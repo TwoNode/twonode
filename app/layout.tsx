@@ -30,7 +30,10 @@ export default function RootLayout({
           name="description"
           content="TwoNode Technologies is an The Platform for Industry Based GIS Solutions"
         />
-        <meta name="keywords" content="twonode, twonodes, tech, technology, technologies, landing page, SEO" />
+        <meta
+          name="keywords"
+          content="twonode, twonodes, tech, technology, technologies, landing page, SEO"
+        />
         <meta name="author" content="TwoNode Technologies" />
 
         {/* <!-- OG Meta Tags to improve the way the post looks when you share the page on LinkedIn, Facebook, Google+ --> */}
@@ -110,13 +113,24 @@ export default function RootLayout({
 
         <script type="application/ld+json">
           {`
-          {
-            "@context": "http://schema.org",
-            "@type": "WebSite",
-            "name": "TwoNode Technologies",
-            "url": "https://www.twonodetechnologies.com"
-          }
-        `}
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "TwoNode Technologies",
+      "url": "https://www.twonodetechnologies.com",
+      "logo": "https://www.twonodetechnologies.com/favicon.jpg",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+234-706-9227-677",
+        "contactType": "Customer Service"
+      },
+      "sameAs": [
+        "https://www.facebook.com/twonodetechnologies",
+        "https://twitter.com/TwoNodeTechnologies",
+        "https://www.linkedin.com/company/twonodetechnologies"
+      ]
+    }
+  `}
         </script>
       </head>
       <body style={{}}>

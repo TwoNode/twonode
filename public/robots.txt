@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: http://www.twonodetechnologies.com/
+
+# Sitemaps
+Sitemap: http://www.twonodetechnologies.com/sitemap.xml
