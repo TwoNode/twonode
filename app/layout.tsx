@@ -29,7 +29,7 @@ export default function RootLayout({
         {/* <!-- SEO Meta Tags --> */}
         <meta
           name="description"
-          content="TwoNode Technologies is an The Platform for Industry Based GIS Solutions"
+          content="TwoNode Technologies is an The Platform for Industry Based GIS Solutions, Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app, Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets."
         />
         <meta
           name="keywords"
@@ -83,7 +83,11 @@ export default function RootLayout({
 
         {/* <!-- Website Title --> */}
         <title>
-          TwoNode Technologies - The Platform for Industry Based GIS Solutions
+          TwoNode Technologies is an The Platform for Industry Based GIS
+          Solutions, Keep track of all your assets, from pipelines to valve
+          pits, metering stations, place markers, ensuring they are always
+          up-to-date, accurately mapped, and accessible real-time with a mobile
+          app.
         </title>
 
         {/* <!-- Styles --> */}
