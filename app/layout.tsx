@@ -7,8 +7,12 @@ import Head from "next/head";
 // const inter = Inter({ subsets: ["latin"] });
 // inter.className
 export const metadata: Metadata = {
-  title: "TwoNode Technologies",
-  description: "TwoNode Technologies",
+  title: "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
+  description:
+    "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
+  keywords:
+    "twonode, twonodes, GIS, Industry, tech, technology, technologies, limited, landing page, SEO",
+  publisher: "TwoNode Technologies",
 };
 
 export default function RootLayout({
@@ -27,15 +31,11 @@ export default function RootLayout({
         />
 
         {/* <!-- SEO Meta Tags --> */}
-        <meta
-          name="description"
-          content="TwoNode Technologies is an The Platform for Industry Based GIS Solutions, Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app, Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets."
-        />
-        <meta
-          name="keywords"
-          content="twonode, twonodes, GIS, Industry, tech, technology, technologies, limited, landing page, SEO"
-        />
         <meta name="author" content="TwoNode Technologies" />
+        <meta
+          name="copyright"
+          content="Copyright © 2024 TwoNode Technologies"
+        />
 
         {/* <!-- OG Meta Tags to improve the way the post looks when you share the page on LinkedIn, Facebook, Google+ --> */}
         <meta property="og:site_name" content="TwoNode Technologies" />
@@ -80,15 +80,6 @@ export default function RootLayout({
           content="https://www.twonodetechnologies.com/images/favicon.png"
         />
         <meta name="robots" content="index, follow" />
-
-        {/* <!-- Website Title --> */}
-        <title>
-          TwoNode Technologies is an The Platform for Industry Based GIS
-          Solutions, Keep track of all your assets, from pipelines to valve
-          pits, metering stations, place markers, ensuring they are always
-          up-to-date, accurately mapped, and accessible real-time with a mobile
-          app.
-        </title>
 
         {/* <!-- Styles --> */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
