@@ -32,7 +32,7 @@ export default function RootLayout({
         />
         <meta
           name="keywords"
-          content="twonode, twonodes, tech, technology, technologies, landing page, SEO"
+          content="twonode, twonodes, tech, technology, technologies, limited, landing page, SEO"
         />
         <meta name="author" content="TwoNode Technologies" />
 
