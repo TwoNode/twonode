@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
   keywords:
-    "twonode, twonodes, GIS, Industry, tech, technology, technologies, limited, landing page, SEO",
+    "twonode, twonode-technologies, GIS, innovative_GIS_solution, Industry, tech, technology, technologies, limited",
   publisher: "TwoNode Technologies",
 };
 
