@@ -15,7 +15,7 @@ export const SurveyTrustFirms = () => {
 
   const surveyData = [
     {
-      src: "/foms.png",
+      src: "/surveyfoms.png",
       companyName: "FOMS Survey Consult Limited",
       surveyor: "Surv. Mariam Adebule",
       imgWidth: 204,
@@ -64,7 +64,7 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
-      src: "/foms.png",
+      src: "/surveyfoms.png",
       companyName: "FOMS Survey Consult Limited",
       surveyor: "Surv. Mariam Adebule",
       imgWidth: 204,
@@ -113,7 +113,7 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
-      src: "/foms.png",
+      src: "/surveyfoms.png",
       companyName: "FOMS Survey Consult Limited",
       surveyor: "Surv. Mariam Adebule",
       imgWidth: 204,
