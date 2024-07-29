@@ -12,14 +12,14 @@ const SurfBoard = ({
           <div className="flex-col justify-start items-center gap-[15px] flex">
             <div className="justify-start items-center gap-[15px] inline-flex">
               <div className="w-5 h-[0px] border-2 border-sky-950"></div>
-              <div className="text-sky-950 text-xl font-medium leading-[34px]">
+              <h2 className="text-sky-950 text-xl font-medium leading-[34px]">
                 {text}
-              </div>
+              </h2>
             </div>
             <div className="flex-col justify-start items-start gap-[18px] flex">
-              <div className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
+              <h3 className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
                 SurfBoard
-              </div>
+              </h3>
             </div>
           </div>
           <div className="max-w-[1019px] text-center text-neutral-600 text-lg font-normal leading-[30px]">

@@ -166,9 +166,9 @@ export const SurveyTrustFirms = () => {
   return (
     <div className="overflow-hidden max-w-full">
       <div className="w-full h-[276px] py-10 items-center  bg-white self-stretch flex-col justify-start gap-[35px] flex">
-        <div className="text-center text-stone-950 text-lg font-semibold">
+        <h2 className="text-center text-stone-950 text-lg font-semibold">
           Survey Firms that Trust our Solution
-        </div>
+        </h2>
         <div className="flex w-full justify-center overflow-hidden items-center">
           <Carousel
             plugins={[plugin.current]}

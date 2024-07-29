@@ -49,15 +49,15 @@ export const EfficientGISSolutions = () => {
           <div className="min-h-[172px] flex flex-col justify-start items-start gap-[30px]">
             <div className="flex justify-start items-center gap-[15px]">
               <div className="w-5 h-[0px] border-2 border-sky-950"></div>
-              <div className="text-sky-950 text-xl font-medium leading-[34px]">
+              <h2 className="text-sky-950 text-xl font-medium leading-[34px]">
                 Our Core Solution
-              </div>
+              </h2>
             </div>
-            <div className="flex flex-col justify-start items-start gap-[18px]">
+            <h3 className="flex flex-col justify-start items-start gap-[18px]">
               <div className="w-[331px] text-sky-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
                 Efficient GIS Solutions
               </div>
-            </div>
+            </h3>
           </div>
           <div className="min-h-[110px] w-full flex flex-col justify-start items-start gap-6">
             <div className="max-w-[570px] flex justify-start items-start gap-6">

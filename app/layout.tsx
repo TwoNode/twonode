@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 // import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import Head from "next/head";
 
 // const inter = Inter({ subsets: ["latin"] });
 // inter.className
@@ -18,7 +19,7 @@ export default function RootLayout({
   return (
     // <!DOCTYPE html>
     <html lang="en">
-      <head>
+      <Head>
         <meta charSet="utf-8" />
         <meta
           name="viewport"
@@ -32,7 +33,7 @@ export default function RootLayout({
         />
         <meta
           name="keywords"
-          content="twonode, twonodes, tech, technology, technologies, limited, landing page, SEO"
+          content="twonode, twonodes, GIS, Industry, tech, technology, technologies, limited, landing page, SEO"
         />
         <meta name="author" content="TwoNode Technologies" />
 
@@ -78,6 +79,7 @@ export default function RootLayout({
           name="twitter:image"
           content="https://www.twonodetechnologies.com/images/favicon.png"
         />
+        <meta name="robots" content="index, follow" />
 
         {/* <!-- Website Title --> */}
         <title>
@@ -110,6 +112,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap"
           rel="stylesheet"
         />
+        <link rel="canonical" href="https://www.twonodetechnologies.com" />
 
         <script type="application/ld+json">
           {`
@@ -128,11 +131,19 @@ export default function RootLayout({
         "https://www.facebook.com/twonodetechnologies",
         "https://twitter.com/TwoNodeTechnologies",
         "https://www.linkedin.com/company/twonodetechnologies"
-      ]
+      ],
+      "publisher": {
+        "@type": "Organization",
+        "name": "TwoNode Technologies",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.twonodetechnologies.com/favicon.jpg"
+        }
+      }
     }
-  `}
+    `}
         </script>
-      </head>
+      </Head>
       <body style={{}}>
         <div className="h-[70px] w-full bg-slate-900">
           <div className="fixed top-0 right-0 left-0 z-[30] w-full h-[65px] px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">

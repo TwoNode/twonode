@@ -26,9 +26,9 @@ const Banner = () => {
                 Integrity | Innovation | Training | Research
               </div>
               <div className="max-w-[887px] pb-2.5 flex-col justify-start items-start flex">
-                <div className="max-w-[887px] text-white text-[54px] md:text-[64px] font-extrabold leading-[74px]">
+                <h1 className="max-w-[887px] text-white text-[54px] md:text-[64px] font-extrabold leading-[74px]">
                   The Platform for Industry Based GIS Solutions
-                </div>
+                </h1>
                 <div className="">
                   <div className="text-sky-500 text-[54px] lg:text-[64px] font-extrabold leading-[54px]">
                     <Carousel

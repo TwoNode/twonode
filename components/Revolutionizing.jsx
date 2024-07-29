@@ -23,9 +23,9 @@ export const Revolutionizing = () => {
         <div className="flex flex-col h-full justify-center">
           <div className="pb-4 justify-start items-center gap-[15px] inline-flex">
             <div className="w-5 h-[0px] border-2 border-white"></div>
-            <div className="text-white text-xl font-medium leading-[34px]">
+            <h2 className="text-white text-xl font-medium leading-[34px]">
               Our Services
-            </div>
+            </h2>
           </div>
           <div className="pb-6 items-center inline-flex">
             <div className="flex-col justify-start items-start inline-flex">
@@ -51,11 +51,11 @@ export const Revolutionizing = () => {
                   </Carousel>
                 </div>
               </div>
-              <div className="self-stretch text-white text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
+              <h3 className="self-stretch text-white text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
                 Industry Based
                 <br />
                 Geospatial Solutions
-              </div>
+              </h3>
             </div>
           </div>
           <div className="pb-10 text-white text-lg font-normal leading-[30px]">

@@ -1,4 +1,3 @@
-import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
@@ -14,9 +13,9 @@ export const SignUpforOurSurvey = ({ url = "/login" }) => {
       <div className="self-stretch min-h-[254px] flex-col justify-start items-center gap-[45px] flex">
         <div className="w-full justify-between items-center inline-flex">
           <div className="w-full flex-col justify-start items-center gap-[18px] inline-flex">
-            <div className="text-center text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
+            <h2 className="text-center text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
               Sign Up for Our Survey Data Management
-            </div>
+            </h2>
             <div className="w-[90%] text-center text-sky-950 text-base font-normal leading-[30px]">
               Don't miss out on the latest in GIS technology and insights.
               Subscribe to our newsletter and be the first to know about new
@@ -104,9 +103,9 @@ export const FeaturedNews = () => {
   return (
     <div className="mywrapper w-full min-h-[623px] px-[135px] py-[70px] bg-gray-50 flex-col justify-start items-start gap-2.5 inline-flex">
       <div className="self-stretch min-h-[483px] flex-col justify-start items-start gap-[50px] flex">
-        <div className="self-stretch text-neutral-900 text-5xl font-semibold capitalize">
+        <h2 className="self-stretch text-neutral-900 text-5xl font-semibold capitalize">
           Featured News
-        </div>
+        </h2>
         <div className="grid justify-items-center lg:grid-cols-2 gap-10">
           <img
             className="max-w-[565px] w-full max-h-[390px] rounded-[10px]"

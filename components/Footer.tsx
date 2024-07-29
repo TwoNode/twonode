@@ -28,14 +28,14 @@ const Footer = () => {
                 <span className="text-sky-950 text-[22px] font-bold leading-[17px]">
                   {Logo}
                 </span>
-                <div className="flex flex-col justify-between h-full">
+                <h1 className="flex flex-col justify-between h-full">
                   <span className="text-sky-950 text-[28px] lg:text-[32px] font-bold">
                     TwoNode
                   </span>
                   <span className="text-sky-950 text-2xl font-bold">
                     &nbsp; &nbsp; Technologies
                   </span>
-                </div>
+                </h1>
               </div>
               <div className="max-w-[378px] text-black text-base font-medium leading-normal">
                 Location: 58 ,Kudirat Abiola Way Oregun, Ikeja, Lagos.

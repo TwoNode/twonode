@@ -8,14 +8,14 @@ export const ReachOutToUs = () => {
               <div className="flex-col justify-start items-start gap-2.5 flex w-full">
                 <div className="justify-start items-center gap-[15px] inline-flex">
                   <div className="w-5 h-[0px] border-2 border-sky-950"></div>
-                  <div className="text-sky-950 text-xl font-medium leading-[34px]">
+                  <h2 className="text-sky-950 text-xl font-medium leading-[34px]">
                     Get In Touch
-                  </div>
+                  </h2>
                 </div>
                 <div className="self-stretch flex-col justify-start items-start gap-[18px] flex w-full">
-                  <div className="text-sky-950 text-[40px] font-extrabold">
+                  <h3 className="text-sky-950 text-[40px] font-extrabold">
                     You Can Reach Out To Us!
-                  </div>
+                  </h3>
                 </div>
               </div>
               <div className="max-w-[498px] text-sky-950 text-[15px] font-normal leading-tight">

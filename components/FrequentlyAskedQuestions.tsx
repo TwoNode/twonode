@@ -40,9 +40,9 @@ export const FrequentlyAskedQuestions = () => {
             <AccordionTrigger className="w-full">
               <div className="cursor-pointer w-full flex-col justify-start items-start flex">
                 <div className="w-full px-[30px] py-6 bg-gray-50 justify-between items-center inline-flex">
-                  <div className="text-neutral-900 text-2xl font-bold leading-[34px]">
+                  <h2 className="text-neutral-900 text-2xl font-bold leading-[34px]">
                     What do we do at TwoNode Technologies?
-                  </div>
+                  </h2>
                   {plusSvg}
                 </div>
               </div>

@@ -6,9 +6,9 @@ const EffortlessTracking = () => {
       <div className="self-stretch h-[254px] flex-col justify-start items-center gap-[45px] flex">
         <div className="w-full justify-between items-center inline-flex">
           <div className="w-full flex-col justify-start items-center gap-[18px] inline-flex">
-            <div className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold font-['Bricolage Grotesque'] leading-[45px] md:leading-[64px]">
+            <h2 className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold font-['Bricolage Grotesque'] leading-[45px] md:leading-[64px]">
               Effortless Tracking
-            </div>
+            </h2>
             <div className="max-w-[982px] text-center text-sky-950 text-base font-normal font-['Bricolage Grotesque'] leading-[30px]">
               Don't miss out on the latest in GIS technology and insights.
               Subscribe to our newsletter and be the first to know about new
