@@ -18,6 +18,10 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        bricolage: ["var(--font-bricolage)"],
+        // mono: ['var(bricolage)'],
+      },
       boxShadow: {
         shadow: "var(--shadow)",
       },

@@ -86,7 +86,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
                     variant="link"
                     // variant={pathname === item.href ? "secondary" : "ghost"}
                     icon={featurednewspage.icon}
-                    className={`group-hover:translate-x-1 py-9 duration-200 w-full flex items-center font-['Bricolage Grotesque'] leading-7 ${
+                    className={`group-hover:translate-x-1 py-9 duration-200 w-full flex items-center  leading-7 ${
                       pathname === featurednewspage.href
                         ? "font-extrabold"
                         : "font-normal"
@@ -101,7 +101,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
                   href={"/signup"}
                   className="cursor-pointer h-10 w-full bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
-                  <div className="text-center text- text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                  <div className="text-center text- text-base font-semibold  leading-7">
                     Sign Up
                   </div>
                 </Link>
@@ -109,7 +109,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
                   href={"/login"}
                   className="cursor-pointer w-full h-10 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
-                  <div className="text-center text-white text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                  <div className="text-center text-white text-base font-semibold  leading-7">
                     Login
                   </div>
                 </Link>

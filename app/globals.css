@@ -1,13 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
 
 :root {
-  font-family: "Bricolage Grotesque";
   font-size: 15px;
 
-  font-family: "Bricolage Grotesque", sans-serif;
   font-optical-sizing: auto;
   font-weight: 500;
   font-style: normal;
@@ -21,6 +18,23 @@
 
 * {
   box-sizing: border-box;
+}
+
+*,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+div,
+small,
+span,
+b,
+i,
+code {
+  @apply font-bricolage;
 }
 
 html,

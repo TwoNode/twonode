@@ -111,6 +111,14 @@ export const OurMap = () => {
           <AnyReactComponent lat={59.955413} lng={30.337844} text="Our Location" />
         </GoogleMapReact>
       </div> */}
+
+      {/* <GoogleMapsEmbed
+        apiKey="XYZ"
+        height={200}
+        width="100%"
+        mode="place"
+        q="Brooklyn+Bridge,New+York,NY"
+      /> */}
     </section>
   );
 };

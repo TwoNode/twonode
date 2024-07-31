@@ -35,7 +35,7 @@ const Navbar = () => {
                   <Link
                     key={ind}
                     href={item.href}
-                    className={`text-center text-sky-950 text-base font-['Bricolage Grotesque'] leading-7 ${
+                    className={`text-center text-sky-950 text-base  leading-7 ${
                       pathname === item.href ? "font-bold" : "font-normal"
                     }`}
                   >
@@ -49,7 +49,7 @@ const Navbar = () => {
                   href={"/signup"}
                   className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
-                  <div className="text-center text-sky-950 text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                  <div className="text-center text-sky-950 text-base font-semibold  leading-7">
                     Sign Up
                   </div>
                 </Link>
@@ -57,7 +57,7 @@ const Navbar = () => {
                   href={"/login"}
                   className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
-                  <div className="text-center text-white text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                  <div className="text-center text-white text-base font-semibold  leading-7">
                     Login
                   </div>
                 </Link>
@@ -75,7 +75,7 @@ const Navbar = () => {
                         href={"/signup"}
                         className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                       >
-                        <div className="text-center text-sky-950 text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                        <div className="text-center text-sky-950 text-base font-semibold  leading-7">
                           Sign Up
                         </div>
                       </Link>
@@ -85,7 +85,7 @@ const Navbar = () => {
                         href={"/login"}
                         className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                       >
-                        <div className="text-center text-white text-base font-semibold font-['Bricolage Grotesque'] leading-7">
+                        <div className="text-center text-white text-base font-semibold  leading-7">
                           Login
                         </div>
                       </Link>

@@ -9,17 +9,17 @@ const SurfBoardSubscriptionPlans = () => {
           <div className="flex-col justify-start items-center gap-[15px] flex">
             <div className="justify-start items-center gap-[15px] inline-flex">
               <div className="w-5 h-[0px] border-2 border-sky-950"></div>
-              <h2 className="text-sky-950 text-xl font-medium font-['Bricolage Grotesque'] leading-[34px]">
+              <h2 className="text-sky-950 text-xl font-medium  leading-[34px]">
                 Sign Up
               </h2>
             </div>
             <div className="flex-col justify-start items-start gap-[18px] flex">
-              <h3 className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold font-['Bricolage Grotesque'] leading-[54px]">
+              <h3 className="text-center text-zinc-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold  leading-[54px]">
                 SurfBoard Subscription Plans
               </h3>
             </div>
           </div>
-          <div className="text-center text-neutral-600 text-lg font-normal font-['Bricolage Grotesque'] leading-[30px]">
+          <div className="text-center text-neutral-600 text-lg font-normal  leading-[30px]">
             A customizable subscription plan made for you to buy only what you
             truly require.
           </div>
@@ -32,13 +32,13 @@ const SurfBoardSubscriptionPlans = () => {
                 src="https://via.placeholder.com/204x204"
               />
               <div className="flex-col justify-start items-center gap-[14.29px] flex">
-                <div className="text-center text-zinc-950 text-[28px] font-bold font-['Bricolage Grotesque'] leading-9">
+                <div className="text-center text-zinc-950 text-[28px] font-bold  leading-9">
                   Basic
                 </div>
-                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium font-['Bricolage Grotesque'] leading-tight">
+                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium  leading-tight">
                   Do you do an average of 13 jobs per quarter?
                 </div>
-                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal font-['Bricolage Grotesque'] leading-[18.20px]">
+                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal  leading-[18.20px]">
                   The Basic Plan allows you to manage up to 55 records annually.
                 </div>
               </div>
@@ -51,13 +51,13 @@ const SurfBoardSubscriptionPlans = () => {
                 src="https://via.placeholder.com/204x213"
               />
               <div className="flex-col justify-start items-center gap-[14.29px] flex">
-                <div className="text-center text-zinc-950 text-[28px] font-bold font-['Bricolage Grotesque'] leading-9">
+                <div className="text-center text-zinc-950 text-[28px] font-bold  leading-9">
                   Intermediate
                 </div>
-                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium font-['Bricolage Grotesque'] leading-tight">
+                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium  leading-tight">
                   Do you do an average of 25 jobs per quarter?
                 </div>
-                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal font-['Bricolage Grotesque'] leading-[18.20px]">
+                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal  leading-[18.20px]">
                   The Intermediate Plan allows you to manage up to 110 records
                   annually.
                 </div>
@@ -71,13 +71,13 @@ const SurfBoardSubscriptionPlans = () => {
                 src="https://via.placeholder.com/204x204"
               />
               <div className="flex-col justify-start items-center gap-[14.29px] flex">
-                <div className="text-center text-zinc-950 text-[28px] font-bold font-['Bricolage Grotesque'] leading-9">
+                <div className="text-center text-zinc-950 text-[28px] font-bold  leading-9">
                   Advanced
                 </div>
-                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium font-['Bricolage Grotesque'] leading-tight">
+                <div className="max-w-[290.67px] text-center text-slate-800 text-base font-medium  leading-tight">
                   Do you do more than 25 jobs per quarter?
                 </div>
-                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal font-['Bricolage Grotesque'] leading-[18.20px]">
+                <div className="max-w-[290.67px] text-center text-neutral-600 text-sm font-normal  leading-[18.20px]">
                   The Advanced Plan allows you to manage up to 220 records
                   annually.
                 </div>
@@ -91,7 +91,7 @@ const SurfBoardSubscriptionPlans = () => {
           }
           className="max-w-[520px] w-full px-[45px] py-[15px] bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
         >
-          <div className="text-center text-white text-lg font-semibold font-['Bricolage Grotesque'] leading-[30px]">
+          <div className="text-center text-white text-lg font-semibold  leading-[30px]">
             Subscribe
           </div>
         </Link>

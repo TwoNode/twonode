@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import Head from "next/head";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
-// const inter = Inter({ subsets: ["latin"] });
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-bricolage",
+});
+
 // inter.className
 export const metadata: Metadata = {
   title: "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
@@ -23,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     // <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" className={`${bricolage.variable}`}>
       <Head>
         <meta charSet="utf-8" />
         <meta
@@ -110,28 +115,6 @@ export default function RootLayout({
         <meta name="robots" content="index, follow" />
 
         {/* <!-- Styles --> */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
-          rel="stylesheet"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap"
-          rel="stylesheet"
-        />
         <link rel="canonical" href="https://www.twonodetechnologies.com" />
 
         <script type="application/ld+json">
@@ -164,25 +147,25 @@ export default function RootLayout({
     `}
         </script>
       </Head>
-      <body style={{}}>
+      <body className={`${bricolage.variable} ${bricolage.className}`}>
         {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
-          <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
         )}
         <div className="h-[70px] w-full bg-slate-900">
           <div className="fixed top-0 right-0 left-0 z-[30] w-full h-[65px] px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">
             <div className="text-center">
-              <span className="text-white text-[10px] lg:text-[13px] font-normal font-['Bricolage Grotesque'] leading-[8px] lg:leading-[20px]">
+              <span className="text-white text-[10px] lg:text-[13px] font-normal leading-[8px] lg:leading-[20px]">
                 Reach out on: Call - (+234) 706-9227-677 || Email:
                 info@twonodetechnologies.com{" "}
               </span>
               <Link
                 href={"/contact"}
-                className="text-white text-[8px] lg:text-[12px] font-semibold font-['Bricolage Grotesque'] underline leading-[8px] lg:leading-[20px] whitespace-nowrap"
+                className="text-white text-[8px] lg:text-[12px] font-semibold underline leading-[8px] lg:leading-[20px] whitespace-nowrap"
               >
                 Contact Us
               </Link>
             </div>
-            <p className="text-white text-[8px] lg:text-[12px] font-normal font-['Bricolage Grotesque'] leading-[8px] lg:leading-[30px]">
+            <p className="text-white text-[8px] lg:text-[12px] font-normal leading-[8px] lg:leading-[30px]">
               RC NO.: 7742902
             </p>
           </div>
