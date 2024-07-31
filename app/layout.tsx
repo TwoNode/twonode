@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
 import Head from "next/head";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 // const inter = Inter({ subsets: ["latin"] });
 // inter.className
@@ -164,6 +165,9 @@ export default function RootLayout({
         </script>
       </Head>
       <body style={{}}>
+        {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
+          <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
+        )}
         <div className="h-[70px] w-full bg-slate-900">
           <div className="fixed top-0 right-0 left-0 z-[30] w-full h-[65px] px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">
             <div className="text-center">
