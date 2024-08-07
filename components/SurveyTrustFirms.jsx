@@ -64,6 +64,13 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
+      src: "SurveyFirm.png",
+      companyName: "GEO T LTD",
+      surveyor: "Surv Bashira Alamutu",
+      imgWidth: 99,
+      imgHeight: 80,
+    },
+    {
       src: "/surveyfoms.png",
       companyName: "FOMS Survey Consult Limited",
       surveyor: "Surv. Mariam Adebule",
@@ -113,6 +120,13 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
+      src: "SurveyFirm.png",
+      companyName: "GEO T LTD",
+      surveyor: "Surv Bashira Alamutu",
+      imgWidth: 99,
+      imgHeight: 80,
+    },
+    {
       src: "/surveyfoms.png",
       companyName: "FOMS Survey Consult Limited",
       surveyor: "Surv. Mariam Adebule",
@@ -158,6 +172,13 @@ export const SurveyTrustFirms = () => {
       src: "SurveyFirm.png",
       companyName: "Survey Firm",
       surveyor: "Surv. Paul Osigweh Chigozie",
+      imgWidth: 99,
+      imgHeight: 80,
+    },
+    {
+      src: "SurveyFirm.png",
+      companyName: "GEO T LTD",
+      surveyor: "Surv Bashira Alamutu",
       imgWidth: 99,
       imgHeight: 80,
     },
