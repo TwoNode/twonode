@@ -54,7 +54,7 @@ export const OurMap = () => {
                   </svg>{" "}
                 </div>
                 <div className="text-neutral-600 text-xl font-medium leading-7">
-                  +234-706-9227-677
+                  +234-916-0002-740
                 </div>
               </div>
               <div className="justify-start items-center gap-3.5 inline-flex">
