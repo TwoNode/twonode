@@ -127,7 +127,7 @@ export default function RootLayout({
       "logo": "https://www.twonodetechnologies.com/favicon.jpg",
       "contactPoint": {
         "@type": "ContactPoint",
-        "telephone": "+234-706-9227-677",
+        "telephone": "+234-916-0002-740",
         "contactType": "Customer Service"
       },
       "sameAs": [
