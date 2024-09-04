@@ -239,7 +239,7 @@ const Footer = () => {
                   Have a question?
                 </div>
                 <div className="text-stone-950 text-sm font-semibold leading-7">
-                  <a href="tel:+2347069227677">+234-706-9227-677</a>
+                  <a href="tel:+2349160002740">+234-916-0002-740</a>
                 </div>
               </div>
             </div>
