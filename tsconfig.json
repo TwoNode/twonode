@@ -17,10 +17,11 @@
         "name": "next"
       }
     ],
+    "baseUrl": "./", // Base directory for resolving non-relative modules
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/Footer.tsx", "app/services/SVGs.js", "components/SurveyTrustFirms.jsx", "components/Banner.jsx", "app/contact/OurMap.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/Footer.jsx", "app/services/SVGs.js", "components/SurveyTrustFirms.jsx", "components/Banner.jsx", "app/contact/OurMap.jsx", "app/gbc/page.jsx"],
   "exclude": ["node_modules"]
 }

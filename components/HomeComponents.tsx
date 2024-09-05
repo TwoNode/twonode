@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Carousel,
   CarouselContent,
@@ -7,7 +8,15 @@ import {
 } from "@/components/ui/carousel";
 import Link from "next/link";
 
-export const SignUpforOurSurvey = ({ url = "/login" }) => {
+// Define the props type
+interface SignUpforOurSurveyProps {
+  url?: string; // 'url' is an optional string prop
+}
+
+// Define the component using the props type
+export const SignUpforOurSurvey: React.FC<SignUpforOurSurveyProps> = ({
+  url = "/login",
+}) => {
   return (
     <div className="mywrapper w-full min-h-[374px] pt-[60px] pb-24 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
       <div className="self-stretch min-h-[254px] flex-col justify-start items-center gap-[45px] flex">

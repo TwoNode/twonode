@@ -1,6 +1,7 @@
+import React from "react";
 import Link from "next/link";
 
-const Footer = () => {
+export const Footer: React.FC = () => {
   const Logo = (
     <svg
       width="59"

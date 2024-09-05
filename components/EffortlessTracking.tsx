@@ -1,6 +1,7 @@
+import React from "react";
 import Link from "next/link";
 
-const EffortlessTracking = () => {
+const EffortlessTracking: React.FC = () => {
   return (
     <div className="mywrapper w-full min-h-[374px] py-[60px] bg-gray-50 flex-col justify-center items-center gap-2.5 inline-flex">
       <div className="self-stretch h-[254px] flex-col justify-start items-center gap-[45px] flex">

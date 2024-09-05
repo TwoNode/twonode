@@ -7,15 +7,16 @@ import {
 } from "@/components/HomeComponents";
 import { FrequentlyAskedQuestions } from "@/components/FrequentlyAskedQuestions";
 import { ReachOutToUs } from "@/components/ReachOutToUs";
-import Footer from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 import { SurveyTrustFirms } from "@/components/SurveyTrustFirms";
 import { EfficientGISSolutions } from "@/components/EfficientGISSolutions";
 import { OurGallery } from "@/components/OurGallery";
 import { Revolutionizing } from "@/components/Revolutionizing";
+import { DemystifyingGIS } from "@/components/DemystifyingGIS";
 
 export default function Home() {
   return (
-    <section className="">
+    <section>
       <Navbar />
       <Banner />
 
@@ -27,6 +28,8 @@ export default function Home() {
 
       {/* Revolutionizing industry Based Geospatial Solutions */}
       <Revolutionizing />
+
+      {/* <DemystifyingGIS /> */}
 
       {/* Sign Up for Our Survey Data Management */}
       <SignUpforOurSurvey url="signup" />
