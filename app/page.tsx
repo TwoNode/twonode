@@ -29,7 +29,7 @@ export default function Home() {
       {/* Revolutionizing industry Based Geospatial Solutions */}
       <Revolutionizing />
 
-      {/* <DemystifyingGIS /> */}
+      <DemystifyingGIS />
 
       {/* Sign Up for Our Survey Data Management */}
       <SignUpforOurSurvey url="signup" />
