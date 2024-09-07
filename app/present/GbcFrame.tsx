@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 
-const EmbedSurvey: React.FC = () => {
+const EmbeddedMap: React.FC = () => {
   return (
     <div className="mywrapper">
       <div className="relative h-0 pb-[80%] max-w-full">
@@ -20,4 +20,4 @@ const EmbedSurvey: React.FC = () => {
   );
 };
 
-export default EmbedSurvey;
+export default EmbeddedMap;

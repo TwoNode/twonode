@@ -1,5 +1,6 @@
 import Link from "next/link";
 import React from "react";
+import { CountdownComponent } from "./CountdownComponent";
 
 export const DemystifyingGIS: React.FC = () => {
   return (
@@ -37,50 +38,12 @@ export const DemystifyingGIS: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
-            <div className="flex-col justify-start items-center inline-flex">
-              <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
-                80
-              </span>
-              <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
-                Days
-              </span>
-            </div>
-            <span className="text-center text-[#001f3f] lg:text-7xl text-2xl font-bold font-['Nunito']">
-              :
-            </span>
-            <div className="flex-col justify-start items-center inline-flex">
-              <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
-                16
-              </span>
-              <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
-                Hours
-              </span>
-            </div>
-            <span className="text-center text-[#001f3f] lg:text-7xl text-2xl font-bold font-['Nunito']">
-              :
-            </span>
-            <div className="flex-col justify-start items-center inline-flex">
-              <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
-                20
-              </span>
-              <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
-                Mins
-              </span>
-            </div>
-            <span className="text-center text-[#001f3f] lg:text-7xl text-2xl font-bold font-['Nunito']">
-              :
-            </span>
-            <div className="flex-col justify-start items-center inline-flex">
-              <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
-                50
-              </span>
-              <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
-                Secs
-              </span>
-            </div>
-          </div>
-          <Link href={"/gbc"} className="w-full sm:w-[228px] h-16 bg-[#001f3f] rounded-[70.74px] shadow justify-center items-center flex">
+       
+          <CountdownComponent />
+          <Link
+            href={"/gbc"}
+            className="w-full sm:w-[228px] h-16 bg-[#001f3f] rounded-[70.74px] shadow justify-center items-center flex"
+          >
             <span className="text-white text-nowrap text-2xl font-medium font-['Bricolage Grotesque']">
               Apply Now
             </span>
