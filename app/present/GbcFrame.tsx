@@ -13,7 +13,7 @@ const EmbedSurvey: React.FC = () => {
           allowFullScreen
           title="Map Embed"
           src="https://arcg.is/fb0Pj1"
-          className="absolute top-0 left-0 w-full h-full max-h-[90vh]"
+          className="absolute top-0 left-0 w-full h-full md:max-h-[85vh]"
         />
       </div>
     </div>
