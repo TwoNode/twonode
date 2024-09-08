@@ -22,7 +22,7 @@ export const Gbc = () => {
   return (
     <div className="mywrapper pb-[55px] pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-[30px]">
       <div className="w-full flex flex-col justify-start items-start gap-10">
-        <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[90px] gap-[30px] flex">
+        <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[50px] gap-[20px] flex">
           <div className="flex justify-between items-center flex-wrap lg:gap-[20px] gap-2 w-full">
             <h2 className="text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
               Geospatial Builders Course 1.0
