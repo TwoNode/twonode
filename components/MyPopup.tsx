@@ -26,7 +26,7 @@ export function MyPopup() {
   };
 
   return (
-    <Dialog defaultOpen={true} open={open}>
+    <Dialog defaultOpen={true} open={open} onOpenChange={setOpen}>
       {/* <DialogTrigger asChild>
         <Button variant="outline" className="text-red-600"></Button>
       </DialogTrigger> */}
