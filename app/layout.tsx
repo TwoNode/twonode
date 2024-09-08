@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import Head from "next/head";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { MyPopup } from "@/components/MyPopup";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -147,6 +148,7 @@ export default function RootLayout({
     `}
         </script>
       </Head>
+
       <body className={`${bricolage.variable} ${bricolage.className}`}>
         {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
@@ -170,7 +172,10 @@ export default function RootLayout({
             </p>
           </div>
         </div>
-        <main className="relative">{children}</main>
+        <main className="relative">
+          <MyPopup />
+          {children}
+        </main>
       </body>
     </html>
   );
