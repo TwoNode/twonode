@@ -8,14 +8,25 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-//   DialogTrigger,
+  //   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CountdownComponent } from "./CountdownComponent";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function MyPopup() {
+  const router = useRouter();
+  const [open, setOpen] = useState(true);
+
+  const handleClose = () => {
+    setOpen(false);
+    router.push("/gbc");
+
+  };
+
   return (
-    <Dialog defaultOpen={true}>
+    <Dialog defaultOpen={true} open={open}>
       {/* <DialogTrigger asChild>
         <Button variant="outline" className="text-red-600"></Button>
       </DialogTrigger> */}
@@ -43,15 +54,16 @@ export function MyPopup() {
                 GBC1.0!!!
               </span>
             </div>
+            <CountdownComponent />
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>
             <div className="flex flex-col">
-              <CountdownComponent />
               <Link
                 href={"/gbc"}
+                onClick={handleClose}
                 className="w-full sm:w-[228px] h-16 bg-[#001f3f] rounded-[70.74px] shadow justify-center items-center flex"
               >
                 <span className="text-white text-nowrap text-2xl font-medium font-['Bricolage Grotesque']">
