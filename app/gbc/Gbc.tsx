@@ -100,10 +100,18 @@ export const Gbc = () => {
               </div>
             </div>
           </div>
-          <img
-            className="w-full max-w-[621px] max-h-[424px] rounded-[5px]"
-            src="/gbcLocation.png"
-          />
+          <div className="w-full max-w-[621px] max-h-[424px] rounded-[5px]">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.500011118921!2d3.346840411305369!3d6.584595222421341!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b921776d4cd3f%3A0x82bfa6a8a3177ddf!2sLagos%20Marriott%20Hotel%20Ikeja!5e0!3m2!1sen!2sng!4v1725794142963!5m2!1sen!2sng"
+              width="500"
+              height="420"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="w-full max-w-[621px] max-h-[430px] rounded-[5px]"
+            ></iframe>
+          </div>
+          {/* <img src="/gbcLocation.png" /> */}
         </div>
 
         <div className="flex-col justify-start items-start gap-5 flex">
@@ -143,16 +151,17 @@ export const Gbc = () => {
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
                 Email : -
-                <span className="">
-                  events@twonodetechnologies.com
-                </span>
+                <span className="">events@twonodetechnologies.com</span>
               </span>
             </div>
           </div>
           <div>
             <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[38px]">
               Payment should only be made within 24hours of receiving
-              authorization, <b className="text-[#ff1c4d]">as there are only 15 tickets available.</b> 
+              authorization,{" "}
+              <b className="text-[#ff1c4d]">
+                as there are only 15 tickets available.
+              </b>
               <br />
               All payments should be made to;
             </h5>
