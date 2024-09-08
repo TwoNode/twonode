@@ -1,9 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Countdown, { CountdownRenderProps } from "react-countdown";
 
 export const CountdownComponent: React.FC = () => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure the component only renders after mounting
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Random component for completion state
   const Completionist: React.FC = () => (
     <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
@@ -24,10 +31,8 @@ export const CountdownComponent: React.FC = () => {
     completed,
   }: CountdownRenderProps) => {
     if (completed) {
-      // Render a completed state
       return <Completionist />;
     } else {
-      // Render a countdown
       return (
         <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
           <div className="flex-col justify-start items-center inline-flex">
@@ -75,7 +80,15 @@ export const CountdownComponent: React.FC = () => {
       );
     }
   };
+
+  // Render countdown only after the component has mounted
+  if (!isMounted) return null;
+
   return (
-    <Countdown autoStart date={Date.now() + 6000000000} renderer={renderer} />
+    <Countdown
+      autoStart
+      date={new Date("2024-11-23T09:00:00")}
+      renderer={renderer}
+    />
   );
 };

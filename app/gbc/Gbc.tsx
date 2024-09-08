@@ -20,11 +20,11 @@ import {
 export const Gbc = () => {
   const TAGS = ["#GIS", "#Surveyor", "#Surveying", "#Geospatial", "#Course"];
   return (
-    <div className="mywrapper py-[55px] bg-white justify-start items-center gap-2.5 inline-flex">
+    <div className="mywrapper pb-[55px] pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-[30px]">
       <div className="w-full flex flex-col justify-start items-start gap-10">
         <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[90px] gap-[30px] flex">
           <div className="flex justify-between items-center flex-wrap lg:gap-[20px] gap-2 w-full">
-            <h2 className="text-[#001f3f] lg:text-[40px] text-[25px] font-extrabold font-['Bricolage Grotesque']">
+            <h2 className="text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
               Geospatial Builders Course 1.0
             </h2>
             <div className="justify-end items-center gap-[15px] flex sm:w-max w-full">
@@ -34,25 +34,25 @@ export const Gbc = () => {
           </div>
           <div className="self-stretch justify-between items-start flex flex-wrap">
             <div className="w-full flex-col justify-start items-start gap-5 inline-flex">
-              <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+              <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                 Date and Time
               </h4>
               <div className="self-stretch min-h-[177px] flex-col justify-start items-start gap-[15px] flex">
                 <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {CalendarSvg}
-                  <span className="text-[#001f3f] text-xl lg:text-2xl font-semibold font-['Bricolage Grotesque']">
+                  <span className="text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                     Saturday, November 23rd, 2024
                   </span>
                 </div>
                 <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {ClockSvg}
-                  <span className="text-[#001f3f] text-xl lg:text-2xl font-semibold font-['Bricolage Grotesque']">
+                  <span className="text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                     9 AM Prompt
                   </span>
                 </div>
                 <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {PlusSvg}
-                  <span className="text-[#00bfff] text-xl lg:text-2xl font-medium font-['Bricolage Grotesque']">
+                  <span className="text-[#00bfff] lg:text-2xl font-medium font-['Bricolage Grotesque']">
                     Add to Calendar
                   </span>
                 </div>
@@ -71,12 +71,12 @@ export const Gbc = () => {
                 </Link>
               </div>
               <div className="flex-col justify-start items-start gap-[26px] flex">
-                <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+                <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                   Ticket Information
                 </h4>
                 <div className="justify-start items-center gap-2.5 inline-flex">
                   {StandardTicketSvg}
-                  <div className="text-[#001f3f] text-xl lg:text-2xl font-semibold font-['Bricolage Grotesque']">
+                  <div className="text-[#001f3f] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                     Standard Ticket: 70k each
                   </div>
                 </div>
@@ -87,13 +87,13 @@ export const Gbc = () => {
 
         <div className="flex-col justify-start items-start gap-[25px] flex">
           <div className="flex-col justify-start items-start gap-5 flex">
-            <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+            <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
               Location
             </h3>
             <div className="flex-col justify-start items-start gap-[15px] flex">
               <div className="p-2.5 justify-center items-center gap-5 inline-flex">
                 {LocationSvg}
-                <p className="max-w-[537px] text-[#001f3f] text-xl lg:text-2xl font-semibold font-['Bricolage Grotesque']">
+                <p className="max-w-[537px] text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                   Lagos Marriott Hotel Ikeja - 122 Joel Ogunnaike St, Ikeja GRA,
                   Lagos 100271, Lagos.
                 </p>
@@ -107,11 +107,11 @@ export const Gbc = () => {
         </div>
 
         <div className="flex-col justify-start items-start gap-5 flex">
-          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
             HOW TO PAY FOR GBC 1.0
           </h3>
 
-          <div className="flex flex-col text-[#001f3f] text-xl font-medium font-['Bricolage Grotesque'] leading-[30px]">
+          <div className="flex flex-col text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[30px]">
             <span className="flex items-center gap-2">
               <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
               Scan the QR Code
@@ -130,12 +130,12 @@ export const Gbc = () => {
             NB:
           </h4>
           <div>
-            <h5 className="text-[#001f3f] text-xl font-medium font-['Bricolage Grotesque'] leading-[30px]">
+            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[30px]">
               Our event team will reach out to you via the following details
               only;
             </h5>
 
-            <div className="flex flex-col text-[#001f3f] text-xl font-medium font-['Bricolage Grotesque'] leading-[30px]">
+            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-[30px]">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
                 Phone Number: 09160002740
@@ -143,21 +143,21 @@ export const Gbc = () => {
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
                 Email : -
-                <span className="sm:text-xl text-xs">
+                <span className="">
                   events@twonodetechnologies.com
                 </span>
               </span>
             </div>
           </div>
           <div>
-            <h5 className="text-[#001f3f] text-xl font-medium font-['Bricolage Grotesque'] leading-[38px]">
+            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[38px]">
               Payment should only be made within 24hours of receiving
-              authorization, as there are only 15 tickets available.
+              authorization, <b className="text-[#ff1c4d]">as there are only 15 tickets available.</b> 
               <br />
               All payments should be made to;
             </h5>
 
-            <div className="flex flex-col text-[#001f3f] text-xl font-medium font-['Bricolage Grotesque'] leading-[30px]">
+            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-[30px]">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />{" "}
                 Account Number : - 0944724746
@@ -172,7 +172,7 @@ export const Gbc = () => {
               </span>
             </div>
 
-            <p className="text-[#001f3f] text-xl font-semibold font-['Bricolage Grotesque'] leading-[38px]">
+            <p className="text-[#ff1c4d] font-semibold font-['Bricolage Grotesque'] leading-[38px]">
               PAYMENT Confirms your RESERVATION
             </p>
           </div>
@@ -190,14 +190,14 @@ export const Gbc = () => {
                   <AccordionTrigger className="w-full">
                     <div className="cursor-pointer w-full flex-col justify-start items-start flex">
                       <div className="w-full bg-gray-50 justify-between items-center inline-flex">
-                        <h2 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+                        <h2 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                           Event Description
                         </h2>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="">
+                    <div className="text-sky-950 text-base font-normal leading-[30px]">
                       <h3 className="text-[#001f3f] font-bold text-2xl">
                         A wake-up call!!!
                       </h3>
@@ -258,7 +258,7 @@ export const Gbc = () => {
         </div>
 
         <div className="flex-col justify-start items-start gap-5 flex w-full">
-          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']">
+          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
             Tags
           </h3>
 
