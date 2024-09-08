@@ -22,7 +22,7 @@ export const Gbc = () => {
   return (
     <div className="mywrapper pb-[55px] pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-[30px]">
       <div className="w-full flex flex-col justify-start items-start gap-10">
-        <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[50px] gap-[20px] flex">
+        <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[60px] gap-[40px] flex">
           <div className="flex justify-between items-center flex-wrap lg:gap-[20px] gap-2 w-full">
             <h2 className="text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
               Geospatial Builders Course 1.0
@@ -33,7 +33,7 @@ export const Gbc = () => {
             </div>
           </div>
           <div className="self-stretch justify-between items-start flex flex-wrap">
-            <div className="w-full flex-col justify-start items-start gap-5 inline-flex">
+            <div className="w-max flex-col justify-start items-start gap-5 inline-flex">
               <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                 Date and Time
               </h4>
@@ -85,7 +85,7 @@ export const Gbc = () => {
           </div>
         </div>
 
-        <div className="flex-col justify-start items-start gap-[25px] flex">
+        <div className="grid lg:grid-cols-2 grid-cols-1 justify-between items-center gap-[20px]">
           <div className="flex-col justify-start items-start gap-5 flex">
             <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
               Location
@@ -100,6 +100,7 @@ export const Gbc = () => {
               </div>
             </div>
           </div>
+
           <div className="w-full max-w-[621px] max-h-[424px] rounded-[5px]">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.500011118921!2d3.346840411305369!3d6.584595222421341!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b921776d4cd3f%3A0x82bfa6a8a3177ddf!2sLagos%20Marriott%20Hotel%20Ikeja!5e0!3m2!1sen!2sng!4v1725794142963!5m2!1sen!2sng"
@@ -169,11 +170,11 @@ export const Gbc = () => {
             <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-[30px]">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />{" "}
-                Account Number : - 0944724746
+                Account Number : - ___________
               </span>
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />{" "}
-                Account Name : - TwoNodeTechnologies Limited
+                Account Name : - Event-TwoNodeTechnologies Limited
               </span>
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
