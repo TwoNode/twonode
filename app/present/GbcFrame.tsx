@@ -1,7 +1,3 @@
-"use client";
-
-import React, { useEffect } from "react";
-
 const EmbeddedMap: React.FC = () => {
   return (
     <div className="mywrapper">
