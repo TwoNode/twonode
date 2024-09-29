@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Accordion,
@@ -16,9 +18,21 @@ import {
   StandardTicketSvg,
   LocationSvg,
 } from "@/app/gbc/svgs";
+import { DesktopScreen } from "@/utils/responsiveness";
 
 export const Gbc = () => {
   const TAGS = ["#GIS", "#Surveyor", "#Surveying", "#Geospatial", "#Course"];
+  const isDesktop = DesktopScreen();
+  const [url, setUrl] = useState("gbc-frame");
+
+  useEffect(() => {
+    if (isDesktop) {
+      setUrl("gbc-frame");
+    } else {
+      setUrl("https://arcg.is/0ODWL81");
+    }
+  }, [isDesktop]);
+
   return (
     <div className="mywrapper pb-[55px] pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-[30px]">
       <div className="w-full flex flex-col justify-start items-start gap-10">
@@ -61,7 +75,7 @@ export const Gbc = () => {
             <div className="flex-col justify-start items-end gap-[50px] inline-flex">
               <div className="w-[324px] mAX-h-[84px] p-2.5 bg-[#00bfff] rounded-[5px] flex-col justify-center items-center gap-2.5 flex">
                 <Link
-                  href={"gbc-frame"}
+                  href={url}
                   className="cursor-pointer justify-center items-center gap-[15px] inline-flex"
                 >
                   {BuyTicketSvg}
