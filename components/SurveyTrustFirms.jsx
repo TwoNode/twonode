@@ -57,8 +57,16 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
-      src: "SurveyFirm.png",
-      companyName: "Survey Firm",
+      element: (
+        <>
+          <img
+            style={{ maxHeight: "80px" }}
+            src="paulethan.png"
+            alt="Paulethan Limited"
+          />
+        </>
+      ),
+      companyName: "Paulethan Limited",
       surveyor: "Surv. Paul Osigweh Chigozie",
       imgWidth: 99,
       imgHeight: 80,
@@ -113,8 +121,16 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
-      src: "SurveyFirm.png",
-      companyName: "Survey Firm",
+      element: (
+        <>
+          <img
+            style={{ maxHeight: "80px" }}
+            src="paulethan.png"
+            alt="Paulethan Limited"
+          />
+        </>
+      ),
+      companyName: "Paulethan Limited",
       surveyor: "Surv. Paul Osigweh Chigozie",
       imgWidth: 99,
       imgHeight: 80,
@@ -169,8 +185,16 @@ export const SurveyTrustFirms = () => {
       imgHeight: 80,
     },
     {
-      src: "SurveyFirm.png",
-      companyName: "Survey Firm",
+      element: (
+        <>
+          <img
+            style={{ maxHeight: "80px" }}
+            src="paulethan.png"
+            alt="Paulethan Limited"
+          />
+        </>
+      ),
+      companyName: "Paulethan Limited",
       surveyor: "Surv. Paul Osigweh Chigozie",
       imgWidth: 99,
       imgHeight: 80,
@@ -186,7 +210,7 @@ export const SurveyTrustFirms = () => {
 
   return (
     <div className="overflow-hidden max-w-full">
-      <div className="w-full h-[276px] py-10 items-center  bg-white self-stretch flex-col justify-start gap-[35px] flex">
+      <div className="w-full h-[296px] py-10 items-center  bg-white self-stretch flex-col justify-start gap-[35px] flex">
         <h2 className="text-center text-stone-950 text-lg font-semibold">
           Survey Firms that Trust our Solution
         </h2>
@@ -205,11 +229,15 @@ export const SurveyTrustFirms = () => {
                   className="p-2 basis-1/2 md:basis-[35%] lg:basis-[20%] 2xl:basis-[14%]"
                 >
                   <div className="flex-col justify-start items-center gap-2.5 inline-flex">
-                    <img
-                      className={`w-[${survey.imgWidth}px] h-[${survey.imgHeight}px]`}
-                      src={survey.src}
-                      alt={survey.companyName}
-                    />
+                    {survey.src ? (
+                      <img
+                        className={`w-[${survey.imgWidth}px] h-[${survey.imgHeight}px]`}
+                        src={survey.src}
+                        alt={survey.companyName}
+                      />
+                    ) : (
+                      <>{survey.element}</>
+                    )}
                     <div className="flex-col justify-start items-center flex">
                       <div className="text-center text-stone-950 text-sm font-medium">
                         {survey.companyName}
