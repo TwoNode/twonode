@@ -17,7 +17,7 @@ import {
   BuyTicketSvg,
   StandardTicketSvg,
   LocationSvg,
-} from "@/app/gbc/svgs";
+} from "@/app/(main)/gbc/svgs";
 import { DesktopScreen } from "@/utils/responsiveness";
 
 export const Gbc = () => {
