@@ -266,34 +266,36 @@ const GenerateGridCode: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
-      <h1 className="text-3xl text-center mb-6">
-        Generate GridCode, Store, and Update the Healthcare Layer
-      </h1>
-      <label htmlFor="objectid" className="block mb-2 text-lg">
-        Enter OBJECTID:
-      </label>
-      <input
-        type="number"
-        id="objectid"
-        value={objectId}
-        onChange={(e) => setObjectId(e.target.value)}
-        className="w-full p-2 rounded-md bg-gray-700 text-white mb-4"
-      />
-      <button
-        onClick={fetchFeatureLayerData}
-        className="w-full bg-green-500 hover:bg-green-600 text-white p-2 rounded-md mb-4"
-      >
-        Submit
-      </button>
+    <div className="bg-[#0a162b50] min-w-screen min-h-screen p-4">
+      <div className="bg-[#0a162b] m-auto rounded-lg shadow-lg text-white p-12 font-sans max-w-3xl">
+        <h1 className="text-3xl text-center mb-6">
+          Generate GridCode, Store, and Update the Healthcare Layer
+        </h1>
+        <label htmlFor="objectid" className="block mb-2 text-lg">
+          Enter OBJECTID:
+        </label>
+        <input
+          type="number"
+          id="objectid"
+          value={objectId}
+          onChange={(e) => setObjectId(e.target.value)}
+          className="w-full p-2 rounded-md bg-gray-700 text-white mb-4"
+        />
+        <button
+          onClick={fetchFeatureLayerData}
+          className="w-full bg-green-500 hover:bg-green-600 text-white p-2 rounded-md mb-4"
+        >
+          Submit
+        </button>
 
-      {loading && <div className="text-center text-xl">Loading...</div>}
+        {loading && <div className="text-center text-xl">Loading...</div>}
 
-      {result && (
-        <div className="mt-4 bg-gray-800 p-4 rounded-md">
-          {typeof result === "string" ? <p>{result}</p> : result}
-        </div>
-      )}
+        {result && (
+          <div className="mt-4 bg-gray-800 p-4 rounded-md">
+            {typeof result === "string" ? <p>{result}</p> : result}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
