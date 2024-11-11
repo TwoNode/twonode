@@ -1,174 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Distance Calculation Between Grid Codes</title>
     <style>
-        body {
-            background-color: #0a162b;
-            color: white;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
+      body {
+        background-color: #1e2a47;
+        color: white;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        font-size: 2em;
+        margin-bottom: 10px;
+        color: #f1f1f1;
+      }
+      label,
+      button {
+        font-size: 1.1em;
+        margin-top: 15px;
+        display: block;
+        color: #ddd;
+      }
+      input[type="text"] {
+        font-size: 1em;
+        padding: 10px;
+        margin: 5px 0;
+        width: 100%;
+        max-width: 350px;
+        border-radius: 5px;
+        border: 1px solid #3b3b3b;
+        background-color: #2a3547;
+        color: white;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #4caf50;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.2em;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      pre {
+        background-color: #333;
+        padding: 15px;
+        border-radius: 8px;
+        max-width: 600px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 1.1em;
+        color: #e6e6e6;
+      }
+      .verified {
+        color: #4caf50;
+        font-weight: bold;
+      }
+      .not-verified {
+        color: #f44336;
+        font-weight: bold;
+      }
+      .loading {
+        text-align: center;
+        font-size: 1.2em;
+        color: #ff9800;
+      }
+      .response-container {
+        margin-top: 20px;
+      }
+      .response-container h3 {
+        margin-top: 20px;
+        font-size: 1.5em;
+      }
+      .response-container p {
+        font-size: 1.1em;
+      }
+      .loading-spinner {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #4caf50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        h1, h2 {
-            font-size: 2em;
+        100% {
+          transform: rotate(360deg);
         }
-        label, button {
-            font-size: 1.2em;
-            margin-top: 10px;
-            display: block;
-        }
-        input[type="text"] {
-            font-size: 1em;
-            padding: 5px;
-            margin: 5px 0;
-            width: 100%;
-            max-width: 300px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2em;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        pre {
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 600px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 1.2em;
-        }
-        .verified {
-            color: green;
-            font-weight: bold;
-        }
-        .not-verified {
-            color: red;
-            font-weight: bold;
-        }
+      }
     </style>
-</head>
-<body>
-    <h1>Calculate Distance Between Two Health Care Grid Codes</h1>
-    <label for="sourceGridCode">Source Grid Code:</label>
-    <input type="text" id="sourceGridCode" value="aaaa-aagi"><br><br>
+  </head>
+  <body>
+    <div>
+      <h1>Calculate Distance Between Two Health Care Grid Codes</h1>
+      <label for="sourceGridCode">Source Grid Code:</label>
+      <input
+        type="text"
+        id="sourceGridCode"
+        value="aaaa-aagi"
+        placeholder="Enter Source Grid Code"
+      /><br /><br />
 
-    <label for="destinationGridCode">Destination Grid Code:</label>
-    <input type="text" id="destinationGridCode" value="aaaa-aagk"><br><br>
+      <label for="destinationGridCode">Destination Grid Code:</label>
+      <input
+        type="text"
+        id="destinationGridCode"
+        value="aaaa-aagk"
+        placeholder="Enter Destination Grid Code"
+      /><br /><br />
 
-    <button onclick="verifyAndCalculateDistance()">Calculate Distance</button>
+      <button onclick="verifyAndCalculateDistance()">Calculate Distance</button>
 
-    <h2>Response:</h2>
-    <pre id="response"></pre>
+      <div class="response-container">
+        <h2>Response:</h2>
+        <pre id="response"></pre>
+
+        <div
+          id="loadingIndicator"
+          class="loading"
+          style="
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+          "
+        >
+          <div class="loading-spinner"></div>
+          <span>Loading...</span>
+        </div>
+      </div>
+    </div>
 
     <script>
-        const apiKey = "oPkrz74GWC3lzLPBLfnRLQtJuPjGeLIaI8EcHkaBGO3KGB48zsYj120rimpJQW9pcGd5ToR8eQ4GTFktiG1FLTxrykFPmicr0bQHWLwEB4qfXFE8WBeY6OSGUGZaL6VNFTaqbox3Lm58s38GsDHidZk6gqQo6Ps4yzBQu4aMDUhGEpLPnjce9c00vjvUbEAUgZrPQGAP";
-        const countryCode = "NG";
+      const apiKey =
+        "oPkrz74GWC3lzLPBLfnRLQtJuPjGeLIaI8EcHkaBGO3KGB48zsYj120rimpJQW9pcGd5ToR8eQ4GTFktiG1FLTxrykFPmicr0bQHWLwEB4qfXFE8WBeY6OSGUGZaL6VNFTaqbox3Lm58s38GsDHidZk6gqQo6Ps4yzBQu4aMDUhGEpLPnjce9c00vjvUbEAUgZrPQGAP";
+      const countryCode = "NG";
 
-        // Function to verify grid code
-        async function verifyGridCode(gridCode) {
-            const url = `https://gcorea.gridweb.net/external/api/verify-gridcode?gridCode=${gridCode}&countryCode=${countryCode}`;
-            try {
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: {
-                        "API-Key": apiKey
-                    }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    return data.message === "Verified";
-                } else {
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error verifying grid code:', error);
-                return false;
-            }
+      // Function to verify grid code
+      async function verifyGridCode(gridCode) {
+        const url = `https://gcorea.gridweb.net/external/api/verify-gridcode?gridCode=${gridCode}&countryCode=${countryCode}`;
+        try {
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              "API-Key": apiKey,
+            },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            return data.message === "Verified";
+          } else {
+            return false;
+          }
+        } catch (error) {
+          console.error("Error verifying grid code:", error);
+          return false;
         }
+      }
 
-        // Function to verify both grid codes and calculate distance if valid
-        async function verifyAndCalculateDistance() {
-            const sourceGridCode = document.getElementById("sourceGridCode").value;
-            const destinationGridCode = document.getElementById("destinationGridCode").value;
+      // Function to verify both grid codes and calculate distance if valid
+      async function verifyAndCalculateDistance() {
+        const sourceGridCode = document.getElementById("sourceGridCode").value;
+        const destinationGridCode = document.getElementById(
+          "destinationGridCode"
+        ).value;
 
-            // Verify both grid codes
-            const isSourceValid = await verifyGridCode(sourceGridCode);
-            const isDestinationValid = await verifyGridCode(destinationGridCode);
+        // Show loading state
+        document.getElementById("loadingIndicator").style.display = "flex";
+        document.getElementById("response").innerHTML = "";
 
-            let responseMessage = '';
+        // Verify both grid codes
+        const isSourceValid = await verifyGridCode(sourceGridCode);
+        const isDestinationValid = await verifyGridCode(destinationGridCode);
 
-            // Check the verification status of both grid codes
-            if (!isSourceValid && !isDestinationValid) {
-                responseMessage = `<span class="not-verified">Both Source Grid Code "${sourceGridCode}" and Destination Grid Code "${destinationGridCode}" are not valid.</span>`;
-            } else if (!isSourceValid) {
-                responseMessage = `<span class="not-verified">Source Grid Code "${sourceGridCode}" is not valid, but Destination Grid Code "${destinationGridCode}" is verified.</span>`;
-            } else if (!isDestinationValid) {
-                responseMessage = `<span class="not-verified">Destination Grid Code "${destinationGridCode}" is not valid, but Source Grid Code "${sourceGridCode}" is verified.</span>`;
-            } else {
-                responseMessage = `<span class="verified">Both Source Grid Code "${sourceGridCode}" and Destination Grid Code "${destinationGridCode}" are verified. Proceeding with distance calculation...</span>`;
+        let responseMessage = "";
 
-                // If both are valid, proceed to calculate the distance
-                const apiUrl = "https://gcorea.gridweb.net/external/api/calculate-distance";
-                const distanceData = {
-                    sourceGridCode: sourceGridCode,
-                    destinationGridCode: destinationGridCode,
-                    sourceCountryCode: countryCode,
-                    destinationCountryCode: countryCode
-                };
+        // Check the verification status of both grid codes
+        if (!isSourceValid && !isDestinationValid) {
+          responseMessage = `<span class="not-verified">Both Source Grid Code "${sourceGridCode}" and Destination Grid Code "${destinationGridCode}" are not valid.</span>`;
+        } else if (!isSourceValid) {
+          responseMessage = `<span class="not-verified">Source Grid Code "${sourceGridCode}" is not valid, but Destination Grid Code "${destinationGridCode}" is verified.</span>`;
+        } else if (!isDestinationValid) {
+          responseMessage = `<span class="not-verified">Destination Grid Code "${destinationGridCode}" is not valid, but Source Grid Code "${sourceGridCode}" is verified.</span>`;
+        } else {
+          responseMessage = `<span class="verified">Both Source Grid Code "${sourceGridCode}" and Destination Grid Code "${destinationGridCode}" are verified. Proceeding with distance calculation...</span>`;
 
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: "POST",
-                        headers: {
-                            "API-Key": apiKey,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(distanceData)
-                    });
+          // If both are valid, proceed to calculate the distance
+          const apiUrl =
+            "https://gcorea.gridweb.net/external/api/calculate-distance";
+          const distanceData = {
+            sourceGridCode: sourceGridCode,
+            destinationGridCode: destinationGridCode,
+            sourceCountryCode: countryCode,
+            destinationCountryCode: countryCode,
+          };
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        
-                        // Log the full response to the console for debugging
-                        console.log("Full API Response:", result);
+          try {
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "API-Key": apiKey,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(distanceData),
+            });
 
-                        const { data } = result;
+            if (response.ok) {
+              const result = await response.json();
 
-                        if (!data || !data.sourceGridCode || !data.destinationGridCode) {
-                            responseMessage += "<p>Error: Missing source or destination data.</p>";
-                        } else {
-                            const distance = data.distanceKm || "N/A";
-                            const travelTime = data.estimatedTravelTime || "N/A";
+              const { data } = result;
 
-                            const sourceDetails = data.sourceGridCode || {};
-                            const destinationDetails = data.destinationGridCode || {};
+              if (!data || !data.sourceGridCode || !data.destinationGridCode) {
+                responseMessage +=
+                  "<p>Error: Missing source or destination data.</p>";
+              } else {
+                const distance = data.distanceKm || "N/A";
+                const travelTime = data.estimatedTravelTime || "N/A";
 
-                            // Get source details
-                            const sourceGridCode = sourceDetails.gridCode || "N/A";
-                            const sourceAddress = sourceDetails.address || "N/A";
-                            const sourceLat = sourceDetails.lat || "N/A";
-                            const sourceLng = sourceDetails.lng || "N/A";
-                            const sourceState = sourceDetails.state || "N/A";
+                const sourceDetails = data.sourceGridCode || {};
+                const destinationDetails = data.destinationGridCode || {};
 
-                            // Get destination details
-                            const destGridCode = destinationDetails.gridCode || "N/A";
-                            const destAddress = destinationDetails.address || "N/A";
-                            const destLat = destinationDetails.lat || "N/A";
-                            const destLng = destinationDetails.lng || "N/A";
-                            const destState = destinationDetails.state || "N/A";
+                // Get source details
+                const sourceGridCode = sourceDetails.gridCode || "N/A";
+                const sourceAddress = sourceDetails.address || "N/A";
+                const sourceLat = sourceDetails.lat || "N/A";
+                const sourceLng = sourceDetails.lng || "N/A";
+                const sourceState = sourceDetails.state || "N/A";
 
-                            // Narrative format for Source and Destination
-                            responseMessage += `
+                // Get destination details
+                const destGridCode = destinationDetails.gridCode || "N/A";
+                const destAddress = destinationDetails.address || "N/A";
+                const destLat = destinationDetails.lat || "N/A";
+                const destLng = destinationDetails.lng || "N/A";
+                const destState = destinationDetails.state || "N/A";
+
+                // Narrative format for Source and Destination
+                responseMessage += `
                                 <p><strong>Distance:</strong> ${distance} km</p>
                                 <p><strong>Estimated Travel Time:</strong> ${travelTime}</p>
                                 <h3>Source:</h3>
@@ -176,18 +263,19 @@
                                 <h3>Destination:</h3>
                                 <p>The destination is at the grid code <strong>${destGridCode}</strong>. It is located at <strong>${destAddress}</strong>. The coordinates are Latitude: <strong>${destLat}</strong>, Longitude: <strong>${destLng}</strong>, in the state of <strong>${destState}</strong>.</p>
                             `;
-                        }
-                    } else {
-                        responseMessage += `Error calculating distance: ${response.status} ${response.statusText}`;
-                    }
-                } catch (error) {
-                    responseMessage += `Error: ${error.message}`;
-                }
+              }
+            } else {
+              responseMessage += `Error calculating distance: ${response.status} ${response.statusText}`;
             }
-
-            // Remove unnecessary spaces before the response text
-            document.getElementById("response").innerHTML = responseMessage.trim();
+          } catch (error) {
+            responseMessage += `Error: ${error.message}`;
+          }
         }
+
+        // Hide loading state and display the response
+        document.getElementById("loadingIndicator").style.display = "none";
+        document.getElementById("response").innerHTML = responseMessage.trim();
+      }
     </script>
-</body>
+  </body>
 </html>

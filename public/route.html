@@ -1,180 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Distance Calculation Between Grid Codes</title>
     <style>
-        body {
-            background-color: #0a162b;
-            color: white;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
+      body {
+        background-color: #0a162b;
+        color: white;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        font-size: 2.5em;
+        color: #ffffff;
+        margin-bottom: 20px;
+      }
+      label,
+      button {
+        font-size: 1.1em;
+        margin-top: 10px;
+        display: block;
+        color: #ddd;
+      }
+      input[type="text"] {
+        font-size: 1.2em;
+        padding: 10px;
+        margin: 10px 0;
+        width: 100%;
+        max-width: 350px;
+        border-radius: 5px;
+        border: 1px solid #4caf50;
+        background-color: #2a3547;
+        color: white;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #66bb6a;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      pre {
+        background-color: #333;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 600px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 1.1em;
+      }
+      .verified {
+        color: green;
+        font-weight: bold;
+      }
+      .not-verified {
+        color: red;
+        font-weight: bold;
+      }
+      #map {
+        height: 400px;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .loading {
+        font-size: 1.2em;
+        text-align: center;
+        color: #ff9800;
+      }
+      .loading-spinner {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #4caf50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        h1, h2 {
-            font-size: 2em;
+        100% {
+          transform: rotate(360deg);
         }
-        label, button {
-            font-size: 1.2em;
-            margin-top: 10px;
-            display: block;
-        }
-        input[type="text"] {
-            font-size: 1em;
-            padding: 5px;
-            margin: 5px 0;
-            width: 100%;
-            max-width: 300px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2em;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        pre {
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 600px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 1.2em;
-        }
-        .verified {
-            color: green;
-            font-weight: bold;
-        }
-        .not-verified {
-            color: red;
-            font-weight: bold;
-        }
-        #map { height: 400px; width: 100%; margin-top: 20px; }
+      }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-</head>
-<body>
-    <h1> Route Navigation Between Two Health Care Grid Codes</h1>
-    
+  </head>
+  <body>
+    <h1>Route Navigation Between Two Health Care Grid Codes</h1>
+
     <label for="sourceGridCode">Source Grid Code:</label>
-    <input type="text" id="sourceGridCode" value="aaaa-aagi"><br><br>
+    <input type="text" id="sourceGridCode" value="aaaa-aagi" /><br /><br />
 
     <label for="destinationGridCode">Destination Grid Code:</label>
-    <input type="text" id="destinationGridCode" value="aaaa-aagk"><br><br>
+    <input type="text" id="destinationGridCode" value="aaaa-aagk" /><br /><br />
 
     <button onclick="fetchData()">Search Grid Code</button>
 
     <div id="response"></div>
+
     <button onclick="addToMap()">Add to Map</button>
     <button onclick="navigateToDestination()">Navigate</button>
 
     <div id="map"></div>
 
+    <div
+      id="loadingIndicator"
+      class="loading"
+      style="
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+      "
+    >
+    <div class="loading-spinner"></div>
+      <span>Loading...</span>
+    </div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const apiKey = "oPkrz74GWC3lzLPBLfnRLQtJuPjGeLIaI8EcHkaBGO3KGB48zsYj120rimpJQW9pcGd5ToR8eQ4GTFktiG1FLTxrykFPmicr0bQHWLwEB4qfXFE8WBeY6OSGUGZaL6VNFTaqbox3Lm58s38GsDHidZk6gqQo6Ps4yzBQu4aMDUhGEpLPnjce9c00vjvUbEAUgZrPQGAP";
-        const countryCode = "NG";
-        let sourceCoords = null;
-        let destinationCoords = null;
-        let sourceGridCode = "";
-        let destinationGridCode = "";
+      const apiKey =
+        "oPkrz74GWC3lzLPBLfnRLQtJuPjGeLIaI8EcHkaBGO3KGB48zsYj120rimpJQW9pcGd5ToR8eQ4GTFktiG1FLTxrykFPmicr0bQHWLwEB4qfXFE8WBeY6OSGUGZaL6VNFTaqbox3Lm58s38GsDHidZk6gqQo6Ps4yzBQu4aMDUhGEpLPnjce9c00vjvUbEAUgZrPQGAP";
+      const countryCode = "NG";
+      let sourceCoords = null;
+      let destinationCoords = null;
+      let sourceGridCode = "";
+      let destinationGridCode = "";
 
-        // Initialize Leaflet map and set the view to Nigeria's approximate center
-        const map = L.map('map').setView([9.082, 8.6753], 6); // Centering on Nigeria (Latitude: 9.082, Longitude: 8.6753)
+      // Initialize Leaflet map and set the view to Nigeria's approximate center
+      const map = L.map("map").setView([9.082, 8.6753], 6); // Centering on Nigeria (Latitude: 9.082, Longitude: 8.6753)
 
-        // Tile layer from OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      // Tile layer from OpenStreetMap
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+        map
+      );
 
-        // Function to fetch grid code data and display on map
-        function fetchData() {
-            // Clear previous search results
-            document.getElementById("response").innerHTML = "";
+      // Function to fetch grid code data and display on map
+      function fetchData() {
+        // Show loading state
+        document.getElementById("loadingIndicator").style.display = "flex";
+        document.getElementById("response").innerHTML = "";
 
-            sourceGridCode = document.getElementById("sourceGridCode").value.trim();
-            destinationGridCode = document.getElementById("destinationGridCode").value.trim();
+        sourceGridCode = document.getElementById("sourceGridCode").value.trim();
+        destinationGridCode = document
+          .getElementById("destinationGridCode")
+          .value.trim();
 
-            if (!sourceGridCode || !destinationGridCode) {
-                document.getElementById("response").innerHTML = "<strong>Error:</strong> Please enter valid Grid Codes.";
-                return;
+        if (!sourceGridCode || !destinationGridCode) {
+          document.getElementById("response").innerHTML =
+            "<strong>Error:</strong> Please enter valid Grid Codes.";
+          document.getElementById("loadingIndicator").style.display = "none";
+          return;
+        }
+
+        // Call the search endpoint for both grid codes
+        fetchGridCodeData(sourceGridCode, "source");
+        fetchGridCodeData(destinationGridCode, "destination");
+      }
+
+      // Fetch data from the search endpoint
+      function fetchGridCodeData(gridCode, type) {
+        const url = "https://gcorea.gridweb.net/external/api/search-gridcodes";
+        const headers = {
+          "API-Key": apiKey,
+        };
+
+        const data = new URLSearchParams();
+        data.append("gridCodes[0]", gridCode);
+        data.append("countryCodes[0]", countryCode);
+
+        fetch(url, {
+          method: "POST",
+          headers: headers,
+          body: data,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("API Response:", data);
+            const coords = data.data.details[0]; // Assuming only one result for each grid code
+            if (type === "source") {
+              sourceCoords = { lat: coords.lat, lng: coords.lng };
+              document.getElementById(
+                "response"
+              ).innerHTML += `<strong>Source:</strong> ${coords.address}<br>Latitude: ${coords.lat}, Longitude: ${coords.lng}<br><br>`;
+            } else if (type === "destination") {
+              destinationCoords = { lat: coords.lat, lng: coords.lng };
+              document.getElementById(
+                "response"
+              ).innerHTML += `<strong>Destination:</strong> ${coords.address}<br>Latitude: ${coords.lat}, Longitude: ${coords.lng}<br><br>`;
             }
-
-            // Call the search endpoint for both grid codes
-            fetchGridCodeData(sourceGridCode, "source");
-            fetchGridCodeData(destinationGridCode, "destination");
-        }
-
-        // Fetch data from the search endpoint
-        function fetchGridCodeData(gridCode, type) {
-            const url = "https://gcorea.gridweb.net/external/api/search-gridcodes";
-            const headers = {
-                "API-Key": apiKey
-            };
-
-            const data = new URLSearchParams();
-            data.append("gridCodes[0]", gridCode);
-            data.append("countryCodes[0]", countryCode);
-
-            fetch(url, {
-                method: "POST",
-                headers: headers,
-                body: data
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("API Response:", data);
-                const coords = data.data.details[0]; // Assuming only one result for each grid code
-                if (type === "source") {
-                    sourceCoords = { lat: coords.lat, lng: coords.lng };
-                    document.getElementById("response").innerHTML += `<strong>Source:</strong> ${coords.address}<br>Latitude: ${coords.lat}, Longitude: ${coords.lng}<br><br>`;
-                } else if (type === "destination") {
-                    destinationCoords = { lat: coords.lat, lng: coords.lng };
-                    document.getElementById("response").innerHTML += `<strong>Destination:</strong> ${coords.address}<br>Latitude: ${coords.lat}, Longitude: ${coords.lng}<br><br>`;
-                }
-            })
-            .catch(error => {
-                document.getElementById("response").innerHTML = "<strong>Error:</strong> " + error;
-            });
-        }
-
-        // Add the markers for source and destination to the map
-        function addToMap() {
-            if (!sourceCoords || !destinationCoords) {
-                alert("Please search both source and destination first.");
-                return;
+            // Hide loading state after both grid codes are fetched
+            if (sourceCoords && destinationCoords) {
+              document.getElementById("loadingIndicator").style.display =
+                "none";
             }
+          })
+          .catch((error) => {
+            document.getElementById("response").innerHTML =
+              "<strong>Error:</strong> " + error;
+            document.getElementById("loadingIndicator").style.display = "none";
+          });
+      }
 
-            // Add Source Marker with both GridCode and Coordinates
-            L.marker([sourceCoords.lat, sourceCoords.lng]).addTo(map)
-                .bindPopup(`<strong>Source Grid Code:</strong> ${sourceGridCode}<br><strong>Coordinates:</strong> ${sourceCoords.lat}, ${sourceCoords.lng}`).openPopup();
-
-            // Add Destination Marker with both GridCode and Coordinates
-            L.marker([destinationCoords.lat, destinationCoords.lng]).addTo(map)
-                .bindPopup(`<strong>Destination Grid Code:</strong> ${destinationGridCode}<br><strong>Coordinates:</strong> ${destinationCoords.lat}, ${destinationCoords.lng}`).openPopup();
-
-            // Zoom the map to fit the markers
-            map.fitBounds([ 
-                [sourceCoords.lat, sourceCoords.lng], 
-                [destinationCoords.lat, destinationCoords.lng]
-            ]);
+      // Add the markers for source and destination to the map
+      function addToMap() {
+        if (!sourceCoords || !destinationCoords) {
+          alert("Please search both source and destination first.");
+          return;
         }
 
-        // Function to navigate using Google Maps
-        function navigateToDestination() {
-            if (!sourceCoords || !destinationCoords) {
-                alert("Please search both source and destination first.");
-                return;
-            }
+        // Add Source Marker with both GridCode and Coordinates
+        L.marker([sourceCoords.lat, sourceCoords.lng])
+          .addTo(map)
+          .bindPopup(
+            `<strong>Source Grid Code:</strong> ${sourceGridCode}<br><strong>Coordinates:</strong> ${sourceCoords.lat}, ${sourceCoords.lng}`
+          )
+          .openPopup();
 
-            // Create Google Maps Directions URL
-            const googleMapsURL = `https://www.google.com/maps/dir/?api=1&origin=${sourceCoords.lat},${sourceCoords.lng}&destination=${destinationCoords.lat},${destinationCoords.lng}&travelmode=driving`;
-            window.open(googleMapsURL, "_blank");
+        // Add Destination Marker with both GridCode and Coordinates
+        L.marker([destinationCoords.lat, destinationCoords.lng])
+          .addTo(map)
+          .bindPopup(
+            `<strong>Destination Grid Code:</strong> ${destinationGridCode}<br><strong>Coordinates:</strong> ${destinationCoords.lat}, ${destinationCoords.lng}`
+          )
+          .openPopup();
+
+        // Zoom the map to fit the markers
+        map.fitBounds([
+          [sourceCoords.lat, sourceCoords.lng],
+          [destinationCoords.lat, destinationCoords.lng],
+        ]);
+      }
+
+      // Function to navigate using Google Maps
+      function navigateToDestination() {
+        if (!sourceCoords || !destinationCoords) {
+          alert("Please search both source and destination first.");
+          return;
         }
+
+        // Create Google Maps Directions URL
+        const googleMapsURL = `https://www.google.com/maps/dir/?api=1&origin=${sourceCoords.lat},${sourceCoords.lng}&destination=${destinationCoords.lat},${destinationCoords.lng}&travelmode=driving`;
+        window.open(googleMapsURL, "_blank");
+      }
     </script>
-</body>
+  </body>
 </html>
