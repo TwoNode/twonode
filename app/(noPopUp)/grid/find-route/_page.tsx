@@ -125,7 +125,16 @@ const DistanceCalculation: React.FC = () => {
     }
 
     const googleMapsURL = `https://www.google.com/maps/dir/?api=1&origin=${sourceCoords.lat},${sourceCoords.lng}&destination=${destinationCoords.lat},${destinationCoords.lng}&travelmode=driving`;
-    window.open(googleMapsURL, "_blank");
+
+    try {
+      if (globalThis) {
+        if (typeof globalThis !== "undefined") {
+          // Ensure this runs only on the client side
+
+          globalThis?.open(googleMapsURL, "_blank");
+        }
+      }
+    } catch (error) {}
   };
 
   return (
@@ -280,7 +289,7 @@ export default DistanceCalculation;
 //       return;
 //     }
 //     const googleMapsURL = `https://www.google.com/maps/dir/?api=1&origin=${sourceCoords.lat},${sourceCoords.lng}&destination=${destinationCoords.lat},${destinationCoords.lng}&travelmode=driving`;
-//     window.open(googleMapsURL, "_blank");
+//     globalThis.open(googleMapsURL, "_blank");
 //   };
 
 //   return (
