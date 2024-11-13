@@ -4,8 +4,9 @@ const ExampleWithIframe = () => {
       <iframe
         src="/calculate.html" // Path to the static HTML file in public directory
         width="100%"
-        height="1000px"
+        height="800px"
         title="Embedded HTML"
+        className="max-w-4xl mx-auto rounded-xl"
       />
     </div>
   );

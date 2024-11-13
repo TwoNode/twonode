@@ -53,6 +53,10 @@
       button:hover {
         background-color: #45a049;
       }
+      button.loading {
+        background-color: #ff9800;
+        cursor: not-allowed;
+      }
       pre {
         background-color: #333;
         padding: 10px;
@@ -109,7 +113,7 @@
     <label for="destinationGridCode">Destination Grid Code:</label>
     <input type="text" id="destinationGridCode" value="aaaa-aagk" /><br /><br />
 
-    <button onclick="fetchData()">Search Grid Code</button>
+    <button id="searchButton" onclick="fetchData()">Search Grid Code</button>
 
     <div id="response"></div>
 
@@ -157,7 +161,10 @@
 
       // Function to fetch grid code data and display on map
       function fetchData() {
-        // Show loading state
+        const searchButton = document.getElementById("searchButton");
+        searchButton.textContent = "Loading...";
+        searchButton.classList.add("loading");
+        
         document.getElementById("loadingIndicator").style.display = "flex";
         document.getElementById("response").innerHTML = "";
 
@@ -169,13 +176,21 @@
         if (!sourceGridCode || !destinationGridCode) {
           document.getElementById("response").innerHTML =
             "<strong>Error:</strong> Please enter valid Grid Codes.";
-          document.getElementById("loadingIndicator").style.display = "none";
+          resetButton();
           return;
         }
 
         // Call the search endpoint for both grid codes
         fetchGridCodeData(sourceGridCode, "source");
         fetchGridCodeData(destinationGridCode, "destination");
+      }
+
+      // Reset button after loading
+      function resetButton() {
+        const searchButton = document.getElementById("searchButton");
+        searchButton.textContent = "Search Grid Code";
+        searchButton.classList.remove("loading");
+        document.getElementById("loadingIndicator").style.display = "none";
       }
 
       // Fetch data from the search endpoint
@@ -211,14 +226,13 @@
             }
             // Hide loading state after both grid codes are fetched
             if (sourceCoords && destinationCoords) {
-              document.getElementById("loadingIndicator").style.display =
-                "none";
+              resetButton();
             }
           })
           .catch((error) => {
             document.getElementById("response").innerHTML =
               "<strong>Error:</strong> " + error;
-            document.getElementById("loadingIndicator").style.display = "none";
+            resetButton();
           });
       }
 
