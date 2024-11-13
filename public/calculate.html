@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Distance Calculation Between Grid Codes</title>
     <style>
+      /* Custom scrollbar for Webkit browsers */
+      ::-webkit-scrollbar {
+        width: 12px; /* Width of the scrollbar */
+        height: 12px; /* Height of the scrollbar (for horizontal scrolling) */
+      }
+
+      /* Track (background of the scrollbar) */
+      ::-webkit-scrollbar-track {
+        background: #2a3547; /* Dark background for the track */
+        border-radius: 10px;
+      }
+
+      /* Handle (the draggable part of the scrollbar) */
+      ::-webkit-scrollbar-thumb {
+        background-color: #4caf50; /* Green color for the scrollbar thumb */
+        border-radius: 10px;
+        border: 3px solid #2a3547; /* Border for a bit of separation */
+      }
+
+      /* Handle on hover (when the user hovers over the scrollbar) */
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #45a049; /* Slightly darker green on hover */
+      }
+
+      /* Scrollbar corner (where horizontal and vertical scrollbars meet) */
+      ::-webkit-scrollbar-corner {
+        background-color: #2a3547;
+      }
+
       body {
         background-color: #1e2a47;
         color: white;
@@ -240,7 +269,7 @@
         // Reset button to original state
         calculateButton.textContent = "Calculate Distance";
         calculateButton.classList.remove("loading");
-        
+
         // Display the response
         document.getElementById("response").innerHTML = responseMessage.trim();
       }
