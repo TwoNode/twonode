@@ -249,26 +249,32 @@
             // Hide loading state after both grid codes are fetched
             if (sourceCoords && destinationCoords) {
               resetButton();
-              toggleNavigateLink(); // Update Navigate link state
+              toggleAddToMap(); // Update Navigate link state
             }
           })
           .catch((error) => {
             document.getElementById("response").innerHTML =
               "<strong>Error:</strong> " + error;
             resetButton();
-            toggleNavigateLink(); // Update Navigate link state
+            // toggleNavigateLink(); // Update Navigate link state
           });
+      }
+
+      function toggleAddToMap() {
+        const addToMapButton = document.getElementById("addToMap");
+        if (sourceCoords && destinationCoords) {
+          addToMapButton.classList.remove("loading");
+        } else {
+          addToMapButton.classList.add("loading");
+        }
       }
 
       // Toggle the Navigate link state
       function toggleNavigateLink() {
         const navigateLink = document.getElementById("navigateLink");
-        const addToMapButton = document.getElementById("addToMap");
         if (sourceCoords && destinationCoords) {
           navigateLink.classList.remove("disabled");
-          addToMapButton.classList.remove("loading");
         } else {
-          addToMapButton.classList.add("loading");
           navigateLink.classList.add("disabled");
         }
       }
@@ -279,6 +285,8 @@
           alert("Please search both source and destination first.");
           return;
         }
+
+        toggleNavigateLink();
 
         // Add Source Marker with both GridCode and Coordinates
         L.marker([sourceCoords.lat, sourceCoords.lng])
