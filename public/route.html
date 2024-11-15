@@ -152,6 +152,9 @@
     <br />
     <div id="response" style="padding: 10px"></div>
 
+    <button id="addToMap" class="loading" onclick="addToMap()">
+      Add to Map
+    </button>
     <a
       id="navigateLink"
       href="#"
@@ -260,11 +263,44 @@
       // Toggle the Navigate link state
       function toggleNavigateLink() {
         const navigateLink = document.getElementById("navigateLink");
+        const addToMapButton = document.getElementById("addToMap");
         if (sourceCoords && destinationCoords) {
           navigateLink.classList.remove("disabled");
+          addToMapButton.classList.remove("loading");
         } else {
+          addToMapButton.classList.add("loading");
           navigateLink.classList.add("disabled");
         }
+      }
+
+      // Add the markers for source and destination to the map
+      function addToMap() {
+        if (!sourceCoords || !destinationCoords) {
+          alert("Please search both source and destination first.");
+          return;
+        }
+
+        // Add Source Marker with both GridCode and Coordinates
+        L.marker([sourceCoords.lat, sourceCoords.lng])
+          .addTo(map)
+          .bindPopup(
+            `<strong>Source Grid Code:</strong> ${sourceGridCode}<br><strong>Coordinates:</strong> ${sourceCoords.lat}, ${sourceCoords.lng}`
+          )
+          .openPopup();
+
+        // Add Destination Marker with both GridCode and Coordinates
+        L.marker([destinationCoords.lat, destinationCoords.lng])
+          .addTo(map)
+          .bindPopup(
+            `<strong>Destination Grid Code:</strong> ${destinationGridCode}<br><strong>Coordinates:</strong> ${destinationCoords.lat}, ${destinationCoords.lng}`
+          )
+          .openPopup();
+
+        // Zoom the map to fit the markers
+        map.fitBounds([
+          [sourceCoords.lat, sourceCoords.lng],
+          [destinationCoords.lat, destinationCoords.lng],
+        ]);
       }
 
       // Adjust the navigate function to handle the link click
