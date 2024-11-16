@@ -402,18 +402,41 @@
           .setAttribute("data-url", googleMapsURL);
       }
 
+      function fallbackCopyTextToClipboard(text) {
+        const modalText = document.getElementById("modal-text");
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.width = "100%";
+        textArea.style.height = "100px";
+        textArea.style.padding = "10px";
+        textArea.style.boxSizing = "border-box";
+        textArea.style.fontSize = "18px";
+        modalText.innerHTML = "";
+        modalText.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          const successful = document.execCommand("copy");
+          alert("URL copied to clipboard!");
+        } catch (err) {
+          alert("Fallback: Failed to copy URL, please copy manually: " + err);
+        }
+        document.body.removeChild(textArea);
+      }
+
       function copyToClipboard() {
         const url = document
           .getElementById("copyButton")
           .getAttribute("data-url");
-        navigator.clipboard.writeText(url).then(
-          () => {
-            alert("URL copied to clipboard!");
-          },
-          (err) => {
-            alert("Failed to copy URL: " + err);
-          }
-        );
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(
+            () => alert("URL copied to clipboard!"),
+            (err) => alert("Failed to copy URL: " + err)
+          );
+        } else {
+          fallbackCopyTextToClipboard(url);
+        }
       }
 
       function closeModal() {
