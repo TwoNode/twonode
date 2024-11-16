@@ -321,7 +321,8 @@
 
         // Create Google Maps Directions URL
         const googleMapsURL = `https://www.google.com/maps/dir/?api=1&origin=${sourceCoords.lat},${sourceCoords.lng}&destination=${destinationCoords.lat},${destinationCoords.lng}&travelmode=driving`;
-        window.open(googleMapsURL, "_blank");
+        // window.open(googleMapsURL, "_blank");
+        window.open(googleMapsURL, "_blank", "noopener,noreferrer");
       }
     </script>
   </body>
