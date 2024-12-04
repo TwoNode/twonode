@@ -173,7 +173,7 @@ export default function RootLayout({
           </div>
         </div>
         <main className="relative">
-          <MyPopup />
+          {/* <MyPopup /> */}
           {children}
         </main>
       </body>
