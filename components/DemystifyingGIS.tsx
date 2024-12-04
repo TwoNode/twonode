@@ -40,14 +40,14 @@ export const DemystifyingGIS: React.FC = () => {
           </div>
        
           <CountdownComponent />
-          <Link
+          {/* <Link
             href={"/gbc"}
             className="w-full sm:w-[228px] h-16 bg-[#001f3f] rounded-[70.74px] shadow justify-center items-center flex"
           >
             <span className="text-white text-nowrap text-2xl font-medium font-['Bricolage Grotesque']">
               Apply Now
             </span>
-          </Link>
+          </Link> */}
         </div>
 
         <div className="p-3 flex justify-center w-full basis-1/2">

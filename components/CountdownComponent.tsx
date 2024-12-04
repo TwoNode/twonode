@@ -12,11 +12,21 @@ export const CountdownComponent: React.FC = () => {
   }, []);
 
   // Random component for completion state
+  // const Completionist: React.FC = () => (
+  //   <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
+  //     <div className="flex-col justify-start items-center inline-flex">
+  //       <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+  //         It's the D-day!
+  //       </span>
+  //     </div>
+  //   </div>
+  // );
+
   const Completionist: React.FC = () => (
     <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
       <div className="flex-col justify-start items-center inline-flex">
         <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
-          It's the D-day!
+          The GBC 1.0 event was a Success
         </span>
       </div>
     </div>
