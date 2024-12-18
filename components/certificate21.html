@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate Certificate</title>
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F4F7FA;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #082F49;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-size: 16px;
+            color: #082F49;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #082F49;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #064B68;
+        }
+
+        .alert {
+            color: #FF0000;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .success {
+            color: #008000;
+            text-align: center;
+        }
+    </style>
+    <script>
+        function getAttachment(barCode) {
+            // Define the API endpoint URL
+            var url = `https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/survey123_dd733c292be142d4afcb5c3a1d0829fe/FeatureServer/0/queryAttachments`;
+
+            // Construct the request parameters
+            var params = {
+                definitionExpression: `bar_code='${barCode}'`,  // Correct Definition Expression
+                attachmentTypes: 'application/pdf',             // Specify PDF attachment type
+                f: 'html',                                       // Specify the format as HTML
+                returnUrl: 'True'                                // Ensure that URLs for the attachments are returned
+            };
+
+            // Create the query string from the parameters
+            var queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
+
+            // Make the request to the API
+            fetch(url + "?" + queryString)
+                .then(response => response.text())  // Use .text() to handle HTML response
+                .then(data => {
+                    // Check if "No results found" appears in the response
+                    if (data.includes("No results found")) {
+                        document.getElementById("error-message").innerText = "No results found.";
+                    } else {
+                        // Extract the URL from the HTML response
+                        var urlMatch = data.match(/<td>Url:<\/td><td>(https?:\/\/[^\s]+)<\/td>/);
+
+                        // If the URL is found, open it in a new window
+                        if (urlMatch) {
+                            var attachmentUrl = urlMatch[1]; // The first match group contains the URL
+                            window.open(attachmentUrl, "_blank");  // Open the URL in a new tab
+                        } else {
+                            document.getElementById("error-message").innerText = "No attachment found.";
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching attachment:', error);
+                    document.getElementById("error-message").innerText = 'An error occurred while fetching the attachment.';
+                });
+        }
+
+        // Function to extract the barcode from the URL parameters
+        function getBarcodeFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('barcode');  // Get the 'barcode' parameter from the URL
+        }
+
+        // On page load, check if there's a barcode in the URL and call the function
+        window.onload = function() {
+            const barcode = getBarcodeFromURL();
+            if (barcode) {
+                // Call the getAttachment function with the barcode value from the URL
+                getAttachment(barcode);
+            }
+        };
+    </script>
+</head>
+<body>
+
+    <h1>Validate Certificate</h1>
+
+    <div class="container">
+        <label for="barcode">Enter Certificate Code:</label>
+        <input type="text" id="barcode" name="barcode" required>
+        
+        <button onclick="getAttachment(document.getElementById('barcode').value)">Validate</button>
+
+        <div id="error-message" class="alert"></div>
+    </div>
+
+</body>
+</html>
