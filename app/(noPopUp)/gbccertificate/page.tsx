@@ -110,7 +110,7 @@ const CertificateValidator = () => {
           )}
           {success && (
             <div className="mt-4 text-green-600 text-center text-sm font-medium">
-              Attachment successfully accessed!
+              Attachment successfully validated!
             </div>
           )}
         </form>
