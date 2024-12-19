@@ -38,6 +38,7 @@ const CertificateValidator = () => {
         if (urlMatch) {
           const attachmentUrl = urlMatch[1];
           setPdfUrl(attachmentUrl);
+          router.push(`/gbccertificate?barcode=${barcode}`);
           window.open(attachmentUrl, "_blank");
           setSuccess(true);
           setErrorMessage("");
@@ -60,6 +61,7 @@ const CertificateValidator = () => {
   useEffect(() => {
     // Get the barcode from the query parameters using useRouter
     const barcodeFromURL = searchParams.get("barcode");
+
     if (barcodeFromURL) {
       setBarcode(barcodeFromURL as string); // Set the barcode state
       // If a barcode is present in the URL, fetch the attachment
