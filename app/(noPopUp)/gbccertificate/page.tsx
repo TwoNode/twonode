@@ -2,17 +2,28 @@
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter from next/router
-import { useSearchParams } from "next/navigation";
 
 const CertificateValidator = () => {
-  const searchParams = useSearchParams();
-
   const router = useRouter(); // Initialize the router
   const [barcode, setBarcode] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false); // New loading state
+
+  function getBarcodeFromURL() {
+    const currentURL = window.location.href;
+
+    // Create a URL object
+    const url = new URL(currentURL);
+
+    // Use URLSearchParams to get query parameters
+    const params = new URLSearchParams(url.search);
+
+    // Get the value of the 'barcode' parameter
+    const barcodeFromURL = params.get("barcode");
+    return { barcodeFromURL, currentURL, url };
+  }
 
   const getAttachment = async (barCode: string) => {
     const url = `https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/survey123_dd733c292be142d4afcb5c3a1d0829fe/FeatureServer/0/queryAttachments`;
@@ -38,7 +49,12 @@ const CertificateValidator = () => {
         if (urlMatch) {
           const attachmentUrl = urlMatch[1];
           setPdfUrl(attachmentUrl);
-          router.push(`/gbccertificate?barcode=${barcode}`);
+
+          const { barcodeFromURL } = getBarcodeFromURL();
+
+          if (!!barcode || !!barcodeFromURL) {
+            router.push(`/gbccertificate?barcode=${barcodeFromURL}`);
+          }
           window.open(attachmentUrl, "_blank");
           setSuccess(true);
           setErrorMessage("");
@@ -59,23 +75,17 @@ const CertificateValidator = () => {
   };
 
   useEffect(() => {
-    // Get the barcode from the query parameters using useRouter
-    const barcodeFromURL = searchParams.get("barcode");
+    // Get the current URL
+    const { barcodeFromURL } = getBarcodeFromURL();
 
-    if (barcodeFromURL) {
+    console.log(barcodeFromURL); // Output: 52cc8cdba03b
+
+    if (!!barcodeFromURL) {
       setBarcode(barcodeFromURL as string); // Set the barcode state
       // If a barcode is present in the URL, fetch the attachment
       getAttachment(barcodeFromURL as string);
     }
-  }, [searchParams]); // Include router.query as a dependency
-
-  // useEffect(() => {
-  //   const params = new URLSearchParams(window.location.search);
-  //   const barcodeFromURL = params.get("barcode");
-  //   if (barcodeFromURL) {
-  //     getAttachment(barcodeFromURL);
-  //   }
-  // }, []);
+  }, []); // Include router.query as a dependency
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
