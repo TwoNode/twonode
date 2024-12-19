@@ -44,12 +44,14 @@ const CertificateValidator = () => {
         } else {
           setErrorMessage("No attachment found.");
           setSuccess(false);
+          setPdfUrl("");
         }
       }
     } catch (error) {
       console.error("Error fetching attachment:", error);
       setErrorMessage("An error occurred while fetching the attachment.");
       setSuccess(false);
+      setPdfUrl("");
     } finally {
       setLoading(false); // Set loading state to false after fetching
     }
