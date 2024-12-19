@@ -1,9 +1,15 @@
 "use client";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter from next/router
+import { useSearchParams } from "next/navigation";
 
 const CertificateValidator = () => {
+  const searchParams = useSearchParams();
+
+  const router = useRouter(); // Initialize the router
   const [barcode, setBarcode] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false); // New loading state
@@ -31,6 +37,7 @@ const CertificateValidator = () => {
         );
         if (urlMatch) {
           const attachmentUrl = urlMatch[1];
+          setPdfUrl(attachmentUrl);
           window.open(attachmentUrl, "_blank");
           setSuccess(true);
           setErrorMessage("");
@@ -49,17 +56,32 @@ const CertificateValidator = () => {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const barcodeFromURL = params.get("barcode");
+    // Get the barcode from the query parameters using useRouter
+    const barcodeFromURL = searchParams.get("barcode");
     if (barcodeFromURL) {
-      getAttachment(barcodeFromURL);
+      setBarcode(barcodeFromURL as string); // Set the barcode state
+      // If a barcode is present in the URL, fetch the attachment
+      getAttachment(barcodeFromURL as string);
     }
-  }, []);
+  }, [searchParams]); // Include router.query as a dependency
+
+  // useEffect(() => {
+  //   const params = new URLSearchParams(window.location.search);
+  //   const barcodeFromURL = params.get("barcode");
+  //   if (barcodeFromURL) {
+  //     getAttachment(barcodeFromURL);
+  //   }
+  // }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (pdfUrl) {
+      return window.open(pdfUrl, "_blank");
+    }
+
     if (barcode) {
-      getAttachment(barcode);
+      return getAttachment(barcode);
     }
   };
 
@@ -100,7 +122,11 @@ const CertificateValidator = () => {
             }`}
             disabled={loading} // Disable button while loading
           >
-            {loading ? "Validating..." : "Validate"}
+            {loading ? (
+              "Validating..."
+            ) : (
+              <>{success ? "View Certificate" : "Validate"}</>
+            )}
           </button>
 
           {errorMessage && (
