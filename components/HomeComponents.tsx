@@ -123,16 +123,31 @@ export const FeaturedNews = () => {
           <div className="self-stretch flex-col justify-start items-start gap-[45px] inline-flex">
             <div className="self-stretch min-h-[260px] flex-col justify-start items-start gap-[30px] flex">
               <div className="self-stretch text-neutral-900 text-xl font-medium leading-[35px]">
-                Same Subscription with more Capabilities with ArcGIS Pro and
-                ArcOnline Licenses
+                {/* Same Subscription with more Capabilities with ArcGIS Pro and
+                ArcOnline Licenses */}
+                GBC 1.0: Demystifying GIS for Surveyors
               </div>
               <div className="self-stretch text-neutral-900 text-base font-normal leading-[30px]">
-                TwoNode Technologies is thrilled to announce a long-term
+                {/* TwoNode Technologies is thrilled to announce a long-term
                 partnership with sambus geospatial, the official distributor for
-                ESRI products.
-                <br />
-                This partnership is to provide ultra-specific capabilities
-                beyond your imagination.
+                ESRI products. */}
+                <b> On November 23, 2024,</b> at the Marriott Hotel in Ikeja,
+                Lagos, GBC 1.0 brought surveyors together to explore how GIS can
+                revolutionize their profession. With the theme "Demystifying GIS
+                for Surveyors," the event highlighted the growing need for
+                remote access services and a shift toward digital innovation.
+                {/* This partnership is to provide ultra-specific capabilities
+                beyond your imagination. */}
+                <span className="mt-4 block">
+                  <b>The program </b> showcased how GIS serves as a powerful
+                  ally, enhancing workflows from fieldwork to plan management,
+                  and empowering surveyors to lead in today’s dynamic, digital
+                  age.
+                </span>
+                <span className="mt-4 block">
+                  <b>Discover </b> the insights, breakthroughs, and highlights
+                  of this groundbreaking event.
+                </span>
               </div>
             </div>
             <Link
