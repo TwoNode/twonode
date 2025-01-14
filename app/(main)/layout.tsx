@@ -41,7 +41,7 @@ export default function RootLayout({
         <meta name="author" content="TwoNode Technologies" />
         <meta
           name="copyright"
-          content="Copyright © 2024 TwoNode Technologies"
+          content="Copyright © 2025 TwoNode Technologies"
         />
 
         {/* ICONS */}
