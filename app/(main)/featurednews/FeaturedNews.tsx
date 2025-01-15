@@ -1,201 +1,190 @@
+// File: FeaturedNews.jsx
+
+import React from "react";
 import { FacebookIcon, InstagramIcon, LinkedInIcon, TwitterIcon } from "./svgs";
+
+const BLOGS = [
+  {
+    date: "November 23rd, 2024",
+    location: "Marriott Hotel, Ikeja, Lagos",
+    title: "GBC 1.0: Demystifying GIS for Surveyors",
+    body: `
+      The Geospatial Builders Course (GBC) is a program dedicated to fostering 
+      geospatial capacity-building across industries. This maiden edition, themed 
+      "Demystifying GIS for Surveyors," brought together surveyors and geospatial 
+      enthusiasts for a day of learning, innovation, and connection.
+    `,
+    highlights: [
+      "Analyze millions of parcels across the U.S.",
+      "Conduct real-time analyses on a national scale.",
+      "Empower land conservation and ownership initiatives.",
+    ],
+    keyTakeaway:
+      "GIS equips surveyors with the tools to make smarter, faster decisions at scale, transforming the way we understand and interact with the world.",
+    images: ["img1.png", "img2.png", "img3.png"],
+  },
+  {
+    date: "Wednesday, July 17, 2024 · 2 Min Read",
+    title:
+      "Same Subscription with More Capabilities with ArcGIS Pro and ArcOnline Licenses",
+    body: `
+      TwoNode Technologies is thrilled to announce a long-term partnership with 
+      Sambus Geospatial, the official distributor for ESRI products. This partnership 
+      is to provide ultra-specific capabilities beyond your imagination.
+    `,
+    highlights: [
+      "ArcGIS Pro Advanced, extensions, and dozens of ready-to-use apps.",
+      "ArcGIS Living Atlas of the World with maps and data on thousands of topics, including access to foundational content from Esri.",
+      "Software updates.",
+      "Unlimited access to self-paced e-learning through the Esri Training website.",
+    ],
+    images: ["/fea1.png", "/fea2.png", "/fea3.png"],
+    author: "TwoNode Technologies",
+  },
+  {
+    title: "Technical Session: Building the Future of Surveying",
+    body: `
+      The Technical Session was a masterclass in redefining the future of surveying 
+      and geospatial innovation. It started with the basics—delving into the GIS 
+      Dictionary and Coordinate Systems to establish a common language.
+    `,
+    details: [
+      {
+        category: "For Government Surveyors",
+        points: [
+          "Demonstrated how simple processes like drafting could generate vital reports, including Certificates of Deposit and Land Information Reports.",
+          "Highlighted how survey plans should align with state frameworks for greater accuracy and utility.",
+        ],
+      },
+      {
+        category: "For Private Surveyors",
+        points: [
+          "Emphasized the untapped potential of archived survey plans as historical records of land use and ownership.",
+          "Encouraged surveyors to evolve beyond legal practice into value-added service providers, driving innovation in land management.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "💻 Hands-On Practical",
+    body: `
+      Participants used ArcGIS Pro to access real-world datasets from Victoria Garden 
+      City Estate, Lekki. Key activities included:
+    `,
+    highlights: [
+      "Extracting parcels and transforming vertices into points.",
+      "Creating relationship classes to link parcels and vertices.",
+      "Developing a web application to query properties by size, street, or ownership.",
+    ],
+    keyTakeaway:
+      "This exercise showcased how survey drawings can become dynamic databases, revolutionizing property searches and enabling smarter decision-making.",
+  },
+  {
+    title: "😜 Fun Moments and Networking",
+    body: `
+      The day wasn’t all work! Attendees enjoyed engaging fun moments, building 
+      connections, and sharing ideas that promise to shape the future of surveying 
+      and geospatial technology.
+    `,
+  },
+];
 
 const FeaturedNews = () => {
   return (
-    <div className="mywrapper min-h-[2004.43px] py-[71px] bg-white flex-col justify-start items-center gap-[47px] inline-flex">
-      <div className="flex-col justify-start items-center gap-5 flex">
-        <div className="flex-col justify-start items-center gap-[15px] flex">
-          <div className="justify-start items-center gap-[15px] inline-flex">
-            <div className="w-5 h-[0px] border-2 border-[#001f3f]"></div>
-            <div className="text-[#001f3f] text-xl font-medium leading-[34px]">
-              Our News
-            </div>
-          </div>
-          <div className="flex-col justify-start items-start gap-[18px] flex">
-            <div className="text-center text-[#0c0e12] text-[28px] lg:text-[32px] font-extrabold leading-[54px]">
-              Featured News
-            </div>
-          </div>
+    <div className="mywrapper min-h-screen py-16 bg-gray-50 flex flex-col items-center">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="inline-flex items-center gap-2 text-blue-900 text-xl font-medium">
+          <div className="w-6 h-1 bg-blue-900"></div>
+          Our News
         </div>
+        <h1 className="text-3xl lg:text-5xl font-extrabold text-gray-900 mt-4">
+          Featured News
+        </h1>
       </div>
 
-      <div className="flex flex-col gap-20">
-        <div className="self-stretch flex-col justify-start items-start gap-4 flex">
-          <div className="self-stretch flex-col justify-start items-start gap-[10px] flex">
-            <div className="self-stretch flex-col justify-start items-start gap-6 flex">
-              <div className="self-stretch text-[#0c0e12] text-lg font-medium">
-                November 23rd, 2024 Location- Marriott Hotel, Ikeja, Lagos
+      {/* Blog Section */}
+      <div className="max-w-6xl w-full space-y-16">
+        {BLOGS.map((blog, index) => (
+          <div
+            key={index}
+            className="bg-white p-8 rounded-xl shadow-lg flex flex-col gap-6"
+          >
+            {/* Date and Location */}
+            {blog.date && blog.location && (
+              <div className="text-lg text-gray-600 font-medium">
+                {blog.date} - {blog.location}
               </div>
-              <div className="self-stretch text-[#0c0e12] text-4xl font-semibold leading-[70px]">
-                GBC 1.0: Demystifying GIS for Surveyors
-              </div>
-            </div>
-            <div className="self-stretch">
-              <span className="text-[#0c0e12] text-xl font-normal leading-[30px]">
-                <b>The Geospatial Builders Course (GBC)</b> is a program
-                dedicated to fostering geospatial capacity-building across
-                industries. This maiden edition, themed "Demystifying GIS for
-                Surveyors," brought together surveyors and geospatial
-                enthusiasts for a day of learning, innovation, and connection.
-                <br />
-                <i className="mt-6 italic block underline">
-                  Highlights of the Event Expository Session:
-                </i>
-                A Journey Through GIS The Expository Session kicked off with an
-                exploration of the rich history and evolution of GIS, tracing
-                its humble beginnings to its present status as a transformative
-                powerhouse. Attendees were introduced to the latest GIS trends
-                and inspired by the story of the resilient surveyor—a
-                professional who adapts, innovates, and thrives by leveraging
-                GIS to confront challenges and deliver actionable insights.
-                <br />
-                <br />A pivotal moment was an inspiring video from ESRI FedGIS
-                2024 featuring Jess Altamira, which showcased the incredible
-                potential of big data analytics in GIS. The session demonstrated
-                how GIS is revolutionizing the surveying profession, enabling
-                surveyors to:
-              </span>
-              <ul className="text-[#0c0e12] text-xl font-normal leading-[30px] list-inside list-disc p-3">
-                <li>- Analyze millions of parcels across the U.S.</li>
-                <li>- Conduct real-time analyses on a national scale.</li>
-                <li>- Empower land conservation and ownership initiatives.</li>
+            )}
+
+            {/* Title */}
+            <h2 className="text-2xl lg:text-4xl font-bold text-gray-900">
+              {blog.title}
+            </h2>
+
+            {/* Body */}
+            <p className="text-gray-700 text-lg leading-relaxed">{blog.body}</p>
+
+            {/* Highlights */}
+            {blog.highlights && (
+              <ul className="list-disc list-inside text-gray-700 space-y-2 pl-5">
+                {blog.highlights.map((highlight, i) => (
+                  <li key={i}>{highlight}</li>
+                ))}
               </ul>
+            )}
 
-              <span>
-                💡 Key Takeaway: GIS equips surveyors with the tools to make
-                smarter, faster decisions at scale, transforming the way we
-                understand and interact with the world.
-              </span>
-            </div>
-          </div>
-          <div className="w-full gap-8 flex flex-col items-center justify-center">
-            {/* <img
-            className="max-w-full self-center max-h-[501.43px]"
-            src="/fea1.png"
-          /> */}
-            {/* <div className="max-w-full w-full justify-evenly gap-7 items-center flex flex-wrap">
-            <img
-              className="w-full max-w-[570px] max-h-[430px]"
-              src="/fea2.png"
-            />
+            {/* Key Takeaway */}
+            {blog.keyTakeaway && (
+              <blockquote className="text-lg font-medium text-blue-900 italic border-l-4 border-blue-900 pl-4">
+                💡 Key Takeaway: {blog.keyTakeaway}
+              </blockquote>
+            )}
 
-            <img
-              className="w-full max-w-[570px] max-h-[430px]"
-              src="/fea3.png"
-            />
-          </div> */}
-          </div>
-          <div className="w-full md:justify-between items-center flex flex-wrap gap-3">
-            <div className="justify-start items-center gap-[25px] flex">
-              <img
-                className="w-[61px] h-[61px] rounded-full"
-                src="feaAvatar.png"
-              />
-              <div className="flex-col justify-start items-start gap-[5px] inline-flex">
-                <div className="self-stretch text-[#4e5055] text-base font-normal">
-                  Author
+            {/* Details */}
+            {blog.details &&
+              blog.details.map((detail, i) => (
+                <div key={i}>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {detail.category}
+                  </h3>
+                  <ul className="list-disc list-inside text-gray-700 space-y-2 pl-5">
+                    {detail.points.map((point, j) => (
+                      <li key={j}>{point}</li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="text-[#0c0e12] text-xl font-semibold">
-                  TwoNode Technologies
-                </div>
+              ))}
+
+            {/* Images */}
+            {blog.images && (
+              <div className="grid grid-cols-3 max-lg:grid-cols-2 gap-4 mt-6 items-center">
+                {blog.images.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Blog image ${i + 1}`}
+                    className="rounded-lg max-w-full object-cover"
+                  />
+                ))}
               </div>
-            </div>
-
-            <div className="justify-end items-center gap-3 flex">
-              <LinkedInIcon />
-              <FacebookIcon />
-              <TwitterIcon />
-              <InstagramIcon />
-            </div>
+            )}
           </div>
+        ))}
+      </div>
 
-          <div className="w-full h-[0px] opacity-50 border border-[#4e5055]"></div>
+      {/* Social and Footer */}
+      <div className="mt-20 flex flex-col items-center space-y-6">
+        <div className="flex gap-6">
+          <LinkedInIcon />
+          <FacebookIcon />
+          <TwitterIcon />
+          <InstagramIcon />
         </div>
-
-        <div className="self-stretch flex-col justify-start items-start gap-10 flex">
-          <div className="self-stretch flex-col justify-start items-start gap-[10px] flex">
-            <div className="self-stretch flex-col justify-start items-start gap-6 flex">
-              <div className="self-stretch text-[#0c0e12] text-lg font-medium">
-                Wednesday, July 17, 2024 · 2 Min Read
-              </div>
-              <div className="self-stretch text-[#0c0e12] text-4xl font-semibold leading-[70px]">
-                Same Subscription with more capabilities with ArcGIS Pro and
-                ArcOnline licenses.
-              </div>
-            </div>
-            <div className="self-stretch">
-              <span className="text-[#0c0e12] text-xl font-normal leading-[30px]">
-                TwoNode Technologies is thrilled to announce a long-term
-                partnership with sambus geospatial, the official distributor for
-                ESRI products. <br />
-                This partnership is to provide ultra-specific capabilities{" "}
-                <b className="text-2xl italic inline-block">
-                  beyond your imagination.
-                </b>
-                <br />
-                What you stand to benefit:
-                <br />
-              </span>
-              <ul className="text-[#0c0e12] text-xl font-normal leading-[30px] list-inside list-disc p-3">
-                <li>
-                  ArcGIS Pro Advanced, extensions, and dozens of ready-to-use
-                  apps
-                </li>
-                <li>
-                  ArcGIS Living Atlas of the World with maps and data on
-                  thousands of topics, including access to foundational content
-                  from Esri{" "}
-                </li>
-                <li>Software updates</li>
-                <li>
-                  Unlimited access to self-paced e-learning through the Esri
-                  Training website
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="w-full gap-8 flex flex-col items-center justify-center">
-            <img
-              className="max-w-full self-center max-h-[501.43px]"
-              src="/fea1.png"
-            />
-            <div className="max-w-full w-full justify-evenly gap-7 items-center flex flex-wrap">
-              <img
-                className="w-full max-w-[570px] max-h-[430px]"
-                src="/fea2.png"
-              />
-
-              <img
-                className="w-full max-w-[570px] max-h-[430px]"
-                src="/fea3.png"
-              />
-            </div>
-          </div>
-          <div className="w-full md:justify-between items-center flex flex-wrap gap-3">
-            <div className="justify-start items-center gap-[25px] flex">
-              <img
-                className="w-[61px] h-[61px] rounded-full"
-                src="feaAvatar.png"
-              />
-              <div className="flex-col justify-start items-start gap-[5px] inline-flex">
-                <div className="self-stretch text-[#4e5055] text-base font-normal">
-                  Author
-                </div>
-                <div className="text-[#0c0e12] text-xl font-semibold">
-                  TwoNode Technologies
-                </div>
-              </div>
-            </div>
-
-            <div className="justify-end items-center gap-3 flex">
-              <LinkedInIcon />
-              <FacebookIcon />
-              <TwitterIcon />
-              <InstagramIcon />
-            </div>
-          </div>
-          <div className="w-full h-[0px] opacity-50 border border-[#4e5055]"></div>
-        </div>
+        <p className="text-gray-600 text-sm">
+          © {new Date().getFullYear()} TwoNode Technologies. All rights
+          reserved.
+        </p>
       </div>
     </div>
   );
