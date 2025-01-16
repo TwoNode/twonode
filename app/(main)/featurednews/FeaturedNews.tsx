@@ -3,7 +3,7 @@
 import React from "react";
 import { FacebookIcon, InstagramIcon, LinkedInIcon, TwitterIcon } from "./svgs";
 
-const BLOGS = [
+export const BLOGS = [
   {
     date: "November 23rd, 2024",
     location: "Marriott Hotel, Ikeja, Lagos",
@@ -29,24 +29,6 @@ const BLOGS = [
       "/gbc/expSession/img_5.jpg",
       "/gbc/expSession/img_6.jpg",
     ],
-  },
-  {
-    date: "Wednesday, July 17, 2024 · 2 Min Read",
-    title:
-      "Same Subscription with More Capabilities with ArcGIS Pro and ArcOnline Licenses",
-    body: `
-      TwoNode Technologies is thrilled to announce a long-term partnership with 
-      Sambus Geospatial, the official distributor for ESRI products. This partnership 
-      is to provide ultra-specific capabilities beyond your imagination.
-    `,
-    highlights: [
-      "ArcGIS Pro Advanced, extensions, and dozens of ready-to-use apps.",
-      "ArcGIS Living Atlas of the World with maps and data on thousands of topics, including access to foundational content from Esri.",
-      "Software updates.",
-      "Unlimited access to self-paced e-learning through the Esri Training website.",
-    ],
-    images: ["/fea1.png", "/fea2.png", "/fea3.png"],
-    author: "TwoNode Technologies",
   },
   {
     title: "Technical Session: Building the Future of Surveying",
@@ -115,6 +97,25 @@ const BLOGS = [
       "/gbc/funAndNet/img_5.jpg",
       "/gbc/funAndNet/img_6.jpg",
     ],
+  },
+
+  {
+    date: "Wednesday, July 17, 2024 · 2 Min Read",
+    title:
+      "Same Subscription with More Capabilities with ArcGIS Pro and ArcOnline Licenses",
+    body: `
+      TwoNode Technologies is thrilled to announce a long-term partnership with 
+      Sambus Geospatial, the official distributor for ESRI products. This partnership 
+      is to provide ultra-specific capabilities beyond your imagination.
+    `,
+    highlights: [
+      "ArcGIS Pro Advanced, extensions, and dozens of ready-to-use apps.",
+      "ArcGIS Living Atlas of the World with maps and data on thousands of topics, including access to foundational content from Esri.",
+      "Software updates.",
+      "Unlimited access to self-paced e-learning through the Esri Training website.",
+    ],
+    images: ["/fea1.png", "/fea2.png", "/fea3.png"],
+    author: "TwoNode Technologies",
   },
 ];
 

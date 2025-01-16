@@ -7,40 +7,45 @@ import Link from "next/link";
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 import { Carousel } from "react-responsive-carousel";
 
-export const EfficientGISSolutions = () => {
+const GIS = [
+  {
+    number: 1,
+    title: "Survey Data Management",
+    desc: "Renders Surveyor's data in a manner that provides easy access, management and data-driven insight.",
+    img: "gis.png",
+  },
+  {
+    number: 2,
+    title: "Oil and Gas ROW and Utility Asset Network Management",
+    desc: "Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app.",
+    img: "GIS1.png",
+  },
+  {
+    number: 3,
+    title: "Electric Utility Network Management",
+    desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
+    img: "GIS2.png",
+  },
+  {
+    number: 4,
+    title: "Telecommunication Asset in Real-Time",
+    desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
+    img: "GIS3.png",
+  },
+];
+
+export const CarouselImageSlider = ({
+  title1 = "Our Core Solution",
+  title2 = "Efficient GIS Solutions",
+  data = GIS,
+  link = { title: "Get Started Today", url: "/services" },
+}) => {
   const [element, setElement] = useState({
     number: 1,
     title: "Survey Data Management",
     desc: "Renders Surveyor's data in a manner that provides easy access, management and data-driven insight.",
     img: "gis.png",
   });
-
-  const GIS = [
-    {
-      number: 1,
-      title: "Survey Data Management",
-      desc: "Renders Surveyor's data in a manner that provides easy access, management and data-driven insight.",
-      img: "gis.png",
-    },
-    {
-      number: 2,
-      title: "Oil and Gas ROW and Utility Asset Network Management",
-      desc: "Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app.",
-      img: "GIS1.png",
-    },
-    {
-      number: 3,
-      title: "Electric Utility Network Management",
-      desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
-      img: "GIS2.png",
-    },
-    {
-      number: 4,
-      title: "Telecommunication Asset in Real-Time",
-      desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
-      img: "GIS3.png",
-    },
-  ];
 
   return (
     <div className="mywrapper w-full min-h-[792px] py-[75px] bg-white flex-col items-center gap-12 inline-flex">
@@ -50,12 +55,12 @@ export const EfficientGISSolutions = () => {
             <div className="flex justify-start items-center gap-[15px]">
               <div className="w-5 h-[0px] border-2 border-sky-950"></div>
               <h2 className="text-sky-950 text-xl font-medium leading-[34px]">
-                Our Core Solution
+                {title1}
               </h2>
             </div>
             <h3 className="flex flex-col justify-start items-start gap-[18px]">
               <div className="w-[331px] text-sky-950 text-[40px] lg:text-[35px] md:text-[50px] font-extrabold leading-[54px]">
-                Efficient GIS Solutions
+                {title2}
               </div>
             </h3>
           </div>
@@ -77,11 +82,11 @@ export const EfficientGISSolutions = () => {
 
           <div className="flex flex-col justify-start items-start gap-5 w-full">
             <Link
-              href={"/services"}
+              href={link.url}
               className="w-full self-center max-w-[470px] px-[45px] py-[15px] bg-sky-950 rounded-[30px] flex justify-center items-center gap-2.5"
             >
               <div className="text-center text-white text-lg font-semibold leading-[30px]">
-                Get Started Today
+                {link.title}
               </div>
             </Link>
           </div>
@@ -96,14 +101,14 @@ export const EfficientGISSolutions = () => {
             autoPlay={true}
             infiniteLoop
             interval={2000}
-            onChange={(ind, item) => setElement(GIS[ind])}
+            onChange={(ind, item) => setElement(data[ind])}
             onSwipeMove={() => {}}
             showThumbs={false}
             stopOnHover={false}
             swipeable={true}
             className="gap-6 w-full max-w-[530px] max-h-[642px] bg-black/opacity-20 rounded-lg mt-6 lg:mt-0 flex items-center"
           >
-            {GIS.map((item, ind) => (
+            {data.map((item, ind) => (
               <div
                 key={ind}
                 className="p-6 w-full flex flex-col lg:flex-row lg:items-center lg:justify-center gap-[50px] 2xl:gap-[70px]"
