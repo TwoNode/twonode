@@ -21,7 +21,14 @@ const BLOGS = [
     ],
     keyTakeaway:
       "GIS equips surveyors with the tools to make smarter, faster decisions at scale, transforming the way we understand and interact with the world.",
-    images: ["img1.png", "img2.png", "img3.png"],
+    images: [
+      "/gbc/expSession/img_1.jpg",
+      "/gbc/expSession/img_2.jpg",
+      "/gbc/expSession/img_3.jpg",
+      "/gbc/expSession/img_4.jpg",
+      "/gbc/expSession/img_5.jpg",
+      "/gbc/expSession/img_6.jpg",
+    ],
   },
   {
     date: "Wednesday, July 17, 2024 · 2 Min Read",
@@ -64,6 +71,11 @@ const BLOGS = [
         ],
       },
     ],
+    images: [
+      "/gbc/homePage/img_1.jpg",
+      "/gbc/homePage/img_2.jpg",
+      "/gbc/homePage/img_3.jpg",
+    ],
   },
   {
     title: "💻 Hands-On Practical",
@@ -78,6 +90,15 @@ const BLOGS = [
     ],
     keyTakeaway:
       "This exercise showcased how survey drawings can become dynamic databases, revolutionizing property searches and enabling smarter decision-making.",
+
+    images: [
+      "/gbc/website/img_1.jpg",
+      "/gbc/website/img_2.jpg",
+      "/gbc/website/img_3.jpg",
+      "/gbc/website/img_4.jpg",
+      "/gbc/website/img_5.jpg",
+      "/gbc/website/img_6.jpg",
+    ],
   },
   {
     title: "😜 Fun Moments and Networking",
@@ -86,6 +107,14 @@ const BLOGS = [
       connections, and sharing ideas that promise to shape the future of surveying 
       and geospatial technology.
     `,
+    images: [
+      "/gbc/funAndNet/img_1.jpg",
+      "/gbc/funAndNet/img_2.jpg",
+      "/gbc/funAndNet/img_3.jpg",
+      "/gbc/funAndNet/img_4.jpg",
+      "/gbc/funAndNet/img_5.jpg",
+      "/gbc/funAndNet/img_6.jpg",
+    ],
   },
 ];
 
@@ -158,7 +187,7 @@ const FeaturedNews = () => {
 
             {/* Images */}
             {blog.images && (
-              <div className="grid grid-cols-3 max-lg:grid-cols-2 gap-4 mt-6 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6 items-center">
                 {blog.images.map((src, i) => (
                   <img
                     key={i}
