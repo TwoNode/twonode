@@ -19,27 +19,12 @@ export const OurGallery = () => {
             </div>
           </div>
         </div>
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 justify-items-center  items-center gap-[20px]">
-          <img
-            className="w-full max-w-[270.229px] max-h-[652px]"
-            src="/homegal1.png"
-            alt=""
-          />
-          <img
-            className="w-full max-w-[270.229px] max-h-[652px]"
-            src="/homegal2.png"
-            alt=""
-          />
-          <img
-            className="w-full max-w-[270.229px] max-h-[652px]"
-            src="/homegal3.png"
-            alt=""
-          />
-          <img
-            className="w-full max-w-[270.229px] max-h-[652px]"
-            src="/homegal4.png"
-            alt=""
-          />
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center items-center gap-[20px]">
+          <img className="w-full" src="/gbc/website/img_6.jpg" alt="" />
+          <img className="w-full" src="/gbc/website/img_1.jpg" alt="" />
+          <img className="w-full" src="/gbc/website/img_4.jpg" alt="" />
+          <img className="w-full" src="/gbc/website/img_5.jpg" alt="" />
+          <img className="w-full" src="/gbc/website/img_7.jpg" alt="" />
         </div>
 
         <Link

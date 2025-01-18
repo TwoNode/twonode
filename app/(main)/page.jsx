@@ -19,7 +19,7 @@ export default function Home() {
   const GbcData = BLOGS.slice(0, 4).map((blog, index) => ({
     number: index + 1,
     title: blog.title,
-    desc: blog.body.trim().split("\n")[0], // Taking the first line of the body for description
+    desc: blog.body, // Taking the first line of the body for description
     img: blog.images[0] || "", // Taking the first image as the representative image
   }));
 
@@ -39,7 +39,7 @@ export default function Home() {
         title2="GBC 1.0 event was a Success"
       />
 
-      <CarouselImageSlider />
+      {/* <CarouselImageSlider /> */}
 
       {/* Revolutionizing industry Based Geospatial Solutions */}
       <Revolutionizing />

@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/Footer.jsx", "app/(main)/services/SVGs.js", "components/SurveyTrustFirms.jsx", "components/Banner.jsx", "app/(main)/contact/OurMap.jsx", "app/(main)/gbc/page.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/Footer.jsx", "app/(main)/services/SVGs.js", "components/SurveyTrustFirms.jsx", "components/Banner.jsx", "app/(main)/contact/OurMap.jsx", "app/(main)/gbc/page.jsx", "app/(main)/page.jsx"],
   "exclude": ["node_modules"]
 }

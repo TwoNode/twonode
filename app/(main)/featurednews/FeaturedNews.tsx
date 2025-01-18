@@ -14,6 +14,28 @@ export const BLOGS = [
       "Demystifying GIS for Surveyors," brought together surveyors and geospatial 
       enthusiasts for a day of learning, innovation, and connection.
     `,
+    images: ["/gbc/website/img_1.jpg", "/gbc/website/img_2.jpg"],
+  },
+
+  {
+    date: "November 23rd, 2024",
+    location: "Marriott Hotel, Ikeja, Lagos",
+    title: "Expository Session: A Journey Through GIS",
+    body: (
+      <span>
+        The Expository Session kicked off with an exploration of the rich
+        history and evolution of GIS, tracing its humble beginnings to its
+        present status as a transformative powerhouse. Attendees were introduced
+        to the latest GIS trends and inspired by the story of the resilient
+        surveyor—a professional who adapts, innovates, and thrives by leveraging
+        GIS to confront challenges and deliver actionable insights.
+        <br />
+        <br />A pivotal moment was an inspiring video from ESRI FedGIS 2024
+        featuring Jess Altamira, which showcased the incredible potential of big
+        data analytics in GIS. The session demonstrated how GIS is
+        revolutionizing the surveying profession, enabling surveyors to:
+      </span>
+    ),
     highlights: [
       "Analyze millions of parcels across the U.S.",
       "Conduct real-time analyses on a national scale.",
@@ -30,6 +52,7 @@ export const BLOGS = [
       "/gbc/expSession/img_6.jpg",
     ],
   },
+
   {
     title: "Technical Session: Building the Future of Surveying",
     body: `
@@ -99,24 +122,24 @@ export const BLOGS = [
     ],
   },
 
-  {
-    date: "Wednesday, July 17, 2024 · 2 Min Read",
-    title:
-      "Same Subscription with More Capabilities with ArcGIS Pro and ArcOnline Licenses",
-    body: `
-      TwoNode Technologies is thrilled to announce a long-term partnership with 
-      Sambus Geospatial, the official distributor for ESRI products. This partnership 
-      is to provide ultra-specific capabilities beyond your imagination.
-    `,
-    highlights: [
-      "ArcGIS Pro Advanced, extensions, and dozens of ready-to-use apps.",
-      "ArcGIS Living Atlas of the World with maps and data on thousands of topics, including access to foundational content from Esri.",
-      "Software updates.",
-      "Unlimited access to self-paced e-learning through the Esri Training website.",
-    ],
-    images: ["/fea1.png", "/fea2.png", "/fea3.png"],
-    author: "TwoNode Technologies",
-  },
+  // {
+  //   date: "Wednesday, July 17, 2024 · 2 Min Read",
+  //   title:
+  //     "Same Subscription with More Capabilities with ArcGIS Pro and ArcOnline Licenses",
+  //   body: `
+  //     TwoNode Technologies is thrilled to announce a long-term partnership with
+  //     Sambus Geospatial, the official distributor for ESRI products. This partnership
+  //     is to provide ultra-specific capabilities beyond your imagination.
+  //   `,
+  //   highlights: [
+  //     "ArcGIS Pro Advanced, extensions, and dozens of ready-to-use apps.",
+  //     "ArcGIS Living Atlas of the World with maps and data on thousands of topics, including access to foundational content from Esri.",
+  //     "Software updates.",
+  //     "Unlimited access to self-paced e-learning through the Esri Training website.",
+  //   ],
+  //   images: ["/fea1.png", "/fea2.png", "/fea3.png"],
+  //   author: "TwoNode Technologies",
+  // },
 ];
 
 const FeaturedNews = () => {
