@@ -84,6 +84,10 @@ export const BLOGS = [
       "/gbc/technical/img_1.jpg",
       "/gbc/technical/img_2.jpg",
       "/gbc/technical/img_4.jpg",
+      "/gbc/technical/img_6.jpg",
+      "/gbc/technical/img_5.jpg",
+      "/gbc/technical/img_2.jpg",
+      "/gbc/technical/img_3.jpg",
     ],
   },
   {
@@ -101,10 +105,12 @@ export const BLOGS = [
       "This exercise showcased how survey drawings can become dynamic databases, revolutionizing property searches and enabling smarter decision-making.",
 
     images: [
-      "/gbc/technical/img_6.jpg",
-      "/gbc/technical/img_5.jpg",
-      "/gbc/technical/img_2.jpg",
-      "/gbc/technical/img_3.jpg",
+      "/gbc/handOn/img_1.jpg",
+      "/gbc/handOn/img_8.jpg",
+      "/gbc/handOn/img_2.jpg",
+      "/gbc/handOn/img_3.jpg",
+      "/gbc/handOn/img_5.jpg",
+      "/gbc/handOn/img_6.jpg",
     ],
   },
   {

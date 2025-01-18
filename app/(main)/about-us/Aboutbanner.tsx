@@ -13,25 +13,24 @@ const Aboutbanner = () => {
               </div>
             </div>
             <div className="max-w-[670px] w-full text-zinc-950 text-3xl text-center md:text-start md:text-[40px] lg:text-[50px] font-extrabold leading-10 md:leading-[74px]">
-              A Revolutionary GIS Solution
+              TwoNode Technologies
             </div>
             <div className="max-w-[570px] text-neutral-600 text-lg font-normal leading-[30px]">
-              Revamping the way survey information is managed and retrieved.
-              Discover a new level of efficiency and accuracy with our
-              cutting-edge technology.
+              TwoNode Technologies is a pioneering geospatial innovation company
+              focused on redefining the management, analysis, and visualization
+              of geospatial data. With a commitment to excellence, we provide
+              state-of-the-art Industry based GIS solutions that empower
+              industries to optimize their operations through actionable
+              geospatial insights. Our expertise spans various sectors,
+              including oil and gas, real estate, E-Health, urban planning,
+              telecommunications, energy, and surveying.
               <br />
-              Let us simplify the representation of extent and other vital
-              survey details for you. Your ease of access and peace of mind are
-              our top priorities.
-              <br />
-              At TwoNode, we believe that location intelligence is the
-              cornerstone of strategic planning and operational efficiency. Our
-              team of seasoned GIS professionals and software developers work
-              tirelessly to deliver customized solutions that meet the unique
-              needs of each client. Whether it's urban planning, environmental
-              monitoring, transportation management, or asset tracking, our
-              comprehensive suite of GIS services ensures that you have the
-              insights you need to succeed.
+              At TwoNode Technologies, we tackle the challenges faced by
+              industry professionals in accessing and managing geospatial data.
+              By leveraging advanced technologies and innovative practices, we
+              transform raw data into structured and accessible databases,
+              enabling seamless data retrieval, visualization, and informed
+              decision-making
             </div>
           </div>
         </div>
