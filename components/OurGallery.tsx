@@ -25,6 +25,7 @@ export const OurGallery = () => {
           <img className="w-full" src="/gbc/website/img_4.jpg" alt="" />
           <img className="w-full" src="/gbc/website/img_5.jpg" alt="" />
           <img className="w-full" src="/gbc/website/img_7.jpg" alt="" />
+          <img className="w-full" src="/gbc/website/img_8.jpg" alt="" />
         </div>
 
         <Link

@@ -20,7 +20,7 @@ export default function Home() {
     number: index + 1,
     title: blog.title,
     desc: blog.body, // Taking the first line of the body for description
-    img: blog.images[0] || "", // Taking the first image as the representative image
+    img: blog.images[1] || "", // Taking the first image as the representative image
   }));
 
   return (
