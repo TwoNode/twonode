@@ -15,7 +15,7 @@ export const CountdownComponent: React.FC = () => {
   // const Completionist: React.FC = () => (
   //   <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
   //     <div className="flex-col justify-start items-center inline-flex">
-  //       <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+  //       <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold">
   //         It's the D-day!
   //       </span>
   //     </div>
@@ -25,7 +25,7 @@ export const CountdownComponent: React.FC = () => {
   const Completionist: React.FC = () => (
     <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
       <div className="flex-col justify-start items-center inline-flex">
-        <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+        <span className="text-center text-[#001f3f] lg:text-3xl md:text-2xl text-xl font-semibold">
           The GBC 1.0 event was a Success
         </span>
       </div>
@@ -46,10 +46,10 @@ export const CountdownComponent: React.FC = () => {
       return (
         <div className="my-5 md:justify-start w-full justify-between items-center lg:gap-[29px] gap-[15px] flex">
           <div className="flex-col justify-start items-center inline-flex">
-            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold">
               {days}
             </span>
-            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium">
               Days
             </span>
           </div>
@@ -57,10 +57,10 @@ export const CountdownComponent: React.FC = () => {
             :
           </span>
           <div className="flex-col justify-start items-center inline-flex">
-            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold">
               {hours}
             </span>
-            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium">
               Hours
             </span>
           </div>
@@ -68,10 +68,10 @@ export const CountdownComponent: React.FC = () => {
             :
           </span>
           <div className="flex-col justify-start items-center inline-flex">
-            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold">
               {minutes}
             </span>
-            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium">
               Mins
             </span>
           </div>
@@ -79,10 +79,10 @@ export const CountdownComponent: React.FC = () => {
             :
           </span>
           <div className="flex-col justify-start items-center inline-flex">
-            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-5xl md:text-2xl text-xl font-semibold">
               {seconds}
             </span>
-            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium font-['Bricolage Grotesque']">
+            <span className="text-center text-[#001f3f] lg:text-xl text-sm font-medium">
               Secs
             </span>
           </div>

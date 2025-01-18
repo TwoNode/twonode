@@ -14,7 +14,11 @@ export const BLOGS = [
       "Demystifying GIS for Surveyors," brought together surveyors and geospatial 
       enthusiasts for a day of learning, innovation, and connection.
     `,
-    images: ["/gbc/website/img_1.jpg", "/gbc/website/img_2.jpg"],
+    images: [
+      "/gbc/technical/img_1.jpg",
+      "/gbc/funAndNet/img_2.jpg",
+      "/gbc/expSession/img_1.jpg",
+    ],
   },
 
   {
@@ -79,7 +83,7 @@ export const BLOGS = [
     images: [
       "/gbc/technical/img_1.jpg",
       "/gbc/technical/img_2.jpg",
-      "/gbc/technical/img_3.jpg",
+      "/gbc/technical/img_4.jpg",
     ],
   },
   {
@@ -99,7 +103,8 @@ export const BLOGS = [
     images: [
       "/gbc/technical/img_6.jpg",
       "/gbc/technical/img_5.jpg",
-      "/gbc/technical/img_4.jpg",
+      "/gbc/technical/img_2.jpg",
+      "/gbc/technical/img_3.jpg",
     ],
   },
   {
