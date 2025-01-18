@@ -118,7 +118,7 @@ export const FeaturedNews = () => {
         <div className="grid justify-items-center lg:grid-cols-2 gap-10">
           <img
             className="max-w-[565px] w-full max-h-[390px] rounded-[10px]"
-            src="/gbc/expSession/img_1.jpg"
+            src="/gbc/website/img_11.jpg"
           />
           <div className="self-stretch flex-col justify-start items-start gap-[45px] inline-flex">
             <div className="self-stretch min-h-[260px] flex-col justify-start items-start gap-[30px] flex">
