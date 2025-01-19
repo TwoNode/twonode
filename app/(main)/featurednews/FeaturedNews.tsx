@@ -16,6 +16,7 @@ export const BLOGS = [
     `,
     images: [
       "/gbc/technical/img_1.jpg",
+      "/gbc/expSession/img_2.jpg",
       "/gbc/funAndNet/img_2.jpg",
       "/gbc/expSession/img_1.jpg",
     ],
@@ -49,11 +50,11 @@ export const BLOGS = [
       "GIS equips surveyors with the tools to make smarter, faster decisions at scale, transforming the way we understand and interact with the world.",
     images: [
       "/gbc/expSession/img_1.jpg",
+      "/gbc/expSession/img_6.jpg",
       "/gbc/expSession/img_2.jpg",
       "/gbc/expSession/img_3.jpg",
       "/gbc/expSession/img_4.jpg",
       "/gbc/expSession/img_5.jpg",
-      "/gbc/expSession/img_6.jpg",
     ],
   },
 
@@ -82,9 +83,9 @@ export const BLOGS = [
     ],
     images: [
       "/gbc/technical/img_1.jpg",
+      "/gbc/technical/img_6.jpg",
       "/gbc/technical/img_2.jpg",
       "/gbc/technical/img_4.jpg",
-      "/gbc/technical/img_6.jpg",
       "/gbc/technical/img_5.jpg",
       "/gbc/technical/img_2.jpg",
       "/gbc/technical/img_3.jpg",
@@ -106,11 +107,11 @@ export const BLOGS = [
 
     images: [
       "/gbc/handOn/img_1.jpg",
+      "/gbc/handOn/img_6.jpg",
       "/gbc/handOn/img_8.jpg",
       "/gbc/handOn/img_2.jpg",
       "/gbc/handOn/img_3.jpg",
       "/gbc/handOn/img_5.jpg",
-      "/gbc/handOn/img_6.jpg",
     ],
   },
   {
