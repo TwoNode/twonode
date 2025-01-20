@@ -36,7 +36,7 @@ const Aboutbanner = () => {
         </div>
         <div className="flex items-center justify-center">
           <img
-            src="/about.jpeg"
+            src="/about.png"
             className="max-w-[635px] w-full max-h-[778px] bg-black/opacity-20 rounded-tl-[10px] rounded-bl-[10px]"
           />
         </div>
