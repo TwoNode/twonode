@@ -2,8 +2,10 @@
 
 import Head from "next/head";
 import { FC } from "react";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import RevaDueDiligenceForm from "./Reva";
+import { RevaHeroSection } from "./RevaHeroSection";
+import { RevaFooterSection } from "./RevaFooterSection";
 
 const RevaLandingPage: FC = () => {
   const coreFeatures: string[] = [
@@ -44,20 +46,9 @@ const RevaLandingPage: FC = () => {
         />
       </Head>
 
-      {/* Hero Section */}
-      <section className="text-center py-20 px-5 bg-gradient-to-r from-blue-800 to-gray-900 text-white">
-        <h1 className="text-5xl font-bold">
-          Real Estate Due Diligence Just Got Intelligent!
-        </h1>
+      <RevaDueDiligenceForm />
 
-        <p className="mt-4 text-lg">
-          Request a structured land report with ease in just a few clicks.
-        </p>
-
-        <Button className="mt-6 bg-blue-600 px-6 py-3 text-lg hover:border-2 hover:border-blue-400 transition-all">
-          Request a Report
-        </Button>
-      </section>
+      <RevaHeroSection />
 
       {/* About Section */}
       <section className="py-20 px-5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 text-center">
@@ -159,10 +150,7 @@ const RevaLandingPage: FC = () => {
         </p>
       </section>
 
-      {/* Footer */}
-      <footer className="py-10 bg-gray-900 text-white text-center">
-        <p className="text-lg">&copy; 2025 REVA. All rights reserved.</p>
-      </footer>
+      <RevaFooterSection />
     </div>
   );
 };
