@@ -3,7 +3,6 @@
 import Head from "next/head";
 import { FC } from "react";
 import { motion } from "framer-motion";
-import RevaDueDiligenceForm from "./Reva";
 import { RevaHeroSection } from "./RevaHeroSection";
 import { RevaFooterSection } from "./RevaFooterSection";
 
@@ -45,8 +44,6 @@ const RevaLandingPage: FC = () => {
           content="Real Estate Due Diligence Just Got Intelligent!"
         />
       </Head>
-
-      <RevaDueDiligenceForm />
 
       <RevaHeroSection />
 
