@@ -94,17 +94,6 @@ const RevaDueDiligenceForm: React.FC = () => {
     }
   };
 
-  if (!googleMapsApiKey || !isWindowReady) {
-    // Show a loading spinner or message while waiting for the API key
-    // and window object to be available
-
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
-      </div>
-    );
-  }
-
   // Configuration object for Paystack payment integration
   const paystackConfig: PaystackButtonProps = {
     email, // Email of the payer
@@ -145,6 +134,17 @@ const RevaDueDiligenceForm: React.FC = () => {
       if (isWindowReady) alert("Transaction was not completed."); // Notify the user if the transaction was closed without completion
     },
   };
+
+  if (!googleMapsApiKey || !isWindowReady) {
+    // Show a loading spinner or message while waiting for the API key
+    // and window object to be available
+
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
+      </div>
+    );
+  }
 
   return (
     <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={["places"]}>
