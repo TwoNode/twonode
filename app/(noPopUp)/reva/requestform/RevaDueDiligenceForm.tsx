@@ -153,6 +153,7 @@ const RevaDueDiligenceForm: React.FC = () => {
           <h2 className="text-3xl font-extrabold text-blue-700 mb-4 text-center">
             REVA Due Diligence Request
           </h2>
+
           <form className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,6 +213,59 @@ const RevaDueDiligenceForm: React.FC = () => {
                 placeholder="Auto-generated location"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Local Government Area (LGA)
+              </label>
+              <Input
+                type="text"
+                value={lga}
+                disabled
+                readOnly
+                placeholder="Auto-generated LGA"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Supporting Documents
+              </label>
+              <Input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files) {
+                    console.log("Selected files:", Array.from(files));
+                  }
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Additional Comments
+              </label>
+              <Textarea
+                placeholder="Enter any additional comments"
+                onChange={(e) => console.log("Comments:", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Cost (NGN)
+              </label>
+              <Input
+                type="number"
+                value={totalCost}
+                disabled
+                readOnly
+                placeholder="Auto-calculated total cost"
+              />
+            </div>
+
             <Button
               onClick={() => setShowReview(true)}
               className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300"
