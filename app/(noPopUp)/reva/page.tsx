@@ -1,155 +1,78 @@
-"use client";
-
-import Head from "next/head";
+import { Metadata } from "next";
 import { FC } from "react";
-import { motion } from "framer-motion";
-import { RevaHeroSection } from "./RevaHeroSection";
-import { RevaFooterSection } from "./RevaFooterSection";
+import RevaLandingPage from "./RevaLandingPage";
 
-const RevaLandingPage: FC = () => {
-  const coreFeatures: string[] = [
-    "Quick & seamless report requests",
-    "Secure payment processing",
-    "Access to detailed land records",
-    "Easy Document Uploads",
-    "Mobile-First Experience",
-  ];
-
-  interface Step {
-    title: string;
-    desc: string;
-  }
-
-  const howItWorks: Step[] = [
+export const metadata: Metadata = {
+  title: "REVA - Real Estate Due Diligence",
+  description:
+    "Real Estate Due Diligence Just Got Intelligent! Request detailed land reports with ease.",
+  keywords: "REVA, real estate, due diligence, land reports, property insights",
+  authors: [
     {
-      title: "Submit Request",
-      desc: "Provide the necessary property details and submit your request.",
+      name: "TwoNode Technologies",
+      url: "https://twonode.com",
     },
-    {
-      title: "Make Payment",
-      desc: "Securely complete your payment online.",
+  ],
+  creator: "TwoNode Technologies",
+  applicationName: "REVA - Real Estate Due Diligence",
+  robots: "index, follow",
+  generator: "Next.js",
+  publisher: "TwoNode Technologies",
+  openGraph: {
+    title: "REVA - Real Estate Due Diligence",
+    description:
+      "Simplify real estate due diligence with REVA. Request detailed land reports effortlessly.",
+    url: "https://twonode.com/reva",
+    siteName: "TwoNode Technologies",
+    images: [
+      {
+        url: "https://twonode.com/images/reva.png",
+        width: 800,
+        height: 600,
+        alt: "REVA - Real Estate Due Diligence",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "REVA - Real Estate Due Diligence",
+    description:
+      "Simplify real estate due diligence with REVA. Request detailed land reports effortlessly.",
+    images: ["https://twonode.com/images/reva.png"],
+    site: "@TwoNodeTechnologies",
+    creator: "@TwoNodeTechnologies",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  verification: {
+    google: "google-site-verification=your-google-verification-code",
+  },
+  metadataBase: new URL("https://twonode.com"),
+  alternates: {
+    canonical: "https://twonode.com/reva",
+    languages: {
+      en: "https://twonode.com/reva",
     },
-    {
-      title: "Receive Report",
-      desc: "Download a detailed due diligence report.",
-    },
-  ];
+  },
+};
 
+const RevaPage: FC = () => {
   return (
-    <div>
-      <Head>
-        <title>REVA - Real Estate Due Diligence</title>
-        <meta
-          name="description"
-          content="Real Estate Due Diligence Just Got Intelligent!"
-        />
-      </Head>
-
-      <RevaHeroSection />
-
-      {/* About Section */}
-      <section className="py-20 px-5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 text-center">
-        <h2 className="text-4xl font-extrabold text-gray-800 mb-10">
-          About REVA
-        </h2>
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-start">
-          <div className="md:w-1/2 px-6 md:px-12">
-            <p className="text-lg p-5 leading-relaxed text-justify text-gray-700">
-              REVA is a cutting-edge digital platform designed to simplify real
-              estate due diligence. By providing structured and detailed reports
-              on land parcels, REVA empowers users to make informed decisions
-              without requiring GIS expertise. Experience seamless transactions
-              and trusted property insights with just a few clicks.
-            </p>
-          </div>
-
-          <div className="md:mt-0 md:w-1/2 flex justify-center">
-            <motion.img
-              src="/reva/revaLogo.png"
-              alt="About REVA"
-              className="w-80 md:w-96"
-              animate={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Why Us Section */}
-      <section className="py-20 bg-gray-100 text-gray-900 text-center">
-        <h2 className="text-4xl font-semibold">Why Choose REVA?</h2>
-        <div className="flex flex-wrap justify-center gap-6 mt-10 px-10">
-          {[
-            "Comprehensive Property Insights",
-            "Fast & Reliable Reports",
-            "User-Friendly Interface",
-            "Secure Payment Processing",
-          ].map((reason, index) => (
-            <motion.div
-              key={index}
-              className="p-6 bg-white rounded-xl shadow-md w-64 text-center"
-              animate={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.4, delay: index * 0.2 }}
-            >
-              <p className="text-lg font-medium">{reason}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Core Features */}
-      <section className="py-20 bg-gray-100 text-gray-900">
-        <h2 className="text-4xl font-semibold text-center">Core Features</h2>
-        <div className="flex flex-wrap justify-center gap-6 mt-10 px-10">
-          {coreFeatures.map((feature, index) => (
-            <motion.div
-              key={index}
-              className="p-6 bg-white rounded-xl shadow-md w-64 text-center hover:shadow-lg hover:scale-105 transition-transform duration-300"
-              animate={{ opacity: 1, y: 0 }}
-              initial={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.4, delay: index * 0.2 }}
-            >
-              <p className="text-lg font-mediumn">{feature}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 bg-white text-gray-900">
-        <h2 className="text-4xl font-semibold text-center">How It Works</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-12 px-12">
-          {howItWorks.map((step, index) => (
-            <motion.div
-              key={index}
-              className="p-8 border rounded-xl text-center shadow-lg bg-gray-50 hover:shadow-2xl transition-all"
-              animate={{ opacity: 1, scale: 1 }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-            >
-              <h3 className="text-2xl font-semibold">Step {index + 1}</h3>
-              <p className="mt-2 text-lg">{step.title}</p>
-              <p className="text-gray-500 mt-2">{step.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20 bg-white text-gray-900 text-center">
-        <h2 className="text-4xl font-semibold">Pricing Plans</h2>
-        <p className="mt-6 text-xl">
-          Due diligence reports start from{" "}
-          <span className="font-bold text-blue-600">₦30,000</span>, varying by
-          LGA selection.
-        </p>
-      </section>
-
-      <RevaFooterSection />
-    </div>
+    <>
+      <RevaLandingPage />
+    </>
   );
 };
 
-export default RevaLandingPage;
+export default RevaPage;

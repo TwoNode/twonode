@@ -1,12 +1,23 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 
 export const RevaHeroSection = ({ showRequestButton = true }) => {
   return (
     <>
       {/* Hero Section */}
       <section className="text-center py-20 px-5 bg-gradient-to-r from-blue-800 to-gray-900 text-white">
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/reva/revaLogo.png"
+            alt="REVA Logo"
+            width={100}
+            height={100}
+            className="bg-white/70 rounded-full"
+          />
+        </div>
+
         <h1 className="text-5xl font-bold">
           Real Estate Due Diligence Just Got Intelligent!
         </h1>
