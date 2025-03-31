@@ -110,9 +110,6 @@ const RevaDueDiligenceForm: React.FC = () => {
     email, // Email of the payer
     amount: totalCost * 100, // Total cost converted to kobo (Paystack uses the smallest currency unit)
     publicKey: paystackPublicKey, // Paystack public key
-    text: "Loading...",
-    disabled: true,
-
     reference: `REVA_${Date.now().toString()}`, // Unique reference for the transaction
     metadata: {
       requester, // Name of the requester
@@ -138,13 +135,11 @@ const RevaDueDiligenceForm: React.FC = () => {
     },
     currency: "NGN", // Currency for the transaction (Nigerian Naira)
     onSuccess: (response: any) => {
-      if (isWindowReady) {
-        console.log(Date.now().toString()); // Log the current timestamp
-        alert(`Payment successful! Transaction ID: ${response.reference}`); // Notify the user of successful payment
-        // Handle successful payment here
-        console.log("Payment successful:", response); // Log the payment response
-        router.push("/reva/viewdetails"); // Navigate to the details view page
-      }
+      console.log(Date.now().toString()); // Log the current timestamp
+      alert(`Payment successful! Transaction ID: ${response.reference}`); // Notify the user of successful payment
+      // Handle successful payment here
+      console.log("Payment successful:", response); // Log the payment response
+      router.push("/reva/viewdetails"); // Navigate to the details view page
     },
     onClose: () => {
       if (isWindowReady) alert("Transaction was not completed."); // Notify the user if the transaction was closed without completion
