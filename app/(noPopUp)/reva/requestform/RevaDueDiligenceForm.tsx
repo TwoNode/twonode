@@ -41,14 +41,14 @@ const RevaDueDiligenceForm: React.FC = () => {
   const router = useRouter();
 
   const [isWindowReady, setIsWindowReady] = useState(false);
-  const [email, setEmail] = useState("rojitech9@gmail.com");
+  const [email, setEmail] = useState("");
   const [requester, setRequester] = useState("");
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
   const [lga, setLga] = useState("Unknown");
-  const [totalCost, setTotalCost] = useState(30);
+  const [totalCost, setTotalCost] = useState(0);
   const [showReview, setShowReview] = useState(false);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState("");
   const [paystackPublicKey, setPaystackPublicKey] = useState("");
@@ -164,6 +164,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
+                required
               />
             </div>
             <div>
@@ -175,6 +176,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 value={requester}
                 onChange={(e) => setRequester(e.target.value)}
                 placeholder="Enter your name"
+                required
               />
             </div>
 
@@ -186,9 +188,10 @@ const RevaDueDiligenceForm: React.FC = () => {
                 <Input
                   id="address"
                   type="text"
-                  value={address}
+                  // value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Enter the property address"
+                  required
                 />
               </Autocomplete>
             </div>
@@ -211,6 +214,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 disabled
                 readOnly
                 placeholder="Auto-generated location"
+                required
               />
             </div>
 
@@ -224,6 +228,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 disabled
                 readOnly
                 placeholder="Auto-generated LGA"
+                required
               />
             </div>
 
@@ -234,6 +239,7 @@ const RevaDueDiligenceForm: React.FC = () => {
               <Input
                 type="file"
                 multiple
+                required
                 onChange={(e) => {
                   const files = e.target.files;
                   if (files) {
@@ -263,6 +269,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 disabled
                 readOnly
                 placeholder="Auto-calculated total cost"
+                required
               />
             </div>
 

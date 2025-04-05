@@ -78,8 +78,6 @@ const RevaLandingPage: FC = () => {
             "Charting Information",
             "Historical Survey Record",
             "Map of the property",
-            "User-Friendly Interface",
-            "Secure Payment Processing",
           ].map((reason, index) => (
             <motion.div
               key={index}

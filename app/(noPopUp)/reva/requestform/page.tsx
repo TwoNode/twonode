@@ -90,7 +90,7 @@ export const metadata: Metadata = {
 const RevaFormPage: FC = () => {
   return (
     <div>
-      <RevaHeroSection showRequestButton={false} />
+      <RevaHeroSection showRequestButton={false} smallLogo showTitle={false} />
       <RevaDueDiligenceForm />
       <RevaFooterSection />
     </div>
