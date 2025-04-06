@@ -61,11 +61,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return new Response(
-    JSON.stringify({ message: "Invalid URL" }),
-    {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  return new Response(JSON.stringify({ message: "Invalid URL" }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 }
