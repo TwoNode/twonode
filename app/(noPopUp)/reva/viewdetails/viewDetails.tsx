@@ -1,10 +1,9 @@
 "use client";
 
-import { Metadata } from "next";
-import { FC, useState } from "react";
+import { FC, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-const ViewDetails: FC = () => {
+const ViewDetailsContent: FC = () => {
   const [transactionDetails, setTransactionDetails] = useState({});
   const searchParams = useSearchParams();
   const trxref = searchParams.get("trxref");
@@ -12,11 +11,6 @@ const ViewDetails: FC = () => {
 
   console.log("Transaction Reference:", trxref);
   console.log("Reference:", reference);
-  // You can use trxref and reference to fetch transaction details or perform any other actions
-  // For example, you might want to verify the transaction with your backend
-  // or display a success message to the user.
-  // You can also use a state management library or context to manage the transaction state
-  // and display it in your component.
 
   return (
     <div>
@@ -33,6 +27,14 @@ const ViewDetails: FC = () => {
         Learn More
       </button>
     </div>
+  );
+};
+
+const ViewDetails: FC = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ViewDetailsContent />
+    </Suspense>
   );
 };
 
