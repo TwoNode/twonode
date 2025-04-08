@@ -733,6 +733,23 @@ const RevaDueDiligenceForm: React.FC = () => {
               <span className="text-gray-600 font-medium">LGA:</span>
               <span className="text-gray-800 font-semibold">{lga}</span>
             </div>
+
+            <div className="flex justify-between items-center border-b pb-2 gap-2">
+              <span className="text-gray-600 font-medium">Files:</span>
+              <div className="text-gray-800 font-semibold overflow-hidden">
+                <div className="flex flex-col">
+                  {fileNames.map((name, index) => (
+                    <span
+                      key={index}
+                      className="text-gray-800 font-semibold text-ellipsis border-b-2 border-gray-200"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">Total Cost:</span>
               <span className="font-semibold text-xl text-blue-600">
