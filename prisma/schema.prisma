@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output = "models/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Property {
+  id                     String   @id @default(uuid())
+  reference              String   @unique
+  name                   String?  // Nullable
+  description            String?  // Nullable
+  status                 String?  // Nullable
+  statusMessage          String?  // Nullable
+  error                  String?  // Nullable
+
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id])
+
+  address                String
+  lat                    Float?
+  lng                    Float?
+  lga                    String
+
+  totalCost              Float
+  supportingDocumentsUrls String[] // Array of URLs
+  additionalComments     String?  // Optional
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model OneTimeUserProperty {
+  id                     String   @id @default(uuid())
+  reference              String   @unique @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 10)")) // Optional DB default if supported
+  requester              String?  // Nullable (default "")
+  description            String?  // Nullable
+  status                 String?  // Nullable
+  paymentStatus          String?  // Nullable
+  statusMessage          String?  // Nullable
+  error                  String?  // Nullable
+
+  email                  String
+  userPhoneNumber        String?  // Optional
+
+  address                String
+  lat                    Float?
+  lng                    Float?
+  lga                    String
+
+  totalCost              Float
+  supportingDocumentsUrls String[] // Array of URLs
+  comments               String?  // Optional
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// Placeholder User model for relation
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  name      String?
+  properties Property[]
+}

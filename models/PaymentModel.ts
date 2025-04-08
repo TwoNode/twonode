@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 interface Location {
   lat: number; // Latitude of the property
@@ -52,15 +53,15 @@ export default mongoose.model<PropertySchemaType>("Property", PropertySchema);
 
 export interface OneTimeUserPropertySchemaType extends Document {
   reference: string; // Unique identifier for the property
-  name: string | null; // Name of the property
+  requester: string | null; // Name of the property
   description: string | null; // Description of the property
   status: string | null; // Status of the property request
+  paymentStatus: string | null; // Payment status of the property request
   statusMessage: string | null; // Status message of the property request
   error: string | null; // Error message if any
 
-  userName: string; // Name of the one-time user
-  userEmail: string; // Email of the one-time user
-  userPhoneNumber: string; // Phone number of the one-time user
+  email: string; // Email of the one-time user
+  userPhoneNumber?: string | null; // Phone number of the one-time user
 
   address: string; // Property address
   location: Location | null; // Location can be null if not set
@@ -68,20 +69,22 @@ export interface OneTimeUserPropertySchemaType extends Document {
 
   totalCost: number; // Total cost in NGN
   supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
-  additionalComments?: string; // Optional additional comments
+  comments?: string; // Optional additional comments
 }
 
+const generateShortUUID = () => uuidv4().replace(/-/g, "").slice(0, 10);
+
 const OneTimeUserPropertySchema = new Schema<OneTimeUserPropertySchemaType>({
-  reference: { type: String, required: true, unique: true },
-  name: { type: String, default: null },
+  reference: { type: String, default: generateShortUUID, unique: true },
+  requester: { type: String, default: "" },
   description: { type: String, default: null },
   status: { type: String, default: null },
+  paymentStatus: { type: String, default: null },
   statusMessage: { type: String, default: null },
   error: { type: String, default: null },
 
-  userName: { type: String, required: true },
-  userEmail: { type: String, required: true },
-  userPhoneNumber: { type: String, required: true },
+  email: { type: String, required: true },
+  userPhoneNumber: { type: String, required: false },
 
   address: { type: String, required: true },
   location: { type: LocationSchema, default: null },
@@ -89,7 +92,7 @@ const OneTimeUserPropertySchema = new Schema<OneTimeUserPropertySchemaType>({
 
   totalCost: { type: Number, required: true },
   supportingDocumentsUrls: { type: [String], required: true },
-  additionalComments: { type: String, default: null },
+  comments: { type: String, default: null },
 });
 
 export const OneTimeUserPropertyModel =
