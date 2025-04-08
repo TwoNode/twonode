@@ -784,7 +784,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <div onClick={handleSubmit}>
-                    <AlertDialogAction className="bg-blue-600">
+                    <AlertDialogAction className="bg-blue-600 w-full">
                       Continue
                     </AlertDialogAction>
                   </div>
