@@ -566,6 +566,19 @@ const RevaDueDiligenceForm: React.FC = () => {
           >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Requester Name
+              </label>
+              <Input
+                type="text"
+                value={requester}
+                onChange={(e) => setRequester(e.target.value)}
+                placeholder="Enter your name"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
 
@@ -574,19 +587,12 @@ const RevaDueDiligenceForm: React.FC = () => {
                 autoComplete="on"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => {
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    notifyError("Invalid email format");
+                  }
+                }}
                 placeholder="Enter your email"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Requester Name
-              </label>
-              <Input
-                type="text"
-                value={requester}
-                onChange={(e) => setRequester(e.target.value)}
-                placeholder="Enter your name"
                 required
               />
             </div>
@@ -606,10 +612,10 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-                <p className="info-text font-light" style={{ lineHeight: "10" }}>
+              <p className="info-text font-light" style={{ lineHeight: "10" }}>
                 If address isn’t working or you’re at the property, use this
                 instead. We’ll use your accurate location.
-                </p>
+              </p>
 
               <div className="flex gap-5 justify-between">
                 <div className="mt-2">
@@ -736,7 +742,10 @@ const RevaDueDiligenceForm: React.FC = () => {
               </label>
               <Input
                 type="number"
-                value={totalCost}
+                value={totalCost.toLocaleString("en-NG", {
+                  style: "currency",
+                  currency: "NGN",
+                })}
                 disabled
                 readOnly
                 placeholder="Auto-calculated total cost"
@@ -813,18 +822,15 @@ const RevaDueDiligenceForm: React.FC = () => {
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">Total Cost:</span>
               <span className="font-semibold text-xl text-blue-600">
-                NGN {totalCost}
+                {totalCost.toLocaleString("en-NG", {
+                  style: "currency",
+                  currency: "NGN",
+                })}
               </span>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
-            {/* <PaystackButton
-              className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 text-center font-semibold"
-              text="Confirm & Pay"
-              {...paystackConfig}
-            /> */}
-
             <AlertDialog>
               <AlertDialogTrigger className="w-full">
                 <Button className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 text-center font-semibold">
