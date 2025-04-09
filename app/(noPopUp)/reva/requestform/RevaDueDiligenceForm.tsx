@@ -354,9 +354,21 @@ const RevaDueDiligenceForm: React.FC = () => {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
+        const userAgent =
+          navigator.userAgent || navigator.vendor || window.opera;
+        let accuracyMax = 7; // Default value for others
+
+        if (/iPhone|iPad|iPod/i.test(userAgent)) {
+          accuracyMax = 11; // Value for iPhone
+        } else if (/android/i.test(userAgent)) {
+          accuracyMax = 5; // Value for Android
+        }
         const accuracy = position.coords.accuracy;
 
-        if (accuracy <= 5) {
+        alert(accuracyMax);
+        alert(userAgent);
+
+        if (accuracy <= accuracyMax) {
           clearTimeout(timeout);
           navigator.geolocation.clearWatch(watchIdRef.current);
 
@@ -384,6 +396,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       (error) => {
         clearTimeout(timeout);
         navigator.geolocation.clearWatch(watchIdRef.current);
+
         if (locationBtn) {
           locationBtn.disabled = false;
           locationBtn.textContent = "Use My Location";
