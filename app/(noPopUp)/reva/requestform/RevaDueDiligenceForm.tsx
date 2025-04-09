@@ -149,6 +149,7 @@ const RevaDueDiligenceForm: React.FC = () => {
         const lga = feature.attributes.LGA?.toUpperCase() || "UNKNOWN";
         const price = feature.attributes.Price || 0;
         setLga(lga);
+        alert(price);
         setTotalCost(price);
         drawLGABoundary(feature.geometry);
       } else {
@@ -616,7 +617,10 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-              <p className="info-text text-sm font-light p-1" style={{ lineHeight: "18px" }}>
+              <p
+                className="info-text text-sm font-light p-1"
+                style={{ lineHeight: "18px" }}
+              >
                 If address isn’t working or you’re at the property, use this
                 instead. We’ll use your accurate location.
               </p>
@@ -745,7 +749,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 Total Cost (NGN)
               </label>
               <Input
-                type="number"
+                type="text"
                 value={totalCost.toLocaleString("en-NG", {
                   style: "currency",
                   currency: "NGN",
