@@ -616,7 +616,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-              <p className="info-text font-light" style={{ lineHeight: "10" }}>
+              <p className="info-text text-sm font-light p-1" style={{ lineHeight: "18px" }}>
                 If address isn’t working or you’re at the property, use this
                 instead. We’ll use your accurate location.
               </p>
