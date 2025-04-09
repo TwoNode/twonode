@@ -151,6 +151,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: any) => {
       totalCost,
       files,
       comments,
+      parcelId,
     } = formData;
 
     // Upload files to AWS S3
@@ -168,6 +169,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: any) => {
       lga,
       totalCost,
       comments,
+      parcelId,
       supportingDocumentsUrls: uploadedFilesUrls,
     };
 

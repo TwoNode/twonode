@@ -57,6 +57,7 @@ model OneTimeUserProperty {
   lat                    Float?
   lng                    Float?
   lga                    String
+  parcelId               String?  // Optional
 
   totalCost              Float
   supportingDocumentsUrls String[] // Array of URLs

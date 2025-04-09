@@ -68,16 +68,18 @@ const RevaDueDiligenceForm: React.FC = () => {
   const useMyLocationRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
 
-  // Adding missing refs for map and marker
+  // Adding missing refs for map, marker, lgaBoundary, parcelBoundary, and watchId
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
+  const lgaBoundaryRef = useRef<google.maps.Polygon | null>(null);
+  const parcelBoundaryRef = useRef<google.maps.Polygon | null>(null);
+  const watchIdRef = useRef(0);
 
   // State variables
   const [isLoading, setIsLoading] = useState(false);
 
-  const [refrence, setReference] = useState("");
+  const [parcelId, setParcelId] = useState("-");
 
-  const [isWindowReady, setIsWindowReady] = useState(false);
   const [email, setEmail] = useState("");
   const [requester, setRequester] = useState("");
   const [address, setAddress] = useState("");
@@ -95,11 +97,8 @@ const RevaDueDiligenceForm: React.FC = () => {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsWindowReady(true);
-      setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
-      setPaystackPublicKey(process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "");
-    }
+    setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
+    setPaystackPublicKey(process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "");
   }, []);
 
   const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
@@ -132,22 +131,108 @@ const RevaDueDiligenceForm: React.FC = () => {
         const lng = place.geometry.location.lng();
         setLocation({ lat, lng });
         fetchLGA(lat, lng);
+        fetchParcel(lat, lng);
       }
     }
   };
 
   const fetchLGA = async (lat: number, lng: number) => {
     try {
-      const response = await fetch(
-        `https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/1/query?where=1%3D1&geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=LGA,Price&f=json`
-      );
+      const url = `https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/1/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=LGA,Price&returnGeometry=true&f=json`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.features && data.features.length > 0) {
-        setLga(data.features[0].attributes.LGA || "Unknown");
-        setTotalCost(data.features[0].attributes.Price || 0);
+        const feature = data.features[0];
+        console.log("LGA Geometry:", feature.geometry);
+        const lga = feature.attributes.LGA?.toUpperCase() || "UNKNOWN";
+        const price = feature.attributes.Price || 0;
+        setLga(lga);
+        setTotalCost(price);
+        drawLGABoundary(feature.geometry);
+      } else {
+        alert("No LGA found for this location.");
+        clearLGABoundary();
+      }
+    } catch (err) {
+      console.error("LGA Fetch Error:", err);
+      alert("Could not fetch LGA data.");
+      clearLGABoundary();
+    }
+  };
+
+  const drawLGABoundary = (geometry: any) => {
+    clearLGABoundary();
+    if (!geometry || !geometry.rings) return;
+    const polygonCoords = geometry.rings.map((ring: any) =>
+      ring.map((coord: any) => ({ lat: coord[1], lng: coord[0] }))
+    );
+
+    const lgaBoundary = new google.maps.Polygon({
+      paths: polygonCoords,
+      strokeColor: "#3b82f6",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#93c5fd",
+      fillOpacity: 0.35,
+      map: mapRef.current!,
+    });
+
+    lgaBoundary.setMap(mapRef.current!);
+    lgaBoundaryRef.current = lgaBoundary;
+  };
+
+  const clearLGABoundary = () => {
+    if (lgaBoundaryRef.current) {
+      lgaBoundaryRef.current.setMap(null);
+      lgaBoundaryRef.current = null;
+    }
+  };
+
+  const fetchParcel = async (lat: number, lng: number) => {
+    try {
+      const url = `https://services5.arcgis.com/DQqY3pyPVyNe3HvS/arcgis/rest/services/Parcels2009_gdb/FeatureServer/0/query?where=1=1&geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&f=json`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0];
+        // console.log("Parcel Geometry:", feature);
+        setParcelId(feature.attributes.ParcelID || "N/A");
+        drawParcelBoundary(feature.geometry);
+        // alert(`Parcel ID: ${feature.attributes.ParcelID || "N/A"}`);
+      } else {
+        clearParcelBoundary();
+        console.log("No parcel found.");
       }
     } catch (error) {
-      console.error("Error fetching LGA data", error);
+      console.error("Error fetching parcel:", error);
+    }
+  };
+
+  const drawParcelBoundary = (geometry: any) => {
+    clearParcelBoundary();
+    if (!geometry || !geometry.rings) return;
+    const polygonCoords = geometry.rings.map((ring: any) =>
+      ring.map((coord: any) => ({ lat: coord[1], lng: coord[0] }))
+    );
+
+    const parcelBoundary = new google.maps.Polygon({
+      paths: polygonCoords,
+      strokeColor: "#10b981",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#6ee7b7",
+      fillOpacity: 0.4,
+      map: mapRef.current!,
+    });
+
+    parcelBoundary.setMap(mapRef.current!);
+    parcelBoundaryRef.current = parcelBoundary;
+  };
+
+  const clearParcelBoundary = () => {
+    if (parcelBoundaryRef.current) {
+      parcelBoundaryRef.current.setMap(null);
+      parcelBoundaryRef.current = null;
     }
   };
 
@@ -196,7 +281,11 @@ const RevaDueDiligenceForm: React.FC = () => {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
 
+      alert(lng);
+
       fetchLGA(lat, lng);
+      fetchParcel(lat, lng);
+
       getLGA(lat, lng);
       placeMarker(latLng);
 
@@ -222,24 +311,10 @@ const RevaDueDiligenceForm: React.FC = () => {
     disableUseMyLocationButton();
   };
 
-  const handleMarkerDragEnd = (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      setLocation({ lat, lng });
-      placeMarker(event.latLng);
-      getLGA(lat, lng);
-    }
-  };
-
   const disableUseMyLocationButton = () => {
     useMyLocationRef.current?.setAttribute("disabled", "true"); // Disable the button
-    addrRef.current?.setAttribute("disabled", "true"); // Disable the button
+    addrRef.current?.setAttribute("disabled", "true"); // Disable the address input
     useMyLocationRef.current?.classList.add("opacity-50", "cursor-not-allowed");
-    // setTimeout(() => {
-    //   enableLocationButton();
-    // }
-    // , 5000); // Re-enable after 5 seconds
   };
 
   const enableUseMyLocationButton = () => {
@@ -252,30 +327,75 @@ const RevaDueDiligenceForm: React.FC = () => {
   };
 
   const useMyLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const accuracy = position.coords.accuracy; // Get accuracy in meters
-          if (accuracy <= 5) {
-            // Check if the accuracy is within 5 meters
-            const currentLocation = new google.maps.LatLng(
-              position.coords.latitude,
-              position.coords.longitude
-            );
-            placeMarker(currentLocation);
-          } else {
-            alert(
-              "Your GPS accuracy is above 5 meters. Please try again for a more accurate location or enter the address manually."
-            );
-          }
-        },
-        () => {
-          alert("Geolocation failed. Please enter the address manually.");
-        }
-      );
-    } else {
+    const locationBtn = useMyLocationRef.current;
+
+    if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
+      return;
     }
+
+    if (locationBtn) {
+      locationBtn.disabled = true;
+      locationBtn.textContent = "Locating...";
+    }
+
+    const timeout = setTimeout(() => {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+
+      if (locationBtn) {
+        locationBtn.disabled = false;
+        locationBtn.textContent = "Use My Location";
+      }
+
+      alert(
+        "Could not get accurate location. Try again or enter address manually."
+      );
+    }, 15000);
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const accuracy = position.coords.accuracy;
+
+        if (accuracy <= 5) {
+          clearTimeout(timeout);
+          navigator.geolocation.clearWatch(watchIdRef.current);
+
+          const latlng = new google.maps.LatLng(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          placeMarker(latlng);
+          fetchLGA(latlng.lat(), latlng.lng());
+          fetchParcel(latlng.lat(), latlng.lng());
+
+          if (mapRef.current) {
+            mapRef.current.setCenter(latlng);
+            mapRef.current.setZoom(18);
+          }
+
+          disableUseMyLocationButton();
+
+          if (locationBtn) {
+            locationBtn.textContent = "Location Set ✅";
+            locationBtn.classList.add("disabled");
+          }
+        }
+      },
+      (error) => {
+        clearTimeout(timeout);
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        if (locationBtn) {
+          locationBtn.disabled = false;
+          locationBtn.textContent = "Use My Location";
+        }
+        alert("Geolocation failed. Please enter the address manually.");
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 20000,
+      }
+    );
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,60 +453,6 @@ const RevaDueDiligenceForm: React.FC = () => {
     setShowReview(false);
   };
 
-  // Configuration object for Paystack payment integration
-  const paystackConfig: PaystackButtonProps = {
-    email, // Email of the payer
-    amount: totalCost * 100, // Total cost converted to kobo (Paystack uses the smallest currency unit)
-    publicKey: paystackPublicKey, // Paystack public key
-    reference: `REVA_${refrence}`, // Unique reference for the transaction
-    metadata: {
-      requester, // Name of the requester
-      address, // Property address
-      lga, // Local Government Area (LGA)
-      custom_fields: [
-        {
-          display_name: "Requester Name", // Display name for the requester
-          variable_name: "requester", // Variable name for the requester
-          value: requester, // Value of the requester
-        },
-        {
-          display_name: "Property Address", // Display name for the property address
-          variable_name: "address", // Variable name for the property address
-          value: address, // Value of the property address
-        },
-        {
-          display_name: "LGA", // Display name for the LGA
-          variable_name: "lga", // Variable name for the LGA
-          value: lga, // Value of the LGA
-        },
-      ],
-    },
-    currency: "NGN", // Currency for the transaction (Nigerian Naira)
-    onSuccess: (response: any) => {
-      console.log(Date.now().toString()); // Log the current timestamp
-      alert(`Payment successful! Transaction ID: ${response.reference}`); // Notify the user of successful payment
-      // Handle successful payment here
-      console.log("Payment successful:", response); // Log the payment response
-      router.push("/reva/viewdetails"); // Navigate to the details view page
-    },
-    onClose: () => {
-      if (isWindowReady) alert("Transaction was not completed."); // Notify the user if the transaction was closed without completion
-    },
-  };
-
-  // you can call this function anything
-  const onPaystackSuccess = (reference: string) => {
-    // Implementation for whatever you want to do with reference and after success call.
-    console.log("Payment successful with reference:", reference);
-    notifySuccess("Payment successful!");
-  };
-
-  // you can call this function anything
-  const onPaystackClose = () => {
-    // implementation for  whatever you want to do when the Paystack dialog closed.
-    console.log("closed");
-  };
-
   interface SaveFormResponse {
     data: {
       reference: string;
@@ -418,6 +484,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       totalCost,
       fileNames,
       comments,
+      parcelId,
     });
 
     saveFormDataAndInitiatePaystack({
@@ -429,6 +496,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       totalCost,
       files,
       comments,
+      parcelId,
     })
       .then((response: SaveFormResponse | any) => {
         console.log("Form data saved successfully:", response);
@@ -441,7 +509,6 @@ const RevaDueDiligenceForm: React.FC = () => {
         notifySuccess("Form data saved successfully!");
 
         if ("data" in response && response.data) {
-          setReference(response?.data?.reference!);
         } else {
           console.error("Unexpected response format:", response);
         }
@@ -455,42 +522,6 @@ const RevaDueDiligenceForm: React.FC = () => {
           // Redirect to Paystack hosted payment page
           window.location.href = checkoutUrl;
         }
-
-        // initializePayment({
-        //   onSuccess: onPaystackSuccess,
-        //   onClose: onPaystackClose,
-        // });
-
-        // setShowReview(true); // Show the review section
-        // // Reset the form fields
-        // setEmail("");
-        // setRequester("");
-        // setAddress("");
-        // setLocation(null);
-        // setLga("Unknown");
-        // setTotalCost(0);
-        // setFileNames([]);
-        // setComments("");
-        // Reset the map and marker
-        // if (mapRef.current) {
-        //   mapRef.current.setCenter(center);
-        //   mapRef.current.setZoom(12);
-        // }
-        // if (markerRef.current) {
-        //   markerRef.current.setMap(null);
-        // }
-        // // Reset the autocomplete input
-        // if (addrRef.current) {
-        //   addrRef.current.value = "";
-        // }
-        // // Reset the use my location button
-        // if (useMyLocationRef.current) {
-        //   useMyLocationRef.current.removeAttribute("disabled");
-        //   useMyLocationRef.current.classList.remove(
-        //     "opacity-50",
-        //     "cursor-not-allowed"
-        //   );
-        // }
       })
       .catch((error) => {
         console.error("Error saving form data:", error);
@@ -501,7 +532,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       });
   };
 
-  if (!googleMapsApiKey || !isWindowReady) {
+  if (!googleMapsApiKey) {
     // Show a loading spinner or message while waiting for the API key
     // and window object to be available
 
@@ -521,6 +552,7 @@ const RevaDueDiligenceForm: React.FC = () => {
           </div>
         </>
       )}
+
       {!showReview ? (
         <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
           <h2 className="text-3xl font-extrabold text-blue-700 mb-4 text-center">
@@ -611,6 +643,23 @@ const RevaDueDiligenceForm: React.FC = () => {
             >
               {location && <Marker position={location} />}
             </GoogleMap>
+
+            <div
+              id="parcelInfo"
+              className={`mt-5 p-4 border rounded-lg ${
+                location ? "bg-green-50 border-green-200" : "hidden"
+              }`}
+            >
+              <h3 className="mb-2 text-lg font-semibold text-green-700">
+                Parcel Information
+              </h3>
+              <p className="text-sm text-gray-700">
+                <strong>Parcel </strong>{" "}
+                <span id="parcelId" className="text-gray-900">
+                  {location ? parcelId : "-"}
+                </span>
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -713,22 +762,31 @@ const RevaDueDiligenceForm: React.FC = () => {
               <span className="text-gray-600 font-medium">Email:</span>
               <span className="text-gray-800 font-semibold">{email}</span>
             </div>
+
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">Requester Name:</span>
               <span className="text-gray-800 font-semibold">{requester}</span>
             </div>
+
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">
                 Property Address:
               </span>
               <span className="text-gray-800 font-semibold">{address}</span>
             </div>
+
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">Location:</span>
               <span className="text-gray-800 font-semibold">
                 {location ? `${location.lat}, ${location.lng}` : "Not set"}
               </span>
             </div>
+
+            <div className="flex justify-between items-center border-b pb-2">
+              <span className="text-gray-600 font-medium">Parcel ID:</span>
+              <span className="text-gray-800 font-semibold">{parcelId}</span>
+            </div>
+
             <div className="flex justify-between items-center border-b pb-2">
               <span className="text-gray-600 font-medium">LGA:</span>
               <span className="text-gray-800 font-semibold">{lga}</span>
