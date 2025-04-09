@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
@@ -149,7 +150,6 @@ const RevaDueDiligenceForm: React.FC = () => {
         const lga = feature.attributes.LGA?.toUpperCase() || "UNKNOWN";
         const price = feature.attributes.Price || 0;
         setLga(lga);
-        alert(price);
         setTotalCost(price);
         drawLGABoundary(feature.geometry);
       } else {
@@ -201,7 +201,6 @@ const RevaDueDiligenceForm: React.FC = () => {
         // console.log("Parcel Geometry:", feature);
         setParcelId(feature.attributes.ParcelID || "N/A");
         drawParcelBoundary(feature.geometry);
-        // alert(`Parcel ID: ${feature.attributes.ParcelID || "N/A"}`);
       } else {
         clearParcelBoundary();
         console.log("No parcel found.");
@@ -836,6 +835,29 @@ const RevaDueDiligenceForm: React.FC = () => {
                 })}
               </span>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                required
+                className="form-checkbox h-5 w-5 text-blue-600"
+              />
+              <span className="text-sm text-gray-700">
+                I have read and agree to the{" "}
+                <Link
+                  href="#"
+                  className="text-blue-600 underline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
           </div>
 
           <div className="mt-6 space-y-4">
