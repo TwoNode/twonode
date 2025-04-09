@@ -410,6 +410,10 @@ const RevaDueDiligenceForm: React.FC = () => {
   };
 
   const verifyAllFields = () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      notifyError("Invalid email format");
+      return false;
+    }
     if (!email) {
       notifyError("Email is required");
       return false;
