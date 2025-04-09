@@ -62,6 +62,8 @@ const containerStyle = {
 
 const center = { lat: 6.5244, lng: 3.3792 };
 
+const watchTime = 30000;
+
 const RevaDueDiligenceForm: React.FC = () => {
   const router = useRouter();
   const addrRef = useRef<HTMLInputElement>(null);
@@ -281,8 +283,6 @@ const RevaDueDiligenceForm: React.FC = () => {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
 
-      alert(lng);
-
       fetchLGA(lat, lng);
       fetchParcel(lat, lng);
 
@@ -291,7 +291,7 @@ const RevaDueDiligenceForm: React.FC = () => {
 
       if (mapRef.current) {
         mapRef.current.setCenter(latLng);
-        mapRef.current.setZoom(15);
+        mapRef.current.setZoom(18);
       }
 
       const geocoder = new google.maps.Geocoder();
@@ -350,7 +350,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       alert(
         "Could not get accurate location. Try again or enter address manually."
       );
-    }, 15000);
+    }, watchTime);
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -393,7 +393,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-        timeout: 20000,
+        timeout: (watchTime * 3) / 2,
       }
     );
   };
@@ -568,8 +568,10 @@ const RevaDueDiligenceForm: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
+
               <Input
                 type="email"
+                autoComplete="on"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
@@ -604,10 +606,10 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-              <p className="info-text">
+                <p className="info-text font-light" style={{ lineHeight: "10" }}>
                 If address isn’t working or you’re at the property, use this
                 instead. We’ll use your accurate location.
-              </p>
+                </p>
 
               <div className="flex gap-5 justify-between">
                 <div className="mt-2">
@@ -632,7 +634,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             <GoogleMap
               mapContainerStyle={containerStyle}
               center={location || center}
-              zoom={location ? 15 : 12}
+              zoom={location ? 18 : 12}
               onLoad={(map) => {
                 mapRef.current = map;
                 if (location) {
