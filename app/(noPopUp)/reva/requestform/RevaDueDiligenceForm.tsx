@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { PaystackProps, callback } from "react-paystack/dist/types";
 import { toast } from "react-toastify";
 import { saveFormDataAndInitiatePaystack } from "../actions/dbActions";
+import Bowser from "bowser";
 
 import {
   AlertDialog,
@@ -80,6 +81,8 @@ const RevaDueDiligenceForm: React.FC = () => {
 
   // State variables
   const [isLoading, setIsLoading] = useState(false);
+  const [locationButtonText, setLocationButtonText] =
+    useState("Use My Location");
 
   const [parcelId, setParcelId] = useState("-");
 
@@ -327,49 +330,30 @@ const RevaDueDiligenceForm: React.FC = () => {
   };
 
   const useMyLocation = () => {
-    const locationBtn = useMyLocationRef.current;
-
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
       return;
     }
 
-    if (locationBtn) {
-      locationBtn.disabled = true;
-      locationBtn.textContent = "Locating...";
+    const locationBtn = useMyLocationRef.current;
+    const browser = Bowser.getParser(window.navigator.userAgent);
+    const platform = browser.getPlatformType();
+    let accuracyMax = 7;
+
+    if (platform === "mobile" && browser.getOSName() === "iOS") {
+      accuracyMax = 11;
+    } else if (platform === "mobile" && browser.getOSName() === "Android") {
+      accuracyMax = 5;
     }
 
-    const timeout = setTimeout(() => {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-
-      if (locationBtn) {
-        locationBtn.disabled = false;
-        locationBtn.textContent = "Use My Location";
-      }
-
-      alert(
-        "Could not get accurate location. Try again or enter address manually."
-      );
-    }, watchTime);
+    setLocationButtonText("Locating...");
+    locationBtn?.setAttribute("disabled", "true");
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const userAgent =
-          navigator.userAgent || navigator.vendor || window.opera;
-        let accuracyMax = 7; // Default value for others
-
-        if (/iPhone|iPad|iPod/i.test(userAgent)) {
-          accuracyMax = 11; // Value for iPhone
-        } else if (/android/i.test(userAgent)) {
-          accuracyMax = 5; // Value for Android
-        }
         const accuracy = position.coords.accuracy;
 
-        alert(accuracyMax);
-        alert(userAgent);
-
         if (accuracy <= accuracyMax) {
-          clearTimeout(timeout);
           navigator.geolocation.clearWatch(watchIdRef.current);
 
           const latlng = new google.maps.LatLng(
@@ -386,22 +370,90 @@ const RevaDueDiligenceForm: React.FC = () => {
           }
 
           disableUseMyLocationButton();
+          setLocationButtonText("Location Set ✅");
+          clearTimeout(timeout);
+        } else {
+          const confirmFallback = window.confirm(
+            `Accuracy is ${accuracy.toFixed(
+              2
+            )}m (threshold: ${accuracyMax}m). Use anyway?`
+          );
 
-          if (locationBtn) {
-            locationBtn.textContent = "Location Set ✅";
-            locationBtn.classList.add("disabled");
+          if (confirmFallback) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+
+            const latlng = new google.maps.LatLng(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            placeMarker(latlng);
+            fetchLGA(latlng.lat(), latlng.lng());
+            fetchParcel(latlng.lat(), latlng.lng());
+
+            if (mapRef.current) {
+              mapRef.current.setCenter(latlng);
+              mapRef.current.setZoom(18);
+            }
+
+            disableUseMyLocationButton();
+            setLocationButtonText("Location Set ✅");
+            clearTimeout(timeout);
+          } else {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            locationBtn?.removeAttribute("disabled");
+            setLocationButtonText("Use My Location");
+            alert("Try again or enter the address manually.");
           }
         }
       },
       (error) => {
-        clearTimeout(timeout);
         navigator.geolocation.clearWatch(watchIdRef.current);
+        locationBtn?.removeAttribute("disabled");
+        setLocationButtonText("Use My Location");
 
-        if (locationBtn) {
-          locationBtn.disabled = false;
-          locationBtn.textContent = "Use My Location";
+        if (error.code === error.POSITION_UNAVAILABLE) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const latlng = new google.maps.LatLng(
+                position.coords.latitude,
+                position.coords.longitude
+              );
+              placeMarker(latlng);
+              fetchLGA(latlng.lat(), latlng.lng());
+              fetchParcel(latlng.lat(), latlng.lng());
+
+              if (mapRef.current) {
+                mapRef.current.setCenter(latlng);
+                mapRef.current.setZoom(18);
+              }
+
+              disableUseMyLocationButton();
+              setLocationButtonText("Location Set ✅");
+            },
+            (fallbackError) => {
+              console.error("Fallback geolocation failed:", fallbackError);
+              alert(
+                "Could not retrieve location. Please enter the address manually."
+              );
+            },
+            {
+              enableHighAccuracy: false,
+              maximumAge: 0,
+              timeout: watchTime,
+            }
+          );
+        } else {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              alert("Permission denied. Please allow location access.");
+              break;
+            case error.TIMEOUT:
+              alert("Location request timed out.");
+              break;
+            default:
+              alert("An unknown error occurred.");
+          }
         }
-        alert("Geolocation failed. Please enter the address manually.");
       },
       {
         enableHighAccuracy: true,
@@ -409,6 +461,15 @@ const RevaDueDiligenceForm: React.FC = () => {
         timeout: (watchTime * 3) / 2,
       }
     );
+
+    const timeout = setTimeout(() => {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      locationBtn?.removeAttribute("disabled");
+      setLocationButtonText("Use My Location");
+      alert(
+        "Could not get accurate location. Try again or enter address manually."
+      );
+    }, watchTime);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -644,7 +705,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                     ref={useMyLocationRef}
                     className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
                   >
-                    Use My Location
+                    {locationButtonText}
                   </Button>
                 </div>
 
