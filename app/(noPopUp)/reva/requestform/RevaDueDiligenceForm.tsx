@@ -976,7 +976,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                     setOpenPrivacyModal(!openPrivacyModal);
                   }}
                 >
-                  Privacy Policy
+                  Terms and Conditions
                 </Link>
                 .
               </span>
