@@ -738,13 +738,13 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-              {/* <p
+              <p
                 className="info-text text-sm font-light p-1"
                 style={{ lineHeight: "18px" }}
               >
-                If address is not available and you’re on the property, tap “Use
-                my Location” We’ll use your accurate Location.
-              </p> */}
+                If you property is easily searchable, enter it here to auto-fill
+                location info
+              </p>
 
               <p
                 className="info-text text-sm font-light p-1"
