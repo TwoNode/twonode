@@ -346,6 +346,8 @@ const RevaDueDiligenceForm: React.FC = () => {
       accuracyMax = 5;
     }
 
+    notifyWarning(platform);
+
     setLocationButtonText("Locating...");
     locationBtn?.setAttribute("disabled", "true");
 
@@ -371,7 +373,6 @@ const RevaDueDiligenceForm: React.FC = () => {
 
           disableUseMyLocationButton();
           setLocationButtonText("Location Set ✅");
-          clearTimeout(timeout);
         } else {
           const confirmFallback = window.confirm(
             `Accuracy is ${accuracy.toFixed(
@@ -397,7 +398,6 @@ const RevaDueDiligenceForm: React.FC = () => {
 
             disableUseMyLocationButton();
             setLocationButtonText("Location Set ✅");
-            clearTimeout(timeout);
           } else {
             navigator.geolocation.clearWatch(watchIdRef.current);
             locationBtn?.removeAttribute("disabled");
@@ -461,15 +461,6 @@ const RevaDueDiligenceForm: React.FC = () => {
         timeout: (watchTime * 3) / 2,
       }
     );
-
-    const timeout = setTimeout(() => {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      locationBtn?.removeAttribute("disabled");
-      setLocationButtonText("Use My Location");
-      alert(
-        "Could not get accurate location. Try again or enter address manually."
-      );
-    }, watchTime);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -694,8 +685,8 @@ const RevaDueDiligenceForm: React.FC = () => {
                 className="info-text text-sm font-light p-1"
                 style={{ lineHeight: "18px" }}
               >
-                If address isn’t working or you’re at the property, use this
-                instead. We’ll use your accurate location.
+                If address is not available and you’re on the property, tap “Use
+                my Location” We’ll use your accurate Location.
               </p>
 
               <div className="flex gap-5 justify-between">
