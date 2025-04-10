@@ -73,6 +73,8 @@ const RevaDueDiligenceForm: React.FC = () => {
   const filesRef = useRef<HTMLInputElement>(null);
 
   // Adding missing refs for map, marker, lgaBoundary, parcelBoundary, and watchId
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const lgaBoundaryRef = useRef<google.maps.Polygon | null>(null);
@@ -99,8 +101,8 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [paystackPublicKey, setPaystackPublicKey] = useState("");
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [comments, setComments] = useState("");
-
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [showConfirmFallback, setShowConfirmFallback] = useState(false);
+  const [fallbackPosition, setFallbackPosition] = useState<any>(null);
 
   useEffect(() => {
     setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
@@ -374,36 +376,8 @@ const RevaDueDiligenceForm: React.FC = () => {
           disableUseMyLocationButton();
           setLocationButtonText("Location Set ✅");
         } else {
-          const confirmFallback = window.confirm(
-            `Accuracy is ${accuracy.toFixed(
-              2
-            )}m (threshold: ${accuracyMax}m). Use anyway?`
-          );
-
-          if (confirmFallback) {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-
-            const latlng = new google.maps.LatLng(
-              position.coords.latitude,
-              position.coords.longitude
-            );
-            placeMarker(latlng);
-            fetchLGA(latlng.lat(), latlng.lng());
-            fetchParcel(latlng.lat(), latlng.lng());
-
-            if (mapRef.current) {
-              mapRef.current.setCenter(latlng);
-              mapRef.current.setZoom(18);
-            }
-
-            disableUseMyLocationButton();
-            setLocationButtonText("Location Set ✅");
-          } else {
-            navigator.geolocation.clearWatch(watchIdRef.current);
-            locationBtn?.removeAttribute("disabled");
-            setLocationButtonText("Use My Location");
-            alert("Try again or enter the address manually.");
-          }
+          setFallbackPosition(position);
+          setShowConfirmFallback(true);
         }
       },
       (error) => {
@@ -461,6 +435,42 @@ const RevaDueDiligenceForm: React.FC = () => {
         timeout: (watchTime * 3) / 2,
       }
     );
+  };
+
+  const handleUseMyLocationFallback = (fallback = true) => {
+    if (fallback) {
+      const accuracy = fallbackPosition.coords.accuracy;
+
+      if (!fallbackPosition) return;
+      navigator.geolocation.clearWatch(watchIdRef.current);
+
+      const latlng = new google.maps.LatLng(
+        fallbackPosition.coords.latitude,
+        fallbackPosition.coords.longitude
+      );
+
+      placeMarker(latlng);
+      fetchLGA(latlng.lat(), latlng.lng());
+      fetchParcel(latlng.lat(), latlng.lng());
+
+      if (mapRef.current) {
+        mapRef.current.setCenter(latlng);
+        mapRef.current.setZoom(18);
+      }
+
+      disableUseMyLocationButton();
+      setLocationButtonText("Location Set ✅");
+      setShowConfirmFallback(false);
+
+      notifyWarning(`Location Set with ${accuracy} accuracy`);
+    } else {
+      setShowConfirmFallback(false);
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      enableUseMyLocationButton();
+      setLocationButtonText("Use My Location");
+
+      notifyWarning("Please try again or enter the address manually.");
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -621,6 +631,38 @@ const RevaDueDiligenceForm: React.FC = () => {
           </div>
         </>
       )}
+
+      <AlertDialog
+        open={showConfirmFallback}
+        onOpenChange={setShowConfirmFallback}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Low Location Accuracy</AlertDialogTitle>
+            <AlertDialogDescription>
+              Accuracy of{" "}
+              <b className="text-red-500 text-lg px-2">
+                {" "}
+                {fallbackPosition?.coords?.accuracy!}{" "}
+              </b>{" "}
+              is outside expected range. Do you want to use this location
+              anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                handleUseMyLocationFallback(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleUseMyLocationFallback()}>
+              Use Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {!showReview ? (
         <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
