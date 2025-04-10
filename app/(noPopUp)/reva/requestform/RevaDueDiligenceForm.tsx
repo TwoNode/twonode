@@ -738,12 +738,24 @@ const RevaDueDiligenceForm: React.FC = () => {
                 />
               </Autocomplete>
 
-              <p
+              {/* <p
                 className="info-text text-sm font-light p-1"
                 style={{ lineHeight: "18px" }}
               >
                 If address is not available and you’re on the property, tap “Use
                 my Location” We’ll use your accurate Location.
+              </p> */}
+
+              <p
+                className="info-text text-sm font-light p-1"
+                style={{ lineHeight: "18px" }}
+              >
+                if address isn't working or you're at the property, use the
+                <span className="inline-block py-1 px-2 mx-[2px] whitespace-nowrap bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                  {" "}
+                  Use My Location{" "}
+                </span>
+                button below instead. We'll use your accurate location.
               </p>
 
               <div className="flex gap-5 justify-between">
