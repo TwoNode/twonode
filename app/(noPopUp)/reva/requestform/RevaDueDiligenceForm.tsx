@@ -27,6 +27,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 import Link from "next/link";
 
 const notifyError = (msg: string) => toast.error(msg);
@@ -103,6 +112,7 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [comments, setComments] = useState("");
   const [showConfirmFallback, setShowConfirmFallback] = useState(false);
   const [fallbackPosition, setFallbackPosition] = useState<any>(null);
+  const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
 
   useEffect(() => {
     setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
@@ -624,6 +634,11 @@ const RevaDueDiligenceForm: React.FC = () => {
 
   return (
     <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={["places"]}>
+      <PrivacyPolicyModal
+        open={openPrivacyModal}
+        setOpen={setOpenPrivacyModal}
+      />
+
       {isLoading && (
         <>
           <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
@@ -958,6 +973,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                   className="text-blue-600 underline"
                   onClick={(e) => {
                     e.preventDefault();
+                    setOpenPrivacyModal(!openPrivacyModal);
                   }}
                 >
                   Privacy Policy
@@ -1123,6 +1139,145 @@ const PrivacyPolicy: React.FC = () => {
           </p>
         </section>
       </div>
+    </div>
+  );
+};
+
+const PrivacyPolicyModal = ({
+  open,
+  setOpen,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}) => {
+  return (
+    <div className="mt-4">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-extrabold text-blue-700 text-center">
+              Privacy Policy
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 text-gray-700 overflow-y-auto max-h-[70vh]">
+            <section>
+              <h2 className="text-xl font-bold mb-2">1. Introduction</h2>
+              <p>
+                REVA ("we," "us," or "our") (by TwoNode Technologies) is
+                committed to protecting your privacy. This Privacy Policy
+                explains how we collect, use, and safeguard your information
+                when you use our platform for real estate due diligence reports.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                2. Information We Collect
+              </h2>
+              <ul className="list-disc pl-5">
+                <li>
+                  <strong>Personal Information:</strong> Name, email address,
+                  and payment details when you request a report.
+                </li>
+                <li>
+                  <strong>Property Information:</strong> Property address and
+                  details provided by users for due diligence checks.
+                </li>
+                <li>
+                  <strong>Automatically Collected Information:</strong> Device
+                  and usage data, including IP addresses and geolocation data
+                  when enabled.
+                </li>
+              </ul>
+              <p>
+                We do not sell, trade, or misuse your information. We may share
+                necessary data with trusted partners, such as payment processors
+                (e.g., Paystack) or government agencies, strictly for service
+                delivery and compliance purposes.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                3. How We Use Your Information
+              </h2>
+              <ul className="list-disc pl-5">
+                <li>
+                  Provide real estate due diligence reports based on available
+                  records.
+                </li>
+                <li>Process payments and generate receipts.</li>
+                <li>Improve our platform’s accuracy and efficiency.</li>
+                <li>Comply with legal obligations and prevent fraud.</li>
+              </ul>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                4. Data Accuracy and Limitations
+              </h2>
+              <p>
+                REVA relies on available data sources for due diligence reports.
+                The absence of information in any of the four chapters of our
+                report (Title Search, Historical Survey Records, Charting
+                Information, and Land use) indicates that no records were found
+                from our virtual search network at the time of the request. This
+                does not guarantee the nonexistence of such records in external
+                sources beyond our access.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">5. Data Security</h2>
+              <p>
+                We implement appropriate security measures to protect your data
+                from unauthorized access. However, we cannot guarantee absolute
+                security due to the nature of online data transmission.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                6. Third-Party Services
+              </h2>
+              <p>
+                We may share necessary data with payment processors (e.g.,
+                Paystack) and government agencies where required by law. We do
+                not sell your personal data to third parties.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                7. Cookies? Yes, Please!
+              </h2>
+              <p>
+                We use cookies to enhance user experience—things like
+                remembering form inputs and session data. You can disable
+                cookies in your browser, but some features may not function
+                optimally.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">
+                8. Updates to This Policy
+              </h2>
+              <p>
+                We may update this Privacy Policy periodically. Users will be
+                notified of significant changes via email or platform
+                notifications.
+              </p>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold mb-2">9. Contact Us</h2>
+              <p>
+                For questions regarding this policy, contact us at{" "}
+                <a
+                  href="mailto:info@twonodetechnologies.com"
+                  className="text-blue-600 underline"
+                >
+                  info@twonodetechnologies.com
+                </a>
+                .
+              </p>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
