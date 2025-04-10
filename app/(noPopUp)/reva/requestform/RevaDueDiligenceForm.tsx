@@ -1030,15 +1030,15 @@ const PrivacyPolicy: React.FC = () => {
   return (
     <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-4xl">
       <h1 className="text-3xl font-extrabold text-blue-700 mb-6 text-center">
-        Privacy Policy
+        Terms and Conditions
       </h1>
       <div className="space-y-6 text-gray-700">
         <section>
           <h2 className="text-xl font-bold mb-2">1. Introduction</h2>
           <p>
             REVA ("we," "us," or "our") (by TwoNode Technologies) is committed
-            to protecting your privacy. This Privacy Policy explains how we
-            collect, use, and safeguard your information when you use our
+            to protecting your privacy. This Terms and Conditions explains how
+            we collect, use, and safeguard your information when you use our
             platform for real estate due diligence reports.
           </p>
         </section>
@@ -1121,7 +1121,7 @@ const PrivacyPolicy: React.FC = () => {
         <section>
           <h2 className="text-xl font-bold mb-2">8. Updates to This Policy</h2>
           <p>
-            We may update this Privacy Policy periodically. Users will be
+            We may update this Terms and Conditions periodically. Users will be
             notified of significant changes via email or platform notifications.
           </p>
         </section>
@@ -1156,7 +1156,7 @@ const PrivacyPolicyModal = ({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-extrabold text-blue-700 text-center">
-              Privacy Policy
+              Terms and Conditions
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 text-gray-700 overflow-y-auto max-h-[70vh]">
@@ -1164,7 +1164,7 @@ const PrivacyPolicyModal = ({
               <h2 className="text-xl font-bold mb-2">1. Introduction</h2>
               <p>
                 REVA ("we," "us," or "our") (by TwoNode Technologies) is
-                committed to protecting your privacy. This Privacy Policy
+                committed to protecting your privacy. This Terms and Conditions
                 explains how we collect, use, and safeguard your information
                 when you use our platform for real estate due diligence reports.
               </p>
@@ -1257,8 +1257,8 @@ const PrivacyPolicyModal = ({
                 8. Updates to This Policy
               </h2>
               <p>
-                We may update this Privacy Policy periodically. Users will be
-                notified of significant changes via email or platform
+                We may update this Terms and Conditions periodically. Users will
+                be notified of significant changes via email or platform
                 notifications.
               </p>
             </section>
