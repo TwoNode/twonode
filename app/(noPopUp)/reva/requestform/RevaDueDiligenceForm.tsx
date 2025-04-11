@@ -631,6 +631,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       })
       .catch((error) => {
         console.error("Error saving form data:", error);
+        console.warn(JSON.stringify(error));
         notifyError(error.message || "Error saving form data");
       })
       .finally(() => {

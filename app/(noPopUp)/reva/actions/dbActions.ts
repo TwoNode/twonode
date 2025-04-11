@@ -242,7 +242,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
     // Optionally, you can revalidate a specific path or redirect after saving
   } catch (error) {
     console.error("Error in saveFormDataAndInitiatePaystack:", error);
-    return { error: "Internal Server Error", status: 500 };
+    return { error, status: 500 };
   }
 };
 
