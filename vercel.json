@@ -1,0 +1,12 @@
+{
+    "functions": {
+        "api/*": {
+            "runtime": "nodejs"
+        }
+    },
+    "build": {
+        "env": {
+            "PRISMA_CLI_BINARY_TARGETS": "rhel-openssl-3.0.x"
+        }
+    }
+}
