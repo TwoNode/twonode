@@ -9,6 +9,9 @@ const s3 = new S3Client({
     accessKeyId: process.env.REVA_AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.REVA_AWS_SECRET_ACCESS_KEY!,
   },
+  // endpoint: `https://${process.env.REVA_AWS_BUCKET_NAME}.s3.${process.env.REVA_AWS_REGION}.amazonaws.com`, // Explicitly set endpoint
+  endpoint: `https://s3.${process.env.REVA_AWS_REGION}.amazonaws.com`, // Correct endpoint format
+  forcePathStyle: true, // Force path-style for compatibility
 });
 
 export async function uploadToS3(formData: FormData) {
@@ -34,7 +37,7 @@ export async function uploadToS3(formData: FormData) {
     );
   }
 
-  revalidatePath("/upload"); // Optional: revalidate page if needed
+  revalidatePath("/reva/requestform"); // Optional: revalidate page if needed
 }
 
 export async function uploadToS3FromServer(files: File[]) {
@@ -61,6 +64,7 @@ export async function uploadToS3FromServer(files: File[]) {
 
     const fileUrl = `https://${process.env.REVA_AWS_BUCKET_NAME!}.s3.${process
       .env.REVA_AWS_REGION!}.amazonaws.com/${key}`;
+
     fileUrls.push(fileUrl);
   }
 

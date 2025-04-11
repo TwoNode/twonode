@@ -18,8 +18,8 @@ export const FrequentlyAskedQuestions = () => {
         d="M2 10H18M10.0001 2V18"
         stroke="#141414"
         strokeWidth="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

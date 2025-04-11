@@ -2,8 +2,13 @@
 
 import { FC, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 
-const ViewDetailsContent: FC = () => {
+const ViewDetailsContent = ({ formData }: { formData: any }) => {
+  const router = useRouter();
+
   const [transactionDetails, setTransactionDetails] = useState({});
   const searchParams = useSearchParams();
   const trxref = searchParams.get("trxref");
@@ -13,29 +18,73 @@ const ViewDetailsContent: FC = () => {
   console.log("Reference:", reference);
 
   return (
-    <div>
-      <h1>Welcome to REVA</h1>
-      <h2>Transaction Details</h2>
-      <p>Transaction Reference: {trxref}</p>
-      <p>Reference: {reference}</p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+      <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-2xl">
+        <h1 className="text-3xl font-bold text-green-700 text-center mb-6">
+          Submission Successful
+        </h1>
+        <p className="text-center text-gray-600 mb-6">
+          Thank you for your request. Your transaction reference is:
+        </p>
 
-      <p>
-        Simplify your real estate due diligence process with REVA. Request
-        detailed land reports effortlessly and make informed decisions.
-      </p>
-      <button onClick={() => alert("More details coming soon!")}>
-        Learn More
-      </button>
+        <div className="text-center text-blue-600 font-semibold text-lg mb-6">
+          Transaction Ref: <span>{trxref}</span>
+          <br /> Reference: <span>{reference}</span>
+        </div>
+
+        <div className="space-y-4">
+          <Detail label="Requester Name" value={formData?.requester} />
+          <Detail label="Email" value={formData?.email} />
+          <Detail label="Property Address" value={formData?.address} />
+          <Detail
+            label="Location"
+            value={`${formData?.lat}, ${formData?.lng}`}
+          />
+          <Detail
+            label="Parcel ID"
+            value={removeIdPrefix(formData?.parcelId)}
+          />
+          <Detail label="LGA" value={formData?.lga} />
+          <Detail
+            label="Total Cost"
+            value={formData?.totalCost?.toLocaleString("en-NG", {
+              style: "currency",
+              currency: "NGN",
+            })}
+          />
+          {formData?.comments && (
+            <Detail label="Comments" value={formData?.comments} />
+          )}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Button
+            className="bg-blue-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
+            onClick={() => router.push("/reva")}
+          >
+            Go to Reva Homepage
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
 
-const ViewDetails: FC = () => {
+const ViewDetails = ({ formData }: { formData: any }) => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ViewDetailsContent />
+      <ViewDetailsContent formData={formData} />
     </Suspense>
   );
 };
 
 export default ViewDetails;
+
+const Detail = ({ label = "", value = "" }) => (
+  <div className="flex justify-between items-center border-b pb-2">
+    <span className="text-gray-600 font-medium">{label}:</span>
+    <span className="text-gray-800 font-semibold text-right ml-4 max-w-[60%] truncate">
+      {value}
+    </span>
+  </div>
+);

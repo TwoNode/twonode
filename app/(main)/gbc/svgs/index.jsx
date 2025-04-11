@@ -30,27 +30,27 @@ export const ShareSvg = (
       cy="14.4547"
       r="2"
       stroke="white"
-      stroke-width="3.90944"
+      strokeWidth="3.90944"
     />
     <circle
       cx="28.8844"
       cy="31.402"
       r="2"
       stroke="white"
-      stroke-width="3.90944"
+      strokeWidth="3.90944"
     />
     <circle
       cx="16.4547"
       cy="22.9274"
       r="2"
       stroke="white"
-      stroke-width="3.90944"
+      strokeWidth="3.90944"
     />
-    <path d="M18.6523 21.863L27.1917 16.1484" stroke="white" stroke-width="4" />
+    <path d="M18.6523 21.863L27.1917 16.1484" stroke="white" strokeWidth="4" />
     <path
       d="M18.1523 24.0589L27.1917 30.2734"
       stroke="white"
-      stroke-width="4"
+      strokeWidth="4"
     />
   </svg>
 );

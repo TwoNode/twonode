@@ -32,7 +32,8 @@ export const initializePaystack = async ({
 
 export const verifyPaystackTransaction = async (reference: string) => {
   try {
-    const response = await paystack.transaction.verify(reference);
+    const response = await paystack.transaction.verify({ reference });
+    // console.log(response);
     return response;
   } catch (error) {
     console.error("Error verifying Paystack transaction:", error);

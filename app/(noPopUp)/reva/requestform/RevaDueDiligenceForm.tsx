@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 
 import Link from "next/link";
+import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 
 const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
@@ -76,7 +77,6 @@ const center = { lat: 6.5244, lng: 3.3792 };
 const watchTime = 30000;
 
 const RevaDueDiligenceForm: React.FC = () => {
-  const router = useRouter();
   const addrRef = useRef<HTMLInputElement>(null);
   const useMyLocationRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
@@ -113,6 +113,8 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [showConfirmFallback, setShowConfirmFallback] = useState(false);
   const [fallbackPosition, setFallbackPosition] = useState<any>(null);
   const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
+  const [hasAcceptedPrivacyTerms, setHasAcceptedPrivacyTerms] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
     setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
@@ -214,7 +216,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
         // console.log("Parcel Geometry:", feature);
-        setParcelId(feature.attributes.ParcelID || "N/A");
+        setParcelId(removeIdPrefix(feature.attributes.ParcelID || "N/A"));
         drawParcelBoundary(feature.geometry);
       } else {
         clearParcelBoundary();
@@ -484,10 +486,9 @@ const RevaDueDiligenceForm: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-
-    if (files) {
-      const fileNames = Array.from(files).map((file) => file.name);
+    if (e.target.files) {
+      setSelectedFiles(e.target.files); // Store files in state
+      const fileNames = Array.from(e.target.files).map((file) => file.name);
       setFileNames(fileNames);
     } else {
       notifyError("No files selected");
@@ -495,12 +496,12 @@ const RevaDueDiligenceForm: React.FC = () => {
   };
 
   const verifyAllFields = () => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      notifyError("Invalid email format");
-      return false;
-    }
     if (!email) {
       notifyError("Email is required");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      notifyError("Invalid email format");
       return false;
     }
     if (!requester) {
@@ -554,16 +555,39 @@ const RevaDueDiligenceForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     if (!verifyAllFields()) {
-      setIsLoading(false);
       return;
     }
 
-    const files = filesRef.current?.files;
+    if (!hasAcceptedPrivacyTerms) {
+      notifyError(
+        "Please Read and Agree to the Terms of Use and Privacy and Policy."
+      );
+      return;
+    }
+
+    setIsLoading(true);
 
     // Handle form submission logic here
+
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("requester", requester);
+    formData.append("address", address);
+    formData.append("location", JSON.stringify(location));
+    formData.append("lga", lga);
+    formData.append("totalCost", totalCost.toString());
+    formData.append("comments", comments);
+    formData.append("parcelId", parcelId);
+
+    const files = selectedFiles;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+      }
+    }
+
     console.log("Form submitted with values:", {
       email,
       requester,
@@ -572,21 +596,14 @@ const RevaDueDiligenceForm: React.FC = () => {
       lga,
       totalCost,
       fileNames,
+      files,
       comments,
       parcelId,
     });
 
-    saveFormDataAndInitiatePaystack({
-      email,
-      requester,
-      address,
-      location,
-      lga,
-      totalCost,
-      files,
-      comments,
-      parcelId,
-    })
+    console.log(formData);
+
+    saveFormDataAndInitiatePaystack(formData)
       .then((response: SaveFormResponse | any) => {
         console.log("Form data saved successfully:", response);
 
@@ -714,7 +731,10 @@ const RevaDueDiligenceForm: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => {
-                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                  if (!email) {
+                    notifyError("Email is required");
+                    return false;
+                  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                     notifyError("Invalid email format");
                   }
                 }}
@@ -740,10 +760,13 @@ const RevaDueDiligenceForm: React.FC = () => {
 
               <p
                 className="info-text text-sm font-light p-1"
-                style={{ lineHeight: "18px" }}
+                style={{ lineHeight: "12px" }}
               >
-                If you property is easily searchable, enter it here to auto-fill
-                location info
+                if address isn't available and you're at the property, tap{" "}
+                <span className="inline-block py-1 px-1 mx-[2px] text-xs whitespace-nowrap bg-slate-100 rounded-sm">
+                  Use My Location.
+                </span>{" "}
+                We'll use your accurate location.
               </p>
 
               <div className="flex gap-5 justify-between">
@@ -765,18 +788,6 @@ const RevaDueDiligenceForm: React.FC = () => {
                 </Button>
               </div>
             </div>
-
-            <p
-              className="info-text text-sm font-light p-1"
-              style={{ lineHeight: "18px" }}
-            >
-              if address isn't working or you're at the property, use the
-              <span className="inline-block py-1 px-1 mx-[2px] text-base whitespace-nowrap">
-                {" "}
-                Use My Location{" "}
-              </span>
-              button below instead. We'll use your accurate location.
-            </p>
 
             <GoogleMap
               mapContainerStyle={containerStyle}
@@ -803,7 +814,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 Parcel Information
               </h3>
               <p className="text-sm text-gray-700">
-                <strong>Parcel </strong>{" "}
+                <strong>Parcel ID:</strong>{" "}
                 <span id="parcelId" className="text-gray-900">
                   {location ? parcelId : "-"}
                 </span>
@@ -975,11 +986,16 @@ const RevaDueDiligenceForm: React.FC = () => {
             <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
+                checked={hasAcceptedPrivacyTerms}
+                onChange={(e) =>
+                  setHasAcceptedPrivacyTerms(!hasAcceptedPrivacyTerms)
+                }
                 required
                 className="form-checkbox h-5 w-5 text-blue-600"
               />
-              <span className="text-sm text-gray-700">
-                I have read and agree to the{" "}
+
+              <span className="text-sm text-gray-700 justify-normal">
+                I have read and agreed to the{" "}
                 <Link
                   href="#"
                   className="text-blue-600 underline"
@@ -988,9 +1004,8 @@ const RevaDueDiligenceForm: React.FC = () => {
                     setOpenPrivacyModal(!openPrivacyModal);
                   }}
                 >
-                  Terms and Conditions
-                </Link>
-                .
+                  Terms of Use and Privacy and Policy.
+                </Link>{" "}
               </span>
             </label>
           </div>
@@ -1038,123 +1053,6 @@ const RevaDueDiligenceForm: React.FC = () => {
 
 export default RevaDueDiligenceForm;
 
-const PrivacyPolicy: React.FC = () => {
-  return (
-    <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-4xl">
-      <h1 className="text-3xl font-extrabold text-blue-700 mb-6 text-center">
-        Terms and Conditions
-      </h1>
-      <div className="space-y-6 text-gray-700">
-        <section>
-          <h2 className="text-xl font-bold mb-2">1. Introduction</h2>
-          <p>
-            REVA ("we," "us," or "our") (by TwoNode Technologies) is committed
-            to protecting your privacy. This Terms and Conditions explains how
-            we collect, use, and safeguard your information when you use our
-            platform for real estate due diligence reports.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">2. Information We Collect</h2>
-          <ul className="list-disc pl-5">
-            <li>
-              <strong>Personal Information:</strong> Name, email address, and
-              payment details when you request a report.
-            </li>
-            <li>
-              <strong>Property Information:</strong> Property address and
-              details provided by users for due diligence checks.
-            </li>
-            <li>
-              <strong>Automatically Collected Information:</strong> Device and
-              usage data, including IP addresses and geolocation data when
-              enabled.
-            </li>
-          </ul>
-          <p>
-            We do not sell, trade, or misuse your information. We may share
-            necessary data with trusted partners, such as payment processors
-            (e.g., Paystack) or government agencies, strictly for service
-            delivery and compliance purposes.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">
-            3. How We Use Your Information
-          </h2>
-          <ul className="list-disc pl-5">
-            <li>
-              Provide real estate due diligence reports based on available
-              records.
-            </li>
-            <li>Process payments and generate receipts.</li>
-            <li>Improve our platform’s accuracy and efficiency.</li>
-            <li>Comply with legal obligations and prevent fraud.</li>
-          </ul>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">
-            4. Data Accuracy and Limitations
-          </h2>
-          <p>
-            REVA relies on available data sources for due diligence reports. The
-            absence of information in any of the four chapters of our report
-            (Title Search, Historical Survey Records, Charting Information, and
-            Land use) indicates that no records were found from our virtual
-            search network at the time of the request. This does not guarantee
-            the nonexistence of such records in external sources beyond our
-            access.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">5. Data Security</h2>
-          <p>
-            We implement appropriate security measures to protect your data from
-            unauthorized access. However, we cannot guarantee absolute security
-            due to the nature of online data transmission.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">6. Third-Party Services</h2>
-          <p>
-            We may share necessary data with payment processors (e.g., Paystack)
-            and government agencies where required by law. We do not sell your
-            personal data to third parties.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">7. Cookies? Yes, Please!</h2>
-          <p>
-            We use cookies to enhance user experience—things like remembering
-            form inputs and session data. You can disable cookies in your
-            browser, but some features may not function optimally.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">8. Updates to This Policy</h2>
-          <p>
-            We may update this Terms and Conditions periodically. Users will be
-            notified of significant changes via email or platform notifications.
-          </p>
-        </section>
-        <section>
-          <h2 className="text-xl font-bold mb-2">9. Contact Us</h2>
-          <p>
-            For questions regarding this policy, contact us at{" "}
-            <a
-              href="mailto:info@twonodetechnologies.com"
-              className="text-blue-600 underline"
-            >
-              info@twonodetechnologies.com
-            </a>
-            .
-          </p>
-        </section>
-      </div>
-    </div>
-  );
-};
-
 const PrivacyPolicyModal = ({
   open,
   setOpen,
@@ -1168,23 +1066,23 @@ const PrivacyPolicyModal = ({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-extrabold text-blue-700 text-center">
-              Terms and Conditions
+              Privacy Policy & Terms and Conditions
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 text-gray-700 overflow-y-auto max-h-[70vh]">
+            {/* --- Privacy Policy --- */}
             <section>
-              <h2 className="text-xl font-bold mb-2">1. Introduction</h2>
+              <h2 className="text-2xl font-bold mb-2">Privacy Policy</h2>
+              <h3 className="text-xl font-bold mb-2">1. Introduction</h3>
               <p>
                 REVA ("we," "us," or "our") (by TwoNode Technologies) is
-                committed to protecting your privacy. This Terms and Conditions
+                committed to protecting your privacy. This Privacy Policy
                 explains how we collect, use, and safeguard your information
                 when you use our platform for real estate due diligence reports.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 2. Information We Collect
-              </h2>
+              </h3>
               <ul className="list-disc pl-5">
                 <li>
                   <strong>Personal Information:</strong> Name, email address,
@@ -1206,11 +1104,9 @@ const PrivacyPolicyModal = ({
                 (e.g., Paystack) or government agencies, strictly for service
                 delivery and compliance purposes.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 3. How We Use Your Information
-              </h2>
+              </h3>
               <ul className="list-disc pl-5">
                 <li>
                   Provide real estate due diligence reports based on available
@@ -1220,71 +1116,135 @@ const PrivacyPolicyModal = ({
                 <li>Improve our platform’s accuracy and efficiency.</li>
                 <li>Comply with legal obligations and prevent fraud.</li>
               </ul>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 4. Data Accuracy and Limitations
-              </h2>
+              </h3>
               <p>
                 REVA relies on available data sources for due diligence reports.
-                The absence of information in any of the four chapters of our
-                report (Title Search, Historical Survey Records, Charting
-                Information, and Land use) indicates that no records were found
-                from our virtual search network at the time of the request. This
-                does not guarantee the nonexistence of such records in external
-                sources beyond our access.
+                Absence of information in any of the four chapters of our report
+                (Title Search, Historical Survey Records, Charting Information,
+                and Land use) indicates that no records were found in our
+                virtual search network at the time. This does not confirm their
+                nonexistence in external sources.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">5. Data Security</h2>
+              <h3 className="text-xl font-bold mb-2">5. Data Security</h3>
               <p>
-                We implement appropriate security measures to protect your data
-                from unauthorized access. However, we cannot guarantee absolute
-                security due to the nature of online data transmission.
+                We implement security measures to protect your data from
+                unauthorized access, but cannot guarantee absolute security.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 6. Third-Party Services
-              </h2>
+              </h3>
               <p>
-                We may share necessary data with payment processors (e.g.,
-                Paystack) and government agencies where required by law. We do
-                not sell your personal data to third parties.
+                We may share necessary data with payment processors and
+                government agencies. We do not sell your personal data to third
+                parties.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 7. Cookies? Yes, Please!
-              </h2>
+              </h3>
               <p>
-                We use cookies to enhance user experience—things like
-                remembering form inputs and session data. You can disable
-                cookies in your browser, but some features may not function
-                optimally.
+                We use cookies to enhance user experience. You may disable
+                cookies in your browser, but some features may not work
+                properly.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">
+              <h3 className="text-xl font-bold mb-2">
                 8. Updates to This Policy
-              </h2>
+              </h3>
               <p>
-                We may update this Terms and Conditions periodically. Users will
-                be notified of significant changes via email or platform
+                We may update this Privacy Policy periodically. Users will be
+                notified of significant changes via email or platform
                 notifications.
               </p>
-            </section>
-            <section>
-              <h2 className="text-xl font-bold mb-2">9. Contact Us</h2>
+              <h3 className="text-xl font-bold mb-2">9. Contact Us</h3>
               <p>
-                For questions regarding this policy, contact us at{" "}
+                Contact us at{" "}
                 <a
                   href="mailto:info@twonodetechnologies.com"
                   className="text-blue-600 underline"
                 >
                   info@twonodetechnologies.com
                 </a>
-                .
+              </p>
+            </section>
+
+            {/* --- Terms and Conditions --- */}
+            <section>
+              <h2 className="text-2xl font-bold mt-10 mb-2">
+                Terms and Conditions
+              </h2>
+              <h3 className="text-xl font-bold mb-2">1. Introduction</h3>
+              <p>
+                These Terms and Conditions govern your use of REVA. By accessing
+                our platform, you agree to abide by these terms.
+              </p>
+              <h3 className="text-xl font-bold mb-2">2. Service Description</h3>
+              <p>
+                REVA provides real estate due diligence reports based on
+                available records. Absence of information in a report does not
+                confirm the nonexistence of such records in other sources.
+              </p>
+              <h3 className="text-xl font-bold mb-2">
+                3. User Responsibilities
+              </h3>
+              <ul className="list-disc pl-5">
+                <li>Provide accurate property details.</li>
+                <li>
+                  Acknowledge that reports are based on available data at
+                  request time.
+                </li>
+                <li>No fraudulent use or misuse of the platform.</li>
+                <li>No scraping, hacking, or unauthorized access.</li>
+              </ul>
+              <h3 className="text-xl font-bold mb-2">
+                4. Limitation of Liability
+              </h3>
+              <p>
+                Reports are based on third-party sources and may not be complete
+                or fully accurate. Users must independently verify information.
+                We are not liable for losses from reliance on reports.
+              </p>
+              <h3 className="text-xl font-bold mb-2">
+                5. Payment and Refund Policy
+              </h3>
+              <ul className="list-disc pl-5">
+                <li>Payments are processed via Paystack.</li>
+                <li>You authorize charges to your payment method.</li>
+                <li>
+                  No refunds unless a report is undelivered due to technical
+                  errors.
+                </li>
+              </ul>
+              <h3 className="text-xl font-bold mb-2">6. Prohibited Conduct</h3>
+              <ul className="list-disc pl-5">
+                <li>Do not violate laws or regulations using the service.</li>
+                <li>
+                  No reverse-engineering or data scraping beyond permissions.
+                </li>
+                <li>No interference with platform security.</li>
+                <li>
+                  REVA content and software cannot be copied or distributed
+                  without permission.
+                </li>
+              </ul>
+              <h3 className="text-xl font-bold mb-2">
+                7. Intellectual Property
+              </h3>
+              <p>All content belongs to REVA and is protected by IP laws.</p>
+              <h3 className="text-xl font-bold mb-2">8. Updates to Terms</h3>
+              <p>
+                We may update these terms. Continued use implies acceptance of
+                the updated terms.
+              </p>
+              <h3 className="text-xl font-bold mb-2">9. Contact Us</h3>
+              <p>
+                For inquiries, email us at{" "}
+                <a
+                  href="mailto:info@twonodetechnologies.com"
+                  className="text-blue-600 underline"
+                >
+                  info@twonodetechnologies.com
+                </a>
               </p>
             </section>
           </div>
