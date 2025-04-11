@@ -8,7 +8,7 @@ import {
   initializePaystack,
   verifyPaystackTransaction,
 } from "./paystackActions";
-import { PrismaClient } from "@/prisma/models/prisma";
+import { PrismaClient } from "@/prisma/generated/prisma";
 
 // const { revalidatePath } = require("next/cache");
 // const { redirect } = require("next/navigation");
