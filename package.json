@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && ls node_modules/@prisma/engines && next build",
+    "build": "npx prisma generate && ls prisma/generated/prisma && ls node_modules/@prisma/engines && next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint"
