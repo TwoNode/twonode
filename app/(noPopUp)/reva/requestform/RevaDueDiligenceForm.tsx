@@ -360,7 +360,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       accuracyMax = 5;
     }
 
-    notifyWarning(platform);
+    notifyWarning(`${platform} - ${browser.getOSName()}`);
 
     setLocationButtonText("Locating...");
     locationBtn?.setAttribute("disabled", "true");
