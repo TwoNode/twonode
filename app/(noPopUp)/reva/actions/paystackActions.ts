@@ -8,16 +8,52 @@ export const initializePaystack = async ({
   email,
   amount,
   reference,
+  requester = "",
+  address = "",
+  lga = "",
+  comments = "",
 }: {
   email: string;
   amount: number;
   reference: string;
+  requester: string;
+  address: string;
+  lga: string;
+  comments: string;
 }) => {
   try {
     const response = await paystack.transaction.initialize({
       email,
       amount,
       reference,
+      metadata: {
+        requester, // Name of the requester
+        address, // Property address
+        lga, // Local Government Area (LGA)
+        comments,
+        custom_fields: [
+          {
+            display_name: "Requester Name", // Display name for the requester
+            variable_name: "requester", // Variable name for the requester
+            value: requester, // Value of the requester
+          },
+          {
+            display_name: "Property Address", // Display name for the property address
+            variable_name: "address", // Variable name for the property address
+            value: address, // Value of the property address
+          },
+          {
+            display_name: "LGA", // Display name for the LGA
+            variable_name: "lga", // Variable name for the LGA
+            value: lga, // Value of the LGA
+          },
+          {
+            display_name: "Comments", // Display name for the LGA
+            variable_name: "comments", // Variable name for the LGA
+            value: comments, // Value of the LGA
+          },
+        ],
+      },
       callback_url: addBaseUrl(
         process.env.PAYSTACK_CALLBACK_URL || "/reva/viewdetails"
       ),

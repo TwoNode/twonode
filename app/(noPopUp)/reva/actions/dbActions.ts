@@ -2,89 +2,12 @@
 
 // import { OneTimeUserPropertyModel } from "@/models/PaymentModel";
 import { revalidatePath } from "next/cache";
-import { NextResponse } from "next/server";
-import { uploadToS3, uploadToS3FromServer } from "./awsActions";
+import { uploadToS3FromServer } from "./awsActions";
 import {
   initializePaystack,
   verifyPaystackTransaction,
 } from "./paystackActions";
 import { PrismaClient } from "@prisma/client";
-
-// const { revalidatePath } = require("next/cache");
-// const { redirect } = require("next/navigation");
-// const { NextResponse } = require("next/server");
-// const { cookies } = require("next/headers");
-// const { headers } = require("next/headers");
-// const { NextRequest } = require("next/server");
-// const { NextApiRequest } = require("next/server");
-// const { NextApiResponse } = require("next/server");
-
-// export const handleRevaRequest = async (formData: FormData) => {
-//   // Extract the form data
-//   const formDataObj = Object.fromEntries(formData.entries());
-//   const {
-//     firstName,
-//     lastName,
-//     email,
-//     phone,
-//     address,
-//     city,
-//     state,
-//     zipCode,
-//     country,
-//     propertyType,
-//     propertyAddress,
-//     propertyCity,
-//     propertyState,
-//     propertyZipCode,
-//     propertyCountry,
-//   } = formDataObj;
-
-//   // Create the request body
-//   const requestBody = {
-//     firstName,
-//     lastName,
-//     email,
-//     phone,
-//     address: {
-//       street: address,
-//       city,
-//       state,
-//       zipCode,
-//       country,
-//     },
-//     property: {
-//       type: propertyType,
-//       address: {
-//         street: propertyAddress,
-//         city: propertyCity,
-//         state: propertyState,
-//         zipCode: propertyZipCode,
-//         country: propertyCountry,
-//       },
-//     },
-//   };
-
-//   await OneTimeUserPropertyModel.create({
-//     reference: `${Date.now()}-${Math.random()}`,
-//     requester: `${firstName} ${lastName}`,
-//     description: `Request from ${firstName} ${lastName}`,
-//     status: "Pending",
-//     statusMessage: "Request is being processed",
-//     error: null,
-//     userName: `${firstName} ${lastName}`,
-//     email: email,
-//     userPhoneNumber: phone,
-//     address: propertyAddress,
-//     location: null, // Assuming location is not provided in the form
-//     lga: propertyCity,
-//     totalCost: 0, // Assuming total cost is not provided in the form
-//     supportingDocumentsUrls: [], // Assuming no supporting documents are uploaded
-//   });
-
-//   // Return the request body for further processing
-//   return requestBody;
-// };
 
 export const saveToDatabase = async (data: any) => {
   const prisma = new PrismaClient();
@@ -133,13 +56,8 @@ const updateTransactionStatus = async (
         error,
       },
     });
-    console.log("Transaction status updated:", updatedTransaction);
     return updatedTransaction;
   } catch (error) {
-    console.error(
-      "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nError updating transaction status: \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
-      error
-    );
     return null;
   } finally {
     await prisma.$disconnect();
@@ -177,11 +95,11 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
 
     // Upload files to AWS S3
 
-    console.warn("FORM DATA UPLOADING", "\n\n\n\n\n\n\n\n\n\n\n\n");
+    console.warn("FORM DATA UPLOADING", "\n\n\n\n\n\n");
 
     console.log("formData", formData);
 
-    console.error("\n\n\n\n\n\n\n\n\n\n\n\n", "FORM DATA UPLOADED");
+    console.error("\n\n\n\n\n\n", "FORM DATA UPLOADED");
 
     if (files && files.length > 0) {
       uploadedFilesUrls = await uploadToS3FromServer(files);
@@ -213,6 +131,10 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       email,
       amount: totalCost * 100,
       reference: result?.data?.reference!,
+      requester,
+      address,
+      lga,
+      comments,
     });
 
     if (!paystackResponse || paystackResponse.status !== true) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, ReactNode, use } from "react";
+import React, { useState, useRef, useEffect, ReactNode } from "react";
 import {
   LoadScript,
   GoogleMap,
@@ -10,7 +10,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { PaystackProps, callback } from "react-paystack/dist/types";
 import { toast } from "react-toastify";
 import { saveFormDataAndInitiatePaystack } from "../actions/dbActions";
@@ -43,28 +42,6 @@ const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
 const notifyWarning = (msg: string) => toast.warn(msg);
 const notifyInfo = (msg: string) => toast.info(msg);
-const notifyLoading = (msg: string) => toast.loading(msg);
-const notifyUpdate = (msg: string) => toast.update(msg);
-const notifyDismiss = (id: string) => toast.dismiss(id);
-const notifyClearWaitingQueue = () => toast.clearWaitingQueue();
-const notifyIsActive = (id: string) => toast.isActive(id);
-const notifyErrorWithId = (id: string, msg: string) =>
-  toast.error(msg, { toastId: id });
-
-// import dynamic from "next/dynamic";
-// const usePaystackPayment = dynamic(
-//   () => import("react-paystack").then((mod) => mod.usePaystackPayment),
-//   { ssr: false } // This ensures it's only loaded on the client
-// );
-
-interface PaystackButtonProps extends PaystackProps {
-  text?: string;
-  className?: string;
-  disabled?: boolean;
-  children?: ReactNode;
-  onSuccess?: callback;
-  onClose?: callback;
-}
 
 const containerStyle = {
   width: "100%",
@@ -107,7 +84,6 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [totalCost, setTotalCost] = useState(0);
   const [showReview, setShowReview] = useState(false);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState("");
-  const [paystackPublicKey, setPaystackPublicKey] = useState("");
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [comments, setComments] = useState("");
   const [showConfirmFallback, setShowConfirmFallback] = useState(false);
@@ -118,7 +94,6 @@ const RevaDueDiligenceForm: React.FC = () => {
 
   useEffect(() => {
     setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
-    setPaystackPublicKey(process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "");
   }, []);
 
   const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
