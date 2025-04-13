@@ -17,26 +17,28 @@ export const RevaHeroSection = ({
         } px-5 bg-gradient-to-r from-blue-800 to-gray-900 text-white`}
       >
         <div className={`flex justify-center  ${smallLogo ? "mb-1" : "mb-4"}`}>
-          {
-            /* Logo */
-            smallLogo ? (
-              <Image
-                src="/reva/revaLogo.png"
-                alt="REVA Logo"
-                width={50}
-                height={50}
-                className="bg-white/70 rounded-full"
-              />
-            ) : (
-              <Image
-                src="/reva/revaLogo.png"
-                alt="REVA Logo"
-                width={100}
-                height={100}
-                className="bg-white/70 rounded-full"
-              />
-            )
-          }
+          <Link href={"/reva"}>
+            {
+              /* Logo */
+              smallLogo ? (
+                <Image
+                  src="/reva/revaLogo.png"
+                  alt="REVA Logo"
+                  width={50}
+                  height={50}
+                  className="bg-white/70 rounded-full"
+                />
+              ) : (
+                <Image
+                  src="/reva/revaLogo.png"
+                  alt="REVA Logo"
+                  width={100}
+                  height={100}
+                  className="bg-white/70 rounded-full"
+                />
+              )
+            }
+          </Link>
         </div>
 
         {showTitle && (
