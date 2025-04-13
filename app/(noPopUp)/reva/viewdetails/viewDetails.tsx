@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
+import { RevaHeroSection } from "../RevaHeroSection";
+import { RevaFooterSection } from "../RevaFooterSection";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -21,15 +23,17 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-2xl">
         <h1 className="text-3xl font-bold text-green-700 text-center mb-6">
-          Submission Successful
+          Due Diligence Request Successful
         </h1>
         <p className="text-center text-gray-600 mb-6">
-          Thank you for your request. Your transaction reference is:
+          Thank you for your due diligence request.
+          <br />
+          Your REVA transaction reference is:
         </p>
 
         <div className="text-center text-blue-600 font-semibold text-lg mb-6">
-          Transaction Ref: <span>{trxref}</span>
-          <br /> Reference: <span>{reference}</span>
+          {/* Transaction Ref: <span>{trxref}</span> */}
+          Reference: <span>{reference}</span>
         </div>
 
         <div className="space-y-4">
@@ -73,7 +77,17 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
 const ViewDetails = ({ formData }: { formData: any }) => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ViewDetailsContent formData={formData} />
+      <>
+        <RevaHeroSection
+          showRequestButton={false}
+          smallLogo
+          showTitle={false}
+        />
+
+        <ViewDetailsContent formData={formData} />
+
+        <RevaFooterSection />
+      </>
     </Suspense>
   );
 };
