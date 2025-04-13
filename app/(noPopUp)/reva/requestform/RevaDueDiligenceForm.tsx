@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, ReactNode } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   LoadScript,
   GoogleMap,
@@ -10,7 +10,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PaystackProps, callback } from "react-paystack/dist/types";
 import { toast } from "react-toastify";
 import { saveFormDataAndInitiatePaystack } from "../actions/dbActions";
 import Bowser from "bowser";
@@ -138,7 +137,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       const data = await response.json();
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
-        console.log("LGA Geometry:", feature.geometry);
+        // console.log("LGA Geometry:", feature.geometry);
         const lga = feature.attributes.LGA?.toUpperCase() || "UNKNOWN";
         const price = feature.attributes.Price || 0;
         setLga(lga);
@@ -195,7 +194,7 @@ const RevaDueDiligenceForm: React.FC = () => {
         drawParcelBoundary(feature.geometry);
       } else {
         clearParcelBoundary();
-        console.log("No parcel found.");
+        // console.log("No parcel found.");
       }
     } catch (error) {
       console.error("Error fetching parcel:", error);
@@ -563,24 +562,24 @@ const RevaDueDiligenceForm: React.FC = () => {
       }
     }
 
-    console.log("Form submitted with values:", {
-      email,
-      requester,
-      address,
-      location,
-      lga,
-      totalCost,
-      fileNames,
-      files,
-      comments,
-      parcelId,
-    });
+    // console.log("Form submitted with values:", {
+    //   email,
+    //   requester,
+    //   address,
+    //   location,
+    //   lga,
+    //   totalCost,
+    //   fileNames,
+    //   files,
+    //   comments,
+    //   parcelId,
+    // });
 
-    console.log(formData);
+    // console.log(formData);
 
     saveFormDataAndInitiatePaystack(formData)
       .then((response: SaveFormResponse | any) => {
-        console.log("Form data saved successfully:", response);
+        // console.log("Form data saved successfully:", response);
 
         if (response.error) {
           notifyError("Error saving form data");
@@ -605,9 +604,13 @@ const RevaDueDiligenceForm: React.FC = () => {
         }
       })
       .catch((error) => {
-        console.error("Error saving form data:", error);
-        console.warn(JSON.stringify(error));
-        notifyError(error.message || "Error saving form data");
+        // console.error("Error saving form data:", error);
+        // console.warn(JSON.stringify(error));
+        if (error?.message && error?.message.length < 35) {
+          notifyError(error.message || "Error saving form data");
+        } else {
+          notifyError("An error occured while processing, please try again");
+        }
       })
       .finally(() => {
         setIsLoading(false);
