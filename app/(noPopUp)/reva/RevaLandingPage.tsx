@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { RevaHeroSection } from "./RevaHeroSection";
 import { RevaFooterSection } from "./RevaFooterSection";
 
+import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
+import { Carousel } from "react-responsive-carousel";
+
 const RevaLandingPage: FC = () => {
   const coreFeatures: string[] = [
     "Quick & seamless report requests",
@@ -31,6 +34,45 @@ const RevaLandingPage: FC = () => {
     {
       title: "Receive Report",
       desc: "Download a detailed due diligence report.",
+    },
+  ];
+
+  const reportPreview: any[] = [
+    {
+      number: 1,
+      title: "Survey Data Management",
+      desc: "Renders Surveyor's data in a manner that provides easy access, management and data-driven insight.",
+      img: "reva/preview/reva1.jpg",
+    },
+    {
+      number: 2,
+      title: "Oil and Gas ROW and Utility Asset Network Management",
+      desc: "Keep track of all your assets, from pipelines to valve pits, metering stations, place markers, ensuring they are always up-to-date, accurately mapped, and accessible real-time with a mobile app.",
+      img: "reva/preview/reva2.jpg",
+    },
+    {
+      number: 3,
+      title: "Electric Utility Network Management",
+      desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
+      img: "reva/preview/reva3.jpg",
+    },
+    {
+      number: 4,
+      title: "Telecommunication Asset in Real-Time",
+      desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
+      img: "reva/preview/reva4.jpg",
+    },
+    {
+      number: 5,
+      title: "Electric Utility Network Management",
+      desc: "Visualize your entire electric grid in real-time, allowing for better monitoring and control of your assets.",
+      img: "reva/preview/reva5.jpg",
+    },
+    {
+      number: 6,
+      title: "Telecommunication Asset in Real-Time",
+      desc: "Visualize your entire telecommunication asset in real-time, allowing for better monitoring and control of your assets.",
+      img: "reva/preview/reva6.jpg",
     },
   ];
 
@@ -129,6 +171,40 @@ const RevaLandingPage: FC = () => {
           ))}
         </div>
       </section>
+
+      <div className="p-10 bg-black bg-gradient-to-r from-blue-800 to-gray-900 text-white">
+        <div className="p-10 gap-6 lg:basis-1/2 max-h-[642px] flex justify-center items-center bg-transparent">
+          <Carousel
+            centerMode={true}
+            centerSlidePercentage={100}
+            // showArrows={false}
+            showStatus={false}
+            // showIndicators={false}
+            infiniteLoop
+            // autoPlay={true}
+            // interval={2000}
+            // onChange={(ind, item) => setElement(data[ind])}
+            // onSwipeMove={() => {}}
+            showThumbs={false}
+            stopOnHover={false}
+            swipeable={true}
+            className="gap-6 lg:w-full max-w-[530px] max-h-[642px] bg-black/opacity-20 rounded-lg mt-6 lg:mt-0 flex items-center"
+          >
+            {reportPreview.map((item, ind) => (
+              <div
+                key={ind}
+                className="p-6 w-full flex flex-col lg:flex-row lg:items-center lg:justify-center gap-[50px] 2xl:gap-[70px]"
+              >
+                <img
+                  src={item?.img}
+                  className="w-full h-auto lg:h-full object-cover rounded-lg"
+                  alt="GIS Solutions"
+                />
+              </div>
+            ))}
+          </Carousel>
+        </div>{" "}
+      </div>
 
       {/* Informed Decision */}
       <section className="py-20 bg-white text-gray-900 text-center">
