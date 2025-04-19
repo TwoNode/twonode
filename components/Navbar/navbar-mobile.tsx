@@ -61,7 +61,7 @@ export function SidebarMobile(props: SidebarMobileProps) {
                     <Link
                       key={ind}
                       href={item.href}
-                      className="group rounded-xl w-full p-0 items-center flex cursor-pointer hover:bg-gray-600"
+                      className={`group rounded-xl w-full p-0 items-center flex cursor-pointer hover:bg-gray-600`}
                     >
                       <SidebarButton
                         variant="link"
@@ -73,7 +73,13 @@ export function SidebarMobile(props: SidebarMobileProps) {
                             : "font-normal"
                         }`}
                       >
-                        <span className="text-white text-xl">{item.label}</span>
+                        <span
+                          className={`text-white text-xl ${
+                            item.important ? "glow-link" : ""
+                          }`}
+                        >
+                          {item.label}
+                        </span>
                       </SidebarButton>
                     </Link>
                   );

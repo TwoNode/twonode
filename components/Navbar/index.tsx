@@ -30,13 +30,17 @@ const Navbar = () => {
               <Link href={"/"} className="justify-start items-center flex">
                 <img alt="" className="" src="/logo.svg" />
               </Link>
-              <div className="justify-start items-center gap-[35px] flex">
+              <div className="justify-start items-center xl:gap-[35px] gap-[25px] flex transition-all duration-300 ease-in-out">
                 {navbarItems.links.map((item, ind) => (
                   <Link
                     key={ind}
                     href={item.href}
                     className={`text-center text-sky-950 text-base leading-7 ${
                       pathname === item.href ? "font-bold" : "font-normal"
+                    } ${
+                      item.important
+                        ? "glow-link font-bold scale-125 hover:scale-125"
+                        : ""
                     }`}
                   >
                     {item.label}
@@ -98,7 +102,7 @@ const Navbar = () => {
         </div>
 
         {/* MOBILE NAVBAR RESPONSIVE */}
-        <div className="w-full  z-[90] h-full lg:hidden">
+        <div className="w-full z-[90] h-full lg:hidden">
           <SidebarMobile sidebarItems={navbarItems} />
         </div>
       </div>

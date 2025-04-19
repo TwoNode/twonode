@@ -102,3 +102,31 @@ body::-webkit-scrollbar-thumb:hover {
   outline: 8px solid yellow;
   outline-offset: -6px;
 } */
+@keyframes glowPulse {
+  0% {
+    text-shadow: 0 0 5px #1e3a8a, 0 0 10px #0ea5e9, 0 0 15px #fde68a;
+    color: #1e3a8a;
+  }
+  50% {
+    text-shadow: 0 0 10px #1e3a8a, 0 0 20px #0ea5e9, 0 0 30px #fde68a;
+    color: #0ea5e9;
+  }
+  100% {
+    text-shadow: 0 0 5px #1e3a8a, 0 0 10px #0ea5e9, 0 0 15px #fde68a;
+    color: #1e3a8a;
+  }
+}
+
+.glow-link {
+  animation: glowPulse 2s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.glow-link:hover,
+.glow-link:active,
+.glow-link:focus,
+.glow-link:focus-visible {
+  animation: none;
+  text-shadow: 0 0 12px #1e3a8a, 0 0 24px #0ea5e9, 0 0 36px #fde68a;
+  color: #0ea5e9;
+}
