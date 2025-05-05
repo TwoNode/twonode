@@ -16,10 +16,11 @@ datasource db {
 
 model Property {
   id                     String   @id @default(uuid())
-  reference              String   @unique
+  reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
   name                   String?  // Nullable
   description            String?  // Nullable
   status                 String?  // Nullable
+  paymentStatus          String?  // Nullable
   statusMessage          String?  // Nullable
   error                  String?  // Nullable
 
@@ -30,10 +31,11 @@ model Property {
   lat                    Float?
   lng                    Float?
   lga                    String
+  parcelId               String?  // Optional
 
   totalCost              Float
   supportingDocumentsUrls String[] // Array of URLs
-  additionalComments     String?  // Optional
+  comments               String?  // Optional
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
@@ -41,7 +43,7 @@ model Property {
 
 model OneTimeUserProperty {
   id                     String   @id @default(uuid())
-  reference              String   @unique @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 10)")) // Optional DB default if supported
+  reference              String   @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
   requester              String?  // Nullable (default "")
   description            String?  // Nullable
   status                 String?  // Nullable
@@ -66,10 +68,25 @@ model OneTimeUserProperty {
   updatedAt              DateTime @updatedAt
 }
 
+
+enum Role {
+  USER
+  ADMIN
+}
+
+
 // Placeholder User model for relation
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  name      String?
-  properties Property[]
+  id              String              @id @default(uuid()) // Unique identifier
+  kindeId         String              @unique
+  email           String              @unique
+
+  firstName       String
+  lastName        String
+
+  role            Role                @default(USER)
+  emailVerified   Boolean             @default(false)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  properties      Property[]
 }

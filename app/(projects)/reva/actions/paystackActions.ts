@@ -2,7 +2,13 @@ const Paystack = require("@paystack/paystack-sdk");
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET);
 
-const addBaseUrl = (url: string) => process.env.BASE_URL + url;
+const addBaseUrl = (url: string): string => {
+  const baseUrl = process.env.BASE_URL;
+  if (!baseUrl) {
+    throw new Error("BASE_URL is not defined in the environment variables.");
+  }
+  return baseUrl + url;
+};
 
 export const initializePaystack = async ({
   email,
@@ -12,6 +18,7 @@ export const initializePaystack = async ({
   address = "",
   lga = "",
   comments = "",
+  isAuthenticated = false,
 }: {
   email: string;
   amount: number;
@@ -20,6 +27,7 @@ export const initializePaystack = async ({
   address: string;
   lga: string;
   comments: string;
+  isAuthenticated?: boolean;
 }) => {
   try {
     const response = await paystack.transaction.initialize({
@@ -55,7 +63,9 @@ export const initializePaystack = async ({
         ],
       },
       callback_url: addBaseUrl(
-        process.env.PAYSTACK_CALLBACK_URL || "/reva/viewdetails"
+        `${
+          isAuthenticated ? "/reva/dashboard/viewdetails" : "/reva/viewdetails"
+        }`
       ),
     });
     console.log(process.env.PAYSTACK_CALLBACK_URL);

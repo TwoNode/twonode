@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { AuthLinks } from "./AuthLinks";
 
 export const RevaHeroSection = ({
   showRequestButton = true,
@@ -52,12 +53,16 @@ export const RevaHeroSection = ({
         </p>
 
         {showRequestButton && (
-          <Link href={"/reva/requestform"} passHref>
-            {/* Button to request a report */}
-            <Button className="mt-6 bg-blue-600 px-6 py-3 text-lg hover:border-2 hover:border-blue-400 transition-all">
-              Request a Report
-            </Button>
-          </Link>
+          <>
+            <Link href={"/reva/requestform"} passHref>
+              {/* Button to request a report */}
+              <Button className="mt-6 bg-blue-600 px-6 py-3 text-lg hover:border-2 hover:border-blue-400 transition-all">
+                Request a Report
+              </Button>
+            </Link>
+
+            <AuthLinks />
+          </>
         )}
       </section>
     </>

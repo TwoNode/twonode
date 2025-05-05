@@ -1,4 +1,4 @@
-import ToastProvider from "@/components/ToastProvider";
+import ToastProvider from "@/providers/ToastProvider";
 import React from "react";
 
 export default function RevaLayout({

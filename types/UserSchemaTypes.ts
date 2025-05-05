@@ -32,7 +32,7 @@ export interface PropertySchemaType {
 
   totalCost: number; // Total cost in NGN
   supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
-  additionalComments?: string; // Optional additional comments
+  comments?: string; // Optional additional comments
 }
 
 // import * as yup from "yup";

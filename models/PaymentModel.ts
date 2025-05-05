@@ -22,7 +22,7 @@ export interface PropertySchemaType extends Document {
 
   totalCost: number; // Total cost in NGN
   supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
-  additionalComments?: string; // Optional additional comments
+  comments?: string; // Optional additional comments
 }
 
 const LocationSchema = new Schema<Location>({
@@ -46,7 +46,7 @@ const PropertySchema = new Schema<PropertySchemaType>({
 
   totalCost: { type: Number, required: true },
   supportingDocumentsUrls: { type: [String], required: true },
-  additionalComments: { type: String, default: null },
+  comments: { type: String, default: null },
 });
 
 export default mongoose.model<PropertySchemaType>("Property", PropertySchema);
