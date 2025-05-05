@@ -8,10 +8,10 @@ export async function GET() {
   cookies().delete("USER_TYPE");
 
   if (userTypeCookie?.value === "reva_user") {
-    return NextResponse.redirect("http://localhost:3000/reva/login");
+    return NextResponse.redirect("/reva/login");
   } else if (userTypeCookie?.value === "scram_user") {
-    return NextResponse.redirect("http://localhost:3000/scram/login");
+    return NextResponse.redirect("/scram/login");
   } else {
-    return NextResponse.redirect("http://localhost:3000/");
+    return NextResponse.redirect("/");
   }
 }

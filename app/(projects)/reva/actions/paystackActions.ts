@@ -1,14 +1,8 @@
+import { addBaseUrl } from "@/utils/addBaseUrl";
+
 const Paystack = require("@paystack/paystack-sdk");
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET);
-
-const addBaseUrl = (url: string): string => {
-  const baseUrl = process.env.BASE_URL;
-  if (!baseUrl) {
-    throw new Error("BASE_URL is not defined in the environment variables.");
-  }
-  return baseUrl + url;
-};
 
 export const initializePaystack = async ({
   email,

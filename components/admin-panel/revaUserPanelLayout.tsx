@@ -4,9 +4,9 @@ import { Sidebar } from "@/components/admin-panel/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { DashboardNavbar } from "@/components/headers/DashboardHeader";
+import { RevaUserDashboardNavbar } from "@/components/headers/RevaUserDashboardHeader";
 
-export default function AdminPanelLayout({
+export default function RevaUserPanelLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -19,7 +19,7 @@ export default function AdminPanelLayout({
 
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
-      <DashboardNavbar />
+      <RevaUserDashboardNavbar />
 
       <main
         className={cn(

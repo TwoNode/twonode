@@ -1,4 +1,4 @@
-import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
+import RevaUserPanelLayout from "@/components/admin-panel/revaUserPanelLayout";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,5 +11,5 @@ export default function DemoLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminPanelLayout>{children}</AdminPanelLayout>;
+  return <RevaUserPanelLayout>{children}</RevaUserPanelLayout>;
 }

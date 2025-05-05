@@ -25,7 +25,7 @@ export async function GET() {
       });
     }
 
-    return NextResponse.redirect("http://localhost:3000/dashboard");
+    return NextResponse.redirect("/scram/dashboard");
   } catch (error) {
     console.error("Error in GET /auth/success/scram:", error);
     return NextResponse.json(

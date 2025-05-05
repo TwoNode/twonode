@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const user = await getUser();
 
     if (!user || user == null || !user.id)
-      throw new Error("something went wrong with authentication" + user);
+      throw new Error("Auth User is " + user);
 
     let dbUser = await prisma.user.findUnique({
       where: { kindeId: user.id },
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     });
 
     const response = NextResponse.redirect(
-      "http://localhost:3000/reva/dashboard?user_type=reva_user"
+      "/reva/dashboard?user_type=reva_user"
     );
 
     response.cookies.set("USER_TYPE", "reva_user", {
