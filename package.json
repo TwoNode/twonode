@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma db push && npx prisma generate && ls node_modules/@prisma/client && next build",
+    "build": "npx prisma generate && npx prisma db push && next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint"

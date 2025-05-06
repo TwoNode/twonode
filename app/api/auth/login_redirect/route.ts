@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { addBaseUrl } from "@/utils/addBaseUrl";
 
 export async function GET() {
   const cookieStore = cookies();
   const userType = cookieStore.get("USER_TYPE")?.value;
 
+  let redirectUrl = "/";
+
   if (userType === "reva_user") {
-    return NextResponse.redirect("/reva/dashboard");
+    redirectUrl = "/reva/dashboard";
+  } else if (userType === "reva_admin") {
+    redirectUrl = "/reva-restricted/dashboard";
   } else if (userType === "scram_user") {
-    return NextResponse.redirect("/scram/dashboard");
+    redirectUrl = "/scram/dashboard";
+  } else if (userType === "scram_admin") {
+    redirectUrl = "/scram-restricted/dashboard";
   } else {
-    return NextResponse.redirect("/"); // Default redirect if usertype is not recognized
+    redirectUrl = "/";
   }
+
+  return NextResponse.redirect(addBaseUrl(redirectUrl));
 }

@@ -57,9 +57,7 @@ export const initializePaystack = async ({
         ],
       },
       callback_url: addBaseUrl(
-        `${
-          isAuthenticated ? "/reva/dashboard/viewdetails" : "/reva/viewdetails"
-        }`
+        isAuthenticated ? "/reva/dashboard/viewdetails" : "/reva/viewdetails"
       ),
     });
     console.log(process.env.PAYSTACK_CALLBACK_URL);

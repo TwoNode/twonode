@@ -2,6 +2,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { addBaseUrl } from "@/utils/addBaseUrl";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     });
 
     const response = NextResponse.redirect(
-      "/reva/dashboard?user_type=reva_user"
+      addBaseUrl("/reva/dashboard?user_type=reva_user")
     );
 
     response.cookies.set("USER_TYPE", "reva_user", {

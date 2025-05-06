@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { addBaseUrl } from "@/utils/addBaseUrl";
 
 export async function GET() {
   const userTypeCookie = cookies().get("USER_TYPE");
@@ -7,11 +8,15 @@ export async function GET() {
   cookies().set("USER_TYPE", "", { maxAge: 0 });
   cookies().delete("USER_TYPE");
 
+  let redirectUrl = "/";
+
   if (userTypeCookie?.value === "reva_user") {
-    return NextResponse.redirect("/reva/login");
+    redirectUrl = "/reva/login";
+  } else if (userTypeCookie?.value === "reva_admin") {
+    redirectUrl = "/reva-restricted/login";
   } else if (userTypeCookie?.value === "scram_user") {
-    return NextResponse.redirect("/scram/login");
-  } else {
-    return NextResponse.redirect("/");
+    redirectUrl = "/scram/login";
   }
+
+  return NextResponse.redirect(addBaseUrl(redirectUrl));
 }
