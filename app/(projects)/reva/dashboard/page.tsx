@@ -13,7 +13,7 @@ const Home = async () => {
 
       <div className="propertiesSection mt-8">
         <PropertyRequests
-          data={data?.slice(0, 3)}
+          data={data?.slice(0, 1)}
           title={"Recent Requests"}
           smallTitle
         />

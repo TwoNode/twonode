@@ -86,21 +86,6 @@ export default function PropertyRequests({
       parcelId: "89AF9FSD98SA",
     },
     {
-      id: "2",
-      reference: "REF67890",
-      name: "Commercial Plaza",
-      description: "A spacious commercial plaza for businesses.",
-      status: "Completed",
-      paymentStatus: "Successful",
-      userId: "user2",
-      address: "456 Business Avenue, Abuja",
-      lga: "Garki",
-      totalCost: 150000,
-      supportingDocumentsUrls: ["lease_agreement.pdf"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
       id: "3",
       reference: "REF11223",
       name: "Residential Home",
@@ -114,22 +99,6 @@ export default function PropertyRequests({
       supportingDocumentsUrls: [],
       createdAt: new Date().toISOString(),
       updatedAt: null,
-    },
-    {
-      id: "4",
-      reference: "REF44556",
-      name: "Modern Office Space",
-      description: "A modern office space with all amenities.",
-      status: "Failed",
-      paymentStatus: "Failed",
-      userId: "user4",
-      address: "101 Corporate Road, Kano",
-      lga: "Nassarawa",
-      totalCost: 80000,
-      supportingDocumentsUrls: ["blueprint.pdf"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      parcelId: "89AF9FSD98SA",
     },
   ];
 
@@ -204,7 +173,11 @@ export default function PropertyRequests({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div
+      className={`${
+        smallTitle ? "" : "min-h-screen"
+      } bg-gradient-to-b from-gray-50 to-gray-100`}
+    >
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1
