@@ -1,3 +1,4 @@
+import { formatCurrency, formatDate } from "@/utils/formatters";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -60,23 +61,6 @@ const getPropertyIcon = (propertyType?: string) => {
     default:
       return <HomeModernIcon className="h-5 w-5 text-gray-400" />;
   }
-};
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDate = (date?: Date) => {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-NG", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 };
 
 export default function PropertyRequests({
