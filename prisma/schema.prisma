@@ -17,7 +17,7 @@ datasource db {
 model Property {
   id                     String   @id @default(uuid())
   reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
-  name                   String?  // Nullable
+  title                  String?  // Nullable
   description            String?  // Nullable
   status                 String?  // Nullable
   paymentStatus          String?  // Nullable

@@ -26,7 +26,7 @@ type PaymentStatus =
 interface Property {
   id: string;
   reference: string;
-  name: string | null;
+  title: string | null;
   description: string | null;
   status: PropertyStatus | null;
   paymentStatus: PaymentStatus | null;
@@ -63,7 +63,7 @@ const getPropertyIcon = (propertyType?: string) => {
   }
 };
 
-export default function PropertyRequests({
+export default function UserPropertyRequests({
   data,
   title,
   smallTitle,
@@ -72,7 +72,7 @@ export default function PropertyRequests({
     {
       id: "1",
       reference: "REF12345",
-      name: "Luxury Apartment",
+      title: "Luxury Apartment",
       description: "A beautiful luxury apartment in the city center.",
       status: "Available",
       paymentStatus: "Paid",
@@ -88,7 +88,7 @@ export default function PropertyRequests({
     {
       id: "3",
       reference: "REF11223",
-      name: "Residential Home",
+      title: "Residential Home",
       description: "A cozy residential home in a quiet neighborhood.",
       status: "Pending",
       paymentStatus: "Unpaid",
@@ -197,7 +197,7 @@ export default function PropertyRequests({
 
         <div className="grid grid-cols-1 gap-5">
           {properties.map((property: Property) => {
-            const propertyType: string = getPropertyType(property.name);
+            const propertyType: string = getPropertyType(property.title);
 
             return (
               <div
@@ -216,7 +216,7 @@ export default function PropertyRequests({
                             className="group"
                           >
                             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight group-hover:text-indigo-600">
-                              {property.name ||
+                              {property.title ||
                                 property.description ||
                                 "Untitled Property"}
                             </h2>

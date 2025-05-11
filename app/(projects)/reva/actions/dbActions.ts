@@ -228,6 +228,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
     const email = user.email;
     const requester = user.firstName;
 
+    const title = formData.get("title") as string;
     const address = formData.get("address") as string;
     const location = JSON.parse(formData.get("location") as string);
     const lga = formData.get("lga") as string;
@@ -268,6 +269,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
     const data = {
       user: { connect: { id: user.id } }, // Assuming `email` is the unique identifier for the user
       // userId: user.id,
+      title,
       address,
       lat: location?.lat,
       lng: location?.lng,

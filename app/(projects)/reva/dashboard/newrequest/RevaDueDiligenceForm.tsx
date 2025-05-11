@@ -73,7 +73,7 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [parcelId, setParcelId] = useState("-");
 
   // const [email, setEmail] = useState("");
-  const [requester, setRequester] = useState("");
+  const [title, setTitle] = useState("");
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
@@ -534,6 +534,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       // Handle form submission logic here
 
       const formData = new FormData();
+      formData.append("title", title);
       formData.append("address", address);
       formData.append("location", JSON.stringify(location));
       formData.append("lga", lga);
@@ -549,7 +550,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       }
 
       console.log("Form submitted with values:", {
-        requester,
+        title,
         address,
         location,
         lga,
@@ -671,6 +672,18 @@ const RevaDueDiligenceForm: React.FC = () => {
               encType="multipart/form-data"
               onSubmit={handleSubmit}
             >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
+                <Input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Property Address
@@ -810,7 +823,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             <div className="space-y-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Requester:</span>
-                <span className="font-medium text-gray-900">{requester}</span>
+                <span className="font-medium text-gray-900">{title}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Address:</span>

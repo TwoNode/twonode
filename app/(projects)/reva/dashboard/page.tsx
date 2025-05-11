@@ -2,7 +2,7 @@ import React from "react";
 import { Welcome } from "./components/Welcome";
 import Link from "next/link";
 import { getUserProperties } from "../actions/dbActions";
-import PropertyRequests from "./components/SingleRequest";
+import UserPropertyRequests from "./components/UserPropertyRequests";
 
 const Home = async () => {
   const { data, success } = await getUserProperties();
@@ -12,7 +12,7 @@ const Home = async () => {
       <Welcome />
 
       <div className="propertiesSection mt-8">
-        <PropertyRequests
+        <UserPropertyRequests
           data={data?.slice(0, 1)}
           title={"Recent Requests"}
           smallTitle
