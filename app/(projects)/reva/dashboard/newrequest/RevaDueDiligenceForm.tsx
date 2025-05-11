@@ -51,7 +51,7 @@ const center = { lat: 6.5244, lng: 3.3792 };
 
 const watchTime = 30000;
 
-const RevaDueDiligenceForm: React.FC = () => {
+const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
   const addrRef = useRef<HTMLInputElement>(null);
   const useMyLocationRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);

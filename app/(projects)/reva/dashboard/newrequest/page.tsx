@@ -2,6 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 
 import RevaDueDiligenceForm from "./RevaDueDiligenceForm";
+// import { notFound } from "next/navigation";
 
 // import dynamic from "next/dynamic";
 // const RevaDueDiligenceForm = dynamic(() => import("./RevaDueDiligenceForm"), {
@@ -85,7 +86,19 @@ export const metadata: Metadata = {
   },
 };
 
-const RevaFormPage: FC = () => {
+const RevaFormPage = async ({
+  searchParams,
+}: {
+  searchParams: { reference?: string };
+}) => {
+  const reference = searchParams?.reference;
+  console.log(reference);
+
+  // if (!reference) {
+  //   console.error("Missing reference in URL.");
+  //   return notFound(); // Render a 404 page if the reference is missing
+  // }
+
   return (
     <div>
       <h2 className="text-[#032740] max-lg:text-xl text-[32px] font-bold text-3xl mb-4">
