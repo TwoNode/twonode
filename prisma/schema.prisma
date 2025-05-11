@@ -21,6 +21,8 @@ model Property {
   description            String?  // Nullable
   status                 String?  // Nullable
   paymentStatus          String?  // Nullable
+  paymentLink            String?  // Nullable
+
   statusMessage          String?  // Nullable
   error                  String?  // Nullable
 
