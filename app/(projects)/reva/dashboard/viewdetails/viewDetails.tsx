@@ -9,12 +9,9 @@ import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
 
-  const [transactionDetails, setTransactionDetails] = useState({});
   const searchParams = useSearchParams();
-  const trxref = searchParams.get("trxref");
   const reference = searchParams.get("reference");
 
-  console.log("Transaction Reference:", trxref);
   console.log("Reference:", reference);
 
   const username =
@@ -27,6 +24,7 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
         <h1 className="text-3xl font-bold text-green-700 text-center mb-6">
           Due Diligence Request Successful
         </h1>
+
         <p className="text-center text-gray-600 mb-6">
           Thank you for your due diligence request.
           <br />
@@ -39,8 +37,9 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
         </div>
 
         <div className="space-y-4">
-          <Detail label="Requester Name" value={username} />
           <Detail label="Email" value={formData?.email} />
+          <Detail label="Status" value={formData?.status} />
+          <Detail label="Payment Status" value={formData?.paymentStatus} />
           <Detail label="Property Address" value={formData?.address} />
           <Detail
             label="Location"

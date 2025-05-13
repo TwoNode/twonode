@@ -143,7 +143,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
         setTotalCost(price);
         drawLGABoundary(feature.geometry);
       } else {
-        alert("No LGA found for this location.");
+        notifyWarning("No LGA found for this location.");
         clearLGABoundary();
       }
     } catch (err) {
@@ -298,6 +298,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
         }
       });
     }
+
     disableUseMyLocationButton();
   };
 
@@ -333,7 +334,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
       accuracyMax = 5;
     }
 
-    notifyWarning(`${platform} - ${browser.getOSName()}`);
+    // notifyWarning(`${platform} - ${browser.getOSName()}`);
 
     setLocationButtonText("Locating...");
     locationBtn?.setAttribute("disabled", "true");
@@ -360,6 +361,23 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
 
           disableUseMyLocationButton();
           setLocationButtonText("Location Set ✅");
+
+          const lat = latlng.lat();
+          const lng = latlng.lng();
+
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === "OK" && results && results.length > 0) {
+              const formattedAddress = results[0].formatted_address;
+              setAddress(formattedAddress);
+              alert(
+                `Address: ${formattedAddress}\nLGA: ${lga}\nLocation: ${lat}, ${lng}`
+              );
+              addrRef.current!.value = formattedAddress;
+            } else {
+              console.error("Geocoder failed due to: " + status);
+            }
+          });
         } else {
           setFallbackPosition(position);
           setShowConfirmFallback(true);
@@ -448,6 +466,23 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
       setShowConfirmFallback(false);
 
       notifyWarning(`Location Set with ${accuracy} accuracy`);
+
+      const lat = latlng.lat();
+      const lng = latlng.lng();
+
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK" && results && results.length > 0) {
+          const formattedAddress = results[0].formatted_address;
+          setAddress(formattedAddress);
+          alert(
+            `Address: ${formattedAddress}\nLGA: ${lga}\nLocation: ${lat}, ${lng}`
+          );
+          addrRef.current!.value = formattedAddress;
+        } else {
+          console.error("Geocoder failed due to: " + status);
+        }
+      });
     } else {
       setShowConfirmFallback(false);
       navigator.geolocation.clearWatch(watchIdRef.current);
