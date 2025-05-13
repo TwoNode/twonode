@@ -21,7 +21,7 @@ export interface PropertySchemaType extends Document {
   lga: string; // Local Government Area (LGA)
 
   totalCost: number; // Total cost in NGN
-  supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
+  documentsUrls: string[]; // Array of URLs for supporting documents
   comments?: string; // Optional additional comments
 }
 
@@ -45,7 +45,7 @@ const PropertySchema = new Schema<PropertySchemaType>({
   lga: { type: String, required: true },
 
   totalCost: { type: Number, required: true },
-  supportingDocumentsUrls: { type: [String], required: true },
+  documentsUrls: { type: [String], required: true },
   comments: { type: String, default: null },
 });
 
@@ -68,7 +68,7 @@ export interface OneTimeUserPropertySchemaType extends Document {
   lga: string; // Local Government Area (LGA)
 
   totalCost: number; // Total cost in NGN
-  supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
+  documentsUrls: string[]; // Array of URLs for supporting documents
   comments?: string; // Optional additional comments
 }
 
@@ -91,7 +91,7 @@ const OneTimeUserPropertySchema = new Schema<OneTimeUserPropertySchemaType>({
   lga: { type: String, required: true },
 
   totalCost: { type: Number, required: true },
-  supportingDocumentsUrls: { type: [String], required: true },
+  documentsUrls: { type: [String], required: true },
   comments: { type: String, default: null },
 });
 

@@ -31,7 +31,7 @@ export interface PropertySchemaType {
   lga: string; // Local Government Area (LGA)
 
   totalCost: number; // Total cost in NGN
-  supportingDocumentsUrls: string[]; // Array of URLs for supporting documents
+  documentsUrls: string[]; // Array of URLs for supporting documents
   comments?: string; // Optional additional comments
 }
 

@@ -39,7 +39,7 @@ interface Property {
   lga: string;
   parcelId?: string | null;
   totalCost: number;
-  supportingDocumentsUrls: string[];
+  documentsUrls: string[];
   comments?: string | null;
   createdAt?: Date | string | null;
   updatedAt?: Date | string | null;
@@ -80,7 +80,7 @@ export default function UserPropertyRequests({
       address: "123 Main Street, Lagos",
       lga: "Ikeja",
       totalCost: 50000,
-      supportingDocumentsUrls: ["document1.pdf", "document2.pdf"],
+      documentsUrls: ["document1.pdf", "document2.pdf"],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       parcelId: "89AF9FSD98SA",
@@ -96,7 +96,7 @@ export default function UserPropertyRequests({
       address: "789 Suburb Lane, Port Harcourt",
       lga: "Obio-Akpor",
       totalCost: 30000,
-      supportingDocumentsUrls: [],
+      documentsUrls: [],
       createdAt: new Date().toISOString(),
       updatedAt: null,
     },
@@ -323,9 +323,9 @@ export default function UserPropertyRequests({
                       )}
                     </div>
 
-                    {property.supportingDocumentsUrls.length > 0 ? (
+                    {property.documentsUrls.length > 0 ? (
                       <ul className="space-y-2">
-                        {property.supportingDocumentsUrls.map(
+                        {property.documentsUrls.map(
                           (doc: string, index: number) => (
                             <li key={index}>
                               <a

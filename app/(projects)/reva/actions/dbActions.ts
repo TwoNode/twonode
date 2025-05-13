@@ -162,7 +162,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       totalCost,
       comments,
       parcelId,
-      supportingDocumentsUrls: uploadedFilesUrls,
+      documentsUrls: uploadedFilesUrls,
     };
 
     const result = await saveToOneTimeProperty(data);
@@ -277,7 +277,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
       totalCost,
       comments,
       parcelId,
-      supportingDocumentsUrls: uploadedFilesUrls,
+      documentsUrls: uploadedFilesUrls,
     };
 
     const result = await saveToPropertyTable(data);
@@ -398,9 +398,19 @@ export const authPaymentSuccessful = async (reference: string) => {
       return { success: false, message: "User is not authenticated." };
     }
 
-    // Fetch existing transaction from the database
-    const existingTransaction = await prisma.property.findUnique({
-      where: { reference, userId: user.id },
+    // // Fetch existing transaction from the database
+    // const existingTransaction = await prisma.property.findUnique({
+    //   where: { reference, userId: user.id },
+    // });
+
+    const existingTransaction = await prisma.property.findFirst({
+      where: {
+        userId: user.id,
+        OR: [
+          { reference: reference },
+          { references: { has: reference } }, // Match inside array
+        ],
+      },
     });
 
     // If transaction does not exist, return an error

@@ -92,8 +92,8 @@ export async function AllRequests() {
                       Supporting Documents:
                     </h3>
                     {/* <ul className="list-disc list-inside text-gray-500 text-xs">
-                  {property.supportingDocumentsUrls?.length > 0 ? (
-                    property.supportingDocumentsUrls.map((url, index) => (
+                  {property.documentsUrls?.length > 0 ? (
+                    property.documentsUrls.map((url, index) => (
                       <li key={index}>
                         <a
                           href={url}

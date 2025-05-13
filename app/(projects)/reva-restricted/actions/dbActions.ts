@@ -162,7 +162,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       totalCost,
       comments,
       parcelId,
-      supportingDocumentsUrls: uploadedFilesUrls,
+      documentsUrls: uploadedFilesUrls,
     };
 
     const result = await saveToOneTimeProperty(data);
@@ -275,7 +275,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
       totalCost,
       comments,
       parcelId,
-      supportingDocumentsUrls: uploadedFilesUrls,
+      documentsUrls: uploadedFilesUrls,
     };
 
     const result = await saveToPropertyTable(data);

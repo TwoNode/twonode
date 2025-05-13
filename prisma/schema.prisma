@@ -17,6 +17,7 @@ datasource db {
 model Property {
   id                     String   @id @default(uuid())
   reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
+  references             String[] // Other references for a transaction
   title                  String?  // Nullable
   description            String?  // Nullable
   status                 String?  // Nullable
@@ -36,7 +37,7 @@ model Property {
   parcelId               String?  // Optional
 
   totalCost              Float
-  supportingDocumentsUrls String[] // Array of URLs
+  documentsUrls          String[] // Array of URLs
   comments               String?  // Optional
 
   createdAt              DateTime @default(now())
@@ -63,7 +64,7 @@ model OneTimeUserProperty {
   parcelId               String?  // Optional
 
   totalCost              Float
-  supportingDocumentsUrls String[] // Array of URLs
+  documentsUrls          String[] // Array of URLs
   comments               String?  // Optional
 
   createdAt              DateTime @default(now())
