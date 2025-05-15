@@ -59,6 +59,7 @@ export function Menu({ isOpen }: MenuProps) {
     {
       element: (
         <LogoutLink
+          key={"logout"}
           // postLogoutRedirectURL="/dashboard"
           className="flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-lg"
         >

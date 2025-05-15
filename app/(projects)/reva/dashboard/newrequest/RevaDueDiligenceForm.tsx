@@ -719,6 +719,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Property Address
@@ -794,6 +795,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                 required
                 placeholder="Auto-generated location"
               />
+
               <Input
                 type="text"
                 value={lga}
