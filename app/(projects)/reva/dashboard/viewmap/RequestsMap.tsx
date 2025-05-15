@@ -40,7 +40,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
       <div className="rounded-xl overflow-hidden border">
         <GoogleMap
           mapContainerStyle={mapStyles}
-          zoom={10}
+          zoom={12}
           center={defaultCenter}
         >
           {properties.map(
