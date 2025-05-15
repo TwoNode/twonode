@@ -25,8 +25,8 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
 
   // Default center (you might want to calculate this based on properties)
   const defaultCenter = {
-    lat: 9.082, // Example: Lagos coordinates
-    lng: 8.6753,
+    lat: 6.5244,
+    lng: 3.3792,
   };
 
   const mapStyles = {

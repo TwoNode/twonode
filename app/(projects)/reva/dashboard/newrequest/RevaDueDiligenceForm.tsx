@@ -711,11 +711,12 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Title
                 </label>
+
                 <Input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter your name"
+                  placeholder="Request title"
                   required
                 />
               </div>
