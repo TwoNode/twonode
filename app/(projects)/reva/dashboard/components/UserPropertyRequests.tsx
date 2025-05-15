@@ -16,13 +16,7 @@ import Link from "next/link";
 
 type PropertyStatus = "Available" | "Completed" | "Pending" | "Failed";
 
-type PaymentStatus =
-  | "Paid"
-  | "Unpaid"
-  | "Partial"
-  | "Refunded"
-  | "Successful"
-  | "Failed";
+type PaymentStatus = "Paid" | "Unpaid";
 
 interface Property {
   id: string;
@@ -121,13 +115,8 @@ export default function UserPropertyRequests({
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case "Paid":
-      case "Successful":
         return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
-      case "Partial":
-        return "bg-purple-50 text-purple-700 ring-purple-600/20";
-      case "Refunded":
-        return "bg-gray-50 text-gray-700 ring-gray-600/20";
-      case "Failed":
+      case "Unpaid":
         return "bg-red-50 text-red-700 ring-red-600/20";
       default:
         return "bg-rose-50 text-rose-700 ring-rose-600/20";
@@ -149,13 +138,8 @@ export default function UserPropertyRequests({
   const getPaymentStatusIcon = (status: PaymentStatus) => {
     switch (status) {
       case "Paid":
-      case "Successful":
         return <BanknotesIcon className="h-4 w-4" />;
-      case "Partial":
-        return <CurrencyDollarIcon className="h-4 w-4" />;
-      case "Refunded":
-        return <ArrowPathIcon className="h-4 w-4" />;
-      case "Failed":
+      case "Unpaid":
         return <ExclamationCircleIcon className="h-4 w-4" />;
       default:
         return <ExclamationCircleIcon className="h-4 w-4" />;
@@ -244,6 +228,7 @@ export default function UserPropertyRequests({
                         {getStatusIcon(property.status ?? "Pending")}
                         {property.status}
                       </span>
+
                       <span
                         className={`inline-flex items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${getPaymentStatusColor(
                           property.paymentStatus ?? "Unpaid"
