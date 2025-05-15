@@ -371,7 +371,7 @@ export const paymentSuccessful = async (reference: string) => {
     const updatedTransaction = await prisma.oneTimeUserProperty.update({
       where: { reference },
       data: {
-        status: "Completed",
+        status: "Processing",
         paymentStatus: "Successful",
         statusMessage: "Payment completed successfully",
         error: null,
@@ -446,7 +446,7 @@ export const authPaymentSuccessful = async (reference: string) => {
     const updatedTransaction = await prisma.property.update({
       where: { reference },
       data: {
-        status: "Completed",
+        status: "Processing",
         paymentStatus: "Successful",
         statusMessage: "Payment completed successfully",
         error: null,

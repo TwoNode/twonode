@@ -62,13 +62,39 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
           )}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center flex justify-center flex-wrap gap-5">
           <Button
             className="bg-blue-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
             onClick={() => router.push("/reva/dashboard/newrequest")}
           >
             New Request
           </Button>
+
+          <Button
+            variant={"link"}
+            className="bg-transparent border-2 border-blue-600 text-blue-600 py-3 px-6 rounded-lg shadow-md hover:bg-blue-600 hover:text-white"
+            onClick={() => router.push("/reva/dashboard/allrequests")}
+          >
+            All Request
+          </Button>
+
+          {formData.paymentStatus !== "Successful" ? (
+            <>
+              <Button
+                variant={"outline"}
+                className="bg-green-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
+                onClick={() =>
+                  router.push(
+                    `/reva/dashboard/newrequest?reference=${reference}`
+                  )
+                }
+              >
+                Continue Request
+              </Button>
+            </>
+          ) : (
+            ""
+          )}
         </div>
       </div>
     </div>

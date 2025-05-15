@@ -42,6 +42,11 @@ export function Menu({ isOpen }: MenuProps) {
       url: `${dashboardUrl}/allrequests`,
     },
     {
+      icon: exploreSvgIcon,
+      label: "View Map",
+      url: `${dashboardUrl}/viewmap`,
+    },
+    {
       icon: calendarSvgIcon,
       label: "New Request",
       url: `${dashboardUrl}/newrequest`,
