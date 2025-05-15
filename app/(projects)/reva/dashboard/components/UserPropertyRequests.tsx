@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 
 type PropertyStatus = "Available" | "Completed" | "Pending" | "Failed";
+
 type PaymentStatus =
   | "Paid"
   | "Unpaid"
