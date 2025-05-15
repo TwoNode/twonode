@@ -36,7 +36,7 @@ export const saveToOneTimeProperty = async (
   data: OneTimeUserPropertyCreateInputType
 ) => {
   try {
-    data.paymentStatus = "Pending";
+    data.paymentStatus = "Unpaid";
     data.status = "Pending";
     data.statusMessage = "Request is being processed";
 
@@ -61,7 +61,7 @@ export const saveToOneTimeProperty = async (
 
 export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
   try {
-    data.paymentStatus = "Pending";
+    data.paymentStatus = "Unpaid";
     data.status = "Pending";
     data.statusMessage = "Request is being processed";
 
@@ -345,8 +345,9 @@ export const paymentSuccessful = async (reference: string) => {
     }
 
     // If payment is already marked as successful, avoid duplicate updates
-    if (existingTransaction.paymentStatus === "Successful") {
+    if (existingTransaction.paymentStatus === "Paid") {
       console.log("Transaction already marked as successful:", reference);
+
       return {
         success: true,
         message: "Payment has already been recorded.",
@@ -372,7 +373,7 @@ export const paymentSuccessful = async (reference: string) => {
       where: { reference },
       data: {
         status: "Processing",
-        paymentStatus: "Successful",
+        paymentStatus: "Paid",
         statusMessage: "Payment completed successfully",
         error: null,
       },
@@ -420,8 +421,9 @@ export const authPaymentSuccessful = async (reference: string) => {
     }
 
     // If payment is already marked as successful, avoid duplicate updates
-    if (existingTransaction.paymentStatus === "Successful") {
+    if (existingTransaction.paymentStatus === "Paid") {
       console.log("Transaction already marked as successful:", reference);
+
       return {
         success: true,
         message: "Payment has already been recorded.",
@@ -435,6 +437,7 @@ export const authPaymentSuccessful = async (reference: string) => {
     // Check if the transaction was actually successful
     if (!verificationResponse || !verificationResponse.status) {
       console.error("Transaction verification failed:", verificationResponse);
+
       return {
         success: false,
         message: "Transaction verification failed or was unsuccessful.",
@@ -447,13 +450,14 @@ export const authPaymentSuccessful = async (reference: string) => {
       where: { reference },
       data: {
         status: "Processing",
-        paymentStatus: "Successful",
+        paymentStatus: "Paid",
         statusMessage: "Payment completed successfully",
         error: null,
       },
     });
 
     console.log("Payment marked as successful:", updatedTransaction);
+
     return {
       success: true,
       message: "Payment recorded successfully",
