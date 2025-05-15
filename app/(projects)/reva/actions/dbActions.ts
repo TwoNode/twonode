@@ -331,7 +331,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
   }
 };
 
-export const paymentSuccessful = async (reference: string) => {
+export const checkPaymentSuccess = async (reference: string) => {
   try {
     // Fetch existing transaction from the database
     const existingTransaction = await prisma.oneTimeUserProperty.findUnique({
@@ -361,6 +361,7 @@ export const paymentSuccessful = async (reference: string) => {
     // Check if the transaction was actually successful
     if (!verificationResponse || !verificationResponse.status) {
       console.error("Transaction verification failed:", verificationResponse);
+
       return {
         success: false,
         message: "Transaction verification failed or was unsuccessful.",

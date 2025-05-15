@@ -39,6 +39,7 @@ model Property {
   totalCost              Float
   documentsUrls          String[] // Array of URLs
   comments               String?  // Optional
+  deleted                Boolean?  // Optional field to indicate if the property is deleted
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
