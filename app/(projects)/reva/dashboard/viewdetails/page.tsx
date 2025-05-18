@@ -1,6 +1,6 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
-import ViewDetails from "./viewDetails";
+import SingleRequestPage from "./SingleRequestPage";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
 import {
   authGetTransactionData,
@@ -100,7 +100,7 @@ const ViewDetailsPage = async ({
 
     console.log(result);
 
-    return <ViewDetails formData={result?.data} />;
+    return <SingleRequestPage property={result?.data} />;
   } catch (error) {
     console.error("Error processing payment:", error);
     return notFound();

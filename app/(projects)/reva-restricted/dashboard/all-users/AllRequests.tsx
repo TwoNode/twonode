@@ -8,7 +8,7 @@ export async function AllRequests() {
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
       <h1 className="text-2xl font-bold mb-4">
-        All Requests &nbsp; <small> ( {success && data?.length} )</small>
+        All Due Diligence &nbsp; <small> ( {success && data?.length} )</small>
       </h1>
 
       <section className="info-section mb-6 flex flex-col gap-4">
@@ -71,7 +71,9 @@ export async function AllRequests() {
                     href={`/reva/dashboard/viewdetails?trxref=REVA_2244bbbc5&reference=REVA_2244bbbc5`}
                   >
                     <h2 className="text-xl font-semibold mb-2">
-                      {property.name || property.description || "Untitled Property"}
+                      {property.name ||
+                        property.description ||
+                        "Untitled Request"}
                     </h2>
                   </Link>
                   <p className="text-gray-600 text-sm mb-2">

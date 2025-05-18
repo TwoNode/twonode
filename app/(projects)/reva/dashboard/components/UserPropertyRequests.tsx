@@ -203,7 +203,7 @@ export default function UserPropertyRequests({
                             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight group-hover:text-indigo-600">
                               {property.title ||
                                 property.description ||
-                                "Untitled Property"}
+                                "Untitled Request"}
                             </h2>
                             <p className="text-xs text-gray-400 mt-1">
                               REF: {property.reference} • {propertyType}
