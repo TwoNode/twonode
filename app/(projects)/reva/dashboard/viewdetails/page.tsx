@@ -2,7 +2,10 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import ViewDetails from "./viewDetails";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
-import { authPaymentSuccessful } from "@/app/(projects)/reva/actions/dbActions";
+import {
+  authGetTransactionData,
+  authPaymentSuccessful,
+} from "@/app/(projects)/reva/actions/dbActions";
 
 export const viewport: Viewport = {
   colorScheme: "light",
@@ -93,23 +96,11 @@ const ViewDetailsPage = async ({
   }
 
   try {
-    const paymentResult = await authPaymentSuccessful(reference);
+    const result = await authGetTransactionData(reference);
 
-    if (paymentResult.success) {
-      return <ViewDetails formData={paymentResult?.data} />;
-    } else {
-      return (
-        <div className="flex justify-center items-center h-screen">
-          <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold">Payment Verification Failed</h2>
-            <p>
-              {paymentResult?.message! ||
-                "Something went wrong. Please try again!"}
-            </p>
-          </div>
-        </div>
-      );
-    }
+    console.log(result);
+
+    return <ViewDetails formData={result?.data} />;
   } catch (error) {
     console.error("Error processing payment:", error);
     return notFound();

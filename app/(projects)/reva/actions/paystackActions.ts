@@ -57,7 +57,7 @@ export const initializePaystack = async ({
         ],
       },
       callback_url: addBaseUrl(
-        isAuthenticated ? "/reva/dashboard/viewdetails" : "/reva/viewdetails"
+        isAuthenticated ? "/reva/dashboard/verifypayment" : "/reva/verifypayment"
       ),
     });
     console.log(process.env.PAYSTACK_CALLBACK_URL);
@@ -113,7 +113,7 @@ export const verifyPaystackTransaction = async (reference: string) => {
 //     alert(`Payment successful! Transaction ID: ${response.reference}`); // Notify the user of successful payment
 //     // Handle successful payment here
 //     console.log("Payment successful:", response); // Log the payment response
-//     router.push("/reva/viewdetails"); // Navigate to the details view page
+//     router.push("/reva/verifypayment"); // Navigate to the details view page
 //   },
 //   onClose: () => {
 //     if (isWindowReady) alert("Transaction was not completed."); // Notify the user if the transaction was closed without completion

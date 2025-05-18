@@ -1,6 +1,6 @@
 export const removeIdPrefix = (text: string) => {
-  if (text.startsWith("ID:")) {
+  if (text?.startsWith("ID:")) {
     return text.replace("ID:", "").trim();
   }
-  return text.trim();
+  return text?.trim();
 };

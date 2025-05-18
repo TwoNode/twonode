@@ -11,18 +11,26 @@ import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser } from "@/utils/authUser";
 import prisma from "@/lib/prisma";
 
+type PropertyStatus = "Available" | "Completed" | "Processing";
+
+type PaymentStatus = "Paid" | "Unpaid";
+
 export type PropertyCreateInputType = Omit<
   Prisma.PropertyCreateInput,
-  "reference"
+  "reference" | "status" | "paymentStatus"
 > & {
   reference?: string;
+  status?: PropertyStatus;
+  paymentStatus?: PaymentStatus;
 };
 
 export type OneTimeUserPropertyCreateInputType = Omit<
   Prisma.OneTimeUserPropertyCreateInput,
-  "reference"
+  "reference" | "status" | "paymentStatus"
 > & {
   reference?: string;
+  status?: PropertyStatus;
+  paymentStatus?: PaymentStatus;
 };
 
 function generateReference(): string {
@@ -37,7 +45,7 @@ export const saveToOneTimeProperty = async (
 ) => {
   try {
     data.paymentStatus = "Unpaid";
-    data.status = "Pending";
+    data.status = "Processing";
     data.statusMessage = "Request is being processed";
 
     const newProperty = await prisma.oneTimeUserProperty.create({
@@ -62,7 +70,7 @@ export const saveToOneTimeProperty = async (
 export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
   try {
     data.paymentStatus = "Unpaid";
-    data.status = "Pending";
+    data.status = "Processing";
     data.statusMessage = "Request is being processed";
 
     if (!data.reference) {
@@ -90,8 +98,8 @@ export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
 
 const updateTransactionStatus = async (
   reference: string,
-  status: string,
-  paymentStatus: string,
+  status: PropertyStatus,
+  paymentStatus: PaymentStatus,
   statusMessage: string,
   error: string | null
 ) => {
@@ -107,6 +115,7 @@ const updateTransactionStatus = async (
     });
     return updatedTransaction;
   } catch (error) {
+    console.error("Error updating transaction status:", error);
     return null;
   }
 };
@@ -188,8 +197,8 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       // update the payment status in the database
       await updateTransactionStatus(
         result?.data?.reference!,
-        "Failed",
-        "Failed",
+        "Processing",
+        "Unpaid",
         paystackResponse.message,
         null
       );
@@ -304,8 +313,8 @@ export const authSaveFormDataAndInitiatePaystack = async (
       // update the payment status in the database
       await updateTransactionStatus(
         result?.data?.reference!,
-        "Failed",
-        "Failed",
+        "Processing",
+        "Unpaid",
         paystackResponse.message,
         null
       );
@@ -467,6 +476,48 @@ export const authPaymentSuccessful = async (reference: string) => {
   } catch (error) {
     console.error("Error processing payment:", error);
     return { success: false, message: "Failed to process payment", error };
+  }
+};
+
+export const getTransactionData = async (reference: string) => {
+  try {
+    const transaction = await prisma.oneTimeUserProperty.findUnique({
+      where: { reference },
+    });
+
+    if (!transaction) {
+      return { success: false, message: "Transaction not found." };
+    }
+
+    return { success: true, data: transaction };
+  } catch (error) {
+    console.error("Error fetching transaction data:", error);
+    return {
+      success: false,
+      message: "Failed to fetch transaction data",
+      error,
+    };
+  }
+};
+
+export const authGetTransactionData = async (reference: string) => {
+  try {
+    const transaction = await prisma.property.findUnique({
+      where: { reference },
+    });
+
+    if (!transaction) {
+      return { success: false, message: "Transaction not found." };
+    }
+
+    return { success: true, data: transaction };
+  } catch (error) {
+    console.error("Error fetching transaction data:", error);
+    return {
+      success: false,
+      message: "Failed to fetch transaction data",
+      error,
+    };
   }
 };
 

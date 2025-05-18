@@ -43,7 +43,7 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
           <Detail label="Property Address" value={formData?.address} />
           <Detail
             label="Location"
-            value={`${formData?.lat}, ${formData?.lng}`}
+            value={`${formData?.lat ?? ""}, ${formData?.lng ?? ""}`}
           />
           <Detail
             label="Parcel ID"
@@ -78,7 +78,7 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
             All Request
           </Button>
 
-          {formData.paymentStatus !== "Successful" ? (
+          {formData?.paymentStatus !== "Paid" ? (
             <>
               <Button
                 variant={"outline"}
