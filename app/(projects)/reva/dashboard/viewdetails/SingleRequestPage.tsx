@@ -48,11 +48,27 @@ const SingleRequestPage = ({ property }: { property: any }) => {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Created</p>
-              <p>{property?.createdAt}</p>
+              <p>
+                {property?.createdAt
+                  ? new Date(property.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "-"}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Last Updated</p>
-              <p>{property?.updatedAt}</p>
+              <p>
+                {property?.updatedAt
+                  ? new Date(property.updatedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "-"}
+              </p>
             </div>
           </CardContent>
         </Card>
