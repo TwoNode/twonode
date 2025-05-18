@@ -15,6 +15,7 @@ import {
 } from "../svgs";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { Home, ListChecks, Map, FilePlus, Settings } from "lucide-react";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -35,27 +36,15 @@ export function Menu({ isOpen }: MenuProps) {
   const dashboardUrl = "/reva/dashboard";
 
   const menuList = [
-    { icon: homeSvgIcon, label: "Home", url: dashboardUrl },
+    { icon: Home, label: "Home", url: dashboardUrl },
     {
-      icon: exploreSvgIcon,
+      icon: ListChecks,
       label: "All Requests",
       url: `${dashboardUrl}/allrequests`,
     },
-    {
-      icon: exploreSvgIcon,
-      label: "View Map",
-      url: `${dashboardUrl}/viewmap`,
-    },
-    {
-      icon: calendarSvgIcon,
-      label: "New Request",
-      url: `${dashboardUrl}/newrequest`,
-    },
-    {
-      icon: notificationSvgIcon,
-      label: "Settings",
-      url: `${dashboardUrl}/settings`,
-    },
+    { icon: Map, label: "View Map", url: `${dashboardUrl}/viewmap` },
+    { icon: FilePlus, label: "New Request", url: `${dashboardUrl}/newrequest` },
+    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
     {
       element: (
         <LogoutLink
@@ -95,7 +84,11 @@ export function Menu({ isOpen }: MenuProps) {
                 href={item.url}
                 key={index}
               >
-                <span className="w-max lg:mx-auto">{item.icon}</span>
+                <span className="w-max lg:mx-auto">
+                  {" "}
+                  <item.icon className="w-5 h-5" />
+                  {/* {item.icon} */}
+                </span>
                 <span className="text-center text-[#032740] text-[10px] font-medium font-['Eudoxus Sans']">
                   {item.label}
                 </span>
