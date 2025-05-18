@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Ellipsis, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import {
-  calendarSvgIcon,
-  exploreSvgIcon,
-  homeSvgIcon,
-  notificationSvgIcon,
-} from "../svgs";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { Home, ListChecks, Map, FilePlus, Settings } from "lucide-react";
+import {
+  Home,
+  ListChecks,
+  Map,
+  FilePlus,
+  Settings,
+  LogOut,
+} from "lucide-react";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -28,6 +28,7 @@ export function Menu({ isOpen }: MenuProps) {
   const isActive = (url: string) => {
     return pathname === url;
   };
+
   const activeClassName = "bg-[#008cff6e] text-[#032740]";
   const inactiveClassName = "text-[#032740]";
   const activeIconClassName = "text-[#032740]";

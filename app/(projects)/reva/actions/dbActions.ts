@@ -552,7 +552,14 @@ export const getUserProperties = async () => {
       return { success: false, message: "No properties found for this user." };
     }
 
-    return { success: true, data: properties };
+    return {
+      success: true,
+      data: properties?.sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+        return dateB - dateA; // Sort descending by date
+      }),
+    };
   } catch (error) {
     console.error("Error fetching user properties:", error);
     return {
