@@ -4,7 +4,6 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
 const SingleRequestPage = ({ property }: { property: any }) => {
@@ -17,7 +16,7 @@ const SingleRequestPage = ({ property }: { property: any }) => {
               Property Request: {property?.title || "Untitled"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              REF: {property?.reference} · Residential
+              REF: &nbsp; {property?.reference}
             </p>
           </div>
           <div className="flex items-center gap-2">
