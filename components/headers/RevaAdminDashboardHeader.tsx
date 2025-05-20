@@ -6,8 +6,11 @@ import Image from "next/image";
 
 export const RevaAdminDashboardNavbar = () => {
   return (
-    <div className="w-full max-w-full h-[75px] max-md:h-[70px] px-[5%] bg-gradient-to-r from-blue-800 to-gray-900 justify-between items-center inline-flex">
-      <Link href={"/reva"}>
+    <div className="w-full max-w-full h-[75px] max-md:h-[70px] px-[5%] bg-gradient-to-r  from-gray-800 to-blue-500 justify-between items-center inline-flex">
+      <Link
+        href={"/reva-restricted/dashboard"}
+        className="flex items-center gap-2.5"
+      >
         <Image
           src="/reva/revaLogo.png"
           alt="REVA Logo"
@@ -15,6 +18,8 @@ export const RevaAdminDashboardNavbar = () => {
           height={50}
           className="bg-white/70 rounded-full w-12 max-md:w-11"
         />
+
+        <h1 className="text-2xl font-bold text-white">REVA Admin</h1>
       </Link>
 
       <div className="justify-start items-center gap-2.5 flex">
