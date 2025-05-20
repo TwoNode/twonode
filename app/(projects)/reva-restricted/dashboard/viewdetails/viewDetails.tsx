@@ -66,9 +66,11 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
         <div className="mt-8 text-center">
           <Button
             className="bg-blue-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
-            onClick={() => router.push("/reva/dashboard/newrequest")}
+            onClick={() =>
+              router.push("/reva-restricted/dashboard/allrequests")
+            }
           >
-            New Request
+            All Requests
           </Button>
         </div>
       </div>
