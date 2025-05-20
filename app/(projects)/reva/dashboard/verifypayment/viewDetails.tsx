@@ -77,24 +77,6 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
           >
             All Request
           </Button>
-
-          {formData.paymentStatus !== "Successful" ? (
-            <>
-              <Button
-                variant={"outline"}
-                className="bg-green-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
-                onClick={() =>
-                  router.push(
-                    `/reva/dashboard/newrequest?reference=${reference}`
-                  )
-                }
-              >
-                Continue Request
-              </Button>
-            </>
-          ) : (
-            ""
-          )}
         </div>
       </div>
     </div>

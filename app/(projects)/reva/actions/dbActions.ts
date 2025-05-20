@@ -11,9 +11,9 @@ import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser } from "@/utils/authUser";
 import prisma from "@/lib/prisma";
 
-type PropertyStatus = "Available" | "Completed" | "Processing";
+export type PropertyStatus = "Available" | "Completed" | "Processing";
 
-type PaymentStatus = "Paid" | "Unpaid";
+export type PaymentStatus = "Paid" | "Unpaid";
 
 export type PropertyCreateInputType = Omit<
   Prisma.PropertyCreateInput,
@@ -22,6 +22,15 @@ export type PropertyCreateInputType = Omit<
   reference?: string;
   status?: PropertyStatus;
   paymentStatus?: PaymentStatus;
+};
+
+export type PropertyWithoutUser = Omit<
+  Prisma.PropertyCreateInput,
+  "user" | "status" | "paymentStatus"
+> & {
+  reference?: string;
+  status?: PropertyStatus | string | null | undefined;
+  paymentStatus?: PaymentStatus | string | null | undefined;
 };
 
 export type OneTimeUserPropertyCreateInputType = Omit<
@@ -525,6 +534,7 @@ const getAllUserProperties = async (userId: string) => {
   try {
     const properties = await prisma.property.findMany({
       where: {
+        deleted: false,
         user: {
           kindeId: userId,
         },

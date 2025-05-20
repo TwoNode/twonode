@@ -6,6 +6,7 @@ import {
   authGetTransactionData,
   authPaymentSuccessful,
 } from "@/app/(projects)/reva/actions/dbActions";
+import InvalidReferencePage from "@/components/InvalidReferencePage";
 
 export const viewport: Viewport = {
   colorScheme: "light",
@@ -92,7 +93,7 @@ const ViewDetailsPage = async ({
 
   if (!reference) {
     console.error("Missing reference in URL.");
-    return notFound(); // Render a 404 page if the reference is missing
+    return InvalidReferencePage(); // Render a 404 page if the reference is missing
   }
 
   try {
@@ -100,10 +101,15 @@ const ViewDetailsPage = async ({
 
     console.log(result);
 
-    return <SingleRequestPage property={result?.data} />;
+    if (!result?.data) {
+      console.error("Invalid or missing property data.");
+      return InvalidReferencePage();
+    }
+
+    return <SingleRequestPage property={result.data} />;
   } catch (error) {
     console.error("Error processing payment:", error);
-    return notFound();
+    return InvalidReferencePage();
   }
 };
 
