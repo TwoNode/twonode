@@ -2,6 +2,7 @@ import Link from "next/link";
 import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
+import { BellRing } from "lucide-react";
 // import { ModeToggle } from "../mode-toggle";
 
 export const RevaUserDashboardNavbar = () => {
@@ -17,8 +18,12 @@ export const RevaUserDashboardNavbar = () => {
         />
       </Link>
 
-      <div className="justify-start items-center gap-2.5 flex">
+      <div className="justify-start items-center gap-3 flex">
         <SheetMenu />
+
+        <Link href="/reva/dashboard/notifications" className="relative">
+          <BellRing size={30} color="#fff"  />
+        </Link>
 
         {/* <ModeToggle /> */}
         <Link

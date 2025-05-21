@@ -16,12 +16,14 @@ datasource db {
 
 model Property {
   id                     String   @id @default(uuid())
-  reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
+  reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
   references             String[] // Other references for a transaction
   title                  String?  // Nullable
   description            String?  // Nullable
-  status                 String?  // Nullable
-  paymentStatus          String?  // Nullable
+
+  status                 String?
+  paymentStatus          String?
+
   paymentLink            String?  // Nullable
 
   statusMessage          String?  // Nullable
@@ -39,19 +41,23 @@ model Property {
   totalCost              Float
   documentsUrls          String[] // Array of URLs
   comments               String?  // Optional
-  deleted                Boolean?  // Optional field to indicate if the property is deleted
+  deleted                Boolean   @default(false) // Optional field to indicate if the property is deleted
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+
+  report                 Json?    // report from reva
 }
 
 model OneTimeUserProperty {
   id                     String   @id @default(uuid())
-  reference              String   @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 9))")) // Optional DB default if supported
+  reference              String   @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
   requester              String?  // Nullable (default "")
   description            String?  // Nullable
-  status                 String?  // Nullable
-  paymentStatus          String?  // Nullable
+
+  status                 String?
+  paymentStatus          String?
+
   statusMessage          String?  // Nullable
   error                  String?  // Nullable
 
@@ -70,6 +76,8 @@ model OneTimeUserProperty {
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+
+  report                 Json?    // report from reva
 }
 
 
@@ -81,16 +89,44 @@ enum Role {
 
 // Placeholder User model for relation
 model User {
-  id              String              @id @default(uuid()) // Unique identifier
-  kindeId         String              @unique
-  email           String              @unique
+  id                 String              @id @default(uuid()) // Unique identifier
+  kindeId            String              @unique
+  email              String              @unique
 
-  firstName       String
-  lastName        String
+  firstName          String
+  lastName           String
 
-  role            Role                @default(USER)
-  emailVerified   Boolean             @default(false)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  properties      Property[]
+  role               Role                @default(USER)
+  emailVerified      Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  properties         Property[]
+}
+
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  PAYMENT
+  PROPERTY
+}
+
+
+model Notification {
+  id              String           @id @default(cuid())
+  type            NotificationType
+  title           String
+  message         String
+  readBy          String[]         @default([]) // List of userIds who read it
+  dismissedBy     String[]         @default([]) // List of userIds who dismissed it
+  userIds         String[]         @default([]) // If null/empty => general
+  link            String?
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([createdAt])
 }

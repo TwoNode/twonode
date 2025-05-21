@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
+import AdminSingleRequestPage from "./SingleRequestPage";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -83,6 +84,8 @@ const ViewDetails = ({ formData }: { formData: any }) => {
     <Suspense fallback={<div>Loading...</div>}>
       <>
         <ViewDetailsContent formData={formData} />
+
+        <AdminSingleRequestPage property={formData} />
       </>
     </Suspense>
   );

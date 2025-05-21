@@ -26,6 +26,34 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
     setOpenDeleteModal((prev) => !prev);
   };
 
+  const handleDownloadReport = () => {
+    console.log("Direct file link:", property.report);
+    if (
+      property?.report &&
+      typeof property.report === "object" &&
+      "directFileLink" in property.report
+    ) {
+      const link = document.createElement("a");
+      if (
+        typeof property.report === "object" &&
+        property.report !== null &&
+        "directFileLink" in property.report
+      ) {
+        link.href = (
+          property.report as { directFileLink: string }
+        ).directFileLink;
+      } else {
+        console.error("No valid file link available to download");
+      }
+      link.download = `${property?.title ?? "report"}.pdf`; // You can customize the file name
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      console.error("No file link available to download");
+    }
+  };
+
   return (
     <>
       <div className="space-y-8 p-6">
@@ -49,6 +77,7 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
               variant="outline"
               disabled={property?.status !== "Completed"}
               className="max-sm:w-full rounded-lg"
+              onClick={handleDownloadReport}
             >
               Download Report
             </Button>
@@ -128,7 +157,7 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
         </Card>
 
         {/* Supporting Documents */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Supporting Documents</CardTitle>
           </CardHeader>
@@ -171,7 +200,7 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Comments */}
         <Card>
@@ -198,10 +227,11 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
               variant="destructive"
               className="max-sm:w-full rounded-lg"
               onClick={toggleDeleteModal}
+              disabled
             >
               Delete Request
             </Button>
-            <Button className="max-sm:w-full rounded-lg">
+            <Button disabled className="max-sm:w-full rounded-lg">
               Download Receipt
             </Button>
           </div>

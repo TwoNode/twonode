@@ -534,10 +534,10 @@ const getAllUserProperties = async (userId: string) => {
   try {
     const properties = await prisma.property.findMany({
       where: {
-        // deleted: false,
         user: {
           kindeId: userId,
         },
+        deleted: false,
       },
     });
 

@@ -3,6 +3,8 @@ import { FC } from "react";
 import ViewDetails from "./viewDetails";
 import { getRequestByReference } from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
+import { authGetTransactionData } from "@/app/(projects)/reva/actions/dbActions";
+import AdminSingleRequestPage from "./SingleRequestPage";
 
 export const viewport: Viewport = {
   colorScheme: "light",
@@ -94,9 +96,23 @@ const ViewDetailsPage = async ({
 
   try {
     const request = await getRequestByReference(reference);
+    const result = await authGetTransactionData(reference);
 
     if (request.success) {
-      return <ViewDetails formData={request?.data} />;
+      console.log("Request Data:", result);
+      const transformedProperty = {
+        ...result.data,
+        report: result?.data?.report ?? undefined, // Ensure compatibility with expected type
+        address: result?.data?.address ?? "Unknown Address", // Provide a default value for address
+        lga: result?.data?.lga ?? "Unknown LGA", // Provide a default value for lga
+      };
+
+      return (
+        <>
+          <AdminSingleRequestPage property={transformedProperty} />;
+          {/* <ViewDetails formData={request?.data} />; */}
+        </>
+      );
     } else {
       return <InvalidReferencePage />;
     }

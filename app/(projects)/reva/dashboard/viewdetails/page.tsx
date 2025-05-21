@@ -106,7 +106,12 @@ const ViewDetailsPage = async ({
       return InvalidReferencePage();
     }
 
-    return <SingleRequestPage property={result.data} />;
+    const transformedProperty = {
+      ...result.data,
+      report: result.data.report ?? undefined, // Ensure compatibility with expected type
+    };
+
+    return <SingleRequestPage property={transformedProperty} />;
   } catch (error) {
     console.error("Error processing payment:", error);
     return InvalidReferencePage();
