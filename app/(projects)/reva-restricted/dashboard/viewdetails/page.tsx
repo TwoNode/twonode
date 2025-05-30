@@ -7,80 +7,14 @@ import { authGetTransactionData } from "@/app/(projects)/reva/actions/dbActions"
 import AdminSingleRequestPage from "./AdminSingleRequestPage";
 import { AdminReportUpload } from "./AdminReportUpload";
 
-export const viewport: Viewport = {
-  colorScheme: "light",
-  themeColor: "#ffffff",
-
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  minimumScale: 1,
-  userScalable: false,
-  height: "device-height",
-};
-
-export const metadata: Metadata = {
-  title: "REVA - Real Estate Due Diligence",
-  description:
-    "Real Estate Due Diligence Just Got Intelligent! Request detailed land reports with ease.",
-  keywords: "REVA, real estate, due diligence, land reports, property insights",
-  authors: [
-    {
-      name: "TwoNode Technologies",
-      url: "https://twonode.com",
-    },
-  ],
-  creator: "TwoNode Technologies",
-  applicationName: "REVA - Real Estate Due Diligence",
-  robots: "index, follow",
-  generator: "Next.js",
-  openGraph: {
-    title: "REVA - Real Estate Due Diligence",
-    description:
-      "Simplify real estate due diligence with REVA. Request detailed land reports effortlessly.",
-    url: "https://twonode.com/reva",
-    siteName: "TwoNode Technologies",
-    images: [
-      {
-        url: "https://twonode.com/images/reva.png",
-        width: 800,
-        height: 600,
-        alt: "REVA - Real Estate Due Diligence",
-      },
-    ],
-    locale: "en_US",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "REVA - Real Estate Due Diligence",
-    description:
-      "Simplify real estate due diligence with REVA. Request detailed land reports effortlessly.",
-    images: ["https://twonode.com/images/reva.png"],
-    site: "@TwoNodeTechnologies",
-    creator: "@TwoNodeTechnologies",
-  },
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
-  },
-  referrer: "origin-when-cross-origin",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  verification: {
-    google: "google-site-verification=your-google-verification-code",
-  },
-  metadataBase: new URL("https://twonode.com"),
-  alternates: {
-    canonical: "https://twonode.com/reva",
-    languages: {
-      en: "https://twonode.com/reva",
-    },
-  },
+const AdminMiniHeader = ({ title = "Admin Report Upload" }) => {
+  return (
+    <header className="mt-4 bg-gradient-to-r w-[90%] lg:w-1/2  from-gray-800 to-blue-500 text-white py-4 rounded-tl-3xl rounded-br-3xl">
+      <div className="container mx-auto flex justify-between items-center px-6">
+        <h1 className="text-xl font-bold">{title}</h1>
+      </div>
+    </header>
+  );
 };
 
 const ViewDetailsPage = async ({
@@ -110,8 +44,10 @@ const ViewDetailsPage = async ({
 
       return (
         <>
+          <AdminMiniHeader title="User Request Data" />
           <AdminSingleRequestPage property={transformedProperty} />;
-          <AdminReportUpload  />;
+          <AdminMiniHeader title="Admin Report Upload" />
+          <AdminReportUpload />;
         </>
       );
     } else {
