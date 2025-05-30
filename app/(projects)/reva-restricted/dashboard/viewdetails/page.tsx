@@ -4,7 +4,7 @@ import ViewDetails from "./viewDetails";
 import { getRequestByReference } from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import { authGetTransactionData } from "@/app/(projects)/reva/actions/dbActions";
-import AdminSingleRequestPage from "./AdminSingleRequestPage";
+import UserRequestDataView from "./UserRequestDataView";
 import { AdminReportUpload } from "./AdminReportUpload";
 
 const AdminMiniHeader = ({ title = "Admin Report Upload" }) => {
@@ -45,7 +45,7 @@ const ViewDetailsPage = async ({
       return (
         <>
           <AdminMiniHeader title="User Request Data" />
-          <AdminSingleRequestPage property={transformedProperty} />;
+          <UserRequestDataView property={transformedProperty} />;
           <AdminMiniHeader title="Admin Report Upload" />
           <AdminReportUpload />;
         </>

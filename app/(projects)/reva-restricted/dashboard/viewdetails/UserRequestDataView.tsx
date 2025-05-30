@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PropertyWithoutUser } from "@/app/(projects)/reva/actions/dbActions";
 
-const AdminSingleRequestPage = ({ property }: { property: any }) => {
+const UserRequestDataView = ({ property }: { property: any }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   const toggleDeleteModal = () => {
@@ -262,4 +262,4 @@ const Info = ({
   </div>
 );
 
-export default AdminSingleRequestPage;
+export default UserRequestDataView;

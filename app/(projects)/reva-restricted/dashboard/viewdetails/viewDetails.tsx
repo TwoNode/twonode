@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
-import AdminSingleRequestPage from "./AdminSingleRequestPage";
+import UserRequestDataView from "./UserRequestDataView";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -85,7 +85,7 @@ const ViewDetails = ({ formData }: { formData: any }) => {
       <>
         <ViewDetailsContent formData={formData} />
 
-        <AdminSingleRequestPage property={formData} />
+        <UserRequestDataView property={formData} />
       </>
     </Suspense>
   );
