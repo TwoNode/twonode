@@ -3,9 +3,15 @@ import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
 import { BellRing } from "lucide-react";
+import { MenuProps } from "../admin-panel/menu";
 // import { ModeToggle } from "../mode-toggle";
 
-export const RevaUserDashboardNavbar = () => {
+interface DashboardNavbarProps extends MenuProps {}
+
+export const RevaUserDashboardNavbar = ({
+  items,
+  userImageUrl = "",
+}: DashboardNavbarProps) => {
   return (
     <div className="w-full max-w-full h-[75px] max-md:h-[70px] px-[5%] bg-gradient-to-r from-blue-800 to-gray-900 justify-between items-center inline-flex">
       <Link href={"/reva"}>
@@ -19,10 +25,10 @@ export const RevaUserDashboardNavbar = () => {
       </Link>
 
       <div className="justify-start items-center gap-3 flex">
-        <SheetMenu />
+        <SheetMenu items={items} userImageUrl={userImageUrl} />
 
         <Link href="/reva/dashboard/notifications" className="relative">
-          <BellRing size={30} color="#fff"  />
+          <BellRing size={30} color="#fff" />
         </Link>
 
         {/* <ModeToggle /> */}

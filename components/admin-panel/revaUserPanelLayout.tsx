@@ -5,6 +5,16 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import { RevaUserDashboardNavbar } from "@/components/headers/RevaUserDashboardHeader";
+import {
+  Home,
+  ListChecks,
+  Map,
+  FilePlus,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 
 export default function RevaUserPanelLayout({
   children,
@@ -12,6 +22,36 @@ export default function RevaUserPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
+  const dashboardUrl = "/reva/dashboard";
+  const { user } = useKindeBrowserClient();
+
+  const menuList = [
+    { icon: Home, label: "Home", url: dashboardUrl },
+    {
+      icon: ListChecks,
+      label: "All Requests",
+      url: `${dashboardUrl}/allrequests`,
+    },
+    { icon: Map, label: "View Map", url: `${dashboardUrl}/viewmap` },
+    { icon: FilePlus, label: "New Request", url: `${dashboardUrl}/newrequest` },
+    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
+    {
+      element: (
+        <LogoutLink
+          key={"logout"}
+          // postLogoutRedirectURL="/dashboard"
+          className="flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-lg"
+        >
+          <span className="w-max lg:mx-auto">
+            <LogOut />
+          </span>
+          <span className="text-center text-[#032740] text-[10px] font-medium font-['Eudoxus Sans']">
+            Logout
+          </span>
+        </LogoutLink>
+      ),
+    },
+  ];
 
   if (!sidebar) return null;
 
@@ -19,7 +59,7 @@ export default function RevaUserPanelLayout({
 
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
-      <RevaUserDashboardNavbar />
+      <RevaUserDashboardNavbar items={menuList} userImageUrl={user?.picture!} />
 
       <main
         className={cn(
@@ -28,7 +68,7 @@ export default function RevaUserPanelLayout({
         )}
       >
         <div className={"lg:w-[105px] h-full max-h-full"}>
-          <Sidebar />
+          <Sidebar items={menuList} userImageUrl={user?.picture!} />
         </div>
 
         <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">

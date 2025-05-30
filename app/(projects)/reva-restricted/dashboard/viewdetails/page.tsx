@@ -4,7 +4,8 @@ import ViewDetails from "./viewDetails";
 import { getRequestByReference } from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import { authGetTransactionData } from "@/app/(projects)/reva/actions/dbActions";
-import AdminSingleRequestPage from "./SingleRequestPage";
+import AdminSingleRequestPage from "./AdminSingleRequestPage";
+import { AdminReportUpload } from "./AdminReportUpload";
 
 export const viewport: Viewport = {
   colorScheme: "light",
@@ -110,7 +111,7 @@ const ViewDetailsPage = async ({
       return (
         <>
           <AdminSingleRequestPage property={transformedProperty} />;
-          {/* <ViewDetails formData={request?.data} />; */}
+          <AdminReportUpload  />;
         </>
       );
     } else {

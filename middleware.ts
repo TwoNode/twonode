@@ -78,6 +78,7 @@ export default withAuth(
 export const config = {
   matcher: [
     "/reva/dashboard/:path*",
+    "/reva-restricted/:path*",
     // "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
   ],
 };

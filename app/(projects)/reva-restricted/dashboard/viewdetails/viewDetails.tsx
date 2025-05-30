@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
-import AdminSingleRequestPage from "./SingleRequestPage";
+import AdminSingleRequestPage from "./AdminSingleRequestPage";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -68,7 +68,7 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
           <Button
             className="bg-blue-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
             onClick={() =>
-              router.push("/reva-restricted/dashboard/allrequests")
+              router.push("/reva-restricted/dashboard/alluserrequests")
             }
           >
             All Requests

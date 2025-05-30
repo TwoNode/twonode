@@ -202,13 +202,13 @@ const AdminSingleRequestPage = ({ property }: { property: any }) => {
           </Button>
 
           <div className="flex gap-4">
-            <Button
+            {/* <Button
               variant="destructive"
               className="max-sm:w-full rounded-lg"
               onClick={toggleDeleteModal}
             >
               Delete Request
-            </Button>
+            </Button> */}
             <Button className="max-sm:w-full rounded-lg">
               Download Receipt
             </Button>
@@ -216,7 +216,7 @@ const AdminSingleRequestPage = ({ property }: { property: any }) => {
         </div>
       </div>
 
-      <AlertDialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
+      {/* <AlertDialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deleting this Request</AlertDialogTitle>
@@ -234,7 +234,7 @@ const AdminSingleRequestPage = ({ property }: { property: any }) => {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog> */}
     </>
   );
 };
