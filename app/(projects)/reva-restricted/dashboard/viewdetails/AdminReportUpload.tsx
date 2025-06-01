@@ -14,14 +14,12 @@ import { uploadDueDiligenceReport } from "../../actions/adminDbActions";
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export type FormState = {
@@ -47,11 +45,18 @@ export type FormState = {
   };
 };
 
-export function AdminReportUpload({ property }: { property: any }) {
+export function AdminReportUpload({
+  property,
+  user = {},
+}: {
+  property: any;
+  user: any;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirmApproval, setShowConfirmApproval] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     titleStatus: "",
@@ -183,6 +188,8 @@ export function AdminReportUpload({ property }: { property: any }) {
       setIsLoading(false);
     }
   };
+
+  const handleApprove = () => {};
 
   return (
     <div>
@@ -394,7 +401,16 @@ export function AdminReportUpload({ property }: { property: any }) {
               </div>
             </div>
 
-            <div className="flex justify-end pt-6">
+            <div className="flex justify-end gap-6 pt-6">
+              {user?.role! === "reva_superadmin" && "Super Admin"}
+              <Button
+                type="button"
+                onClick={() => setShowConfirmApproval(true)}
+                className="w-full md:w-auto px-6 bg-red-500"
+              >
+                Approve Report
+              </Button>
+
               <Button
                 type="button"
                 onClick={() => setShowConfirm(true)}
@@ -406,24 +422,95 @@ export function AdminReportUpload({ property }: { property: any }) {
           </CardContent>
         </Card>
 
-        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <AlertDialogContent>
+        <AlertDialog
+          open={showConfirmApproval}
+          onOpenChange={setShowConfirmApproval}
+        >
+          <AlertDialogContent className="max-w-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle>Submit Report for Review</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl font-bold">
+                Conform Report Approval
+              </AlertDialogTitle>
+
               <AlertDialogDescription>
-                Are you sure you want to submit for Administrative Review?
+                <div className="max-h-80 overflow-y-auto mt-4 rounded-md border p-4 bg-muted text-sm space-y-4">
+                  {Object.entries(form).map(([key, value]) => {
+                    if (key === "images") return null;
+                    const label = key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase());
+                    const displayValue =
+                      typeof value === "boolean"
+                        ? value
+                          ? "Yes"
+                          : "No"
+                        : value;
+                    return (
+                      <div key={key} className="grid grid-cols-2 gap-4">
+                        <span className="font-medium text-muted-foreground whitespace-nowrap">
+                          {label}:
+                        </span>
+                        <span className="text-right break-words text-foreground">
+                          {typeof displayValue === "object" ? (
+                            <span className="italic text-muted">(object)</span>
+                          ) : (
+                            displayValue || (
+                              <span className="italic text-muted">(empty)</span>
+                            )
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Image Preview Section */}
+                  <div className="mt-6">
+                    <h3 className="font-semibold text-base mb-2">
+                      Uploaded Images
+                    </h3>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {Object.entries(form.images).map(([imgKey, file]) => {
+                        const label = imgKey
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (s) => s.toUpperCase());
+                        if (!file) return null;
+                        const previewUrl = URL.createObjectURL(file);
+                        return (
+                          <div key={imgKey} className="text-center space-y-2">
+                            <img
+                              src={previewUrl}
+                              alt={label}
+                              className="w-full h-32 object-cover rounded border shadow-sm"
+                            />
+                            <div className="text-xs text-muted-foreground truncate">
+                              {label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground mt-6 text-red-500">
+                  Are you sure you want to approve this report and sent it to
+                  client's view?
+                </p>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
+
+            <AlertDialogFooter className="pt-4">
               <AlertDialogCancel onClick={() => setShowConfirm(false)}>
                 Cancel
               </AlertDialogCancel>
+
               <Button
                 type="button"
                 onClick={handleSubmitBtnClick}
-                className="w-full md:w-auto px-6"
+                className="w-full md:w-auto px-6 text-green-500"
               >
-                Submit Report
+                Approve Report
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

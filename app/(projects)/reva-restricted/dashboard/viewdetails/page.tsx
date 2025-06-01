@@ -1,9 +1,8 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import ViewDetails from "./viewDetails";
-import { getRequestByReference } from "../../actions/adminDbActions";
+import { getRequestByReferenceByAdmin } from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
-import { authGetTransactionData } from "@/app/(projects)/reva/actions/dbActions";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminReportUpload } from "./AdminReportUpload";
 
@@ -30,13 +29,12 @@ const ViewDetailsPage = async ({
   }
 
   try {
-    const request = await getRequestByReference(reference);
-    const result = await authGetTransactionData(reference);
+    const request = await getRequestByReferenceByAdmin(reference);
 
     if (request.success) {
-      console.log("Request Data:", result);
+      // console.log("Request Data:", result);
       const transformedProperty = {
-        ...result.data,
+        ...request.data,
         // report: result?.data?.report ?? undefined, // Ensure compatibility with expected type
       };
 
@@ -45,7 +43,11 @@ const ViewDetailsPage = async ({
           <AdminMiniHeader title="User Request Data" />
           <UserRequestDataView property={transformedProperty} />;
           <AdminMiniHeader title="Admin Report Upload" />
-          <AdminReportUpload property={transformedProperty} />;
+          <AdminReportUpload
+            property={transformedProperty}
+            user={request.user}
+          />
+          ;
         </>
       );
     } else {

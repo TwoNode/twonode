@@ -49,14 +49,14 @@
 //       };
 //     }
 
-//     const existingUser = await prisma.user.findUnique({ where: { email } });
+//     const existingUser = await prisma.revaUser.findUnique({ where: { email } });
 
 //     if (existingUser) {
 //       return { success: false, message: "Email already in use" };
 //     }
 
 //     const hashedPassword = await hashPassword(password);
-//     const user = await prisma.user.create({
+//     const user = await prisma.revaUser.create({
 //       data: { email, password: hashedPassword, name },
 //     });
 
@@ -106,7 +106,7 @@
 //       return { success: false, message: "Invalid or expired token" };
 //     }
 
-//     const user = await prisma.user.findUnique({
+//     const user = await prisma.revaUser.findUnique({
 //       where: { id: tokenRecord.userId },
 //     });
 
@@ -114,7 +114,7 @@
 //       return { success: false, message: "Email does not match the token" };
 //     }
 
-//     await prisma.user.update({
+//     await prisma.revaUser.update({
 //       where: { id: tokenRecord.userId },
 //       data: { updatedAt: new Date(), emailVerified: true }, // Store verification timestamp
 //     });
@@ -138,7 +138,7 @@
 //     //   return { success: false, message: "Too many attempts. Please try again later." };
 //     // }
 
-//     const user = await prisma.user.findUnique({ where: { email } });
+//     const user = await prisma.revaUser.findUnique({ where: { email } });
 
 //     // Timing attack protection - always compare passwords
 //     const dummyHash = await hashPassword("dummy_value_for_comparison");
@@ -204,7 +204,7 @@
 //       };
 //     }
 
-//     const user = await prisma.user.findUnique({ where: { id: userId } });
+//     const user = await prisma.revaUser.findUnique({ where: { id: userId } });
 //     if (!user || !(await comparePassword(oldPassword, user.password))) {
 //       return { success: false, message: "Old password is incorrect" };
 //     }
@@ -218,7 +218,7 @@
 //     }
 
 //     const newHashed = await hashPassword(newPassword);
-//     await prisma.user.update({
+//     await prisma.revaUser.update({
 //       where: { id: userId },
 //       data: { password: newHashed },
 //     });
@@ -234,7 +234,7 @@
 //   email: string
 // ): Promise<AuthResponse<{ resetToken: string }>> => {
 //   try {
-//     const user = await prisma.user.findUnique({ where: { email } });
+//     const user = await prisma.revaUser.findUnique({ where: { email } });
 //     if (!user) {
 //       // Don't reveal whether user exists
 //       return {
@@ -306,7 +306,7 @@
 //     }
 
 //     const hashed = await hashPassword(newPassword);
-//     await prisma.user.update({
+//     await prisma.revaUser.update({
 //       where: { id: tokenRecord.userId },
 //       data: { password: hashed },
 //     });
@@ -355,7 +355,7 @@
 //       };
 
 //       // Fetch user from database
-//       const user = await prisma.user.findUnique({
+//       const user = await prisma.revaUser.findUnique({
 //         where: { id: decoded.userId },
 //       });
 
@@ -452,7 +452,7 @@
 
 //   // Then proceed with password reset (no old password required)
 //   const hashed = await hashPassword(newPassword);
-//   await prisma.user.update({
+//   await prisma.revaUser.update({
 //     where: { id: verification.data!.userId },
 //     data: { password: hashed },
 //   });

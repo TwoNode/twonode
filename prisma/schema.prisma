@@ -7,7 +7,6 @@
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -30,7 +29,7 @@ model Property {
   error                  String?  // Nullable
 
   userId                 String
-  user                   User     @relation(fields: [userId], references: [id])
+  user                   RevaUser @relation(fields: [userId], references: [id])
 
   address                String
   lat                    Float?
@@ -84,11 +83,12 @@ model OneTimeUserProperty {
 enum Role {
   USER
   ADMIN
+  SUPERADMIN
 }
 
 
 // Placeholder User model for relation
-model User {
+model RevaUser {
   id                 String              @id @default(uuid()) // Unique identifier
   kindeId            String              @unique
   email              String              @unique

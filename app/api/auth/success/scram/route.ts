@@ -10,12 +10,12 @@ export async function GET() {
     if (!user || user == null || !user.id)
       throw new Error("something went wrong with authentication: " + user);
 
-    let dbUser = await prisma.user.findUnique({
+    let dbUser = await prisma.revaUser.findUnique({
       where: { kindeId: user.id },
     });
 
     if (!dbUser) {
-      dbUser = await prisma.user.create({
+      dbUser = await prisma.revaUser.create({
         data: {
           kindeId: user.id,
           firstName: user.given_name ?? "",

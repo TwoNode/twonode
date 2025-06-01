@@ -6,10 +6,23 @@ import prisma from "@/lib/prisma";
 import { uploadToS3FromServer } from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
 
-export const getAllRequestsWithUser = async (limit: number | null = null) => {
+export const getAllRequestsWithUserByAdmin = async ({
+  limit,
+  onlyWithReport = false,
+}: {
+  limit?: number;
+  onlyWithReport?: boolean;
+} = {}) => {
   try {
     const properties = await prisma.property.findMany({
       take: limit !== null ? limit : undefined,
+      where: onlyWithReport
+        ? {
+            report: {
+              not: Prisma.JsonNull,
+            },
+          }
+        : undefined,
       include: {
         user: {
           select: {
@@ -21,15 +34,14 @@ export const getAllRequestsWithUser = async (limit: number | null = null) => {
           },
         },
       },
+      orderBy: {
+        updatedAt: "desc",
+      },
     });
 
     return {
       success: true,
-      data: properties?.sort((a, b) => {
-        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
-        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
-        return dateB - dateA; // Sort descending by date
-      }),
+      data: properties,
     };
   } catch (error) {
     console.error("Error fetching properties:", error);
@@ -37,8 +49,14 @@ export const getAllRequestsWithUser = async (limit: number | null = null) => {
   }
 };
 
-export const getRequestByReference = async (reference: string) => {
+export const getRequestByReferenceByAdmin = async (reference: string) => {
   try {
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+      return { success: false, message: "User is not authenticated." };
+    }
+
     const request = await prisma.property.findUnique({
       where: { reference },
       include: {
@@ -54,7 +72,7 @@ export const getRequestByReference = async (reference: string) => {
       },
     });
 
-    return { success: true, data: request };
+    return { success: true, data: request, user };
   } catch (error) {
     console.error("Error fetching request:", error);
     return { success: false, error: "Failed to fetch request" };

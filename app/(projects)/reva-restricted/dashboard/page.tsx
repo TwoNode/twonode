@@ -1,11 +1,11 @@
 import React from "react";
 import { Welcome } from "./components/Welcome";
 import Link from "next/link";
-import { getAllRequestsWithUser } from "../actions/adminDbActions";
+import { getAllRequestsWithUserByAdmin } from "../actions/adminDbActions";
 import RequestList from "../components/RequestsList";
 
 const Home = async () => {
-  const { data, success } = await getAllRequestsWithUser(5);
+  const { data, success } = await getAllRequestsWithUserByAdmin({ limit: 5 });
 
   console.log(
     "\n\n\n\n\n\nData fetched from server:",

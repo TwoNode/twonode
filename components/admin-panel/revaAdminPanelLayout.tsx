@@ -34,6 +34,11 @@ export default function RevaAdminPanelLayout({
       label: "All Requests",
       url: `${dashboardUrl}/alluserrequests`,
     },
+    {
+      icon: ListChecks,
+      label: "Review",
+      url: `${dashboardUrl}/review`,
+    },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
 
     {

@@ -1,10 +1,10 @@
 import React from "react";
-import { getAllRequestsWithUser } from "../../actions/adminDbActions";
+import { getAllRequestsWithUserByAdmin } from "../../actions/adminDbActions";
 import Link from "next/link";
 import RequestList from "../../components/RequestsList";
 
 export async function AllRequests() {
-  const { data, success } = await getAllRequestsWithUser();
+  const { data, success } = await getAllRequestsWithUserByAdmin();
 
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">

@@ -112,7 +112,22 @@ const RequestList = ({ requests }: { requests: any[] }) => {
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex justify-between">
+              {req?.report ? (
+                req?.report?.isApproved ? (
+                  <Badge className="transition-colors bg-green-100 text-green-700 hover:text-white hover:bg-green-700">
+                    Approved
+                  </Badge>
+                ) : (
+                  <Badge className="transition-colors bg-yellow-100 text-yellow-700 hover:text-white hover:bg-yellow-700">
+                    Under Review
+                  </Badge>
+                )
+              ) : (
+                <Badge className="transition-colors bg-red-100 text-red-700 hover:text-white hover:bg-red-700">
+                  No Report
+                </Badge>
+              )}
               <Link
                 href={`/reva-restricted/dashboard/viewdetails?reference=${req?.reference}`}
               >

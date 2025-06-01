@@ -4,7 +4,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export async function getUserFromRevaDB(userId: string) {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.revaUser.findUnique({
       where: { kindeId: userId },
     });
 
