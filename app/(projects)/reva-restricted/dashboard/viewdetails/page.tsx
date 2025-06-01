@@ -37,9 +37,7 @@ const ViewDetailsPage = async ({
       console.log("Request Data:", result);
       const transformedProperty = {
         ...result.data,
-        report: result?.data?.report ?? undefined, // Ensure compatibility with expected type
-        address: result?.data?.address ?? "Unknown Address", // Provide a default value for address
-        lga: result?.data?.lga ?? "Unknown LGA", // Provide a default value for lga
+        // report: result?.data?.report ?? undefined, // Ensure compatibility with expected type
       };
 
       return (
@@ -47,7 +45,7 @@ const ViewDetailsPage = async ({
           <AdminMiniHeader title="User Request Data" />
           <UserRequestDataView property={transformedProperty} />;
           <AdminMiniHeader title="Admin Report Upload" />
-          <AdminReportUpload />;
+          <AdminReportUpload property={transformedProperty} />;
         </>
       );
     } else {

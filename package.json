@@ -57,6 +57,7 @@
     "react-responsive": "^10.0.0",
     "react-responsive-carousel": "^3.2.23",
     "react-toastify": "^11.0.5",
+    "sonner": "^2.0.4",
     "sooner": "^1.1.1",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",

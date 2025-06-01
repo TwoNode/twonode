@@ -40,18 +40,23 @@ export async function uploadToS3(formData: FormData) {
   revalidatePath("/reva/requestform"); // Optional: revalidate page if needed
 }
 
-export async function uploadToS3FromServer(files: File[]) {
-  if (files.length === 0) throw new Error("No file(s) provided");
+export async function uploadToS3FromServer(files: File[], reference = "") {
+  console.log("Uploading File to S3 Bucket...");
+  if (files.length === 0) {
+    console.log(files);
+    console.warn("S3 upload Error: No file(s) provided");
+    throw new Error("No file(s) provided");
+  }
 
   const fileUrls: string[] = [];
 
   for (const file of files) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const uniqueSuffix = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 15)}`;
-    const key = `uploads/${uniqueSuffix}-${file.name}`;
+    const uniqueSuffix = `${
+      reference ? reference + "-" : ""
+    }${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    const key = `reva/uploads/${uniqueSuffix}-${file.name}`;
 
     await s3.send(
       new PutObjectCommand({

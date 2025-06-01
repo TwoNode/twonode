@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,11 +8,55 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
+import { uploadDueDiligenceReport } from "../../actions/adminDbActions";
 
-export function AdminReportUpload() {
-  const [form, setForm] = useState({
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+export type FormState = {
+  titleStatus: string;
+  titleNumber: string;
+  rightToSellHolder: string;
+  transactionFlow: string;
+  parcelPositionMatch: string;
+  parcelStatus: string;
+  surveyPlanNumber: string;
+  surveyName: string;
+  historicalSurveys: string;
+  zoning: string;
+  hasBuildingPlanApproval: boolean;
+  buildingPlanNo: string;
+  setbacksInfo: string;
+  images: {
+    transactionFlowImg: File | null;
+    parcelCheck: File | null;
+    parcelChartingFree: File | null;
+    parcelChartingOffset: File | null;
+    landUseCheck: File | null;
+  };
+};
+
+export function AdminReportUpload({ property }: { property: any }) {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [form, setForm] = useState<FormState>({
     titleStatus: "",
     titleNumber: "",
+    rightToSellHolder: "",
     transactionFlow: "",
     parcelPositionMatch: "",
     parcelStatus: "",
@@ -24,7 +68,7 @@ export function AdminReportUpload() {
     buildingPlanNo: "",
     setbacksInfo: "",
     images: {
-      transactionFlow: null,
+      transactionFlowImg: null,
       parcelCheck: null,
       parcelChartingFree: null,
       parcelChartingOffset: null,
@@ -32,11 +76,29 @@ export function AdminReportUpload() {
     },
   });
 
+  const imageUrls: Record<string, string> = property?.report?.images || {};
+
+  useEffect(() => {
+    const report = property?.report || {};
+    setForm((prev) => ({
+      ...prev,
+      ...report,
+      images: {
+        transactionFlowImg: null,
+        parcelCheck: null,
+        parcelChartingFree: null,
+        parcelChartingOffset: null,
+        landUseCheck: null,
+      },
+    }));
+  }, [property]);
+
   const handleChange = (key: string, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleImageChange = (key: string, file: File | null) => {
+    console.warn(key, file);
     setForm((prev) => ({
       ...prev,
       images: {
@@ -46,42 +108,114 @@ export function AdminReportUpload() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmitBtnClick = () => {
+    formRef.current?.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+    notifyInfo("Report submission in progress.");
+    setShowConfirm(false);
+    setIsLoading(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === "images" && typeof value === "object") {
-        Object.entries(value).forEach(([imgKey, imgFile]) => {
-          if (imgFile) formData.append(imgKey, imgFile);
-        });
-      } else {
-        formData.append(key, value as string);
-      }
-    });
+    try {
+      const formData = new FormData();
+      formData.append("reference", property?.reference);
 
-    console.log("Sending form data");
-    // TODO: POST formData to backend
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === "images" && typeof value === "object") {
-        Object.entries(value).forEach(([imgKey, imgFile]) => {
-          console.log(
-            `Image Label: ${imgKey.replace(/([A-Z])/g, " $1")}, Value: ${
-              imgFile ? (imgFile as File).name : "No file uploaded"
-            }`
-          );
+      console.log(form);
+
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === "images" && typeof value === "object") {
+          Object.entries(value).forEach(([imgKey, imgFile]) => {
+            if (imgFile) formData.append(imgKey, imgFile);
+          });
+        } else {
+          formData.append(key, value as string);
+        }
+      });
+
+      let prevImages: Record<string, string> = {};
+
+      if (
+        property?.report?.images &&
+        typeof property?.report?.images === "object"
+      ) {
+        Object.entries(property?.report?.images).forEach(([key, value]) => {
+          if (value) {
+            prevImages[key] = value as string;
+          }
         });
-      } else {
-        console.log(
-          `Label: ${key.replace(/([A-Z])/g, " $1")}, Value: ${value}`
-        );
       }
-    });
+
+      formData.append("prevImages", JSON.stringify(prevImages));
+
+      const response = await uploadDueDiligenceReport(formData);
+      // console.log("Form data saved successfully:", response);
+
+      if (response?.error) {
+        notifyError("Error saving form data");
+        throw response?.error || new Error("An error occured");
+      }
+
+      notifySuccess("Report data saved successfully!");
+    } catch (err) {
+      // console.error("Error saving form data:", error);
+      // console.warn(JSON.stringify(error));
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        (err as { message: string }).message.length < 35
+      ) {
+        notifyError(
+          typeof err === "object" && err !== null && "message" in err
+            ? (err as { message: string }).message
+            : "Error saving form data"
+        );
+      } else {
+        notifyError("An error occured while processing, please try again");
+      }
+
+      console.warn(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="space-y-6 p-6 w-full mx-auto">
+      {isLoading && (
+        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-50">
+          <svg
+            className="animate-spin h-8 w-8 text-blue-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        ref={formRef}
+        className="space-y-6 p-6 w-full mx-auto"
+      >
         <Card>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,6 +243,17 @@ export function AdminReportUpload() {
                 />
               </div>
 
+              <div>
+                <Label>Who holds the right to sell the development?</Label>
+                <Input
+                  placeholder="e.g Mr Reva"
+                  value={form.rightToSellHolder}
+                  onChange={(e) =>
+                    handleChange("rightToSellHolder", e.target.value)
+                  }
+                />
+              </div>
+
               <div className="lg:col-span-3">
                 <Label>Transaction Flow</Label>
                 <Textarea
@@ -124,10 +269,17 @@ export function AdminReportUpload() {
                 <Label>Parcel Position Match (%)</Label>
                 <Input
                   placeholder="e.g 99.99%"
+                  type="number"
                   value={form.parcelPositionMatch}
-                  onChange={(e) =>
-                    handleChange("parcelPositionMatch", e.target.value)
-                  }
+                  max={100}
+                  min={0}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      0,
+                      Math.min(100, Number(e.target.value))
+                    );
+                    handleChange("parcelPositionMatch", value.toString());
+                  }}
                 />
               </div>
 
@@ -211,14 +363,25 @@ export function AdminReportUpload() {
                   onChange={(e) => handleChange("setbacksInfo", e.target.value)}
                 />
               </div>
+            </div>
 
-              <div className="lg:col-span-3 space-y-4">
-                <Label className="text-lg font-semibold">Upload Images</Label>
+            <div className="lg:col-span-3 space-y-4">
+              <Label className="text-lg font-semibold">Upload Images</Label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {Object.keys(form.images).map((key) => (
                   <div key={key} className="space-y-1">
                     <Label className="capitalize font-medium">
                       {key.replace(/([A-Z])/g, " $1")}
                     </Label>
+
+                    {imageUrls[key] && (
+                      <img
+                        src={imageUrls[key]}
+                        alt={key}
+                        className="w-32 h-32 object-cover rounded border"
+                      />
+                    )}
                     <Input
                       type="file"
                       accept="image/*"
@@ -232,12 +395,39 @@ export function AdminReportUpload() {
             </div>
 
             <div className="flex justify-end pt-6">
-              <Button type="submit" className="w-full md:w-auto px-6">
+              <Button
+                type="button"
+                onClick={() => setShowConfirm(true)}
+                className="w-full md:w-auto px-6"
+              >
                 Submit Report
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Submit Report for Review</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to submit for Administrative Review?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowConfirm(false)}>
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                type="button"
+                onClick={handleSubmitBtnClick}
+                className="w-full md:w-auto px-6"
+              >
+                Submit Report
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </form>
     </div>
   );

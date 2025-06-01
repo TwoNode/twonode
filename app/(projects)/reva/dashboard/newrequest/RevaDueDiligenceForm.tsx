@@ -35,11 +35,7 @@ import {
 import Link from "next/link";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 import { authSaveFormDataAndInitiatePaystack } from "../../actions/dbActions";
-
-const notifyError = (msg: string) => toast.error(msg);
-const notifySuccess = (msg: string) => toast.success(msg);
-const notifyWarning = (msg: string) => toast.warn(msg);
-const notifyInfo = (msg: string) => toast.info(msg);
+import { notifyError, notifyInfo, notifySuccess, notifyWarning } from "@/utils/notify";
 
 const containerStyle = {
   width: "100%",

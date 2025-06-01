@@ -175,7 +175,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                 <p className="mt-2 text-sm text-muted-foreground">
                   No documents uploaded
                 </p>
-                <Button className="mt-4">Upload Document</Button>
+                {/* <Button className="mt-4">Upload Document</Button> */}
               </div>
             )}
           </CardContent>
