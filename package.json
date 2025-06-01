@@ -72,6 +72,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/paystack__inline-js": "^1.0.1",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -5,6 +5,45 @@ import { getAuthenticatedUser } from "@/utils/authUser";
 import prisma from "@/lib/prisma";
 import { uploadToS3FromServer } from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
+import { createTransport } from "nodemailer";
+
+export const sendMail = async ({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+}) => {
+  try {
+    const transporter = createTransport({
+      service: "Zoho",
+      auth: {
+        user: process?.env?.EMAIL_USER, // Your email address
+        pass: process?.env?.EMAIL_PASS, // Your email password or app-specific password
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      text,
+      html,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: ", info.response);
+
+    return { success: true, info };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return { success: false, error: "Failed to send email" };
+  }
+};
 
 export const superAdminCheck = async (user: any) => {
   try {
@@ -93,6 +132,7 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
 
 export const uploadDueDiligenceReport = async (formData: FormData) => {
   try {
+    let warnings: string[] = [] as string[];
     const user = await getAuthenticatedUser();
     if (!user) {
       return { error: "User is not authenticated.", status: 401 };
@@ -180,12 +220,34 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
       },
     });
 
+    try {
+      await sendMail({
+        to: process.env.EMAIL_USER || "", // Replace with the actual recipient email
+        subject: "Due Diligence Report Update",
+        text: "The due diligence report has been updated successfully, please review the report.",
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #4CAF50;">Due Diligence Report Update</h2>
+            <p>Dear User,</p>
+            <p>The due diligence report has been updated successfully. Please review the report at your earliest convenience.</p>
+            <p>Thank you for your attention.</p>
+            <p style="margin-top: 20px;">Best regards,</p>
+            <p><strong>Your Company Name</strong></p>
+          </div>
+        `,
+      });
+    } catch (err) {
+      console.log("Email not sent: ", err);
+      warnings.push("Email not sent");
+    }
+
     revalidatePath(
       `/reva-restricted/dashboard/viewdetails?reference=${reference}`
     );
 
     return {
       success: true,
+      warnings,
       data: result,
     };
   } catch (error) {
@@ -225,6 +287,8 @@ async function uploadFilesToS3(
 
 export const approveDueDiligenceReport = async (reference: string) => {
   try {
+    let warnings: string[] = [];
+
     console.log("\n\n\n\n\n", reference, "\n\n\n\n\n");
     const user = await getAuthenticatedUser();
     const isSuperAdmin = superAdminCheck(user);
@@ -241,7 +305,11 @@ export const approveDueDiligenceReport = async (reference: string) => {
       where: { reference },
     });
 
-    if (!property || !property?.report || property?.report !== "object") {
+    if (
+      !property ||
+      !property?.report ||
+      typeof property?.report !== "object"
+    ) {
       throw "Property or report not found.";
     }
 
@@ -259,16 +327,40 @@ export const approveDueDiligenceReport = async (reference: string) => {
       data: { report: updatedReport },
     });
 
+    try {
+      await sendMail({
+        to: process.env?.EMAIL_USER || "", // Replace with the actual recipient email
+        subject: "Due Diligence Report Update",
+        text: "Dear User, your due diligence report is now ready, please download from your dashboard.",
+        html: "<p>The due diligence report has been updated successfully.</p>",
+      });
+
+      await sendMail({
+        to: process.env?.ADMIN_EMAIL || "", // Replace with the actual recipient email
+        subject: "Due Diligence Report Update",
+        text: "Dear User, your due diligence report is now ready, please download from your dashboard.",
+        html: "<p>The due diligence report has been updated successfully.</p>",
+      });
+    } catch (err) {
+      console.log("Email not sent: ", err);
+      warnings.push("Email not sent");
+    }
+
     revalidatePath(
       `/reva-restricted/dashboard/viewdetails?reference=${reference}`
     );
 
     return {
       success: true,
+      warnings,
       data: result,
     };
   } catch (error) {
-    console.error("\n\n\n\nError approving due diligence report:", error);
+    console.error(
+      "\n\n\n\nError approving due diligence report : ",
+      reference,
+      error
+    );
     return { error: error, success: false };
   }
 };
