@@ -10,7 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
-import { uploadDueDiligenceReport } from "../../actions/adminDbActions";
+import {
+  approveDueDiligenceReport,
+  uploadDueDiligenceReport,
+} from "../../actions/adminDbActions";
 
 import {
   AlertDialog,
@@ -114,6 +117,30 @@ export function AdminReportUpload({
   };
 
   const handleSubmitBtnClick = () => {
+    const requiredFields: (keyof FormState)[] = [
+      "titleStatus",
+      "titleNumber",
+      "rightToSellHolder",
+      "parcelPositionMatch",
+      "parcelStatus",
+      "surveyPlanNumber",
+      "surveyName",
+      ...(form.hasBuildingPlanApproval
+        ? ["buildingPlanNo" as keyof FormState]
+        : []),
+    ];
+
+    const missingFields = requiredFields.filter((field) => !form[field]);
+
+    if (missingFields.length > 0) {
+      notifyError(
+        `Please fill all required fields: ${missingFields
+          .map((field) => field.replace(/([A-Z])/g, " $1").toUpperCase())
+          .join(", ")}`
+      );
+      return;
+    }
+
     formRef.current?.dispatchEvent(
       new Event("submit", { bubbles: true, cancelable: true })
     );
@@ -159,7 +186,11 @@ export function AdminReportUpload({
       const response = await uploadDueDiligenceReport(formData);
       // console.log("Form data saved successfully:", response);
 
-      if (response?.error) {
+      if (
+        typeof response === "object" &&
+        "error" in response &&
+        response.error
+      ) {
         notifyError("Error saving form data");
         throw response?.error || new Error("An error occured");
       }
@@ -189,7 +220,38 @@ export function AdminReportUpload({
     }
   };
 
-  const handleApprove = () => {};
+  const handleApprove = async () => {
+    try {
+      setIsLoading(true);
+      if (!property?.report || typeof property?.report !== "object") {
+        notifyError("Invalid report data. Unable to approve.");
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await approveDueDiligenceReport(
+        property?.reference || ""
+      );
+
+      if (
+        typeof response === "object" &&
+        "error" in response &&
+        response.error
+      ) {
+        throw response?.error || new Error("An error occurred");
+      }
+
+      notifySuccess("Report approved successfully!");
+      setShowConfirmApproval(false);
+    } catch (err) {
+      notifyError(
+        "An error occurred while approving the report. Please try again."
+      );
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -223,6 +285,7 @@ export function AdminReportUpload({
         ref={formRef}
         className="space-y-6 p-6 w-full mx-auto"
       >
+        {/* {JSON.stringify(property?.report)} */}
         <Card>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -232,6 +295,7 @@ export function AdminReportUpload({
                   value={form.titleStatus}
                   onChange={(e) => handleChange("titleStatus", e.target.value)}
                   className="w-full border rounded p-2"
+                  required
                 >
                   <option value="">Select...</option>
                   <option value="duly">is a duly registered instrument</option>
@@ -247,6 +311,7 @@ export function AdminReportUpload({
                   placeholder="e.g Number 33 Page 33 in Volume 2580"
                   value={form.titleNumber}
                   onChange={(e) => handleChange("titleNumber", e.target.value)}
+                  required
                 />
               </div>
 
@@ -258,6 +323,7 @@ export function AdminReportUpload({
                   onChange={(e) =>
                     handleChange("rightToSellHolder", e.target.value)
                   }
+                  required
                 />
               </div>
 
@@ -280,6 +346,7 @@ export function AdminReportUpload({
                   value={form.parcelPositionMatch}
                   max={100}
                   min={0}
+                  required
                   onChange={(e) => {
                     const value = Math.max(
                       0,
@@ -296,6 +363,7 @@ export function AdminReportUpload({
                   placeholder="e.g Free from any known Government Acquisition"
                   value={form.parcelStatus}
                   onChange={(e) => handleChange("parcelStatus", e.target.value)}
+                  required
                 />
               </div>
 
@@ -307,6 +375,7 @@ export function AdminReportUpload({
                   onChange={(e) =>
                     handleChange("surveyPlanNumber", e.target.value)
                   }
+                  required
                 />
               </div>
 
@@ -316,6 +385,7 @@ export function AdminReportUpload({
                   placeholder="e.g LEGRANDE PROPERTY DEVELOPMENT COMPANY LTD"
                   value={form.surveyName}
                   onChange={(e) => handleChange("surveyName", e.target.value)}
+                  required
                 />
               </div>
 
@@ -336,6 +406,7 @@ export function AdminReportUpload({
                   placeholder="e.g Residential, Commercial, Agricultural"
                   value={form.zoning}
                   onChange={(e) => handleChange("zoning", e.target.value)}
+                  required
                 />
               </div>
 
@@ -355,6 +426,7 @@ export function AdminReportUpload({
                   <Input
                     placeholder="e.g BP/LA/2025/0001"
                     value={form.buildingPlanNo}
+                    required
                     onChange={(e) =>
                       handleChange("buildingPlanNo", e.target.value)
                     }
@@ -507,7 +579,7 @@ export function AdminReportUpload({
 
               <Button
                 type="button"
-                onClick={handleSubmitBtnClick}
+                onClick={handleApprove}
                 className="w-full md:w-auto px-6 text-green-500"
               >
                 Approve Report
@@ -522,6 +594,7 @@ export function AdminReportUpload({
               <AlertDialogTitle className="text-xl font-bold">
                 Submit Report for Review
               </AlertDialogTitle>
+
               <AlertDialogDescription>
                 <div className="max-h-80 overflow-y-auto mt-4 rounded-md border p-4 bg-muted text-sm space-y-4">
                   {Object.entries(form).map(([key, value]) => {
@@ -535,6 +608,7 @@ export function AdminReportUpload({
                           ? "Yes"
                           : "No"
                         : value;
+
                     return (
                       <div key={key} className="grid grid-cols-2 gap-4">
                         <span className="font-medium text-muted-foreground whitespace-nowrap">
@@ -558,13 +632,17 @@ export function AdminReportUpload({
                     <h3 className="font-semibold text-base mb-2">
                       Uploaded Images
                     </h3>
+
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(form.images).map(([imgKey, file]) => {
                         const label = imgKey
                           .replace(/([A-Z])/g, " $1")
                           .replace(/^./, (s) => s.toUpperCase());
+
                         if (!file) return null;
+
                         const previewUrl = URL.createObjectURL(file);
+
                         return (
                           <div key={imgKey} className="text-center space-y-2">
                             <img

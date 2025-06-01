@@ -6,6 +6,18 @@ import prisma from "@/lib/prisma";
 import { uploadToS3FromServer } from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
 
+export const superAdminCheck = async (user: any) => {
+  try {
+    if (!user || user.role !== "SUPERADMIN") {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const getAllRequestsWithUserByAdmin = async ({
   limit,
   onlyWithReport = false,
@@ -81,7 +93,6 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
 
 export const uploadDueDiligenceReport = async (formData: FormData) => {
   try {
-    console.log(JSON.stringify(formData.get("prevImages")));
     const user = await getAuthenticatedUser();
     if (!user) {
       return { error: "User is not authenticated.", status: 401 };
@@ -107,37 +118,66 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
       })
       .filter(Boolean) as { key: string; file: File }[];
 
-    const report: Record<string, any> = {
-      titleStatus: formData.get("titleStatus"),
-      titleNumber: formData.get("titleNumber"),
-      rightToSellHolder: formData.get("rightToSellHolder"),
-      transactionFlow: formData.get("transactionFlow"),
-      parcelPositionMatch: formData.get("parcelPositionMatch"),
-      parcelStatus: formData.get("parcelStatus"),
-      surveyPlanNumber: formData.get("surveyPlanNumber"),
-      surveyName: formData.get("surveyName"),
-      historicalSurveys: formData.get("historicalSurveys"),
-      zoning: formData.get("zoning"),
-      hasBuildingPlanApproval:
-        formData.get("hasBuildingPlanApproval") === "true",
-      buildingPlanNo: formData.get("buildingPlanNo"),
-      setbacksInfo: formData.get("setbacksInfo"),
-      images: formData.get("prevImages")
-        ? JSON.parse(formData.get("prevImages") as string)
-        : {},
-    };
+    const report: Record<string, any> = Object.fromEntries(
+      Object.entries({
+        titleStatus: formData.get("titleStatus"),
+        titleNumber: formData.get("titleNumber"),
+        rightToSellHolder: formData.get("rightToSellHolder"),
+        transactionFlow: formData.get("transactionFlow"),
+        parcelPositionMatch: formData.get("parcelPositionMatch"),
+        parcelStatus: formData.get("parcelStatus"),
+        surveyPlanNumber: formData.get("surveyPlanNumber"),
+        surveyName: formData.get("surveyName"),
+        historicalSurveys: formData.get("historicalSurveys"),
+        zoning: formData.get("zoning"),
+        hasBuildingPlanApproval:
+          formData.get("hasBuildingPlanApproval") === "true",
+        buildingPlanNo: formData.get("buildingPlanNo"),
+        setbacksInfo: formData.get("setbacksInfo"),
+        images: formData.get("prevImages")
+          ? JSON.parse(formData.get("prevImages") as string)
+          : {},
+      }).filter(
+        ([_, value]) =>
+          value !== "" &&
+          value !== null &&
+          value !== undefined &&
+          !(Array.isArray(value) && value.length === 0) &&
+          !(
+            typeof value === "object" &&
+            !Array.isArray(value) &&
+            Object?.keys(value)?.length === 0
+          )
+      )
+    );
 
     // filesMap.forEach((f, idx) => {
     //   report.images[f.key] = uploadedUrls[idx];
     // });
 
-    console.log("report", report);
+    console.log("\n\n\n\nreport\n\n\n\n", report);
 
     await uploadFilesToS3(filesMap, report, reference);
 
+    const existingProperty = await prisma.property.findUnique({
+      where: { reference },
+    });
+
+    const previousReport =
+      existingProperty?.report && typeof existingProperty.report === "object"
+        ? existingProperty.report
+        : {};
+
+    console.log(previousReport);
+
     const result = await prisma.property.update({
       where: { reference },
-      data: { report },
+      data: {
+        report: {
+          ...previousReport,
+          ...report,
+        },
+      },
     });
 
     revalidatePath(
@@ -182,3 +222,53 @@ async function uploadFilesToS3(
     // throw new Error("Failed to upload files to S3.");
   }
 }
+
+export const approveDueDiligenceReport = async (reference: string) => {
+  try {
+    console.log("\n\n\n\n\n", reference, "\n\n\n\n\n");
+    const user = await getAuthenticatedUser();
+    const isSuperAdmin = superAdminCheck(user);
+
+    if (!isSuperAdmin) {
+      throw "User is not authenticated.";
+    }
+
+    if (!reference) {
+      throw "Reference is not valid.";
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { reference },
+    });
+
+    if (!property || !property?.report || property?.report !== "object") {
+      throw "Property or report not found.";
+    }
+
+    const updatedReport = {
+      ...(typeof property?.report === "object" ? property.report : {}),
+      isApproved: true,
+    };
+
+    console.log("\n\n\n\n\n");
+    console.log(updatedReport);
+    console.log("\n\n\n\n\n");
+
+    const result = await prisma.property.update({
+      where: { reference },
+      data: { report: updatedReport },
+    });
+
+    revalidatePath(
+      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+    );
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (error) {
+    console.error("\n\n\n\nError approving due diligence report:", error);
+    return { error: error, success: false };
+  }
+};
