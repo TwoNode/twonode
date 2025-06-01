@@ -428,6 +428,93 @@ export function AdminReportUpload({ property }: { property: any }) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-bold">
+                Submit Report for Review
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="max-h-80 overflow-y-auto mt-4 rounded-md border p-4 bg-muted text-sm space-y-4">
+                  {Object.entries(form).map(([key, value]) => {
+                    if (key === "images") return null;
+                    const label = key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase());
+                    const displayValue =
+                      typeof value === "boolean"
+                        ? value
+                          ? "Yes"
+                          : "No"
+                        : value;
+                    return (
+                      <div key={key} className="grid grid-cols-2 gap-4">
+                        <span className="font-medium text-muted-foreground whitespace-nowrap">
+                          {label}:
+                        </span>
+                        <span className="text-right break-words text-foreground">
+                          {typeof displayValue === "object" ? (
+                            <span className="italic text-muted">(object)</span>
+                          ) : (
+                            displayValue || (
+                              <span className="italic text-muted">(empty)</span>
+                            )
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Image Preview Section */}
+                  <div className="mt-6">
+                    <h3 className="font-semibold text-base mb-2">
+                      Uploaded Images
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {Object.entries(form.images).map(([imgKey, file]) => {
+                        const label = imgKey
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (s) => s.toUpperCase());
+                        if (!file) return null;
+                        const previewUrl = URL.createObjectURL(file);
+                        return (
+                          <div key={imgKey} className="text-center space-y-2">
+                            <img
+                              src={previewUrl}
+                              alt={label}
+                              className="w-full h-32 object-cover rounded border shadow-sm"
+                            />
+                            <div className="text-xs text-muted-foreground truncate">
+                              {label}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground mt-6">
+                  Are you sure you want to submit this report for Administrative
+                  Review?
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-4">
+              <AlertDialogCancel onClick={() => setShowConfirm(false)}>
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                type="button"
+                onClick={handleSubmitBtnClick}
+                className="w-full md:w-auto px-6"
+              >
+                Submit Report
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </form>
     </div>
   );
