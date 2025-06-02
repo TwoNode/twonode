@@ -49,7 +49,10 @@ const UserRequestDataView = ({ property }: { property: any }) => {
 
             <Button
               variant="outline"
-              disabled={property?.status !== "Completed"}
+              disabled={
+                property?.status !== "Completed" &&
+                property?.status !== "Available"
+              }
               className="max-sm:w-full rounded-lg"
               onClick={() => {
                 if (property?.report?.directFileLink) {

@@ -73,9 +73,21 @@ const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
             {property?.paymentStatus && (
               <Badge variant="secondary">{property.paymentStatus}</Badge>
             )}
+            {property?.report &&
+              typeof property.report === "object" &&
+              "isApproved" in property.report &&
+              property?.report?.isApproved && (
+                <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
+                  {"Approved"}
+                </Badge>
+              )}
+
             <Button
               variant="outline"
-              disabled={property?.status !== "Completed"}
+              disabled={
+                property?.status !== "Completed" &&
+                property?.status !== "Available"
+              }
               className="max-sm:w-full rounded-lg"
               onClick={handleDownloadReport}
             >

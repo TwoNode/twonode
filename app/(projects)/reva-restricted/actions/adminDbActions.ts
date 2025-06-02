@@ -7,6 +7,9 @@ import { uploadToS3FromServer } from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
 
+const AVAILABLE = "Available";
+const COMPLETED = "Completed";
+
 export const sendMail = async ({
   to,
   subject,
@@ -213,6 +216,7 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
     const result = await prisma.property.update({
       where: { reference },
       data: {
+        status: COMPLETED,
         report: {
           ...previousReport,
           ...report,
@@ -324,7 +328,7 @@ export const approveDueDiligenceReport = async (reference: string) => {
 
     const result = await prisma.property.update({
       where: { reference },
-      data: { report: updatedReport },
+      data: { report: updatedReport, status: AVAILABLE },
     });
 
     try {
