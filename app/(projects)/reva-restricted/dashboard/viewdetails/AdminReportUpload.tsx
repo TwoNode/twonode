@@ -474,14 +474,27 @@ export function AdminReportUpload({
             </div>
 
             <div className="flex justify-end gap-6 pt-6">
-              {user?.role! === "reva_superadmin" && "Super Admin"}
-              <Button
-                type="button"
-                onClick={() => setShowConfirmApproval(true)}
-                className="w-full md:w-auto px-6 bg-red-500"
-              >
-                Approve Report
-              </Button>
+              {user?.role! === "SUPERADMIN" && (
+                <>
+                  {property?.report?.isApproved ? (
+                    <Button
+                      type="button"
+                      onClick={() => setShowConfirmApproval(true)}
+                      className={`w-full md:w-auto px-6 bg-red-500`}
+                    >
+                      Disapprove Report
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => setShowConfirmApproval(true)}
+                      className={`w-full md:w-auto px-6 bg-green-500 hover:bg-red-500`}
+                    >
+                      Approve Report
+                    </Button>
+                  )}
+                </>
+              )}
 
               <Button
                 type="button"

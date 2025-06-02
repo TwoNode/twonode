@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 
 // Define the paths that require authentication
-const protectedRoutes = ["/reva/dashboard"];
+const protectedRoutes = ["/reva/dashboard", "reva-restricted/dashboard"];
 
 // export default function middleware(req: NextRequest) {
 //   console.log("isLoggedIn", "isLoggedIn");
@@ -36,12 +36,18 @@ export default withAuth(
     console.log("USER_TYPE Query Param:", userTypeQueryParam);
     console.log("USER_TYPE Cookie: ", userType);
 
-    if (
-      protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
-    ) {
-      if (userType !== "reva_user" && userType !== "reva_admin") {
+    const pathname = req.nextUrl.pathname;
+
+    if (protectedRoutes.some((route) => pathname.startsWith(route))) {
+      if (
+        (pathname.startsWith("/reva/dashboard") && userType !== "reva_user") ||
+        (pathname.startsWith("/reva-restricted/dashboard") &&
+          userType !== "reva_admin")
+      ) {
         const url = req.nextUrl.clone();
-        url.pathname = "/reva/login"; // Redirect to login page
+        url.pathname = pathname.startsWith("/reva-restricted/dashboard")
+          ? "/reva-restricted/login"
+          : "/reva/login";
         url.searchParams.delete("user_type");
         console.log("Redirecting to login page");
         return NextResponse.redirect(url);
@@ -55,14 +61,14 @@ export default withAuth(
       const res = NextResponse.redirect(url);
       res.cookies.set({
         name: "USER_TYPE",
-        value: "reva_user",
+        value: userTypeQueryParam,
         path: "/",
         httpOnly: true,
       });
       return res;
     }
 
-    return NextResponse.next(); // Allow access if the user type is valid
+    return NextResponse.next();
   },
   {
     isReturnToCurrentPage: true,
@@ -78,7 +84,7 @@ export default withAuth(
 export const config = {
   matcher: [
     "/reva/dashboard/:path*",
-    "/reva-restricted/:path*",
+    "/reva-restricted/dashboard/:path*",
     // "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
   ],
 };

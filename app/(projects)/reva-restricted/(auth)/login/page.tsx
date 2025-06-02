@@ -76,18 +76,18 @@ export default function LoginPreview() {
     <div className="flex flex-col min-h-[90vh] h-full w-full items-center justify-center px-4">
       <Card className="mx-auto max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">REVA Login</CardTitle>
-          <CardDescription>
-            Click one of the buttons to get started.
-          </CardDescription>
+          <CardTitle className="text-2xl">REVA ADMIN Login</CardTitle>
+          <CardDescription>Only for Admins</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-between gap-4">
-          <LoginLink postLoginRedirectURL="/api/auth/success/reva">
-            <Button>Login</Button>
+          <LoginLink postLoginRedirectURL="/api/auth/success/reva-restricted">
+            <Button className="bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-300 transition-all px-6 py-3 text-lg rounded-lg">
+              Login to Your Account
+            </Button>
           </LoginLink>
-          <RegisterLink postLoginRedirectURL="/api/auth/success/reva">
+          {/* <RegisterLink postLoginRedirectURL="/api/auth/success/reva-restricted">
             <Button>Sign up</Button>
-          </RegisterLink>
+          </RegisterLink> */}
         </CardContent>
       </Card>
     </div>

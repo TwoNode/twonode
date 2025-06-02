@@ -1,3 +1,8 @@
+UPDATE "RevaUser"
+SET role = 'SUPERADMIN'
+WHERE email IN ('rojitech9@gmail.com', 'abowabaolamide@gmail.com');
+
+
 -- -- First, delete all existing records from the Property table
 -- TRUNCATE TABLE "Property" RESTART IDENTITY CASCADE;
 
@@ -291,3 +296,4 @@
 -- -- UPDATE "Property"
 -- -- SET status = 'Completed'
 -- -- WHERE reference = 'REVA_86e628c17';
+

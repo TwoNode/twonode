@@ -41,6 +41,12 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             {property?.paymentStatus && (
               <Badge variant="secondary">{property.paymentStatus}</Badge>
             )}
+            {property?.report?.isApproved && (
+              <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
+                {"Approved"}
+              </Badge>
+            )}
+
             <Button
               variant="outline"
               disabled={property?.status !== "Completed"}

@@ -41,13 +41,12 @@ const ViewDetailsPage = async ({
       return (
         <>
           <AdminMiniHeader title="User Request Data" />
-          <UserRequestDataView property={transformedProperty} />;
+          <UserRequestDataView property={transformedProperty} />
           <AdminMiniHeader title="Admin Report Upload" />
           <AdminReportUpload
             property={transformedProperty}
             user={request.user}
           />
-          ;
         </>
       );
     } else {
