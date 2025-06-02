@@ -17,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PropertyWithoutUser } from "@/app/(projects)/reva/actions/dbActions";
+import { toast } from "react-toastify";
 
 const UserRequestDataView = ({ property }: { property: any }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -64,6 +65,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                   document.body.removeChild(link);
                 } else {
                   console.error("No file link available to download");
+                  toast.error("Report will be ready soon.");
                 }
               }}
             >
