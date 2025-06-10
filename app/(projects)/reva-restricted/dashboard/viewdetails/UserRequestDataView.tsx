@@ -168,6 +168,12 @@ function ReportPDF({ property }: { property: any }) {
     textSm: {
       fontSize: 10,
     },
+    textBold: {
+      fontWeight: "bold",
+    },
+    textRed: {
+      color: "red",
+    },
 
     //
     //
@@ -178,14 +184,15 @@ function ReportPDF({ property }: { property: any }) {
     heading: {
       fontSize: 16,
       fontWeight: "bold",
-      // marginBottom: 10,
       color: "#0A2D75",
-      border: "1px solid green",
-      borderWidth: 0.5,
-      borderColor: "green",
-      paddingHorizontal: 3,
-      paddingTop: 0,
-      borderBottom: 6,
+
+      borderBottomWidth: 0.3,
+      borderBottomColor: "#04b104",
+      borderBottomStyle: "solid",
+
+      paddingBottom: 8,
+      marginBottom: 12,
+      width: "90%",
     },
     section: { marginBottom: 20 },
     subheading: {
@@ -195,15 +202,54 @@ function ReportPDF({ property }: { property: any }) {
       // textDecoration: "underline",
     },
     fieldRow: { marginBottom: 4 },
+    title: {
+      fontSize: 16,
+      color: "#000000c0",
+      marginVertical: 10,
+    },
     //
     //
     //
     greyBg: {
-      backgroundColor: "#ccc",
       position: "relative",
-      paddingLeft: 50,
+      backgroundColor: "#e7e3e3",
+      paddingTop: 13,
+      paddingBottom: 13,
+      paddingLeft: 35,
+      paddingRight: 25,
+      minHeight: 50,
+      marginVertical: 5,
     },
-    greyBgRedIcon: {},
+    greyBgRedIcon: {
+      position: "absolute",
+      top: 12,
+      left: 10,
+      width: 18,
+      height: 18,
+      // border: "2px solid yellow",
+    },
+    greyHeader: {
+      fontStyle: "italic",
+      fontWeight: "light",
+      textAlign: "justify",
+      color: "#00000090",
+      lineHeight: 1,
+    },
+    greyText: {
+      fontStyle: "italic",
+      fontWeight: "light",
+      textAlign: "justify",
+      color: "#00000050",
+      lineHeight: 1,
+
+      paddingLeft: 15,
+    },
+    fullWidthImage: {
+      width: "95%",
+      height: "auto",
+      marginHorizontal: "auto",
+      border: "2px solid red",
+    },
   });
 
   return (
@@ -250,157 +296,69 @@ function ReportPDF({ property }: { property: any }) {
         </View>
       </Page>
 
-      <Page size="LETTER" orientation="portrait" style={styles.page}>
+      <Page
+        size="LETTER"
+        id="titleInvestigation"
+        orientation="portrait"
+        style={styles.page}
+      >
         <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
         <Text style={styles.heading}>Title Investigation (Lands Bureau)</Text>
 
         <View style={styles.greyBg}>
-          <Image
-            style={styles.headerImage}
-            source={"/reva/reva_pdf_logo.png"}
-          />
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
 
-          <Text style={styles.subheading}>
+          <Text style={styles.greyHeader}>
+            The Project Development Agreement dated 10th October 2017 between
+            Mr. Augustine Atage and Legrande properties development company
+            limited{" "}
+            <Text style={[styles.textBold, styles.textRed]}>
+              is a duly registered instrument{" "}
+            </Text>
+            at the registry of deeds, lands bureau Lagos State as Number 33 Page
+            33 in Volume 2580.
+          </Text>
+        </View>
+
+        <Text style={styles.title}>Highlights.</Text>
+
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={styles.greyHeader}>
             The property currently has an existing title dated $Date between
             $Title Name which $Title Status at the registry of deeds, lands
             bureau Lagos State as $Title Number.
           </Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Reference:</Text>{" "}
-            {property?.reference}
-          </Text>
+        <Image
+          style={styles.fullWidthImage}
+          source={"/reva/reva_pdf_logo.png"}
+        />
 
-          <Text style={styles.fieldRow}>
-            Highlights.
-            <></>
-            Transaction Flow Summary: 1.Alhaji Saibu Dabiri Ajasa family sells a
-            parcel of land to Alhaji Muibeen Olatummbi.<></>
-            2.Alhaji Muibeen Olatummbi sells the same parcel to Mr. Robinson
-            Anunobi.<></>
-            3.Mr. Robinson Anunobi then transfers the land to Mr. Augustine
-            Ataga.<></>
-            4. Later, Mr. Augustine Ataga purchases an additional piece of land
-            from Alhaji Muibeen Olatummbi,<></>
-            the same individual who originally sold to Mr. Robinson Anunobi.
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>LGA:</Text> {property?.lga}
-          </Text>
-        </View>
+        <View style={styles.greyBg} wrap={false}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Title Investigation (Lands Bureau)
+          <Text style={styles.greyHeader}>
+            <Text style={[styles.textBold]}>
+              “The question arises: Who holds the right to sell the development?{" "}
+            </Text>
+            According to the Property Development Agreement, No. 33, Page 33,
+            Volume 2580, specifically on Page 13, Section 10, Subsection 1,
+            Paragraphs 1 and 2, Legrande Properties Development Company Limited
+            is entitled to 5 units, while Mr. Augustine Ataga is entitled to 2
+            units. Further clarification is provided in Section 13.0 on Page 14
           </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Status:</Text>{" "}
-            {report.titleStatus}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Number:</Text>{" "}
-            {report.titleNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Right To Sell Holder:</Text>{" "}
-            {report.rightToSellHolder}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-            {report.transactionFlow}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Parcel Investigation (Surveyor General)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Position Match:</Text>{" "}
-            {report.parcelPositionMatch}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Status:</Text>{" "}
-            {report.parcelStatus}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Survey Details</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Plan Number:</Text>{" "}
-            {report.surveyPlanNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Name:</Text>{" "}
-            {report.surveyName}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Historical Surveys:</Text>{" "}
-            {report.historicalSurveys}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Physical Planning</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Zoning:</Text>{" "}
-            {report.zoning}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Setbacks Info:</Text>{" "}
-            {report.setbacksInfo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Building Plan Approval</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Approval Available:</Text>{" "}
-            {report.hasBuildingPlanApproval ? "Yes" : "No"}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Building Plan Number:</Text>{" "}
-            {report.buildingPlanNo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Images (names only)</Text>
-          {report.images && (
-            <>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-                {report.images.transactionFlowImg?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Parcel Check:</Text>{" "}
-                {report.images.parcelCheck?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Free:
-                </Text>{" "}
-                {report.images.parcelChartingFree?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Offset:
-                </Text>{" "}
-                {report.images.parcelChartingOffset?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Land Use Check:</Text>{" "}
-                {report.images.landUseCheck?.name || "N/A"}
-              </Text>
-            </>
-          )}
         </View>
       </Page>
 
-      <Page size="LETTER" orientation="portrait" style={styles.page}>
+      <Page
+        size="LETTER"
+        id="parcelInvestigationSurveyor"
+        orientation="portrait"
+        style={styles.page}
+      >
         <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
         <Text style={styles.heading}>
           Parcel Investigation (Office of the State Surveyor General)
@@ -420,117 +378,14 @@ function ReportPDF({ property }: { property: any }) {
             <Text style={styles.frontPageRefLabel}>LGA:</Text> {property?.lga}
           </Text>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Title Investigation (Lands Bureau)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Status:</Text>{" "}
-            {report.titleStatus}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Number:</Text>{" "}
-            {report.titleNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Right To Sell Holder:</Text>{" "}
-            {report.rightToSellHolder}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-            {report.transactionFlow}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Parcel Investigation (Surveyor General)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Position Match:</Text>{" "}
-            {report.parcelPositionMatch}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Status:</Text>{" "}
-            {report.parcelStatus}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Survey Details</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Plan Number:</Text>{" "}
-            {report.surveyPlanNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Name:</Text>{" "}
-            {report.surveyName}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Historical Surveys:</Text>{" "}
-            {report.historicalSurveys}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Physical Planning</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Zoning:</Text>{" "}
-            {report.zoning}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Setbacks Info:</Text>{" "}
-            {report.setbacksInfo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Building Plan Approval</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Approval Available:</Text>{" "}
-            {report.hasBuildingPlanApproval ? "Yes" : "No"}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Building Plan Number:</Text>{" "}
-            {report.buildingPlanNo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Images (names only)</Text>
-          {report.images && (
-            <>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-                {report.images.transactionFlowImg?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Parcel Check:</Text>{" "}
-                {report.images.parcelCheck?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Free:
-                </Text>{" "}
-                {report.images.parcelChartingFree?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Offset:
-                </Text>{" "}
-                {report.images.parcelChartingOffset?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Land Use Check:</Text>{" "}
-                {report.images.landUseCheck?.name || "N/A"}
-              </Text>
-            </>
-          )}
-        </View>
       </Page>
 
-      <Page size="LETTER" orientation="portrait" style={styles.page}>
+      <Page
+        size="LETTER"
+        id="parcelInvestigationPhysical"
+        orientation="portrait"
+        style={styles.page}
+      >
         <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
         <Text style={styles.heading}>
           Parcel Investigation (Physical Planning)
@@ -601,62 +456,6 @@ function ReportPDF({ property }: { property: any }) {
             <Text style={styles.frontPageRefLabel}>Historical Surveys:</Text>{" "}
             {report.historicalSurveys}
           </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Physical Planning</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Zoning:</Text>{" "}
-            {report.zoning}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Setbacks Info:</Text>{" "}
-            {report.setbacksInfo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Building Plan Approval</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Approval Available:</Text>{" "}
-            {report.hasBuildingPlanApproval ? "Yes" : "No"}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Building Plan Number:</Text>{" "}
-            {report.buildingPlanNo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Images (names only)</Text>
-          {report.images && (
-            <>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-                {report.images.transactionFlowImg?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Parcel Check:</Text>{" "}
-                {report.images.parcelCheck?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Free:
-                </Text>{" "}
-                {report.images.parcelChartingFree?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Offset:
-                </Text>{" "}
-                {report.images.parcelChartingOffset?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Land Use Check:</Text>{" "}
-                {report.images.landUseCheck?.name || "N/A"}
-              </Text>
-            </>
-          )}
         </View>
       </Page>
 

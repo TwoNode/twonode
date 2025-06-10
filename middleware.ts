@@ -5,27 +5,60 @@ import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 // Define the paths that require authentication
 const protectedRoutes = ["/reva/dashboard", "reva-restricted/dashboard"];
 
-// export default function middleware(req: NextRequest) {
-//   console.log("isLoggedIn", "isLoggedIn");
-//   const url = req.nextUrl.clone();
-//   const pathname = url.pathname;
+type DynamicAuthOptions = any & {
+  loginPage?: string | ((req: NextRequest) => string);
+  isReturnToCurrentPage?: boolean | ((req: NextRequest) => boolean);
+};
 
-//   // Check if the request is for a protected route
-//   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-//     const isLoggedIn = req.cookies.get("isLoggedIn")?.value;
+function withDynamicAuth(options?: DynamicAuthOptions, middlewareFn?: any) {
+  return async (req: NextRequest) => {
+    // Resolve dynamic login page if provided as a function
+    const resolvedOptions: any = {
+      ...options,
+      loginPage:
+        typeof options?.loginPage === "function"
+          ? options.loginPage(req)
+          : options?.loginPage,
+    };
 
-//     // Redirect to login if not logged in
-//     if (!isLoggedIn || isLoggedIn !== "true") {
-//       url.pathname = "/reva/login"; // Redirect to login page
-//       return NextResponse.redirect(url);
-//     }
-//   }
+    console.log(
+      "\n\n\n\n\n\n\n\n",
+      resolvedOptions?.loginPage,
+      "\n\n\n\n\n\n\n\n"
+    );
 
-//   return NextResponse.next(); // Allow access if the user is logged in
-// }
+    if (middlewareFn) {
+      // Handle case where middleware function is provided
+      return withAuth(
+        req,
+        resolvedOptions,
+        async ({ token, user }: { token: string; user: any }) => {
+          (req as any).kindeAuth = { token, user };
+          return await middlewareFn(req);
+        }
+      );
+    }
 
-export default withAuth(
-  async function middleware(req: any) {
+    // Basic auth handling without middleware function
+    return withAuth(req, resolvedOptions);
+  };
+}
+
+// 2. With additional middleware logic
+const middlewareWithLogic = withDynamicAuth(
+  {
+    loginPage: (req: NextRequest) => {
+      const pathname = req.nextUrl.pathname;
+
+      if (pathname.startsWith("/reva-restricted"))
+        return "/reva-restricted/login";
+      if (pathname.startsWith("/reva")) return "/reva/login";
+
+      return "/reva/login"; // Default fallback
+    },
+    isReturnToCurrentPage: true,
+  },
+  async (req: NextRequest) => {
     // console.log("\n\n\n\n\n\n\n\nlook at me", req.kindeAuth, "\n\n\n\n\n");
     // const cookies = req.cookies.getAll();
     const userTypeCookie = req.cookies.get("USER_TYPE");
@@ -69,17 +102,10 @@ export default withAuth(
     }
 
     return NextResponse.next();
-  },
-  {
-    isReturnToCurrentPage: true,
-    loginPage: "/reva/login",
-    // publicPaths: ["/public", "/more"],
-    // isAuthorized: ({ token }: { token: any }) => {
-    //   // The user will be considered authorized if they have the permission 'eat:chips'
-    //   return token.permissions.includes("eat:chips");
-    // },
   }
 );
+
+export default middlewareWithLogic;
 
 export const config = {
   matcher: [
