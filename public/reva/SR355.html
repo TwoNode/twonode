@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SR - Spatial Records</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.29/"></script>
+
+  <!-- Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzhhoV6YJZc640ODPgDoz9dKTSXnYr0Gw&libraries=places"></script>
+
+<style>
+  html, body, #viewDiv {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  .search-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    width: 320px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .search-panel h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+    color: #333;
+  }
+
+  .search-panel input,
+  .search-panel select,
+  .search-panel button {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+  }
+
+  .search-panel button {
+    background-color: #0078d4;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+  }
+
+  .search-panel button:hover {
+    background-color: #005fa3;
+  }
+
+  .search-panel hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 16px 0;
+  }
+</style>
+
+<div class="search-panel">
+  <h3>Spatial Record Search</h3>
+  
+  <label for="searchField">Select Field</label>
+  <select id="searchField"></select>
+
+  <input type="text" id="fieldSearch" placeholder="Enter search text..." />
+  <select id="searchResults"></select>
+
+  <hr />
+
+  <label for="utmCoord">Locate by UTM</label>
+  <input type="text" id="utmCoord" placeholder="e.g., 542520.253,724085.335" />
+  <button onclick="goToUTM()">Locate Coordinate</button>
+
+  <hr />
+
+  <label for="addressInput">Search Address</label>
+  <input id="addressInput" type="text" placeholder="Enter address..." />
+</div>
+
+  <div id="viewDiv"></div>
+
+<script> 
+  require([
+    "esri/Map", "esri/views/MapView",
+    "esri/WebMap", "esri/layers/FeatureLayer",
+    "esri/Graphic", "esri/layers/GraphicsLayer",
+    "esri/rest/support/Query",
+    "esri/widgets/Legend", "esri/widgets/LayerList",
+    "esri/widgets/Expand",
+    "esri/geometry/Point", "esri/geometry/projection",
+    "esri/geometry/SpatialReference"
+  ], function (
+    Map, MapView, WebMap, FeatureLayer, Graphic, GraphicsLayer,
+    Query, Legend, LayerList, Expand,
+    Point, projection, SpatialReference
+  ) {
+    const webmap = new WebMap({
+      portalItem: { id: "9f45cec473534d49a1d56633b8516609" }
+    });
+
+    const view = new MapView({
+      container: "viewDiv",
+      map: webmap
+    });
+
+    const graphicsLayer = new GraphicsLayer({
+      title: "Search point",
+      listMode: "show"
+    });
+    view.map.add(graphicsLayer);
+
+    // Wait for webmap to load, then get the existing SpatialRecords layer
+    let layer;
+    webmap.when(() => {
+      // Ensure graphicsLayer is on top
+      view.map.reorder(graphicsLayer, view.map.layers.length - 1);
+
+      layer = webmap.layers.find(l => l.title === "SpatialRecords");
+      if (!layer) {
+        console.error("SpatialRecords layer not found in the webmap.");
+        return;
+      }
+
+      // Populate search field options
+      layer.load().then(() => {
+        const searchFieldSelect = document.getElementById("searchField");
+        const fields = layer.fields.filter(f => f.type === "string");
+        fields.forEach(field => {
+          const opt = document.createElement("option");
+          opt.value = field.name;
+          opt.textContent = field.alias || field.name;
+          searchFieldSelect.appendChild(opt);
+        });
+      });
+    });
+
+    const legendExpand = new Expand({
+      view,
+      content: new Legend({ view }),
+      expanded: false
+    });
+
+    const layerListExpand = new Expand({
+      view,
+      content: new LayerList({ view }),
+      expanded: false
+    });
+
+    view.ui.add(legendExpand, "bottom-left");
+    view.ui.add(layerListExpand, "top-right");
+
+    const searchFieldSelect = document.getElementById("searchField");
+    const fieldSearch = document.getElementById("fieldSearch");
+    const resultSelect = document.getElementById("searchResults");
+
+    fieldSearch.addEventListener("input", async () => {
+      if (!layer) return;
+
+      const field = searchFieldSelect.value;
+      const text = fieldSearch.value.trim();
+      if (text.length < 2 || !field) return;
+
+      const query = layer.createQuery();
+      query.where = `${field} LIKE '%${text}%'`;
+      query.outFields = [field];
+      query.returnGeometry = false;
+
+      const results = await layer.queryFeatures(query);
+      resultSelect.innerHTML = "";
+      results.features.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f.attributes[field];
+        opt.textContent = f.attributes[field];
+        resultSelect.appendChild(opt);
+      });
+    });
+
+    resultSelect.addEventListener("change", async () => {
+      if (!layer) return;
+
+      const field = searchFieldSelect.value;
+      const value = resultSelect.value;
+      const query = layer.createQuery();
+      query.where = `${field} = '${value}'`;
+      query.returnGeometry = true;
+      query.outFields = ["*"];
+
+      const results = await layer.queryFeatures(query);
+      if (results.features.length) {
+        const feat = results.features[0];
+        graphicsLayer.removeAll();
+        graphicsLayer.add(new Graphic({
+          geometry: feat.geometry,
+          symbol: {
+            type: "simple-fill",
+            color: [0, 0, 255, 0.2],
+            outline: { color: "blue", width: 2 }
+          }
+        }));
+        view.goTo({ target: feat.geometry, zoom: 20 });
+        view.popup.open({
+          features: [feat],
+          location: feat.geometry.centroid
+        });
+      }
+    });
+
+    // UTM Coordinate
+    window.goToUTM = async () => {
+      const coordInput = document.getElementById("utmCoord").value.trim();
+      const parts = coordInput.split(",");
+      if (parts.length !== 2) {
+        alert("Enter coordinate in X,Y format (e.g., 542520.253,724085.335)");
+        return;
+      }
+
+      const x = parseFloat(parts[0]);
+      const y = parseFloat(parts[1]);
+      if (isNaN(x) || isNaN(y)) {
+        alert("Coordinates must be valid numbers.");
+        return;
+      }
+
+      const utmPoint = new Point({
+        x: x,
+        y: y,
+        spatialReference: new SpatialReference({ wkid: 26331 })
+      });
+
+      await projection.load();
+      const projected = projection.project(utmPoint, view.spatialReference);
+
+      graphicsLayer.removeAll();
+      graphicsLayer.add(new Graphic({
+        geometry: projected,
+        symbol: {
+          type: "simple-marker",
+          color: "red",
+          size: "10px"
+        }
+      }));
+      view.goTo({ target: projected, zoom: 20 });
+      checkIntersection(projected);
+    };
+
+    const input = document.getElementById("addressInput");
+    const autocomplete = new google.maps.places.Autocomplete(input);
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (!place.geometry) return;
+
+      const location = place.geometry.location;
+      const point = new Point({
+        longitude: location.lng(),
+        latitude: location.lat()
+      });
+
+      graphicsLayer.removeAll();
+      graphicsLayer.add(new Graphic({
+        geometry: point,
+        symbol: {
+          type: "simple-marker",
+          color: "green",
+          size: "10px"
+        }
+      }));
+      view.goTo({ target: point, zoom: 20 });
+      checkIntersection(point);
+    });
+
+    function checkIntersection(point) {
+      if (!layer) return;
+
+      const spatialQuery = layer.createQuery();
+      spatialQuery.geometry = point;
+      spatialQuery.spatialRelationship = "intersects";
+      spatialQuery.outFields = ["*"];
+      spatialQuery.returnGeometry = true;
+
+      layer.queryFeatures(spatialQuery).then(results => {
+        if (results.features.length > 0) {
+          view.popup.open({
+            features: results.features,
+            location: point
+          });
+        } else {
+          view.popup.close();
+        }
+      });
+    }
+
+    // Click handler
+    view.on("click", async function (event) {
+      const point = event.mapPoint;
+
+      await projection.load();
+      const utm = projection.project(point, new SpatialReference({ wkid: 26331 }));
+      document.getElementById("utmCoord").value = `${utm.x.toFixed(3)},${utm.y.toFixed(3)}`;
+
+      const lat = point.latitude;
+      const lng = point.longitude;
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          document.getElementById("addressInput").value = results[0].formatted_address;
+        }
+      });
+
+      graphicsLayer.removeAll();
+      graphicsLayer.add(new Graphic({
+        geometry: point,
+        symbol: {
+          type: "simple-marker",
+          color: "orange",
+          size: "10px"
+        }
+      }));
+
+      view.goTo({ target: point, zoom: 20 });
+      checkIntersection(point);
+    });
+  });
+</script>
+</body>
+</html>

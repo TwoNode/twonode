@@ -41,8 +41,8 @@ export default function RevaAdminPanelLayout({
     },
     {
       icon: Map,
-      label: "Parcel Report",
-      url: `${dashboardUrl}/parcel-report`,
+      label: "Spatial Record",
+      url: `${dashboardUrl}/spatial-record`,
     },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
 
