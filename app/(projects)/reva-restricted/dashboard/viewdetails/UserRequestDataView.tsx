@@ -54,17 +54,6 @@ function ReportPDF({ property }: { property: any }) {
     //   fontWeight: "bold",
     //   color: "#0A2D75",
     // },
-    // footer: {
-    //   position: "absolute",
-    //   bottom: 20,
-    //   left: 40,
-    //   right: 40,
-    //   backgroundColor: "#002060",
-    //   flexDirection: "row",
-    //   justifyContent: "space-between",
-    //   padding: 10,
-    // },
-
     headerImage: {
       position: "absolute",
       top: 5,
@@ -75,13 +64,32 @@ function ReportPDF({ property }: { property: any }) {
       marginTop: 20,
       marginBottom: 120,
     },
-    footerText: {
+
+    footer: {
       position: "absolute",
-      top: 5,
-      right: 20,
+      bottom: 10,
+      left: 0,
+      // right: 40,
+      flexDirection: "row",
+      justifyContent: "center",
+      paddingHorizontal: 50,
+      width: "100%",
+    },
+
+    pageNumber: {
+      color: "#00000050",
+      fontSize: 8,
+      textAlign: "right",
+      justifySelf: "right",
+      marginLeft: "auto",
+    },
+
+    footerText: {
+      color: "#002060",
       textAlign: "center",
       fontSize: 8,
       fontWeight: "bold",
+      marginLeft: "auto",
     },
 
     frontPage: {
@@ -250,6 +258,36 @@ function ReportPDF({ property }: { property: any }) {
       marginHorizontal: "auto",
       border: "2px solid red",
     },
+
+    table: {
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      borderTop: "1px solid #ccc",
+      borderLeft: "1px solid #ccc",
+    },
+    cellLeft: {
+      width: "50%",
+      padding: 4,
+      borderBottom: "1px solid #ccc",
+      borderRight: "1px solid #ccc",
+      backgroundColor: "#f8f8f8",
+    },
+    cellRight: {
+      width: "50%",
+      padding: 4,
+      borderBottom: "1px solid #ccc",
+      borderRight: "1px solid #ccc",
+    },
+    italicNote: {
+      fontStyle: "italic",
+      fontSize: 10,
+      marginTop: 6,
+    },
+    boldGreen: {
+      color: "#4cdd3e",
+      fontWeight: "bold",
+    },
   });
 
   return (
@@ -364,20 +402,255 @@ function ReportPDF({ property }: { property: any }) {
           Parcel Investigation (Office of the State Surveyor General)
         </Text>
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Client & Property Info</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Reference:</Text>{" "}
-            {property?.reference}
+        {/* Section 1: Parcel Location Check */}
+        <Text style={styles.title}>Parcel Location Check</Text>
+
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={styles.greyHeader}>
+            Parcel location using the following Reference:{" "}
           </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Address:</Text>{" "}
-            {property?.address}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>LGA:</Text> {property?.lga}
+
+          {/* Table */}
+          <View style={styles.table}>
+            <View style={styles.cellLeft}>
+              <Text>Minna_UTM_Zone_31N</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Geographic Coordinate System: GCS_Minna</Text>
+            </View>
+            <View style={styles.cellLeft}>
+              <Text>Projection: Transverse_Mercator</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Angular Unit: Degree (0.0174532925199433)</Text>
+            </View>
+            <View style={styles.cellLeft}>
+              <Text>False_Easting: 500000.0</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Prime Meridian: Greenwich (0.0)</Text>
+            </View>
+            <View style={styles.cellLeft}>
+              <Text>Central_Meridian: 3.0</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Datum: D_Minna</Text>
+            </View>
+            <View style={styles.cellLeft}>
+              <Text>Scale_Factor: 0.9996</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Spheroid: Clarke_1880_RGS</Text>
+            </View>
+            <View style={styles.cellLeft}>
+              <Text>Linear Unit: Meter (1.0)</Text>
+            </View>
+            <View style={styles.cellRight}>
+              <Text>Semimajor Axis: 6378249.145</Text>
+            </View>
+            <View style={styles.cellLeft}></View>
+            <View style={styles.cellRight}>
+              <Text>Semiminor Axis: 6356514.869549775</Text>
+            </View>
+            <View style={styles.cellLeft}></View>
+            <View style={styles.cellRight}>
+              <Text>Inverse Flattening: 293.465</Text>
+            </View>
+          </View>
+
+          <Text style={styles.italicNote}>
+            Please see Figure 1.0 below for the Parcel Overlay on Ortho
+            Rectified Imagery
           </Text>
         </View>
+
+        <Text style={styles.title}>
+          {" "}
+          Parcel Position Check on Lagos State Framework (Vector 04)
+        </Text>
+
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={[styles.greyHeader]}>
+            The
+            <Text style={styles.boldGreen}>$Survey Plan No.</Text>
+            <Text> has a </Text>
+            <Text style={styles.boldGreen}>$Parcel Position Match (%)</Text>
+            position match with the Lagos State Framework(Vector 04)
+          </Text>
+
+          <Text style={styles.greyText}>
+            Please see Figure 1.0 below for the Parcel Overlay on Orthorectified
+            Imagery
+          </Text>
+        </View>
+
+        {/* Figure 1.0 Parcel Check Image */}
+
+        <Text style={styles.title}>Parcel Status Check - Charting Report </Text>
+
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={[styles.greyHeader]}>
+            Based on the Above Parcel Check The Charting report Reveals That;
+          </Text>
+
+          <Text style={styles.greyText}>
+            $Parcel Status Check -- he property is free from any known
+            Government Acquisition (Please see figure 2.0)
+          </Text>
+
+          <Text style={styles.greyText}>
+            $Parcel on Setbacks -- No Commitment
+          </Text>
+          <Text style={styles.greyText}>
+            $Parcel on Setbacks -- Falls partly within the offset of the Open
+            Canal (Please see figure 3.0)
+          </Text>
+        </View>
+
+        {/* Parcel Charting Image */}
+
+        <Text style={styles.title}>Historical Survey Records</Text>
+
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={[styles.greyHeader]}>
+            The most recent lodged survey plan for the property is Survey Plan
+            No. $Most recent lodged survey plan no., archived at the office of
+            the State Surveyor General on $Date on Survey plan. This survey was
+            registered under $Name on Survey.{" "}
+          </Text>
+
+          <Text style={styles.greyHeader}>
+            Prior to this, the following survey plans covering the same area
+            were recorded in descending order of date:
+          </Text>
+
+          <Text style={styles.greyText}>$Historical Survey Records</Text>
+          <Text style={styles.greyText}>
+            1.Survey Plan No. ABC/0000/001/2007/LA – December 20, 2007 –
+            Registered to Mr. Adebayo Abiodun
+          </Text>
+          <Text style={styles.greyText}>
+            2.Survey Plan No. CDE/1111/002/1998/LA – February 14, 1998 –
+            Registered to Mr. Junior Olubode
+          </Text>
+          <Text style={styles.greyText}>
+            3.Survey Plan No. FT/LA/002/78 – January 2, 1978 – Registered to
+            Mrs. Adebisi Olukoya.
+          </Text>
+        </View>
+
+        {/* <>
+          <Text style={styles1.referenceItem}>
+            <Text style={styles1.italic}>Minna_UTM_Zone_31N</Text>
+          </Text>
+          <Text style={styles1.referenceItem}>
+            Projection: Transverse_Mercator
+          </Text>
+          <Text style={styles1.referenceItem}>False_Easting: 500000.0</Text>
+          <Text style={styles1.referenceItem}>Central_Meridian: 3.0</Text>
+          <Text style={styles1.referenceItem}>Scale_Factor: 0.99%</Text>
+          <Text style={styles1.referenceItem}>Linear Unit: Meter (1.0)</Text>
+
+          <Text style={styles1.sectionTitle}>
+            Geographic Coordinate System:
+          </Text>
+          <Text style={styles1.referenceItem}>GCS_Minna</Text>
+          <Text style={styles1.referenceItem}>
+            Angular Unit: Degree (0.0174532925199433)
+          </Text>
+          <Text style={styles1.referenceItem}>
+            Prime Meridian: Greenwich (0.0)
+          </Text>
+          <Text style={styles1.referenceItem}>Datum: D_Minna</Text>
+          <Text style={styles1.referenceItem}>Spheroid: Clarke_1880_RGS</Text>
+          <Text style={styles1.referenceItem}>Semimajor Axis: 6378249.145</Text>
+          <Text style={styles1.referenceItem}>
+            Semiminor Axis: 6356514.869549775
+          </Text>
+          <Text style={styles1.referenceItem}>Inverse Flattening: 293.465</Text>
+
+          <View style={styles1.figureContainer}>
+            <Text style={styles1.figureTitle}>
+              Figure 1.0: Parcel Overlay on Ortho Rectified Imagery
+            </Text>
+            <View
+              style={{
+                width: 400,
+                height: 250,
+                backgroundColor: "#e0e0e0",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text>Parcel Overlay Image Would Appear Here</Text>
+            </View>
+          </View>
+
+          <Text style={{ ...styles1.sectionTitle, marginTop: 30 }}>
+            Parcel Position Check on Lagos State Framework (Vector 04)
+          </Text>
+
+          <Text style={styles1.referenceItem}>
+            The <Text style={styles1.bold}>Survey Plan No.</Text> has a{" "}
+            <Text style={styles1.bold}>Parcel Position Match (%)</Text> position
+            match with the Lagos State Framework (Vector 04)
+          </Text>
+
+          <View style={styles1.figureContainer}>
+            <Text style={styles1.figureTitle}>
+              Figure 1.0: Parcel Overlay on Orthorectified Imagery
+            </Text>
+
+            <View
+              style={{
+                width: 400,
+                height: 250,
+                backgroundColor: "#e0e0e0",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text>Parcel Overlay Image Would Appear Here</Text>
+            </View>
+          </View>
+
+          <View style={styles1.table}>
+            <View style={[styles1.tableRow, styles1.headerCell]}>
+              <Text style={[styles1.tableCell, { width: "30%" }]}>
+                Parameter
+              </Text>
+              <Text style={[styles1.tableCell, { width: "70%" }]}>Value</Text>
+            </View>
+            <View style={styles1.tableRow}>
+              <Text style={[styles1.tableCell, { width: "30%" }]}>
+                Coordinate System
+              </Text>
+              <Text style={[styles1.tableCell, { width: "70%" }]}>
+                Minna_UTM_Zone_31N
+              </Text>
+            </View>
+            <View style={styles1.tableRow}>
+              <Text style={[styles1.tableCell, { width: "30%" }]}>
+                Projection
+              </Text>
+              <Text style={[styles1.tableCell, { width: "70%" }]}>
+                Transverse_Mercator
+              </Text>
+            </View>
+            <View style={styles1.tableRow}>
+              <Text style={[styles1.tableCell, { width: "30%" }]}>Datum</Text>
+              <Text style={[styles1.tableCell, { width: "70%" }]}>D_Minna</Text>
+            </View>
+          </View>
+        </> */}
       </Page>
 
       <Page
@@ -386,204 +659,74 @@ function ReportPDF({ property }: { property: any }) {
         orientation="portrait"
         style={styles.page}
       >
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Real Estate
+            <Text style={[styles.textRed, styles.textBold]}>
+              {" "}
+              Due Diligence{" "}
+            </Text>
+            just got intelligent
+          </Text>
+
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) =>
+              `Page ${pageNumber} of ${totalPages}`
+            }
+          />
+        </View>
+
         <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
         <Text style={styles.heading}>
           Parcel Investigation (Physical Planning)
         </Text>
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Client & Property Info</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Reference:</Text>{" "}
-            {property?.reference}
+        <View style={styles.greyBg}>
+          <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
+
+          <Text style={styles.greyHeader}>
+            The Parcel falls within the{" "}
+            <Text style={[styles.textBold, styles.textRed]}>
+              $Landuse Zoning
+            </Text>
           </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Address:</Text>{" "}
-            {property?.address}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>LGA:</Text> {property?.lga}
+
+          <Text style={styles.greyHeader}>
+            The Parcel falls within the Residential Landuse
           </Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Title Investigation (Lands Bureau)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Status:</Text>{" "}
-            {report.titleStatus}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Number:</Text>{" "}
-            {report.titleNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Right To Sell Holder:</Text>{" "}
-            {report.rightToSellHolder}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-            {report.transactionFlow}
-          </Text>
-        </View>
+        {/* Figure 4.0 Parcel LandUse Check image */}
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Parcel Investigation (Surveyor General)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Position Match:</Text>{" "}
-            {report.parcelPositionMatch}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Status:</Text>{" "}
-            {report.parcelStatus}
-          </Text>
-        </View>
+        <View wrap={false}>
+          <Text style={styles.title}>Building Plan Approval</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Survey Details</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Plan Number:</Text>{" "}
-            {report.surveyPlanNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Name:</Text>{" "}
-            {report.surveyName}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Historical Surveys:</Text>{" "}
-            {report.historicalSurveys}
-          </Text>
-        </View>
-      </Page>
+          <View style={styles.greyBg}>
+            <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
 
-      <Page size="LETTER" orientation="portrait" style={styles.page}>
-        <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
-        <Text style={styles.heading}>Due Diligence Report</Text>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Client & Property Info</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Reference:</Text>{" "}
-            {property?.reference}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Address:</Text>{" "}
-            {property?.address}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>LGA:</Text> {property?.lga}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Title Investigation (Lands Bureau)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Status:</Text>{" "}
-            {report.titleStatus}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Title Number:</Text>{" "}
-            {report.titleNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Right To Sell Holder:</Text>{" "}
-            {report.rightToSellHolder}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-            {report.transactionFlow}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>
-            Parcel Investigation (Surveyor General)
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Position Match:</Text>{" "}
-            {report.parcelPositionMatch}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Parcel Status:</Text>{" "}
-            {report.parcelStatus}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Survey Details</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Plan Number:</Text>{" "}
-            {report.surveyPlanNumber}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Survey Name:</Text>{" "}
-            {report.surveyName}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Historical Surveys:</Text>{" "}
-            {report.historicalSurveys}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Physical Planning</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Zoning:</Text>{" "}
-            {report.zoning}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Setbacks Info:</Text>{" "}
-            {report.setbacksInfo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Building Plan Approval</Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Approval Available:</Text>{" "}
-            {report.hasBuildingPlanApproval ? "Yes" : "No"}
-          </Text>
-          <Text style={styles.fieldRow}>
-            <Text style={styles.frontPageRefLabel}>Building Plan Number:</Text>{" "}
-            {report.buildingPlanNo}
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subheading}>Images (names only)</Text>
-          {report.images && (
-            <>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Transaction Flow:</Text>{" "}
-                {report.images.transactionFlowImg?.name || "N/A"}
+            <Text style={styles.greyHeader}>
+              Any Building Plan Approval –{" "}
+              <Text style={[styles.textBold, styles.textRed]}>
+                $Building Plan Approval{" "}
               </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Parcel Check:</Text>{" "}
-                {report.images.parcelCheck?.name || "N/A"}
+            </Text>
+
+            <Text style={styles.greyHeader}>
+              Building Plan Approval Number -{" "}
+              <Text style={[styles.textBold, styles.textRed]}>
+                $Building Plan No{" "}
               </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Free:
-                </Text>{" "}
-                {report.images.parcelChartingFree?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>
-                  Parcel Charting Offset:
-                </Text>{" "}
-                {report.images.parcelChartingOffset?.name || "N/A"}
-              </Text>
-              <Text style={styles.fieldRow}>
-                <Text style={styles.frontPageRefLabel}>Land Use Check:</Text>{" "}
-                {report.images.landUseCheck?.name || "N/A"}
-              </Text>
-            </>
-          )}
+            </Text>
+
+            <Text style={styles.greyHeader}>
+              Any Building Plan Approval – YES
+            </Text>
+
+            <Text style={styles.greyHeader}>
+              Building Plan Approval Number - ABC123DEF456
+            </Text>
+          </View>
         </View>
       </Page>
     </Document>
