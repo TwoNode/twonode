@@ -290,6 +290,34 @@ function ReportPDF({ property }: { property: any }) {
     },
   });
 
+  const Header = () => (
+    <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
+  );
+
+  const Footer = () => (
+    <View style={styles.footer}>
+      <Text style={styles.footerText}>
+        Real Estate
+        <Text style={[styles.textRed, styles.textBold]}> Due Diligence </Text>
+        just got intelligent
+      </Text>
+
+      <Text
+        style={styles.pageNumber}
+        render={({ pageNumber, totalPages }) =>
+          `Page ${pageNumber} of ${totalPages}`
+        }
+      />
+    </View>
+  );
+
+  const HeaderAndFooter = () => (
+    <>
+      <Header />
+      <Footer />
+    </>
+  );
+
   return (
     <Document>
       <Page size="LETTER" orientation="portrait" style={styles.frontPage}>
@@ -340,7 +368,7 @@ function ReportPDF({ property }: { property: any }) {
         orientation="portrait"
         style={styles.page}
       >
-        <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
+        <HeaderAndFooter />
         <Text style={styles.heading}>Title Investigation (Lands Bureau)</Text>
 
         <View style={styles.greyBg}>
@@ -397,7 +425,8 @@ function ReportPDF({ property }: { property: any }) {
         orientation="portrait"
         style={styles.page}
       >
-        <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
+        <HeaderAndFooter />
+
         <Text style={styles.heading}>
           Parcel Investigation (Office of the State Surveyor General)
         </Text>
@@ -659,25 +688,8 @@ function ReportPDF({ property }: { property: any }) {
         orientation="portrait"
         style={styles.page}
       >
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Real Estate
-            <Text style={[styles.textRed, styles.textBold]}>
-              {" "}
-              Due Diligence{" "}
-            </Text>
-            just got intelligent
-          </Text>
+        <HeaderAndFooter />
 
-          <Text
-            style={styles.pageNumber}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
-        </View>
-
-        <Image style={styles.headerImage} source={"/reva/reva_pdf_logo.png"} />
         <Text style={styles.heading}>
           Parcel Investigation (Physical Planning)
         </Text>
