@@ -2,7 +2,7 @@
 
 import { AdminReportUpload } from "./AdminReportUpload";
 import { AdminDirectLinkUpload } from "./AdminDirectLinkUpload";
-import { AdminMiniHeader } from "./AdminMiniHeader";
+import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 

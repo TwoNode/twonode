@@ -64,9 +64,11 @@ export const superAdminCheck = async (user: any) => {
 export const getAllRequestsWithUserByAdmin = async ({
   limit,
   onlyWithReport = false,
+  includeOneTimeRequests = false,
 }: {
   limit?: number;
   onlyWithReport?: boolean;
+  includeOneTimeRequests?: boolean;
 } = {}) => {
   try {
     const properties = await prisma.property.findMany({
@@ -94,9 +96,24 @@ export const getAllRequestsWithUserByAdmin = async ({
       },
     });
 
+    const oneTimeProperties = await prisma.oneTimeUserProperty.findMany({
+      take: limit !== null ? limit : undefined,
+      where: onlyWithReport
+        ? {
+            report: {
+              not: Prisma.JsonNull,
+            },
+          }
+        : undefined,
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
     return {
       success: true,
       data: properties,
+      oneTimeRequests: oneTimeProperties,
     };
   } catch (error) {
     console.error("Error fetching properties:", error);

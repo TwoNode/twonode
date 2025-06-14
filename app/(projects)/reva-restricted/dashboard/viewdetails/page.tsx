@@ -6,7 +6,7 @@ import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminReportUpload } from "./AdminReportUpload";
 import { AdminDirectLinkUpload } from "./AdminDirectLinkUpload";
-import { AdminMiniHeader } from "./AdminMiniHeader";
+import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import AdminReport from "./AdminReport";
 import SingleRequestPage from "@/app/(projects)/reva/dashboard/viewdetails/SingleRequestPage";
 

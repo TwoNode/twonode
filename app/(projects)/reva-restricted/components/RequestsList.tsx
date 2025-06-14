@@ -26,11 +26,15 @@ const RequestList = ({ requests }: { requests: any[] }) => {
                 <p className="text-sm text-muted-foreground">
                   REF: {req?.reference} · LGA: {req?.lga}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  By: {req?.user.firstName} {req?.user.lastName} (
-                  {req?.user.email})
-                </p>
+
+                {req?.user && (
+                  <p className="text-sm text-muted-foreground">
+                    By: {req?.user.firstName} {req?.user.lastName} ({" "}
+                    {req?.user.email})
+                  </p>
+                )}
               </div>
+
               <div className="flex flex-col gap-2 items-end">
                 <Badge
                   variant="outline"
