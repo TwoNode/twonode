@@ -454,12 +454,26 @@ export const approveDueDiligenceReport = async (
       });
 
       if (isApproved && property?.user?.email) {
-        // await sendMail({
-        //   to: property?.user?.email || "",
-        //   subject: "[User] Your Due Diligence Report is Ready",
-        //   text: `Hello,\n\nYour due diligence report for property ${reference} has been approved and is now available in your dashboard.`,
-        //   html: `<p>Great news! The due diligence report for property <strong>${reference}</strong> has been approved. You can now view or download it from your dashboard.</p>`,
-        // });
+        await sendMail({
+          to: property?.user?.email || "",
+          subject: "REVA: Your Due Diligence Report is Ready",
+          text: `Hello,\n\nYour due diligence report for property ${reference} has been approved and is now available in your dashboard.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <h2 style="color: #10b981; margin-bottom: 0;">🎉 Report Approved!</h2>
+              <p style="font-size: 16px; color: #374151;">
+                Hello <strong>${property?.user?.firstName || "User"}</strong>,
+              </p>
+              <p style="font-size: 16px; color: #374151;">
+                Your due diligence report for <strong>property #${reference}</strong> has been successfully approved.
+              </p>
+              <p style="font-size: 16px; color: #374151;">
+                You can now view or download the report directly from your dashboard.
+              </p>
+              <p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p>
+            </div>
+          `,
+        });
       }
     } catch (err) {
       console.log("Email not sent: ", err);
