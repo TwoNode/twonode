@@ -19,7 +19,11 @@ import {
 
 import { PropertyWithoutUser } from "../../actions/dbActions";
 
-const SingleRequestPage = ({ property }: { property: PropertyWithoutUser }) => {
+const SingleRequestPage = ({
+  property,
+}: {
+  property: PropertyWithoutUser | any;
+}) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   const toggleDeleteModal = () => {

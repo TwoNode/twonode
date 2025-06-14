@@ -778,6 +778,10 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             <h1 className="text-2xl font-semibold text-gray-800">
               {property?.title || "Untitled Request"}
             </h1>
+
+            <p className="text-sm text-muted-foreground">
+              REF: {property?.reference}
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

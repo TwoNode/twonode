@@ -40,7 +40,11 @@ export async function uploadToS3(formData: FormData) {
   revalidatePath("/reva/requestform"); // Optional: revalidate page if needed
 }
 
-export async function uploadToS3FromServer(files: File[], reference = "") {
+export async function uploadToS3FromServer(
+  files: File[],
+  reference = "",
+  options = { useDirectFileName: false }
+) {
   console.log("Uploading File to S3 Bucket...");
   if (files.length === 0) {
     console.log(files);
@@ -56,7 +60,10 @@ export async function uploadToS3FromServer(files: File[], reference = "") {
     const uniqueSuffix = `${
       reference ? reference + "-" : ""
     }${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    const key = `reva/uploads/${uniqueSuffix}-${file.name}`;
+
+    const key = options?.useDirectFileName
+      ? `reva/uploads/${file.name}`
+      : `reva/uploads/${uniqueSuffix}-${file.name}`;
 
     await s3.send(
       new PutObjectCommand({

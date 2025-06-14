@@ -230,7 +230,8 @@ export function AdminReportUpload({
       }
 
       const response = await approveDueDiligenceReport(
-        property?.reference || ""
+        property?.reference || "",
+        property?.report?.isApproved ? false : true
       );
 
       if (
@@ -241,7 +242,9 @@ export function AdminReportUpload({
         throw response?.error || new Error("An error occurred");
       }
 
-      notifySuccess("Report approved successfully!");
+      property?.report?.isApproved
+        ? notifySuccess("Report disapproved successfully!")
+        : notifySuccess("Report approved successfully!");
       setShowConfirmApproval(false);
     } catch (err) {
       notifyError(

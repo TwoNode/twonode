@@ -9,6 +9,7 @@ import { createTransport } from "nodemailer";
 
 const AVAILABLE = "Available";
 const COMPLETED = "Completed";
+const PROCESSING = "Processing";
 
 export const sendMail = async ({
   to,
@@ -200,7 +201,7 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
 
     console.log("\n\n\n\nreport\n\n\n\n", report);
 
-    await uploadFilesToS3(filesMap, report, reference);
+    await uploadFilesToS3AndUpdateReport(filesMap, report, reference);
 
     const existingProperty = await prisma.property.findUnique({
       where: { reference },
@@ -260,7 +261,90 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
   }
 };
 
-async function uploadFilesToS3(
+export const uploadDirectLinkReport = async (formData: FormData) => {
+  try {
+    let warnings: string[] = [] as string[];
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return { error: "User is not authenticated.", status: 401 };
+    }
+
+    const reference = formData.get("reference") as string;
+    if (!reference) {
+      return { error: "Missing property reference.", status: 400 };
+    }
+
+    const file = formData.get("directLink");
+
+    if (!file || !(file instanceof File)) {
+      throw new Error("Missing or invalid file: 'directLink'");
+    }
+
+    const directFileLink = await uploadToS3FromServer([file], reference, {
+      useDirectFileName: true,
+    });
+
+    console.log("\n\n\n\nreport\n\n\n\n", directFileLink);
+
+    const existingProperty = await prisma.property.findUnique({
+      where: { reference },
+    });
+
+    const previousReport =
+      existingProperty?.report && typeof existingProperty.report === "object"
+        ? existingProperty.report
+        : {};
+
+    console.log(previousReport);
+
+    const result = await prisma.property.update({
+      where: { reference },
+      data: {
+        status: COMPLETED,
+        report: {
+          ...previousReport,
+          directFileLink,
+        },
+      },
+    });
+
+    try {
+      await sendMail({
+        to: process.env.EMAIL_USER || "", // Replace with the actual recipient email
+        subject: "Due Diligence Report Update",
+        text: "The due diligence report has been updated successfully, please review the report.",
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #4CAF50;">Due Diligence Report Update</h2>
+            <p>Dear User,</p>
+            <p>The due diligence report has been updated successfully. Please review the report at your earliest convenience.</p>
+            <p>Thank you for your attention.</p>
+            <p style="margin-top: 20px;">Best regards,</p>
+            <p><strong>Your Company Name</strong></p>
+          </div>
+        `,
+      });
+    } catch (err) {
+      console.log("Email not sent: ", err);
+      warnings.push("Email not sent");
+    }
+
+    revalidatePath(
+      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+    );
+
+    return {
+      success: true,
+      warnings,
+      data: result,
+    };
+  } catch (error) {
+    console.error("Error updating due diligence report:", error);
+    return { error: error, success: false };
+  }
+};
+
+async function uploadFilesToS3AndUpdateReport(
   filesMap: { key: string; file: File }[],
   report: Record<string, any>,
   reference: string
@@ -289,7 +373,10 @@ async function uploadFilesToS3(
   }
 }
 
-export const approveDueDiligenceReport = async (reference: string) => {
+export const approveDueDiligenceReport = async (
+  reference: string,
+  isApproved = true
+) => {
   try {
     let warnings: string[] = [];
 
@@ -307,6 +394,17 @@ export const approveDueDiligenceReport = async (reference: string) => {
 
     const property = await prisma.property.findUnique({
       where: { reference },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            kindeId: true,
+          },
+        },
+      },
     });
 
     if (
@@ -319,32 +417,50 @@ export const approveDueDiligenceReport = async (reference: string) => {
 
     const updatedReport = {
       ...(typeof property?.report === "object" ? property.report : {}),
-      isApproved: true,
+      isApproved,
     };
 
     console.log("\n\n\n\n\n");
-    console.log(updatedReport);
+    console.log(property?.user?.email, updatedReport);
     console.log("\n\n\n\n\n");
 
     const result = await prisma.property.update({
       where: { reference },
-      data: { report: updatedReport, status: AVAILABLE },
+      data: {
+        report: updatedReport,
+        status: isApproved ? AVAILABLE : PROCESSING,
+      },
     });
 
     try {
+      const statusText = isApproved ? "approved" : "disapproved";
+
       await sendMail({
-        to: process.env?.EMAIL_USER || "", // Replace with the actual recipient email
-        subject: "Due Diligence Report Update",
-        text: "Dear User, your due diligence report is now ready, please download from your dashboard.",
-        html: "<p>The due diligence report has been updated successfully.</p>",
+        to: process.env?.EMAIL_USER || "",
+        subject: `[Super Admin] Due Diligence Report ${
+          isApproved ? "Approved" : "Disapproved"
+        }`,
+        text: `Hello Super Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}.`,
+        html: `<p><strong>Super Admin Alert:</strong></p><p>The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.</p>`,
       });
 
       await sendMail({
-        to: process.env?.ADMIN_EMAIL || "", // Replace with the actual recipient email
-        subject: "Due Diligence Report Update",
-        text: "Dear User, your due diligence report is now ready, please download from your dashboard.",
-        html: "<p>The due diligence report has been updated successfully.</p>",
+        to: process.env?.ADMIN_EMAIL || "",
+        subject: `[Admin] Due Diligence Report ${
+          isApproved ? "Approved" : "Disapproved"
+        }`,
+        text: `Hello Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}. Please review it on your dashboard.`,
+        html: `<p>The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.</p>`,
       });
+
+      if (isApproved && property?.user?.email) {
+        // await sendMail({
+        //   to: property?.user?.email || "",
+        //   subject: "[User] Your Due Diligence Report is Ready",
+        //   text: `Hello,\n\nYour due diligence report for property ${reference} has been approved and is now available in your dashboard.`,
+        //   html: `<p>Great news! The due diligence report for property <strong>${reference}</strong> has been approved. You can now view or download it from your dashboard.</p>`,
+        // });
+      }
     } catch (err) {
       console.log("Email not sent: ", err);
       warnings.push("Email not sent");

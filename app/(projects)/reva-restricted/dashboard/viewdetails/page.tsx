@@ -5,16 +5,10 @@ import { getRequestByReferenceByAdmin } from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminReportUpload } from "./AdminReportUpload";
-
-const AdminMiniHeader = ({ title = "Admin Report Upload" }) => {
-  return (
-    <header className="mt-4 bg-gradient-to-r w-[90%] lg:w-1/2  from-gray-800 to-blue-500 text-white py-4 rounded-tl-3xl rounded-br-3xl">
-      <div className="container mx-auto flex justify-between items-center px-6">
-        <h1 className="text-xl font-bold">{title}</h1>
-      </div>
-    </header>
-  );
-};
+import { AdminDirectLinkUpload } from "./AdminDirectLinkUpload";
+import { AdminMiniHeader } from "./AdminMiniHeader";
+import AdminReport from "./AdminReport";
+import SingleRequestPage from "@/app/(projects)/reva/dashboard/viewdetails/SingleRequestPage";
 
 const ViewDetailsPage = async ({
   searchParams,
@@ -42,11 +36,26 @@ const ViewDetailsPage = async ({
         <>
           <AdminMiniHeader title="User Request Data" />
           <UserRequestDataView property={transformedProperty} />
-          <AdminMiniHeader title="Admin Report Upload" />
-          <AdminReportUpload
-            property={transformedProperty}
-            user={request.user}
-          />
+
+          <AdminReport property={transformedProperty} user={request.user} />
+
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+          <br />
+
+          <div className="user bg-slate-200 p-6">
+            <AdminMiniHeader title="How it looks on User's Dashboard" />
+            <SingleRequestPage property={transformedProperty} />
+          </div>
         </>
       );
     } else {
