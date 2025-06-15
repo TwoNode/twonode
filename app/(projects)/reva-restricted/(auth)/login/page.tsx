@@ -85,9 +85,6 @@ export default function LoginPreview() {
               Login to Your Account
             </Button>
           </LoginLink>
-          {/* <RegisterLink postLoginRedirectURL="/api/auth/success/reva-restricted">
-            <Button>Sign up</Button>
-          </RegisterLink> */}
         </CardContent>
       </Card>
     </div>

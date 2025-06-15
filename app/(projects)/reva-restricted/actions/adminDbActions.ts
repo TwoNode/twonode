@@ -484,8 +484,12 @@ export const approveDueDiligenceReport = async (
         title: string,
         greeting: string,
         body: string,
-        link: string = "reva"
-      ) => `
+        link: string = "/reva"
+      ) => {
+        const normalizedLink = link.startsWith("/") ? link : `/${link}`;
+
+
+        return `
         <div style="
           font-family: Arial, sans-serif;
           max-width: 600px;
@@ -514,7 +518,7 @@ export const approveDueDiligenceReport = async (
             <p>${body}</p>
 
             <div style="margin: 30px 0; text-align: center;">
-              <a href="${process.env.ONLINE_BASE_URL}x${link}/dashboard/viewdetails?reference=${reference}"
+              <a href="${process.env.ONLINE_BASE_URL}${normalizedLink}/dashboard/viewdetails?reference=${reference}"
                 target="_blank"
                 style="
                   display: inline-block;
@@ -538,6 +542,7 @@ export const approveDueDiligenceReport = async (
           </div>
         </div>
       `;
+      };
 
       await sendMail({
         to: process.env?.EMAIL_USER || "",
@@ -549,7 +554,7 @@ export const approveDueDiligenceReport = async (
           isApproved ? "Approved" : "Disapproved",
           `<p style='font-size: 16px;'>Hello <strong>Super Admin</strong>,</p>`,
           `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
-          "reva-restricted"
+          "/reva-restricted"
         ),
       });
 
@@ -563,7 +568,7 @@ export const approveDueDiligenceReport = async (
           isApproved ? "Approved" : "Disapproved",
           `<p style='font-size: 16px;'>Hello <strong>Admin</strong>,</p>`,
           `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
-          "reva-restricted"
+          "/reva-restricted"
         ),
       });
 
