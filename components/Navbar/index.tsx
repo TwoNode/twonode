@@ -23,7 +23,7 @@ const Navbar = () => {
   return (
     <>
       <div className="h-[90px] w-full" />
-      <div className="absolute top-0 right-0 left-0 z-50 inline-flex w-full h-[90px] px-[1%] pt-[19px] pb-5 bg-white justify-center items-center">
+      <div className="absolute top-0 right-0 left-0 z-[999] inline-flex w-full h-[90px] px-[1%] pt-[19px] pb-5 bg-white justify-center items-center">
         <div className="w-full hidden lg:flex h-[54px] justify-between items-center gap-[80px]">
           <div className="w-full h-[84px] px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
             <div className="w-full justify-between items-center inline-flex">

@@ -259,7 +259,7 @@ export function AdminReportUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-50">
+        <div className="fixed z-[999] inset-0 flex justify-center items-center bg-white bg-opacity-75">
           <svg
             className="animate-spin h-8 w-8 text-blue-500"
             xmlns="http://www.w3.org/2000/svg"
@@ -686,13 +686,16 @@ export function AdminReportUpload({
               <AlertDialogCancel onClick={() => setShowConfirm(false)}>
                 Cancel
               </AlertDialogCancel>
-              <Button
-                type="button"
-                onClick={handleSubmitBtnClick}
-                className="w-full md:w-auto px-6"
-              >
-                Submit Report
-              </Button>
+
+              <AlertDialogCancel>
+                <Button
+                  type="button"
+                  onClick={handleSubmitBtnClick}
+                  className="w-full md:w-auto px-6"
+                >
+                  Submit Report
+                </Button>
+              </AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -144,7 +144,7 @@ const SingleRequestPage = ({
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Info
               label="Total Cost"
-              value={`₦${property?.totalCost.toLocaleString()}`}
+              value={`₦${property?.totalCost?.toLocaleString()}`}
               bold
             />
             <Info

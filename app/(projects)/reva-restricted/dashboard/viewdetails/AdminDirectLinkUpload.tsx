@@ -157,7 +157,7 @@ export function AdminDirectLinkUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-50">
+        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-[999]">
           <svg
             className="animate-spin h-8 w-8 text-blue-500"
             xmlns="http://www.w3.org/2000/svg"
@@ -326,6 +326,7 @@ export function AdminDirectLinkUpload({
                     <span className={`bg-green-200 p-2`}>Approve Report</span>
                   )}
                 </AlertDialogTitle>
+
                 <AlertDialogDescription>
                   <div className="space-y-4 text-sm mt-4 p-4 bg-muted rounded border max-h-80 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-4">
@@ -341,6 +342,7 @@ export function AdminDirectLinkUpload({
                       </span>
                     </div>
                   </div>
+
                   <p className="text-sm text-red-500 mt-6">
                     Are you sure you want to{" "}
                     {property?.report?.isApproved ? "disapprove" : "approve"}{" "}
@@ -348,29 +350,32 @@ export function AdminDirectLinkUpload({
                   </p>
                 </AlertDialogDescription>
               </AlertDialogHeader>
+
               <AlertDialogFooter className="pt-4">
                 <AlertDialogCancel
                   onClick={() => setShowConfirmApproval(false)}
                 >
                   Cancel
                 </AlertDialogCancel>{" "}
-                {property?.report?.isApproved ? (
-                  <Button
-                    type="button"
-                    onClick={handleApprove}
-                    className="w-full md:w-auto px-6 bg-red-500"
-                  >
-                    Disapprove Report
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={handleApprove}
-                    className="w-full md:w-auto px-6 bg-green-500"
-                  >
-                    Approve Report
-                  </Button>
-                )}
+                <AlertDialogCancel>
+                  {property?.report?.isApproved ? (
+                    <Button
+                      type="button"
+                      onClick={handleApprove}
+                      className="w-full md:w-auto px-6 bg-red-500"
+                    >
+                      Disapprove Report
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={handleApprove}
+                      className="w-full md:w-auto px-6 bg-green-500"
+                    >
+                      Approve Report
+                    </Button>
+                  )}
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

@@ -96,19 +96,22 @@ export const getAllRequestsWithUserByAdmin = async ({
       },
     });
 
-    const oneTimeProperties = await prisma.oneTimeUserProperty.findMany({
-      take: limit !== null ? limit : undefined,
-      where: onlyWithReport
-        ? {
-            report: {
-              not: Prisma.JsonNull,
-            },
-          }
-        : undefined,
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+    let oneTimeProperties = null;
+    if (includeOneTimeRequests) {
+      oneTimeProperties = await prisma.oneTimeUserProperty.findMany({
+        take: limit !== null ? limit : undefined,
+        where: onlyWithReport
+          ? {
+              report: {
+                not: Prisma.JsonNull,
+              },
+            }
+          : undefined,
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
+    }
 
     return {
       success: true,
@@ -452,13 +455,96 @@ export const approveDueDiligenceReport = async (
     try {
       const statusText = isApproved ? "approved" : "disapproved";
 
+      const logoDisplay = `
+        <div style="
+          background-color: #1e40af;
+          background-image: linear-gradient(to right, #00000020, #ffffff);
+          width: 100%;
+        ">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #ffffff; background-image: linear-gradient(to right, #00000020, #ffffff); padding: 16px 0;">
+            <tr>
+              <td align="center">
+                <img
+                  src="${process.env.ONLINE_BASE_URL}/logo.png"
+                  alt="TwoNode Technologies"
+                  style="height: 48px; max-width: 40%; margin-right: 8px;"
+                />
+                <img
+                  src="${process.env.ONLINE_BASE_URL}/reva/revaLogo.png"
+                  alt="REVA Logo"
+                  style="height: 48px; max-width: 40%;"
+                />
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      const mailTemplate = (title: string, greeting: string, body: string) => `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        ">
+          ${logoDisplay}
+
+          <div style="
+            background-color: #1e40af;
+            background-image: linear-gradient(to right, #1e40af, #111827);
+            padding: 24px;
+            text-align: center;
+            color: white;
+          ">
+            <h2 style="margin: 0; font-size: 24px;">🎉 Report ${title}!</h2>
+            <p style="margin: 8px 0 0; font-size: 16px;">Reference: #${reference}</p>
+          </div>
+
+          <div style="padding: 24px; background-color: #f9fafb; color: #374151;">
+            ${greeting}
+
+            <p>${body}</p>
+
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${process.env.ONLINE_BASE_URL}/reva-restricted/dashboard/viewdetails?reference=${reference}"
+                target="_blank"
+                style="
+                  display: inline-block;
+                  padding: 12px 24px;
+                  background-color: #10b981;
+                  color: white;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                  font-size: 16px;
+                ">
+                View Report
+              </a>
+            </div>
+
+            <p style="font-size: 16px;">
+              You can now view or download your report from the dashboard.
+            </p>
+
+            <p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p>
+          </div>
+        </div>
+      `;
+
       await sendMail({
         to: process.env?.EMAIL_USER || "",
         subject: `[Super Admin] Due Diligence Report ${
           isApproved ? "Approved" : "Disapproved"
         }`,
         text: `Hello Super Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}.`,
-        html: `<p><strong>Super Admin Alert:</strong></p><p>The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.</p>`,
+        html: mailTemplate(
+          isApproved ? "Approved" : "Disapproved",
+          `<p style='font-size: 16px;'>Hello <strong>Super Admin</strong>,</p>`,
+          `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`
+        ),
       });
 
       await sendMail({
@@ -466,30 +552,26 @@ export const approveDueDiligenceReport = async (
         subject: `[Admin] Due Diligence Report ${
           isApproved ? "Approved" : "Disapproved"
         }`,
-        text: `Hello Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}. Please review it on your dashboard.`,
-        html: `<p>The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.</p>`,
+        text: `Hello Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}.`,
+        html: mailTemplate(
+          isApproved ? "Approved" : "Disapproved",
+          `<p style='font-size: 16px;'>Hello <strong>Admin</strong>,</p>`,
+          `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`
+        ),
       });
 
       if (isApproved && property?.user?.email) {
         await sendMail({
-          to: property?.user?.email || "",
-          subject: "REVA: Your Due Diligence Report is Ready",
+          to: property.user.email,
+          subject: `REVA: Your Due Diligence Report is Ready`,
           text: `Hello,\n\nYour due diligence report for property ${reference} has been approved and is now available in your dashboard.`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
-              <h2 style="color: #10b981; margin-bottom: 0;">🎉 Report Approved!</h2>
-              <p style="font-size: 16px; color: #374151;">
-                Hello <strong>${property?.user?.firstName || "User"}</strong>,
-              </p>
-              <p style="font-size: 16px; color: #374151;">
-                Your due diligence report for <strong>property #${reference}</strong> has been successfully approved.
-              </p>
-              <p style="font-size: 16px; color: #374151;">
-                You can now view or download the report directly from your dashboard.
-              </p>
-              <p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p>
-            </div>
-          `,
+          html: mailTemplate(
+            "Approved",
+            `<p style='font-size: 16px;'>Hello <strong>${
+              property?.user?.firstName || "User"
+            }</strong>,</p>`,
+            `Your due diligence report for <strong>property #${reference}</strong> has been successfully approved.`
+          ),
         });
       }
     } catch (err) {
