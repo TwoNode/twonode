@@ -36,11 +36,25 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
+    cookieStore.set({
+      name: "USER_ROLE",
+      value: dbUser.role,
+      httpOnly: true,
+      path: "/",
+    });
+
     const response = NextResponse.redirect(
       addBaseUrl("/reva/dashboard?user_type=reva_user")
     );
 
     response.cookies.set("USER_TYPE", "reva_user", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "strict",
+    });
+
+    response.cookies.set("USER_ROLE", dbUser.role, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",

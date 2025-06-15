@@ -21,10 +21,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!dbUser) {
-      return NextResponse.json(
-        { error: "User not found or unauthorized" },
-        { status: 403 }
-      );
+      throw new Error("Admin User not found!");
     }
 
     const cookieStore = await cookies();
@@ -32,6 +29,13 @@ export async function GET(request: NextRequest) {
     cookieStore.set({
       name: "USER_TYPE",
       value: user_type,
+      httpOnly: true,
+      path: "/",
+    });
+
+    cookieStore.set({
+      name: "USER_ROLE",
+      value: dbUser.role,
       httpOnly: true,
       path: "/",
     });
@@ -47,14 +51,18 @@ export async function GET(request: NextRequest) {
       sameSite: "strict",
     });
 
+    response.cookies.set("USER_ROLE", dbUser.role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "strict",
+    });
+
     response.headers.set("USER_TYPE", user_type);
     return response;
   } catch (error) {
     console.error("Error in GET /auth/success/reva:", error);
 
-    return NextResponse.json(
-      { error: "Failed to authenticate user" },
-      { status: 500 }
-    );
+    return NextResponse.redirect(addBaseUrl("/reva/error-login"));
   }
 }
