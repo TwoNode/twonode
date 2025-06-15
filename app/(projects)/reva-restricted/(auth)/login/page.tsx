@@ -1,7 +1,8 @@
 import React from "react";
 import RevaAdminLogin from "./RevaAdminLogin";
-import { setMyRedirectUrlCookie } from "@/app/(projects)/reva/actions/otherActions";
 import { SetCookieFromClient } from "@/components/SetCookieFromClient";
+
+export const dynamic = "force-dynamic";
 
 const RevaLoginPage = () => {
   return (
