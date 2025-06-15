@@ -40,9 +40,32 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
-    const response = NextResponse.redirect(
-      addBaseUrl("/reva-restricted/dashboard?user_type=reva_admin")
-    );
+    cookieStore.set("USER_TYPE", "reva_user", { httpOnly: true, path: "/" });
+    cookieStore.set("USER_ROLE", dbUser.role, { httpOnly: true, path: "/" });
+
+    const postLoginRaw =
+      request.nextUrl.searchParams.get("post_login_redirect_url") ||
+      cookieStore.get("my_redirect_url")?.value;
+    const fallbackUrl = "/reva-restricted/dashboard?user_type=reva_admin";
+
+    const redirectUrl = (() => {
+      if (
+        postLoginRaw &&
+        postLoginRaw.startsWith("/reva-restricted/dashboard")
+      ) {
+        const url = new URL(postLoginRaw, process.env.BASE_URL);
+        url.searchParams.set("user_type", user_type);
+
+        cookieStore.set("my_redirect_url", "", { maxAge: 0 });
+        cookieStore.delete("my_redirect_url");
+
+        return url.pathname + "?" + url.searchParams.toString();
+      }
+
+      return fallbackUrl;
+    })();
+
+    const response = NextResponse.redirect(addBaseUrl(redirectUrl));
 
     response.cookies.set("USER_TYPE", user_type, {
       httpOnly: true,

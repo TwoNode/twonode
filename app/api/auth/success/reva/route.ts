@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
+    const user_type = "reva_user";
 
     if (!user || user == null || !user.id)
       throw new Error("Auth User is " + user);
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     cookieStore.set({
       name: "USER_TYPE",
-      value: "reva_user",
+      value: user_type,
       httpOnly: true,
       path: "/",
     });
@@ -43,11 +44,31 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
-    const response = NextResponse.redirect(
-      addBaseUrl("/reva/dashboard?user_type=reva_user")
-    );
+    cookieStore.set("USER_TYPE", user_type, { httpOnly: true, path: "/" });
+    cookieStore.set("USER_ROLE", dbUser.role, { httpOnly: true, path: "/" });
 
-    response.cookies.set("USER_TYPE", "reva_user", {
+    const postLoginRaw =
+      request.nextUrl.searchParams.get("post_login_redirect_url") ||
+      cookieStore.get("my_redirect_url")?.value;
+    const fallbackUrl = "/reva/dashboard?user_type=reva_user";
+
+    const redirectUrl = (() => {
+      if (postLoginRaw && postLoginRaw.startsWith("/reva/dashboard")) {
+        const url = new URL(postLoginRaw, process.env.BASE_URL);
+        url.searchParams.set("user_type", user_type);
+
+        cookieStore.set("my_redirect_url", "", { maxAge: 0 });
+        cookieStore.delete("my_redirect_url");
+
+        return url.pathname + "?" + url.searchParams.toString();
+      }
+
+      return fallbackUrl;
+    })();
+
+    const response = NextResponse.redirect(addBaseUrl(redirectUrl));
+
+    response.cookies.set("USER_TYPE", user_type, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
@@ -61,13 +82,11 @@ export async function GET(request: NextRequest) {
       sameSite: "strict",
     });
 
-    response.headers.set("USER_TYPE", "reva_user");
+    response.headers.set("USER_TYPE", user_type);
     return response;
   } catch (error) {
     console.error("Error in GET /auth/success/reva:", error);
-    return NextResponse.json(
-      { error: "Failed to authenticate user" },
-      { status: 500 }
-    );
+
+    return NextResponse.redirect(addBaseUrl("/reva/error-login"));
   }
 }
