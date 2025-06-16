@@ -19,6 +19,29 @@ import {
 
 import { PropertyWithoutUser } from "../../actions/dbActions";
 
+export type ReportType = {
+  titleStatus: string;
+  titleNumber: string;
+  rightToSellHolder: string;
+  transactionFlow: string;
+  parcelPositionMatch: string;
+  parcelStatus: string;
+  surveyPlanNumber: string;
+  surveyName: string;
+  historicalSurveys: string;
+  zoning: string;
+  hasBuildingPlanApproval: boolean;
+  buildingPlanNo: string;
+  setbacksInfo: string;
+  images: {
+    transactionFlowImg: File | null;
+    parcelCheck: File | null;
+    parcelChartingFree: File | null;
+    parcelChartingOffset: File | null;
+    landUseCheck: File | null;
+  };
+};
+
 const SingleRequestPage = ({
   property,
 }: {
@@ -28,6 +51,46 @@ const SingleRequestPage = ({
 
   const toggleDeleteModal = () => {
     setOpenDeleteModal((prev) => !prev);
+  };
+
+  const isReportReady = () => {
+    const report = property?.report;
+
+    const isApproved =
+      typeof report === "object" &&
+      report !== null &&
+      "isApproved" in report &&
+      (report as any).isApproved === true;
+
+    if (!isApproved) return false;
+
+    if ("directFileLink" in (report || {})) {
+      return true;
+    }
+
+    const requiredKeys: (keyof ReportType)[] = [
+      "titleStatus",
+      "titleNumber",
+      "rightToSellHolder",
+      "transactionFlow",
+      "parcelPositionMatch",
+      "parcelStatus",
+      "surveyPlanNumber",
+      "surveyName",
+      "historicalSurveys",
+      "zoning",
+      "hasBuildingPlanApproval",
+      "buildingPlanNo",
+      "setbacksInfo",
+      "images",
+    ];
+
+    const hasAllFields =
+      typeof report === "object" &&
+      report !== null &&
+      requiredKeys.every((key) => key in report);
+
+    return hasAllFields;
   };
 
   const handleDownloadReport = () => {
@@ -77,21 +140,15 @@ const SingleRequestPage = ({
             {property?.paymentStatus && (
               <Badge variant="secondary">{property.paymentStatus}</Badge>
             )}
-            {property?.report &&
-              typeof property.report === "object" &&
-              "isApproved" in property.report &&
-              property?.report?.isApproved && (
-                <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
-                  {"Approved"}
-                </Badge>
-              )}
+            {isReportReady() && (
+              <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
+                {"Approved"}
+              </Badge>
+            )}
 
             <Button
               variant="outline"
-              disabled={
-                property?.status !== "Completed" &&
-                property?.status !== "Available"
-              }
+              disabled={!isReportReady()}
               className="max-sm:w-full rounded-lg"
               onClick={handleDownloadReport}
             >

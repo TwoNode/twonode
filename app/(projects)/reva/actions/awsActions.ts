@@ -1,7 +1,11 @@
 "use server";
 
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { revalidatePath } from "next/cache";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   region: process.env.REVA_AWS_REGION!,
@@ -36,8 +40,6 @@ export async function uploadToS3(formData: FormData) {
       })
     );
   }
-
-  revalidatePath("/reva/requestform"); // Optional: revalidate page if needed
 }
 
 export async function uploadToS3FromServer(
@@ -83,4 +85,60 @@ export async function uploadToS3FromServer(
   console.log("Uploaded files:", fileUrls);
 
   return fileUrls;
+}
+
+export async function deleteFromS3(input: { key?: string; url?: string }) {
+  const { key, url } = input;
+
+  let objectKey = key;
+
+  if (!objectKey && url) {
+    const bucketHost = `${process.env.REVA_AWS_BUCKET_NAME!}.s3.${process.env
+      .REVA_AWS_REGION!}.amazonaws.com/`;
+    const idx = url.indexOf(bucketHost);
+    if (idx === -1) throw new Error("Invalid S3 URL format");
+
+    objectKey = url.substring(idx + bucketHost.length);
+  }
+
+  if (!objectKey) throw new Error("Missing key or valid url");
+
+  await s3.send(
+    new DeleteObjectCommand({
+      Bucket: process.env.REVA_AWS_BUCKET_NAME!,
+      Key: objectKey,
+    })
+  );
+}
+
+export async function deleteManyFromS3(
+  items: { key?: string; url?: string }[]
+) {
+  const bucket = process.env.REVA_AWS_BUCKET_NAME!;
+  const region = process.env.REVA_AWS_REGION!;
+  const bucketHost = `${bucket}.s3.${region}.amazonaws.com/`;
+
+  const keys = items
+    .map(({ key, url }) => {
+      if (key) return key;
+      if (url) {
+        const idx = url.indexOf(bucketHost);
+        if (idx === -1) return null;
+        return url.substring(idx + bucketHost.length);
+      }
+      return null;
+    })
+    .filter((k): k is string => !!k); // Ensure only valid strings
+
+  if (keys.length === 0) throw new Error("No valid keys or URLs provided");
+
+  await s3.send(
+    new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: {
+        Objects: keys.map((Key) => ({ Key })),
+        Quiet: false,
+      },
+    })
+  );
 }

@@ -39,7 +39,7 @@ const RequestList = ({ requests }: { requests: any[] }) => {
                 <Badge
                   variant="outline"
                   className={
-                    req?.status === "Completed"
+                    ["Available", "Completed"].includes(req?.status)
                       ? "bg-green-100 text-green-700"
                       : "bg-yellow-100 text-yellow-700"
                   }

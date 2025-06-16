@@ -3,7 +3,10 @@
 import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser } from "@/utils/authUser";
 import prisma from "@/lib/prisma";
-import { uploadToS3FromServer } from "../../reva/actions/awsActions";
+import {
+  deleteManyFromS3,
+  uploadToS3FromServer,
+} from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
 
@@ -182,6 +185,21 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
       })
       .filter(Boolean) as { key: string; file: File }[];
 
+    const prevImages: Record<string, string> = formData.get("prevImages")
+      ? JSON.parse(formData.get("prevImages") as string)
+      : {};
+
+    // Extract old image URLs that are being replaced
+    const replacedImageUrls: string[] = [];
+    filesMap.forEach(({ key }) => {
+      console.log(key);
+      if (prevImages?.[key]) {
+        replacedImageUrls.push(prevImages[key]);
+      }
+    });
+
+    console.log("\n\n\n\n\nprevImages", prevImages);
+
     const report: Record<string, any> = Object.fromEntries(
       Object.entries({
         titleStatus: formData.get("titleStatus"),
@@ -198,9 +216,7 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
           formData.get("hasBuildingPlanApproval") === "true",
         buildingPlanNo: formData.get("buildingPlanNo"),
         setbacksInfo: formData.get("setbacksInfo"),
-        images: formData.get("prevImages")
-          ? JSON.parse(formData.get("prevImages") as string)
-          : {},
+        images: prevImages,
       }).filter(
         ([_, value]) =>
           value !== "" &&
@@ -222,6 +238,18 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
     console.log("\n\n\n\nreport\n\n\n\n", report);
 
     await uploadFilesToS3AndUpdateReport(filesMap, report, reference);
+
+    try {
+      console.log(replacedImageUrls, prevImages);
+      // Delete old images after successful upload
+      if (replacedImageUrls.length > 0) {
+        await deleteManyFromS3(replacedImageUrls.map((url) => ({ url })));
+        console.log("\n\n\nPrevious Images deleted\n\n");
+      }
+    } catch (error) {
+      console.log("\n\nError While deleting some replaced files");
+      console.log(replacedImageUrls);
+    }
 
     const existingProperty = await prisma.property.findUnique({
       where: { reference },
@@ -487,7 +515,6 @@ export const approveDueDiligenceReport = async (
         link: string = "/reva"
       ) => {
         const normalizedLink = link.startsWith("/") ? link : `/${link}`;
-
 
         return `
         <div style="
