@@ -14,6 +14,7 @@ import {
 } from "../../reva/actions/awsActions";
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
+import { Platform } from "@/utils/platform";
 
 const AVAILABLE = "Available";
 const COMPLETED = "Completed";
@@ -71,13 +72,13 @@ export const superAdminCheck = async (user: any) => {
 
 // Enhanced admin access verification using encrypted cookies
 export const verifyRevaAdminPermissions = async () => {
-  const userData = getEncryptedUserData();
+  const userData = await getEncryptedUserData();
 
   if (!userData) {
     throw new Error("No user data found");
   }
 
-  if (!isPlatformUser(userData, "reva")) {
+  if (!isPlatformUser(userData, Platform.REVA)) {
     throw new Error("Wrong platform");
   }
 
