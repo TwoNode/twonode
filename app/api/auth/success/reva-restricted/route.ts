@@ -1,14 +1,14 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { addBaseUrl } from "@/utils/addBaseUrl";
+import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { Platform, RevaRole } from "@/utils/platform";
 
 export async function GET(request: NextRequest) {
   try {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
-    const user_type = "reva_admin";
 
     if (!user || user == null || !user.id)
       throw new Error("Auth User is " + user);
@@ -24,29 +24,21 @@ export async function GET(request: NextRequest) {
       throw new Error("Admin User not found!");
     }
 
-    const cookieStore = await cookies();
-
-    cookieStore.set({
-      name: "USER_TYPE",
-      value: user_type,
-      httpOnly: true,
-      path: "/",
-    });
-
-    cookieStore.set({
-      name: "USER_ROLE",
-      value: dbUser.role,
-      httpOnly: true,
-      path: "/",
-    });
-
-    cookieStore.set("USER_TYPE", "reva_user", { httpOnly: true, path: "/" });
-    cookieStore.set("USER_ROLE", dbUser.role, { httpOnly: true, path: "/" });
+    // Create encrypted user data
+    const userData = {
+      platform: Platform.REVA,
+      role: dbUser.role as RevaRole,
+      userId: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
+      kindeId: dbUser.kindeId,
+    };
 
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
-      cookieStore.get("my_redirect_url")?.value;
-    const fallbackUrl = "/reva-restricted/dashboard?user_type=reva_admin";
+      request.cookies.get("my_redirect_url")?.value;
+    const fallbackUrl = "/reva-restricted/dashboard";
 
     const redirectUrl = (() => {
       if (
@@ -54,38 +46,36 @@ export async function GET(request: NextRequest) {
         postLoginRaw.startsWith("/reva-restricted/dashboard")
       ) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
-        url.searchParams.set("user_type", user_type);
-
-        cookieStore.set("my_redirect_url", "", { maxAge: 0 });
-        cookieStore.delete("my_redirect_url");
-
         return url.pathname + "?" + url.searchParams.toString();
       }
-
       return fallbackUrl;
     })();
 
-    const response = NextResponse.redirect(addBaseUrl(redirectUrl));
+    // Parse existing URL and params
+    const existingUrl = new URL(redirectUrl, process.env.BASE_URL);
+    const existingParams = existingUrl.searchParams;
 
-    response.cookies.set("USER_TYPE", user_type, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "strict",
+    // Create final URL with all params
+    const finalUrl = new URL(redirectUrl, process.env.BASE_URL);
+
+    // Copy over existing params
+    existingParams.forEach((value, key) => {
+      finalUrl.searchParams.set(key, value);
     });
 
-    response.cookies.set("USER_ROLE", dbUser.role, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "strict",
-    });
+    // Add isNewLogin parameter
+    finalUrl.searchParams.set("isNewLogin", "true");
 
-    response.headers.set("USER_TYPE", user_type);
-    return response;
+    // Create single response with final redirect URL
+    const response = NextResponse.redirect(
+      addBaseUrl(finalUrl.pathname + "?" + finalUrl.searchParams.toString())
+    );
+
+    // Set encrypted user cookie on the response and return it
+    const responseWithCookie = await setEncryptedUserCookie(userData, response);
+    return responseWithCookie;
   } catch (error) {
     console.error("Error in GET /auth/success/reva:", error);
-
     return NextResponse.redirect(addBaseUrl("/reva/error-login"));
   }
 }

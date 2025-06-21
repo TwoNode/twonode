@@ -13,9 +13,9 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
-import { ReactNode } from "react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
-import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
+import RevaLoading from "./RevaLoading";
 
 export default function RevaAdminPanelLayout({
   children,
@@ -24,8 +24,7 @@ export default function RevaAdminPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/reva-restricted/dashboard";
-
-  const { user } = useKindeBrowserClient();
+  const { user, isAdmin, isLoading } = useRevaAdminAccess();
 
   const sidebarItems = [
     { icon: Home, label: "Home", url: dashboardUrl },
@@ -65,6 +64,16 @@ export default function RevaAdminPanelLayout({
   ];
 
   if (!sidebar) return null;
+
+  // Show loading state while checking admin access
+  if (isLoading) {
+    return <RevaLoading />;
+  }
+
+  // If not admin, don't render the admin panel
+  if (!isAdmin) {
+    return null; // Will redirect via the hook
+  }
 
   // const { getOpenState, settings } = sidebar;
 

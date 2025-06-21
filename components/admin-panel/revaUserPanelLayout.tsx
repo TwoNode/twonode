@@ -14,7 +14,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
-import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { useRevaUserAccess } from "@/hooks/useRevaUserAccess";
+import RevaLoading from "./RevaLoading";
 
 export default function RevaUserPanelLayout({
   children,
@@ -23,7 +24,7 @@ export default function RevaUserPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/reva/dashboard";
-  const { user } = useKindeBrowserClient();
+  const { user, isUser, isLoading } = useRevaUserAccess();
 
   const menuList = [
     { icon: Home, label: "Home", url: dashboardUrl },
@@ -52,6 +53,14 @@ export default function RevaUserPanelLayout({
       ),
     },
   ];
+
+  if (isLoading) {
+    return <RevaLoading />;
+  }
+
+  if (!isUser) {
+    return null; // Will redirect via the hook
+  }
 
   if (!sidebar) return null;
 

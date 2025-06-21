@@ -1,27 +1,45 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { addBaseUrl } from "@/utils/addBaseUrl";
-import { is_admin, REVA_ROLES, USER_PERMS } from "@/permissions";
+import { Platform } from "@/utils/platform";
+import {
+  canAccessRevaAdminPanel,
+  clearEncryptedUserCookie,
+  getEncryptedUserData,
+} from "@/utils/encryptedCookies";
 
 export async function GET() {
-  const userTypeCookie = cookies().get("USER_TYPE");
-  const userRole = cookies().get("USER_ROLE")?.value;
+  try {
+    const userData = await getEncryptedUserData();
 
-  cookies().set("USER_TYPE", "", { maxAge: 0 });
-  cookies().delete("USER_TYPE");
+    let redirectUrl = "/";
 
-  cookies().set("USER_ROLE", "", { maxAge: 0 });
-  cookies().delete("USER_ROLE");
+    if (userData) {
+      if (userData.platform === Platform.REVA) {
+        if (canAccessRevaAdminPanel(userData)) {
+          redirectUrl = "/reva-restricted/login";
+        } else {
+          redirectUrl = "/reva/login";
+        }
+      } else if (userData.platform === Platform.SCRAM) {
+        if (canAccessRevaAdminPanel(userData)) {
+          redirectUrl = "/scram-restricted/login";
+        } else {
+          redirectUrl = "/scram/login";
+        }
+      }
+    }
 
-  let redirectUrl = "/";
+    // Clear the cookie and redirect
+    const response = NextResponse.redirect(addBaseUrl(redirectUrl));
 
-  if (userTypeCookie?.value === USER_PERMS.reva_user || userRole == REVA_ROLES.user) {
-    redirectUrl = "/reva/login";
-  } else if (userTypeCookie?.value === "reva_admin" && is_admin(userRole)) {
-    redirectUrl = "/reva-restricted/login";
-  } else if (userTypeCookie?.value === "scram_user") {
-    redirectUrl = "/scram/login";
+    // Apply cookie clearing to the response
+    const clearedResponse = clearEncryptedUserCookie(response);
+
+    return clearedResponse;
+  } catch (error) {
+    console.error("Error in logout handler:", error);
+    // Fallback redirect to home page
+    const response = NextResponse.redirect(addBaseUrl("/"));
+    return clearEncryptedUserCookie(response);
   }
-
-  return NextResponse.redirect(addBaseUrl(redirectUrl));
 }

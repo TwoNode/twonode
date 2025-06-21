@@ -20,25 +20,43 @@ import {
 import { PropertyWithoutUser } from "../../actions/dbActions";
 
 export type ReportType = {
-  titleStatus: string;
-  titleNumber: string;
-  rightToSellHolder: string;
-  transactionFlow: string;
-  parcelPositionMatch: string;
-  parcelStatus: string;
-  surveyPlanNumber: string;
-  surveyName: string;
-  historicalSurveys: string;
-  zoning: string;
-  hasBuildingPlanApproval: boolean;
-  buildingPlanNo: string;
-  setbacksInfo: string;
+  centroid: string | null; // e.g. "6.5244, 3.3792"
+
+  titleStatus: string; // "is a duly registered instrument" | "is not a duly registered instrument"
+  titleDate: string | null; // e.g. "2022-08-15"
+  titleName: string | null; // e.g. "Mr John Doe"
+  titleNumber: string; // e.g. "Number 33 Page 33 in Volume 2580"
+
+  rightToSellHolder: string; // e.g. "Mr Reva"
+
+  transactionFlow: string; // List all transaction flow details
+
+  parcelPositionMatch: string; // e.g. "99.99%"
+  parcelStatus: string; // e.g. "Free from any known Government Acquisition"
+  implicationOfParcelStatus: string | null; // e.g. "No government claim risk"
+
+  commitmentStatus: string | null; // e.g. "Committed"
+  implicationOfCommitmentStatus: string | null; // e.g. "May require government consent"
+
+  setbacksInfo: string; // e.g. "Falls partly within the offset of the Open Canal"
+  implicationOfsetbacksInfo: string | null; // e.g. "Possible construction limitation"
+
+  surveyPlanNumber: string; // e.g. "LS/D/LA/2580"
+  surveyName: string; // e.g. "LEGRANDE PROPERTY DEVELOPMENT COMPANY LTD"
+  dateOnSurveyPlan: string | null; // e.g. "2020-11-22"
+
+  historicalSurveys: string; // e.g. "Survey by XYZ in 2010, updated in 2016"
+  zoning: string; // e.g. "Residential"
+
+  hasBuildingPlanApproval: boolean; // true = Yes, false = No
+  buildingPlanNo: string; // e.g. "BP/LA/2025/0001"
+
   images: {
-    transactionFlowImg: File | null;
-    parcelCheck: File | null;
-    parcelChartingFree: File | null;
-    parcelChartingOffset: File | null;
-    landUseCheck: File | null;
+    transactionFlowImg: string; // Transaction Flow of Property Parcel
+    parcelCheck: string; // Parcel Check
+    parcelChartingFree: string; // Parcel Charting (Free from Government Acquisition)
+    parcelChartingOffset: string; // Parcel Charting (Falls within setback)
+    landUseCheck: string; // Parcel Land Use Check
   };
 };
 
@@ -69,6 +87,8 @@ const SingleRequestPage = ({
     }
 
     const requiredKeys: (keyof ReportType)[] = [
+      "titleName",
+      "titleDate",
       "titleStatus",
       "titleNumber",
       "rightToSellHolder",
@@ -79,10 +99,11 @@ const SingleRequestPage = ({
       "surveyName",
       "historicalSurveys",
       "zoning",
-      "hasBuildingPlanApproval",
-      "buildingPlanNo",
       "setbacksInfo",
       "images",
+      ...(report?.hasBuildingPlanApproval
+        ? ["buildingPlanNo" as keyof ReportType]
+        : []),
     ];
 
     const hasAllFields =
@@ -358,3 +379,6 @@ const Info = ({
 );
 
 export default SingleRequestPage;
+function notifyError(arg0: string) {
+  throw new Error("Function not implemented.");
+}

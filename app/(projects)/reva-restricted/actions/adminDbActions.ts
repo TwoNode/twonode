@@ -2,6 +2,11 @@
 
 import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser } from "@/utils/authUser";
+import {
+  getEncryptedUserData,
+  canAccessRevaAdminPanel,
+  isPlatformUser,
+} from "@/utils/encryptedCookies";
 import prisma from "@/lib/prisma";
 import {
   deleteManyFromS3,
@@ -64,6 +69,25 @@ export const superAdminCheck = async (user: any) => {
   }
 };
 
+// Enhanced admin access verification using encrypted cookies
+export const verifyRevaAdminPermissions = async () => {
+  const userData = getEncryptedUserData();
+
+  if (!userData) {
+    throw new Error("No user data found");
+  }
+
+  if (!isPlatformUser(userData, "reva")) {
+    throw new Error("Wrong platform");
+  }
+
+  if (!canAccessRevaAdminPanel(userData)) {
+    throw new Error("Insufficient permissions");
+  }
+
+  return userData;
+};
+
 export const getAllRequestsWithUserByAdmin = async ({
   limit,
   onlyWithReport = false,
@@ -74,6 +98,9 @@ export const getAllRequestsWithUserByAdmin = async ({
   includeOneTimeRequests?: boolean;
 } = {}) => {
   try {
+    // Verify admin access before proceeding
+    await verifyRevaAdminPermissions();
+
     const properties = await prisma.property.findMany({
       take: limit !== null ? limit : undefined,
       where: onlyWithReport
@@ -129,11 +156,8 @@ export const getAllRequestsWithUserByAdmin = async ({
 
 export const getRequestByReferenceByAdmin = async (reference: string) => {
   try {
-    const user = await getAuthenticatedUser();
-
-    if (!user) {
-      return { success: false, message: "User is not authenticated." };
-    }
+    // Verify admin access before proceeding
+    const userData = await verifyRevaAdminPermissions();
 
     const request = await prisma.property.findUnique({
       where: { reference },
@@ -150,7 +174,7 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
       },
     });
 
-    return { success: true, data: request, user };
+    return { success: true, data: request, user: userData };
   } catch (error) {
     console.error("Error fetching request:", error);
     return { success: false, error: "Failed to fetch request" };
@@ -160,10 +184,9 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
 export const uploadDueDiligenceReport = async (formData: FormData) => {
   try {
     let warnings: string[] = [] as string[];
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "User is not authenticated.", status: 401 };
-    }
+
+    // Verify admin access before proceeding
+    const userData = await verifyRevaAdminPermissions();
 
     const reference = formData.get("reference") as string;
     if (!reference) {

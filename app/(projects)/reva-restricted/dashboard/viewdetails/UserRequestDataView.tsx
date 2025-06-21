@@ -21,6 +21,51 @@ import {
   Image,
 } from "@react-pdf/renderer";
 
+export type ReportType = {
+  // Front page
+  centroid: string | null;
+
+  // Page 1:  Title Investigation (Lands Bureau)
+  titleStatus: string;
+  titleDate: string | null;
+  titleName: string | null;
+  titleNumber: string;
+  transactionFlow: string;
+  // images?.transactionFlowImg
+  rightToSellHolder: string;
+
+  // Page 2:  Parcel Investigation (Office of the State Surveyor General)
+  surveyPlanNumber: string;
+  parcelPositionMatch: string;
+  // images?.parcelCheck
+  parcelStatus: string;
+  implicationOfParcelStatus: string | null;
+  commitmentStatus: string | null;
+  implicationOfCommitmentStatus: string | null;
+  parcelSetbacks: string;
+  implicationOfParcelSetbacks: string | null;
+  // images?.parcelChartingFree
+  // images?.parcelChartingOffset
+  surveyName: string;
+  latestSurveyPlanNumber: string;
+  dateOnSurveyPlan: string | null;
+  historicalSurveys: string;
+
+  // Page 3:  Parcel Investigation (Physical Planning)
+  zoning: string;
+  // images?.landUseCheck
+  hasBuildingPlanApproval: boolean;
+  buildingPlanNo: string;
+
+  images: {
+    transactionFlowImg: string;
+    parcelCheck: string;
+    parcelChartingFree: string;
+    parcelChartingOffset: string;
+    landUseCheck: string;
+  };
+};
+
 // Register fonts (optional)
 Font.register({
   family: "Helvetica",
@@ -31,7 +76,7 @@ Font.register({
 });
 
 function ReportPDF({ property }: { property: any }) {
-  const report = property?.report || {};
+  const report: ReportType = property?.report || {};
 
   const styles = StyleSheet.create({
     // header: {
@@ -72,6 +117,10 @@ function ReportPDF({ property }: { property: any }) {
       textAlign: "right",
       justifySelf: "right",
       marginLeft: "auto",
+    },
+
+    textItalic: {
+      fontStyle: "italic",
     },
 
     footerText: {
@@ -278,6 +327,195 @@ function ReportPDF({ property }: { property: any }) {
       color: "#4cdd3e",
       fontWeight: "bold",
     },
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    // Add these new styles:
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: "#0A2D75",
+      marginBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "#04b104",
+      paddingBottom: 4,
+    },
+    highlightBox: {
+      backgroundColor: "#f5f5f5",
+      padding: 12,
+      marginBottom: 16,
+      borderLeftWidth: 3,
+      borderLeftColor: "#0A2D75",
+    },
+    // highlightTitle: {
+    //   fontSize: 12,
+    //   fontWeight: "bold",
+    //   marginBottom: 6,
+    //   color: "#0A2D75",
+    // },
+    // highlightContent: {
+    //   fontSize: 11,
+    //   lineHeight: 1.4,
+    // },
+    transactionFlow: {
+      marginTop: 16,
+      marginBottom: 16,
+    },
+    flowItem: {
+      marginBottom: 8,
+      fontSize: 11,
+    },
+    flowBullet: {
+      fontWeight: "bold",
+      marginRight: 4,
+    },
+    landCustomsSection: {
+      marginTop: 20,
+      marginBottom: 16,
+    },
+    landCustomsTitle: {
+      fontSize: 12,
+      fontWeight: "bold",
+      marginBottom: 8,
+      color: "#0A2D75",
+    },
+    landCustomsItem: {
+      marginBottom: 6,
+      fontSize: 11,
+    },
+    tagsSection: {
+      marginTop: 16,
+      marginBottom: 16,
+    },
+    tagsTitle: {
+      fontSize: 12,
+      fontWeight: "bold",
+      marginBottom: 8,
+      color: "#0A2D75",
+    },
+    // tag: {
+    // },
+    tag: {
+      //   display: "inline-block",
+      flexDirection: "row", // Use flex instead of inline-block
+      marginRight: 8,
+      marginBottom: 8,
+      padding: "2px 6px",
+      backgroundColor: "#e7e3e3",
+      borderRadius: 3,
+      fontSize: 10,
+    },
+    // diagramTitle: {
+    //   fontSize: 12,
+    //   fontWeight: "bold",
+    //   marginTop: 16,
+    //   marginBottom: 8,
+    //   color: "#0A2D75",
+    // },
+    quoteText: {
+      fontStyle: "italic",
+      fontSize: 11,
+      marginTop: 12,
+      marginBottom: 12,
+      paddingLeft: 12,
+      borderLeftWidth: 2,
+      borderLeftColor: "#0A2D75",
+    },
+    footerNote: {
+      position: "absolute",
+      bottom: 40,
+      left: 0,
+      right: 0,
+      textAlign: "center",
+      fontSize: 10,
+      color: "#0A2D75",
+      fontWeight: "bold",
+    },
+
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    // Add these new styles
+    numberedItem: {
+      marginBottom: 8,
+      flexDirection: "row",
+    },
+    number: {
+      fontWeight: "bold",
+      marginRight: 8,
+    },
+    content: {
+      flex: 1,
+    },
+    highlightSection: {
+      marginBottom: 20,
+    },
+    highlightTitle: {
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
+    highlightContent: {
+      marginLeft: 16,
+    },
+    nativeLandSection: {
+      marginBottom: 20,
+    },
+    nativeLandTitle: {
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 8,
+      textDecoration: "underline",
+    },
+    nativeLandItem: {
+      marginBottom: 6,
+      flexDirection: "row",
+    },
+    bullet: {
+      marginRight: 8,
+    },
+    registrationTags: {
+      marginBottom: 20,
+    },
+    registrationTitle: {
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 8,
+      textDecoration: "underline",
+    },
+    transactionTags: {
+      marginBottom: 20,
+    },
+    transactionTitle: {
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 8,
+      textDecoration: "underline",
+    },
+    diagramSection: {
+      marginBottom: 20,
+    },
+    diagramTitle: {
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    diagramContent: {
+      fontStyle: "italic",
+      marginLeft: 16,
+    },
+    signatureLine: {
+      borderTop: "1px solid black",
+      width: 200,
+      marginTop: 30,
+    },
   });
 
   const Header = () => (
@@ -316,14 +554,12 @@ function ReportPDF({ property }: { property: any }) {
 
         <View style={styles.section}>
           <Text style={styles.frontPageAddress}>
-            <Text style={styles.frontPageAddressText}>
-              {property?.address} -- {property?.address}
-            </Text>
+            <Text style={styles.frontPageAddressText}>{property?.address}</Text>
             <Text style={styles.frontPageAddressText}> {property?.lga} </Text>
           </Text>
 
           <Text style={styles.frontPagePoint}>
-            Centroid - 6°34'05.7"N 3°22'37.4"E
+            {property?.centroid ?? `Centroid - --`}
           </Text>
 
           <Text style={styles.frontPageClient}>
@@ -352,6 +588,258 @@ function ReportPDF({ property }: { property: any }) {
         </View>
       </Page>
 
+      <Page size="LETTER" orientation="portrait" style={styles.page}>
+        <HeaderAndFooter />
+
+        {/* Title Investigation Section */}
+        <Text style={styles.heading}>Title Investigation (Lands Bureau)</Text>
+
+        <View style={styles.numberedItem}>
+          <Text style={styles.number}>1.</Text>
+          <Text style={styles.content}>
+            The property currently has an existing title dated{" "}
+            <Text style={styles.textBold}>{report.titleDate || "--"}</Text>{" "}
+            between{" "}
+            <Text style={styles.textBold}>{report.titleName || "--"}</Text>{" "}
+            which{" "}
+            <Text style={styles.textBold}>
+              {report.titleStatus === "duly"
+                ? "is a duly registered instrument"
+                : "is not a duly registered instrument"}
+            </Text>{" "}
+            at the registry of deeds, lands bureau Lagos State as{" "}
+            <Text style={styles.textBold}>{report.titleNumber || "--"}</Text>.
+          </Text>
+        </View>
+
+        {/* Highlights Section */}
+        <View style={styles.highlightSection}>
+          <Text style={styles.highlightTitle}>Highlights:</Text>
+          <View style={styles.highlightContent}>
+            <View style={styles.numberedItem}>
+              <Text style={styles.number}>1.</Text>
+              <Text style={styles.content}>
+                Transaction Flow Summary:{" "}
+                <Text style={styles.textBold}>
+                  {report.transactionFlow || "--"}
+                </Text>
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Native Land and Customs Section */}
+        <View style={styles.nativeLandSection}>
+          <Text style={styles.nativeLandTitle}>
+            Yanuba Native Land and customs
+          </Text>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Alhaji Sabu Dabiri</Text>
+          </View>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}> </Text>
+            <Text>Ajaxa family</Text>
+          </View>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}> </Text>
+            <Text>No 71 Page 71 Volume 1839</Text>
+          </View>
+
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Alhaji Mulbeen Olatunmbi</Text>
+          </View>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}> </Text>
+            <Text>No 2 Page 2 Volume 2127</Text>
+          </View>
+
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Mr. Augustine Afaga</Text>
+          </View>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}> </Text>
+            <Text>Mr. Robinson Anunabi</Text>
+          </View>
+        </View>
+
+        {/* Registration Flow Tags */}
+        <View style={styles.registrationTags}>
+          <Text style={styles.registrationTitle}>Registration Flow Tags</Text>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Registered deed</Text>
+          </View>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Non-registered deed</Text>
+          </View>
+        </View>
+
+        {/* Transaction Flow Tags */}
+        <View style={styles.transactionTags}>
+          <Text style={styles.transactionTitle}>Transaction Flow Tags</Text>
+          <View style={styles.nativeLandItem}>
+            <Text style={styles.bullet}>-</Text>
+            <Text>Legrande properties development company limited</Text>
+          </View>
+        </View>
+
+        {/* Diagram Section */}
+        <View style={styles.diagramSection}>
+          <Text style={styles.diagramTitle}>
+            Diagram 1.0 - Transaction Flow at Property Parcel
+          </Text>
+          <View style={styles.diagramContent}>
+            <Text style={styles.textItalic}>
+              "The question arises: Who holds the right to sell the development?{" "}
+              <Text style={styles.textBold}>
+                {report.rightToSellHolder || "--"}
+              </Text>
+              "
+            </Text>
+          </View>
+        </View>
+
+        {/* Footer Note */}
+        <Text style={styles.footerText}>
+          Real Estate Due Diligence just got intelligent
+        </Text>
+        <Text style={styles.pageNumber}>Page 1</Text>
+      </Page>
+
+      <Page size="LETTER" orientation="portrait" style={styles.page}>
+        <HeaderAndFooter />
+
+        {/* Title Investigation Section */}
+        <Text style={styles.sectionTitle}>
+          Title Investigation (Lands Bureau)
+        </Text>
+
+        {/* Main Property Title Information */}
+        <View style={styles.highlightBox}>
+          <Text style={styles.highlightTitle}>Property Title Information</Text>
+          <Text style={styles.highlightContent}>
+            The property currently has an existing title dated{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {report.titleDate || "--"}
+            </Text>{" "}
+            between{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {report.titleName || "--"}
+            </Text>{" "}
+            which{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {report.titleStatus === "duly"
+                ? "is a duly registered instrument"
+                : "is not a duly registered instrument"}
+            </Text>{" "}
+            at the registry of deeds, lands bureau Lagos State as{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {report.titleNumber || "--"}
+            </Text>
+            .
+          </Text>
+        </View>
+
+        {/* Transaction Flow Summary */}
+        <View style={styles.transactionFlow}>
+          <Text style={styles.highlightTitle}>Transaction Flow Summary:</Text>
+          {report.transactionFlow ? (
+            report.transactionFlow.split("\n").map((item, index) => (
+              <Text key={index} style={styles.flowItem}>
+                <Text style={styles.flowBullet}>•</Text> {item}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.flowItem}>
+              The property currently has{" "}
+              <Text style={[styles.textBold, styles.textRed]}> NO </Text>{" "}
+              existing title transaction.
+            </Text>
+          )}
+        </View>
+
+        {/* Yanuba Native Land and Customs Section */}
+        <View style={styles.landCustomsSection}>
+          <Text style={styles.landCustomsTitle}>
+            Yanuba Native Land and Customs
+          </Text>
+          <Text style={styles.landCustomsItem}>
+            • Alhaji Sabu Dabiri Ajasa family
+          </Text>
+          <Text style={{ ...styles.landCustomsItem, marginLeft: 12 }}>
+            No 71 Page 71 Volume 1839
+          </Text>
+          <Text style={styles.landCustomsItem}>• Alhaji Mulbeen Olatunmbi</Text>
+          <Text style={{ ...styles.landCustomsItem, marginLeft: 12 }}>
+            No 2 Page 2 Volume 2127
+          </Text>
+          <Text style={styles.landCustomsItem}>• Mr. Augustine Afaga</Text>
+          <Text style={styles.landCustomsItem}>• Mr. Robinson Anunabi</Text>
+        </View>
+
+        {/* Registration Flow Tags */}
+        <View style={styles.tagsSection}>
+          <Text style={styles.tagsTitle}>Registration Flow Tags</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            <View style={styles.tag}>
+              <Text>• Registered deed</Text>
+            </View>
+            <View style={styles.tag}>
+              <Text>• Non-registered deed</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Transaction Flow Tags */}
+        <View style={styles.tagsSection}>
+          <Text style={styles.tagsTitle}>Transaction Flow Tags</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            <View style={styles.tag}>
+              <Text>• Legrande properties development company limited</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Diagram Section */}
+        <View>
+          <Text style={styles.diagramTitle}>
+            Diagram 1.0 - Transaction Flow at Property Parcel
+          </Text>
+          {/* Placeholder for diagram image */}
+          <View
+            style={{
+              height: 150,
+              backgroundColor: "#f5f5f5",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text>[Transaction Flow Diagram]</Text>
+          </View>
+        </View>
+
+        {/* Quote Section */}
+        <View style={styles.quoteText}>
+          <Text>
+            "The question arises: Who holds the right to sell the development?{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {report.rightToSellHolder || "--"}
+            </Text>
+            "
+          </Text>
+        </View>
+
+        {/* Footer Note */}
+        <Text style={styles.footerNote}>
+          Real Estate Due Diligence just got intelligent
+        </Text>
+      </Page>
+
       <Page
         size="LETTER"
         id="titleInvestigation"
@@ -365,12 +853,17 @@ function ReportPDF({ property }: { property: any }) {
           <Image style={styles.greyBgRedIcon} source={"/reva/redIcon.png"} />
 
           <Text style={styles.greyHeader}>
-            The Project Development Agreement dated 10th October 2017 between
-            Mr. Augustine Atage and Legrande properties development company
-            limited{" "}
+            {"The property currently has an existing title dated "}
             <Text style={[styles.textBold, styles.textRed]}>
-              is a duly registered instrument{" "}
+              {property?.titleDate ?? "--"}
             </Text>
+            {" between "}
+            <Text style={[styles.textBold, styles.textRed]}>
+              {property?.titleName ?? "--"}{" "}
+            </Text>{" "}
+            which $Title Status at the registry of deeds, lands bureau Lagos
+            State as $Title Number.
+            <Text style={[styles.textBold, styles.textRed]}></Text>
             at the registry of deeds, lands bureau Lagos State as Number 33 Page
             33 in Volume 2580.
           </Text>
@@ -690,16 +1183,16 @@ function ReportPDF({ property }: { property: any }) {
           <Text style={styles.greyHeader}>
             The Parcel falls within the{" "}
             <Text style={[styles.textBold, styles.textRed]}>
-              $Landuse Zoning
+              {property?.zoning}
             </Text>
-          </Text>
-
-          <Text style={styles.greyHeader}>
-            The Parcel falls within the Residential Landuse
           </Text>
         </View>
 
         {/* Figure 4.0 Parcel LandUse Check image */}
+        <Image
+          style={styles.fullWidthImage}
+          source={report?.images?.landUseCheck}
+        />
 
         <View wrap={false}>
           <Text style={styles.title}>Building Plan Approval</Text>

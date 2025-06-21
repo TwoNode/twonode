@@ -1,4 +1,5 @@
 import RevaAdminPanelLayout from "@/components/admin-panel/revaAdminPanelLayout";
+import ServerProtectedAdminRoute from "@/components/middlewares/ServerProtectedAdminRoute";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,5 +12,10 @@ export default function DemoLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RevaAdminPanelLayout>{children}</RevaAdminPanelLayout>;
+  return (
+    // Temporarily disabled for debugging
+    // <ServerProtectedAdminRoute>
+      <RevaAdminPanelLayout>{children}</RevaAdminPanelLayout>
+    // </ServerProtectedAdminRoute>
+  );
 }
