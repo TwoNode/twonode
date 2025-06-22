@@ -3,7 +3,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
+  CurrencyNairaIcon,
   ExclamationCircleIcon,
   ArrowPathIcon,
   MapPinIcon,
@@ -261,7 +261,7 @@ export default function UserPropertyRequests({
 
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5">
-                        <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
+                        <CurrencyNairaIcon className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
                         <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
