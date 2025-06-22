@@ -161,7 +161,7 @@ const Home = async () => {
                       />
                     </svg>
                     <span className="font-medium text-gray-900">
-                      ${property.totalCost.toLocaleString()}
+                      ₦{property.totalCost.toLocaleString()}
                     </span>
                   </div>
                   <Link
