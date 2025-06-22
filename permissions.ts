@@ -36,7 +36,13 @@ export const canAccessRevaAdminPanel = (role: string | null = "") => {
 };
 
 export const canAccessRevaUserPanel = (role: string | null = "") => {
-  return [REVA_ROLES.user, REVA_ROLES.admin, REVA_ROLES.super_admin].includes(role ?? "");
+  return [REVA_ROLES.user, REVA_ROLES.admin, REVA_ROLES.super_admin].includes(
+    role ?? ""
+  );
+};
+
+export const canAccessRevaSuperAdminPanel = (role: string | null = "") => {
+  return role === REVA_ROLES.super_admin;
 };
 
 export const isRevaSuperAdmin = (role: string | null = "") => {

@@ -15,6 +15,8 @@ import {
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
 import { Platform } from "@/utils/platform";
+import { canAccessRevaSuperAdminPanel } from "@/permissions";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 const AVAILABLE = "Available";
 const COMPLETED = "Completed";
@@ -35,8 +37,8 @@ export const sendMail = async ({
     const transporter = createTransport({
       service: "Zoho",
       auth: {
-        user: process?.env?.EMAIL_USER, // Your email address
-        pass: process?.env?.EMAIL_PASS, // Your email password or app-specific password
+        user: process?.env?.EMAIL_USER,
+        pass: process?.env?.EMAIL_PASS,
       },
     });
 
@@ -58,21 +60,17 @@ export const sendMail = async ({
   }
 };
 
-export const superAdminCheck = async (user: any) => {
-  try {
-    if (!user || user.role !== "SUPERADMIN") {
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
-
 // Enhanced admin access verification using encrypted cookies
 export const verifyRevaAdminPermissions = async () => {
   const userData = await getEncryptedUserData();
+
+  const { isAuthenticated } = getKindeServerSession();
+
+  const UserIsAuthenticated = await isAuthenticated();
+
+  if (!UserIsAuthenticated) {
+    throw new Error("Not Authenticated");
+  }
 
   if (!userData) {
     throw new Error("No user data found");
@@ -84,6 +82,33 @@ export const verifyRevaAdminPermissions = async () => {
 
   if (!canAccessRevaAdminPanel(userData)) {
     throw new Error("Insufficient permissions");
+  }
+
+  return userData;
+};
+
+// Enhanced super admin access verification
+export const verifyRevaSuperAdminPermissions = async () => {
+  const userData = await getEncryptedUserData();
+
+  const { isAuthenticated } = getKindeServerSession();
+
+  const UserIsAuthenticated = await isAuthenticated();
+
+  if (!UserIsAuthenticated) {
+    throw new Error("Not Authenticated");
+  }
+
+  if (!userData) {
+    throw new Error("No user data found");
+  }
+
+  if (!isPlatformUser(userData, Platform.REVA)) {
+    throw new Error("Wrong platform");
+  }
+
+  if (!canAccessRevaSuperAdminPanel(userData.role)) {
+    throw new Error("Insufficient permissions - Super Admin access required");
   }
 
   return userData;
@@ -336,14 +361,21 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
 export const uploadDirectLinkReport = async (formData: FormData) => {
   try {
     let warnings: string[] = [] as string[];
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "User is not authenticated.", status: 401 };
-    }
+
+    const user = await verifyRevaAdminPermissions();
 
     const reference = formData.get("reference") as string;
     if (!reference) {
       return { error: "Missing property reference.", status: 400 };
+    }
+
+    const existingProperty = await prisma.property.findUnique({
+      where: { reference },
+      include: { user: true },
+    });
+
+    if (!existingProperty) {
+      return { error: "Property not found.", success: false, status: 404 };
     }
 
     const file = formData.get("directLink");
@@ -358,10 +390,6 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
 
     console.log("\n\n\n\nreport\n\n\n\n", directFileLink);
 
-    const existingProperty = await prisma.property.findUnique({
-      where: { reference },
-    });
-
     const previousReport =
       existingProperty?.report && typeof existingProperty.report === "object"
         ? existingProperty.report
@@ -369,14 +397,18 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
 
     console.log(previousReport);
 
+    const report = {
+      ...previousReport,
+      directFileLink,
+      completedAt: new Date().toISOString(),
+      completedBy: user.email,
+    };
+
     const result = await prisma.property.update({
       where: { reference },
       data: {
         status: COMPLETED,
-        report: {
-          ...previousReport,
-          directFileLink,
-        },
+        report,
       },
     });
 
@@ -409,6 +441,8 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
       success: true,
       warnings,
       data: result,
+      message: "Report uploaded successfully",
+      status: 200,
     };
   } catch (error) {
     console.error("Error updating due diligence report:", error);
@@ -453,12 +487,7 @@ export const approveDueDiligenceReport = async (
     let warnings: string[] = [];
 
     console.log("\n\n\n\n\n", reference, "\n\n\n\n\n");
-    const user = await getAuthenticatedUser();
-    const isSuperAdmin = superAdminCheck(user);
-
-    if (!isSuperAdmin) {
-      throw "User is not authenticated.";
-    }
+    const user = await verifyRevaAdminPermissions();
 
     if (!reference) {
       throw "Reference is not valid.";
@@ -490,6 +519,8 @@ export const approveDueDiligenceReport = async (
     const updatedReport = {
       ...(typeof property?.report === "object" ? property.report : {}),
       isApproved,
+      approvedAt: new Date().toISOString(),
+      approvedBy: user.email,
     };
 
     console.log("\n\n\n\n\n");
@@ -650,6 +681,7 @@ export const approveDueDiligenceReport = async (
       success: true,
       warnings,
       data: result,
+      message: `Report ${isApproved ? "approved" : "rejected"} successfully`,
     };
   } catch (error) {
     console.error(
@@ -658,5 +690,357 @@ export const approveDueDiligenceReport = async (
       error
     );
     return { error: error, success: false };
+  }
+};
+
+// ===== NEW REVAUSER-BASED ADMIN MANAGEMENT FUNCTIONS =====
+
+export const createAdminUser = async (formData: FormData) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const email = formData.get("email") as string;
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const role = formData.get("role") as "ADMIN" | "SUPERADMIN";
+
+    if (!email || !firstName || !lastName || !role) {
+      return { success: false, error: "All fields are required" };
+    }
+
+    // Prevent operations on dev email
+    if (email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    const existingUser = await prisma.revaUser.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return { success: false, error: "User with this email already exists" };
+    }
+
+    const newUser = await prisma.revaUser.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        role,
+        emailVerified: true,
+        is_active: true,
+        kindeId: `REVA_ADMIN_KINDE_ID_${Date.now()}__${Math.random()
+          .toString(36)
+          .substring(2, 11)}`,
+      },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: `${role} user created successfully`,
+      data: {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+      },
+    };
+  } catch (error) {
+    console.error("Error creating admin user:", error);
+    return { success: false, error: "Failed to create admin user" };
+  }
+};
+
+export const getAllAdminUsers = async () => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const adminUsers = await prisma.revaUser.findMany({
+      where: {
+        role: {
+          in: ["ADMIN", "SUPERADMIN"],
+        },
+        email: {
+          not: process.env.DEV_EMAIL,
+        },
+      },
+      include: {
+        _count: {
+          select: {
+            properties: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data: adminUsers,
+    };
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+    return { success: false, error: "Failed to fetch admin users" };
+  }
+};
+
+export const getAllUsers = async () => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const allUsers = await prisma.revaUser.findMany({
+      where: {
+        email: {
+          not: process.env.DEV_EMAIL,
+        },
+      },
+      include: {
+        _count: {
+          select: {
+            properties: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const admins = allUsers.filter(
+      (user) => user.role === "ADMIN" || user.role === "SUPERADMIN"
+    );
+    const regularUsers = allUsers.filter((user) => user.role === "USER");
+
+    return {
+      success: true,
+      data: {
+        allUsers,
+        admins,
+        regularUsers,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return { success: false, error: "Failed to fetch users" };
+  }
+};
+
+export const makeUserAdmin = async (
+  userId: string,
+  role: "ADMIN" | "SUPERADMIN"
+) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const user = await prisma.revaUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Prevent operations on dev email
+    if (user.email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
+      return { success: false, error: "User is already an admin" };
+    }
+
+    const updatedUser = await prisma.revaUser.update({
+      where: { id: userId },
+      data: {
+        role,
+        is_active: true,
+      },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: `User upgraded to ${role} successfully`,
+      data: updatedUser,
+    };
+  } catch (error) {
+    console.error("Error making user admin:", error);
+    return { success: false, error: "Failed to make user admin" };
+  }
+};
+
+export const removeAdminPrivileges = async (userId: string) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const user = await prisma.revaUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Prevent operations on dev email
+    if (user.email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    if (user.role === "USER") {
+      return { success: false, error: "User is not an admin" };
+    }
+
+    const updatedUser = await prisma.revaUser.update({
+      where: { id: userId },
+      data: {
+        role: "USER",
+      },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: "Admin privileges removed successfully",
+      data: updatedUser,
+    };
+  } catch (error) {
+    console.error("Error removing admin privileges:", error);
+    return { success: false, error: "Failed to remove admin privileges" };
+  }
+};
+
+export const deactivateUser = async (userId: string) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const user = await prisma.revaUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Prevent operations on dev email
+    if (user.email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    if (!user.is_active) {
+      return { success: false, error: "User is already deactivated" };
+    }
+
+    const updatedUser = await prisma.revaUser.update({
+      where: { id: userId },
+      data: {
+        is_active: false,
+      },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: "User deactivated successfully",
+      data: updatedUser,
+    };
+  } catch (error) {
+    console.error("Error deactivating user:", error);
+    return { success: false, error: "Failed to deactivate user" };
+  }
+};
+
+export const reactivateUser = async (userId: string) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const user = await prisma.revaUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Prevent operations on dev email
+    if (user.email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    if (user.is_active) {
+      return { success: false, error: "User is already active" };
+    }
+
+    const updatedUser = await prisma.revaUser.update({
+      where: { id: userId },
+      data: {
+        is_active: true,
+      },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: "User reactivated successfully",
+      data: updatedUser,
+    };
+  } catch (error) {
+    console.error("Error reactivating user:", error);
+    return { success: false, error: "Failed to reactivate user" };
+  }
+};
+
+export const deleteUser = async (userId: string) => {
+  try {
+    await verifyRevaSuperAdminPermissions();
+
+    const user = await prisma.revaUser.findUnique({
+      where: { id: userId },
+      include: {
+        _count: {
+          select: {
+            properties: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Prevent operations on dev email
+    if (user.email === process.env.DEV_EMAIL) {
+      return { success: false, error: "Cannot modify dev account" };
+    }
+
+    if (user._count.properties > 0) {
+      return {
+        success: false,
+        error: `Cannot delete user with ${user._count.properties} associated properties. Please reassign or delete the properties first.`,
+      };
+    }
+
+    await prisma.revaUser.delete({
+      where: { id: userId },
+    });
+
+    revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return { success: false, error: "Failed to delete user" };
   }
 };

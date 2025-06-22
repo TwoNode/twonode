@@ -18,6 +18,10 @@ const config = {
       },
     },
     extend: {
+      screens: {
+        "1400lg": "1400px",
+        "1500lg": "1500px",
+      },
       fontFamily: {
         bricolage: ["var(--font-bricolage)"],
         // mono: ['var(bricolage)'],

@@ -3,9 +3,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   DocumentTextIcon,
-  CurrencyNairaIcon,
   ExclamationCircleIcon,
-  ArrowPathIcon,
   MapPinIcon,
   BanknotesIcon,
   BuildingOfficeIcon,
@@ -13,6 +11,18 @@ import {
   ShoppingBagIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+
+// Custom Naira icon component
+const NairaIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M7 6V4H9V6H11V4H13V6H15V8H13V16H15V18H13V20H11V18H9V20H7V18H5V16H7V8H5V6H7ZM9 8V16H11V8H9Z" />
+  </svg>
+);
 
 type PropertyStatus = "Available" | "Completed" | "Processing";
 
@@ -261,7 +271,7 @@ export default function UserPropertyRequests({
 
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5">
-                        <CurrencyNairaIcon className="h-5 w-5 text-gray-400" />
+                        <NairaIcon className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
                         <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">

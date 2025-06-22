@@ -18,14 +18,32 @@ export async function GET(request: NextRequest) {
     });
 
     if (!dbUser) {
-      dbUser = await prisma.revaUser.create({
-        data: {
-          kindeId: user.id,
-          firstName: user.given_name ?? "",
-          lastName: user.family_name ?? "",
-          email: user.email ?? "",
-        },
+      const existingUser = await prisma.revaUser.findUnique({
+        where: { email: user.email ?? "" },
       });
+
+      if (
+        existingUser &&
+        existingUser.kindeId?.startsWith("REVA_ADMIN_KINDE_ID_")
+      ) {
+        dbUser = await prisma.revaUser.update({
+          where: { id: existingUser.id },
+          data: { kindeId: user.id },
+        });
+      } else {
+        dbUser = await prisma.revaUser.create({
+          data: {
+            kindeId: user.id,
+            firstName: user.given_name ?? "",
+            lastName: user.family_name ?? "",
+            email: user.email ?? "",
+          },
+        });
+      }
+    }
+
+    if (!dbUser) {
+      throw new Error("Failed to create or find user in database");
     }
 
     // Create encrypted user data

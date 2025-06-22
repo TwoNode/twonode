@@ -5,13 +5,21 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
-  isPlatformUser,
+  canAccessRevaSuperAdminPanel,
+} from "@/permissions";
+import {
   getAndRefreshUserSession,
+  getEncryptedUserDataFromRequest,
+  isPlatformUser,
 } from "@/utils/encryptedCookies";
 import { Platform } from "@/utils/platform";
 
 // Define the paths that require authentication
-const protectedRoutes = ["/reva/dashboard", "/reva-restricted/dashboard"]; // Fixed: added missing slash
+const protectedRoutes = [
+  "/reva/dashboard",
+  "/reva-restricted/dashboard",
+  "/reva-restricted/superadmin",
+]; // Fixed: added missing slash
 
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
@@ -91,7 +99,7 @@ const middlewareWithLogic = withDynamicAuth(
       console.log("🛡️ Middleware - Kinde user:", kindeUser?.id);
 
       if (!kindeUser || !kindeUser.id) {
-        const redirectPath = pathname.startsWith("/reva-restricted/dashboard")
+        const redirectPath = pathname.startsWith("/reva-restricted")
           ? "/reva-restricted/login"
           : "/reva/login";
         console.log(
@@ -116,7 +124,7 @@ const middlewareWithLogic = withDynamicAuth(
             return NextResponse.next();
           }
 
-          const redirectPath = pathname.startsWith("/reva-restricted/dashboard")
+          const redirectPath = pathname.startsWith("/reva-restricted")
             ? "/reva-restricted/login"
             : "/reva/login";
           console.log(
@@ -142,7 +150,7 @@ const middlewareWithLogic = withDynamicAuth(
 
         // Check platform access
         if (!isPlatformUser(userData, Platform.REVA)) {
-          const redirectPath = pathname.startsWith("/reva-restricted/dashboard")
+          const redirectPath = pathname.startsWith("/reva-restricted")
             ? "/reva-restricted/login"
             : "/reva/login";
           console.log(
@@ -158,17 +166,30 @@ const middlewareWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva/dashboard")) {
           // Regular user dashboard - any authenticated REVA user can access
           console.log("🛡️ Middleware - Checking user dashboard access");
-          hasAccess = canAccessRevaUserPanel(userData);
+          hasAccess = canAccessRevaUserPanel(userData.role);
         } else if (pathname.startsWith("/reva-restricted/dashboard")) {
           // Admin dashboard - only ADMIN and SUPERADMIN can access
           console.log("🛡️ Middleware - Checking admin dashboard access");
-          hasAccess = canAccessRevaAdminPanel(userData);
+
+          // Special check for superadmin routes within dashboard
+          if (pathname.startsWith("/reva-restricted/dashboard/superadmin")) {
+            console.log(
+              "🛡️ Middleware - Checking superadmin access within dashboard"
+            );
+            hasAccess = canAccessRevaSuperAdminPanel(userData.role);
+          } else {
+            hasAccess = canAccessRevaAdminPanel(userData.role);
+          }
+        } else if (pathname.startsWith("/reva-restricted/superadmin")) {
+          // Superadmin dashboard - only SUPERADMIN can access
+          console.log("🛡️ Middleware - Checking superadmin access");
+          hasAccess = canAccessRevaSuperAdminPanel(userData.role);
         }
 
         console.log("🛡️ Middleware - Access granted:", hasAccess);
 
         if (!hasAccess) {
-          const redirectPath = pathname.startsWith("/reva-restricted/dashboard")
+          const redirectPath = pathname.startsWith("/reva-restricted")
             ? "/reva-restricted/login"
             : "/reva/login";
           console.log(
@@ -206,7 +227,7 @@ const middlewareWithLogic = withDynamicAuth(
       } catch (error) {
         console.error("🛡️ Middleware - Error processing session:", error);
 
-        const redirectPath = pathname.startsWith("/reva-restricted/dashboard")
+        const redirectPath = pathname.startsWith("/reva-restricted")
           ? "/reva-restricted/login"
           : "/reva/login";
         console.log(
@@ -225,5 +246,9 @@ const middlewareWithLogic = withDynamicAuth(
 export default middlewareWithLogic;
 
 export const config = {
-  matcher: ["/reva/dashboard/:path*", "/reva-restricted/dashboard/:path*"],
+  matcher: [
+    "/reva/dashboard/:path*",
+    "/reva-restricted/dashboard/:path*",
+    "/reva-restricted/superadmin/:path*",
+  ],
 };

@@ -9,19 +9,39 @@ export async function GET(request: NextRequest) {
   try {
     const { getUser } = getKindeServerSession();
     const user = await getUser();
-
     if (!user || user == null || !user.id)
       throw new Error("Auth User is " + user);
 
     let dbUser = await prisma.revaUser.findFirst({
       where: {
         kindeId: user.id,
-        OR: [{ role: "SUPERADMIN" }, { role: "ADMIN" }],
+        role: {
+          in: ["SUPERADMIN", "ADMIN"],
+        },
       },
     });
 
     if (!dbUser) {
-      throw new Error("Admin User not found!");
+      const existingUser = await prisma.revaUser.findUnique({
+        where: {
+          email: user.email ?? "",
+          role: {
+            in: ["SUPERADMIN", "ADMIN"],
+          },
+        },
+      });
+
+      if (
+        existingUser &&
+        existingUser.kindeId?.startsWith("REVA_ADMIN_KINDE_ID_")
+      ) {
+        dbUser = await prisma.revaUser.update({
+          where: { id: existingUser.id },
+          data: { kindeId: user.id },
+        });
+      } else {
+        throw new Error("Admin User not found!");
+      }
     }
 
     // Create encrypted user data

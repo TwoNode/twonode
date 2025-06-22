@@ -12,11 +12,13 @@ import {
   FilePlus,
   Settings,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
 import RevaLoading from "./RevaLoading";
 import { REVA_COLORS } from "@/reva-colors";
+import { canAccessRevaSuperAdminPanel } from "@/permissions";
 
 export default function RevaAdminPanelLayout({
   children,
@@ -25,7 +27,7 @@ export default function RevaAdminPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/reva-restricted/dashboard";
-  const { user, isAdmin, isLoading } = useRevaAdminAccess();
+  const { user, isAdmin, isLoading, userData } = useRevaAdminAccess();
 
   const sidebarItems = [
     { icon: Home, label: "Home", url: dashboardUrl },
@@ -45,7 +47,16 @@ export default function RevaAdminPanelLayout({
       url: `${dashboardUrl}/spatial-record`,
     },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
-
+    // Only show Superadmin menu item for SUPERADMIN users
+    ...(userData?.role && canAccessRevaSuperAdminPanel(userData.role)
+      ? [
+          {
+            icon: Shield,
+            label: "Superadmin",
+            url: `${dashboardUrl}/superadmin`,
+          },
+        ]
+      : []),
     {
       element: (
         <LogoutLink

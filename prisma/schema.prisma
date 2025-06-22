@@ -98,6 +98,7 @@ model RevaUser {
 
   role               Role                @default(USER)
   emailVerified      Boolean             @default(false)
+  is_active          Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   properties         Property[]
