@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
-import { RevaHeroSection } from "../RevaHeroSection";
-import { RevaFooterSection } from "../RevaFooterSection";
+import RevaHeroSection from "../RevaHeroSection";
+import RevaFooterSection from "../RevaFooterSection";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();

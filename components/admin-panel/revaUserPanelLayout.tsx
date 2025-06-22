@@ -16,6 +16,7 @@ import {
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaUserAccess } from "@/hooks/useRevaUserAccess";
 import RevaLoading from "./RevaLoading";
+import { REVA_COLORS } from "@/reva-colors";
 
 export default function RevaUserPanelLayout({
   children,
@@ -41,12 +42,30 @@ export default function RevaUserPanelLayout({
         <LogoutLink
           key={"logout"}
           // postLogoutRedirectURL="/dashboard"
-          className="flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-lg"
+          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          style={{
+            backgroundColor: "transparent",
+          }}
         >
-          <span className="w-max lg:mx-auto">
-            <LogOut />
+          <span
+            className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200"
+            style={{
+              backgroundColor: "transparent",
+            }}
+          >
+            <LogOut
+              className="w-5 h-5 transition-colors duration-200"
+              style={{
+                color: REVA_COLORS.text.muted,
+              }}
+            />
           </span>
-          <span className="text-center text-[#032740] text-[10px] font-medium font-['Eudoxus Sans']">
+          <span
+            className="text-center text-[10px] font-medium font-['Eudoxus Sans'] transition-colors duration-200"
+            style={{
+              color: REVA_COLORS.text.secondary,
+            }}
+          >
             Logout
           </span>
         </LogoutLink>

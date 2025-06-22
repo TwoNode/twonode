@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { REVA_COLORS } from "@/reva-colors";
 
 export default function RevaLoading() {
   return (
@@ -14,13 +15,25 @@ export default function RevaLoading() {
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-[#032740] dark:text-white">
+          <span
+            className="text-sm font-bold dark:text-white"
+            style={{ color: REVA_COLORS.text.primary }}
+          >
             Loading Reva Dashboard
           </span>
           <div className="flex gap-1">
-            <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></span>
-            <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse delay-75"></span>
-            <span className="w-1 h-1 bg-blue-200 rounded-full animate-pulse delay-150"></span>
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ backgroundColor: REVA_COLORS.primary.light }}
+            ></span>
+            <span
+              className="w-1 h-1 rounded-full animate-pulse delay-75"
+              style={{ backgroundColor: REVA_COLORS.secondary.light }}
+            ></span>
+            <span
+              className="w-1 h-1 rounded-full animate-pulse delay-150"
+              style={{ backgroundColor: REVA_COLORS.blueGradient.light }}
+            ></span>
           </div>
         </div>
       </div>

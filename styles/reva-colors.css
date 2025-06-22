@@ -1,0 +1,328 @@
+/* REVA Color Palette
+ * A comprehensive color system for the REVA platform
+ * Based on analysis of existing components and design patterns
+ */
+
+:root {
+  /* ===== PRIMARY COLORS ===== */
+  --reva-primary: #032740; /* Main brand color - dark blue */
+  --reva-primary-light: #008cff; /* Light blue accent */
+  --reva-primary-lighter: #00bfff; /* Bright blue for highlights */
+
+  /* ===== SECONDARY COLORS ===== */
+  --reva-secondary: #1e40af; /* Secondary blue */
+  --reva-secondary-light: #3b82f6; /* Light secondary blue */
+  --reva-secondary-dark: #1e3a8a; /* Dark secondary blue */
+
+  /* ===== GRADIENT COLORS ===== */
+  --reva-gradient-start: #111827; /* Dark gray for gradients */
+  --reva-gradient-mid: #374151; /* Medium gray for gradients */
+  --reva-gradient-end: #6b7280; /* Light gray for gradients */
+
+  /* ===== BLUE GRADIENTS ===== */
+  --reva-blue-gradient-start: #1e40af; /* Blue gradient start */
+  --reva-blue-gradient-end: #3b82f6; /* Blue gradient end */
+  --reva-blue-gradient-light: #60a5fa; /* Light blue gradient */
+
+  /* ===== GRAY SCALE ===== */
+  --reva-gray-50: #f9fafb; /* Very light gray */
+  --reva-gray-100: #f3f4f6; /* Light gray */
+  --reva-gray-200: #e5e7eb; /* Medium light gray */
+  --reva-gray-300: #d1d5db; /* Medium gray */
+  --reva-gray-400: #9ca3af; /* Medium dark gray */
+  --reva-gray-500: #6b7280; /* Dark gray */
+  --reva-gray-600: #4b5563; /* Darker gray */
+  --reva-gray-700: #374151; /* Very dark gray */
+  --reva-gray-800: #1f2937; /* Almost black gray */
+  --reva-gray-900: #111827; /* Near black */
+
+  /* ===== SLATE COLORS ===== */
+  --reva-slate-50: #f8fafc; /* Very light slate */
+  --reva-slate-100: #f1f5f9; /* Light slate */
+  --reva-slate-200: #e2e8f0; /* Medium light slate */
+  --reva-slate-300: #cbd5e1; /* Medium slate */
+  --reva-slate-400: #94a3b8; /* Medium dark slate */
+  --reva-slate-500: #64748b; /* Dark slate */
+  --reva-slate-600: #475569; /* Darker slate */
+  --reva-slate-700: #334155; /* Very dark slate */
+  --reva-slate-800: #1e293b; /* Almost black slate */
+  --reva-slate-900: #0f172a; /* Near black slate */
+
+  /* ===== BACKGROUND COLORS ===== */
+  --reva-bg-primary: #f0f2f4; /* Main background */
+  --reva-bg-secondary: #ffffff; /* Secondary background */
+  --reva-bg-tertiary: #f9fafb; /* Tertiary background */
+  --reva-bg-dark: #111827; /* Dark background */
+  --reva-bg-gradient: linear-gradient(
+    to right,
+    var(--reva-gray-800),
+    var(--reva-blue-gradient-start)
+  );
+
+  /* ===== TEXT COLORS ===== */
+  --reva-text-primary: #032740; /* Primary text color */
+  --reva-text-secondary: #6b7280; /* Secondary text color */
+  --reva-text-muted: #9ca3af; /* Muted text color */
+  --reva-text-light: #ffffff; /* Light text color */
+  --reva-text-dark: #111827; /* Dark text color */
+
+  /* ===== INTERACTIVE COLORS ===== */
+  --reva-hover-bg: #f3f4f6; /* Hover background */
+  --reva-active-bg: #e5e7eb; /* Active background */
+  --reva-focus-ring: #3b82f6; /* Focus ring color */
+
+  /* ===== STATUS COLORS ===== */
+  --reva-success: #10b981; /* Success green */
+  --reva-success-light: #34d399; /* Light success green */
+  --reva-warning: #f59e0b; /* Warning orange */
+  --reva-warning-light: #fbbf24; /* Light warning orange */
+  --reva-error: #ef4444; /* Error red */
+  --reva-error-light: #f87171; /* Light error red */
+  --reva-info: #3b82f6; /* Info blue */
+  --reva-info-light: #60a5fa; /* Light info blue */
+
+  /* ===== BORDER COLORS ===== */
+  --reva-border-light: #e5e7eb; /* Light border */
+  --reva-border-medium: #d1d5db; /* Medium border */
+  --reva-border-dark: #9ca3af; /* Dark border */
+  --reva-border-blue: #3b82f6; /* Blue border */
+
+  /* ===== SHADOW COLORS ===== */
+  --reva-shadow-light: rgba(0, 0, 0, 0.05);
+  --reva-shadow-medium: rgba(0, 0, 0, 0.1);
+  --reva-shadow-dark: rgba(0, 0, 0, 0.15);
+  --reva-shadow-blue: rgba(59, 130, 246, 0.1);
+
+  /* ===== TRANSPARENCY COLORS ===== */
+  --reva-blue-10: rgba(3, 39, 64, 0.1); /* 10% opacity blue */
+  --reva-blue-20: rgba(3, 39, 64, 0.2); /* 20% opacity blue */
+  --reva-blue-30: rgba(3, 39, 64, 0.3); /* 30% opacity blue */
+  --reva-blue-50: rgba(3, 39, 64, 0.5); /* 50% opacity blue */
+  --reva-blue-70: rgba(3, 39, 64, 0.7); /* 70% opacity blue */
+
+  /* ===== SIDEBAR SPECIFIC COLORS ===== */
+  --reva-sidebar-bg: linear-gradient(
+    to bottom,
+    var(--reva-slate-50),
+    var(--reva-slate-100)
+  );
+  --reva-sidebar-active: linear-gradient(
+    to right,
+    rgba(59, 130, 246, 0.2),
+    rgba(37, 99, 235, 0.2)
+  );
+  --reva-sidebar-hover: rgba(59, 130, 246, 0.05);
+  --reva-sidebar-border: rgba(226, 232, 240, 0.6);
+
+  /* ===== HEADER SPECIFIC COLORS ===== */
+  --reva-header-bg: linear-gradient(
+    to right,
+    var(--reva-gray-800),
+    var(--reva-blue-gradient-start)
+  );
+  --reva-header-text: #ffffff;
+  --reva-header-accent: #f0f0f1;
+
+  /* ===== BUTTON COLORS ===== */
+  --reva-btn-primary: linear-gradient(
+    to right,
+    var(--reva-blue-gradient-start),
+    var(--reva-blue-gradient-end)
+  );
+  --reva-btn-primary-hover: linear-gradient(
+    to right,
+    var(--reva-secondary-dark),
+    var(--reva-blue-gradient-start)
+  );
+  --reva-btn-secondary: var(--reva-gray-100);
+  --reva-btn-secondary-hover: var(--reva-gray-200);
+  --reva-btn-danger: linear-gradient(to right, #dc2626, #ef4444);
+  --reva-btn-danger-hover: linear-gradient(to right, #b91c1c, #dc2626);
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Background Colors */
+.bg-reva-primary {
+  background-color: var(--reva-primary);
+}
+.bg-reva-primary-light {
+  background-color: var(--reva-primary-light);
+}
+.bg-reva-secondary {
+  background-color: var(--reva-secondary);
+}
+.bg-reva-gray-50 {
+  background-color: var(--reva-gray-50);
+}
+.bg-reva-gray-100 {
+  background-color: var(--reva-gray-100);
+}
+.bg-reva-gray-200 {
+  background-color: var(--reva-gray-200);
+}
+.bg-reva-gray-800 {
+  background-color: var(--reva-gray-800);
+}
+.bg-reva-gray-900 {
+  background-color: var(--reva-gray-900);
+}
+
+/* Text Colors */
+.text-reva-primary {
+  color: var(--reva-text-primary);
+}
+.text-reva-secondary {
+  color: var(--reva-text-secondary);
+}
+.text-reva-muted {
+  color: var(--reva-text-muted);
+}
+.text-reva-light {
+  color: var(--reva-text-light);
+}
+.text-reva-dark {
+  color: var(--reva-text-dark);
+}
+
+/* Border Colors */
+.border-reva-light {
+  border-color: var(--reva-border-light);
+}
+.border-reva-medium {
+  border-color: var(--reva-border-medium);
+}
+.border-reva-blue {
+  border-color: var(--reva-border-blue);
+}
+
+/* Gradient Backgrounds */
+.bg-reva-gradient {
+  background: var(--reva-bg-gradient);
+}
+.bg-reva-header {
+  background: var(--reva-header-bg);
+}
+.bg-reva-sidebar {
+  background: var(--reva-sidebar-bg);
+}
+
+/* Status Colors */
+.text-reva-success {
+  color: var(--reva-success);
+}
+.text-reva-warning {
+  color: var(--reva-warning);
+}
+.text-reva-error {
+  color: var(--reva-error);
+}
+.text-reva-info {
+  color: var(--reva-info);
+}
+
+.bg-reva-success {
+  background-color: var(--reva-success);
+}
+.bg-reva-warning {
+  background-color: var(--reva-warning);
+}
+.bg-reva-error {
+  background-color: var(--reva-error);
+}
+.bg-reva-info {
+  background-color: var(--reva-info);
+}
+
+/* ===== COMMON GRADIENTS ===== */
+.gradient-reva-blue {
+  background: linear-gradient(
+    to right,
+    var(--reva-blue-gradient-start),
+    var(--reva-blue-gradient-end)
+  );
+}
+
+.gradient-reva-header {
+  background: linear-gradient(
+    to right,
+    var(--reva-gray-800),
+    var(--reva-blue-gradient-start)
+  );
+}
+
+.gradient-reva-sidebar {
+  background: linear-gradient(
+    to bottom,
+    var(--reva-slate-50),
+    var(--reva-slate-100)
+  );
+}
+
+/* ===== HOVER EFFECTS ===== */
+.hover-reva-blue:hover {
+  background-color: var(--reva-sidebar-hover);
+  color: var(--reva-primary-light);
+}
+
+.hover-reva-scale:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* ===== SHADOW EFFECTS ===== */
+.shadow-reva-light {
+  box-shadow: 0 1px 3px 0 var(--reva-shadow-light);
+}
+
+.shadow-reva-medium {
+  box-shadow: 0 4px 6px -1px var(--reva-shadow-medium);
+}
+
+.shadow-reva-blue {
+  box-shadow: 0 4px 14px 0 var(--reva-shadow-blue);
+}
+
+/* ===== FOCUS STATES ===== */
+.focus-reva:focus {
+  outline: 2px solid var(--reva-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes reva-glow {
+  0% {
+    box-shadow: 0 0 5px var(--reva-primary-light);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--reva-primary-light),
+      0 0 30px var(--reva-primary-light);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--reva-primary-light);
+  }
+}
+
+.animate-reva-glow {
+  animation: reva-glow 2s ease-in-out infinite;
+}
+
+/* ===== RESPONSIVE COLOR ADJUSTMENTS ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --reva-bg-primary: #111827;
+    --reva-bg-secondary: #1f2937;
+    --reva-text-primary: #f9fafb;
+    --reva-text-secondary: #d1d5db;
+    --reva-border-light: #374151;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  :root {
+    --reva-primary: #000000;
+    --reva-text-primary: #000000;
+    --reva-bg-primary: #ffffff;
+  }
+}

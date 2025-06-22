@@ -1,7 +1,7 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
-import { RevaHeroSection } from "../RevaHeroSection";
-import { RevaFooterSection } from "../RevaFooterSection";
+import RevaHeroSection from "../RevaHeroSection";
+import RevaFooterSection from "../RevaFooterSection";
 
 import RevaDueDiligenceForm from "./RevaDueDiligenceForm";
 

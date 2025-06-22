@@ -2,8 +2,8 @@
 
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { RevaHeroSection } from "./RevaHeroSection";
-import { RevaFooterSection } from "./RevaFooterSection";
+import RevaHeroSection from "./RevaHeroSection";
+import RevaFooterSection from "./RevaFooterSection";
 
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 import { Carousel } from "react-responsive-carousel";

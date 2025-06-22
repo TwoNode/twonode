@@ -1,5 +1,5 @@
 import React from "react";
-import { Welcome } from "./components/Welcome";
+import Welcome from "./components/Welcome";
 import Link from "next/link";
 import { getUserProperties } from "../actions/dbActions";
 import UserPropertyRequests from "./components/UserPropertyRequests";

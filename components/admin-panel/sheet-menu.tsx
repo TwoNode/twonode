@@ -10,6 +10,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { REVA_COLORS } from "@/reva-colors";
 
 export interface SheetMenuProps extends MenuProps {}
 
@@ -26,7 +27,8 @@ export function SheetMenu({ items, userImageUrl }: SheetMenuProps) {
         </Button>
       </SheetTrigger>
       <SheetContent
-        className="sm:w-72 px-3 h-full flex flex-col bg-[#f0f2f4]"
+        className="sm:w-72 px-3 h-full flex flex-col"
+        style={{ backgroundColor: REVA_COLORS.background.tertiary }}
         side="left"
       >
         <SheetHeader>

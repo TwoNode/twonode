@@ -1,5 +1,6 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
+import { REVA_COLORS } from "@/reva-colors";
 
 import RevaDueDiligenceForm from "./RevaDueDiligenceForm";
 // import { notFound } from "next/navigation";
@@ -101,7 +102,10 @@ const RevaFormPage = async ({
 
   return (
     <div>
-      <h2 className="text-[#032740] max-lg:text-xl text-[32px] font-bold text-3xl mb-4">
+      <h2
+        className="max-lg:text-xl text-[32px] font-bold text-3xl mb-4"
+        style={{ color: REVA_COLORS.text.dark }}
+      >
         REVA Due Diligence Request
       </h2>
 

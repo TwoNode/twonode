@@ -3,6 +3,7 @@ import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
 import { MenuItem, MenuProps } from "../admin-panel/menu";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
 // import { ModeToggle } from "../mode-toggle";
 
 interface DashboardNavbarProps extends MenuProps {}
@@ -12,7 +13,10 @@ export const RevaAdminDashboardNavbar = ({
   userImageUrl = "",
 }: DashboardNavbarProps) => {
   return (
-    <div className="w-full max-w-full h-[75px] max-md:h-[70px] px-[5%] bg-gradient-to-r  from-gray-800 to-blue-500 justify-between items-center inline-flex">
+    <div
+      className="w-full max-w-full h-[75px] max-md:h-[70px] px-[5%] justify-between items-center inline-flex"
+      style={{ background: REVA_GRADIENTS.header }}
+    >
       <Link
         href={"/reva-restricted/dashboard"}
         className="flex items-center gap-2.5"
@@ -35,9 +39,15 @@ export const RevaAdminDashboardNavbar = ({
 
         <Link
           href="/reva-restricted/superadmin"
-          className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 bg-gradient-to-r from-blue-700 to-blue-900 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"
+          className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"
+          style={{
+            background: `linear-gradient(to right, ${REVA_COLORS.primary.main}, ${REVA_COLORS.secondary.main})`,
+          }}
         >
-          <span className="text-sm text-[#f0f0f1] group-hover:text-white font-medium transition-colors duration-300">
+          <span
+            className="text-sm font-medium transition-colors duration-300"
+            style={{ color: REVA_COLORS.text.light }}
+          >
             Add New Admin
           </span>
         </Link>
