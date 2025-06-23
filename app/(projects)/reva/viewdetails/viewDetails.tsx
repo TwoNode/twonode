@@ -7,6 +7,14 @@ import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 import RevaHeroSection from "../RevaHeroSection";
 import RevaFooterSection from "../RevaFooterSection";
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+} from "@react-pdf/renderer";
 
 const ViewDetailsContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -62,6 +70,15 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
         </div>
 
         <div className="mt-8 text-center">
+          {/* <PDFDownloadLink
+            document={<ReceiptPDF formData={formData} />}
+            fileName={`REVA_Receipt_${formData?.reference}.pdf`}
+            className="bg-green-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-green-700 mr-4"
+          >
+            {({ loading }) =>
+              loading ? "Generating Receipt..." : "Download PDF Receipt"
+            }
+          </PDFDownloadLink> */}
           <Button
             className="bg-blue-600 text-white py-3 px-6 rounded-lg shadow-md hover:bg-blue-700"
             onClick={() => router.push("/reva")}
@@ -102,3 +119,84 @@ const Detail = ({ label = "", value = "" }) => (
     </span>
   </div>
 );
+
+const ReceiptPDF = ({ formData }: { formData: any }) => {
+  const styles = StyleSheet.create({
+    page: { padding: 30, fontFamily: "Helvetica" },
+    title: {
+      fontSize: 20,
+      marginBottom: 20,
+      textAlign: "center",
+      color: "#166534",
+      fontWeight: "bold",
+    },
+    section: { marginBottom: 10 },
+    label: { fontWeight: "bold", color: "#166534" },
+    value: { marginLeft: 8 },
+    ref: {
+      color: "#2563eb",
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    footer: { marginTop: 30, textAlign: "center", fontSize: 10, color: "#888" },
+  });
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>Due Diligence Payment Receipt</Text>
+        <Text style={styles.ref}>Reference: {formData?.reference}</Text>
+        <View style={styles.section}>
+          <Text>
+            <Text style={styles.label}>Requester Name:</Text>{" "}
+            <Text style={styles.value}>{formData?.requester}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Email:</Text>{" "}
+            <Text style={styles.value}>{formData?.email}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Property Address:</Text>{" "}
+            <Text style={styles.value}>{formData?.address}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Location:</Text>{" "}
+            <Text style={styles.value}>
+              {formData?.lat}, {formData?.lng}
+            </Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Parcel ID:</Text>{" "}
+            <Text style={styles.value}>
+              {removeIdPrefix(formData?.parcelId)}
+            </Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>LGA:</Text>{" "}
+            <Text style={styles.value}>{formData?.lga}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Total Cost:</Text>{" "}
+            <Text style={styles.value}>
+              {formData?.totalCost?.toLocaleString("en-NG", {
+                style: "currency",
+                currency: "NGN",
+              })}
+            </Text>
+          </Text>
+          {formData?.comments && (
+            <Text>
+              <Text style={styles.label}>Comments:</Text>{" "}
+              <Text style={styles.value}>{formData?.comments}</Text>
+            </Text>
+          )}
+        </View>
+        <Text style={styles.footer}>
+          Thank you for your payment. This receipt is system generated and valid
+          without signature.
+        </Text>
+      </Page>
+    </Document>
+  );
+};

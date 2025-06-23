@@ -3,7 +3,8 @@ import CreateAdminUserForm from "../../components/CreateAdminUserForm";
 import AdminUsersList from "../../components/AdminUsersList";
 import UserRoleManagementForm from "../../components/UserRoleManagementForm";
 import AllUsersList from "../../components/AllUsersList";
-import { getAllUsers, getAllAdminUsers } from "../../actions/adminDbActions";
+import { getAllUsers } from "../../actions/adminDbActions";
+import { canAccessRevaAdminPanel } from "@/permissions";
 
 interface User {
   id: string;
@@ -47,7 +48,7 @@ const RevaPage: FC = async () => {
   const adminUsers =
     allUsersResult.success && allUsersResult.data?.allUsers
       ? (allUsersResult.data.allUsers.filter(
-          (user) => user.role === "ADMIN" || user.role === "SUPERADMIN"
+          (user: User) => canAccessRevaAdminPanel(user.role)
         ) as AdminUser[])
       : [];
 

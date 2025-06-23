@@ -257,28 +257,34 @@ export default function AllUsersList({ users }: AllUsersListProps) {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-col gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900">
                         {user.firstName} {user.lastName}
                       </h3>
-                      <Badge
-                        variant={
-                          user.role === "SUPERADMIN"
-                            ? "destructive"
-                            : user.role === "ADMIN"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {user.role}
-                      </Badge>
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                      {user.emailVerified && (
-                        <Badge variant="outline">Verified</Badge>
-                      )}
+
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge
+                          variant={
+                            user.role === "SUPERADMIN"
+                              ? "destructive"
+                              : user.role === "ADMIN"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {user.role}
+                        </Badge>
+                        <Badge
+                          variant={user.is_active ? "default" : "secondary"}
+                        >
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {user.emailVerified && (
+                          <Badge variant="outline">Verified</Badge>
+                        )}
+                      </div>
                     </div>
+
                     <p className="text-sm text-gray-600 mb-2">{user.email}</p>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">

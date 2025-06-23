@@ -1,7 +1,6 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
-import { getAuthenticatedUser } from "@/utils/authUser";
 import {
   getEncryptedUserData,
   canAccessRevaAdminPanel,
@@ -17,6 +16,10 @@ import { createTransport } from "nodemailer";
 import { Platform } from "@/utils/platform";
 import { canAccessRevaSuperAdminPanel } from "@/permissions";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import {
+  notifyReportReady,
+  notifySystemAlert,
+} from "../../reva/actions/dbActions";
 
 const AVAILABLE = "Available";
 const COMPLETED = "Completed";
@@ -347,6 +350,18 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
       `/reva-restricted/dashboard/viewdetails?reference=${reference}`
     );
 
+    // Trigger notification for report upload
+    try {
+      await notifySystemAlert(
+        "Report Uploaded",
+        `Due diligence report for property ${reference} has been uploaded by ${userData.email}.`,
+        []
+      );
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      warnings.push("Notification not sent");
+    }
+
     return {
       success: true,
       warnings,
@@ -436,6 +451,18 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
     revalidatePath(
       `/reva-restricted/dashboard/viewdetails?reference=${reference}`
     );
+
+    // Trigger notification for direct link report upload
+    try {
+      await notifySystemAlert(
+        "Direct Link Report Uploaded",
+        `Direct link report for property ${reference} has been uploaded by ${user.email}.`,
+        []
+      );
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      warnings.push("Notification not sent");
+    }
 
     return {
       success: true,
@@ -677,6 +704,33 @@ export const approveDueDiligenceReport = async (
       `/reva-restricted/dashboard/viewdetails?reference=${reference}`
     );
 
+    // Trigger notifications
+    try {
+      if (isApproved) {
+        // Notify user that report is ready
+        if (property?.user?.id) {
+          await notifyReportReady(property, property.user.id);
+        }
+
+        // Notify admins about approved report
+        await notifySystemAlert(
+          "Report Approved",
+          `Due diligence report for property ${reference} has been approved by ${user.email}`,
+          []
+        );
+      } else {
+        // Notify admins about disapproved report
+        await notifySystemAlert(
+          "Report Disapproved",
+          `Due diligence report for property ${reference} has been disapproved by ${user.email}`,
+          []
+        );
+      }
+    } catch (error) {
+      console.error("Error creating notifications:", error);
+      warnings.push("Notifications not sent");
+    }
+
     return {
       success: true,
       warnings,
@@ -736,6 +790,40 @@ export const createAdminUser = async (formData: FormData) => {
     });
 
     revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    // Notify superadmins about new admin creation
+    try {
+      await notifySystemAlert(
+        "Admin User Created",
+        `A new ${role} (${firstName} ${lastName}, ${email}) was created by a superadmin.
+         You can manage admin users in the Super Admin dashboard.`,
+        []
+      );
+      // Email all superadmins
+      const superadmins = await prisma.revaUser.findMany({
+        where: { role: "SUPERADMIN", is_active: true },
+      });
+      const superadminEmails = superadmins.map((u) => u.email).filter(Boolean);
+      if (superadminEmails.length > 0) {
+        await sendMail({
+          to: superadminEmails.join(","),
+          subject: `REVA: New ${role} Created`,
+          text: `A new ${role} (${firstName} ${lastName}, ${email}) was created by a superadmin.`,
+          html: `<p>A new <b>${role}</b> (<b>${firstName} ${lastName}</b>, <b>${email}</b>) was created by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
+        });
+      }
+      // Email the user who was created
+      if (email) {
+        await sendMail({
+          to: email,
+          subject: `REVA: Your ${role} account has been created`,
+          text: `Hello ${firstName},\n\nCongratulations! Your account has been created as a ${role} on the REVA platform. You now have access to admin features.`,
+          html: `<p>Hello <b>${firstName}</b>,<br><br>Congratulations! Your account has been created as a <b>${role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating notification for admin creation:", error);
+    }
 
     return {
       success: true,
@@ -863,6 +951,52 @@ export const makeUserAdmin = async (
     });
 
     revalidatePath("/reva-restricted/dashboard/superadmin");
+
+    // Notify superadmins about user promotion
+    try {
+      await notifySystemAlert(
+        "User Promoted to Admin",
+        `User ${user?.firstName || ""} ${user?.lastName || ""} (${
+          user?.email
+        }) was promoted to ${role} by a superadmin.
+         You can manage admin users in the Super Admin dashboard.`,
+        []
+      );
+      // Email all superadmins
+      const superadmins = await prisma.revaUser.findMany({
+        where: { role: "SUPERADMIN", is_active: true },
+      });
+      const superadminEmails = superadmins.map((u) => u.email).filter(Boolean);
+      if (superadminEmails.length > 0) {
+        await sendMail({
+          to: superadminEmails.join(","),
+          subject: `REVA: User Promoted to ${role}`,
+          text: `User ${user?.firstName || ""} ${user?.lastName || ""} (${
+            user?.email
+          }) was promoted to ${role} by a superadmin.`,
+          html: `<p>User <b>${user?.firstName || ""} ${
+            user?.lastName || ""
+          }</b> (<b>${
+            user?.email
+          }</b>) was promoted to <b>${role}</b> by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
+        });
+      }
+      // Email the user who was promoted
+      if (user?.email) {
+        await sendMail({
+          to: user.email,
+          subject: `REVA: You have been promoted to ${role}`,
+          text: `Hello ${
+            user?.firstName || ""
+          },\n\nCongratulations! You have been promoted to ${role} on the REVA platform. You now have access to admin features.`,
+          html: `<p>Hello <b>${
+            user?.firstName || ""
+          }</b>,<br><br>Congratulations! You have been promoted to <b>${role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating notification for admin promotion:", error);
+    }
 
     return {
       success: true,

@@ -2,8 +2,9 @@ import Link from "next/link";
 import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
-import { MenuProps } from "../admin-panel/menu";
+import { MenuItem, MenuProps } from "../admin-panel/menu";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import NotificationBell from "../NotificationBell";
 import { canAccessRevaSuperAdminPanel } from "@/permissions";
 // import { ModeToggle } from "../mode-toggle";
 
@@ -48,9 +49,17 @@ export const RevaAdminDashboardNavbar = ({
       <div className="justify-start items-center gap-2.5 flex">
         <SheetMenu items={items} userImageUrl={userImageUrl} />
 
+        <NotificationBell
+          href="/reva-restricted/dashboard/notifications"
+          size={30}
+          color="#fff"
+        />
+
         {/* <ModeToggle /> */}
 
-        {userData && userData?.role && canAccessRevaSuperAdminPanel(userData.role) ? (
+        {userData &&
+        userData?.role &&
+        canAccessRevaSuperAdminPanel(userData.role) ? (
           <Link
             href="/reva-restricted/dashboard/superadmin"
             className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"

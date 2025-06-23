@@ -112,6 +112,7 @@ export default function RevaAdminPanelLayout({
       <RevaAdminDashboardNavbar
         items={sidebarItems}
         userImageUrl={user?.picture!}
+        userData={userData}
       />
 
       <main

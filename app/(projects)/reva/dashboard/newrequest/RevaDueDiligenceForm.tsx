@@ -10,7 +10,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-toastify";
 import Bowser from "bowser";
 
 import {
@@ -101,15 +100,26 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
     setAddress("");
     setLocation(null);
     setLga("Unknown");
+    setParcelId("-");
+    setTitle("");
+    setComments("");
+    setSelectedFiles(null);
+    setFileNames([]);
+    if (filesRef.current) {
+      filesRef.current.value = "";
+    }
     enableUseMyLocationButton();
     if (markerRef.current) {
       markerRef.current.setMap(null);
     }
+    clearLGABoundary();
+    clearParcelBoundary();
     if (mapRef.current) {
       mapRef.current.setCenter(center);
       mapRef.current.setZoom(12);
     }
     setTotalCost(0);
+    setLocationButtonText("Use My Location");
   };
 
   const onPlaceChanged = () => {

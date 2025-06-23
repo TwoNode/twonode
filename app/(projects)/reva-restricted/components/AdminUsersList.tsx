@@ -203,25 +203,34 @@ AdminUsersListProps) {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-col gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900">
                         {user.firstName} {user.lastName}
                       </h3>
-                      <Badge
-                        variant={
-                          user.role === "SUPERADMIN" ? "destructive" : "default"
-                        }
-                      >
-                        {user.role}
-                      </Badge>
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                      {user.emailVerified && (
-                        <Badge variant="outline">Verified</Badge>
-                      )}
+
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge
+                          variant={
+                            user.role === "SUPERADMIN"
+                              ? "destructive"
+                              : "default"
+                          }
+                        >
+                          {user.role}
+                        </Badge>
+                        <Badge
+                          variant={user.is_active ? "default" : "secondary"}
+                        >
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {user.emailVerified && (
+                          <Badge variant="outline">Verified</Badge>
+                        )}
+                      </div>
                     </div>
+
                     <p className="text-sm text-gray-600 mb-2">{user.email}</p>
+
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="h-3 w-3" />
@@ -246,6 +255,7 @@ AdminUsersListProps) {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="text-[10px] h-8 px-2"
                             disabled={
                               actionUserId === user.id &&
                               actionType === "deactivate"
@@ -284,6 +294,7 @@ AdminUsersListProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleReactivateUser(user.id)}
+                        className="text-[10px] h-8 px-2"
                         disabled={
                           actionUserId === user.id &&
                           actionType === "reactivate"
@@ -301,6 +312,7 @@ AdminUsersListProps) {
                           <Button
                             variant="destructive"
                             size="sm"
+                            className="text-[10px] h-8 px-2"
                             disabled={
                               actionUserId === user.id &&
                               actionType === "remove-admin"

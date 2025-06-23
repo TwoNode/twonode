@@ -65,6 +65,9 @@ export const saveToOneTimeProperty = async (
 
     console.log("New property saved:", newProperty);
 
+    // Trigger notification for new property request
+    await notifyNewPropertyRequest(newProperty);
+
     return {
       success: true,
       message: "Data saved successfully",
@@ -93,6 +96,15 @@ export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
     });
 
     console.log("New property saved:", newProperty);
+
+    // Get the user ID from the property's user relation
+    const propertyWithUser = await prisma.property.findUnique({
+      where: { id: newProperty.id },
+      include: { user: true },
+    });
+
+    // Trigger notification for new property request
+    await notifyNewPropertyRequest(newProperty, propertyWithUser?.user?.id);
 
     return {
       success: true,
@@ -399,6 +411,10 @@ export const checkPaymentSuccess = async (reference: string) => {
     });
 
     console.log("Payment marked as successful:", updatedTransaction);
+
+    // Trigger notification for payment received
+    await notifyPaymentReceived(updatedTransaction);
+
     return {
       success: true,
       message: "Payment recorded successfully",
@@ -476,6 +492,9 @@ export const authPaymentSuccessful = async (reference: string) => {
     });
 
     console.log("Payment marked as successful:", updatedTransaction);
+
+    // Trigger notification for payment received
+    await notifyPaymentReceived(updatedTransaction, user.id);
 
     return {
       success: true,
@@ -594,5 +613,317 @@ export const getUserPropertyById = async (id: string) => {
   } catch (error) {
     console.error("Error fetching user property:", error);
     return { success: false, message: "Failed to fetch user property", error };
+  }
+};
+
+// ===== NOTIFICATION FUNCTIONS =====
+
+export type NotificationCreateInput = {
+  type:
+    | "INFO"
+    | "SUCCESS"
+    | "WARNING"
+    | "ERROR"
+    | "SYSTEM"
+    | "PAYMENT"
+    | "PROPERTY";
+  title: string;
+  message: string;
+  userIds?: string[];
+  link?: string;
+  metadata?: any;
+};
+
+export const createNotification = async (data: NotificationCreateInput) => {
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        userIds: data.userIds || [],
+        link: data.link,
+        metadata: data.metadata,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Notification created successfully",
+      data: notification,
+    };
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    return { success: false, message: "Failed to create notification", error };
+  }
+};
+
+export const getUserNotifications = async (userId: string) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          { userIds: { has: userId } },
+          { userIds: { isEmpty: true } }, // General notifications
+        ],
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data: notifications,
+    };
+  } catch (error) {
+    console.error("Error fetching user notifications:", error);
+    return { success: false, message: "Failed to fetch notifications", error };
+  }
+};
+
+export const getAdminNotifications = async () => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data: notifications,
+    };
+  } catch (error) {
+    console.error("Error fetching admin notifications:", error);
+    return { success: false, message: "Failed to fetch notifications", error };
+  }
+};
+
+export const markNotificationAsRead = async (
+  notificationId: string,
+  userId: string
+) => {
+  try {
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      return { success: false, message: "Notification not found" };
+    }
+
+    const updatedReadBy = notification.readBy.includes(userId)
+      ? notification.readBy
+      : [...notification.readBy, userId];
+
+    const updatedNotification = await prisma.notification.update({
+      where: { id: notificationId },
+      data: {
+        readBy: updatedReadBy,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Notification marked as read",
+      data: updatedNotification,
+    };
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    return {
+      success: false,
+      message: "Failed to mark notification as read",
+      error,
+    };
+  }
+};
+
+export const dismissNotification = async (
+  notificationId: string,
+  userId: string
+) => {
+  try {
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      return { success: false, message: "Notification not found" };
+    }
+
+    const updatedDismissedBy = notification.dismissedBy.includes(userId)
+      ? notification.dismissedBy
+      : [...notification.dismissedBy, userId];
+
+    const updatedNotification = await prisma.notification.update({
+      where: { id: notificationId },
+      data: {
+        dismissedBy: updatedDismissedBy,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Notification dismissed",
+      data: updatedNotification,
+    };
+  } catch (error) {
+    console.error("Error dismissing notification:", error);
+    return { success: false, message: "Failed to dismiss notification", error };
+  }
+};
+
+export const getUnreadNotificationCount = async (userId: string) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          { userIds: { has: userId } },
+          { userIds: { isEmpty: true } }, // General notifications
+        ],
+        NOT: {
+          OR: [{ readBy: { has: userId } }, { dismissedBy: { has: userId } }],
+        },
+      },
+    });
+
+    return {
+      success: true,
+      count: notifications.length,
+    };
+  } catch (error) {
+    console.error("Error fetching unread notification count:", error);
+    return { success: false, count: 0, error };
+  }
+};
+
+// ===== NOTIFICATION TRIGGERS =====
+
+export const notifyNewPropertyRequest = async (
+  propertyData: any,
+  userId?: string
+) => {
+  try {
+    // Notify admins about new property request
+    await createNotification({
+      type: "PROPERTY",
+      title: "New Property Request",
+      message: `New due diligence request received for property at ${propertyData.address}`,
+      link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      metadata: {
+        propertyReference: propertyData.reference,
+        address: propertyData.address,
+        requester: propertyData.requester || propertyData.email,
+      },
+    });
+
+    // Notify user about successful request creation
+    if (userId) {
+      await createNotification({
+        type: "SUCCESS",
+        title: "Request Submitted Successfully",
+        message: `Your due diligence request for ${propertyData.address} has been submitted and is being processed.`,
+        userIds: [userId],
+        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        metadata: {
+          propertyReference: propertyData.reference,
+          address: propertyData.address,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating property request notifications:", error);
+    return { success: false, error };
+  }
+};
+
+export const notifyPaymentReceived = async (
+  propertyData: any,
+  userId?: string
+) => {
+  try {
+    // Notify admins about payment
+    await createNotification({
+      type: "PAYMENT",
+      title: "Payment Received",
+      message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${
+        propertyData.reference
+      }`,
+      link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      metadata: {
+        propertyReference: propertyData.reference,
+        amount: propertyData.totalCost,
+        address: propertyData.address,
+      },
+    });
+
+    // Notify user about payment confirmation
+    if (userId) {
+      await createNotification({
+        type: "SUCCESS",
+        title: "Payment Confirmed",
+        message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${
+          propertyData.reference
+        } has been confirmed.`,
+        userIds: [userId],
+        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        metadata: {
+          propertyReference: propertyData.reference,
+          amount: propertyData.totalCost,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating payment notifications:", error);
+    return { success: false, error };
+  }
+};
+
+export const notifyReportReady = async (propertyData: any, userId?: string) => {
+  try {
+    // Notify user about report completion
+    if (userId) {
+      await createNotification({
+        type: "SUCCESS",
+        title: "Report Ready",
+        message: `Your due diligence report for property ${propertyData.reference} is now available.`,
+        userIds: [userId],
+        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        metadata: {
+          propertyReference: propertyData.reference,
+          address: propertyData.address,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating report ready notification:", error);
+    return { success: false, error };
+  }
+};
+
+export const notifySystemAlert = async (
+  title: string,
+  message: string,
+  userIds?: string[]
+) => {
+  try {
+    await createNotification({
+      type: "SYSTEM",
+      title,
+      message,
+      userIds,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating system alert:", error);
+    return { success: false, error };
   }
 };

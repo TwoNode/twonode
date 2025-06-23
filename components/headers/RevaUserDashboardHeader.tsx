@@ -2,8 +2,9 @@ import Link from "next/link";
 import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
+import { MenuItem, MenuProps } from "../admin-panel/menu";
 import { BellRing } from "lucide-react";
-import { MenuProps } from "../admin-panel/menu";
+import NotificationBell from "../NotificationBell";
 // import { ModeToggle } from "../mode-toggle";
 
 interface DashboardNavbarProps extends MenuProps {}
@@ -27,9 +28,11 @@ export const RevaUserDashboardNavbar = ({
       <div className="justify-start items-center gap-3 flex">
         <SheetMenu items={items} userImageUrl={userImageUrl} />
 
-        <Link href="/reva/dashboard/notifications" className="relative">
-          <BellRing size={30} color="#fff" />
-        </Link>
+        <NotificationBell
+          href="/reva/dashboard/notifications"
+          size={30}
+          color="#fff"
+        />
 
         {/* <ModeToggle /> */}
         <Link

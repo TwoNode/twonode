@@ -16,6 +16,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+} from "@react-pdf/renderer";
 
 import { PropertyWithoutUser } from "../../actions/dbActions";
 
@@ -167,14 +175,15 @@ const SingleRequestPage = ({
               </Badge>
             )}
 
-            <Button
-              variant="outline"
-              disabled={!isReportReady()}
-              className="max-sm:w-full rounded-lg"
-              onClick={handleDownloadReport}
+            {/* <PDFDownloadLink
+              document={<ReceiptPDF property={property} />}
+              fileName={`REVA_Receipt_${property?.reference}.pdf`}
+              className="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 mr-2"
             >
-              Download Report
-            </Button>
+              {({ loading }) =>
+                loading ? "Generating Receipt..." : "Download PDF Receipt"
+              }
+            </PDFDownloadLink> */}
           </div>
         </div>
 
@@ -377,6 +386,85 @@ const Info = ({
     </p>
   </div>
 );
+
+const ReceiptPDF = ({ property }: { property: any }) => {
+  const styles = StyleSheet.create({
+    page: { padding: 30, fontFamily: "Helvetica" },
+    title: {
+      fontSize: 20,
+      marginBottom: 20,
+      textAlign: "center",
+      color: "#166534",
+      fontWeight: "bold",
+    },
+    section: { marginBottom: 10 },
+    label: { fontWeight: "bold", color: "#166534" },
+    value: { marginLeft: 8 },
+    ref: {
+      color: "#2563eb",
+      fontWeight: "bold",
+      fontSize: 14,
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    footer: { marginTop: 30, textAlign: "center", fontSize: 10, color: "#888" },
+  });
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.title}>Due Diligence Payment Receipt</Text>
+        <Text style={styles.ref}>Reference: {property?.reference}</Text>
+        <View style={styles.section}>
+          <Text>
+            <Text style={styles.label}>Requester Name:</Text>{" "}
+            <Text style={styles.value}>{property?.requester}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Email:</Text>{" "}
+            <Text style={styles.value}>{property?.email}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Property Address:</Text>{" "}
+            <Text style={styles.value}>{property?.address}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Location:</Text>{" "}
+            <Text style={styles.value}>
+              {property?.lat}, {property?.lng}
+            </Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Parcel ID:</Text>{" "}
+            <Text style={styles.value}>{property?.parcelId}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>LGA:</Text>{" "}
+            <Text style={styles.value}>{property?.lga}</Text>
+          </Text>
+          <Text>
+            <Text style={styles.label}>Total Cost:</Text>{" "}
+            <Text style={styles.value}>
+              {property?.totalCost?.toLocaleString("en-NG", {
+                style: "currency",
+                currency: "NGN",
+              })}
+            </Text>
+          </Text>
+          {property?.comments && (
+            <Text>
+              <Text style={styles.label}>Comments:</Text>{" "}
+              <Text style={styles.value}>{property?.comments}</Text>
+            </Text>
+          )}
+        </View>
+        <Text style={styles.footer}>
+          Thank you for your payment. This receipt is system generated and valid
+          without signature.
+        </Text>
+      </Page>
+    </Document>
+  );
+};
 
 export default SingleRequestPage;
 function notifyError(arg0: string) {

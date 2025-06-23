@@ -197,41 +197,43 @@ export default function UserPropertyRequests({
             return (
               <div
                 key={property.id}
-                className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden transition-all hover:shadow-md hover:ring-gray-900/10"
+                className="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5 overflow-hidden transition-all duration-300 hover:shadow-lg hover:ring-gray-900/10 hover:scale-[1.01]"
               >
-                <div className="p-5 sm:p-6">
+                <div className="p-6 sm:p-8">
                   {/* Header with title and status badges */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
                     <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        {getPropertyIcon(propertyType)}
-                        <div>
+                      <div className="flex items-start gap-4">
+                        <div className="shrink-0 mt-1">
+                          {getPropertyIcon(propertyType)}
+                        </div>
+                        <div className="min-w-0">
                           <Link
                             href={`/reva/dashboard/viewdetails?reference=${property.reference}`}
-                            className="group"
+                            className="group block"
                           >
-                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 leading-tight group-hover:text-indigo-600">
+                            <h2 className="text-xl font-semibold text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors duration-200">
                               {property.title ||
                                 property.description ||
                                 "Untitled Request"}
                             </h2>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-sm text-gray-400 mt-1.5">
                               REF: {property.reference} • {propertyType}
                             </p>
                           </Link>
+
+                          {property.description && (
+                            <p className="text-sm text-gray-500 mt-3 line-clamp-2">
+                              {property.description}
+                            </p>
+                          )}
                         </div>
                       </div>
-
-                      {property.description && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          {property.description}
-                        </p>
-                      )}
                     </div>
 
-                    <div className="flex md:flex-col md:justify-start justify-end items-end gap-2">
+                    <div className="flex md:flex-col md:items-end justify-end gap-3">
                       <span
-                        className={`inline-flex items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
+                        className={`inline-flex items-center gap-x-2 rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset ${getStatusColor(
                           property.status ?? "Processing"
                         )}`}
                       >
@@ -240,7 +242,7 @@ export default function UserPropertyRequests({
                       </span>
 
                       <span
-                        className={`inline-flex items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${getPaymentStatusColor(
+                        className={`inline-flex items-center gap-x-2 rounded-full px-3 py-1.5 text-sm font-medium ring-1 ring-inset ${getPaymentStatusColor(
                           property.paymentStatus ?? "Unpaid"
                         )}`}
                       >
@@ -251,30 +253,32 @@ export default function UserPropertyRequests({
                   </div>
 
                   {/* Details grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 mt-1">
                         <MapPinIcon className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
                           Address
                         </h3>
-                        <p className="text-gray-800">{property.address}</p>
+                        <p className="text-gray-800 leading-snug">
+                          {property.address}
+                        </p>
                         {property.lga && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-sm text-gray-500 mt-1">
                             {property.lga}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 mt-1">
                         <NairaIcon className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
                           Total Cost
                         </h3>
                         <p className="text-2xl font-bold text-indigo-600">
@@ -283,12 +287,12 @@ export default function UserPropertyRequests({
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 mt-1">
                         <ClockIcon className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
                           {property.updatedAt ? "Last Updated" : "Created"}
                         </h3>
                         <p className="text-gray-800">
@@ -305,33 +309,33 @@ export default function UserPropertyRequests({
                   </div>
 
                   {/* Documents section */}
-                  <div className="mt-5 pt-4 border-t border-gray-100">
-                    <div className="flex justify-between items-center mb-3 max-sm:items-start max-sm:gap-6 max-sm:flex-col-reverse">
-                      <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <div className="flex justify-between items-center mb-4 max-sm:flex-col max-sm:items-start max-sm:gap-4">
+                      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider flex items-center gap-2">
                         <DocumentTextIcon className="h-4 w-4" />
                         Supporting Documents
                       </h3>
 
                       {property.parcelId && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                        <span className="text-sm bg-gray-50 text-gray-600 px-3 py-1.5 rounded-full">
                           Parcel ID: {property.parcelId}
                         </span>
                       )}
                     </div>
 
                     {property.documentsUrls.length > 0 ? (
-                      <ul className="space-y-2">
+                      <ul className="space-y-2.5">
                         {property.documentsUrls.map(
                           (doc: string, index: number) => (
                             <li key={index}>
                               <a
                                 href="#"
-                                className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-2 group"
+                                className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-3 group"
                               >
                                 <span className="truncate group-hover:underline">
                                   {doc.replace(/_/g, " ").replace(".pdf", "")}
                                 </span>
-                                <span className="text-xs text-gray-400 group-hover:text-gray-500">
+                                <span className="text-xs text-gray-400 group-hover:text-gray-500 transition-colors">
                                   PDF
                                 </span>
                               </a>

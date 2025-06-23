@@ -106,6 +106,8 @@ const RevaDueDiligenceForm: React.FC = () => {
     setAddress("");
     setLocation(null);
     setLga("Unknown");
+    setParcelId("-");
+    setTotalCost(0);
     enableUseMyLocationButton();
     if (markerRef.current) {
       markerRef.current.setMap(null);
@@ -114,7 +116,13 @@ const RevaDueDiligenceForm: React.FC = () => {
       mapRef.current.setCenter(center);
       mapRef.current.setZoom(12);
     }
-    setTotalCost(0);
+    if (lgaBoundaryRef.current) {
+      lgaBoundaryRef.current.setMap(null);
+    }
+    if (parcelBoundaryRef.current) {
+      parcelBoundaryRef.current.setMap(null);
+    }
+    setLocationButtonText("Use My Location");
   };
 
   const onPlaceChanged = () => {
