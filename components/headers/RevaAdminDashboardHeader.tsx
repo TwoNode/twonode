@@ -2,15 +2,28 @@ import Link from "next/link";
 import React from "react";
 import { SheetMenu } from "../admin-panel/sheet-menu";
 import Image from "next/image";
-import { MenuItem, MenuProps } from "../admin-panel/menu";
+import { MenuProps } from "../admin-panel/menu";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { canAccessRevaSuperAdminPanel } from "@/permissions";
 // import { ModeToggle } from "../mode-toggle";
 
-interface DashboardNavbarProps extends MenuProps {}
+interface UserData {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "USER" | "ADMIN" | "SUPERADMIN";
+  emailVerified: boolean;
+}
+
+interface DashboardNavbarProps extends MenuProps {
+  userData?: UserData | any;
+}
 
 export const RevaAdminDashboardNavbar = ({
   items,
   userImageUrl = "",
+  userData,
 }: DashboardNavbarProps) => {
   return (
     <div
@@ -37,20 +50,37 @@ export const RevaAdminDashboardNavbar = ({
 
         {/* <ModeToggle /> */}
 
-        <Link
-          href="/reva-restricted/superadmin"
-          className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"
-          style={{
-            background: `linear-gradient(to right, ${REVA_COLORS.primary.main}, ${REVA_COLORS.secondary.main})`,
-          }}
-        >
-          <span
-            className="text-sm font-medium transition-colors duration-300"
-            style={{ color: REVA_COLORS.text.light }}
+        {userData && userData?.role && canAccessRevaSuperAdminPanel(userData.role) ? (
+          <Link
+            href="/reva-restricted/dashboard/superadmin"
+            className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"
+            style={{
+              background: `linear-gradient(to right, ${REVA_COLORS.primary.main}, ${REVA_COLORS.secondary.main})`,
+            }}
           >
-            Add New Admin
-          </span>
-        </Link>
+            <span
+              className="text-sm font-medium transition-colors duration-300"
+              style={{ color: REVA_COLORS.text.light }}
+            >
+              Add New Admin
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="/reva-restricted/dashboard/alluserrequests"
+            className="group relative inline-flex items-center justify-center rounded-2xl px-6 py-2 transition-all duration-300 ease-in-out hover:scale-105 hover:brightness-130"
+            style={{
+              background: `linear-gradient(to right, ${REVA_COLORS.primary.main}, ${REVA_COLORS.secondary.main})`,
+            }}
+          >
+            <span
+              className="text-sm font-medium transition-colors duration-300"
+              style={{ color: REVA_COLORS.text.light }}
+            >
+              All Requests
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );
