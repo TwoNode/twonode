@@ -26,6 +26,7 @@ import {
 } from "@react-pdf/renderer";
 
 import { PropertyWithoutUser } from "../../actions/dbActions";
+import Link from "next/link";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"
@@ -246,13 +247,13 @@ const SingleRequestPage = ({
             {property?.paymentLink && (
               <div className="col-span-2">
                 <Button variant="link" size="sm" asChild>
-                  <a
+                  <Link
                     href={property.paymentLink}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     View Payment
-                  </a>
+                  </Link>
                 </Button>
               </div>
             )}
@@ -321,9 +322,11 @@ const SingleRequestPage = ({
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center border-t pt-6 flex-wrap max-sm:justify-center gap-4">
-          <Button variant="outline" className="max-sm:w-full rounded-lg">
-            Back to All Requests
-          </Button>
+          <Link href="/reva/dashboard">
+            <Button variant="outline" className="max-sm:w-full rounded-lg">
+              Back to All Requests
+            </Button>
+          </Link>
 
           <div className="flex gap-4">
             <Button
