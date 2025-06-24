@@ -3,6 +3,7 @@ import CreateAdminUserForm from "../../components/CreateAdminUserForm";
 import AdminUsersList from "../../components/AdminUsersList";
 import UserRoleManagementForm from "../../components/UserRoleManagementForm";
 import AllUsersList from "../../components/AllUsersList";
+import CreateNotificationForm from "../../components/CreateNotificationForm";
 import { getAllUsers } from "../../actions/adminDbActions";
 import { canAccessRevaAdminPanel } from "@/permissions";
 
@@ -47,8 +48,8 @@ const RevaPage: FC = async () => {
 
   const adminUsers =
     allUsersResult.success && allUsersResult.data?.allUsers
-      ? (allUsersResult.data.allUsers.filter(
-          (user: User) => canAccessRevaAdminPanel(user.role)
+      ? (allUsersResult.data.allUsers.filter((user: User) =>
+          canAccessRevaAdminPanel(user.role)
         ) as AdminUser[])
       : [];
 
@@ -59,7 +60,7 @@ const RevaPage: FC = async () => {
           Super Admin Dashboard
         </h1>
         <p className="text-gray-600">
-          Manage admin users, roles, and system settings
+          Manage admin users, roles, system settings, and notifications
         </p>
       </div>
 
@@ -73,6 +74,11 @@ const RevaPage: FC = async () => {
         <div>
           <UserRoleManagementForm users={allUsers} />
         </div>
+      </div>
+
+      {/* Notification Creation Form */}
+      <div className="mb-8">
+        <CreateNotificationForm />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -115,6 +115,14 @@ enum NotificationType {
   PROPERTY
 }
 
+enum NotificationAudience {
+  SPECIFIC_USERS   // Targeted to specific userIds
+  GENERAL_USERS    // General notification for regular users
+  GENERAL_ADMINS   // General notification for admins
+  SUPERADMIN       // General notification for superadmins
+  ALL_USERS        // Everyone (users + admins + superadmins)
+}
+
 
 model Notification {
   id              String           @id @default(cuid())
@@ -124,10 +132,12 @@ model Notification {
   readBy          String[]         @default([]) // List of userIds who read it
   dismissedBy     String[]         @default([]) // List of userIds who dismissed it
   userIds         String[]         @default([]) // If null/empty => general
+  audience        NotificationAudience @default(SPECIFIC_USERS)
   link            String?
   metadata        Json?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@index([createdAt])
+  @@index([audience])
 }

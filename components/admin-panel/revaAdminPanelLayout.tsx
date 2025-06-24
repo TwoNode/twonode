@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   Shield,
+  Bell,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
@@ -54,6 +55,11 @@ export default function RevaAdminPanelLayout({
             icon: Shield,
             label: "Superadmin",
             url: `${dashboardUrl}/superadmin`,
+          },
+          {
+            icon: Bell,
+            label: "Notifications",
+            url: `${dashboardUrl}/notifications`,
           },
         ]
       : []),

@@ -35,7 +35,7 @@ export default function NotificationBell({
     try {
       const user = await getAuthenticatedUser();
       if (user?.id) {
-        const result = await getUnreadNotificationCount(user.id);
+        const result = await getUnreadNotificationCount(user.id, user.role);
         if (result.success) {
           setUnreadCount(result.count);
         }

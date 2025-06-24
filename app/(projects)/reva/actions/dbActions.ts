@@ -7,9 +7,15 @@ import {
   initializePaystack,
   verifyPaystackTransaction,
 } from "./paystackActions";
-import { Prisma } from "@prisma/client";
+import {
+  Prisma,
+  NotificationAudience,
+  NotificationType,
+  Role,
+} from "@prisma/client";
 import { getAuthenticatedUser } from "@/utils/authUser";
 import prisma from "@/lib/prisma";
+import { sendEmailToAdmin } from "@/utils/email";
 
 export type PropertyStatus = "Available" | "Completed" | "Processing";
 
@@ -64,9 +70,26 @@ export const saveToOneTimeProperty = async (
     });
 
     console.log("New property saved:", newProperty);
-
     // Trigger notification for new property request
-    await notifyNewPropertyRequest(newProperty);
+    await notifyNewPropertyRequest(newProperty as any, "oneTimeProperty");
+
+    // Send email to admin
+    if (process.env.ADMIN_EMAIL) {
+      await sendEmailToAdmin({
+        to: process.env.ADMIN_EMAIL,
+        subject: "New OneTime Property Request",
+        text: `New due diligence request received for ${newProperty.address}`,
+        html: `
+          <h3>New OneTime Property Request</h3>
+          <p>A new due diligence request has been received:</p>
+          <ul>
+            <li>Property: ${newProperty.address}</li>
+            <li>Reference: ${newProperty.reference}</li>
+            <li>Requester: ${newProperty.requester || newProperty.email}</li>
+          </ul>
+        `,
+      });
+    }
 
     return {
       success: true,
@@ -618,18 +641,14 @@ export const getUserPropertyById = async (id: string) => {
 
 // ===== NOTIFICATION FUNCTIONS =====
 
+// Enhanced Notification Service
+
 export type NotificationCreateInput = {
-  type:
-    | "INFO"
-    | "SUCCESS"
-    | "WARNING"
-    | "ERROR"
-    | "SYSTEM"
-    | "PAYMENT"
-    | "PROPERTY";
+  type: NotificationType;
   title: string;
   message: string;
   userIds?: string[];
+  audience?: NotificationAudience;
   link?: string;
   metadata?: any;
 };
@@ -642,11 +661,11 @@ export const createNotification = async (data: NotificationCreateInput) => {
         title: data.title,
         message: data.message,
         userIds: data.userIds || [],
+        audience: data.audience || NotificationAudience.SPECIFIC_USERS,
         link: data.link,
         metadata: data.metadata,
       },
     });
-
     return {
       success: true,
       message: "Notification created successfully",
@@ -658,24 +677,38 @@ export const createNotification = async (data: NotificationCreateInput) => {
   }
 };
 
-export const getUserNotifications = async (userId: string) => {
+export const getUserNotifications = async (userId: string, role: Role) => {
   try {
+    const conditions: any[] = [
+      // User-specific notifications (always visible to the target user)
+      { userIds: { has: userId } },
+    ];
+
+    // Add role-based audience conditions
+    if (role === Role.SUPERADMIN) {
+      conditions.push(
+        { audience: NotificationAudience.SUPERADMIN },
+        { audience: NotificationAudience.GENERAL_ADMINS },
+        { audience: NotificationAudience.ALL_USERS }
+      );
+    } else if (role === Role.ADMIN) {
+      conditions.push(
+        { audience: NotificationAudience.GENERAL_ADMINS },
+        { audience: NotificationAudience.ALL_USERS }
+      );
+    } else if (role === Role.USER) {
+      conditions.push(
+        { audience: NotificationAudience.GENERAL_USERS },
+        { audience: NotificationAudience.ALL_USERS }
+      );
+    }
+
     const notifications = await prisma.notification.findMany({
-      where: {
-        OR: [
-          { userIds: { has: userId } },
-          { userIds: { isEmpty: true } }, // General notifications
-        ],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { OR: conditions },
+      orderBy: { createdAt: "desc" },
     });
 
-    return {
-      success: true,
-      data: notifications,
-    };
+    return { success: true, data: notifications };
   } catch (error) {
     console.error("Error fetching user notifications:", error);
     return { success: false, message: "Failed to fetch notifications", error };
@@ -685,17 +718,36 @@ export const getUserNotifications = async (userId: string) => {
 export const getAdminNotifications = async () => {
   try {
     const notifications = await prisma.notification.findMany({
-      orderBy: {
-        createdAt: "desc",
+      where: {
+        OR: [
+          { audience: NotificationAudience.GENERAL_ADMINS },
+          { audience: NotificationAudience.ALL_USERS },
+        ],
       },
+      orderBy: { createdAt: "desc" },
     });
-
-    return {
-      success: true,
-      data: notifications,
-    };
+    return { success: true, data: notifications };
   } catch (error) {
     console.error("Error fetching admin notifications:", error);
+    return { success: false, message: "Failed to fetch notifications", error };
+  }
+};
+
+export const getSuperAdminNotifications = async () => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          { audience: NotificationAudience.SUPERADMIN },
+          { audience: NotificationAudience.GENERAL_ADMINS },
+          { audience: NotificationAudience.ALL_USERS },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return { success: true, data: notifications };
+  } catch (error) {
+    console.error("Error fetching superadmin notifications:", error);
     return { success: false, message: "Failed to fetch notifications", error };
   }
 };
@@ -708,26 +760,22 @@ export const markNotificationAsRead = async (
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
-
-    if (!notification) {
+    if (!notification)
       return { success: false, message: "Notification not found" };
-    }
 
     const updatedReadBy = notification.readBy.includes(userId)
       ? notification.readBy
       : [...notification.readBy, userId];
 
-    const updatedNotification = await prisma.notification.update({
+    const updated = await prisma.notification.update({
       where: { id: notificationId },
-      data: {
-        readBy: updatedReadBy,
-      },
+      data: { readBy: updatedReadBy },
     });
 
     return {
       success: true,
       message: "Notification marked as read",
-      data: updatedNotification,
+      data: updated,
     };
   } catch (error) {
     console.error("Error marking notification as read:", error);
@@ -747,51 +795,39 @@ export const dismissNotification = async (
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
-
-    if (!notification) {
+    if (!notification)
       return { success: false, message: "Notification not found" };
-    }
 
     const updatedDismissedBy = notification.dismissedBy.includes(userId)
       ? notification.dismissedBy
       : [...notification.dismissedBy, userId];
 
-    const updatedNotification = await prisma.notification.update({
+    const updated = await prisma.notification.update({
       where: { id: notificationId },
-      data: {
-        dismissedBy: updatedDismissedBy,
-      },
+      data: { dismissedBy: updatedDismissedBy },
     });
 
-    return {
-      success: true,
-      message: "Notification dismissed",
-      data: updatedNotification,
-    };
+    return { success: true, message: "Notification dismissed", data: updated };
   } catch (error) {
     console.error("Error dismissing notification:", error);
     return { success: false, message: "Failed to dismiss notification", error };
   }
 };
 
-export const getUnreadNotificationCount = async (userId: string) => {
+export const getUnreadNotificationCount = async (
+  userId: string,
+  role: Role
+) => {
   try {
-    const notifications = await prisma.notification.findMany({
-      where: {
-        OR: [
-          { userIds: { has: userId } },
-          { userIds: { isEmpty: true } }, // General notifications
-        ],
-        NOT: {
-          OR: [{ readBy: { has: userId } }, { dismissedBy: { has: userId } }],
-        },
-      },
-    });
+    const base = await getUserNotifications(userId, role);
+    if (!base.success) throw base.error;
 
-    return {
-      success: true,
-      count: notifications.length,
-    };
+    const unread =
+      base.data?.filter(
+        (n) => !n.readBy.includes(userId) && !n.dismissedBy.includes(userId)
+      ) ?? [];
+
+    return { success: true, count: unread.length };
   } catch (error) {
     console.error("Error fetching unread notification count:", error);
     return { success: false, count: 0, error };
@@ -808,17 +844,21 @@ export const notifyNewPropertyRequest = async (
     // Notify admins about new property request
     await createNotification({
       type: "PROPERTY",
-      title: "New Property Request",
-      message: `New due diligence request received for property at ${propertyData.address}`,
+      title: `New ${
+        propertyData?.requester ? "OneTime " : ""
+      } Property Request`,
+      message: `New due diligence request received for ${propertyData.address}`,
       link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
         propertyReference: propertyData.reference,
         address: propertyData.address,
         requester: propertyData.requester || propertyData.email,
+        oneTimeRequest: propertyData?.requester ? true : false,
       },
     });
 
-    // Notify user about successful request creation
+    // Notify user if userId provided
     if (userId) {
       await createNotification({
         type: "SUCCESS",
@@ -829,7 +869,30 @@ export const notifyNewPropertyRequest = async (
         metadata: {
           propertyReference: propertyData.reference,
           address: propertyData.address,
+          oneTimeRequest: propertyData?.requester ? true : false,
         },
+      });
+    }
+
+    // Send email to admin if configured
+    if (process.env.ADMIN_EMAIL) {
+      await sendEmailToAdmin({
+        to: process.env.ADMIN_EMAIL,
+        subject: `New ${
+          propertyData?.requester ? "OneTime " : ""
+        }Property Request`,
+        text: `New due diligence request received for ${propertyData.address}`,
+        html: `
+          <h3>New ${
+            propertyData?.requester ? "OneTime " : ""
+          }Property Request</h3>
+          <p>A new due diligence request has been received:</p>
+          <ul>
+            <li>Property: ${propertyData.address}</li>
+            <li>Reference: ${propertyData.reference}</li>
+            <li>Requester: ${propertyData.requester || propertyData.email}</li>
+          </ul>
+        `,
       });
     }
 
@@ -845,7 +908,6 @@ export const notifyPaymentReceived = async (
   userId?: string
 ) => {
   try {
-    // Notify admins about payment
     await createNotification({
       type: "PAYMENT",
       title: "Payment Received",
@@ -853,6 +915,7 @@ export const notifyPaymentReceived = async (
         propertyData.reference
       }`,
       link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
         propertyReference: propertyData.reference,
         amount: propertyData.totalCost,
@@ -860,7 +923,6 @@ export const notifyPaymentReceived = async (
       },
     });
 
-    // Notify user about payment confirmation
     if (userId) {
       await createNotification({
         type: "SUCCESS",
@@ -876,7 +938,6 @@ export const notifyPaymentReceived = async (
         },
       });
     }
-
     return { success: true };
   } catch (error) {
     console.error("Error creating payment notifications:", error);
@@ -886,7 +947,6 @@ export const notifyPaymentReceived = async (
 
 export const notifyReportReady = async (propertyData: any, userId?: string) => {
   try {
-    // Notify user about report completion
     if (userId) {
       await createNotification({
         type: "SUCCESS",
@@ -900,7 +960,6 @@ export const notifyReportReady = async (propertyData: any, userId?: string) => {
         },
       });
     }
-
     return { success: true };
   } catch (error) {
     console.error("Error creating report ready notification:", error);
@@ -919,11 +978,258 @@ export const notifySystemAlert = async (
       title,
       message,
       userIds,
+      audience: userIds?.length
+        ? NotificationAudience.SPECIFIC_USERS
+        : NotificationAudience.ALL_USERS,
     });
-
     return { success: true };
   } catch (error) {
     console.error("Error creating system alert:", error);
     return { success: false, error };
+  }
+};
+
+// ===== NOTIFICATION ACCESS CONTROL TEST =====
+
+export const testNotificationAccessControl = async () => {
+  try {
+    console.log("🧪 Testing Notification Access Control...");
+
+    // Create test notifications for different audiences
+    const testNotifications = [
+      {
+        type: "INFO" as NotificationType,
+        title: "User Test Notification",
+        message: "This should only be visible to users",
+        audience: NotificationAudience.GENERAL_USERS,
+      },
+      {
+        type: "INFO" as NotificationType,
+        title: "Admin Test Notification",
+        message: "This should only be visible to admins",
+        audience: NotificationAudience.GENERAL_ADMINS,
+      },
+      {
+        type: "INFO" as NotificationType,
+        title: "Superadmin Test Notification",
+        message: "This should only be visible to superadmins",
+        audience: NotificationAudience.SUPERADMIN,
+      },
+      {
+        type: "INFO" as NotificationType,
+        title: "All Users Test Notification",
+        message: "This should be visible to everyone",
+        audience: NotificationAudience.ALL_USERS,
+      },
+      {
+        type: "INFO" as NotificationType,
+        title: "Specific User Test Notification",
+        message: "This should only be visible to specific user",
+        userIds: ["test-user-id"],
+        audience: NotificationAudience.SPECIFIC_USERS,
+      },
+    ];
+
+    // Create the test notifications
+    for (const notif of testNotifications) {
+      await createNotification(notif);
+    }
+
+    console.log("✅ Test notifications created successfully");
+
+    // Test access control for each role
+    const testResults = {
+      user: {
+        generalUsers: 0,
+        generalAdmins: 0,
+        superadmin: 0,
+        allUsers: 0,
+        specificUsers: 0,
+      },
+      admin: {
+        generalUsers: 0,
+        generalAdmins: 0,
+        superadmin: 0,
+        allUsers: 0,
+        specificUsers: 0,
+      },
+      superadmin: {
+        generalUsers: 0,
+        generalAdmins: 0,
+        superadmin: 0,
+        allUsers: 0,
+        specificUsers: 0,
+      },
+    };
+
+    // Test USER role access
+    const userNotifs = await getUserNotifications("test-user-id", Role.USER);
+    if (userNotifs.success) {
+      userNotifs.data?.forEach((notif) => {
+        if (notif.audience === NotificationAudience.GENERAL_USERS)
+          testResults.user.generalUsers++;
+        if (notif.audience === NotificationAudience.GENERAL_ADMINS)
+          testResults.user.generalAdmins++;
+        if (notif.audience === NotificationAudience.SUPERADMIN)
+          testResults.user.superadmin++;
+        if (notif.audience === NotificationAudience.ALL_USERS)
+          testResults.user.allUsers++;
+        if (notif.audience === NotificationAudience.SPECIFIC_USERS)
+          testResults.user.specificUsers++;
+      });
+    }
+
+    // Test ADMIN role access
+    const adminNotifs = await getUserNotifications("test-admin-id", Role.ADMIN);
+    if (adminNotifs.success) {
+      adminNotifs.data?.forEach((notif) => {
+        if (notif.audience === NotificationAudience.GENERAL_USERS)
+          testResults.admin.generalUsers++;
+        if (notif.audience === NotificationAudience.GENERAL_ADMINS)
+          testResults.admin.generalAdmins++;
+        if (notif.audience === NotificationAudience.SUPERADMIN)
+          testResults.admin.superadmin++;
+        if (notif.audience === NotificationAudience.ALL_USERS)
+          testResults.admin.allUsers++;
+        if (notif.audience === NotificationAudience.SPECIFIC_USERS)
+          testResults.admin.specificUsers++;
+      });
+    }
+
+    // Test SUPERADMIN role access
+    const superadminNotifs = await getUserNotifications(
+      "test-superadmin-id",
+      Role.SUPERADMIN
+    );
+    if (superadminNotifs.success) {
+      superadminNotifs.data?.forEach((notif) => {
+        if (notif.audience === NotificationAudience.GENERAL_USERS)
+          testResults.superadmin.generalUsers++;
+        if (notif.audience === NotificationAudience.GENERAL_ADMINS)
+          testResults.superadmin.generalAdmins++;
+        if (notif.audience === NotificationAudience.SUPERADMIN)
+          testResults.superadmin.superadmin++;
+        if (notif.audience === NotificationAudience.ALL_USERS)
+          testResults.superadmin.allUsers++;
+        if (notif.audience === NotificationAudience.SPECIFIC_USERS)
+          testResults.superadmin.specificUsers++;
+      });
+    }
+
+    console.log("📊 Test Results:", testResults);
+
+    // Verify access control is working correctly
+    const accessControlPassed =
+      // Users should NOT see admin or superadmin notifications
+      testResults.user.generalAdmins === 0 &&
+      testResults.user.superadmin === 0 &&
+      // Users should see user and all users notifications
+      testResults.user.generalUsers > 0 &&
+      testResults.user.allUsers > 0 &&
+      // Admins should NOT see user or superadmin notifications
+      testResults.admin.generalUsers === 0 &&
+      testResults.admin.superadmin === 0 &&
+      // Admins should see admin and all users notifications
+      testResults.admin.generalAdmins > 0 &&
+      testResults.admin.allUsers > 0 &&
+      // Superadmins should NOT see user or admin notifications
+      testResults.superadmin.generalUsers === 0 &&
+      testResults.superadmin.generalAdmins === 0 &&
+      // Superadmins should see superadmin and all users notifications
+      testResults.superadmin.superadmin > 0 &&
+      testResults.superadmin.allUsers > 0;
+
+    if (accessControlPassed) {
+      console.log("✅ Notification Access Control Test PASSED");
+    } else {
+      console.log("❌ Notification Access Control Test FAILED");
+    }
+
+    return {
+      success: accessControlPassed,
+      results: testResults,
+      message: accessControlPassed
+        ? "Access control working correctly"
+        : "Access control has issues",
+    };
+  } catch (error) {
+    console.error("Error testing notification access control:", error);
+    return { success: false, error: "Test failed" };
+  }
+};
+
+// ===== NOTIFICATION CREATION TEST =====
+
+export const testNotificationCreation = async () => {
+  try {
+    console.log("🧪 Testing Notification Creation...");
+
+    // Test creating a notification for each audience
+    const testNotifications = [
+      {
+        type: "INFO" as NotificationType,
+        title: "Test User Notification",
+        message: "This is a test notification for users",
+        audience: NotificationAudience.GENERAL_USERS,
+      },
+      {
+        type: "WARNING" as NotificationType,
+        title: "Test Admin Notification",
+        message: "This is a test notification for admins",
+        audience: NotificationAudience.GENERAL_ADMINS,
+      },
+      {
+        type: "SUCCESS" as NotificationType,
+        title: "Test Superadmin Notification",
+        message: "This is a test notification for superadmins",
+        audience: NotificationAudience.SUPERADMIN,
+      },
+      {
+        type: "SYSTEM" as NotificationType,
+        title: "Test All Users Notification",
+        message: "This is a test notification for all users",
+        audience: NotificationAudience.ALL_USERS,
+      },
+    ];
+
+    const results = [];
+
+    for (const notif of testNotifications) {
+      const result = await createNotification(notif);
+      results.push({
+        notification: notif,
+        success: result.success,
+        message: result.message,
+      });
+
+      if (result.success) {
+        console.log(
+          `✅ Created ${notif.audience} notification: ${notif.title}`
+        );
+      } else {
+        console.log(
+          `❌ Failed to create ${notif.audience} notification: ${result.message}`
+        );
+      }
+    }
+
+    const successCount = results.filter((r) => r.success).length;
+    const totalCount = results.length;
+
+    console.log(
+      `📊 Notification Creation Test Results: ${successCount}/${totalCount} successful`
+    );
+
+    return {
+      success: successCount === totalCount,
+      results,
+      message:
+        successCount === totalCount
+          ? "All notifications created successfully"
+          : `${successCount}/${totalCount} notifications created successfully`,
+    };
+  } catch (error) {
+    console.error("Error testing notification creation:", error);
+    return { success: false, error: "Test failed" };
   }
 };

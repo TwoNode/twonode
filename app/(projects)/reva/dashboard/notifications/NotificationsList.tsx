@@ -113,7 +113,7 @@ export default function NotificationsList() {
       const user = await getAuthenticatedUser();
       if (user?.id) {
         setUserId(user.id);
-        const result = await getUserNotifications(user.id);
+        const result = await getUserNotifications(user.id, user.role);
         if (result.success) {
           setNotifications(
             (result.data || []).map((notification) => ({
