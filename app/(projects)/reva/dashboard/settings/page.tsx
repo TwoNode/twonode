@@ -1,12 +1,25 @@
 import React from "react";
-import ComingSoon from "../components/ComingSoon";
+import { getAuthenticatedUser } from "@/utils/authUser";
+import UserProfile from "./UserProfile";
 
-const Home = () => {
-  return (
-    <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
-      <ComingSoon />
-    </div>
-  );
+const Settings = async () => {
+  try {
+    const user = await getAuthenticatedUser();
+
+    return (
+      <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
+        <UserProfile user={user} />
+      </div>
+    );
+  } catch (error) {
+    return (
+      <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
+        <div className="text-center py-8 text-red-500">
+          <p>Failed to load profile. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
 };
 
-export default Home;
+export default Settings;

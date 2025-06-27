@@ -9,6 +9,7 @@ import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
 import {
   approveDueDiligenceReport,
   uploadDirectLinkReport,
+  approveOneTimeDueDiligenceReport,
 } from "../../actions/adminDbActions";
 
 import {
@@ -120,29 +121,31 @@ export function AdminDirectLinkUpload({
   const handleApprove = async () => {
     try {
       setIsLoading(true);
-      if (!property?.report || typeof property?.report !== "object") {
+      if (!property?.report) {
         notifyError("Invalid report data. Unable to approve.");
         setIsLoading(false);
         return;
       }
 
-      const response = await approveDueDiligenceReport(
+      // Use appropriate approval function based on request type
+      const approvalFunction = property?.isOneTimeRequest
+        ? approveOneTimeDueDiligenceReport
+        : approveDueDiligenceReport;
+
+      const response = await approvalFunction(
         property?.reference || "",
-        property?.report?.isApproved ? false : true
+        !property?.report?.isApproved
       );
 
-      if (
-        typeof response === "object" &&
-        "error" in response &&
-        response.error
-      ) {
+      if (response?.error) {
         throw response?.error || new Error("An error occurred");
       }
 
-      property?.report?.isApproved
-        ? notifySuccess("Report disapproved successfully!")
-        : notifySuccess("Report approved successfully!");
-
+      notifySuccess(
+        property?.report?.isApproved
+          ? "Report disapproved successfully!"
+          : "Report approved successfully!"
+      );
       setShowConfirmApproval(false);
     } catch (err) {
       notifyError(

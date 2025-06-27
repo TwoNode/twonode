@@ -12,6 +12,7 @@ import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
 import {
   approveDueDiligenceReport,
   uploadDueDiligenceReport,
+  approveOneTimeDueDiligenceReport,
 } from "../../actions/adminDbActions";
 import {
   AlertDialog,
@@ -272,7 +273,12 @@ export function AdminReportUpload({
         return;
       }
 
-      const response = await approveDueDiligenceReport(
+      // Use appropriate approval function based on request type
+      const approvalFunction = property?.isOneTimeRequest
+        ? approveOneTimeDueDiligenceReport
+        : approveDueDiligenceReport;
+
+      const response = await approvalFunction(
         property?.reference || "",
         !property?.report?.isApproved
       );

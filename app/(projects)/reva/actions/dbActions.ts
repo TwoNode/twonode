@@ -947,7 +947,11 @@ export const notifyPaymentReceived = async (
 
 export const notifyReportReady = async (propertyData: any, userId?: string) => {
   try {
-    if (userId) {
+    // Check if this is a OneTime request
+    const isOneTimeRequest = propertyData?.requester || !propertyData?.user;
+
+    if (userId && !isOneTimeRequest) {
+      // Regular user notification
       await createNotification({
         type: "SUCCESS",
         title: "Report Ready",
@@ -957,6 +961,24 @@ export const notifyReportReady = async (propertyData: any, userId?: string) => {
         metadata: {
           propertyReference: propertyData.reference,
           address: propertyData.address,
+          oneTimeRequest: false,
+        },
+      });
+    } else if (isOneTimeRequest && propertyData?.email) {
+      // OneTime request notification - create a system notification that can be accessed via email
+      await createNotification({
+        type: "SUCCESS",
+        title: "OneTime Report Ready",
+        message: `Your OneTime due diligence report for property ${propertyData.reference} is now available.`,
+        audience: NotificationAudience.GENERAL_USERS, // This will be accessible to anyone with the link
+        link: `/reva/onetimerequest?reference=${
+          propertyData.reference
+        }&email=${encodeURIComponent(propertyData.email)}`,
+        metadata: {
+          propertyReference: propertyData.reference,
+          address: propertyData.address,
+          oneTimeRequest: true,
+          email: propertyData.email,
         },
       });
     }
@@ -1231,5 +1253,111 @@ export const testNotificationCreation = async () => {
   } catch (error) {
     console.error("Error testing notification creation:", error);
     return { success: false, error: "Test failed" };
+  }
+};
+
+export const getOneTimeRequestByReference = async (
+  reference: string,
+  email: string
+) => {
+  try {
+    const request = await prisma.oneTimeUserProperty.findFirst({
+      where: {
+        reference,
+        email,
+      },
+    });
+
+    if (!request) {
+      return { success: false, error: "Request not found" };
+    }
+
+    return { success: true, data: request };
+  } catch (error) {
+    console.error("Error fetching OneTime request:", error);
+    return { success: false, error: "Failed to fetch request" };
+  }
+};
+
+export const downloadOneTimeRequestReport = async (
+  reference: string,
+  email: string
+) => {
+  try {
+    if (!reference || !email) {
+      return {
+        success: false,
+        error: "Reference and email are required",
+        status: 400,
+      };
+    }
+
+    const result = await getOneTimeRequestByReference(reference, email);
+
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: "Request not found or unauthorized",
+        status: 404,
+      };
+    }
+
+    const request = result.data;
+
+    // Check if report exists and is approved
+    if (!request.report || typeof request.report !== "object") {
+      return {
+        success: false,
+        error: "Report not found",
+        status: 404,
+      };
+    }
+
+    if (
+      !request.report ||
+      typeof request.report !== "object" ||
+      !("isApproved" in request.report) ||
+      !request.report?.isApproved
+    ) {
+      return {
+        success: false,
+        error: "Report is not yet approved",
+        status: 403,
+      };
+    }
+
+    // If there's a direct file link, return it for redirection
+    if (
+      typeof request.report === "object" &&
+      "directFileLink" in request.report
+    ) {
+      return {
+        success: true,
+        data: {
+          redirectUrl: request.report.directFileLink as string,
+          type: "redirect",
+        },
+      };
+    }
+
+    // Return the report data
+    return {
+      success: true,
+      data: {
+        reference: request.reference,
+        address: request.address,
+        report: request.report,
+        approvedAt: (request.report as any).approvedAt ?? null,
+        approvedBy: (request.report as any).approvedBy ?? null,
+        type: "data",
+      },
+    };
+  } catch (error) {
+    console.error("Error downloading OneTime report:", error);
+    return {
+      success: false,
+      error: "Internal server error",
+      status: 500,
+    };
   }
 };

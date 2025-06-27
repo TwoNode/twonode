@@ -210,6 +210,24 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
   }
 };
 
+export const getOneTimeRequestByReferenceByAdmin = async (
+  reference: string
+) => {
+  try {
+    // Verify admin access before proceeding
+    const userData = await verifyRevaAdminPermissions();
+
+    const request = await prisma.oneTimeUserProperty.findUnique({
+      where: { reference },
+    });
+
+    return { success: true, data: request, user: userData };
+  } catch (error) {
+    console.error("Error fetching OneTime request:", error);
+    return { success: false, error: "Failed to fetch OneTime request" };
+  }
+};
+
 export const uploadDueDiligenceReport = async (formData: FormData) => {
   try {
     let warnings: string[] = [] as string[];
@@ -740,6 +758,241 @@ export const approveDueDiligenceReport = async (
   } catch (error) {
     console.error(
       "\n\n\n\nError approving due diligence report : ",
+      reference,
+      error
+    );
+    return { error: error, success: false };
+  }
+};
+
+export const approveOneTimeDueDiligenceReport = async (
+  reference: string,
+  isApproved = true
+) => {
+  try {
+    let warnings: string[] = [];
+
+    console.log("\n\n\n\n\n", reference, "\n\n\n\n\n");
+    const user = await verifyRevaAdminPermissions();
+
+    if (!reference) {
+      throw "Reference is not valid.";
+    }
+
+    const property = await prisma.oneTimeUserProperty.findUnique({
+      where: { reference },
+    });
+
+    if (
+      !property ||
+      !property?.report ||
+      typeof property?.report !== "object"
+    ) {
+      throw "Property or report not found.";
+    }
+
+    const updatedReport = {
+      ...(typeof property?.report === "object" ? property.report : {}),
+      isApproved,
+      approvedAt: new Date().toISOString(),
+      approvedBy: user.email,
+    };
+
+    console.log("\n\n\n\n\n");
+    console.log(property?.email, updatedReport);
+    console.log("\n\n\n\n\n");
+
+    const result = await prisma.oneTimeUserProperty.update({
+      where: { reference },
+      data: {
+        report: updatedReport,
+        status: isApproved ? "Completed" : "Processing",
+      },
+    });
+
+    try {
+      const statusText = isApproved ? "approved" : "disapproved";
+
+      const logoDisplay = `
+        <div style="
+          background-color: #1e40af;
+          background-image: linear-gradient(to right, #00000020, #ffffff);
+          width: 100%;
+        ">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #ffffff; background-image: linear-gradient(to right, #00000020, #ffffff); padding: 16px 0;">
+            <tr>
+              <td align="center">
+                <img
+                  src="${process.env.ONLINE_BASE_URL}/logo.png"
+                  alt="TwoNode Technologies"
+                  style="height: 48px; max-width: 40%; margin-right: 8px;"
+                />
+                <img
+                  src="${process.env.ONLINE_BASE_URL}/reva/revaLogo.png"
+                  alt="REVA Logo"
+                  style="height: 48px; max-width: 40%;"
+                />
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      const mailTemplate = (
+        title: string,
+        greeting: string,
+        body: string,
+        link: string = "/reva/onetimerequest"
+      ) => {
+        const normalizedLink = link.startsWith("/") ? link : `/${link}`;
+
+        return `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        ">
+          ${logoDisplay}
+
+          <div style="
+            background-color: #1e40af;
+            background-image: linear-gradient(to right, #1e40af, #111827);
+            padding: 24px;
+            text-align: center;
+            color: white;
+          ">
+            <h2 style="margin: 0; font-size: 24px;">🎉 Report ${title}!</h2>
+            <p style="margin: 8px 0 0; font-size: 16px;">Reference: #${reference}</p>
+          </div>
+
+          <div style="padding: 24px; background-color: #f9fafb; color: #374151;">
+            ${greeting}
+
+            <p>${body}</p>
+
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${
+                process.env.ONLINE_BASE_URL
+              }${normalizedLink}?reference=${reference}&email=${encodeURIComponent(
+          property.email
+        )}"
+                target="_blank"
+                style="
+                  display: inline-block;
+                  padding: 12px 24px;
+                  background-color: #10b981;
+                  color: white;
+                  text-decoration: none;
+                  border-radius: 6px;
+                  font-weight: bold;
+                  font-size: 16px;
+                ">
+                View Report
+              </a>
+            </div>
+
+            <p style="font-size: 16px;">
+              You can now view or download your report using the link above.
+            </p>
+
+            <p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p>
+          </div>
+        </div>
+      `;
+      };
+
+      await sendMail({
+        to: process.env?.EMAIL_USER || "",
+        subject: `[Super Admin] OneTime Due Diligence Report ${
+          isApproved ? "Approved" : "Disapproved"
+        }`,
+        text: `Hello Super Admin,\n\nThe OneTime due diligence report for property ${reference} has been ${statusText}.`,
+        html: mailTemplate(
+          isApproved ? "Approved" : "Disapproved",
+          `<p style='font-size: 16px;'>Hello <strong>Super Admin</strong>,</p>`,
+          `The OneTime due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
+          "/reva-restricted"
+        ),
+      });
+
+      await sendMail({
+        to: process.env?.ADMIN_EMAIL || "",
+        subject: `[Admin] OneTime Due Diligence Report ${
+          isApproved ? "Approved" : "Disapproved"
+        }`,
+        text: `Hello Admin,\n\nThe OneTime due diligence report for property ${reference} has been ${statusText}.`,
+        html: mailTemplate(
+          isApproved ? "Approved" : "Disapproved",
+          `<p style='font-size: 16px;'>Hello <strong>Admin</strong>,</p>`,
+          `The OneTime due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
+          "/reva-restricted"
+        ),
+      });
+
+      // Send email to OneTime user
+      if (isApproved && property?.email) {
+        await sendMail({
+          to: property.email,
+          subject: `REVA: Your OneTime Due Diligence Report is Ready`,
+          text: `Hello,\n\nYour OneTime due diligence report for property ${reference} has been approved and is now available.`,
+          html: mailTemplate(
+            "Approved",
+            `<p style='font-size: 16px;'>Hello <strong>${
+              property?.requester || "User"
+            }</strong>,</p>`,
+            `Your OneTime due diligence report for <strong>property #${reference}</strong> has been successfully approved.`
+          ),
+        });
+      }
+    } catch (err) {
+      console.log("Email not sent: ", err);
+      warnings.push("Email not sent");
+    }
+
+    revalidatePath(
+      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+    );
+
+    // Trigger notifications
+    try {
+      if (isApproved) {
+        // Notify OneTime user that report is ready
+        await notifyReportReady(property);
+
+        // Notify admins about approved report
+        await notifySystemAlert(
+          "OneTime Report Approved",
+          `OneTime due diligence report for property ${reference} has been approved by ${user.email}`,
+          []
+        );
+      } else {
+        // Notify admins about disapproved report
+        await notifySystemAlert(
+          "OneTime Report Disapproved",
+          `OneTime due diligence report for property ${reference} has been disapproved by ${user.email}`,
+          []
+        );
+      }
+    } catch (error) {
+      console.error("Error creating notifications:", error);
+      warnings.push("Notifications not sent");
+    }
+
+    return {
+      success: true,
+      warnings,
+      data: result,
+      message: `OneTime report ${
+        isApproved ? "approved" : "rejected"
+      } successfully`,
+    };
+  } catch (error) {
+    console.error(
+      "\n\n\n\nError approving OneTime due diligence report : ",
       reference,
       error
     );

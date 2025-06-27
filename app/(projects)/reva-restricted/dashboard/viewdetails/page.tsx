@@ -1,7 +1,10 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import ViewDetails from "./viewDetails";
-import { getRequestByReferenceByAdmin } from "../../actions/adminDbActions";
+import {
+  getRequestByReferenceByAdmin,
+  getOneTimeRequestByReferenceByAdmin,
+} from "../../actions/adminDbActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminReportUpload } from "./AdminReportUpload";
@@ -23,21 +26,39 @@ const ViewDetailsPage = async ({
   }
 
   try {
-    const request = await getRequestByReferenceByAdmin(reference);
+    // First try to get regular request
+    let request = await getRequestByReferenceByAdmin(reference);
+    let isOneTimeRequest = false;
 
-    if (request.success) {
+    // If not found, try OneTime request
+    if (!request.success) {
+      const oneTimeRequest = await getOneTimeRequestByReferenceByAdmin(
+        reference
+      );
+      if (oneTimeRequest.success) {
+        request = oneTimeRequest as any;
+        isOneTimeRequest = true;
+      }
+    }
+
+    if (request?.success) {
       // console.log("Request Data:", result);
       const transformedProperty = {
         ...request.data,
+        isOneTimeRequest, // Add flag to identify request type
         // report: result?.data?.report ?? undefined, // Ensure compatibility with expected type
       };
 
       return (
         <>
-          <AdminMiniHeader title="User Request Data" />
+          <AdminMiniHeader
+            title={
+              isOneTimeRequest ? "OneTime Request Data" : "User Request Data"
+            }
+          />
           <UserRequestDataView property={transformedProperty} />
 
-          <AdminReport property={transformedProperty} user={request.user} />
+          <AdminReport property={transformedProperty} user={request?.user} />
 
           <br />
           <br />
@@ -53,7 +74,13 @@ const ViewDetailsPage = async ({
           <br />
 
           <div className="user bg-slate-200 p-6">
-            <AdminMiniHeader title="How it looks on User's Dashboard" />
+            <AdminMiniHeader
+              title={
+                isOneTimeRequest
+                  ? "How it looks on OneTime User's Page"
+                  : "How it looks on User's Dashboard"
+              }
+            />
             <SingleRequestPage property={transformedProperty} />
           </div>
         </>
