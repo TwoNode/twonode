@@ -187,7 +187,6 @@ const AllRequestsWithReportClient: React.FC<
       });
     }
 
-
     // Apply has report filter (all requests in this view should have reports)
     if (filters.hasReport !== null) {
       filtered = filtered.filter((request) => {
