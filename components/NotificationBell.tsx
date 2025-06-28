@@ -25,8 +25,8 @@ export default function NotificationBell({
   useEffect(() => {
     fetchUnreadCount();
 
-    // Refresh unread count every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // Refresh unread count every 3 seconds
+    const interval = setInterval(fetchUnreadCount, 180000);
 
     return () => clearInterval(interval);
   }, []);

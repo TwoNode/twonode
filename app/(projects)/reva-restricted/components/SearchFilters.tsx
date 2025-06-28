@@ -72,6 +72,18 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     "Ikwerre",
     "Emohua",
     "Okrika",
+    "Ajeromi-Ifelodun",
+    "Amuwo-Odofin",
+    "Apapa",
+    "Eti-Osa",
+    "Ibeju-Lekki",
+    "Kosofe",
+    "Lagos Island",
+    "Lagos Mainland",
+    "Mushin",
+    "Ojo",
+    "Oshodi/Isolo",
+    "Shomolu",
   ];
 
   const handleFilterChange = (key: keyof SearchFilters, value: any) => {
@@ -139,7 +151,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
     const timeout = setTimeout(() => {
       onSearch(filters);
-    }, 300);
+    }, 500);
 
     setSearchTimeout(timeout);
 

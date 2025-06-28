@@ -330,10 +330,24 @@
         }
       }));
 
-      view.goTo({ target: point, zoom: 20 });
-      checkIntersection(point);
+        view.goTo({ target: point, zoom: 20 });
+        
+        // Let ArcGIS handle the popup automatically for all layers
+        
+        view.hitTest(event).then(response => {
+          const results = response.results.filter(r => r.graphic.layer && r.graphic.layer.type === "feature");
+          if (results.length > 0) {
+            const features = results.map(r => r.graphic);
+            view.popup.open({
+              features: features,
+              location: point
+            });
+          } else {
+            view.popup.close();
+          }
+        });
+      });
     });
-  });
 </script>
 </body>
 </html>

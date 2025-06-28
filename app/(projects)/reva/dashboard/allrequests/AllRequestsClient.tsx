@@ -127,12 +127,14 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
 
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
-      <UserSearchFilters
-        onSearch={handleSearch}
-        onClear={handleClear}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-      />
+      <div className="flex justify-center mx-auto max-w-full">
+        <UserSearchFilters
+          onSearch={handleSearch}
+          onClear={handleClear}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      </div>
 
       {filteredData.length > 0 ? (
         <UserPropertyRequests data={filteredData} title="All Requests" />

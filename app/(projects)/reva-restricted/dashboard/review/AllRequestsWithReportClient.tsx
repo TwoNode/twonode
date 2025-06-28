@@ -135,12 +135,35 @@ const AllRequestsWithReportClient: React.FC<
 
     // Apply LGA filter
     if (filters.lga.length > 0) {
-      filtered = filtered.filter((request) =>
-        filters.lga.includes(request.lga)
-      );
-      filteredOneTime = filteredOneTime.filter((request) =>
-        filters.lga.includes(request.lga)
-      );
+      filtered = filtered.filter((request) => {
+        // Ensure request.lga is a string and convert to lowercase
+        const requestLga = String(request.lga || "").toLowerCase();
+
+        // Check if any selected LGA matches the request LGA
+        return filters.lga.some((filterLga) => {
+          const filterLgaLower = String(filterLga).toLowerCase();
+          // Check if either contains the other (partial match)
+          return (
+            requestLga.includes(filterLgaLower) ||
+            filterLgaLower.includes(requestLga)
+          );
+        });
+      });
+
+      filteredOneTime = filteredOneTime.filter((request) => {
+        // Ensure request.lga is a string and convert to lowercase
+        const requestLga = String(request.lga || "").toLowerCase();
+
+        // Check if any selected LGA matches the request LGA
+        return filters.lga.some((filterLga) => {
+          const filterLgaLower = String(filterLga).toLowerCase();
+          // Check if either contains the other (partial match)
+          return (
+            requestLga.includes(filterLgaLower) ||
+            filterLgaLower.includes(requestLga)
+          );
+        });
+      });
     }
 
     // Apply has report filter (all requests in this view should have reports)
