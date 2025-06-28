@@ -59,6 +59,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
     paymentStatus: [],
     requestType: [],
     lga: [],
+    parcelId: "",
     hasReport: null,
     isApproved: null,
   });
@@ -167,6 +168,26 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
       });
     }
 
+    // Apply parcel ID filter
+    if (filters.parcelId) {
+      const parcelIdLower = filters.parcelId.toLowerCase();
+
+      filtered = filtered.filter((request) => {
+        const requestParcelId = String(request?.parcelId || "").toLowerCase();
+        return (
+          parcelIdLower.includes(requestParcelId) ||
+          requestParcelId.includes(parcelIdLower)
+        );
+      });
+      filteredOneTime = filteredOneTime.filter((request) => {
+        const requestParcelId = String(request?.parcelId || "").toLowerCase();
+        return (
+          parcelIdLower.includes(requestParcelId) ||
+          requestParcelId.includes(parcelIdLower)
+        );
+      });
+    }
+
     // Apply has report filter
     if (filters.hasReport !== null) {
       filtered = filtered.filter((request) => {
@@ -205,6 +226,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
       paymentStatus: [],
       requestType: [],
       lga: [],
+      parcelId: "",
       hasReport: null,
       isApproved: null,
     });

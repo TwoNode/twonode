@@ -26,6 +26,7 @@ export interface SearchFilters {
   paymentStatus: string[];
   requestType: string[];
   lga: string[];
+  parcelId: string;
   hasReport: boolean | null;
   isApproved: boolean | null;
 }
@@ -42,6 +43,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     paymentStatus: [],
     requestType: [],
     lga: [],
+    parcelId: "",
     hasReport: null,
     isApproved: null,
   });
@@ -137,6 +139,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       paymentStatus: [],
       requestType: [],
       lga: [],
+      parcelId: "",
       hasReport: null,
       isApproved: null,
     });
@@ -169,6 +172,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       filters.paymentStatus.length > 0 ||
       filters.requestType.length > 0 ||
       filters.lga.length > 0 ||
+      filters.parcelId ||
       filters.hasReport !== null ||
       filters.isApproved !== null
     );
@@ -181,6 +185,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       filters.paymentStatus.length +
       filters.requestType.length +
       filters.lga.length +
+      (filters.parcelId ? 1 : 0) +
       (filters.hasReport !== null ? 1 : 0) +
       (filters.isApproved !== null ? 1 : 0)
     );
@@ -197,6 +202,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               value={filters.searchTerm}
               onChange={(e) => handleFilterChange("searchTerm", e.target.value)}
               className="pl-10"
+            />
+          </div>
+          <div className="w-48">
+            <Input
+              placeholder="Filter by Parcel ID..."
+              value={filters.parcelId}
+              onChange={(e) => handleFilterChange("parcelId", e.target.value)}
             />
           </div>
           <Button

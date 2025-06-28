@@ -58,6 +58,7 @@ const AllRequestsWithReportClient: React.FC<
     paymentStatus: [],
     requestType: [],
     lga: [],
+    parcelId: "",
     hasReport: null,
     isApproved: null,
   });
@@ -137,7 +138,7 @@ const AllRequestsWithReportClient: React.FC<
     if (filters.lga.length > 0) {
       filtered = filtered.filter((request) => {
         // Ensure request.lga is a string and convert to lowercase
-        const requestLga = String(request.lga || "").toLowerCase();
+        const requestLga = String(request?.lga || "").toLowerCase();
 
         // Check if any selected LGA matches the request LGA
         return filters.lga.some((filterLga) => {
@@ -152,7 +153,7 @@ const AllRequestsWithReportClient: React.FC<
 
       filteredOneTime = filteredOneTime.filter((request) => {
         // Ensure request.lga is a string and convert to lowercase
-        const requestLga = String(request.lga || "").toLowerCase();
+        const requestLga = String(request?.lga || "").toLowerCase();
 
         // Check if any selected LGA matches the request LGA
         return filters.lga.some((filterLga) => {
@@ -165,6 +166,27 @@ const AllRequestsWithReportClient: React.FC<
         });
       });
     }
+
+    // Apply parcel ID filter
+    if (filters.parcelId) {
+      const parcelIdLower = filters.parcelId.toLowerCase();
+
+      filtered = filtered.filter((request) => {
+        const requestParcelId = String(request?.parcelId || "").toLowerCase();
+        return (
+          parcelIdLower.includes(requestParcelId) ||
+          requestParcelId.includes(parcelIdLower)
+        );
+      });
+      filteredOneTime = filteredOneTime.filter((request) => {
+        const requestParcelId = String(request?.parcelId || "").toLowerCase();
+        return (
+          parcelIdLower.includes(requestParcelId) ||
+          requestParcelId.includes(parcelIdLower)
+        );
+      });
+    }
+
 
     // Apply has report filter (all requests in this view should have reports)
     if (filters.hasReport !== null) {
@@ -212,6 +234,7 @@ const AllRequestsWithReportClient: React.FC<
       paymentStatus: [],
       requestType: [],
       lga: [],
+      parcelId: "",
       hasReport: null,
       isApproved: null,
     });
