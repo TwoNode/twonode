@@ -56,6 +56,7 @@ const RevaDueDiligenceForm: React.FC = () => {
   const addrRef = useRef<HTMLInputElement>(null);
   const useMyLocationRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
+  const siteImagesRef = useRef<HTMLInputElement>(null);
 
   // Adding missing refs for map, marker, lgaBoundary, parcelBoundary, and watchId
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -90,6 +91,12 @@ const RevaDueDiligenceForm: React.FC = () => {
   const [openPrivacyModal, setOpenPrivacyModal] = useState(false);
   const [hasAcceptedPrivacyTerms, setHasAcceptedPrivacyTerms] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [selectedSiteImages, setSelectedSiteImages] = useState<FileList | null>(
+    null
+  );
+  const [siteImageNames, setSiteImageNames] = useState<string[]>([]);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [isLocationFromGPS, setIsLocationFromGPS] = useState(false);
 
   useEffect(() => {
     setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
@@ -108,6 +115,18 @@ const RevaDueDiligenceForm: React.FC = () => {
     setLga("Unknown");
     setParcelId("-");
     setTotalCost(0);
+    setSelectedFiles(null);
+    setFileNames([]);
+    setSelectedSiteImages(null);
+    setSiteImageNames([]);
+    setLocationAccuracy(null);
+    setIsLocationFromGPS(false);
+    if (filesRef.current) {
+      filesRef.current.value = "";
+    }
+    if (siteImagesRef.current) {
+      siteImagesRef.current.value = "";
+    }
     enableUseMyLocationButton();
     if (markerRef.current) {
       markerRef.current.setMap(null);
@@ -308,6 +327,9 @@ const RevaDueDiligenceForm: React.FC = () => {
       });
     }
     disableUseMyLocationButton();
+    // Reset GPS location flags when manually clicking on map
+    setIsLocationFromGPS(false);
+    setLocationAccuracy(null);
   };
 
   const disableUseMyLocationButton = () => {
@@ -342,7 +364,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       accuracyMax = 5;
     }
 
-    notifyWarning(`${platform} - ${browser.getOSName()}`);
+    // notifyWarning(`${platform} - ${browser.getOSName()}`);
 
     setLocationButtonText("Locating...");
     locationBtn?.setAttribute("disabled", "true");
@@ -350,6 +372,8 @@ const RevaDueDiligenceForm: React.FC = () => {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         const accuracy = position.coords.accuracy;
+        setLocationAccuracy(accuracy);
+        setIsLocationFromGPS(true);
 
         if (accuracy <= accuracyMax) {
           navigator.geolocation.clearWatch(watchIdRef.current);
@@ -382,6 +406,10 @@ const RevaDueDiligenceForm: React.FC = () => {
         if (error.code === error.POSITION_UNAVAILABLE) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
+              const accuracy = position.coords.accuracy;
+              setLocationAccuracy(accuracy);
+              setIsLocationFromGPS(true);
+
               const latlng = new google.maps.LatLng(
                 position.coords.latitude,
                 position.coords.longitude
@@ -455,6 +483,8 @@ const RevaDueDiligenceForm: React.FC = () => {
       disableUseMyLocationButton();
       setLocationButtonText("Location Set ✅");
       setShowConfirmFallback(false);
+      setLocationAccuracy(accuracy);
+      setIsLocationFromGPS(true);
 
       notifyWarning(`Location Set with ${accuracy} accuracy`);
     } else {
@@ -474,6 +504,25 @@ const RevaDueDiligenceForm: React.FC = () => {
       setFileNames(fileNames);
     } else {
       notifyError("No files selected");
+    }
+  };
+
+  const handleSiteImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+      if (imageFiles.length !== files.length) {
+        notifyError("Please select only image files for site images");
+        e.target.value = "";
+        return;
+      }
+
+      setSelectedSiteImages(e.target.files); // Store site images in state
+      const siteImageNames = imageFiles.map((file) => file.name);
+      setSiteImageNames(siteImageNames);
+    } else {
+      notifyError("No site images selected");
     }
   };
 
@@ -510,6 +559,32 @@ const RevaDueDiligenceForm: React.FC = () => {
     //   setError("At least one supporting document is required");
     //   return false;
     // }
+
+    // Check location accuracy if using GPS
+    if (isLocationFromGPS && locationAccuracy !== null) {
+      const browser = Bowser.getParser(window.navigator.userAgent);
+      const platform = browser.getPlatformType();
+      let maxAccuracy = 7;
+
+      if (platform === "mobile" && browser.getOSName() === "iOS") {
+        maxAccuracy = 10;
+      } else if (platform === "mobile" && browser.getOSName() === "Android") {
+        maxAccuracy = 5;
+      }
+
+      if (locationAccuracy > maxAccuracy) {
+        notifyError(
+          `Location accuracy (${locationAccuracy}m) is too low. Please use a more accurate location or enter the address manually.`
+        );
+        return false;
+      }
+    }
+
+    // Make site images compulsory
+    if (siteImageNames.length === 0) {
+      notifyError("At least one site image is required");
+      return false;
+    }
 
     return true;
   };
@@ -567,6 +642,13 @@ const RevaDueDiligenceForm: React.FC = () => {
     if (files) {
       for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
+      }
+    }
+
+    const siteImages = selectedSiteImages;
+    if (siteImages) {
+      for (let i = 0; i < siteImages.length; i++) {
+        formData.append("site_images", siteImages[i]);
       }
     }
 
@@ -867,6 +949,48 @@ const RevaDueDiligenceForm: React.FC = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Site Images <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="file"
+                multiple
+                required
+                onChange={handleSiteImagesChange}
+                ref={siteImagesRef}
+                accept="image/*"
+                // accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                className="mb-2"
+              />
+
+              {siteImageNames.length > 0 && (
+                <div className="p-1 flex flex-col max-w-full border border-blue-100 overflow-x-hidden">
+                  {siteImageNames.map((name, index) => (
+                    <p
+                      key={index}
+                      className="text-sm text-blue-600 text-ellipsis"
+                    >
+                      {name}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {isLocationFromGPS && locationAccuracy !== null && (
+              <div className="p-3 rounded-md border bg-blue-50 border-blue-200">
+                <p className="text-sm text-blue-700">
+                  <strong>Location Accuracy:</strong> {locationAccuracy}m
+                  {locationAccuracy > 10 && (
+                    <span className="text-red-600 ml-2">
+                      ⚠️ Accuracy may be too low for submission
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Additional Comments
               </label>
               <Textarea
@@ -948,6 +1072,22 @@ const RevaDueDiligenceForm: React.FC = () => {
               <div className="text-gray-800 font-semibold overflow-hidden">
                 <div className="flex flex-col">
                   {fileNames.map((name, index) => (
+                    <span
+                      key={index}
+                      className="text-gray-800 font-semibold text-ellipsis border-b-2 border-gray-200"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center border-b pb-2 gap-2">
+              <span className="text-gray-600 font-medium">Site Images:</span>
+              <div className="text-gray-800 font-semibold overflow-hidden">
+                <div className="flex flex-col">
+                  {siteImageNames.map((name, index) => (
                     <span
                       key={index}
                       className="text-gray-800 font-semibold text-ellipsis border-b-2 border-gray-200"
@@ -1101,7 +1241,7 @@ const PrivacyPolicyModal = ({
                   records.
                 </li>
                 <li>Process payments and generate receipts.</li>
-                <li>Improve our platform’s accuracy and efficiency.</li>
+                <li>Improve our platform's accuracy and efficiency.</li>
                 <li>Comply with legal obligations and prevent fraud.</li>
               </ul>
               <h3 className="text-xl font-bold mb-2">

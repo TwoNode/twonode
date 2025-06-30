@@ -1,0 +1,420 @@
+<!-- ArcGIS JS API -->
+<link
+  rel="stylesheet"
+  href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
+/>
+<script src="https://js.arcgis.com/4.29/"></script>
+
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzhhoV6YJZc640ODPgDoz9dKTSXnYr0Gw&libraries=places"></script>
+
+<div class="search-panel">
+  <h3>Spatial Record Search</h3>
+
+  <label for="searchField">Select Field</label>
+  <select id="searchField"></select>
+
+  <input type="text" id="fieldSearch" placeholder="Enter search text..." />
+  <select id="searchResults"></select>
+
+  <hr />
+
+  <label for="utmCoord">Locate by UTM</label>
+  <input type="text" id="utmCoord" placeholder="e.g., 542520.253,724085.335" />
+  <button onclick="window.goToUTM()">Locate Coordinate</button>
+
+  <hr />
+
+  <label for="addressInput">Search Address</label>
+  <input id="addressInput" type="text" placeholder="Enter address..." />
+
+  <style>
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      min-height: 80vh;
+      margin: 0;
+      padding: 0;
+      border: 8px solid blue;
+    }
+
+    .search-panel {
+      width: 320px;
+      background: #fff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-panel h3 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .search-panel input,
+    .search-panel select,
+    .search-panel button {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+
+    .search-panel button {
+      background-color: #0078d4;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+
+    .search-panel button:hover {
+      background-color: #005fa3;
+    }
+
+    .search-panel hr {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 16px 0;
+    }
+  </style>
+</div>
+
+<div id="viewDiv"></div>
+
+<script>
+  // Entire script unchanged — you can paste in your original logic here
+  window && window?.require && typeof window?.require === 'function' && window?.require([
+    "esri/Map",
+    "esri/views/MapView",
+    "esri/WebMap",
+    "esri/layers/FeatureLayer",
+    "esri/Graphic",
+    "esri/layers/GraphicsLayer",
+    "esri/rest/support/Query",
+    "esri/widgets/Legend",
+    "esri/widgets/LayerList",
+    "esri/widgets/Expand",
+    "esri/geometry/Point",
+    "esri/geometry/projection",
+    "esri/geometry/SpatialReference",
+  ], function (
+    Map,
+    MapView,
+    WebMap,
+    FeatureLayer,
+    Graphic,
+    GraphicsLayer,
+    Query,
+    Legend,
+    LayerList,
+    Expand,
+    Point,
+    projection,
+    SpatialReference
+  ) {
+    const webmap = new WebMap({
+      portalItem: { id: "9f45cec473534d49a1d56633b8516609" },
+    });
+
+    const view = new MapView({
+      container: "viewDiv",
+      map: webmap,
+    });
+
+    const graphicsLayer = new GraphicsLayer({
+      title: "Search point",
+      listMode: "show",
+    });
+    view.map.add(graphicsLayer);
+
+    let layer;
+    webmap.when(() => {
+      view.map.reorder(graphicsLayer, view.map.layers.length - 1);
+
+      layer = webmap.layers.find((l) => l.title === "SpatialRecords");
+      if (!layer) {
+        console.error("SpatialRecords layer not found in the webmap.");
+        return;
+      }
+
+      layer.load().then(() => {
+        const searchFieldSelect = document.getElementById("searchField");
+        const fields = layer.fields.filter((f) => f.type === "string");
+        fields.forEach((field) => {
+          const opt = document.createElement("option");
+          opt.value = field.name;
+          opt.textContent = field.alias || field.name;
+          searchFieldSelect.appendChild(opt);
+        });
+      });
+    });
+
+    const legendExpand = new Expand({
+      view,
+      content: new Legend({ view }),
+      expanded: false,
+    });
+
+    const layerListExpand = new Expand({
+      view,
+      content: new LayerList({ view }),
+      expanded: false,
+    });
+
+    view.ui.add(legendExpand, "bottom-left");
+    view.ui.add(layerListExpand, "top-right");
+
+    const searchFieldSelect = document.getElementById("searchField");
+    const fieldSearch = document.getElementById("fieldSearch");
+    const resultSelect = document.getElementById("searchResults");
+
+    fieldSearch.addEventListener("input", async () => {
+      if (!layer) return;
+
+      const field = searchFieldSelect.value;
+      const text = fieldSearch.value.trim();
+      if (text.length < 2 || !field) return;
+
+      const query = layer.createQuery();
+      query.where = `${field} LIKE '%${text}%'`;
+      query.outFields = [field];
+      query.returnGeometry = false;
+
+      const results = await layer.queryFeatures(query);
+      resultSelect.innerHTML = "";
+      results.features.forEach((f) => {
+        const opt = document.createElement("option");
+        opt.value = f.attributes[field];
+        opt.textContent = f.attributes[field];
+        resultSelect.appendChild(opt);
+      });
+    });
+
+    resultSelect.addEventListener("change", async () => {
+      if (!layer) return;
+
+      try {
+        const field = searchFieldSelect.value;
+        if (!field) return;
+
+        const value = resultSelect.value;
+        if (!value) return;
+
+        // Sanitize the value to prevent SQL injection
+        const sanitizedValue = value.replace(/'/g, "''");
+
+        const query = layer.createQuery();
+        query.where = `${field} = '${sanitizedValue}'`;
+        query.returnGeometry = true;
+        query.outFields = ["*"];
+
+        const results = await layer.queryFeatures(query);
+        if (results && results.features && results.features.length) {
+          const feat = results.features[0];
+          if (!feat.geometry) return;
+
+          graphicsLayer.removeAll();
+          graphicsLayer.add(
+            new Graphic({
+              geometry: feat.geometry,
+              symbol: {
+                type: "simple-fill",
+                color: [0, 0, 255, 0.2],
+                outline: { color: "blue", width: 2 },
+              },
+            })
+          );
+
+          await view.goTo({ target: feat.geometry, zoom: 20 });
+          
+          if (feat.geometry.centroid) {
+            view.popup.open({
+              features: [feat],
+              location: feat.geometry.centroid,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error in resultSelect change handler:", error);
+      }
+    });
+
+    window.goToUTM = async () => {
+      try {
+        const coordInput = document.getElementById("utmCoord");
+        if (!coordInput) return;
+
+        const coordValue = coordInput.value.trim();
+        const parts = coordValue.split(",");
+        if (parts.length !== 2) {
+          alert("Enter coordinate in X,Y format (e.g., 542520.253,724085.335)");
+          return;
+        }
+
+        const x = parseFloat(parts[0]);
+        const y = parseFloat(parts[1]);
+        if (isNaN(x) || isNaN(y)) {
+          alert("Coordinates must be valid numbers.");
+          return;
+        }
+
+        const utmPoint = new Point({
+          x: x,
+          y: y,
+          spatialReference: new SpatialReference({ wkid: 26331 }),
+        });
+
+        await projection.load();
+        const projected = projection.project(utmPoint, view.spatialReference);
+        if (!projected) return;
+
+        graphicsLayer.removeAll();
+        graphicsLayer.add(
+          new Graphic({
+            geometry: projected,
+            symbol: {
+              type: "simple-marker",
+              color: "red",
+              size: "10px",
+            },
+          })
+        );
+
+        await view.goTo({ target: projected, zoom: 20 });
+        checkIntersection(projected);
+      } catch (error) {
+        console.error("Error in goToUTM:", error);
+        alert("Error processing UTM coordinates");
+      }
+    };
+
+    const input = document.getElementById("addressInput");
+    if (!input) {
+      console.error("Address input element not found");
+    } else {
+      const autocomplete = new google.maps.places.Autocomplete(input);
+      autocomplete.addListener("place_changed", () => {
+        try {
+          const place = autocomplete.getPlace();
+          if (!place.geometry) return;
+
+          const location = place.geometry.location;
+          const point = new Point({
+            longitude: location.lng(),
+            latitude: location.lat(),
+          });
+
+          graphicsLayer.removeAll();
+          graphicsLayer.add(
+            new Graphic({
+              geometry: point,
+              symbol: {
+                type: "simple-marker",
+                color: "green",
+                size: "10px",
+              },
+            })
+          );
+
+          view.goTo({ target: point, zoom: 20 });
+          checkIntersection(point);
+        } catch (error) {
+          console.error("Error in place_changed handler:", error);
+        }
+      });
+    }
+
+    function checkIntersection(point) {
+      if (!layer || !point) return;
+
+      try {
+        const spatialQuery = layer.createQuery();
+        spatialQuery.geometry = point;
+        spatialQuery.spatialRelationship = "intersects";
+        spatialQuery.outFields = ["*"];
+        spatialQuery.returnGeometry = true;
+
+        layer.queryFeatures(spatialQuery).then((results) => {
+          if (results && results.features && results.features.length > 0) {
+            view.popup.open({
+              features: results.features,
+              location: point,
+            });
+          } else {
+            view.popup.close();
+          }
+        }).catch(error => {
+          console.error("Error querying features:", error);
+        });
+      } catch (error) {
+        console.error("Error in checkIntersection:", error);
+      }
+    }
+
+    view.on("click", async function (event) {
+      try {
+        const point = event.mapPoint;
+        if (!point) return;
+
+        await projection.load();
+        const utm = projection.project(
+          point,
+          new SpatialReference({ wkid: 26331 })
+        );
+
+        const utmCoordInput = document.getElementById("utmCoord");
+        if (utmCoordInput && utm) {
+          utmCoordInput.value = `${utm.x.toFixed(3)},${utm.y.toFixed(3)}`;
+        }
+
+        const lat = point.latitude;
+        const lng = point.longitude;
+        const geocoder = new google.maps.Geocoder();
+        
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          const addressInput = document.getElementById("addressInput");
+          if (status === "OK" && results && results[0] && addressInput) {
+            addressInput.value = results[0].formatted_address;
+          }
+        });
+
+        graphicsLayer.removeAll();
+        graphicsLayer.add(
+          new Graphic({
+            geometry: point,
+            symbol: {
+              type: "simple-marker",
+              color: "orange",
+              size: "10px",
+            },
+          })
+        );
+
+        await view.goTo({ target: point, zoom: 20 });
+
+        const response = await view.hitTest(event);
+        const results = response.results.filter(
+          (r) => r.graphic.layer && r.graphic.layer.type === "feature"
+        );
+        
+        if (results.length > 0) {
+          const features = results.map((r) => r.graphic);
+          view.popup.open({
+            features: features,
+            location: point,
+          });
+        } else {
+          view.popup.close();
+        }
+      } catch (error) {
+        console.error("Error in click handler:", error);
+      }
+    });
+  });
+</script>

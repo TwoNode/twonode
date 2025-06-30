@@ -191,6 +191,17 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       uploadedFilesUrls = await uploadToS3FromServer(files);
     }
 
+    // Handle site images
+    const siteImages = formData
+      .getAll("site_images")
+      .filter((file) => file instanceof File) as File[];
+
+    let uploadedSiteImagesUrls: string[] = [];
+
+    if (siteImages.length > 0) {
+      uploadedSiteImagesUrls = await uploadToS3FromServer(siteImages);
+    }
+
     // throw new Error("error");
 
     // Upload files to AWS S3
@@ -216,6 +227,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       comments,
       parcelId,
       documentsUrls: uploadedFilesUrls,
+      site_images: uploadedSiteImagesUrls,
     };
 
     const result = await saveToOneTimeProperty(data);
@@ -305,6 +317,17 @@ export const authSaveFormDataAndInitiatePaystack = async (
       uploadedFilesUrls = await uploadToS3FromServer(files);
     }
 
+    // Handle site images
+    const siteImages = formData
+      .getAll("site_images")
+      .filter((file) => file instanceof File) as File[];
+
+    let uploadedSiteImagesUrls: string[] = [];
+
+    if (siteImages.length > 0) {
+      uploadedSiteImagesUrls = await uploadToS3FromServer(siteImages);
+    }
+
     // throw new Error("error");
 
     // Upload files to AWS S3
@@ -331,6 +354,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
       comments,
       parcelId,
       documentsUrls: uploadedFilesUrls,
+      site_images: uploadedSiteImagesUrls,
     };
 
     const result = await saveToPropertyTable(data);

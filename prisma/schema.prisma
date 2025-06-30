@@ -39,6 +39,7 @@ model Property {
 
   totalCost              Float
   documentsUrls          String[] // Array of URLs
+  site_images            String[] // Array of site image URLs
   comments               String?  // Optional
   deleted                Boolean   @default(false) // Optional field to indicate if the property is deleted
 
@@ -71,6 +72,7 @@ model OneTimeUserProperty {
 
   totalCost              Float
   documentsUrls          String[] // Array of URLs
+  site_images            String[] // Array of site image URLs
   comments               String?  // Optional
 
   createdAt              DateTime @default(now())

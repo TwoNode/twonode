@@ -150,50 +150,51 @@ const SingleRequestPage = ({
       console.error("No file link available to download");
     }
   };
-
   return (
     <>
-      <div className="space-y-8 p-6">
+      <div className="space-y-8 p-8 max-w-7xl mx-auto bg-gray-50">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-white p-6 rounded-xl shadow-sm">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
               {property?.title || "Untitled Request"}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              REF: {property?.reference}
+            <p className="text-sm text-gray-500 mt-1">
+              Reference ID:{" "}
+              <span className="font-medium">{property?.reference}</span>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {property?.status && <Badge>{property.status}</Badge>}
-            {property?.paymentStatus && (
-              <Badge variant="secondary">{property.paymentStatus}</Badge>
-            )}
-            {isReportReady() && (
-              <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
-                {"Approved"}
+          <div className="flex flex-wrap items-center gap-3">
+            {property?.status && (
+              <Badge className="px-4 py-1 text-sm font-medium">
+                {property.status}
               </Badge>
             )}
-
-            {/* <PDFDownloadLink
-              document={<ReceiptPDF property={property} />}
-              fileName={`REVA_Receipt_${property?.reference}.pdf`}
-              className="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 mr-2"
-            >
-              {({ loading }) =>
-                loading ? "Generating Receipt..." : "Download PDF Receipt"
-              }
-            </PDFDownloadLink> */}
+            {property?.paymentStatus && (
+              <Badge
+                variant="secondary"
+                className="px-4 py-1 text-sm font-medium"
+              >
+                {property.paymentStatus}
+              </Badge>
+            )}
+            {isReportReady() && (
+              <Badge className="px-6 py-1.5 text-sm font-medium bg-emerald-500 text-white">
+                Approved
+              </Badge>
+            )}
           </div>
         </div>
 
         {/* Property Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Property Information</CardTitle>
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <CardTitle className="text-xl text-gray-800">
+              Property Information
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
             <Info label="Address" value={property?.address} />
             <Info label="LGA" value={property?.lga} />
             <Info label="Parcel ID" value={property?.parcelId || "-"} />
@@ -224,68 +225,33 @@ const SingleRequestPage = ({
           </CardContent>
         </Card>
 
-        {/* Financial */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Info
-              label="Total Cost"
-              value={`₦${property?.totalCost?.toLocaleString()}`}
-              bold
-            />
-            <Info
-              label="Payment Status"
-              value={property?.paymentStatus || "-"}
-              color={
-                property?.paymentStatus === "Paid"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }
-            />
-            {property?.paymentLink && (
-              <div className="col-span-2">
-                <Button variant="link" size="sm" asChild>
-                  <Link
-                    href={property.paymentLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View Payment
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Supporting Documents */}
-        {/* <Card>
-          <CardHeader>
-            <CardTitle>Supporting Documents</CardTitle>
+        {/* Site Images */}
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
+            <CardTitle className="text-xl text-gray-800">Site Images</CardTitle>
           </CardHeader>
           <CardContent>
-            {Array.isArray(property?.documentsUrls) &&
-            property.documentsUrls.length > 0 ? (
-              <ul className="list-disc pl-6 space-y-1">
-                {property.documentsUrls.map((url, idx) => (
-                  <li key={idx}>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      Document {idx + 1}
-                    </a>
-                  </li>
+            {Array.isArray(property?.site_images) &&
+            property.site_images.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {property.site_images.map((url: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg overflow-hidden border bg-white shadow hover:shadow-lg transition-shadow"
+                  >
+                    <img
+                      src={url}
+                      alt={`Site Image ${idx + 1}`}
+                      className="w-full h-48 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="flex flex-col items-center justify-center p-8 text-gray-400">
                 <svg
-                  className="mx-auto h-8 w-8 text-gray-400"
+                  className="w-12 h-12 mb-2"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -297,47 +263,96 @@ const SingleRequestPage = ({
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  No documents uploaded
-                </p>
-                <Button className="mt-4">Upload Document</Button>
+                <span className="text-sm">No site images uploaded</span>
               </div>
             )}
           </CardContent>
-        </Card> */}
+        </Card>
+
+        {/* Financial */}
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+            <CardTitle className="text-xl text-gray-800">
+              Financial Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            <Info
+              label="Total Cost"
+              value={`₦${property?.totalCost?.toLocaleString()}`}
+              bold
+            />
+            <Info
+              label="Payment Status"
+              value={property?.paymentStatus || "-"}
+              color={
+                property?.paymentStatus === "Paid"
+                  ? "text-emerald-600"
+                  : "text-red-600"
+              }
+            />
+            {property?.paymentLink && (
+              <div className="col-span-2">
+                <Button
+                  variant="link"
+                  size="lg"
+                  asChild
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  <Link
+                    href={property.paymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Payment Details →
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Comments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Comments</CardTitle>
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+            <CardTitle className="text-xl text-gray-800">
+              Comments & Notes
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <Textarea
               value={property?.comments || "No remarks"}
               readOnly
               rows={4}
+              className="resize-none bg-gray-50 border-gray-200"
             />
           </CardContent>
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center border-t pt-6 flex-wrap max-sm:justify-center gap-4">
+        <div className="flex justify-between items-center border-t border-gray-200 pt-8 flex-wrap max-sm:justify-center gap-4">
           <Link href="/reva/dashboard">
-            <Button variant="outline" className="max-sm:w-full rounded-lg">
-              Back to All Requests
+            <Button
+              variant="outline"
+              className="max-sm:w-full rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              ← Back to All Requests
             </Button>
           </Link>
 
           <div className="flex gap-4">
             <Button
               variant="destructive"
-              className="max-sm:w-full rounded-lg"
+              className="max-sm:w-full rounded-lg transition-all hover:bg-red-700"
               onClick={toggleDeleteModal}
               disabled
             >
               Delete Request
             </Button>
-            <Button disabled className="max-sm:w-full rounded-lg">
+            <Button
+              disabled
+              className="max-sm:w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 transition-colors"
+            >
               Download Receipt
             </Button>
           </div>
@@ -345,19 +360,27 @@ const SingleRequestPage = ({
       </div>
 
       <AlertDialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Deleting this Request</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl text-red-600">
+              Deleting this Request
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600">
               Are you sure you want to delete this due diligence request? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={toggleDeleteModal}>
+          <AlertDialogFooter className="gap-3">
+            <AlertDialogCancel
+              onClick={toggleDeleteModal}
+              className="rounded-lg hover:bg-gray-100"
+            >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={toggleDeleteModal}>
+            <AlertDialogAction
+              onClick={toggleDeleteModal}
+              className="rounded-lg bg-red-600 hover:bg-red-700"
+            >
               Delete Request
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -378,11 +401,11 @@ const Info = ({
   bold?: boolean;
   color?: string;
 }) => (
-  <div>
-    <p className="text-xs text-muted-foreground">{label}</p>
+  <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
     <p
-      className={`text-sm ${bold ? "font-semibold" : ""} ${
-        color || "text-gray-800"
+      className={`text-base ${bold ? "font-semibold" : ""} ${
+        color || "text-gray-900"
       }`}
     >
       {value}

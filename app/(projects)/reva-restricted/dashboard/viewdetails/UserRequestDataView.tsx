@@ -1430,6 +1430,50 @@ const UserRequestDataView = ({ property }: { property: any }) => {
           </CardContent>
         </Card>
 
+        {/* Site Images */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Site Images</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Array.isArray(property?.site_images) &&
+            property.site_images.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {property.site_images.map((url: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg overflow-hidden border bg-white shadow hover:shadow-lg transition-shadow"
+                  >
+                    <img
+                      src={url}
+                      alt={`Site Image ${idx + 1}`}
+                      className="w-full h-48 object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+                <svg
+                  className="w-12 h-12 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span className="text-sm">No site images uploaded</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Financial */}
         <Card>
           <CardHeader>
