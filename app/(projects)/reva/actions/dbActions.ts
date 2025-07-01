@@ -70,26 +70,8 @@ export const saveToOneTimeProperty = async (
     });
 
     console.log("New property saved:", newProperty);
-    // Trigger notification for new property request
+    // Trigger notification for new property request (includes email to all admins)
     await notifyNewPropertyRequest(newProperty as any, "oneTimeProperty");
-
-    // Send email to admin
-    if (process.env.ADMIN_EMAIL) {
-      await sendEmailToAdmin({
-        to: process.env.ADMIN_EMAIL,
-        subject: "New OneTime Property Request",
-        text: `New due diligence request received for ${newProperty.address}`,
-        html: `
-          <h3>New OneTime Property Request</h3>
-          <p>A new due diligence request has been received:</p>
-          <ul>
-            <li>Property: ${newProperty.address}</li>
-            <li>Reference: ${newProperty.reference}</li>
-            <li>Requester: ${newProperty.requester || newProperty.email}</li>
-          </ul>
-        `,
-      });
-    }
 
     return {
       success: true,
@@ -898,26 +880,67 @@ export const notifyNewPropertyRequest = async (
       });
     }
 
-    // Send email to admin if configured
-    if (process.env.ADMIN_EMAIL) {
-      await sendEmailToAdmin({
-        to: process.env.ADMIN_EMAIL,
-        subject: `New ${
-          propertyData?.requester ? "OneTime " : ""
-        }Property Request`,
-        text: `New due diligence request received for ${propertyData.address}`,
-        html: `
-          <h3>New ${
-            propertyData?.requester ? "OneTime " : ""
-          }Property Request</h3>
-          <p>A new due diligence request has been received:</p>
-          <ul>
-            <li>Property: ${propertyData.address}</li>
-            <li>Reference: ${propertyData.reference}</li>
-            <li>Requester: ${propertyData.requester || propertyData.email}</li>
-          </ul>
-        `,
+    // Send email to all admin users in the database
+    try {
+      const adminUsers = await prisma.revaUser.findMany({
+        where: {
+          role: {
+            in: ["ADMIN", "SUPERADMIN"],
+          },
+          is_active: true,
+        },
       });
+
+      const adminEmails = adminUsers.map((user) => user.email).filter(Boolean);
+
+      if (adminEmails.length > 0) {
+        await sendEmailToAdmin({
+          to: adminEmails.join(","),
+          subject: `New ${
+            propertyData?.requester ? "OneTime " : ""
+          } Property Request`,
+          text: `New due diligence request received for ${propertyData.address}`,
+          html: `
+            <h3>New ${
+              propertyData?.requester ? "OneTime " : ""
+            } Property Request</h3>
+            <p>A new due diligence request has been received:</p>
+            <ul>
+              <li>Property: ${propertyData.address}</li>
+              <li>Reference: ${propertyData.reference}</li>
+              <li>Requester: ${
+                propertyData.requester || propertyData.email
+              }</li>
+            </ul>
+            <p>Please review this request in the admin dashboard.</p>
+          `,
+        });
+      }
+    } catch (emailError) {
+      console.error("Error sending emails to admins:", emailError);
+      // Fallback to single admin email if bulk email fails
+      if (process.env.ADMIN_EMAIL) {
+        await sendEmailToAdmin({
+          to: process.env.ADMIN_EMAIL,
+          subject: `New ${
+            propertyData?.requester ? "OneTime " : ""
+          } Property Request`,
+          text: `New due diligence request received for ${propertyData.address}`,
+          html: `
+            <h3>New ${
+              propertyData?.requester ? "OneTime " : ""
+            } Property Request</h3>
+            <p>A new due diligence request has been received:</p>
+            <ul>
+              <li>Property: ${propertyData.address}</li>
+              <li>Reference: ${propertyData.reference}</li>
+              <li>Requester: ${
+                propertyData.requester || propertyData.email
+              }</li>
+            </ul>
+          `,
+        });
+      }
     }
 
     return { success: true };
