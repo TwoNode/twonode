@@ -444,6 +444,23 @@ export const checkPaymentSuccess = async (reference: string) => {
     // Trigger notification for payment received
     await notifyPaymentReceived(updatedTransaction);
 
+    // Send email to client after payment
+    if (updatedTransaction.email) {
+      try {
+        await sendEmailToAdmin({
+          to: updatedTransaction.email,
+          subject: "REVA: Payment Received for Your OneTime Request",
+          text: `Hello,\n\nYour payment for reference ${updatedTransaction.reference} has been received. Your request is now being processed.`,
+          html: `<p>Hello,</p><p>Your payment for reference <b>${updatedTransaction.reference}</b> has been received. Your request is now being processed.</p><p>Thank you for using REVA.</p>`,
+        });
+      } catch (err) {
+        console.error(
+          "Failed to send payment confirmation email to client:",
+          err
+        );
+      }
+    }
+
     return {
       success: true,
       message: "Payment recorded successfully",
@@ -524,6 +541,24 @@ export const authPaymentSuccessful = async (reference: string) => {
 
     // Trigger notification for payment received
     await notifyPaymentReceived(updatedTransaction, user.id);
+
+    // Send email to client after payment
+
+    if (user?.email) {
+      try {
+        await sendEmailToAdmin({
+          to: user.email,
+          subject: "REVA: Payment Received for Your Request",
+          text: `Hello,\n\nYour payment for reference ${updatedTransaction.reference} has been received. Your request is now being processed.`,
+          html: `<p>Hello,</p><p>Your payment for reference <b>${updatedTransaction.reference}</b> has been received. Your request is now being processed.</p><p>Thank you for using REVA.</p>`,
+        });
+      } catch (err) {
+        console.error(
+          "Failed to send payment confirmation email to client:",
+          err
+        );
+      }
+    }
 
     return {
       success: true,
