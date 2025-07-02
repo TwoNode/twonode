@@ -24,25 +24,24 @@ export function useRevaAdminAccess() {
   } = useKindeBrowserClient();
 
   useEffect(() => {
-    let isMounted = true; // Add mounted flag to prevent state updates after unmount
+    let isMounted = true;
     let timeoutId: NodeJS.Timeout | null = null;
 
     const checkAdminAccess = async () => {
       try {
-        if (!isMounted) return;
+        if (!isMounted || isAdmin !== null) return;
 
         // Check for isNewLogin parameter
         const urlParams = new URLSearchParams(window.location.search);
         const isNewLogin = urlParams.get("isNewLogin");
 
         if (isNewLogin === "true") {
-          // Remove isNewLogin parameter and redirect to clean URL
           const cleanUrl = window.location.pathname;
           router.replace(cleanUrl);
           return;
         }
 
-        // Wait for Kinde to finish loading before checking auth state
+        // Wait for Kinde to finish loading
         if (isKindeLoading) return;
 
         setIsLoading(true);
@@ -66,9 +65,7 @@ export function useRevaAdminAccess() {
             "❌ Failed to get user data, redirecting to login",
             response
           );
-          setIsAdmin(false);
-          router.push("/reva-restricted/login");
-          return;
+          throw new Error("Failed to fetch user data");
         }
 
         const userData: UserData = await response.json();
@@ -85,14 +82,13 @@ export function useRevaAdminAccess() {
           return;
         }
 
-        // Check if user has admin role
-        if (userData.role === "ADMIN" || userData.role === "SUPERADMIN") {
-          console.log("✅ User has admin role, allowing access");
-          setIsAdmin(true);
-        } else {
+        // Check admin role
+        const hasAdminRole =
+          userData.role === "ADMIN" || userData.role === "SUPERADMIN";
+        setIsAdmin(hasAdminRole);
+
+        if (!hasAdminRole) {
           console.log("❌ User does not have admin role, redirecting");
-          setIsAdmin(false);
-          console.log("🔄 Redirecting to user dashboard");
           router.push("/reva/dashboard");
         }
       } catch (error) {
@@ -109,20 +105,24 @@ export function useRevaAdminAccess() {
       }
     };
 
-    checkAdminAccess();
+    // Only run check if we haven't determined admin status yet
+    if (isAdmin === null) {
+      checkAdminAccess();
+    }
 
-    // Add a timeout fallback for loading state
+    // Fallback timeout
     timeoutId = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && isLoading) {
+        console.warn("⚠️ Admin check timed out after 10 seconds");
         setIsLoading(false);
       }
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [user, isAuthenticated, router, isKindeLoading]);
+  }, [user, isAuthenticated, router, isKindeLoading, isAdmin]); // Added isAdmin to deps
 
   return {
     isAdmin,
