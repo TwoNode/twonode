@@ -26,12 +26,14 @@ export function useRevaUserAccess() {
   } = useKindeBrowserClient();
 
   useEffect(() => {
+    let didHandleNewLogin = false;
+    let timeoutId: NodeJS.Timeout | null = null;
     // Check for isNewLogin parameter
     const urlParams = new URLSearchParams(window.location.search);
     const isNewLogin = urlParams.get("isNewLogin");
 
-    if (isNewLogin === "true") {
-      console.log("🔄 Fresh login detected, redirecting to clean URL");
+    if (isNewLogin === "true" && !didHandleNewLogin) {
+      didHandleNewLogin = true;
       // Remove isNewLogin parameter and redirect to clean URL
       const cleanUrl = window.location.pathname;
       router.replace(cleanUrl);
@@ -85,6 +87,15 @@ export function useRevaUserAccess() {
     };
 
     checkUserAccess();
+
+    // Add a timeout fallback for loading state
+    timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000); // 10 seconds
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user, isAuthenticated, router, isKindeLoading]);
 
   return {
