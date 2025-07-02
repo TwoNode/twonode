@@ -24,25 +24,27 @@ export function useRevaAdminAccess() {
   } = useKindeBrowserClient();
 
   useEffect(() => {
-    let didHandleNewLogin = false;
+    let isMounted = true; // Add mounted flag to prevent state updates after unmount
     let timeoutId: NodeJS.Timeout | null = null;
-    // Check for isNewLogin parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const isNewLogin = urlParams.get("isNewLogin");
-
-    if (isNewLogin === "true" && !didHandleNewLogin) {
-      didHandleNewLogin = true;
-      // Remove isNewLogin parameter and redirect to clean URL
-      const cleanUrl = window.location.pathname;
-      router.replace(cleanUrl);
-      return;
-    }
-
-    // Wait for Kinde to finish loading before checking auth state
-    if (isKindeLoading) return;
 
     const checkAdminAccess = async () => {
       try {
+        if (!isMounted) return;
+
+        // Check for isNewLogin parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewLogin = urlParams.get("isNewLogin");
+
+        if (isNewLogin === "true") {
+          // Remove isNewLogin parameter and redirect to clean URL
+          const cleanUrl = window.location.pathname;
+          router.replace(cleanUrl);
+          return;
+        }
+
+        // Wait for Kinde to finish loading before checking auth state
+        if (isKindeLoading) return;
+
         setIsLoading(true);
 
         console.log("🔍 Checking admin access...");
@@ -72,6 +74,7 @@ export function useRevaAdminAccess() {
         const userData: UserData = await response.json();
         console.log("👤 User data:", userData);
 
+        if (!isMounted) return;
         setUserData(userData);
 
         // Check platform
@@ -94,10 +97,15 @@ export function useRevaAdminAccess() {
         }
       } catch (error) {
         console.error("❌ Error checking admin access:", error);
-        setIsAdmin(false);
-        router.push("/reva-restricted/login");
+        if (isMounted) {
+          setIsAdmin(false);
+          router.push("/reva-restricted/login");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
+        }
       }
     };
 
@@ -105,10 +113,13 @@ export function useRevaAdminAccess() {
 
     // Add a timeout fallback for loading state
     timeoutId = setTimeout(() => {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }, 10000); // 10 seconds
 
     return () => {
+      isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [user, isAuthenticated, router, isKindeLoading]);

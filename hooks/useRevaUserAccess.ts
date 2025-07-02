@@ -26,24 +26,27 @@ export function useRevaUserAccess() {
   } = useKindeBrowserClient();
 
   useEffect(() => {
-    let didHandleNewLogin = false;
+    let isMounted = true; // Track if component is mounted
     let timeoutId: NodeJS.Timeout | null = null;
-    // Check for isNewLogin parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const isNewLogin = urlParams.get("isNewLogin");
-
-    if (isNewLogin === "true" && !didHandleNewLogin) {
-      didHandleNewLogin = true;
-      // Remove isNewLogin parameter and redirect to clean URL
-      const cleanUrl = window.location.pathname;
-      router.replace(cleanUrl);
-      return;
-    }
-
-    if (isKindeLoading) return;
 
     const checkUserAccess = async () => {
       try {
+        if (!isMounted) return;
+
+        // Check for isNewLogin parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const isNewLogin = urlParams.get("isNewLogin");
+
+        if (isNewLogin === "true") {
+          // Remove isNewLogin parameter and redirect to clean URL
+          const cleanUrl = window.location.pathname;
+          router.replace(cleanUrl);
+          return;
+        }
+
+        // Wait for Kinde to finish loading
+        if (isKindeLoading) return;
+
         setIsLoading(true);
 
         if (!isAuthenticated || !user) {
@@ -55,12 +58,12 @@ export function useRevaUserAccess() {
         // Get user data from API endpoint
         const response = await fetch("/api/auth/user-data");
         if (!response.ok) {
-          setIsUser(false);
-          router.push("/reva/login");
-          return;
+          throw new Error("Failed to fetch user data");
         }
 
         const userData: UserData = await response.json();
+
+        if (!isMounted) return;
         setUserData(userData);
 
         // Check platform
@@ -72,17 +75,22 @@ export function useRevaUserAccess() {
 
         // Check if user has access to user panel
         const canAccess = canAccessRevaUserPanel(userData.role);
-        if (canAccess) {
-          setIsUser(true);
-        } else {
-          setIsUser(false);
+        setIsUser(canAccess);
+
+        if (!canAccess) {
           router.push("/reva/dashboard");
         }
       } catch (error) {
-        setIsUser(false);
-        router.push("/reva/login");
+        console.error("Error checking user access:", error);
+        if (isMounted) {
+          setIsUser(false);
+          router.push("/reva/login");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
+        }
       }
     };
 
@@ -90,13 +98,16 @@ export function useRevaUserAccess() {
 
     // Add a timeout fallback for loading state
     timeoutId = setTimeout(() => {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }, 10000); // 10 seconds
 
     return () => {
+      isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [user, isAuthenticated, router, isKindeLoading]);
+  }, [user, isAuthenticated, router, isKindeLoading, isLoading]);
 
   return {
     isUser,
