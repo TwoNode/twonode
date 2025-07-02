@@ -607,7 +607,7 @@ export const getUserProperties = async () => {
     const properties = await getAllUserProperties(user?.kindeId!);
 
     if (!properties || properties.length === 0) {
-      return { success: false, message: "No properties found for this user." };
+      return { success: true, message: "No properties found for this user." };
     }
 
     return {

@@ -2,17 +2,14 @@ import React from "react";
 import Welcome from "./components/Welcome";
 import Link from "next/link";
 import { getAllRequestsWithUserByAdmin } from "../actions/adminDbActions";
-import RequestList from "../components/RequestsList";
+import ErrorComponent from "../../reva/dashboard/components/ErrorComponent";
 
 const Home = async () => {
   const { data, success } = await getAllRequestsWithUserByAdmin({ limit: 5 });
 
-  console.log(
-    "\n\n\n\n\n\nData fetched from server:",
-    data?.length,
-    data,
-    success
-  );
+  if (!success) {
+    return <ErrorComponent />;
+  }
 
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
