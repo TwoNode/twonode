@@ -543,7 +543,6 @@ export const authPaymentSuccessful = async (reference: string) => {
     await notifyPaymentReceived(updatedTransaction, user.id);
 
     // Send email to client after payment
-
     if (user?.email) {
       try {
         await sendEmailToAdmin({
