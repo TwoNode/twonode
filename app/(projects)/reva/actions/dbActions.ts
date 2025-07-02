@@ -702,12 +702,14 @@ export const getUserNotifications = async (userId: string, role: Role) => {
         { audience: NotificationAudience.GENERAL_ADMINS },
         { audience: NotificationAudience.ALL_USERS }
       );
-    } else if (role === Role.USER) {
-      conditions.push(
-        { audience: NotificationAudience.GENERAL_USERS },
-        { audience: NotificationAudience.ALL_USERS }
-      );
     }
+    // For USER role, do NOT push GENERAL_USERS notifications
+    // else if (role === Role.USER) {
+    //   conditions.push(
+    //     { audience: NotificationAudience.GENERAL_USERS },
+    //     { audience: NotificationAudience.ALL_USERS }
+    //   );
+    // }
 
     const notifications = await prisma.notification.findMany({
       where: { OR: conditions },

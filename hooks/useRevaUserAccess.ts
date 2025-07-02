@@ -26,19 +26,21 @@ export function useRevaUserAccess() {
   } = useKindeBrowserClient();
 
   useEffect(() => {
-    let isMounted = true; // Track if component is mounted
+    let isMounted = true;
     let timeoutId: NodeJS.Timeout | null = null;
 
     const checkUserAccess = async () => {
       try {
         if (!isMounted) return;
 
+        // Skip if we already have a decision
+        if (isUser !== null) return;
+
         // Check for isNewLogin parameter
         const urlParams = new URLSearchParams(window.location.search);
         const isNewLogin = urlParams.get("isNewLogin");
 
         if (isNewLogin === "true") {
-          // Remove isNewLogin parameter and redirect to clean URL
           const cleanUrl = window.location.pathname;
           router.replace(cleanUrl);
           return;
@@ -55,25 +57,20 @@ export function useRevaUserAccess() {
           return;
         }
 
-        // Get user data from API endpoint
         const response = await fetch("/api/auth/user-data");
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
+        if (!response.ok) throw new Error("Failed to fetch user data");
 
         const userData: UserData = await response.json();
 
         if (!isMounted) return;
         setUserData(userData);
 
-        // Check platform
         if (userData.platform !== Platform.REVA) {
           setIsUser(false);
           router.push("/reva/login");
           return;
         }
 
-        // Check if user has access to user panel
         const canAccess = canAccessRevaUserPanel(userData.role);
         setIsUser(canAccess);
 
@@ -94,20 +91,22 @@ export function useRevaUserAccess() {
       }
     };
 
-    checkUserAccess();
+    // Only run if we haven't determined access yet
+    if (isUser === null) {
+      checkUserAccess();
+    }
 
-    // Add a timeout fallback for loading state
     timeoutId = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && isLoading) {
         setIsLoading(false);
       }
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [user, isAuthenticated, router, isKindeLoading, isLoading]);
+  }, [user, isAuthenticated, isKindeLoading, isUser, router]); // Added isUser to dependencies
 
   return {
     isUser,
