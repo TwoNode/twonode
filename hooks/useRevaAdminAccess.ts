@@ -12,9 +12,14 @@ interface UserData {
   lastName: string;
 }
 
+// Helper function for user access (if not already defined)
+function canAccessRevaUserPanel(role: UserData["role"]): boolean {
+  return role === "USER" || role === "ADMIN" || role === "SUPERADMIN";
+}
+
 export function useRevaAdminAccess() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Start as loading
   const [userData, setUserData] = useState<UserData | null>(null);
   const router = useRouter();
   const {
@@ -25,39 +30,47 @@ export function useRevaAdminAccess() {
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
-
     const checkAdminAccess = async () => {
-      try {
-        if (!isMounted || isAdmin !== null) return;
+      // 1. Initial Loading State & Cleanup
+      if (!isMounted) return;
 
-        // Check for isNewLogin parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const isNewLogin = urlParams.get("isNewLogin");
+      // Reset state on re-run, unless we already determined it and are not re-authenticating
+      if (isAdmin !== null && !isKindeLoading) {
+        setIsLoading(false); // If already determined and Kinde isn't loading, we're done
+        return;
+      }
 
-        if (isNewLogin === "true") {
-          const cleanUrl = window.location.pathname;
-          router.replace(cleanUrl);
-          return;
-        }
+      setIsLoading(true); // Ensure loading is true at the start of the check
 
-        // Wait for Kinde to finish loading
-        if (isKindeLoading) return;
+      // 2. Handle New Login Parameter (clean URL immediately)
+      const urlParams = new URLSearchParams(window.location.search);
+      const isNewLogin = urlParams.get("isNewLogin");
+      if (isNewLogin === "true") {
+        const cleanUrl = window.location.pathname;
+        router.replace(cleanUrl); // Replace to avoid re-triggering logic unnecessarily
+        return; // Exit here, the redirect will cause a re-render
+      }
 
-        setIsLoading(true);
+      // 3. Wait for Kinde to Load
+      if (isKindeLoading) {
+        console.log("Kinde is still loading...");
+        return; // Kinde is still loading, wait for it to complete
+      }
 
-        console.log("🔍 Checking admin access...");
-        console.log("User:", user);
-        console.log("Authenticated:", isAuthenticated);
-
-        if (!isAuthenticated || !user) {
-          console.log("❌ Not authenticated, redirecting to login");
+      // 4. Authentication Check
+      if (!isAuthenticated || !user) {
+        console.log("❌ Not authenticated or no user, redirecting to login");
+        if (isMounted) {
           setIsAdmin(false);
+          setIsLoading(false);
           router.push("/reva-restricted/login");
-          return;
         }
+        return;
+      }
 
-        // Get user data from API endpoint
+      // 5. Fetch User Data
+      try {
+        console.log("🔍 Checking admin access & fetching user data...");
         const response = await fetch("/api/auth/user-data");
 
         if (!response.ok) {
@@ -68,24 +81,31 @@ export function useRevaAdminAccess() {
           throw new Error("Failed to fetch user data");
         }
 
-        const userData: UserData = await response.json();
-        console.log("👤 User data:", userData);
+        const fetchedUserData: UserData = await response.json();
+        console.log("👤 User data:", fetchedUserData);
 
-        if (!isMounted) return;
-        setUserData(userData);
+        if (!isMounted) return; // Component unmounted during async operation
 
-        // Check platform
-        if (userData.platform !== "reva") {
+        setUserData(fetchedUserData);
+
+        // 6. Platform Check
+        if (fetchedUserData.platform !== "reva") {
           console.log("❌ Wrong platform, redirecting to login");
-          setIsAdmin(false);
-          router.push("/reva-restricted/login");
+          if (isMounted) {
+            setIsAdmin(false);
+            router.push("/reva-restricted/login");
+          }
           return;
         }
 
-        // Check admin role
+        // 7. Admin Role Check
         const hasAdminRole =
-          userData.role === "ADMIN" || userData.role === "SUPERADMIN";
-        setIsAdmin(hasAdminRole);
+          fetchedUserData.role === "ADMIN" ||
+          fetchedUserData.role === "SUPERADMIN";
+
+        if (isMounted) {
+          setIsAdmin(hasAdminRole);
+        }
 
         if (!hasAdminRole) {
           console.log("❌ User does not have admin role, redirecting");
@@ -100,29 +120,20 @@ export function useRevaAdminAccess() {
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          if (timeoutId) clearTimeout(timeoutId);
         }
       }
     };
 
-    // Only run check if we haven't determined admin status yet
-    if (isAdmin === null) {
-      checkAdminAccess();
-    }
+    checkAdminAccess(); // Always call the async function
 
-    // Fallback timeout
-    timeoutId = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn("⚠️ Admin check timed out after 10 seconds");
-        setIsLoading(false);
-      }
-    }, 10000);
-
+    // Cleanup function
     return () => {
       isMounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [user, isAuthenticated, router, isKindeLoading, isAdmin]); // Added isAdmin to deps
+  }, [user, isAuthenticated, isKindeLoading, router, isAdmin]); // Keep isAdmin in deps for explicit re-evaluation
+
+  // Removed the timeout logic. If isLoading is properly handled by consuming components,
+  // a timeout for loading state isn't typically needed and can mask underlying issues.
 
   return {
     isAdmin,
