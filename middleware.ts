@@ -82,13 +82,6 @@ const middlewareWithLogic = withDynamicAuth(
     const pathname = req.nextUrl.pathname;
     console.log("🛡️ Middleware - Pathname:", pathname);
 
-    // Check for isNewLogin parameter
-    const isNewLogin = req.nextUrl.searchParams.get("isNewLogin");
-    if (isNewLogin === "true") {
-      console.log("🛡️ Middleware - Fresh login detected, allowing access");
-      return NextResponse.next();
-    }
-
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
       console.log("🛡️ Middleware - Protected route detected");
 

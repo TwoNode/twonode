@@ -65,32 +65,17 @@ export async function GET(request: NextRequest) {
     const redirectUrl = (() => {
       if (postLoginRaw && postLoginRaw.startsWith("/reva/dashboard")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
+        // return url.pathname + (url.search ? url.search : "");
         return url.pathname + "?" + url.searchParams.toString();
       }
       return fallbackUrl;
     })();
 
-    // Parse existing URL and params
-    const existingUrl = new URL(redirectUrl, process.env.BASE_URL);
-    const existingParams = existingUrl.searchParams;
-
-    // Create final URL with all params
-    const finalUrl = new URL(redirectUrl, process.env.BASE_URL);
-
-    // Copy over existing params
-    existingParams.forEach((value, key) => {
-      finalUrl.searchParams.set(key, value);
-    });
-
-    // Add isNewLogin parameter
-    finalUrl.searchParams.set("isNewLogin", "true");
-
-    // Create single response with final redirect URL
-    const response = NextResponse.redirect(
-      addBaseUrl(finalUrl.pathname + "?" + finalUrl.searchParams.toString())
+    // Redirect to the beautiful redirect page with redirectionPage param
+    const redirectPageUrl = addBaseUrl(
+      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`
     );
-
-    // Set encrypted user cookie on the response and return it
+    const response = NextResponse.redirect(redirectPageUrl);
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REVA Due Diligence Request</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzhhoV6YJZc640ODPgDoz9dKTSXnYr0Gw&libraries=places"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9fafb; color: #111827; }
+        .container { max-width: 600px; margin: auto; background: #ffffff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input, textarea, button { width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; }
+        button { background-color: #2563eb; color: white; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #1d4ed8; }
+        #map { height: 300px; margin: 10px 0; border-radius: 15px; }
+        h2 { margin-bottom: 10px; color: #1f2937; }
+        label { font-weight: bold; color: #374151; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="formContainer">
+    <h2>REVA Due Diligence Request</h2>
+    <p><em>"Your due diligence just got intelligent"</em></p>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Enter your email" required>
+
+    <label for="requester">Requester Name</label>
+    <input type="text" id="requester" placeholder="Enter requester's name" required>
+
+    <label for="address">Property Address</label>
+    <input type="text" id="address" placeholder="Enter the property address" required>
+
+    <div id="map"></div>
+
+    <label for="location">Location (Latitude, Longitude)</label>
+    <input type="text" id="location" readonly>
+
+    <label for="lga">Local Government Area (LGA)</label>
+    <input type="text" id="lga" readonly>
+
+    <label for="documents">Supporting Documents</label>
+    <input type="file" id="documents">
+
+    <label for="comments">Additional Comments</label>
+    <textarea id="comments" placeholder="Enter any additional comments"></textarea>
+
+    <label for="totalCost">Total Cost (NGN)</label>
+    <input type="number" id="totalCost" readonly>
+
+    <button onclick="showReviewStep()">Proceed to Review</button>
+</div>
+
+<div class="container" id="reviewStep" style="display:none;">
+    <h2>Review Your Details</h2>
+    <p><strong>Email:</strong> <span id="reviewEmail"></span></p>
+    <p><strong>Requester:</strong> <span id="reviewRequester"></span></p>
+    <p><strong>Address:</strong> <span id="reviewAddress"></span></p>
+    <p><strong>Location:</strong> <span id="reviewLocation"></span></p>
+    <p><strong>LGA:</strong> <span id="reviewLGA"></span></p>
+    <p><strong>Total Cost:</strong> <span id="reviewTotalCost"></span></p>
+    <button onclick="payWithPaystack()">Confirm & Pay</button>
+    <button onclick="goBack()">Edit Details</button>
+</div>
+
+<script>
+    let map, marker;
+
+    function initMap() {
+        const input = document.getElementById('address');
+        const autocomplete = new google.maps.places.Autocomplete(input);
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: 6.5244, lng: 3.3792 },
+            zoom: 12,
+        });
+
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+                const location = place.geometry.location;
+                placeMarker(location);
+                fetchLGA(location.lat(), location.lng());
+                map.setCenter(location);
+                map.setZoom(15);
+            } else {
+                alert('No location found.');
+            }
+        });
+
+        map.addListener('click', function(event) {
+            placeMarker(event.latLng);
+            fetchLGA(event.latLng.lat(), event.latLng.lng());
+            map.setCenter(event.latLng);
+            map.setZoom(15);
+        });
+    }
+
+    function placeMarker(location) {
+        if (marker) marker.setMap(null);
+        marker = new google.maps.Marker({ position: location, map: map });
+        document.getElementById('location').value = `${location.lat()}, ${location.lng()}`;
+    }
+
+    async function fetchLGA(lat, lng) {
+        try {
+            const response = await fetch(`https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/1/query?where=1%3D1&geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=LGA,Price&f=json`);
+            const data = await response.json();
+
+            if (data.features && data.features.length > 0) {
+                const lga = data.features[0].attributes.LGA ? data.features[0].attributes.LGA.toUpperCase() : "Unknown";
+                const price = data.features[0].attributes.Price || 0;
+                document.getElementById('lga').value = lga;
+                document.getElementById('totalCost').value = price;
+            } else {
+                alert('LGA not found for this location.');
+            }
+        } catch (error) {
+            alert('Error fetching LGA data.');
+            console.error('Error:', error);
+        }
+    }
+
+    function showReviewStep() {
+        document.getElementById('reviewEmail').textContent = document.getElementById('email').value;
+        document.getElementById('reviewRequester').textContent = document.getElementById('requester').value;
+        document.getElementById('reviewAddress').textContent = document.getElementById('address').value;
+        document.getElementById('reviewLocation').textContent = document.getElementById('location').value;
+        document.getElementById('reviewLGA').textContent = document.getElementById('lga').value;
+        document.getElementById('reviewTotalCost').textContent = document.getElementById('totalCost').value;
+
+        document.getElementById('formContainer').style.display = 'none';
+        document.getElementById('reviewStep').style.display = 'block';
+    }
+
+    function goBack() {
+        document.getElementById('formContainer').style.display = 'block';
+        document.getElementById('reviewStep').style.display = 'none';
+    }
+
+    function payWithPaystack() {
+        let handler = PaystackPop.setup({
+            key: 'pk_test_9dab542d1bb550a1775463d8894ecd546901b678',
+            email: document.getElementById('email').value,
+            amount: document.getElementById('totalCost').value * 100,
+            currency: 'NGN',
+            onClose: function() { alert('Transaction was not completed.'); },
+            callback: function(response) {
+                alert('Payment successful! Transaction ID: ' + response.reference);
+                console.log('Transaction reference:', response.reference);
+            }
+        });
+        handler.openIframe();
+    }
+
+    window.onload = initMap;
+</script>
+
+</body>
+</html>

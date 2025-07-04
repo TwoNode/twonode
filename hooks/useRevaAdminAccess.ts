@@ -42,16 +42,7 @@ export function useRevaAdminAccess() {
 
       setIsLoading(true); // Ensure loading is true at the start of the check
 
-      // 2. Handle New Login Parameter (clean URL immediately)
-      const urlParams = new URLSearchParams(window.location.search);
-      const isNewLogin = urlParams.get("isNewLogin");
-      if (isNewLogin === "true") {
-        const cleanUrl = window.location.pathname;
-        router.replace(cleanUrl); // Replace to avoid re-triggering logic unnecessarily
-        return; // Exit here, the redirect will cause a re-render
-      }
-
-      // 3. Wait for Kinde to Load
+      // 2. Wait for Kinde to Load
       if (isKindeLoading) {
         console.log("Kinde is still loading...");
         return; // Kinde is still loading, wait for it to complete

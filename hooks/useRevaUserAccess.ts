@@ -37,15 +37,6 @@ export function useRevaUserAccess() {
 
       setIsLoading(true);
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const isNewLogin = urlParams.get("isNewLogin");
-
-      if (isNewLogin === "true") {
-        const cleanUrl = window.location.pathname;
-        router.replace(cleanUrl);
-        return;
-      }
-
       if (isKindeLoading) {
         console.log("Kinde is still loading for user access...");
         return;
