@@ -6,8 +6,10 @@ const prisma = new PrismaClient();
 
 // Helper to mark payment as paid
 async function markPaymentPaid(reference: string, message: string) {
+  console.log("markPaymentPaid called with reference:", reference);
   let updated = null;
   if (reference.startsWith("REVA_")) {
+    console.log("Updating property table for authenticated user");
     // Update property table for authenticated users
     try {
       updated = await prisma.property.update({
@@ -19,11 +21,14 @@ async function markPaymentPaid(reference: string, message: string) {
           error: null,
         },
       });
+      console.log("Successfully updated property table:", updated.id);
       return { success: true, data: updated, type: "property" };
     } catch (e) {
+      console.error("Error updating property table:", e);
       return { success: false, error: "Reference not found in property table" };
     }
   } else if (reference.startsWith("reva_")) {
+    console.log("Updating oneTimeUserProperty table for one-time user");
     // Update oneTimeUserProperty table for one-time users
     try {
       updated = await prisma.oneTimeUserProperty.update({
@@ -35,22 +40,30 @@ async function markPaymentPaid(reference: string, message: string) {
           error: null,
         },
       });
+      console.log(
+        "Successfully updated oneTimeUserProperty table:",
+        updated.id
+      );
       return { success: true, data: updated, type: "oneTimeUserProperty" };
     } catch (e) {
+      console.error("Error updating oneTimeUserProperty table:", e);
       return {
         success: false,
         error: "Reference not found in oneTimeUserProperty table",
       };
     }
   } else {
+    console.log("Invalid reference format:", reference);
     return { success: false, error: "Invalid reference format" };
   }
 }
 
 // Helper to mark payment as failed/unpaid
 async function markPaymentFailed(reference: string, message: string) {
+  console.log("markPaymentFailed called with reference:", reference);
   let updated = null;
   if (reference.startsWith("REVA_")) {
+    console.log("Updating property table for authenticated user (failed)");
     // Update property table for authenticated users
     try {
       updated = await prisma.property.update({
@@ -62,11 +75,16 @@ async function markPaymentFailed(reference: string, message: string) {
           error: message,
         },
       });
+      console.log("Successfully updated property table (failed):", updated.id);
       return { success: true, data: updated, type: "property" };
     } catch (e) {
+      console.error("Error updating property table (failed):", e);
       return { success: false, error: "Reference not found in property table" };
     }
   } else if (reference.startsWith("reva_")) {
+    console.log(
+      "Updating oneTimeUserProperty table for one-time user (failed)"
+    );
     // Update oneTimeUserProperty table for one-time users
     try {
       updated = await prisma.oneTimeUserProperty.update({
@@ -78,14 +96,20 @@ async function markPaymentFailed(reference: string, message: string) {
           error: message,
         },
       });
+      console.log(
+        "Successfully updated oneTimeUserProperty table (failed):",
+        updated.id
+      );
       return { success: true, data: updated, type: "oneTimeUserProperty" };
     } catch (e) {
+      console.error("Error updating oneTimeUserProperty table (failed):", e);
       return {
         success: false,
         error: "Reference not found in oneTimeUserProperty table",
       };
     }
   } else {
+    console.log("Invalid reference format (failed):", reference);
     return { success: false, error: "Invalid reference format" };
   }
 }
@@ -96,6 +120,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-paystack-signature");
 
   if (!signature) {
+    console.log("Webhook: Missing signature");
     return new Response(JSON.stringify({ message: "Missing signature" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -103,12 +128,21 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json()) as PaystackWebhookType;
+  console.log("Webhook received:", {
+    event: body.event,
+    reference: body.data.reference,
+    status: body.data.status,
+    amount: body.data.amount,
+    gateway_response: body.data.gateway_response,
+  });
+
   const hash = crypto
     .createHmac("sha512", PAYSTACK_SECRET)
     .update(JSON.stringify(body))
     .digest("hex");
 
   if (hash !== signature) {
+    console.log("Webhook: Invalid signature");
     return new Response(JSON.stringify({ message: "Invalid signature" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -119,7 +153,10 @@ export async function POST(req: NextRequest) {
     switch (body.event) {
       case "charge.success": {
         const reference = body.data.reference;
+        console.log("Processing charge.success for reference:", reference);
+
         if (!reference) {
+          console.log("Webhook: Missing reference in webhook data");
           return new Response(
             JSON.stringify({ message: "Missing reference in webhook data" }),
             {
@@ -128,16 +165,24 @@ export async function POST(req: NextRequest) {
             }
           );
         }
+
         if (body.data.status === "success") {
+          console.log(
+            "Payment successful, marking as paid for reference:",
+            reference
+          );
           const result = await markPaymentPaid(
             reference,
             body.data.gateway_response || "Payment completed successfully"
           );
+          console.log("markPaymentPaid result:", result);
+
           if (result.success) {
+            console.log("Successfully marked payment as paid:", result);
             return new Response(
               JSON.stringify({
-                // message: "Payment marked as paid",
-                // data: result.data,
+                message: "Payment marked as paid",
+                data: result.data,
               }),
               {
                 status: 200,
@@ -145,6 +190,7 @@ export async function POST(req: NextRequest) {
               }
             );
           } else {
+            console.log("Failed to mark payment as paid:", result.error);
             return new Response(
               JSON.stringify({
                 message: "Failed to mark payment as paid",
@@ -157,11 +203,18 @@ export async function POST(req: NextRequest) {
             );
           }
         } else {
+          console.log(
+            "Payment failed, marking as failed for reference:",
+            reference
+          );
           const failResult = await markPaymentFailed(
             reference,
             body.data.gateway_response || "Payment failed"
           );
+          console.log("markPaymentFailed result:", failResult);
+
           if (failResult.success) {
+            console.log("Successfully marked payment as failed:", failResult);
             return new Response(
               JSON.stringify({
                 message: "Payment marked as failed",
@@ -173,6 +226,7 @@ export async function POST(req: NextRequest) {
               }
             );
           } else {
+            console.log("Failed to mark payment as failed:", failResult.error);
             return new Response(
               JSON.stringify({
                 message: "Failed to mark payment as failed",
@@ -186,13 +240,15 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-      // Optionally handle explicit failure event if Paystack sends it
       case "charge.failed": {
         const reference = body.data.reference;
+        console.log("Processing charge.failed for reference:", reference);
         const failResult = await markPaymentFailed(
           reference,
           body.data.gateway_response || "Payment failed"
         );
+        console.log("markPaymentFailed result:", failResult);
+
         if (failResult.success) {
           return new Response(
             JSON.stringify({
