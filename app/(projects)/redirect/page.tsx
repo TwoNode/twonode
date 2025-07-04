@@ -2,6 +2,8 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default function RedirectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -10,7 +12,7 @@ export default function RedirectPage() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       router.replace(redirectionPage);
-    }, 1800); // 1.8s delay for UX
+    }, 1200); // 1.8s delay for UX
     return () => clearTimeout(timeout);
   }, [redirectionPage, router]);
 
