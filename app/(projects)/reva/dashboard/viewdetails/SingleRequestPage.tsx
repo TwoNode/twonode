@@ -27,6 +27,12 @@ import {
 
 import { PropertyWithoutUser } from "../../actions/dbActions";
 import Link from "next/link";
+import {
+  notifyError,
+  notifyInfo,
+  notifySuccess,
+  notifyWarning,
+} from "@/utils/notify";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"
@@ -124,30 +130,35 @@ const SingleRequestPage = ({
   };
 
   const handleDownloadReport = () => {
-    console.log("Direct file link:", property.report);
-    if (
-      property?.report &&
-      typeof property.report === "object" &&
-      "directFileLink" in property.report
-    ) {
-      const link = document.createElement("a");
+    try {
       if (
+        property?.report &&
         typeof property.report === "object" &&
-        property.report !== null &&
         "directFileLink" in property.report
       ) {
-        link.href = (
-          property.report as { directFileLink: string }
-        ).directFileLink;
+        const link = document.createElement("a");
+        const directFileLink = (property.report as { directFileLink: string })
+          .directFileLink;
+
+        if (!directFileLink) {
+          notifyError("No valid file link available to download");
+          return;
+        }
+
+        link.href = directFileLink;
+        link.download = `${property?.title ?? "report"}.pdf`;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        notifySuccess("Report download started successfully!");
       } else {
-        console.error("No valid file link available to download");
+        notifyError("Report is not ready for download yet");
       }
-      link.download = `${property?.title ?? "report"}.pdf`; // You can customize the file name
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      console.error("No file link available to download");
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      notifyError("Failed to download report. Please try again.");
     }
   };
   return (
@@ -329,6 +340,105 @@ const SingleRequestPage = ({
           </CardContent>
         </Card>
 
+        {/* Report Status */}
+        <Card className="overflow-hidden border-none shadow-md">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <CardTitle className="text-xl text-gray-800">
+              Due Diligence Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Badge
+                    variant={isReportReady() ? "default" : "secondary"}
+                    className={`px-3 py-1 text-sm font-medium ${
+                      isReportReady()
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {isReportReady() ? "Ready" : "Processing"}
+                  </Badge>
+                  {property?.report?.isApproved && (
+                    <Badge className="px-3 py-1 text-sm font-medium bg-blue-500 text-white">
+                      Approved
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {isReportReady()
+                    ? "Your due diligence report is ready for download. The report contains comprehensive property analysis including title search, survey records, charting information, and land use details."
+                    : "Your report is being processed. This may take 24-48 hours. You'll be notified when it's ready."}
+                </p>
+                {property?.report?.updatedAt && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Last updated:{" "}
+                    {new Date(property.report.updatedAt).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
+                  </p>
+                )}
+              </div>
+              <div className="flex-shrink-0">
+                <Button
+                  onClick={handleDownloadReport}
+                  disabled={!isReportReady()}
+                  className={`px-6 py-2 rounded-lg transition-colors ${
+                    isReportReady()
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  {isReportReady() ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download Report
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-2 animate-spin"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Processing...
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Action Buttons */}
         <div className="flex justify-between items-center border-t border-gray-200 pt-8 flex-wrap max-sm:justify-center gap-4">
           <Link href="/reva/dashboard">
@@ -349,6 +459,7 @@ const SingleRequestPage = ({
             >
               Delete Request
             </Button>
+
             <Button
               disabled
               className="max-sm:w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 transition-colors"
@@ -493,6 +604,3 @@ const ReceiptPDF = ({ property }: { property: any }) => {
 };
 
 export default SingleRequestPage;
-function notifyError(arg0: string) {
-  throw new Error("Function not implemented.");
-}
