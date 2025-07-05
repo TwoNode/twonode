@@ -3,6 +3,7 @@ import { FC } from "react";
 import VerifyPayment from "./viewDetails";
 import { notFound } from "next/navigation";
 import { checkPaymentSuccess } from "../actions/dbActions";
+import PaymentErrorPage from "./PaymentErrorPage";
 
 const VerifyPaymentPage = async ({
   searchParams,
@@ -23,15 +24,10 @@ const VerifyPaymentPage = async ({
       return <VerifyPayment formData={paymentResult?.data} />;
     } else {
       return (
-        <div className="flex justify-center items-center h-screen">
-          <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold">Payment Verification Failed</h2>
-            <p>
-              {paymentResult?.message! ||
-                "Something went wrong. Please try again!"}
-            </p>
-          </div>
-        </div>
+        <PaymentErrorPage
+          message={paymentResult?.message || ""}
+          reference={reference}
+        />
       );
     }
   } catch (error) {

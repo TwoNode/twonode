@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import RedirectComponent from "./RedirectPage";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,9 @@ export default function RedirectPage({ searchParams }: PageProps) {
       : null) || "/";
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={<LoadingSpinner variant="fullscreen" text="Redirecting..." />}
+    >
       <RedirectComponent redirectionPage={redirectionPage} />
     </Suspense>
   );

@@ -5,6 +5,9 @@ import RevaFooterSection from "../RevaFooterSection";
 
 import RevaDueDiligenceForm from "./RevaDueDiligenceForm";
 
+// Force dynamic rendering to avoid export errors
+export const dynamic = "force-dynamic";
+
 // import dynamic from "next/dynamic";
 // const RevaDueDiligenceForm = dynamic(() => import("./RevaDueDiligenceForm"), {
 //   ssr: false,

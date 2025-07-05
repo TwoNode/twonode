@@ -122,7 +122,7 @@ export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
   }
 };
 
-const updateTransactionStatus = async (
+const updateOneTimeTransactionStatus = async (
   reference: string,
   status: PropertyStatus,
   paymentStatus: PaymentStatus,
@@ -141,7 +141,31 @@ const updateTransactionStatus = async (
     });
     return updatedTransaction;
   } catch (error) {
-    console.error("Error updating transaction status:", error);
+    console.error("Error updating OneTime transaction status:", error);
+    return null;
+  }
+};
+
+const updatePropertyTransactionStatus = async (
+  reference: string,
+  status: PropertyStatus,
+  paymentStatus: PaymentStatus,
+  statusMessage: string,
+  error: string | null
+) => {
+  try {
+    const updatedTransaction = await prisma.property.update({
+      where: { reference },
+      data: {
+        status,
+        paymentStatus,
+        statusMessage,
+        error,
+      },
+    });
+    return updatedTransaction;
+  } catch (error) {
+    console.error("Error updating Property transaction status:", error);
     return null;
   }
 };
@@ -198,6 +222,9 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       uploadedFilesUrls = await uploadToS3FromServer(files);
     }
 
+    // Determine if this is a live or test transaction based on environment
+    const isLive = process.env.NODE_ENV === "production";
+
     const data = {
       email,
       requester,
@@ -210,6 +237,7 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       parcelId,
       documentsUrls: uploadedFilesUrls,
       site_images: uploadedSiteImagesUrls,
+      isLive,
     };
 
     const result = await saveToOneTimeProperty(data);
@@ -229,11 +257,12 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
       address,
       lga,
       comments,
+      isLive,
     });
 
     if (!paystackResponse || paystackResponse.status !== true) {
       // update the payment status in the database
-      await updateTransactionStatus(
+      await updateOneTimeTransactionStatus(
         result?.data?.reference!,
         "Processing",
         "Unpaid",
@@ -243,6 +272,15 @@ export const saveFormDataAndInitiatePaystack = async (formData: FormData) => {
 
       return { error: `${paystackResponse.message}`, status: 500 };
     }
+
+    // // update the payment status in the database
+    // const updatedTransaction = await updateOneTimeTransactionStatus(
+    //   result?.data?.reference!,
+    //   "Processing",
+    //   "Paid",
+    //   paystackResponse.message,
+    //   null
+    // );
 
     console.log("Paystack response:", paystackResponse);
 
@@ -324,9 +362,11 @@ export const authSaveFormDataAndInitiatePaystack = async (
       uploadedFilesUrls = await uploadToS3FromServer(files);
     }
 
+    // Determine if this is a live or test transaction based on environment
+    const isLive = process.env.NODE_ENV === "production";
+
     const data = {
       user: { connect: { id: user.id } }, // Assuming `email` is the unique identifier for the user
-      // userId: user.id,
       title,
       address,
       lat: location?.lat,
@@ -337,9 +377,10 @@ export const authSaveFormDataAndInitiatePaystack = async (
       parcelId,
       documentsUrls: uploadedFilesUrls,
       site_images: uploadedSiteImagesUrls,
+      isLive,
     };
 
-    const result = await saveToPropertyTable(data);
+    const result: any = await saveToPropertyTable(data);
 
     console.log("Result from saveToDatabase:", result);
 
@@ -357,11 +398,12 @@ export const authSaveFormDataAndInitiatePaystack = async (
       lga,
       comments,
       isAuthenticated: true,
+      isLive,
     });
 
     if (!paystackResponse || paystackResponse.status !== true) {
       // update the payment status in the database
-      await updateTransactionStatus(
+      await updatePropertyTransactionStatus(
         result?.data?.reference!,
         "Processing",
         "Unpaid",
@@ -371,6 +413,15 @@ export const authSaveFormDataAndInitiatePaystack = async (
 
       return { error: `${paystackResponse.message}`, status: 500 };
     }
+
+    // // update the payment status in the database
+    // const updatedTransaction = await updatePropertyTransactionStatus(
+    //   result?.data?.reference!,
+    //   "Processing",
+    //   "Paid",
+    //   paystackResponse.message,
+    //   null
+    // );
 
     console.log("Paystack response:", paystackResponse);
 
@@ -414,8 +465,11 @@ export const checkPaymentSuccess = async (reference: string) => {
       };
     }
 
-    // Verify the transaction with Paystack
-    const verificationResponse = await verifyPaystackTransaction(reference);
+    // Verify the transaction with Paystack using the appropriate environment
+    const verificationResponse = await verifyPaystackTransaction(
+      reference,
+      existingTransaction.isLive
+    );
 
     // Check if the transaction was actually successful
     if (!verificationResponse || !verificationResponse.status) {
@@ -512,8 +566,11 @@ export const authPaymentSuccessful = async (reference: string) => {
       };
     }
 
-    // Verify the transaction with Paystack
-    const verificationResponse = await verifyPaystackTransaction(reference);
+    // Verify the transaction with Paystack using the appropriate environment
+    const verificationResponse = await verifyPaystackTransaction(
+      reference,
+      existingTransaction.isLive
+    );
 
     // Check if the transaction was actually successful
     if (!verificationResponse || !verificationResponse.status) {

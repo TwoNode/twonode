@@ -1,8 +1,8 @@
-import { addBaseUrl } from "@/utils/addBaseUrl";
-
-const Paystack = require("@paystack/paystack-sdk");
-
-const paystack = new Paystack(process.env.PAYSTACK_SECRET);
+import { getPaystackCallbackUrl } from "@/utils/addBaseUrl";
+import {
+  createPaystackInstance,
+  logPaystackEnvironment,
+} from "@/utils/paystackConfig";
 
 export const initializePaystack = async ({
   email,
@@ -13,6 +13,7 @@ export const initializePaystack = async ({
   lga = "",
   comments = "",
   isAuthenticated = false,
+  isLive = false,
 }: {
   email: string;
   amount: number;
@@ -22,8 +23,15 @@ export const initializePaystack = async ({
   lga: string;
   comments: string;
   isAuthenticated?: boolean;
+  isLive?: boolean;
 }) => {
   try {
+    // Create Paystack instance with appropriate keys based on isLive
+    const paystack = createPaystackInstance(isLive);
+
+    // Log environment information for debugging
+    logPaystackEnvironment(isLive);
+
     const response = await paystack.transaction.initialize({
       email,
       amount,
@@ -33,6 +41,7 @@ export const initializePaystack = async ({
         address, // Property address
         lga, // Local Government Area (LGA)
         comments,
+        isLive, // Track if this is a live or test transaction
         custom_fields: [
           {
             display_name: "Requester Name", // Display name for the requester
@@ -54,15 +63,29 @@ export const initializePaystack = async ({
             variable_name: "comments", // Variable name for the LGA
             value: comments, // Value of the LGA
           },
+          {
+            display_name: "Environment", // Display name for the environment
+            variable_name: "isLive", // Variable name for the environment
+            value: isLive ? "Live" : "Test", // Value of the environment
+          },
         ],
       },
-      callback_url: addBaseUrl(
+      callback_url: getPaystackCallbackUrl(
         isAuthenticated
           ? "/reva/dashboard/verifypayment"
           : "/reva/verifypayment"
       ),
     });
-    console.log(process.env.PAYSTACK_CALLBACK_URL);
+
+    console.log(
+      "Paystack callback URL:",
+      getPaystackCallbackUrl(
+        isAuthenticated
+          ? "/reva/dashboard/verifypayment"
+          : "/reva/verifypayment"
+      )
+    );
+
     return response;
   } catch (error) {
     console.error("Error initializing Paystack:", error);
@@ -70,10 +93,15 @@ export const initializePaystack = async ({
   }
 };
 
-export const verifyPaystackTransaction = async (reference: string) => {
+export const verifyPaystackTransaction = async (
+  reference: string,
+  isLive: boolean = false
+) => {
   try {
+    // Create Paystack instance with appropriate keys based on isLive
+    const paystack = createPaystackInstance(isLive);
+
     const response = await paystack.transaction.verify({ reference });
-    // console.log(response);
     return response;
   } catch (error) {
     console.error("Error verifying Paystack transaction:", error);

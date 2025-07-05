@@ -65,7 +65,8 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
           <Alert className="border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              Your payment has been successfully processed! Your request is now being reviewed by our team.
+              Your payment has been successfully processed! Your request is now
+              being reviewed by our team.
             </AlertDescription>
           </Alert>
 
@@ -79,6 +80,14 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.title && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Title
+                    </label>
+                    <p className="text-gray-900">{formData?.title || ""}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-gray-500">
                     Description
@@ -196,7 +205,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                       <label className="text-sm font-medium text-gray-500">
                         Phone
                       </label>
-                      <p className="text-gray-900">{formData.userPhoneNumber}</p>
+                      <p className="text-gray-900">
+                        {formData.userPhoneNumber}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -215,25 +226,26 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {formData.documentsUrls.slice(0, 4).map((doc: string, index: number) => (
-                    <a
-                      key={index}
-                      href={doc}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-                    >
-                      <Download className="h-3 w-3" />
-                      <span className="truncate">
-                        {doc
-                          .split("/")
-                          .pop()
-                          ?.replace(/_/g, " ")
-                          .replace(".pdf", "") ||
-                          `Document ${index + 1}`}
-                      </span>
-                    </a>
-                  ))}
+                  {formData.documentsUrls
+                    .slice(0, 4)
+                    .map((doc: string, index: number) => (
+                      <a
+                        key={index}
+                        href={doc}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span className="truncate">
+                          {doc
+                            .split("/")
+                            .pop()
+                            ?.replace(/_/g, " ")
+                            .replace(".pdf", "") || `Document ${index + 1}`}
+                        </span>
+                      </a>
+                    ))}
                   {formData.documentsUrls.length > 4 && (
                     <div className="text-xs text-gray-500 col-span-full">
                       +{formData.documentsUrls.length - 4} more documents
@@ -255,7 +267,8 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-4">
-                  Your due diligence report has been approved and is ready for download.
+                  Your due diligence report has been approved and is ready for
+                  download.
                 </p>
                 <DownloadReportButton
                   reference={formData.reference}
@@ -268,24 +281,24 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button asChild className="flex-1">
-              <Link href={`/reva/onetimerequest?reference=${formData.reference}&email=${encodeURIComponent(formData.email)}`}>
+              <Link
+                href={`/reva/onetimerequest?reference=${
+                  formData.reference
+                }&email=${encodeURIComponent(formData.email)}`}
+              >
                 <ArrowRight className="h-4 w-4 mr-2" />
                 View Full Details
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/reva/requestform">
-                Make Another Request
-              </Link>
+              <Link href="/reva/requestform">Make Another Request</Link>
             </Button>
           </div>
 
           {/* Status Message */}
           {formData.statusMessage && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800">
-                {formData.statusMessage}
-              </p>
+              <p className="text-sm text-blue-800">{formData.statusMessage}</p>
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
   LoadScript,
   GoogleMap,
@@ -11,8 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { saveFormDataAndInitiatePaystack } from "../actions/dbActions";
+import {
+  saveFormDataAndInitiatePaystack,
+  checkPaymentSuccess,
+} from "../actions/dbActions";
 import Bowser from "bowser";
+import PaystackPop from "@paystack/inline-js";
 
 import {
   AlertDialog,
@@ -36,6 +41,7 @@ import {
 
 import Link from "next/link";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
+import { DashboardLoadingSpinner } from "@/components/ui/loading-spinner";
 
 const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
@@ -53,6 +59,7 @@ const center = { lat: 6.5244, lng: 3.3792 };
 const watchTime = 30000;
 
 const RevaDueDiligenceForm: React.FC = () => {
+  const router = useRouter();
   const addrRef = useRef<HTMLInputElement>(null);
   const useMyLocationRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLInputElement>(null);
@@ -682,15 +689,73 @@ const RevaDueDiligenceForm: React.FC = () => {
         } else {
           console.error("Unexpected response format:", response);
         }
-        notifyInfo("Redirecting to payment...");
+        notifyInfo("Opening payment popup...");
 
-        // redirect to paystack payment page with checkoutUrl
+        // Use Paystack popup instead of redirect
+        const accessCode = response?.paystack?.access_code;
+        const reference = response?.data?.reference;
 
-        const checkoutUrl = response?.paystack?.authorization_url;
+        if (accessCode && reference) {
+          const popup = new PaystackPop() as any;
 
-        if (checkoutUrl) {
-          // Redirect to Paystack hosted payment page
-          window.location.href = checkoutUrl;
+          // Define your callbacks object
+          const callbacks = {
+            onSuccess: async (response: {
+              id: number;
+              reference: string;
+              message: string;
+            }) => {
+              console.log("Payment successful:", response);
+              notifySuccess("Payment successful! Verifying transaction...");
+
+              try {
+                setIsLoading(true);
+                // Use server action to verify payment
+                const verifyResult = await checkPaymentSuccess(
+                  response.reference
+                );
+
+                if (verifyResult.success) {
+                  notifySuccess("Payment verified successfully!");
+                  // Redirect to verify payment page
+                  router.push(
+                    `/reva/verifypayment?reference=${response.reference}`
+                  );
+                } else {
+                  notifyError(
+                    "Payment verification failed: " + verifyResult.message
+                  );
+                }
+              } catch (error) {
+                console.error("Error verifying payment:", error);
+                notifyError("Error verifying payment. Please contact support.");
+              } finally {
+                setIsLoading(false);
+              }
+            },
+
+            onCancel: () => {
+              notifyWarning("Payment was cancelled.");
+            },
+
+            onError: (error: { message: string }) => {
+              console.error("Payment error:", error);
+              notifyError("Payment failed: " + error.message);
+            },
+
+            onLoad: (data: {
+              id: number;
+              customer: any;
+              accessCode: string;
+            }) => {
+              console.log("Payment popup loaded:", data);
+            },
+          };
+
+          // Resume the transaction with the access code and callbacks
+          popup.resumeTransaction(accessCode, callbacks);
+        } else {
+          notifyError("Invalid payment response from server.");
         }
       })
       .catch((error) => {

@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { NextRequest } from "next/server";
 import type { PaystackWebhookType } from "@/types/PaystackWebhookType";
 import { PrismaClient } from "@prisma/client";
+import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
+
 const prisma = new PrismaClient();
 
 // Helper to mark payment as paid
@@ -114,8 +116,6 @@ async function markPaymentFailed(reference: string, message: string) {
   }
 }
 
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET || "";
-
 export async function POST(req: NextRequest) {
   const signature = req.headers.get("x-paystack-signature");
 
@@ -135,6 +135,9 @@ export async function POST(req: NextRequest) {
     amount: body.data.amount,
     gateway_response: body.data.gateway_response,
   });
+
+  // Get the appropriate Paystack secret key for webhook verification
+  const PAYSTACK_SECRET = getPaystackSecretForWebhook(body.data.reference);
 
   const hash = crypto
     .createHmac("sha512", PAYSTACK_SECRET)

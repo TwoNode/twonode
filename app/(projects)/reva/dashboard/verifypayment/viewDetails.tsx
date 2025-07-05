@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
+import { DashboardLoadingSpinner } from "@/components/ui/loading-spinner";
 
 const VerifyPaymentContent = ({ formData }: { formData: any }) => {
   const router = useRouter();
@@ -37,6 +38,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
         </div>
 
         <div className="space-y-4">
+          {formData?.title && (
+            <Detail label="Title" value={formData?.title || ""} />
+          )}
           <Detail label="Email" value={formData?.email} />
           <Detail label="Status" value={formData?.status} />
           <Detail label="Payment Status" value={formData?.paymentStatus} />
@@ -85,7 +89,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
 
 const VerifyPayment = ({ formData }: { formData: any }) => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={<DashboardLoadingSpinner text="Loading payment details..." />}
+    >
       <>
         <VerifyPaymentContent formData={formData} />
       </>
