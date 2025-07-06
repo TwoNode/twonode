@@ -1115,22 +1115,22 @@ export const notifyReportReady = async (propertyData: any, userId?: string) => {
       });
     } else if (isOneTimeRequest && propertyData?.email) {
       // OneTime request notification - create a system notification that can be accessed via email
-      // await createNotification({
-      //   type: "SUCCESS",
-      //   title: "OneTime Report Ready",
-      //   message: `Your OneTime due diligence report for property ${propertyData.reference} is now available.`,
-      //   audience: NotificationAudience.SPECIFIC_USERS, // This will be accessible to anyone with the link
-      //   link: `/reva/onetimerequest?reference=${
-      //     propertyData.reference
-      //   }&email=${encodeURIComponent(propertyData.email)}`,
-      //   metadata: {
-      //     propertyReference: propertyData.reference,
-      //     address: propertyData.address,
-      //     oneTimeRequest: true,
-      //     email: propertyData.email,
-      //   },
-      //   userIds: [propertyData.email],
-      // });
+      await createNotification({
+        type: "SUCCESS",
+        title: "OneTime Report Ready",
+        message: `Your OneTime due diligence report for property ${propertyData.reference} is now available.`,
+        audience: NotificationAudience.SPECIFIC_USERS, // This will be accessible to anyone with the link
+        link: `/reva/onetimerequest?reference=${
+          propertyData.reference
+        }&email=${encodeURIComponent(propertyData.email)}`,
+        metadata: {
+          propertyReference: propertyData.reference,
+          address: propertyData.address,
+          oneTimeRequest: true,
+          email: propertyData.email,
+        },
+        userIds: [propertyData.email],
+      });
     }
     return { success: true };
   } catch (error) {
