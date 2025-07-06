@@ -12,6 +12,10 @@
 <div class="search-panel">
   <div class="search-header">
     <h3>Spatial Record Search</h3>
+    <p style="margin: 8px 0 0 0; font-size: 0.875rem; color: #6b7280">
+      💡 <strong>Zoom Tips:</strong> Click on the map to zoom to level 20,
+      double-click for maximum zoom (level 22)
+    </p>
   </div>
 
   <div class="search-sections">
@@ -400,10 +404,62 @@
         grid-template-columns: repeat(3, 1fr);
       }
     }
+
+    /* Zoom indicator styles */
+    .zoom-indicator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+      animation: fadeInOut 1s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+      }
+      20% {
+        opacity: 1;
+      }
+      80% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Enhanced marker pulse animation */
+    .pulse-marker {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
   </style>
 </div>
 
 <div id="viewDiv"></div>
+<div id="zoomIndicator" class="zoom-indicator">Zooming to location...</div>
 
 <script type="module">
   // Import ArcGIS modules
@@ -420,6 +476,17 @@
   // Replace the projection import line with:
   import * as projection from "https://js.arcgis.com/4.29/@arcgis/core/geometry/projection.js";
   import SpatialReference from "https://js.arcgis.com/4.29/@arcgis/core/geometry/SpatialReference.js";
+
+  // Helper function to show zoom indicator
+  function showZoomIndicator() {
+    const indicator = document.getElementById("zoomIndicator");
+    if (indicator) {
+      indicator.style.display = "block";
+      setTimeout(() => {
+        indicator.style.display = "none";
+      }, 1000);
+    }
+  }
 
   // Initialize the webmap
   const webmap = new WebMap({
@@ -544,8 +611,21 @@
         })
       );
 
-      await view.goTo({ target: projected, zoom: 20 });
-      checkIntersection(projected);
+      // Show zoom indicator
+      showZoomIndicator();
+
+      // Enhanced zoom functionality with smooth animation
+      await view.goTo({
+        target: projected,
+        zoom: 20,
+        duration: 1000,
+        easing: "ease-out",
+      });
+
+      // Add a brief delay to ensure zoom is complete before checking intersection
+      setTimeout(() => {
+        checkIntersection(projected);
+      }, 500);
     } catch (error) {
       console.error("Error in goToUTM:", error);
       alert("Error processing UTM coordinates");
@@ -581,8 +661,21 @@
           })
         );
 
-        view.goTo({ target: point, zoom: 20 });
-        checkIntersection(point);
+        // Show zoom indicator
+        showZoomIndicator();
+
+        // Enhanced zoom functionality with smooth animation
+        view.goTo({
+          target: point,
+          zoom: 20,
+          duration: 1000,
+          easing: "ease-out",
+        });
+
+        // Add a brief delay to ensure zoom is complete before checking intersection
+        setTimeout(() => {
+          checkIntersection(point);
+        }, 500);
       } catch (error) {
         console.error("Error in place_changed handler:", error);
       }
@@ -654,33 +747,87 @@
           symbol: {
             type: "simple-marker",
             color: "orange",
-            size: "10px",
+            size: "12px",
+            outline: {
+              color: "white",
+              width: 2,
+            },
           },
         })
       );
 
-      await view.goTo({ target: point, zoom: 20 });
+      // Show zoom indicator
+      showZoomIndicator();
 
-      const response = await view.hitTest(event);
-      const results = response.results.filter(
-        (r) => r.graphic?.layer?.type === "feature"
-      );
+      // Enhanced zoom functionality with smooth animation
+      await view.goTo({
+        target: point,
+        zoom: 20,
+        duration: 1000,
+        easing: "ease-out",
+      });
 
-      if (results.length > 0) {
-        const features = results.map((r) => r.graphic);
-        view.popup.open({
-          features: features,
-          location: point,
-        });
-      } else {
-        view.popup.close();
-      }
+      // Add a brief delay to ensure zoom is complete before checking features
+      setTimeout(async () => {
+        const response = await view.hitTest(event);
+        const results = response.results.filter(
+          (r) => r.graphic?.layer?.type === "feature"
+        );
+
+        if (results.length > 0) {
+          const features = results.map((r) => r.graphic);
+          view.popup.open({
+            features: features,
+            location: point,
+          });
+        } else {
+          view.popup.close();
+        }
+      }, 500);
     } catch (error) {
       console.error("Error in click handler:", error);
     }
   });
-</script>
 
+  // Add double-click handler for maximum zoom
+  view.on("double-click", async function (event) {
+    try {
+      const point = event.mapPoint;
+      if (!point) return;
+
+      // Show zoom indicator
+      showZoomIndicator();
+
+      // Maximum zoom with smooth animation
+      await view.goTo({
+        target: point,
+        zoom: 22,
+        duration: 1500,
+        easing: "ease-out",
+      });
+
+      // Add a brief delay to ensure zoom is complete
+      setTimeout(async () => {
+        const response = await view.hitTest(event);
+        const results = response.results.filter(
+          (r) => r.graphic?.layer?.type === "feature"
+        );
+
+        if (results.length > 0) {
+          const features = results.map((r) => r.graphic);
+          view.popup.open({
+            features: features,
+            location: point,
+          });
+        } else {
+          view.popup.close();
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error in double-click handler:", error);
+    }
+  });
+</script>
 
 <!-- <script>
   // Entire script unchanged — you can paste in your original logic here
@@ -831,14 +978,23 @@
                 })
               );
 
-              await view.goTo({ target: feat.geometry, zoom: 20 });
+              // Enhanced zoom functionality with smooth animation
+              await view.goTo({
+                target: feat.geometry,
+                zoom: 20,
+                duration: 1000,
+                easing: "ease-out"
+              });
 
-              if (feat.geometry.centroid) {
-                view.popup.open({
-                  features: [feat],
-                  location: feat.geometry.centroid,
-                });
-              }
+              // Add a brief delay to ensure zoom is complete before opening popup
+              setTimeout(() => {
+                if (feat.geometry.centroid) {
+                  view.popup.open({
+                    features: [feat],
+                    location: feat.geometry.centroid,
+                  });
+                }
+              }, 500);
             }
           } catch (error) {
             console.error("Error in resultSelect change handler:", error);
