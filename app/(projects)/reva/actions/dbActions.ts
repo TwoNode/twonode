@@ -122,7 +122,7 @@ export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
   }
 };
 
-const updateOneTimeTransactionStatus = async (
+export const updateOneTimeTransactionStatus = async (
   reference: string,
   status: PropertyStatus,
   paymentStatus: PaymentStatus,
@@ -146,7 +146,7 @@ const updateOneTimeTransactionStatus = async (
   }
 };
 
-const updatePropertyTransactionStatus = async (
+export const updatePropertyTransactionStatus = async (
   reference: string,
   status: PropertyStatus,
   paymentStatus: PaymentStatus,
@@ -940,20 +940,41 @@ export const notifyNewPropertyRequest = async (
   userId?: string
 ) => {
   try {
+    // Determine if this is a OneTime request and get the requester name
+    const isOneTimeRequest = !!propertyData?.requester;
+    let requesterName =
+      propertyData?.requester || propertyData?.email || "Unknown";
+
+    // For regular authenticated requests, try to get user info if not already included
+    if (!isOneTimeRequest && propertyData?.userId) {
+      try {
+        const user = await prisma.revaUser.findUnique({
+          where: { id: propertyData.userId },
+          select: { firstName: true, lastName: true, email: true },
+        });
+        if (user) {
+          requesterName =
+            `${user.firstName} ${user.lastName}`.trim() || user.email;
+        }
+      } catch (userError) {
+        console.error("Error fetching user info for email:", userError);
+        // Fallback to email if user fetch fails
+        requesterName = propertyData?.email || "Unknown";
+      }
+    }
+
     // Notify admins about new property request
     await createNotification({
       type: "PROPERTY",
-      title: `New ${
-        propertyData?.requester ? "OneTime " : ""
-      } Property Request`,
+      title: `New ${isOneTimeRequest ? "OneTime " : ""} Property Request`,
       message: `New due diligence request received for ${propertyData.address}`,
       link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
       audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
         propertyReference: propertyData.reference,
         address: propertyData.address,
-        requester: propertyData.requester || propertyData.email,
-        oneTimeRequest: propertyData?.requester ? true : false,
+        requester: requesterName,
+        oneTimeRequest: isOneTimeRequest,
       },
     });
 
@@ -968,7 +989,7 @@ export const notifyNewPropertyRequest = async (
         metadata: {
           propertyReference: propertyData.reference,
           address: propertyData.address,
-          oneTimeRequest: propertyData?.requester ? true : false,
+          oneTimeRequest: isOneTimeRequest,
         },
       });
     }
@@ -989,21 +1010,15 @@ export const notifyNewPropertyRequest = async (
       if (adminEmails.length > 0) {
         await sendEmailToAdmin({
           to: adminEmails.join(","),
-          subject: `New ${
-            propertyData?.requester ? "OneTime " : ""
-          } Property Request`,
+          subject: `New ${isOneTimeRequest ? "OneTime " : ""} Property Request`,
           text: `New due diligence request received for ${propertyData.address}`,
           html: `
-            <h3>New ${
-              propertyData?.requester ? "OneTime " : ""
-            } Property Request</h3>
+            <h3>New ${isOneTimeRequest ? "OneTime " : ""} Property Request</h3>
             <p>A new due diligence request has been received:</p>
             <ul>
               <li>Property: ${propertyData.address}</li>
               <li>Reference: ${propertyData.reference}</li>
-              <li>Requester: ${
-                propertyData.requester || propertyData.email
-              }</li>
+              <li>Requester: ${requesterName}</li>
             </ul>
             <p>Please review this request in the admin dashboard.</p>
           `,
@@ -1015,21 +1030,15 @@ export const notifyNewPropertyRequest = async (
       if (process.env.ADMIN_EMAIL) {
         await sendEmailToAdmin({
           to: process.env.ADMIN_EMAIL,
-          subject: `New ${
-            propertyData?.requester ? "OneTime " : ""
-          } Property Request`,
+          subject: `New ${isOneTimeRequest ? "OneTime " : ""} Property Request`,
           text: `New due diligence request received for ${propertyData.address}`,
           html: `
-            <h3>New ${
-              propertyData?.requester ? "OneTime " : ""
-            } Property Request</h3>
+            <h3>New ${isOneTimeRequest ? "OneTime " : ""} Property Request</h3>
             <p>A new due diligence request has been received:</p>
             <ul>
               <li>Property: ${propertyData.address}</li>
               <li>Reference: ${propertyData.reference}</li>
-              <li>Requester: ${
-                propertyData.requester || propertyData.email
-              }</li>
+              <li>Requester: ${requesterName}</li>
             </ul>
           `,
         });
@@ -1088,7 +1097,7 @@ export const notifyPaymentReceived = async (
 export const notifyReportReady = async (propertyData: any, userId?: string) => {
   try {
     // Check if this is a OneTime request
-    const isOneTimeRequest = propertyData?.requester || !propertyData?.user;
+    const isOneTimeRequest = !!propertyData?.requester;
 
     if (userId && !isOneTimeRequest) {
       // Regular user notification

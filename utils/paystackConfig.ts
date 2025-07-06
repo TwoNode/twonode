@@ -1,3 +1,4 @@
+"use server";
 /**
  * Paystack Configuration Utility
  * Handles environment-based key selection for test vs live payments
@@ -14,7 +15,9 @@ export interface PaystackConfig {
  * @param isLive - Whether this is a live transaction
  * @returns PaystackConfig object with appropriate keys
  */
-export const getPaystackConfig = (isLive: boolean): PaystackConfig => {
+export const getPaystackConfig = async (
+  isLive: boolean
+): Promise<PaystackConfig> => {
   if (isLive) {
     // Live environment - use live keys
     const liveSecretKey = process.env.PAYSTACK_LIVE_SECRET;
@@ -22,7 +25,7 @@ export const getPaystackConfig = (isLive: boolean): PaystackConfig => {
 
     if (!liveSecretKey) {
       throw new Error(
-        "Live Paystack keys not configured. Please set PAYSTACK_LIVE_SECRET and PAYSTACK_LIVE_PUBLIC_KEY environment variables."
+        "Live Paystack keys not configured. Please set PAYSTACK_LIVE_SECRET environment variable."
       );
     }
 
@@ -38,7 +41,7 @@ export const getPaystackConfig = (isLive: boolean): PaystackConfig => {
 
     if (!testSecretKey) {
       throw new Error(
-        "Test Paystack keys not configured. Please set PAYSTACK_TEST_SECRET and PAYSTACK_TEST_PUBLIC_KEY environment variables."
+        "Test Paystack keys not configured. Please set PAYSTACK_TEST_SECRET environment variable."
       );
     }
 
@@ -81,8 +84,8 @@ export const getPaystackSecretForWebhook = (reference: string): string => {
  * @param isLive - Whether this is a live transaction
  * @returns Paystack SDK instance
  */
-export const createPaystackInstance = (isLive: boolean) => {
-  const config = getPaystackConfig(isLive);
+export const createPaystackInstance = async (isLive: boolean) => {
+  const config = await getPaystackConfig(isLive);
   const Paystack = require("@paystack/paystack-sdk");
   return new Paystack(config.secretKey);
 };
@@ -91,8 +94,8 @@ export const createPaystackInstance = (isLive: boolean) => {
  * Log Paystack environment information for debugging
  * @param isLive - Whether this is a live transaction
  */
-export const logPaystackEnvironment = (isLive: boolean) => {
-  const config = getPaystackConfig(isLive);
+export const logPaystackEnvironment = async (isLive: boolean) => {
+  const config = await getPaystackConfig(isLive);
   console.log(`Paystack Environment: ${isLive ? "LIVE" : "TEST"}`);
   console.log(`Public Key: ${config.publicKey.substring(0, 10)}...`);
   console.log(`Secret Key: ${config.secretKey.substring(0, 10)}...`);

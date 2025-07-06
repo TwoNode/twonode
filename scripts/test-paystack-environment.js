@@ -14,7 +14,7 @@ async function testPaystackEnvironment() {
     // Test 1: Test environment configuration
     console.log("=== Test Environment ===");
     try {
-      const testConfig = getPaystackConfig(false);
+      const testConfig = await getPaystackConfig(false);
       console.log("✅ Test environment config loaded successfully");
       console.log(`Secret Key: ${testConfig.secretKey.substring(0, 10)}...`);
       console.log(`Public Key: ${testConfig.publicKey.substring(0, 10)}...`);
@@ -26,7 +26,7 @@ async function testPaystackEnvironment() {
     // Test 2: Live environment configuration
     console.log("=== Live Environment ===");
     try {
-      const liveConfig = getPaystackConfig(true);
+      const liveConfig = await getPaystackConfig(true);
       console.log("✅ Live environment config loaded successfully");
       console.log(`Secret Key: ${liveConfig.secretKey.substring(0, 10)}...`);
       console.log(`Public Key: ${liveConfig.publicKey.substring(0, 10)}...`);
@@ -38,10 +38,10 @@ async function testPaystackEnvironment() {
     // Test 3: Paystack instance creation
     console.log("=== Paystack Instance Creation ===");
     try {
-      const testInstance = createPaystackInstance(false);
+      const testInstance = await createPaystackInstance(false);
       console.log("✅ Test Paystack instance created successfully");
 
-      const liveInstance = createPaystackInstance(true);
+      const liveInstance = await createPaystackInstance(true);
       console.log("✅ Live Paystack instance created successfully\n");
     } catch (error) {
       console.log("❌ Paystack instance creation failed:", error.message);
@@ -49,9 +49,9 @@ async function testPaystackEnvironment() {
 
     // Test 4: Environment logging
     console.log("=== Environment Logging ===");
-    logPaystackEnvironment(false);
+    await logPaystackEnvironment(false);
     console.log("");
-    logPaystackEnvironment(true);
+    await logPaystackEnvironment(true);
     console.log("");
 
     // Test 5: Database isLive field

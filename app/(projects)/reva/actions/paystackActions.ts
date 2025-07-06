@@ -1,3 +1,5 @@
+"use server";
+
 import { getPaystackCallbackUrl } from "@/utils/addBaseUrl";
 import {
   createPaystackInstance,
@@ -27,10 +29,10 @@ export const initializePaystack = async ({
 }) => {
   try {
     // Create Paystack instance with appropriate keys based on isLive
-    const paystack = createPaystackInstance(isLive);
+    const paystack = await createPaystackInstance(isLive);
 
     // Log environment information for debugging
-    logPaystackEnvironment(isLive);
+    await logPaystackEnvironment(isLive);
 
     const response = await paystack.transaction.initialize({
       email,
@@ -99,7 +101,7 @@ export const verifyPaystackTransaction = async (
 ) => {
   try {
     // Create Paystack instance with appropriate keys based on isLive
-    const paystack = createPaystackInstance(isLive);
+    const paystack = await createPaystackInstance(isLive);
 
     const response = await paystack.transaction.verify({ reference });
     return response;

@@ -14,6 +14,7 @@ import {
   LogOut,
   Shield,
   Bell,
+  CreditCard,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
@@ -41,6 +42,11 @@ export default function RevaAdminPanelLayout({
       icon: ListChecks,
       label: "Review",
       url: `${dashboardUrl}/review`,
+    },
+    {
+      icon: CreditCard,
+      label: "Payment Verification",
+      url: `${dashboardUrl}/payment-verification`,
     },
     {
       icon: Map,
