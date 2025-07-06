@@ -191,7 +191,7 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
                 filters.paymentStatus.length === 0 &&
                 filters.hasReport === null && (
                   <Link
-                    href="/reva/requestform"
+                    href="/reva/dashboard/newrequest"
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                   >
                     Make Your First Request

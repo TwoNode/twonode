@@ -587,9 +587,11 @@ const RevaDueDiligenceForm: React.FC = () => {
       }
     }
 
-    // Make site images compulsory
-    if (siteImageNames.length === 0) {
-      notifyError("At least one site image is required");
+    // Make site images compulsory only if using GPS location
+    if (isLocationFromGPS && siteImageNames.length === 0) {
+      notifyError(
+        "At least one site image is required when using GPS location"
+      );
       return false;
     }
 

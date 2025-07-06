@@ -25,6 +25,110 @@ const AVAILABLE = "Available";
 const COMPLETED = "Completed";
 const PROCESSING = "Processing";
 
+// Helper function to get all admin emails
+const getAllAdminEmails = async () => {
+  const adminUsers = await prisma.revaUser.findMany({
+    where: {
+      role: { in: ["ADMIN", "SUPERADMIN"] },
+      is_active: true,
+    },
+    select: { email: true },
+  });
+
+  return adminUsers.map((user) => user.email);
+  // .filter((email) => email && email !== process.env.DEV_EMAIL);
+};
+
+// Helper function to get all superadmin emails
+const getAllSuperAdminEmails = async () => {
+  const superadminUsers = await prisma.revaUser.findMany({
+    where: {
+      role: "SUPERADMIN",
+      is_active: true,
+    },
+    select: { email: true },
+  });
+
+  return superadminUsers.map((user) => user.email);
+  // .filter((email) => email && email !== process.env.DEV_EMAIL);
+};
+
+// Function to send email to all admins
+export const sendEmailToAllAdmins = async ({
+  subject,
+  text,
+  html,
+}: {
+  subject: string;
+  text: string;
+  html: string;
+}) => {
+  try {
+    const adminEmails = await getAllAdminEmails();
+
+    if (adminEmails.length === 0) {
+      console.log("No admin emails found to send notification to");
+      return { success: false, error: "No admin emails found" };
+    }
+
+    const result = await sendMail({
+      to: adminEmails.join(","),
+      subject,
+      text,
+      html,
+    });
+
+    console.log(
+      `Email sent to ${adminEmails.length} admins: ${adminEmails.join(", ")}`
+    );
+    return { success: true, data: result, recipientCount: adminEmails.length };
+  } catch (error) {
+    console.error("Error sending email to all admins:", error);
+    return { success: false, error: "Failed to send email to admins" };
+  }
+};
+
+// Function to send email to all superadmins
+export const sendEmailToAllSuperAdmins = async ({
+  subject,
+  text,
+  html,
+}: {
+  subject: string;
+  text: string;
+  html: string;
+}) => {
+  try {
+    const superadminEmails = await getAllSuperAdminEmails();
+
+    if (superadminEmails.length === 0) {
+      console.log("No superadmin emails found to send notification to");
+      return { success: false, error: "No superadmin emails found" };
+    }
+
+    const result = await sendMail({
+      to: superadminEmails.join(","),
+      subject,
+      text,
+      html,
+    });
+
+    console.log(
+      `Email sent to ${
+        superadminEmails.length
+      } superadmins: ${superadminEmails.join(", ")}`
+    );
+    return {
+      success: true,
+      data: result,
+      recipientCount: superadminEmails.length,
+    };
+  } catch (error) {
+    console.error("Error sending email to all superadmins:", error);
+    return { success: false, error: "Failed to send email to superadmins" };
+  }
+};
+
 export const sendMail = async ({
   to,
   subject,
@@ -685,8 +789,8 @@ export const approveDueDiligenceReport = async (
         ),
       });
 
-      await sendMail({
-        to: process.env?.ADMIN_EMAIL || "",
+      // Send email to all admins
+      await sendEmailToAllAdmins({
         subject: `[Admin] Due Diligence Report ${
           isApproved ? "Approved" : "Disapproved"
         }`,
@@ -919,8 +1023,8 @@ export const approveOneTimeDueDiligenceReport = async (
         ),
       });
 
-      await sendMail({
-        to: process.env?.ADMIN_EMAIL || "",
+      // Send email to all admins
+      await sendEmailToAllAdmins({
         subject: `[Admin] OneTime Due Diligence Report ${
           isApproved ? "Approved" : "Disapproved"
         }`,
@@ -961,21 +1065,20 @@ export const approveOneTimeDueDiligenceReport = async (
     try {
       if (isApproved) {
         // Notify OneTime user that report is ready
-        await notifyReportReady(property);
-
-        // Notify admins about approved report
-        await notifySystemAlert(
-          "OneTime Report Approved",
-          `OneTime due diligence report for property ${reference} has been approved by ${user.email}`,
-          []
-        );
+        // await notifyReportReady(property);
+        // // Notify admins about approved report
+        // await notifySystemAlert(
+        //   "OneTime Report Approved",
+        //   `OneTime due diligence report for property ${reference} has been approved by ${user.email}`,
+        //   []
+        // );
       } else {
-        // Notify admins about disapproved report
-        await notifySystemAlert(
-          "OneTime Report Disapproved",
-          `OneTime due diligence report for property ${reference} has been disapproved by ${user.email}`,
-          []
-        );
+        // // Notify admins about disapproved report
+        // await notifySystemAlert(
+        //   "OneTime Report Disapproved",
+        //   `OneTime due diligence report for property ${reference} has been disapproved by ${user.email}`,
+        //   []
+        // );
       }
     } catch (error) {
       console.error("Error creating notifications:", error);
@@ -1053,18 +1156,11 @@ export const createAdminUser = async (formData: FormData) => {
         []
       );
       // Email all superadmins
-      const superadmins = await prisma.revaUser.findMany({
-        where: { role: "SUPERADMIN", is_active: true },
+      await sendEmailToAllSuperAdmins({
+        subject: `REVA: New ${role} Created`,
+        text: `A new ${role} (${firstName} ${lastName}, ${email}) was created by a superadmin.`,
+        html: `<p>A new <b>${role}</b> (<b>${firstName} ${lastName}</b>, <b>${email}</b>) was created by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
       });
-      const superadminEmails = superadmins.map((u) => u.email).filter(Boolean);
-      if (superadminEmails.length > 0) {
-        await sendMail({
-          to: superadminEmails.join(","),
-          subject: `REVA: New ${role} Created`,
-          text: `A new ${role} (${firstName} ${lastName}, ${email}) was created by a superadmin.`,
-          html: `<p>A new <b>${role}</b> (<b>${firstName} ${lastName}</b>, <b>${email}</b>) was created by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
-        });
-      }
       // Email the user who was created
       if (email) {
         await sendMail({
@@ -1216,24 +1312,17 @@ export const makeUserAdmin = async (
         []
       );
       // Email all superadmins
-      const superadmins = await prisma.revaUser.findMany({
-        where: { role: "SUPERADMIN", is_active: true },
+      await sendEmailToAllSuperAdmins({
+        subject: `REVA: User Promoted to ${role}`,
+        text: `User ${user?.firstName || ""} ${user?.lastName || ""} (${
+          user?.email
+        }) was promoted to ${role} by a superadmin.`,
+        html: `<p>User <b>${user?.firstName || ""} ${
+          user?.lastName || ""
+        }</b> (<b>${
+          user?.email
+        }</b>) was promoted to <b>${role}</b> by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
       });
-      const superadminEmails = superadmins.map((u) => u.email).filter(Boolean);
-      if (superadminEmails.length > 0) {
-        await sendMail({
-          to: superadminEmails.join(","),
-          subject: `REVA: User Promoted to ${role}`,
-          text: `User ${user?.firstName || ""} ${user?.lastName || ""} (${
-            user?.email
-          }) was promoted to ${role} by a superadmin.`,
-          html: `<p>User <b>${user?.firstName || ""} ${
-            user?.lastName || ""
-          }</b> (<b>${
-            user?.email
-          }</b>) was promoted to <b>${role}</b> by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
-        });
-      }
       // Email the user who was promoted
       if (user?.email) {
         await sendMail({
