@@ -145,3 +145,129 @@ model Notification {
   @@index([createdAt])
   @@index([audience])
 }
+
+enum SurfboardRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+model SurfboardUser {
+  id            String         @id @default(uuid())
+  kindeId       String         @unique
+  email         String         @unique
+  firstName     String
+  lastName      String
+  role          SurfboardRole  @default(USER)
+  emailVerified Boolean        @default(false)
+  is_active     Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  plans         SurfboardPlan[]
+}
+
+enum SurfboardNotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  PLAN
+  SHARING
+}
+
+enum SurfboardNotificationAudience {
+  SPECIFIC_USERS
+  GENERAL_ADMINS
+  SUPERADMIN
+  ALL_USERS
+}
+
+model SurfboardNotification {
+  id          String                        @id @default(cuid())
+  type        SurfboardNotificationType
+  title       String
+  message     String
+  readBy      String[]                      @default([]) // List of userIds who read it
+  dismissedBy String[]                      @default([]) // List of userIds who dismissed it
+  userIds     String[]                      @default([]) // If null/empty => general
+  audience    SurfboardNotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime                      @default(now())
+  updatedAt   DateTime                      @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+}
+
+// Surfboard Plan Models
+model SurfboardPlan {
+  id                    String   @id @default(uuid())
+  planNumber            String   @unique
+  surveyTitle           String
+  planType              String
+  referencePlanNumber   String?
+  deededArea            String
+  facilitator           String
+  pillarType            String
+  certificateReady      String?
+  
+  // Administrative boundaries
+  ward                  String?
+  lcda                  String?
+  lga                   String?
+  
+  // File paths
+  pdfFilePath           String?
+  cadFilePath           String?
+  certificateFilePath   String?
+  
+  // Geometry (stored as GeoJSON string)
+  geometry              String? // GeoJSON polygon
+  areaSqM               Float?
+  centroid              String? // GeoJSON point
+  
+  // Status and tracking
+  status                String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  reviewComments        String?
+  
+  // Relationships
+  userId                String
+  user                  SurfboardUser @relation(fields: [userId], references: [id])
+  pillars               SurfboardPillar[]
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([planNumber])
+}
+
+model SurfboardPillar {
+  id            String   @id @default(uuid())
+  parcelId      String
+  parcel        SurfboardPlan @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  
+  // Coordinates
+  easting       Float
+  northing      Float
+  pointIndex    Int
+  pillarNumber  String
+  
+  // Geometry (stored as GeoJSON string)
+  geometry      String? // GeoJSON point
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([parcelId])
+  @@index([pillarNumber])
+}
