@@ -1,11 +1,7 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
-import {
-  getEncryptedUserData,
-  canAccessRevaAdminPanel,
-  isPlatformUser,
-} from "@/utils/encryptedCookies";
+import { getEncryptedUserData, isPlatformUser } from "@/utils/encryptedCookies";
 import prisma from "@/lib/prisma";
 import {
   deleteManyFromS3,
@@ -14,7 +10,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
 import { Platform } from "@/utils/platform";
-import { canAccessRevaSuperAdminPanel } from "@/permissions";
+import { canAccessRevaAdminPanel, canAccessRevaSuperAdminPanel } from "@/permissions";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
   notifyReportReady,
@@ -187,7 +183,7 @@ export const verifyRevaAdminPermissions = async () => {
     throw new Error("Wrong platform");
   }
 
-  if (!canAccessRevaAdminPanel(userData)) {
+  if (!canAccessRevaAdminPanel(userData.role)) {
     throw new Error("Insufficient permissions");
   }
 
@@ -497,15 +493,105 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
 
 export const uploadDirectLinkReport = async (formData: FormData) => {
   try {
-    let warnings: string[] = [] as string[];
+    let warnings: string[] = [];
 
     const user = await verifyRevaAdminPermissions();
 
     const reference = formData.get("reference") as string;
+    const isOneTimeRequest = formData.get("isOneTimeRequest") === "true";
+    
     if (!reference) {
       return { error: "Missing property reference.", status: 400 };
     }
 
+    // Handle one-time requests
+    if (isOneTimeRequest) {
+      const existingRequest = await prisma.oneTimeUserProperty.findUnique({
+        where: { reference },
+      });
+
+      if (!existingRequest) {
+        return { error: "One-time request not found.", success: false, status: 404 };
+      }
+
+      const file = formData.get("directLink");
+      if (!file || !(file instanceof File)) {
+        throw new Error("Missing or invalid file: 'directLink'");
+      }
+
+      const directFileLink = await uploadToS3FromServer([file], reference, {
+        useDirectFileName: true,
+      });
+
+      const previousReport = existingRequest?.report && typeof existingRequest.report === "object"
+        ? existingRequest.report
+        : {};
+
+      const report = {
+        ...previousReport,
+        directFileLink,
+        completedAt: new Date().toISOString(),
+        completedBy: user.email,
+      };
+
+      const result = await prisma.oneTimeUserProperty.update({
+        where: { reference },
+        data: {
+          status: COMPLETED,
+          report,
+        },
+      });
+
+      // Send notification email to the requester
+      try {
+        await sendMail({
+          to: existingRequest.email,
+          subject: "Your Due Diligence Report is Ready",
+          text: `Your due diligence report for request ${reference} is now available for download.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+              <h2 style="color: #4CAF50;">Your Due Diligence Report is Ready</h2>
+              <p>Dear ${existingRequest.requester || 'Valued Customer'},</p>
+              <p>Your due diligence report for request <strong>${reference}</strong> is now available for download.</p>
+              <p>You can download your report by clicking the link below:</p>
+              <p><a href="${process.env.ONLINE_BASE_URL}/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(existingRequest.email)}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p>
+              <p>Thank you for using our service.</p>
+              <p style="margin-top: 20px;">Best regards,</p>
+              <p><strong>REVA Team</strong></p>
+            </div>
+          `,
+        });
+      } catch (err) {
+        console.log("Email not sent: ", err);
+        warnings.push("Email not sent");
+      }
+
+      revalidatePath(
+        `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+      );
+
+      // Trigger notification for direct link report upload
+      try {
+        await notifySystemAlert(
+          "One-Time Request Report Uploaded",
+          `Report for one-time request ${reference} has been uploaded by ${user.email}.`,
+          []
+        );
+      } catch (error) {
+        console.error("Error creating notification:", error);
+        warnings.push("Notification not sent");
+      }
+
+      return {
+        success: true,
+        warnings,
+        data: result,
+        message: "Report uploaded successfully",
+        status: 200,
+      };
+    }
+    
+    // Handle regular property requests
     const existingProperty = await prisma.property.findUnique({
       where: { reference },
       include: { user: true },
@@ -525,14 +611,10 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
       useDirectFileName: true,
     });
 
-    console.log("\n\n\n\nreport\n\n\n\n", directFileLink);
-
     const previousReport =
       existingProperty?.report && typeof existingProperty.report === "object"
         ? existingProperty.report
         : {};
-
-    console.log(previousReport);
 
     const report = {
       ...previousReport,
@@ -551,7 +633,7 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
 
     try {
       await sendMail({
-        to: process.env.EMAIL_USER || "", // Replace with the actual recipient email
+        to: process.env.EMAIL_USER || "",
         subject: "Due Diligence Report Update",
         text: "The due diligence report has been updated successfully, please review the report.",
         html: `
@@ -561,7 +643,7 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
             <p>The due diligence report has been updated successfully. Please review the report at your earliest convenience.</p>
             <p>Thank you for your attention.</p>
             <p style="margin-top: 20px;">Best regards,</p>
-            <p><strong>Your Company Name</strong></p>
+            <p><strong>REVA Team</strong></p>
           </div>
         `,
       });
