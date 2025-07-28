@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/admin-panel/sidebar";
+import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,6 @@ import {
   Home,
   ListChecks,
   Map,
-  FilePlus,
   Settings,
   LogOut,
   Shield,
@@ -18,9 +17,11 @@ import {
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
-import RevaLoading from "./RevaLoading";
+import RevaLoading from "@/components/admin-panel/RevaLoading";
 import { REVA_COLORS } from "@/reva-colors";
 import { canAccessRevaSuperAdminPanel } from "@/permissions";
+
+export const sideBarWidthClass = " lg:w-[130px] ";
 
 export default function RevaAdminPanelLayout({
   children,
@@ -74,7 +75,11 @@ export default function RevaAdminPanelLayout({
         <LogoutLink
           key={"logout"}
           // postLogoutRedirectURL="/dashboard"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          className={cn(
+            "group w-full h-[60px] rounded-xl",
+            "flex flex-col items-center justify-center gap-2.5",
+            "hover:bg-red-300 transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          )}
           style={{
             backgroundColor: "transparent",
           }}
@@ -133,8 +138,12 @@ export default function RevaAdminPanelLayout({
           "flex"
         )}
       >
-        <div className={"lg:w-[105px] h-full max-h-full"}>
-          <Sidebar items={sidebarItems} userImageUrl={user?.picture!} />
+        <div className={sideBarWidthClass + "h-full max-h-full"}>
+          <Sidebar
+            items={sidebarItems}
+            userImageUrl={user?.picture!}
+            sideBarWidthClass={sideBarWidthClass}
+          />
         </div>
 
         <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">

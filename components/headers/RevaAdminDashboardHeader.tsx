@@ -1,10 +1,10 @@
 import Link from "next/link";
 import React from "react";
-import { SheetMenu } from "../admin-panel/sheet-menu";
+import { SheetMenu } from "@/components/admin-panel/sheet-menu";
 import Image from "next/image";
-import { MenuItem, MenuProps } from "../admin-panel/menu";
+import { MenuItem, MenuProps } from "@/components/sidebars/menu";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
-import NotificationBell from "../NotificationBell";
+import NotificationBell from "@/components/NotificationBell";
 import { canAccessRevaSuperAdminPanel } from "@/permissions";
 // import { ModeToggle } from "../mode-toggle";
 

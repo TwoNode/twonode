@@ -1,7 +1,7 @@
 // import { ModeToggle } from "@/components/mode-toggle";
 import { UserNav } from "@/components/admin-panel/user-nav";
 import { SheetMenu } from "@/components/admin-panel/sheet-menu";
-import { MenuProps } from "./menu";
+import { MenuProps } from "../sidebars/menu";
 
 interface NavbarProps extends MenuProps {
   title: string;

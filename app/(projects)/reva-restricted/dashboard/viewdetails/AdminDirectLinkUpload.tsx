@@ -87,32 +87,66 @@ export function AdminDirectLinkUpload({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("reference", property?.reference);
 
-    const file = form.directFileLink;
-
-    if (!file || !(file instanceof File)) {
-      notifyError("Please upload a valid file before submitting.");
-      setIsLoading(false);
-      return;
-    }
-
-    formData.append("directLink", file);
+    if (isLoading) return; // Prevent multiple submissions
 
     try {
+      setIsLoading(true);
+
+      const formData = new FormData();
+      if (!property?.reference) {
+        throw new Error("Missing property reference");
+      }
+      formData.append("reference", property.reference);
+
+      // Add isOneTimeRequest flag to the form data
+      formData.append(
+        "isOneTimeRequest",
+        property?.isOneTimeRequest ? "true" : "false"
+      );
+
+      const file = form.directFileLink;
+
+      if (!file || !(file instanceof File)) {
+        throw new Error("Please upload a valid file before submitting.");
+      }
+
+      // Validate file size (e.g., 50MB limit)
+      const maxFileSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxFileSize) {
+        throw new Error(
+          `File size exceeds the maximum limit of ${
+            maxFileSize / (1024 * 1024)
+          }MB`
+        );
+      }
+
+      formData.append("directLink", file);
+
       const response = await uploadDirectLinkReport(formData);
 
-      if (response?.error) {
-        console.warn(response?.error);
-        notifyError("Upload failed.");
-        return;
+      if (response?.error || !response?.success) {
+        console.error("Upload error:", response.error);
+        const errorMessage =
+          typeof response.error === "string"
+            ? response.error
+            : response.error instanceof Error
+            ? response.error.message
+            : "Upload failed. Please try again.";
+        throw new Error(errorMessage);
       }
 
       notifySuccess("File uploaded successfully!");
+
+      // Optionally refresh the page or update the UI
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     } catch (error) {
-      notifyError("Unexpected error occurred.");
-      console.error(error);
+      console.error("Error in handleSubmit:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      notifyError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
-import RevaAdminPanelLayout from "@/components/admin-panel/revaAdminPanelLayout";
-import ServerProtectedAdminRoute from "@/components/middlewares/ServerProtectedAdminRoute";
+import RevaAdminPanelLayout from "@/components/layouts/revaAdminPanelLayout";
+// import ServerProtectedAdminRoute from "@/components/middlewares/ServerProtectedAdminRoute";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default function DemoLayout({
   return (
     // Temporarily disabled for debugging
     // <ServerProtectedAdminRoute>
-      <RevaAdminPanelLayout>{children}</RevaAdminPanelLayout>
+    <RevaAdminPanelLayout>{children}</RevaAdminPanelLayout>
     // </ServerProtectedAdminRoute>
   );
 }

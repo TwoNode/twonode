@@ -1,8 +1,8 @@
 import Link from "next/link";
 import React from "react";
-import { SheetMenu } from "../admin-panel/sheet-menu";
+import { SheetMenu } from "@/components/admin-panel/sheet-menu";
 import Image from "next/image";
-import { MenuItem, MenuProps } from "../admin-panel/menu";
+import { MenuItem, MenuProps } from "@/components/sidebars/menu";
 import { BellRing } from "lucide-react";
 import NotificationBell from "../NotificationBell";
 // import { ModeToggle } from "../mode-toggle";

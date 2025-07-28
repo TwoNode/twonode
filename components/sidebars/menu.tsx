@@ -23,9 +23,11 @@ export type MenuItem = LinkItem | ElementItem;
 export interface MenuProps {
   items: MenuItem[];
   userImageUrl?: string;
+  colorPalette?: any; // Accepts a color palette object (REVA_COLORS or SURFBOARD_COLORS)
 }
 
-export function Menu({ items, userImageUrl = "" }: MenuProps) {
+export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
+  const colors = colorPalette || require("@/reva-colors").REVA_COLORS;
   const pathname = usePathname();
 
   const isActive = (url: string) => pathname === url;
@@ -44,57 +46,85 @@ export function Menu({ items, userImageUrl = "" }: MenuProps) {
                 key={index}
                 href={item.url}
                 className={cn(
-                  "group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out",
+                  "p-2 group flex flex-col items-center justify-center gap-[6px] w-full h-[70px] rounded-xl transition-all duration-200 ease-in-out",
                   "hover:scale-105 hover:shadow-sm"
                 )}
                 style={{
                   background: isActive(item.url)
-                    ? `linear-gradient(to right, ${REVA_COLORS.transparency.blue20}, ${REVA_COLORS.transparency.blue30})`
+                    ? `linear-gradient(to right, ${colors.primary.light}33, ${colors.secondary.light}33)`
                     : "transparent",
                   borderLeft: isActive(item.url)
-                    ? `2px solid ${REVA_COLORS.primary.light}`
+                    ? `3px solid ${colors.sidebar.itemBorderLeft}`
                     : "none",
-                  color: isActive(item.url)
-                    ? REVA_COLORS.text.primary
-                    : REVA_COLORS.text.secondary,
+                  color:
+                    colorPalette &&
+                    colorPalette.primary &&
+                    colorPalette.primary.contrastText
+                      ? colorPalette.primary.contrastText
+                      : isActive(item.url)
+                      ? colors.primary.dark
+                      : colors.primary.dark,
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive(item.url)) {
-                    e.currentTarget.style.backgroundColor = `${REVA_COLORS.primary.light}10`;
-                    e.currentTarget.style.color = REVA_COLORS.primary.light;
+                    e.currentTarget.style.backgroundColor = `${colors.primary.light}22`;
+                    e.currentTarget.style.color =
+                      colorPalette &&
+                      colorPalette.primary &&
+                      colorPalette.primary.contrastText
+                        ? colorPalette.primary.contrastText
+                        : colors.primary.main;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive(item.url)) {
                     e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = REVA_COLORS.text.secondary;
+                    e.currentTarget.style.color =
+                      colorPalette &&
+                      colorPalette.primary &&
+                      colorPalette.primary.contrastText
+                        ? colorPalette.primary.contrastText
+                        : colors.primary.dark;
                   }
                 }}
               >
                 <span
-                  className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200"
+                  className="w-max lg:mx-auto p-2 rounded-lg transition-all duration-200 border"
                   style={{
                     backgroundColor: isActive(item.url)
-                      ? `${REVA_COLORS.primary.light}20`
-                      : "transparent",
+                      ? `${colors.primary.light}CC`
+                      : `${colors.background.default}CC`,
+                    borderColor: isActive(item.url)
+                      ? `${colors.primary.main}60`
+                      : `${colors.primary.light}60`,
                   }}
                 >
                   <item.icon
                     className="w-5 h-5 transition-all duration-200"
                     style={{
-                      color: isActive(item.url)
-                        ? REVA_COLORS.primary.light
-                        : REVA_COLORS.text.muted,
+                      color:
+                        colorPalette &&
+                        colorPalette.primary &&
+                        colorPalette.primary.contrastText
+                          ? colorPalette.primary.contrastText
+                          : isActive(item.url)
+                          ? colors.primary.dark
+                          : colors.primary.main,
                     }}
                   />
                 </span>
                 <span
-                  className="text-center text-[10px] font-medium font-['Eudoxus Sans'] transition-colors duration-200"
+                  className="text-center text-[11px] font-semibold font-['Eudoxus Sans'] transition-colors duration-200 max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
                   style={{
-                    color: isActive(item.url)
-                      ? REVA_COLORS.text.primary
-                      : REVA_COLORS.text.secondary,
-                    fontWeight: isActive(item.url) ? "600" : "500",
+                    color:
+                      colorPalette &&
+                      colorPalette.primary &&
+                      colorPalette.primary.contrastText
+                        ? colorPalette.primary.contrastText
+                        : isActive(item.url)
+                        ? colors.primary.dark
+                        : colors.primary.dark,
+                    fontWeight: isActive(item.url) ? "700" : "500",
                   }}
                 >
                   {item.label}
@@ -112,7 +142,7 @@ export function Menu({ items, userImageUrl = "" }: MenuProps) {
                   className="w-16 h-16 rounded-full border-2 shadow-md transition-all duration-200 group-hover:shadow-lg"
                   style={{
                     borderColor: REVA_COLORS.border.light,
-                    objectFit: "cover"
+                    objectFit: "cover",
                   }}
                   src={userImageUrl}
                   alt="User Avatar"

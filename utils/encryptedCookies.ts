@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { EncryptJWT, jwtDecrypt, JWTPayload } from "jose";
 import { Platform, RevaRole } from "@/utils/platform";
+import type { SurfboardRole } from "@/utils/platform";
 
 // JWT configuration
 const JWT_ALGORITHM = "dir"; // Direct key agreement
@@ -29,8 +30,8 @@ const getEncryptionKey = (): Uint8Array => {
 
 // Interface for user data to be encrypted
 export interface EncryptedUserData {
-  platform: Platform; // Platform.REVA, Platform.SCRAM, etc.
-  role: RevaRole; // RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN
+  platform: Platform; // Platform.REVA, Platform.SCRAM, Platform.SURFBOARD, etc.
+  role: RevaRole | SurfboardRole; // RevaRole.USER, SurfboardRole.USER, etc.
   userId: string;
   email: string;
   firstName: string;
@@ -43,7 +44,7 @@ export interface EncryptedUserData {
 // Extended JWT payload interface
 interface UserJWTPayload extends JWTPayload {
   platform: Platform;
-  role: RevaRole;
+  role: RevaRole | SurfboardRole;
   userId: string;
   email: string;
   firstName: string;
@@ -367,25 +368,6 @@ export async function invalidateSession(sessionId: string): Promise<void> {
 
   // TODO: Implement session invalidation storage (Redis, database, etc.)
   // This would be checked during decryptUserData to ensure the session hasn't been invalidated
-}
-
-// Utility functions for checking permissions
-export function canAccessRevaAdminPanel(
-  userData: EncryptedUserData | null
-): boolean {
-  if (!userData) return false;
-  return (
-    userData.role === RevaRole.ADMIN || userData.role === RevaRole.SUPERADMIN
-  );
-}
-
-export function canAccessRevaUserPanel(
-  userData: EncryptedUserData | null
-): boolean {
-  if (!userData) return false;
-  return [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN].includes(
-    userData.role
-  );
 }
 
 export function isSuperAdmin(userData: EncryptedUserData | null): boolean {

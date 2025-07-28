@@ -1,10 +1,7 @@
-import {
-  getEncryptedUserData,
-  canAccessRevaAdminPanel,
-  isPlatformUser,
-} from "@/utils/encryptedCookies";
+import { getEncryptedUserData, isPlatformUser } from "@/utils/encryptedCookies";
 import { redirect } from "next/navigation";
 import { Platform } from "@/utils/platform";
+import { canAccessRevaAdminPanel } from "@/permissions";
 
 interface ServerProtectedAdminRouteProps {
   children: React.ReactNode;
@@ -26,7 +23,7 @@ export default async function ServerProtectedAdminRoute({
     }
 
     // Check admin access
-    if (!canAccessRevaAdminPanel(userData)) {
+    if (!canAccessRevaAdminPanel(userData.role)) {
       redirect("/reva/dashboard");
     }
 

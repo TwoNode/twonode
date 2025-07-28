@@ -6,6 +6,9 @@ import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
   canAccessRevaSuperAdminPanel,
+  canAccessSurfboardAdminPanel,
+  canAccessSurfboardUserPanel,
+  canAccessSurfboardSuperAdminPanel,
 } from "@/permissions";
 import {
   getAndRefreshUserSession,
@@ -19,7 +22,10 @@ const protectedRoutes = [
   "/reva/dashboard",
   "/reva-restricted/dashboard",
   "/reva-restricted/superadmin",
-]; // Fixed: added missing slash
+  "/surfboard/dashboard",
+  "/surf-restricted/dashboard",
+  "/surf-restricted/superadmin",
+]; // Added Surfboard routes
 
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
@@ -73,6 +79,9 @@ const middlewareWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         return "/reva-restricted/login";
       if (pathname.startsWith("/reva")) return "/reva/login";
+      if (pathname.startsWith("/surf-restricted"))
+        return "/surf-restricted/login";
+      if (pathname.startsWith("/surfboard")) return "/surfboard/login";
 
       return "/reva/login"; // Default fallback
     },
@@ -92,9 +101,14 @@ const middlewareWithLogic = withDynamicAuth(
       console.log("🛡️ Middleware - Kinde user:", kindeUser?.id);
 
       if (!kindeUser || !kindeUser.id) {
-        const redirectPath = pathname.startsWith("/reva-restricted")
-          ? "/reva-restricted/login"
-          : "/reva/login";
+        let redirectPath = "/reva/login";
+        if (pathname.startsWith("/reva-restricted"))
+          redirectPath = "/reva-restricted/login";
+        else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+        else if (pathname.startsWith("/surf-restricted"))
+          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard"))
+          redirectPath = "/surfboard/login";
         console.log(
           "🛡️ Middleware - User not authenticated, redirecting to:",
           redirectPath
@@ -117,9 +131,14 @@ const middlewareWithLogic = withDynamicAuth(
             return NextResponse.next();
           }
 
-          const redirectPath = pathname.startsWith("/reva-restricted")
-            ? "/reva-restricted/login"
-            : "/reva/login";
+          let redirectPath = "/reva/login";
+          if (pathname.startsWith("/reva-restricted"))
+            redirectPath = "/reva-restricted/login";
+          else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-restricted"))
+            redirectPath = "/surf-restricted/login";
+          else if (pathname.startsWith("/surfboard"))
+            redirectPath = "/surfboard/login";
           console.log(
             "🛡️ Middleware - No session data found, redirecting to:",
             redirectPath
@@ -142,10 +161,25 @@ const middlewareWithLogic = withDynamicAuth(
         );
 
         // Check platform access
-        if (!isPlatformUser(userData, Platform.REVA)) {
-          const redirectPath = pathname.startsWith("/reva-restricted")
-            ? "/reva-restricted/login"
-            : "/reva/login";
+        let platformCheck = false;
+        if (pathname.startsWith("/reva")) {
+          platformCheck = isPlatformUser(userData, Platform.REVA);
+        } else if (
+          pathname.startsWith("/surfboard") ||
+          pathname.startsWith("/surf-restricted")
+        ) {
+          platformCheck = isPlatformUser(userData, Platform.SURFBOARD);
+        }
+
+        if (!platformCheck) {
+          let redirectPath = "/reva/login";
+          if (pathname.startsWith("/reva-restricted"))
+            redirectPath = "/reva-restricted/login";
+          else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-restricted"))
+            redirectPath = "/surf-restricted/login";
+          else if (pathname.startsWith("/surfboard"))
+            redirectPath = "/surfboard/login";
           console.log(
             "🛡️ Middleware - Wrong platform, redirecting to:",
             redirectPath
@@ -177,14 +211,44 @@ const middlewareWithLogic = withDynamicAuth(
           // Superadmin dashboard - only SUPERADMIN can access
           console.log("🛡️ Middleware - Checking superadmin access");
           hasAccess = canAccessRevaSuperAdminPanel(userData.role);
+        } else if (pathname.startsWith("/surfboard/dashboard")) {
+          // Surfboard user dashboard - any authenticated Surfboard user can access
+          console.log(
+            "🛡️ Middleware - Checking Surfboard user dashboard access"
+          );
+          hasAccess = canAccessSurfboardUserPanel(userData.role);
+        } else if (pathname.startsWith("/surf-restricted/dashboard")) {
+          // Surfboard admin dashboard - only ADMIN and SUPERADMIN can access
+          console.log(
+            "🛡️ Middleware - Checking Surfboard admin dashboard access"
+          );
+
+          // Special check for superadmin routes within dashboard
+          if (pathname.startsWith("/surf-restricted/dashboard/superadmin")) {
+            console.log(
+              "🛡️ Middleware - Checking Surfboard superadmin access within dashboard"
+            );
+            hasAccess = canAccessSurfboardSuperAdminPanel(userData.role);
+          } else {
+            hasAccess = canAccessSurfboardAdminPanel(userData.role);
+          }
+        } else if (pathname.startsWith("/surf-restricted/superadmin")) {
+          // Surfboard superadmin dashboard - only SUPERADMIN can access
+          console.log("🛡️ Middleware - Checking Surfboard superadmin access");
+          hasAccess = canAccessSurfboardSuperAdminPanel(userData.role);
         }
 
         console.log("🛡️ Middleware - Access granted:", hasAccess);
 
         if (!hasAccess) {
-          const redirectPath = pathname.startsWith("/reva-restricted")
-            ? "/reva-restricted/login"
-            : "/reva/login";
+          let redirectPath = "/reva/login";
+          if (pathname.startsWith("/reva-restricted"))
+            redirectPath = "/reva-restricted/login";
+          else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-restricted"))
+            redirectPath = "/surf-restricted/login";
+          else if (pathname.startsWith("/surfboard"))
+            redirectPath = "/surfboard/login";
           console.log(
             "🛡️ Middleware - User does not have required role, redirecting to:",
             redirectPath
@@ -220,9 +284,14 @@ const middlewareWithLogic = withDynamicAuth(
       } catch (error) {
         console.error("🛡️ Middleware - Error processing session:", error);
 
-        const redirectPath = pathname.startsWith("/reva-restricted")
-          ? "/reva-restricted/login"
-          : "/reva/login";
+        let redirectPath = "/reva/login";
+        if (pathname.startsWith("/reva-restricted"))
+          redirectPath = "/reva-restricted/login";
+        else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+        else if (pathname.startsWith("/surf-restricted"))
+          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard"))
+          redirectPath = "/surfboard/login";
         console.log(
           "🛡️ Middleware - Session error, redirecting to:",
           redirectPath
@@ -243,5 +312,8 @@ export const config = {
     "/reva/dashboard/:path*",
     "/reva-restricted/dashboard/:path*",
     "/reva-restricted/superadmin/:path*",
+    "/surfboard/dashboard/:path*",
+    "/surf-restricted/dashboard/:path*",
+    "/surf-restricted/superadmin/:path*",
   ],
 };

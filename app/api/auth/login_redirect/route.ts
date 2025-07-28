@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { Platform } from "@/utils/platform";
+import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
-  getEncryptedUserData,
-} from "@/utils/encryptedCookies";
+  canAccessSurfboardAdminPanel,
+  canAccessSurfboardUserPanel,
+  canAccessSurfboardSuperAdminPanel,
+} from "@/permissions";
 
 export async function GET() {
   console.log("login_redirect PAGE");
@@ -18,9 +21,9 @@ export async function GET() {
   }
 
   if (userData.platform === Platform.REVA) {
-    if (canAccessRevaAdminPanel(userData)) {
+    if (canAccessRevaAdminPanel(userData.role)) {
       redirectUrl = "/reva-restricted/dashboard";
-    } else if (canAccessRevaUserPanel(userData)) {
+    } else if (canAccessRevaUserPanel(userData.role)) {
       redirectUrl = "/reva/dashboard";
     }
   } else if (userData.platform === Platform.SCRAM) {
@@ -28,6 +31,14 @@ export async function GET() {
       redirectUrl = "/scram-restricted/dashboard";
     } else if (userData.role === "USER") {
       redirectUrl = "/scram/dashboard";
+    }
+  } else if (userData.platform === Platform.SURFBOARD) {
+    if (canAccessSurfboardSuperAdminPanel(userData.role)) {
+      redirectUrl = "/surf-restricted/superadmin";
+    } else if (canAccessSurfboardAdminPanel(userData.role)) {
+      redirectUrl = "/surf-restricted/dashboard";
+    } else if (canAccessSurfboardUserPanel(userData.role)) {
+      redirectUrl = "/surfboard/dashboard";
     }
   }
 

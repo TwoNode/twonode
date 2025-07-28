@@ -55,3 +55,47 @@ export const isRevaRegularUser = (role: string | null = "") => {
 
 // Legacy function for backward compatibility
 export const is_admin = isRevaAdmin;
+
+// Surfboard permission helpers
+// Surfboard permission helpers
+const SURFBOARD_USER_ROLE = "USER";
+const SURFBOARD_ADMIN_ROLE = "ADMIN";
+const SURFBOARD_SUPERADMIN_ROLE = "SUPERADMIN";
+
+export const SURFBOARD_ROLES = {
+  user: SURFBOARD_USER_ROLE,
+  admin: SURFBOARD_ADMIN_ROLE,
+  super_admin: SURFBOARD_SUPERADMIN_ROLE,
+};
+
+export const isSurfboardAdmin = (role: string | null = "") => {
+  return [SURFBOARD_ROLES.admin, SURFBOARD_ROLES.super_admin].includes(
+    role ?? ""
+  );
+};
+
+export const canAccessSurfboardAdminPanel = (role: string | null = "") => {
+  return [SURFBOARD_ROLES.admin, SURFBOARD_ROLES.super_admin].includes(
+    role ?? ""
+  );
+};
+
+export const canAccessSurfboardUserPanel = (role: string | null = "") => {
+  return [
+    SURFBOARD_ROLES.user,
+    SURFBOARD_ROLES.admin,
+    SURFBOARD_ROLES.super_admin,
+  ].includes(role ?? "");
+};
+
+export const canAccessSurfboardSuperAdminPanel = (role: string | null = "") => {
+  return role === SURFBOARD_ROLES.super_admin;
+};
+
+export const isSurfboardSuperAdmin = (role: string | null = "") => {
+  return role === SURFBOARD_ROLES.super_admin;
+};
+
+export const isSurfboardRegularUser = (role: string | null = "") => {
+  return role === SURFBOARD_ROLES.user;
+};

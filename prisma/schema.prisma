@@ -146,6 +146,24 @@ model Notification {
   @@index([audience])
 }
 
+
+
+
+
+
+
+
+
+
+
+
+// --------------------------------------------------------------------------------
+// Prisma schema for the Surfboard mapping application.
+// Defines the PostGIS‐enabled Postgres schema for storing survey plans,
+// with pillars stored as JSONB, and a simple status/isLive workflow.
+// --------------------------------------------------------------------------------
+
+
 enum SurfboardRole {
   USER
   ADMIN
@@ -163,9 +181,6 @@ model SurfboardUser {
   is_active     Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  
-  // Relations
-  plans         SurfboardPlan[]
 }
 
 enum SurfboardNotificationType {
@@ -203,71 +218,68 @@ model SurfboardNotification {
   @@index([audience])
 }
 
-// Surfboard Plan Models
-model SurfboardPlan {
-  id                    String   @id @default(uuid())
-  planNumber            String   @unique
-  surveyTitle           String
-  planType              String
-  referencePlanNumber   String?
-  deededArea            String
-  facilitator           String
-  pillarType            String
-  certificateReady      String?
-  
-  // Administrative boundaries
-  ward                  String?
-  lcda                  String?
-  lga                   String?
-  
-  // File paths
-  pdfFilePath           String?
-  cadFilePath           String?
-  certificateFilePath   String?
-  
-  // Geometry (stored as GeoJSON string)
-  geometry              String? // GeoJSON polygon
-  areaSqM               Float?
-  centroid              String? // GeoJSON point
-  
-  // Status and tracking
-  status                String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
-  reviewedBy            String?
-  reviewedAt            DateTime?
-  reviewComments        String?
-  
-  // Relationships
-  userId                String
-  user                  SurfboardUser @relation(fields: [userId], references: [id])
-  pillars               SurfboardPillar[]
-  
-  // Timestamps
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  @@index([userId])
-  @@index([status])
-  @@index([planNumber])
+
+/// Workflow states for a surfboard plan
+enum SurfboardPlanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
 }
 
-model SurfboardPillar {
-  id            String   @id @default(uuid())
-  parcelId      String
-  parcel        SurfboardPlan @relation(fields: [parcelId], references: [id], onDelete: Cascade)
-  
-  // Coordinates
-  easting       Float
-  northing      Float
-  pointIndex    Int
-  pillarNumber  String
-  
-  // Geometry (stored as GeoJSON string)
-  geometry      String? // GeoJSON point
-  
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  @@index([parcelId])
-  @@index([pillarNumber])
+/// A single survey plan record.
+/// Geometry is stored as raw GeoJSON in JSONB; pillars are in JSONB.
+model SurfboardPlan {
+  /// PK: auto-generated UUID
+  id                  String               @id @default(uuid()) @db.Uuid
+
+  /// User-entered reference number
+  planNumber          String               @unique
+
+  /// Descriptive title
+  surveyTitle         String
+
+  /// Category (e.g. APPROVED LAYOUT, DEED)
+  planType            String
+
+  /// Optional link to a previous plan
+  referencePlanNumber String?
+
+  /// Recorded deeded area (free-text)
+  deededArea          String
+
+  /// Surveyor/facilitator name
+  facilitator         String
+
+  /// Type of survey pillar
+  pillarType          String
+
+  /// Raw GeoJSON polygon stored as JSONB
+  geometry            Json
+
+  /// S3 URLs for uploaded files
+  pdfFilePath         String?
+  cadFilePath         String?
+  certificateFilePath String?
+
+  // Location fields
+  ward                String?
+  lcda                String?
+  lga                 String?
+
+  /// Array of pillar objects
+  pillars             Json
+
+  /// Workflow status (default PENDING)
+  status              SurfboardPlanStatus @default(PENDING)
+
+  /// Draft vs. published
+  isLive              Boolean             @default(false)
+
+  /// Creation & update timestamps
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  /// Index by reference number
+  @@index([planNumber])
 }

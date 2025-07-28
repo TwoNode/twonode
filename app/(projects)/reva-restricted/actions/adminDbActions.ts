@@ -10,7 +10,10 @@ import {
 import { revalidatePath } from "next/cache";
 import { createTransport } from "nodemailer";
 import { Platform } from "@/utils/platform";
-import { canAccessRevaAdminPanel, canAccessRevaSuperAdminPanel } from "@/permissions";
+import {
+  canAccessRevaAdminPanel,
+  canAccessRevaSuperAdminPanel,
+} from "@/permissions";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
   notifyReportReady,
@@ -303,6 +306,10 @@ export const getRequestByReferenceByAdmin = async (reference: string) => {
       },
     });
 
+    if (!request) {
+      return { success: false, error: "Request not found" };
+    }
+
     return { success: true, data: request, user: userData };
   } catch (error) {
     console.error("Error fetching request:", error);
@@ -320,6 +327,10 @@ export const getOneTimeRequestByReferenceByAdmin = async (
     const request = await prisma.oneTimeUserProperty.findUnique({
       where: { reference },
     });
+
+    if (!request) {
+      return { success: false, error: "OneTime request not found" };
+    }
 
     return { success: true, data: request, user: userData };
   } catch (error) {
@@ -494,12 +505,27 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
 export const uploadDirectLinkReport = async (formData: FormData) => {
   try {
     let warnings: string[] = [];
+    let user;
 
-    const user = await verifyRevaAdminPermissions();
+    try {
+      user = await verifyRevaAdminPermissions();
+      if (!user) {
+        return {
+          error: "Unauthorized: Admin permissions required.",
+          status: 401,
+        };
+      }
+    } catch (authError) {
+      console.error("Authentication error:", authError);
+      return {
+        error: "Authentication failed. Please log in again.",
+        status: 401,
+      };
+    }
 
     const reference = formData.get("reference") as string;
     const isOneTimeRequest = formData.get("isOneTimeRequest") === "true";
-    
+
     if (!reference) {
       return { error: "Missing property reference.", status: 400 };
     }
@@ -511,7 +537,11 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
       });
 
       if (!existingRequest) {
-        return { error: "One-time request not found.", success: false, status: 404 };
+        return {
+          error: "One-time request not found.",
+          success: false,
+          status: 404,
+        };
       }
 
       const file = formData.get("directLink");
@@ -523,9 +553,10 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
         useDirectFileName: true,
       });
 
-      const previousReport = existingRequest?.report && typeof existingRequest.report === "object"
-        ? existingRequest.report
-        : {};
+      const previousReport =
+        existingRequest?.report && typeof existingRequest.report === "object"
+          ? existingRequest.report
+          : {};
 
       const report = {
         ...previousReport,
@@ -551,10 +582,14 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
           html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
               <h2 style="color: #4CAF50;">Your Due Diligence Report is Ready</h2>
-              <p>Dear ${existingRequest.requester || 'Valued Customer'},</p>
+              <p>Dear ${existingRequest.requester || "Valued Customer"},</p>
               <p>Your due diligence report for request <strong>${reference}</strong> is now available for download.</p>
               <p>You can download your report by clicking the link below:</p>
-              <p><a href="${process.env.ONLINE_BASE_URL}/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(existingRequest.email)}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p>
+              <p><a href="${
+                process.env.ONLINE_BASE_URL
+              }/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(
+            existingRequest.email
+          )}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p>
               <p>Thank you for using our service.</p>
               <p style="margin-top: 20px;">Best regards,</p>
               <p><strong>REVA Team</strong></p>
@@ -590,7 +625,7 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
         status: 200,
       };
     }
-    
+
     // Handle regular property requests
     const existingProperty = await prisma.property.findUnique({
       where: { reference },

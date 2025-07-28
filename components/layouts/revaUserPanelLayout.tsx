@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/admin-panel/sidebar";
+import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaUserAccess } from "@/hooks/useRevaUserAccess";
-import RevaLoading from "./RevaLoading";
+import RevaLoading from "@/components/admin-panel/RevaLoading";
 import { REVA_COLORS } from "@/reva-colors";
+import { sideBarWidthClass } from "./revaAdminPanelLayout";
 
 export default function RevaUserPanelLayout({
   children,
@@ -95,8 +96,12 @@ export default function RevaUserPanelLayout({
           "flex"
         )}
       >
-        <div className={"lg:w-[105px] h-full max-h-full"}>
-          <Sidebar items={menuList} userImageUrl={user?.picture!} />
+        <div className={sideBarWidthClass + "h-full max-h-full"}>
+          <Sidebar
+            items={menuList}
+            userImageUrl={user?.picture!}
+            sideBarWidthClass={sideBarWidthClass}
+          />
         </div>
 
         <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
