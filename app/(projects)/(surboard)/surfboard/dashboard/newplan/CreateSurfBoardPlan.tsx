@@ -75,45 +75,47 @@ export default function CreateSurfBoardPlan() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsLoading(true);
+    const loadingToast = toast.loading("Processing CSV file...");
+
     try {
       const text = await file.text();
       const parsedPillars = parseCSVContent(text);
       setPillars(parsedPillars);
       setFiles((prev) => ({ ...prev, csvFile: file }));
-      console.log(parsedPillars, file);
 
-      const rows = text.trim().split("\n").slice(1);
-      const parsed = rows.map((row) => {
-        const [pillarNumber, x, y] = row.split(",");
-        return {
-          pillarNumber: pillarNumber.trim(),
-          x: parseFloat(x),
-          y: parseFloat(y),
-        };
-      });
-
-      // Generate polygon geometry
+      // Generate polygon geometry asynchronously
       if (parsedPillars.length >= 3) {
-        const polygonGeometry = generatePolygonFromPillars(parsedPillars);
-        setGeometry(polygonGeometry);
-        setShowMap(true);
+        try {
+          const polygonGeometry = await generatePolygonFromPillars(parsedPillars);
+          setGeometry(polygonGeometry);
+          setShowMap(true);
 
-        // Simulate getting administrative data (in real app, this would come from a GIS service)
-        setWard("Sample Ward");
-        setLcda("Sample LCDA");
-        setLga("Sample LGA");
+          // Simulate getting administrative data (in real app, this would come from a GIS service)
+          setWard("Sample Ward");
+          setLcda("Sample LCDA");
+          setLga("Sample LGA");
 
-        toast.success(`Successfully parsed ${parsedPillars.length} pillars`);
+          toast.success(`Successfully parsed ${parsedPillars.length} pillars`, { id: loadingToast });
+        } catch (error) {
+          console.error("Error generating polygon:", error);
+          toast.error(
+            `Failed to process coordinates: ${error instanceof Error ? error.message : "Unknown error"}`,
+            { id: loadingToast }
+          );
+          return;
+        }
       } else {
-        toast.error("Need at least 3 pillars to form a polygon");
+        toast.error("Need at least 3 pillars to form a polygon", { id: loadingToast });
       }
     } catch (error) {
+      console.error("Error parsing CSV:", error);
       toast.error(
-        `Error parsing CSV: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { id: loadingToast }
       );
-      console.log("[ERROR]: ", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

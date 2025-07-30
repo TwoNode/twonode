@@ -36,85 +36,108 @@ export default function MapPreview({
   useEffect(() => {
     if (!mapRef.current || pillars.length === 0) return;
 
-    // Initialize map
-    const map = L.map(mapRef.current).setView([6.5244, 3.3792], 10); // Lagos coordinates
+    let isMounted = true;
+    const markers: L.Marker[] = [];
+    const tooltips: L.Tooltip[] = [];
+    let polygon: L.Polygon | null = null;
 
-    // Add OpenStreetMap tiles
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map);
+    const initMap = async () => {
+      try {
+        // Initialize map
+        const map = L.map(mapRef.current!).setView([6.5244, 3.3792], 10); // Lagos coordinates
 
-    // Create polygon from pillar points
-    const points = pillars.map((pillar) =>
-      convertCoordinates(pillar.easting, pillar.northing)
-    );
+        // Add OpenStreetMap tiles
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+        }).addTo(map);
 
-    // Create polygon coordinates array
-    const polygonCoords = points.map(({ lat, lng }) => [lat, lng]);
+        // Convert all coordinates asynchronously
+        const points = await Promise.all(
+          pillars.map((pillar) =>
+            convertCoordinates(pillar.easting, pillar.northing)
+          )
+        );
 
-    // Ensure polygon is closed by adding first point at the end
-    if (
-      polygonCoords.length > 0 &&
-      (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] ||
-        polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1])
-    ) {
-      polygonCoords.push(polygonCoords[0]);
-    }
+        if (!isMounted) return;
 
-    // Add polygon layer
-    if (polygonCoords.length > 2) {
-      // Need at least 3 points for a polygon
-      const polygon = L.polygon(polygonCoords as L.LatLngExpression[], {
-        color: "red",
-        weight: 2,
-        fillColor: "blue",
-        fillOpacity: 0.2,
-      });
-      polygon.addTo(map);
-    }
+        // Create polygon coordinates array
+        const polygonCoords = points.map(({ lat, lng }) => [lat, lng]);
 
-    // Add pillar markers
-    pillars.forEach((pillar, index) => {
-      const { lat, lng } = convertCoordinates(pillar.easting, pillar.northing);
+        // Ensure polygon is closed by adding first point at the end
+        if (
+          polygonCoords.length > 0 &&
+          (polygonCoords[0][0] !== polygonCoords[polygonCoords.length - 1][0] ||
+            polygonCoords[0][1] !== polygonCoords[polygonCoords.length - 1][1])
+        ) {
+          polygonCoords.push(polygonCoords[0]);
+        }
 
-      const marker = L.marker([lat, lng])
-        .bindPopup(
-          `<b>Pillar ${
-            pillar.pillarNumber
-          }</b><br>Index: ${index}<br>Easting: ${pillar.easting.toFixed(
-            2
-          )}<br>Northing: ${pillar.northing.toFixed(2)}`
-        )
-        .addTo(map);
+        // Add polygon layer if we have enough points
+        if (polygonCoords.length > 2) {
+          polygon = L.polygon(polygonCoords as L.LatLngExpression[], {
+            color: "red",
+            weight: 2,
+            fillColor: "blue",
+            fillOpacity: 0.2,
+          }).addTo(map);
+        }
 
-      // Add pillar number label
-      L.tooltip({
-        permanent: true,
-        direction: "center",
-        className: "pillar-label",
-      })
-        .setContent(pillar.pillarNumber)
-        .setLatLng([lat, lng])
-        .addTo(map);
-    });
+        // Add pillar markers and tooltips
+        pillars.forEach((pillar, index) => {
+          const { lat, lng } = points[index];
 
-    // Fit map to show all features
-    if (pillars.length > 0) {
-      const bounds = L.latLngBounds(
-        pillars.map((pillar) => {
-          const { lat, lng } = convertCoordinates(
-            pillar.easting,
-            pillar.northing
+          // Create marker
+          const marker = L.marker([lat, lng])
+            .bindPopup(
+              `<b>Pillar ${
+                pillar.pillarNumber
+              }</b><br>Index: ${index}<br>Easting: ${pillar.easting.toFixed(
+                2
+              )}<br>Northing: ${pillar.northing.toFixed(2)}`
+            )
+            .addTo(map);
+          markers.push(marker);
+
+          // Add pillar number label
+          const tooltip = L.tooltip({
+            permanent: true,
+            direction: "center",
+            className: "pillar-label",
+          })
+            .setContent(pillar.pillarNumber)
+            .setLatLng([lat, lng])
+            .addTo(map);
+          tooltips.push(tooltip);
+        });
+
+        // Fit map to show all features
+        if (points.length > 0) {
+          const bounds = L.latLngBounds(
+            points.map(({ lat, lng }) => [lat, lng] as [number, number])
           );
-          return [lat, lng];
-        })
-      );
-      map.fitBounds(bounds, { padding: [20, 20] });
-    }
+          map.fitBounds(bounds, { padding: [20, 20] });
+        }
 
-    mapInstanceRef.current = map;
+        mapInstanceRef.current = map;
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        // You might want to show an error message to the user here
+      }
+    };
+
+    initMap();
 
     return () => {
+      isMounted = false;
+
+      // Clean up markers and tooltips
+      markers.forEach((marker) => marker.remove());
+      tooltips.forEach((tooltip) => tooltip.remove());
+      if (polygon) {
+        polygon.remove();
+      }
+
+      // Clean up map
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -152,7 +175,10 @@ export default function MapPreview({
 
   return (
     <div className={`relative ${className}`}>
-      <div ref={mapRef} className="h-[500px] overflow-hidden w-full rounded-lg" />
+      <div
+        ref={mapRef}
+        className="h-[500px] overflow-hidden w-full rounded-lg"
+      />
       <style jsx global>{`
         .pillar-label {
           background: none;

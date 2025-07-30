@@ -1,3 +1,8 @@
+// Import ArcGIS projection utilities
+import * as projectOperator from "@arcgis/core/geometry/operators/projectOperator";
+import SpatialReference from "@arcgis/core/geometry/SpatialReference";
+import Point from "@arcgis/core/geometry/Point";
+
 // Utility functions for surfboard operations
 export interface PillarData {
   easting: number;
@@ -7,33 +12,77 @@ export interface PillarData {
   geometry?: string; // GeoJSON point
 }
 
-// Enhanced coordinate conversion using proper projection
-export function convertCoordinates(
+// Create a promise that resolves when projection is loaded
+let projectionLoadPromise: Promise<void> | null = null;
+
+/**
+ * Ensures the projection module is loaded before performing coordinate transformations
+ */
+export async function ensureProjectionLoaded(): Promise<void> {
+  // If already loaded, return immediately
+  if (projectOperator.isLoaded()) {
+    return;
+  }
+
+  // If loading is in progress, return the existing promise
+  if (projectionLoadPromise) {
+    return projectionLoadPromise;
+  }
+
+  // Start loading the projection module
+  projectionLoadPromise = projectOperator.load().catch((error) => {
+    console.error("Failed to load projection module:", error);
+    throw new Error(
+      "Failed to initialize map projection system. Please try refreshing the page."
+    );
+  });
+
+  return projectionLoadPromise;
+}
+
+// Enhanced coordinate conversion using ArcGIS projection
+export async function convertCoordinates(
   easting: number,
   northing: number,
-  fromEPSG: number = 26331 // Default to Minna / Nigeria Mid Belt
-): { lat: number; lng: number } {
-  // This is a simplified conversion for Nigeria Mid Belt (EPSG:26331) to WGS84
-  // In production, you should use a proper projection library like proj4js
+  fromEPSG: number = 26331 // Minna / Nigeria West Belt
+): Promise<{ lat: number; lng: number }> {
+  try {
+    await ensureProjectionLoaded();
 
-  // Approximate conversion factors for Nigeria Mid Belt to WGS84
-  // These are rough estimates and should be replaced with proper projection
-  const latOffset = 6.5; // Approximate latitude offset
-  const lngOffset = 3.4; // Approximate longitude offset
+    // Create point in source spatial reference
+    const sourcePoint = new Point({
+      x: easting,
+      y: northing,
+      spatialReference: new SpatialReference({ wkid: fromEPSG }),
+    });
 
-  // Convert from meters to degrees (very rough approximation)
-  const lat = latOffset + northing / 111000;
-  const lng = lngOffset + easting / (111000 * Math.cos((lat * Math.PI) / 180));
+    // Project to WGS84 (EPSG:4326)
+    const targetSR = new SpatialReference({ wkid: 4326 });
+    const projectedPoint = projectOperator.execute(
+      sourcePoint,
+      targetSR
+    ) as Point;
 
-  return { lat, lng };
+    return {
+      lat: projectedPoint.y,
+      lng: projectedPoint.x,
+    };
+  } catch (error) {
+    console.error("Coordinate conversion failed:", error);
+    throw new Error(
+      `Failed to convert coordinates: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 }
 
 // Enhanced CSV parsing with better error handling
 export function parseCSVContent(csvContent: string): PillarData[] {
   try {
     const lines = csvContent.trim().split("\n");
-    if (lines.length < 2) {
-      throw new Error("CSV file must have at least a header and one data row");
+    if (lines.length < 3) {
+      throw new Error("CSV file must have at least 3 rows");
     }
 
     // Parse header
@@ -111,43 +160,74 @@ export function parseCSVContent(csvContent: string): PillarData[] {
 }
 
 // Generate GeoJSON polygon from pillars with proper closure
-export function generatePolygonFromPillars(pillars: PillarData[]): string {
+export async function generatePolygonFromPillars(
+  pillars: PillarData[]
+): Promise<string> {
   if (pillars.length < 3) {
     throw new Error("Need at least 3 pillars to form a polygon");
   }
 
-  // Convert all pillars to WGS84 coordinates
-  const coordinates = pillars.map((pillar) => {
-    const { lat, lng } = convertCoordinates(pillar.easting, pillar.northing);
-    return [lng, lat]; // GeoJSON format: [longitude, latitude]
-  });
+  try {
+    // Convert all pillars to WGS84 coordinates
+    const coordinatesPromises = pillars.map(async (pillar) => {
+      const { lat, lng } = await convertCoordinates(
+        pillar.easting,
+        pillar.northing
+      );
+      return [lng, lat]; // GeoJSON format: [longitude, latitude]
+    });
 
-  // Close the polygon by repeating the first point
-  if (
-    coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
-    coordinates[0][1] !== coordinates[coordinates.length - 1][1]
-  ) {
-    coordinates.push([...coordinates[0]]);
+    const coordinates = await Promise.all(coordinatesPromises);
+
+    // Close the polygon by repeating the first point
+    if (
+      coordinates.length > 0 &&
+      (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+        coordinates[0][1] !== coordinates[coordinates.length - 1][1])
+    ) {
+      coordinates.push([...coordinates[0]]);
+    }
+
+    const polygon = {
+      type: "Polygon",
+      coordinates: [coordinates],
+    };
+
+    return JSON.stringify(polygon);
+  } catch (error) {
+    console.error("Failed to generate polygon:", error);
+    throw new Error(
+      `Failed to generate polygon: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
-
-  const polygon = {
-    type: "Polygon",
-    coordinates: [coordinates],
-  };
-
-  return JSON.stringify(polygon);
 }
 
 // Generate GeoJSON point for a pillar
-export function generatePointFromPillar(pillar: PillarData): string {
-  const { lat, lng } = convertCoordinates(pillar.easting, pillar.northing);
+export async function generatePointFromPillar(
+  pillar: PillarData
+): Promise<string> {
+  try {
+    const { lat, lng } = await convertCoordinates(
+      pillar.easting,
+      pillar.northing
+    );
 
-  const point = {
-    type: "Point",
-    coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
-  };
+    const point = {
+      type: "Point",
+      coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
+    };
 
-  return JSON.stringify(point);
+    return JSON.stringify(point);
+  } catch (error) {
+    console.error("Failed to generate point:", error);
+    throw new Error(
+      `Failed to generate point: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 }
 
 // Calculate polygon area (simplified - use proper GIS library in production)
