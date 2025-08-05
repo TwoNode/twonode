@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
-  getAllSurfboardPlans,
-  updateSurfboardPlanStatus,
-  deleteSurfboardPlan,
+  getAllSurfPlans,
+  updateSurfPlanStatus,
+  deleteSurfPlan,
 } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
+import { useRouter } from "next/navigation";
+import { MapPin } from "lucide-react";
 
 interface PlanWithPillars extends Plan {
   status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW";
@@ -26,17 +28,14 @@ interface PlanWithPillars extends Plan {
 }
 
 export default function PlanList() {
+  const router = useRouter();
   const [plans, setPlans] = useState<PlanWithPillars[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPlans();
-  }, []);
-
   const loadPlans = async () => {
     try {
-      const result = await getAllSurfboardPlans();
+      const result = await getAllSurfPlans();
       if (result?.success && result?.data) {
         setPlans(result.data as PlanWithPillars[]);
       } else {
@@ -49,13 +48,17 @@ export default function PlanList() {
     }
   };
 
+  useEffect(() => {
+    loadPlans();
+  }, []);
+
   const handleStatusUpdate = async (
     planId: string,
     newStatus: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"
   ) => {
     setUpdating(planId);
     try {
-      const result = await updateSurfboardPlanStatus(planId, newStatus);
+      const result = await updateSurfPlanStatus(planId, newStatus);
       if (result.success) {
         toast.success("Status updated successfully");
         loadPlans(); // Reload plans
@@ -79,7 +82,7 @@ export default function PlanList() {
     }
 
     try {
-      const result = await deleteSurfboardPlan(planId);
+      const result = await deleteSurfPlan(planId);
       if (result.success) {
         toast.success("Plan deleted successfully");
         loadPlans(); // Reload plans
@@ -166,116 +169,104 @@ export default function PlanList() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Plan Details
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Plan Number
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Location
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Title
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Files
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
                 Created
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+              <th scope="col" className="relative px-6 py-3">
+                <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {plans.map((plan) => (
-              <tr key={plan.id} className="hover:bg-gray-50">
+              <tr
+                key={plan.id}
+                onClick={() => router.push(`/surfboard/dashboard/plan?planId=${plan.id}`)}
+                className="hover:bg-gray-50 cursor-pointer"
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {plan.planNumber}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {plan.surveyTitle}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {plan.planType} • {plan.pillarType}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {plan.pillars.length} pillars
-                    </div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {plan.planNumber}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {plan.ward && <div>Ward: {plan.ward}</div>}
-                    {plan.lcda && <div>LCDA: {plan.lcda}</div>}
-                    {plan.lga && <div>LGA: {plan.lga}</div>}
-                  </div>
+                  <div className="text-sm text-gray-900">{plan.surveyTitle}</div>
+                  <div className="text-sm text-gray-500">{plan.facilitator}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <select
-                    value={plan.status || "PENDING"}
-                    onChange={(e) =>
-                      handleStatusUpdate(
-                        plan.id,
-                        e.target.value as
-                          | "PENDING"
-                          | "APPROVED"
-                          | "REJECTED"
-                          | "UNDER_REVIEW"
-                      )
-                    }
-                    disabled={updating === plan.id}
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
-                      plan.status || "PENDING"
-                    )} border-0 focus:ring-2 focus:ring-blue-500`}
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      plan.status === "APPROVED"
+                        ? "bg-green-100 text-green-800"
+                        : plan.status === "REJECTED"
+                        ? "bg-red-100 text-red-800"
+                        : plan.status === "UNDER_REVIEW"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
                   >
-                    <option value="PENDING">Pending</option>
-                    <option value="UNDER_REVIEW">Under Review</option>
-                    <option value="APPROVED">Approved</option>
-                    <option value="REJECTED">Rejected</option>
-                  </select>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex space-x-2">
-                    {plan.pdfFilePath && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        PDF
-                      </span>
-                    )}
-                    {plan.cadFilePath && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        CAD
-                      </span>
-                    )}
-                    {plan.certificateFilePath && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Cert
-                      </span>
-                    )}
-                  </div>
+                    {plan.status.replace("_", " ")}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(plan.createdAt)}
+                  {new Date(plan.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end space-x-2">
                     <button
-                      onClick={() =>
-                        window.open(
-                          `/surfboard/dashboard/plan/${plan.id}`,
-                          "_blank"
-                        )
-                      }
-                      className="text-blue-600 hover:text-blue-900 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle view action
+                        router.push(`/surfboard/dashboard/plan/${plan.id}`);
+                      }}
+                      className="text-blue-600 hover:text-blue-900"
                     >
                       View
                     </button>
                     <button
-                      onClick={() => handleDelete(plan.id)}
-                      className="text-red-600 hover:text-red-900 text-xs"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            "Are you sure you want to delete this plan? This action cannot be undone."
+                          )
+                        ) {
+                          setUpdating(plan.id);
+                          const result = await deleteSurfPlan(plan.id);
+                          if (result?.success) {
+                            toast.success("Plan deleted successfully");
+                            loadPlans();
+                          } else {
+                            toast.error(result?.error || "Failed to delete plan");
+                          }
+                          setUpdating(null);
+                        }
+                      }}
+                      disabled={updating === plan.id}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
                     >
-                      Delete
+                      {updating === plan.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </td>

@@ -25,7 +25,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-import { PropertyWithoutUser } from "../../actions/dbActions";
+import { PropertyWithoutUser } from "../../actions/revaActions";
 import Link from "next/link";
 import {
   notifyError,

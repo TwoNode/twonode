@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createSurfboardPlan } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import { createSurfPlan } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type {
   CreatePlanData,
   PillarData,
@@ -22,7 +22,7 @@ type FormFields = Omit<
   "ward" | "lcda" | "lga" | "geometry" | "pillars"
 >;
 
-export default function CreateSurfBoardPlan() {
+export default function CreateSurfPlan() {
   const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +43,8 @@ export default function CreateSurfBoardPlan() {
     facilitator: "",
     pillarType: "",
     certificateReady: false,
+    dateOnSurveyPlan: "",
+    reasonForWithdrawalAndResubmission: "",
   });
 
   // File state
@@ -135,7 +137,8 @@ export default function CreateSurfBoardPlan() {
       !planInfo.planType ||
       !planInfo.deededArea ||
       !planInfo.facilitator ||
-      !planInfo.pillarType 
+      !planInfo.pillarType ||
+      (planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION" && !planInfo.reasonForWithdrawalAndResubmission)
     ) {
       toast.error("Please fill in all required fields");
       return;
@@ -174,7 +177,7 @@ export default function CreateSurfBoardPlan() {
       };
 
       // Call the server action to create the plan
-      const result = await createSurfboardPlan(planData, fileData);
+      const result = await createSurfPlan(planData, fileData);
 
       if (result.success) {
         toast.success("Plan created successfully!", { id: loadingToast });
@@ -219,6 +222,8 @@ export default function CreateSurfBoardPlan() {
       facilitator: "",
       pillarType: "",
       certificateReady: false,
+      dateOnSurveyPlan: "",
+      reasonForWithdrawalAndResubmission: "",
     });
     setFiles({
       csvFile: null,
@@ -396,6 +401,39 @@ export default function CreateSurfBoardPlan() {
                   <option value="yes">Yes</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date on Survey Plan
+                </label>
+                <input
+                  type="date"
+                  name="dateOnSurveyPlan"
+                  value={planInfo.dateOnSurveyPlan as string}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION" && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Reason for Withdrawal and Resubmission *
+                  </label>
+                  <textarea
+                    name="reasonForWithdrawalAndResubmission"
+                    value={planInfo.reasonForWithdrawalAndResubmission}
+                    onChange={(e) =>
+                      setPlanInfo((prev) => ({
+                        ...prev,
+                        reasonForWithdrawalAndResubmission: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                    required={planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION"}
+                  />
+                </div>
+              )}
             </div>
 
             {/* File Uploads */}

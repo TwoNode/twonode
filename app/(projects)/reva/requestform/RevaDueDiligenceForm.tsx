@@ -15,7 +15,7 @@ import { toast } from "react-toastify";
 import {
   saveFormDataAndInitiatePaystack,
   checkPaymentSuccess,
-} from "../actions/dbActions";
+} from "../actions/revaActions";
 import Bowser from "bowser";
 import PaystackPop from "@paystack/inline-js";
 

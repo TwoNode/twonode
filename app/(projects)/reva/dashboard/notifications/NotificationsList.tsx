@@ -34,8 +34,8 @@ import {
   markNotificationAsRead,
   dismissNotification,
   getUnreadNotificationCount,
-} from "../../actions/dbActions";
-import { getAuthenticatedUser } from "@/utils/authUser";
+} from "../../actions/revaActions";
+import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
 
 type NotificationType =
@@ -110,7 +110,7 @@ export default function NotificationsList() {
   const fetchUserAndNotifications = async () => {
     try {
       setLoading(true);
-      const user = await getAuthenticatedUser();
+      const user = await getAuthenticatedRevaUser();
       if (user?.id) {
         setUserId(user.id);
         const result = await getUserNotifications(user.id, user.role);

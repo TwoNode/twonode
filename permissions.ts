@@ -68,19 +68,19 @@ export const SURFBOARD_ROLES = {
   super_admin: SURFBOARD_SUPERADMIN_ROLE,
 };
 
-export const isSurfboardAdmin = (role: string | null = "") => {
+export const isSurfAdmin = (role: string | null = "") => {
   return [SURFBOARD_ROLES.admin, SURFBOARD_ROLES.super_admin].includes(
     role ?? ""
   );
 };
 
-export const canAccessSurfboardAdminPanel = (role: string | null = "") => {
+export const canAccessSurfAdminPanel = (role: string | null = "") => {
   return [SURFBOARD_ROLES.admin, SURFBOARD_ROLES.super_admin].includes(
     role ?? ""
   );
 };
 
-export const canAccessSurfboardUserPanel = (role: string | null = "") => {
+export const canAccessSurfUserPanel = (role: string | null = "") => {
   return [
     SURFBOARD_ROLES.user,
     SURFBOARD_ROLES.admin,
@@ -88,14 +88,14 @@ export const canAccessSurfboardUserPanel = (role: string | null = "") => {
   ].includes(role ?? "");
 };
 
-export const canAccessSurfboardSuperAdminPanel = (role: string | null = "") => {
+export const canAccessSurfSuperAdminPanel = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.super_admin;
 };
 
-export const isSurfboardSuperAdmin = (role: string | null = "") => {
+export const isSurfSuperAdmin = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.super_admin;
 };
 
-export const isSurfboardRegularUser = (role: string | null = "") => {
+export const isSurfRegularUser = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.user;
 };

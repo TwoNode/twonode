@@ -151,12 +151,6 @@ model Notification {
 
 
 
-
-
-
-
-
-
 // --------------------------------------------------------------------------------
 // Prisma schema for the Surfboard mapping application.
 // Defines the PostGIS‐enabled Postgres schema for storing survey plans,
@@ -171,17 +165,111 @@ enum SurfboardRole {
 }
 
 model SurfboardUser {
-  id            String         @id @default(uuid())
-  kindeId       String         @unique
-  email         String         @unique
-  firstName     String
-  lastName      String
-  role          SurfboardRole  @default(USER)
-  emailVerified Boolean        @default(false)
-  is_active     Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  kindeId           String         @unique
+  email             String         @unique
+  firstName         String
+  lastName          String
+  role              SurfboardRole  @default(USER)
+  emailVerified     Boolean        @default(false)
+  is_active         Boolean        @default(true)
+  
+  // New fields
+  logo              String?        // URL to the user's logo
+  companyName       String?        // User's company name
+  surconRegNumber   String?        // SURCON registration number
+  surconRegName     String?        // Name as registered with SURCON
+  signature         String?        // URL to the user's signature image
+  prefix            String?        // Name prefix (e.g., Mr., Mrs., Dr.)
+  suffix            String?        // Name suffix (e.g., Jr., Sr., III)
+  residenceState    String?        // Residence state in Nigeria
+
+  // Relations
+  plans             SurfboardPlan[]
+
+  // Timestamps
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
+
+
+/// Workflow states for a surfboard plan
+enum SurfboardPlanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+/// A single survey plan record.
+/// Geometry is stored as raw GeoJSON in JSONB; pillars are in JSONB.
+model SurfboardPlan {
+  /// PK: auto-generated UUID
+  id                     String               @id @default(uuid()) @db.Uuid
+
+  /// User-entered reference number
+  planNumber             String               @unique
+
+  /// Descriptive title
+  surveyTitle            String
+
+  /// Category (e.g. APPROVED LAYOUT, DEED)
+  planType               String
+
+  /// Optional link to a previous plan
+  referencePlanNumber    String?
+
+  /// Recorded deeded area (free-text)
+  deededArea             String
+
+  /// Surveyor/facilitator name
+  facilitator            String
+
+  /// Type of survey pillar
+  pillarType             String
+
+  /// Raw GeoJSON polygon stored as JSONB
+  geometry               Json
+
+  /// S3 URLs for uploaded files
+  pdfFilePath            String?
+  cadFilePath            String?
+  certificateFilePath    String?
+
+  // Location fields
+  ward                   String?
+  lcda                   String?
+  lga                    String?
+
+  /// Array of pillar objects
+  pillars                Json
+
+  /// Date on the survey plan document
+  dateOnSurveyPlan       DateTime?
+
+  /// Reason required when planType is "Withdrawal and Resubmission"
+  reasonForWithdrawalAndResubmission String?
+
+  /// Workflow status (default PENDING)
+  status                 SurfboardPlanStatus @default(PENDING)
+
+  /// Draft vs. published
+  isLive                 Boolean             @default(false)
+
+  /// Reference to the user who created this plan
+  userId                 String?
+  user                   SurfboardUser?       @relation(fields: [userId], references: [id])
+
+  sharedTo               String[]
+
+  /// Creation & update timestamps
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  /// Index by reference number
+  @@index([planNumber])
+}
+
 
 enum SurfboardNotificationType {
   INFO
@@ -216,70 +304,4 @@ model SurfboardNotification {
 
   @@index([createdAt])
   @@index([audience])
-}
-
-
-/// Workflow states for a surfboard plan
-enum SurfboardPlanStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  UNDER_REVIEW
-}
-
-/// A single survey plan record.
-/// Geometry is stored as raw GeoJSON in JSONB; pillars are in JSONB.
-model SurfboardPlan {
-  /// PK: auto-generated UUID
-  id                  String               @id @default(uuid()) @db.Uuid
-
-  /// User-entered reference number
-  planNumber          String               @unique
-
-  /// Descriptive title
-  surveyTitle         String
-
-  /// Category (e.g. APPROVED LAYOUT, DEED)
-  planType            String
-
-  /// Optional link to a previous plan
-  referencePlanNumber String?
-
-  /// Recorded deeded area (free-text)
-  deededArea          String
-
-  /// Surveyor/facilitator name
-  facilitator         String
-
-  /// Type of survey pillar
-  pillarType          String
-
-  /// Raw GeoJSON polygon stored as JSONB
-  geometry            Json
-
-  /// S3 URLs for uploaded files
-  pdfFilePath         String?
-  cadFilePath         String?
-  certificateFilePath String?
-
-  // Location fields
-  ward                String?
-  lcda                String?
-  lga                 String?
-
-  /// Array of pillar objects
-  pillars             Json
-
-  /// Workflow status (default PENDING)
-  status              SurfboardPlanStatus @default(PENDING)
-
-  /// Draft vs. published
-  isLive              Boolean             @default(false)
-
-  /// Creation & update timestamps
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-
-  /// Index by reference number
-  @@index([planNumber])
 }

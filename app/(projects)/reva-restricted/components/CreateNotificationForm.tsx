@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Bell, Send, Loader2 } from "lucide-react";
-import { createNotification } from "../../reva/actions/dbActions";
+import { createNotification } from "../../reva/actions/revaActions";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
 import { toast } from "sonner";
 

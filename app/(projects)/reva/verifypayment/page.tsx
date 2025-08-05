@@ -2,7 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import VerifyPayment from "./viewDetails";
 import { notFound } from "next/navigation";
-import { checkPaymentSuccess } from "../actions/dbActions";
+import { checkPaymentSuccess } from "../actions/revaActions";
 import PaymentErrorPage from "./PaymentErrorPage";
 
 const VerifyPaymentPage = async ({

@@ -6,9 +6,9 @@ import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
   canAccessRevaSuperAdminPanel,
-  canAccessSurfboardAdminPanel,
-  canAccessSurfboardUserPanel,
-  canAccessSurfboardSuperAdminPanel,
+  canAccessSurfAdminPanel,
+  canAccessSurfUserPanel,
+  canAccessSurfSuperAdminPanel,
 } from "@/permissions";
 import {
   getAndRefreshUserSession,
@@ -216,7 +216,7 @@ const middlewareWithLogic = withDynamicAuth(
           console.log(
             "🛡️ Middleware - Checking Surfboard user dashboard access"
           );
-          hasAccess = canAccessSurfboardUserPanel(userData.role);
+          hasAccess = canAccessSurfUserPanel(userData.role);
         } else if (pathname.startsWith("/surf-restricted/dashboard")) {
           // Surfboard admin dashboard - only ADMIN and SUPERADMIN can access
           console.log(
@@ -228,14 +228,14 @@ const middlewareWithLogic = withDynamicAuth(
             console.log(
               "🛡️ Middleware - Checking Surfboard superadmin access within dashboard"
             );
-            hasAccess = canAccessSurfboardSuperAdminPanel(userData.role);
+            hasAccess = canAccessSurfSuperAdminPanel(userData.role);
           } else {
-            hasAccess = canAccessSurfboardAdminPanel(userData.role);
+            hasAccess = canAccessSurfAdminPanel(userData.role);
           }
         } else if (pathname.startsWith("/surf-restricted/superadmin")) {
           // Surfboard superadmin dashboard - only SUPERADMIN can access
           console.log("🛡️ Middleware - Checking Surfboard superadmin access");
-          hasAccess = canAccessSurfboardSuperAdminPanel(userData.role);
+          hasAccess = canAccessSurfSuperAdminPanel(userData.role);
         }
 
         console.log("🛡️ Middleware - Access granted:", hasAccess);

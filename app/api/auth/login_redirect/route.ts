@@ -5,9 +5,9 @@ import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
-  canAccessSurfboardAdminPanel,
-  canAccessSurfboardUserPanel,
-  canAccessSurfboardSuperAdminPanel,
+  canAccessSurfAdminPanel,
+  canAccessSurfUserPanel,
+  canAccessSurfSuperAdminPanel,
 } from "@/permissions";
 
 export async function GET() {
@@ -33,11 +33,11 @@ export async function GET() {
       redirectUrl = "/scram/dashboard";
     }
   } else if (userData.platform === Platform.SURFBOARD) {
-    if (canAccessSurfboardSuperAdminPanel(userData.role)) {
+    if (canAccessSurfSuperAdminPanel(userData.role)) {
       redirectUrl = "/surf-restricted/superadmin";
-    } else if (canAccessSurfboardAdminPanel(userData.role)) {
+    } else if (canAccessSurfAdminPanel(userData.role)) {
       redirectUrl = "/surf-restricted/dashboard";
-    } else if (canAccessSurfboardUserPanel(userData.role)) {
+    } else if (canAccessSurfUserPanel(userData.role)) {
       redirectUrl = "/surfboard/dashboard";
     }
   }

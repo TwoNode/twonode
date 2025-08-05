@@ -1,5 +1,5 @@
 import React from "react";
-import { getUserProperties } from "../actions/dbActions";
+import { getUserProperties } from "../actions/revaActions";
 import DashboardClient from "./DashboardClient";
 import ErrorComponent from "./components/ErrorComponent";
 

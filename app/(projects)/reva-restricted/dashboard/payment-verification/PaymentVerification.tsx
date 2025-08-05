@@ -37,7 +37,7 @@ import { getAllRequestsWithUserByAdmin } from "../../actions/adminDbActions";
 import {
   updatePropertyTransactionStatus,
   updateOneTimeTransactionStatus,
-} from "../../../reva/actions/dbActions";
+} from "../../../reva/actions/revaActions";
 import {
   notifySuccess,
   notifyError,

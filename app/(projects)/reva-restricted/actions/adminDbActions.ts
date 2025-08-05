@@ -18,7 +18,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
   notifyReportReady,
   notifySystemAlert,
-} from "../../reva/actions/dbActions";
+} from "../../reva/actions/revaActions";
 
 const AVAILABLE = "Available";
 const COMPLETED = "Completed";

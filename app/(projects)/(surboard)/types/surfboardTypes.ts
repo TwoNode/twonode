@@ -43,6 +43,8 @@ export interface CreatePlanData {
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
+  dateOnSurveyPlan?: string | Date;
+  reasonForWithdrawalAndResubmission?: string;
 }
 
 /** Files uploaded alongside the plan */
@@ -75,6 +77,8 @@ export interface Plan {
   pillars: Prisma.JsonValue | PillarData[]; // Using Prisma's JsonValue type
   status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;
+  dateOnSurveyPlan: Date | null;
+  reasonForWithdrawalAndResubmission: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

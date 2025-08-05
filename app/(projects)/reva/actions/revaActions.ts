@@ -13,7 +13,7 @@ import {
   NotificationType,
   Role,
 } from "@prisma/client";
-import { getAuthenticatedUser } from "@/utils/authUser";
+import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
 import prisma from "@/lib/prisma";
 import { sendEmailToAdmin } from "@/utils/email";
 import { sendEmailToAllAdmins } from "@/app/(projects)/reva-restricted/actions/adminDbActions";
@@ -305,7 +305,7 @@ export const authSaveFormDataAndInitiatePaystack = async (
   formData: FormData
 ) => {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedRevaUser();
 
     if (!user) {
       return { error: "User is not authenticated.", status: 401 };
@@ -348,16 +348,6 @@ export const authSaveFormDataAndInitiatePaystack = async (
     if (siteImages.length > 0) {
       uploadedSiteImagesUrls = await uploadToS3FromServer(siteImages);
     }
-
-    // throw new Error("error");
-
-    // Upload files to AWS S3
-
-    console.warn("FORM DATA UPLOADING", "\n\n\n\n\n\n");
-
-    console.log("formData", formData);
-
-    console.error("\n\n\n\n\n\n", "FORM DATA UPLOADED");
 
     if (files && files.length > 0) {
       uploadedFilesUrls = await uploadToS3FromServer(files);
@@ -530,7 +520,7 @@ export const checkPaymentSuccess = async (reference: string) => {
 export const authPaymentSuccessful = async (reference: string) => {
   try {
     // Fetch authenticated user
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedRevaUser();
     if (!user) {
       return { success: false, message: "User is not authenticated." };
     }
@@ -690,7 +680,7 @@ const getAllUserProperties = async (userId: string) => {
 
 export const getUserProperties = async () => {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedRevaUser();
 
     if (!user) {
       return { success: false, message: "User is not authenticated." };

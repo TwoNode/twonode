@@ -15,7 +15,7 @@ import {
   Mail,
 } from "lucide-react";
 import Link from "next/link";
-import { getOneTimeRequestByReference } from "@/app/(projects)/reva/actions/dbActions";
+import { getOneTimeRequestByReference } from "@/app/(projects)/reva/actions/revaActions";
 import DownloadReportButton from "./components/DownloadReportButton";
 import { OneTimeRequest } from "./OneTimeRequest";
 

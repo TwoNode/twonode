@@ -2,7 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import VerifyPayment from "./viewDetails";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
-import { authPaymentSuccessful } from "@/app/(projects)/reva/actions/dbActions";
+import { authPaymentSuccessful } from "@/app/(projects)/reva/actions/revaActions";
 import PaymentErrorPage from "./PaymentErrorPage";
 
 const VerifyPaymentPage = async ({

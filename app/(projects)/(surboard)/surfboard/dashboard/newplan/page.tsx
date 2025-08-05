@@ -1,10 +1,10 @@
 import React from "react";
-import CreateSurfBoardPlan from "./CreateSurfBoardPlan";
+import CreateSurfPlan from "./CreateSurfBoardPlan";
 
 const CreateSurfBoardPlanPage = () => {
   return (
     <div>
-      <CreateSurfBoardPlan />
+      <CreateSurfPlan />
     </div>
   );
 };

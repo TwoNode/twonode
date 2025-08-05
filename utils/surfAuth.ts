@@ -1,11 +1,11 @@
 "use server";
 import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { canAccessRevaAdminPanel, canAccessRevaUserPanel } from "@/permissions";
+import { canAccessSurfAdminPanel, canAccessSurfUserPanel } from "@/permissions";
 
-export async function getUserFromRevaDB(userId: string) {
+export async function getUserFromSurfDB(userId: string) {
   try {
-    const user = await prisma.revaUser.findUnique({
+    const user = await prisma.surfboardUser.findUnique({
       where: { kindeId: userId },
     });
 
@@ -16,7 +16,7 @@ export async function getUserFromRevaDB(userId: string) {
   }
 }
 
-export async function getAuthenticatedUser() {
+export async function getAuthenticatedSurfUser() {
   const { getUser, isAuthenticated } = getKindeServerSession();
 
   const UserIsAuthenticated = await isAuthenticated();
@@ -26,25 +26,25 @@ export async function getAuthenticatedUser() {
     throw new Error("Not Authenticated");
   }
 
-  const revaUser = await getUserFromRevaDB(user.id);
+  const surfUser = await getUserFromSurfDB(user.id);
 
-  if (!revaUser) {
-    throw new Error("User not found in Reva DB");
+  if (!surfUser) {
+    throw new Error("User not found in Surf DB");
   }
 
-  return { ...user, ...revaUser };
+  return { ...user, ...surfUser };
 }
 
 // Function to verify if user can access admin panel
-export async function verifyRevaAdminAccess() {
+export async function verifySurfAdminAccess() {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedSurfUser();
     
     if (!user || !user.role) {
       return { hasAccess: false, message: "User not authenticated or role not found" };
     }
 
-    const hasAccess = canAccessRevaAdminPanel(user.role);
+    const hasAccess = canAccessSurfAdminPanel(user.role);
     
     return { 
       hasAccess, 
@@ -58,15 +58,15 @@ export async function verifyRevaAdminAccess() {
 }
 
 // Function to verify if user can access user panel
-export async function verifyRevaUserAccess() {
+export async function verifySurfUserAccess() {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedSurfUser();
     
     if (!user || !user.role) {
       return { hasAccess: false, message: "User not authenticated or role not found" };
     }
 
-    const hasAccess = canAccessRevaUserPanel(user.role);
+    const hasAccess = canAccessSurfUserPanel(user.role);
     
     return { 
       hasAccess, 
@@ -78,7 +78,3 @@ export async function verifyRevaUserAccess() {
     return { hasAccess: false, message: "Error verifying permissions" };
   }
 }
-
-// Legacy function for backward compatibility
-export const verifyAdminAccess = verifyRevaAdminAccess;
-export const verifyUserAccess = verifyRevaUserAccess;

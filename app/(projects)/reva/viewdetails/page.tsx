@@ -2,7 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import ViewDetails from "./viewDetails";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
-import { checkPaymentSuccess } from "../actions/dbActions";
+import { checkPaymentSuccess } from "../actions/revaActions";
 
 const ViewDetailsPage = async ({
   searchParams,

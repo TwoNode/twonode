@@ -4,12 +4,6 @@ CREATE TYPE "SurfboardNotificationType" AS ENUM ('INFO', 'SUCCESS', 'WARNING', '
 -- CreateEnum
 CREATE TYPE "SurfboardNotificationAudience" AS ENUM ('SPECIFIC_USERS', 'GENERAL_ADMINS', 'SUPERADMIN', 'ALL_USERS');
 
--- AlterTable
-ALTER TABLE "OneTimeUserProperty" ALTER COLUMN "reference" SET DEFAULT concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12));
-
--- AlterTable
-ALTER TABLE "Property" ALTER COLUMN "reference" SET DEFAULT concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12));
-
 -- CreateTable
 CREATE TABLE "SurfboardNotification" (
     "id" TEXT NOT NULL,

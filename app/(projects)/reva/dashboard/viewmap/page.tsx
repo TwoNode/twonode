@@ -1,4 +1,4 @@
-import { getUserProperties } from "@/app/(projects)/reva/actions/dbActions";
+import { getUserProperties } from "@/app/(projects)/reva/actions/revaActions";
 import RequestsMap from "./RequestsMap";
 
 const ViewDetailsPage = async ({

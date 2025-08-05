@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { downloadOneTimeRequestReport } from "@/app/(projects)/reva/actions/dbActions";
+import { downloadOneTimeRequestReport } from "@/app/(projects)/reva/actions/revaActions";
 import { toast } from "sonner";
 
 interface DownloadReportButtonProps {

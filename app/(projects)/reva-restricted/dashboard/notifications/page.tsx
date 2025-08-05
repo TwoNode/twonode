@@ -1,11 +1,11 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/utils/authUser";
+import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
 import AdminNotificationsList from "./AdminNotificationsList";
 
 const NotificationsPage = async () => {
   try {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedRevaUser();
 
     // If user is superadmin, redirect to manage page
     if (user?.role === "SUPERADMIN") {

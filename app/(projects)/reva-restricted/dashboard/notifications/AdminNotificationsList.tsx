@@ -39,9 +39,9 @@ import {
   getSuperAdminNotifications,
   markNotificationAsRead,
   dismissNotification,
-} from "../../../reva/actions/dbActions";
+} from "../../../reva/actions/revaActions";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
-import { getAuthenticatedUser } from "@/utils/authUser";
+import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
 
 type NotificationType =
   | "INFO"
@@ -119,7 +119,7 @@ export default function AdminNotificationsList() {
   const fetchAdminAndNotifications = async () => {
     try {
       setLoading(true);
-      const admin = await getAuthenticatedUser();
+      const admin = await getAuthenticatedRevaUser();
       if (admin?.id) {
         setAdminUserId(admin.id);
         setUserRole(admin.role);

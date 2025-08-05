@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"; // Handles error cases gracefully
 import {
   authGetTransactionData,
   authPaymentSuccessful,
-} from "@/app/(projects)/reva/actions/dbActions";
+} from "@/app/(projects)/reva/actions/revaActions";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 
 const ViewDetailsPage = async ({

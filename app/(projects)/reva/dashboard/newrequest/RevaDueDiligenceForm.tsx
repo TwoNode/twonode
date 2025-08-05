@@ -37,7 +37,7 @@ import { removeIdPrefix } from "@/utils/removeIDFromParcel";
 import {
   authSaveFormDataAndInitiatePaystack,
   authPaymentSuccessful,
-} from "../../actions/dbActions";
+} from "../../actions/revaActions";
 import {
   notifyError,
   notifyInfo,

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { getUnreadNotificationCount } from "@/app/(projects)/reva/actions/dbActions";
-import { getAuthenticatedUser } from "@/utils/authUser";
+import { getUnreadNotificationCount } from "@/app/(projects)/reva/actions/revaActions";
+import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
 
 interface NotificationBellProps {
   href: string;
@@ -33,7 +33,7 @@ export default function NotificationBell({
 
   const fetchUnreadCount = async () => {
     try {
-      const user = await getAuthenticatedUser();
+      const user = await getAuthenticatedRevaUser();
       if (user?.id) {
         const result = await getUnreadNotificationCount(user.id, user.role);
         if (result.success) {
