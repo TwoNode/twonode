@@ -1,4 +1,3 @@
-// app/(projects)/(surboard)/surfboard/dashboard/plan/SharePlanModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,13 +7,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
+import { searchUsers, sharePlanWithUser, unsharePlanWithUser } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import {type User } from "./SinglePlan"
 
 interface SharePlanModalProps {
   isOpen: boolean;
@@ -50,66 +44,86 @@ export function SharePlanModal({
 
     setIsSearching(true);
     try {
-      // TODO: Replace with actual API call to search users
-      // const results = await searchUsers(query);
-      // setSearchResults(results);
-
-      // Mock data for now
-      setTimeout(() => {
-        setSearchResults(
-          [
-            { id: "1", name: "John Doe", email: "john@example.com" },
-            { id: "2", name: "Jane Smith", email: "jane@example.com" },
-          ].filter(
-            (user) =>
-              !sharedUsers.some((sharedUser) => sharedUser.id === user.id) &&
-              (user.name.toLowerCase().includes(query.toLowerCase()) ||
-                user.email.toLowerCase().includes(query.toLowerCase()))
-          )
-        );
-        setIsSearching(false);
-      }, 500);
+      const result = await searchUsers(query);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to search users');
+      }
+      
+      // Transform the search results to match the User interface
+      const users = result.data || [];
+      
+      // Filter out already shared users
+      const filteredResults = users.filter(
+        (user: User) => !sharedUsers.some(sharedUser => sharedUser.id === user.id)
+      );
+      
+      setSearchResults(filteredResults);
     } catch (error) {
       console.error("Error searching users:", error);
       toast({
         title: "Error",
-        description: "Failed to search for users. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to search for users. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSearching(false);
     }
   };
 
-  const handleAddUser = (user: User) => {
-    if (!sharedUsers.some((u) => u.id === user.id)) {
+  const handleAddUser = async (user: User) => {
+    try {
+      const result = await sharePlanWithUser(planId, user.id);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to share plan');
+      }
+
+      // Update local state
       const updatedSharedUsers = [...sharedUsers, user];
       setSharedUsers(updatedSharedUsers);
       onShareUpdate(updatedSharedUsers);
-      setSearchResults(searchResults.filter((u) => u.id !== user.id));
-
-      // TODO: Call API to update shared users in the backend
-      // await sharePlanWithUser(planId, user.id);
+      setSearchResults(searchResults.filter(u => u.id !== user.id));
 
       toast({
         title: "Success",
-        description: `Shared plan with ${user.name}`,
+        description: `Shared plan with ${user.firstName} ${user.lastName}`,
+      });
+    } catch (error) {
+      console.error("Error sharing plan:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to share plan. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleRemoveUser = (userId: string) => {
-    const updatedSharedUsers = sharedUsers.filter((user) => user.id !== userId);
-    setSharedUsers(updatedSharedUsers);
-    onShareUpdate(updatedSharedUsers);
+  const handleRemoveUser = async (userId: string) => {
+    try {
+      const result = await unsharePlanWithUser(planId, userId);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to remove user access');
+      }
 
-    // TODO: Call API to remove user's access in the backend
-    // await unsharePlanWithUser(planId, userId);
+      // Update local state
+      const updatedSharedUsers = sharedUsers.filter(user => user.id !== userId);
+      setSharedUsers(updatedSharedUsers);
+      onShareUpdate(updatedSharedUsers);
 
-    const removedUser = sharedUsers.find((user) => user.id === userId);
-    if (removedUser) {
+      const removedUser = sharedUsers.find(user => user.id === userId);
+      if (removedUser) {
+        toast({
+          title: "Access Removed",
+          description: `Removed ${removedUser.firstName} ${removedUser.lastName}'s access to this plan`,
+        });
+      }
+    } catch (error) {
+      console.error("Error removing user access:", error);
       toast({
-        title: "Access Removed",
-        description: `Removed ${removedUser.name}'s access to this plan`,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove user access. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -137,7 +151,7 @@ export function SharePlanModal({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search users by name or email..."
+              placeholder="Search users by name, email, or SURCON number..."
               className="pl-8"
               value={searchQuery}
               onChange={(e) => {
@@ -164,18 +178,17 @@ export function SharePlanModal({
                       >
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback>
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
+                              {user.firstName?.[0]}{user.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium">{user.name}</p>
+                            <p className="text-sm font-medium">
+                              {user.firstName} {user.lastName}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {user.email}
+                              {user.surconRegNumber && ` • ${user.surconRegNumber}`}
                             </p>
                           </div>
                         </div>
@@ -212,18 +225,17 @@ export function SharePlanModal({
                     >
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar} alt={user.name} />
                           <AvatarFallback>
-                            {user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                            {user.firstName?.[0]}{user.lastName?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">{user.name}</p>
+                          <p className="text-sm font-medium">
+                            {user.firstName} {user.lastName}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {user.email}
+                            {user.surconRegNumber && ` • ${user.surconRegNumber}`}
                           </p>
                         </div>
                       </div>

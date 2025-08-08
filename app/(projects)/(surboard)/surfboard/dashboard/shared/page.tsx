@@ -1,6 +1,5 @@
-import AllPlans from "./AllPlans";
+import SharedPlans from "./SharedPlans";
 
 export default function AllPlansPage() {
-  const data =  ""
-  return <AllPlans />;
+  return <SharedPlans />;
 }

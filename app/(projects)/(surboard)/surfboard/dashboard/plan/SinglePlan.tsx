@@ -42,11 +42,12 @@ interface PlanWithPillars extends Omit<Plan, "deededArea" | "pillars"> {
   pillars: PillarData[];
 }
 
-interface User {
+export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  avatar?: string;
+  surconRegNumber: string | null;
 }
 
 export default function SinglePlanDetails({ planId }: { planId: string }) {
@@ -139,15 +140,21 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
         // const response = await fetch(`/api/plans/${planId}/shared-users`);
         // const data = await response.json();
         // setSharedWith(data);
-        
+
         // Mock data for now
         setSharedWith([
-          { id: '1', name: 'John Doe', email: 'john@example.com' },
+          {
+            id: "1",
+            firstName: "John",
+            lastName: "Doe",
+            surconRegNumber: "ksadf_",
+            email: "john@example.com",
+          },
           // Add more mock users as needed
         ]);
       } catch (error) {
-        console.error('Error fetching shared users:', error);
-        toast.error('Failed to load shared users');
+        console.error("Error fetching shared users:", error);
+        toast.error("Failed to load shared users");
       }
     };
 
@@ -165,12 +172,12 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
       //   body: JSON.stringify({ userIds: updatedUsers.map(u => u.id) })
       // });
       // if (!response.ok) throw new Error('Failed to update shared users');
-      
+
       setSharedWith(updatedUsers);
-      toast.success('Sharing settings updated');
+      toast.success("Sharing settings updated");
     } catch (error) {
-      console.error('Error updating shared users:', error);
-      toast.error('Failed to update sharing settings');
+      console.error("Error updating shared users:", error);
+      toast.error("Failed to update sharing settings");
     }
   };
 
@@ -229,7 +236,7 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
               <MapPin className="w-4 h-4 mr-2" />
               {showMap ? "Hide Map" : "Show Map"}
             </button>
-            <button 
+            <button
               onClick={() => setIsShareModalOpen(true)}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
             >

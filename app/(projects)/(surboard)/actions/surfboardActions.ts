@@ -13,6 +13,7 @@ import {
   deleteMultipleSurfboardFilesFromS3,
 } from "./awsActions";
 import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
+import { SurfboardUser } from "@prisma/client";
 
 // // Simple polygon area calculation (Haversine formula)
 // function calculatePolygonArea(geometry: any): number {
@@ -216,7 +217,6 @@ export async function getAllSurfPlans(): Promise<ApiResult<Plan[]>> {
   }
 }
 
-
 /**
  * Fetches all plans from the database.
  */
@@ -235,7 +235,7 @@ export async function getAllSharedSurfPlans(): Promise<ApiResult<Plan[]>> {
       where: {
         userId: user.id,
         sharedTo: {
-          isEmpty: false
+          isEmpty: false,
         },
       },
       select: {
@@ -329,9 +329,7 @@ export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
 /**
  * Fetches a single plan by ID.
  */
-export async function getSurfPlanById(
-  id: string
-): Promise<ApiResult<Plan>> {
+export async function getSurfPlanById(id: string): Promise<ApiResult<Plan>> {
   try {
     const user = await getAuthenticatedSurfUser();
 
@@ -425,10 +423,8 @@ export async function updateSurfPlanStatus(
     };
   }
 }
- 
-export async function deleteSurfPlan(
-  id: string
-): Promise<ApiResult<null>> {
+
+export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
   try {
     const user = await getAuthenticatedSurfUser();
 
@@ -438,7 +434,7 @@ export async function deleteSurfPlan(
         error: "User not authenticated or role not found",
       };
     }
-    
+
     const plan = await prisma.surfboardPlan.findUnique({
       where: { id, userId: user.id },
       select: {
@@ -509,9 +505,12 @@ export async function addSurfUserToSharedSurfPlan(
     const authUser = await getAuthenticatedSurfUser();
 
     if (!authUser || !authUser.role) {
-      return { success: false, error: "User not authenticated or role not found" };
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
     }
-    
+
     const user = await prisma.surfboardUser.findUnique({
       where: { id: userId },
     });
@@ -554,7 +553,10 @@ export async function removeSurfUserFromSharedSurfPlan(
     const authUser = await getAuthenticatedSurfUser();
 
     if (!authUser || !authUser.role) {
-      return { success: false, error: "User not authenticated or role not found" };
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
     }
 
     const plan = await prisma.surfboardPlan.findUnique({
@@ -579,5 +581,271 @@ export async function removeSurfUserFromSharedSurfPlan(
   } catch (err) {
     console.error("Error removing user from shared plan:", err);
     return { success: false, error: (err as Error).message };
+  }
+}
+
+type SearchUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  surconRegNumber: string | null;
+};
+
+export async function searchUsers(
+  query: string
+): Promise<ApiResult<SearchUser[]>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    if (!query.trim()) {
+      return { success: true, data: [] };
+    }
+
+    const users = await prisma.surfboardUser.findMany({
+      where: {
+        OR: [
+          { email: { contains: query, mode: "insensitive" } },
+          { surconRegNumber: { contains: query, mode: "insensitive" } },
+        ],
+        // Don't return the current user
+        email: { not: user.email },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        surconRegNumber: true,
+      },
+      take: 10, // Limit results
+    });
+
+    return { success: true, data: users };
+  } catch (error) {
+    console.error("Error searching users:", error);
+    return { success: false, error: "Failed to search users" };
+  }
+}
+
+export async function sharePlanWithUser(
+  planId: string,
+  userId: string
+): Promise<ApiResult<{ id: string; sharedTo: string[] }>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Verify the plan exists and belongs to the current user
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+      select: { sharedTo: true },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    // Verify the target user exists
+    const targetUser = await prisma.surfboardUser.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Add user to sharedTo array if not already present
+    const updatedPlan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        sharedTo: {
+          set: [...new Set([...(plan.sharedTo || []), userId])],
+        },
+      },
+      select: {
+        id: true,
+        sharedTo: true,
+      },
+    });
+
+    revalidatePath(`/surfboard/dashboard/plan/${planId}`);
+    return { success: true, data: updatedPlan };
+  } catch (error) {
+    console.error("Error sharing plan:", error);
+    return { success: false, error: "Failed to share plan" };
+  }
+}
+
+export async function unsharePlanWithUser(
+  planId: string,
+  userId: string
+): Promise<ApiResult<{ id: string; sharedTo: string[] }>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Verify the plan exists and belongs to the current user
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+      select: { sharedTo: true },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    // Remove user from sharedTo array
+    const updatedPlan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        sharedTo: {
+          set: (plan.sharedTo || []).filter((id: string) => id !== userId),
+        },
+      },
+      select: {
+        id: true,
+        sharedTo: true,
+      },
+    });
+
+    revalidatePath(`/surfboard/dashboard/plan/${planId}`);
+    return { success: true, data: updatedPlan };
+  } catch (error) {
+    console.error("Error unsharing plan:", error);
+    return { success: false, error: "Failed to unshare plan" };
+  }
+}
+
+export async function editSurfboardPlan(formData: FormData): Promise<ApiResult<Plan>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const planId = formData.get('id') as string;
+    if (!planId) {
+      return { success: false, error: 'Plan ID is required' };
+    }
+
+    // Get the existing plan to check creation time and current certificate
+    const existingPlan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!existingPlan) {
+      return { success: false, error: 'Plan not found' };
+    }
+
+    // Check if the plan was created more than 24 hours ago
+    const isWithin24Hours = existingPlan.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    // Prepare update data
+    const updateData: any = {};
+    
+    // Only update these fields if within 24 hours
+    if (isWithin24Hours) {
+      if (formData.get('planNumber')) {
+        updateData.planNumber = formData.get('planNumber') as string;
+      }
+      if (formData.get('surveyTitle')) {
+        updateData.surveyTitle = formData.get('surveyTitle') as string;
+      }
+      if (formData.get('planType')) {
+        updateData.planType = formData.get('planType') as string;
+      }
+      if (formData.get('referencePlanNumber')) {
+        updateData.referencePlanNumber = formData.get('referencePlanNumber') as string;
+      }
+      if (formData.get('deededArea')) {
+        updateData.deededArea = formData.get('deededArea') as string;
+      }
+      if (formData.get('facilitator')) {
+        updateData.facilitator = formData.get('facilitator') as string;
+      }
+    }
+
+    // Handle certificate file upload
+    const certificateFile = formData.get('certificateFile') as File | null;
+    let certificateFilePath = formData.get('certificateFilePath') as string | null;
+    
+    if (certificateFile && certificateFile.size > 0) {
+      try {
+        // Upload the new certificate file to S3
+        const uploadResult = await uploadSurfboardFileToS3(
+          certificateFile,
+          "certificate",
+          `surfboard/certificates/${planId}/${Date.now()}_${certificateFile.name}`
+        ) ;
+      
+        if (!uploadResult.url) {
+          return { success: false, error: 'Failed to upload certificate file' };
+        }
+      
+        certificateFilePath = uploadResult.url;
+      } catch (error) {
+        console.error('Error uploading certificate file:', error);
+        return { success: false, error: 'Failed to upload certificate file' };
+      }
+
+      // If there was a previous certificate file, delete it from S3
+      if (existingPlan.certificateFilePath) {
+        try {
+          const filesToDelete = [
+            { url: existingPlan.certificateFilePath },
+          ];
+          await deleteMultipleSurfboardFilesFromS3(filesToDelete);
+        } catch (error) {
+          console.error('Error deleting old certificate file:', error);
+          // Continue even if deletion fails
+        }
+      }
+
+      updateData.certificateFilePath = certificateFilePath;
+    } else if (certificateFilePath) {
+      // If no new file but path exists, keep the existing path
+      updateData.certificateFilePath = certificateFilePath;
+    }
+
+    // Update the plan in the database
+    const updatedPlan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: updateData,
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/surfboard/dashboard/plan/edit?planId=${planId}`);
+
+    return { 
+      success: true, 
+      data: {
+        ...updatedPlan,
+        status: updatedPlan.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'UNDER_REVIEW',
+      } 
+    };
+  } catch (error) {
+    console.error('Error updating plan:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to update plan' 
+    };
   }
 }

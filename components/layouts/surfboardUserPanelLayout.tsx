@@ -63,6 +63,11 @@ export default function SurfboardUserPanelLayout({
       label: "All Plans",
       url: `${dashboardUrl}/allplans`,
     },
+    {
+      icon: ListChecks,
+      label: "Shared Plans",
+      url: `${dashboardUrl}/shared`,
+    },
     { icon: Map, label: "Map Viewer", url: `${dashboardUrl}/map` },
     { icon: FilePlus, label: "New Plan", url: `${dashboardUrl}/newplan` },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },

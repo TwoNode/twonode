@@ -238,7 +238,7 @@ export default function PlanList() {
                       onClick={(e) => {
                         e.stopPropagation();
                         // Handle view action
-                        router.push(`/surfboard/dashboard/plan/${plan.id}`);
+                        router.push(`/surfboard/dashboard/plan?planId=${plan.id}`);
                       }}
                       className="text-blue-600 hover:text-blue-900"
                     >

@@ -73,6 +73,7 @@
     "react-responsive": "^10.0.0",
     "react-responsive-carousel": "^3.2.23",
     "react-toastify": "^11.0.5",
+    "shadcn-file-upload": "^1.0.2",
     "sonner": "^2.0.4",
     "sooner": "^1.1.1",
     "tailwind-merge": "^2.4.0",

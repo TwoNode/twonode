@@ -4,7 +4,6 @@ import "../globals.css";
 import Link from "next/link";
 import Head from "next/head";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { MyPopup } from "@/components/MyPopup";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
