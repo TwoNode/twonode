@@ -13,43 +13,18 @@ import {
   deleteMultipleSurfboardFilesFromS3,
 } from "./awsActions";
 import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
-import { SurfboardUser } from "@prisma/client";
+import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 
-// // Simple polygon area calculation (Haversine formula)
-// function calculatePolygonArea(geometry: any): number {
-//   if (
-//     geometry.type !== "Polygon" ||
-//     !geometry.coordinates ||
-//     !geometry.coordinates[0]
-//   ) {
-//     return 0;
-//   }
-
-//   const coordinates = geometry.coordinates[0];
-//   if (coordinates.length < 3) return 0;
-
-//   let area = 0;
-//   for (let i = 0; i < coordinates.length - 1; i++) {
-//     const [lng1, lat1] = coordinates[i];
-//     const [lng2, lat2] = coordinates[i + 1];
-
-//     // Convert to radians
-//     const lat1Rad = (lat1 * Math.PI) / 180;
-//     const lat2Rad = (lat2 * Math.PI) / 180;
-//     const deltaLng = ((lng2 - lng1) * Math.PI) / 180;
-
-//     // Haversine formula for area calculation
-//     area += Math.atan2(
-//       Math.sin(deltaLng) * Math.cos(lat2Rad),
-//       Math.cos(lat1Rad) * Math.sin(lat2Rad) -
-//         Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLng)
-//     );
-//   }
-
-//   // Convert to square meters (approximate)
-//   const earthRadius = 6371000; // meters
-//   return Math.abs(area * earthRadius * earthRadius);
-// }
+// Type guard to check if a value is a valid GeometryInput
+function isGeometryInput(value: any): value is GeometryInput {
+  console.log("\n\n\n\nGeometry value", value, typeof value);
+  if (typeof value === "string") return true;
+  if (!value || typeof value !== "object") return false;
+  if (value?.type === "Polygon" || value?.type === "MultiPolygon") {
+    return true;
+  }
+  return false;
+}
 
 /**
  * Creates a new surfboard plan:
@@ -210,7 +185,28 @@ export async function getAllSurfPlans(): Promise<ApiResult<Plan[]>> {
       orderBy: { createdAt: "desc" },
     });
 
-    return { success: true, data: plans };
+    // Add area and centroid to each plan
+    const plansWithGeometry = plans.map((plan) => {
+      if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+
+      try {
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
+        return {
+          ...plan,
+          areaSqM,
+          centroid: centroidCoords,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+    });
+
+    return { success: true, data: plansWithGeometry };
   } catch (err) {
     console.error("getAllSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
@@ -265,15 +261,36 @@ export async function getAllSharedSurfPlans(): Promise<ApiResult<Plan[]>> {
       orderBy: { createdAt: "desc" },
     });
 
-    return { success: true, data: plans };
+    // Add area and centroid to each plan
+    const plansWithGeometry = plans.map((plan) => {
+      if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+
+      try {
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
+        return {
+          ...plan,
+          areaSqM,
+          centroid: centroidCoords,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+    });
+
+    return { success: true, data: plansWithGeometry };
   } catch (err) {
-    console.error("getAllSurfPlans error:", err);
+    console.error("getAllSharedSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }
 
 /**
- * Fetches all plans from the database.
+ * Fetches all plans shared with the current user.
  */
 export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
   try {
@@ -319,9 +336,30 @@ export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
       orderBy: { createdAt: "desc" },
     });
 
-    return { success: true, data: plans };
+    // Add area and centroid to each plan
+    const plansWithGeometry = plans.map((plan) => {
+      if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+
+      try {
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
+        return {
+          ...plan,
+          areaSqM,
+          centroid: centroidCoords,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+    });
+
+    return { success: true, data: plansWithGeometry };
   } catch (err) {
-    console.error("getAllSurfPlans error:", err);
+    console.error("getSharedWithMeSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }
@@ -329,7 +367,12 @@ export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
 /**
  * Fetches a single plan by ID.
  */
-export async function getSurfPlanById(id: string): Promise<ApiResult<Plan>> {
+export async function getSurfPlanById(
+  id: string,
+  options?: {
+    forEdit?: boolean;
+  }
+): Promise<ApiResult<Plan>> {
   try {
     const user = await getAuthenticatedSurfUser();
 
@@ -340,41 +383,65 @@ export async function getSurfPlanById(id: string): Promise<ApiResult<Plan>> {
       };
     }
 
+    const ORArray = [
+      { userId: user.id }, // Owner
+      !options?.forEdit ? { sharedTo: { has: user.id } } : {}, // Shared with user
+    ].filter(Boolean);
+
     const plan = await prisma.surfboardPlan.findUnique({
       where: {
         id,
-        userId: user.id,
+        OR: ORArray,
       },
-      select: {
-        id: true,
-        planNumber: true,
-        surveyTitle: true,
-        planType: true,
-        referencePlanNumber: true,
-        deededArea: true,
-        facilitator: true,
-        pillarType: true,
-        geometry: true,
-        pdfFilePath: true,
-        cadFilePath: true,
-        certificateFilePath: true,
-        ward: true,
-        lcda: true,
-        lga: true,
-        pillars: true,
-        status: true,
-        isLive: true,
-        dateOnSurveyPlan: true,
-        reasonForWithdrawalAndResubmission: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
       },
     });
 
     if (!plan) {
-      return { success: false, error: "Plan not found" };
+      return { success: false, error: "Plan not found or access denied" };
     }
-    return { success: true, data: plan };
+
+    // Add area and centroid to the plan
+    let planWithGeometry: Plan = { ...plan, isOwner: plan.userId === user.id };
+
+    console.log(
+      "\n\n\n\nGeometry is valid",
+      plan.geometry,
+      isGeometryInput(plan.geometry)
+    );
+    if (plan.geometry && isGeometryInput(plan.geometry)) {
+      try {
+        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM,
+          centroid,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM: 0,
+          centroid: null,
+        };
+      }
+    } else {
+      planWithGeometry = {
+        ...planWithGeometry,
+        areaSqM: 0,
+        centroid: null,
+      };
+    }
+
+    return { success: true, data: planWithGeometry };
   } catch (err) {
     console.error("getSurfPlanById error:", err);
     return { success: false, error: (err as Error).message };
@@ -382,7 +449,7 @@ export async function getSurfPlanById(id: string): Promise<ApiResult<Plan>> {
 }
 
 /**
- * Deletes a plan and its S3 files.
+ * Updates a plan's status.
  */
 export async function updateSurfPlanStatus(
   id: string,
@@ -725,16 +792,18 @@ export async function unsharePlanWithUser(
   }
 }
 
-export async function editSurfboardPlan(formData: FormData): Promise<ApiResult<Plan>> {
+export async function editSurfboardPlan(
+  formData: FormData
+): Promise<ApiResult<Plan>> {
   try {
     const user = await getAuthenticatedSurfUser();
     if (!user) {
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: "Unauthorized" };
     }
 
-    const planId = formData.get('id') as string;
+    const planId = formData.get("id") as string;
     if (!planId) {
-      return { success: false, error: 'Plan ID is required' };
+      return { success: false, error: "Plan ID is required" };
     }
 
     // Get the existing plan to check creation time and current certificate
@@ -743,69 +812,76 @@ export async function editSurfboardPlan(formData: FormData): Promise<ApiResult<P
     });
 
     if (!existingPlan) {
-      return { success: false, error: 'Plan not found' };
+      return { success: false, error: "Plan not found" };
     }
 
     // Check if the plan was created more than 24 hours ago
-    const isWithin24Hours = existingPlan.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000);
-    
+    const isWithin24Hours =
+      existingPlan.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000);
+
     // Prepare update data
     const updateData: any = {};
-    
+
     // Only update these fields if within 24 hours
     if (isWithin24Hours) {
-      if (formData.get('planNumber')) {
-        updateData.planNumber = formData.get('planNumber') as string;
+      if (formData.get("planNumber")) {
+        updateData.planNumber = formData.get("planNumber") as string;
       }
-      if (formData.get('surveyTitle')) {
-        updateData.surveyTitle = formData.get('surveyTitle') as string;
+      if (formData.get("surveyTitle")) {
+        updateData.surveyTitle = formData.get("surveyTitle") as string;
       }
-      if (formData.get('planType')) {
-        updateData.planType = formData.get('planType') as string;
+      if (formData.get("planType")) {
+        updateData.planType = formData.get("planType") as string;
       }
-      if (formData.get('referencePlanNumber')) {
-        updateData.referencePlanNumber = formData.get('referencePlanNumber') as string;
+      if (formData.get("referencePlanNumber")) {
+        updateData.referencePlanNumber = formData.get(
+          "referencePlanNumber"
+        ) as string;
       }
-      if (formData.get('deededArea')) {
-        updateData.deededArea = formData.get('deededArea') as string;
+      if (formData.get("deededArea")) {
+        updateData.deededArea = formData.get("deededArea") as string;
       }
-      if (formData.get('facilitator')) {
-        updateData.facilitator = formData.get('facilitator') as string;
+      if (formData.get("facilitator")) {
+        updateData.facilitator = formData.get("facilitator") as string;
       }
     }
 
     // Handle certificate file upload
-    const certificateFile = formData.get('certificateFile') as File | null;
-    let certificateFilePath = formData.get('certificateFilePath') as string | null;
-    
+    const certificateFile = formData.get("certificateFile") as File | null;
+    let certificateFilePath = formData.get("certificateFilePath") as
+      | string
+      | null;
+
+    console.log("\n\n\n\n\n\n\n\ncertificateFile", certificateFile);
+    console.log("certificateFilePath", certificateFilePath);
     if (certificateFile && certificateFile.size > 0) {
       try {
         // Upload the new certificate file to S3
         const uploadResult = await uploadSurfboardFileToS3(
           certificateFile,
           "certificate",
-          `surfboard/certificates/${planId}/${Date.now()}_${certificateFile.name}`
-        ) ;
-      
+          `${planId}`
+        );
+
+        console.log("uploadResult", uploadResult);
+
         if (!uploadResult.url) {
-          return { success: false, error: 'Failed to upload certificate file' };
+          return { success: false, error: "Failed to upload certificate file" };
         }
-      
+
         certificateFilePath = uploadResult.url;
       } catch (error) {
-        console.error('Error uploading certificate file:', error);
-        return { success: false, error: 'Failed to upload certificate file' };
+        console.error("Error uploading certificate file:", error);
+        return { success: false, error: "Failed to upload certificate file" };
       }
 
       // If there was a previous certificate file, delete it from S3
       if (existingPlan.certificateFilePath) {
         try {
-          const filesToDelete = [
-            { url: existingPlan.certificateFilePath },
-          ];
+          const filesToDelete = [{ url: existingPlan.certificateFilePath }];
           await deleteMultipleSurfboardFilesFromS3(filesToDelete);
         } catch (error) {
-          console.error('Error deleting old certificate file:', error);
+          console.error("Error deleting old certificate file:", error);
           // Continue even if deletion fails
         }
       }
@@ -834,18 +910,22 @@ export async function editSurfboardPlan(formData: FormData): Promise<ApiResult<P
 
     revalidatePath(`/surfboard/dashboard/plan/edit?planId=${planId}`);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         ...updatedPlan,
-        status: updatedPlan.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'UNDER_REVIEW',
-      } 
+        status: updatedPlan.status as
+          | "PENDING"
+          | "APPROVED"
+          | "REJECTED"
+          | "UNDER_REVIEW",
+      },
     };
   } catch (error) {
-    console.error('Error updating plan:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to update plan' 
+    console.error("Error updating plan:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update plan",
     };
   }
 }

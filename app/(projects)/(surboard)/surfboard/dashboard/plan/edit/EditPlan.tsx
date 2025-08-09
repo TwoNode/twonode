@@ -25,7 +25,18 @@ export default function EditPlan({
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Edit Survey Plan</h1>
+        <div className="flex flex-col items-start justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {plan.surveyTitle}: {plan.planNumber}
+          </h1>
+          <h2 className="text-xl font-bold italic tracking-tight">
+            Edit Survey Plan
+          </h2>
+        </div>
+
+        <Button asChild variant="outline" className="mt-4" type="button">
+          <Link href={`/surfboard/dashboard/plan?planId=${plan.id}`}>Back</Link>
+        </Button>
       </div>
 
       <Card className="mt-6">
@@ -57,6 +68,32 @@ export default function EditPlan({
                   required
                 />
               </div>
+
+              {/* Area (Read-only) */}
+              <div className="space-y-2">
+                <Label>Area</Label>
+                <div className="p-2 border rounded-md bg-gray-50 text-gray-700">
+                  {plan.areaSqM
+                    ? plan.areaSqM < 10000
+                      ? `${plan.areaSqM.toFixed(2)} m²`
+                      : `${(plan.areaSqM / 10000).toFixed(2)} ha`
+                    : "N/A"}
+                </div>
+              </div>
+
+              {/* Centroid (Read-only) */}
+              {plan.centroid &&
+                Array.isArray(plan.centroid) &&
+                plan.centroid.length >= 2 && (
+                  <div className="space-y-2">
+                    <Label>Centroid</Label>
+                    <div className="p-2 border rounded-md bg-gray-50 text-gray-700">
+                      {`${plan.centroid[1].toFixed(
+                        6
+                      )}°N, ${plan.centroid[0].toFixed(6)}°E`}
+                    </div>
+                  </div>
+                )}
 
               {/* Survey Title */}
               <div className="space-y-2">
@@ -130,12 +167,23 @@ export default function EditPlan({
                       const hiddenInput = document.querySelector(
                         'input[name="certificateFilePath"]'
                       ) as HTMLInputElement;
+                      const hiddenFileInput = document.querySelector(
+                        'input[name="certificateFile"]'
+                      ) as HTMLInputElement;
                       if (hiddenInput) {
                         hiddenInput.value = files[0].name;
+                      }
+                      if (hiddenFileInput) {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(files[0]);
+                        hiddenFileInput.files = dataTransfer.files;
                       }
                     }
                   }}
                 />
+
+                <input type="file" name="certificateFile" className="hidden" />
+
                 <input
                   type="hidden"
                   name="certificateFilePath"
@@ -144,7 +192,7 @@ export default function EditPlan({
                 {plan.certificateFilePath && (
                   <div className="mt-2">
                     <p className="text-sm text-muted-foreground">
-                      Current file: {plan.certificateFilePath.split("/").pop()  }
+                      Current file: {plan.certificateFilePath.split("/").pop()}
                     </p>
                     <Link
                       href={plan.certificateFilePath}
@@ -152,7 +200,7 @@ export default function EditPlan({
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:underline"
                     >
-                      View current file {plan.certificateFilePath}
+                      View current file
                     </Link>
                   </div>
                 )}

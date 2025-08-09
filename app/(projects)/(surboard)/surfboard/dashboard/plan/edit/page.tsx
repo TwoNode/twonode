@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
 import EditPlan from "./EditPlan";
 import { getSurfPlanById } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 
 export default async function EditPlanPage({
   searchParams,
@@ -9,14 +9,24 @@ export default async function EditPlanPage({
 }) {
   const planId = searchParams.planId;
 
-  const result = await getSurfPlanById(planId);
+  const result = await getSurfPlanById(planId, { forEdit: true });
 
   if (!result.success) {
-    notFound();
+    return (
+      <SurfPageNotFound
+        url="/surfboard/dashboard/allplans"
+        urlText="Surfboard All Plans"
+      />
+    );
   }
 
   if (!result.data) {
-    notFound();
+    return (
+      <SurfPageNotFound
+        url="/surfboard/dashboard/allplans"
+        urlText="Surfboard All Plans"
+      />
+    );
   }
 
   const plan = result.data;

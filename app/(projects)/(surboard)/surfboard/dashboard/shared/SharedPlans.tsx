@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import PlanList from "./SharedPlanList";
 import { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 import { getAllSharedSurfPlans, getSharedWithMeSurfPlans } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Download, Share2, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PlanView from "../../../components/PlanView";
 
 export default function SharedPlans() {
   const [search, setSearch] = useState("");
@@ -49,6 +49,13 @@ export default function SharedPlans() {
 
     fetchSharedPlans();
   }, []);
+
+  const filterPlans = (plans: Plan[]) => {
+    return plans.filter(plan => 
+      plan.surveyTitle?.toLowerCase().includes(search.toLowerCase()) ||
+      plan.planNumber?.toLowerCase().includes(search.toLowerCase())
+    );
+  };
 
   if (loading) {
     return (
@@ -149,42 +156,18 @@ export default function SharedPlans() {
             <TabsTrigger value="sharedWithMe">Shared with Me</TabsTrigger>
           </TabsList>
           <TabsContent value="shared" className="mt-6">
-            {sharedPlans.length > 0 ? (
-              <PlanList 
-                plans={sharedPlans.filter(plan => 
-                  plan.surveyTitle?.toLowerCase().includes(search.toLowerCase()) ||
-                  plan.planNumber?.toLowerCase().includes(search.toLowerCase())
-                )} 
-                emptyMessage="You haven't shared any plans yet."
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                <Share2 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No shared plans</h3>
-                <p className="text-muted-foreground mb-4">Get started by sharing a plan with your team</p>
-                <Button>
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share Plan
-                </Button>
-              </div>
-            )}
+            <PlanView 
+              plans={filterPlans(sharedPlans)}
+              emptyMessage="You haven't shared any plans yet."
+              defaultView="grid"
+            />
           </TabsContent>
           <TabsContent value="sharedWithMe" className="mt-6">
-            {sharedWithMePlans.length > 0 ? (
-              <PlanList 
-                plans={sharedWithMePlans.filter(plan => 
-                  plan.surveyTitle?.toLowerCase().includes(search.toLowerCase()) ||
-                  plan.planNumber?.toLowerCase().includes(search.toLowerCase())
-                )} 
-                emptyMessage="No plans have been shared with you yet."
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-                <Share2 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No plans shared with you</h3>
-                <p className="text-muted-foreground">When someone shares a plan with you, it will appear here</p>
-              </div>
-            )}
+            <PlanView 
+              plans={filterPlans(sharedWithMePlans)}
+              emptyMessage="No plans have been shared with you yet."
+              defaultView="grid"
+            />
           </TabsContent>
         </Tabs>
       </div>

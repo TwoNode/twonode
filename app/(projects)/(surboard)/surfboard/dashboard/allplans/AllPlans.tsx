@@ -1,10 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
-import PlanList from "./PlanList";
+import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { getAllSurfPlans } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import PlanView from "../../../components/PlanView";
 
 export default function AllPlans() {
   const [search, setSearch] = useState("");
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadPlans = async () => {
+    try {
+      const result = await getAllSurfPlans();
+      if (result?.success && result?.data) {
+        setPlans(result.data);
+      } else {
+        toast.error(result?.error || "Failed to load plans");
+      }
+    } catch (error) {
+      toast.error("Error loading plans");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPlans();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <main className="max-w-7xl mx-auto py-8 px-4">
@@ -42,7 +73,11 @@ export default function AllPlans() {
         </div>
       </div>
 
-      <PlanList />
+      <PlanView 
+        plans={plans} 
+        emptyMessage="No survey plans found. Create a new plan to get started."
+        defaultView="list"
+      />
     </main>
   );
 }

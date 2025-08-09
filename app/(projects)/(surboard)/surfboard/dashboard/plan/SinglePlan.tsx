@@ -11,8 +11,13 @@ import {
   ArrowLeft,
   MapPin,
   Share2,
+  Edit,
+  Trash2,
 } from "lucide-react";
-import { getSurfPlanById } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import {
+  getSurfPlanById,
+  deleteSurfPlan,
+} from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 import dynamic from "next/dynamic";
 import { SharePlanModal } from "./SharePlanModal";
@@ -40,6 +45,9 @@ interface PlanWithPillars extends Omit<Plan, "deededArea" | "pillars"> {
   createdAt: Date;
   updatedAt: Date;
   pillars: PillarData[];
+  userId?: string | null;
+  isOwner?: boolean;
+  centroid?: [number, number] | null;
 }
 
 export interface User {
@@ -57,6 +65,44 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
   const [showMap, setShowMap] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [sharedWith, setSharedWith] = useState<User[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // Handle delete plan
+  const handleDelete = async () => {
+    if (!plan) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to delete this plan? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteSurfPlan(plan.id);
+      if (result.success) {
+        toast.success("Plan deleted successfully");
+        router.push("/surfboard/dashboard/allplans");
+      } else {
+        toast.error(result.error || "Failed to delete plan");
+      }
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      toast.error("An error occurred while deleting the plan");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle edit plan
+  const handleEdit = () => {
+    if (plan) {
+      router.push(`/surfboard/dashboard/plan/edit?planId=${plan.id}`);
+    }
+  };
 
   // Calculate center from pillars for the map
   const getMapCenter = (pillars: PillarData[]): [number, number] => {
@@ -88,6 +134,7 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
         const result = await getSurfPlanById(planId);
 
         if (result.success && result.data) {
+          setIsOwner(result?.data?.isOwner || false);
           setPlan({
             ...result.data,
             createdAt: new Date(result.data.createdAt),
@@ -96,6 +143,7 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
               typeof result.data.deededArea === "number"
                 ? result.data.deededArea
                 : null,
+            centroid: result?.data?.centroid,
             pillars: (() => {
               if (!Array.isArray(result.data.pillars)) return [];
               return result.data.pillars
@@ -143,13 +191,13 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
 
         // Mock data for now
         setSharedWith([
-          {
-            id: "1",
-            firstName: "John",
-            lastName: "Doe",
-            surconRegNumber: "ksadf_",
-            email: "john@example.com",
-          },
+          // {
+          //   id: "1",
+          //   firstName: "John",
+          //   lastName: "Doe",
+          //   surconRegNumber: "ksadf_",
+          //   email: "john@example.com",
+          // },
           // Add more mock users as needed
         ]);
       } catch (error) {
@@ -236,13 +284,33 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
               <MapPin className="w-4 h-4 mr-2" />
               {showMap ? "Hide Map" : "Show Map"}
             </button>
-            <button
-              onClick={() => setIsShareModalOpen(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share Plan
-            </button>
+            {isOwner && (
+              <>
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share Plan
+                </button>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center"
+                  disabled={isDeleting}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -340,10 +408,18 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
                   <span className="font-medium">LGA:</span> {plan.lga}
                 </p>
               )}
-              {plan?.areaSqM && (
+              <p>
+                <span className="font-medium">Area:</span>{" "}
+                {plan.areaSqM 
+                  ? plan.areaSqM < 10000 
+                    ? `${plan.areaSqM.toFixed(2)} m²` 
+                    : `${(plan.areaSqM / 10000).toFixed(2)} ha`
+                  : 'N/A'}
+              </p>
+              {plan.centroid && Array.isArray(plan.centroid) && plan.centroid.length >= 2 && (
                 <p>
-                  <span className="font-medium">Area (m²):</span>{" "}
-                  {plan.areaSqM.toLocaleString()}
+                  <span className="font-medium">Centroid:</span>{" "}
+                  {`${plan.centroid[1].toFixed(6)}°N, ${plan.centroid[0].toFixed(6)}°E`}
                 </p>
               )}
             </div>

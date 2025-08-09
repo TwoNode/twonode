@@ -74,13 +74,19 @@ export interface Plan {
   ward: string | null;
   lcda: string | null;
   lga: string | null;
-  pillars: Prisma.JsonValue | PillarData[]; // Using Prisma's JsonValue type
+  pillars: Prisma.JsonValue | PillarData[] | null; // Using Prisma's JsonValue type
   status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;
   dateOnSurveyPlan: Date | null;
   reasonForWithdrawalAndResubmission: string | null;
   createdAt: Date;
   updatedAt: Date;
+  sharedTo?: string[];
+  areaSqM?: number | null;
+  centroid?: [number, number] | null;
+  userId?: string | null;
+  user?: Prisma.SurfboardUserCreateInput | any;
+  isOwner?: boolean;
 }
 
 /** Standard envelope for API results */
