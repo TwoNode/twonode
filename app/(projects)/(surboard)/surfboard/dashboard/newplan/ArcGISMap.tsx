@@ -56,9 +56,18 @@ export default function ArcGISMap({
     const graphicsLayer = new GraphicsLayer({ title: "Uploaded Survey" });
     const pointLayer = new GraphicsLayer({ title: "Uploaded Survey Pillars" });
 
-    const webmap = new WebMap({
-      portalItem: { id: "5b13e132fb1c403fb19d389b0462af4e" },
-    });
+    let webmap;
+    try {
+      webmap = new WebMap({
+        portalItem: { id: "5b13e132fb1c403fb19d389b0462af4e" },
+      });
+    } catch (error) {
+      console.error("Error loading WebMap:", error);
+      webmap = new WebMap({
+        basemap: "topo-vector", // Using a default basemap instead of portal item
+      });
+    }
+
     webmap.addMany([graphicsLayer, pointLayer]);
 
     const view = new MapView({
@@ -220,19 +229,50 @@ export default function ArcGISMap({
   }
 
   return (
-    <div className="relative">
+    <div className="relative max-w-full max-h-full">
       <button
         onClick={() => setIsFullscreen(!isFullscreen)}
-        className="absolute top-2 right-2 z-50 p-2 bg-white rounded-full shadow"
+        className={`${isFullscreen ? "fixed" : "absolute"} top-4 right-4 z-[1000] p-2 bg-white/90 hover:bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center w-10 h-10`}
+        title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
       >
-        {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        {isFullscreen ? (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-gray-700"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        ) : (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-gray-700"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+            />
+          </svg>
+        )}
       </button>
       <div
         ref={mapDiv}
         className={
           isFullscreen
             ? "fixed inset-0 z-[999]"
-            : "w-full h-[70vh] max-h-[1200px] rounded-xl shadow-lg border-8 border-blue-500 overflow-hidden"
+            : "w-full h-[70vh] max-h-[1200px] rounded-xl shadow-lg border-8 border-blue-500 overflow-hidden max-w-full"
         }
       />
     </div>
