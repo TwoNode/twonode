@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // Import ArcGIS core CSS for widgets and themes
 import "@arcgis/core/assets/esri/themes/light/main.css";
 

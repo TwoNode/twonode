@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createSurfPlan } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import {
+  createSurfPlan,
+  getAllFacilitators,
+} from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type {
   CreatePlanData,
   PillarData,
@@ -55,6 +58,33 @@ export default function CreateSurfPlan() {
     certificateFile: null as File | null,
   });
 
+  const [facilitators, setFacilitators] = useState<string[]>([]);
+  const [showNewFacilitatorInput, setShowNewFacilitatorInput] = useState(false);
+  const [isLoadingFacilitators, setIsLoadingFacilitators] = useState(true);
+  const [facilitatorError, setFacilitatorError] = useState<string | null>(null);
+
+  // Add this effect to load facilitators when the component mounts
+  useEffect(() => {
+    const loadFacilitators = async () => {
+      try {
+        setIsLoadingFacilitators(true);
+        const result = await getAllFacilitators();
+        if (result?.success && result?.data) {
+          setFacilitators(result.data);
+        } else {
+          setFacilitatorError(result?.error || "Failed to load facilitators");
+        }
+      } catch (error) {
+        console.error("Error loading facilitators:", error);
+        setFacilitatorError("An error occurred while loading facilitators");
+      } finally {
+        setIsLoadingFacilitators(false);
+      }
+    };
+
+    loadFacilitators();
+  }, []);
+
   // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -89,7 +119,9 @@ export default function CreateSurfPlan() {
       // Generate polygon geometry asynchronously
       if (parsedPillars.length >= 3) {
         try {
-          const polygonGeometry = await generatePolygonFromPillars(parsedPillars);
+          const polygonGeometry = await generatePolygonFromPillars(
+            parsedPillars
+          );
           setGeometry(polygonGeometry);
           setShowMap(true);
 
@@ -98,22 +130,30 @@ export default function CreateSurfPlan() {
           setLcda("Sample LCDA");
           setLga("Sample LGA");
 
-          toast.success(`Successfully parsed ${parsedPillars.length} pillars`, { id: loadingToast });
+          toast.success(`Successfully parsed ${parsedPillars.length} pillars`, {
+            id: loadingToast,
+          });
         } catch (error) {
           console.error("Error generating polygon:", error);
           toast.error(
-            `Failed to process coordinates: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Failed to process coordinates: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
             { id: loadingToast }
           );
           return;
         }
       } else {
-        toast.error("Need at least 3 pillars to form a polygon", { id: loadingToast });
+        toast.error("Need at least 3 pillars to form a polygon", {
+          id: loadingToast,
+        });
       }
     } catch (error) {
       console.error("Error parsing CSV:", error);
       toast.error(
-        `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Error parsing CSV: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         { id: loadingToast }
       );
     } finally {
@@ -138,7 +178,8 @@ export default function CreateSurfPlan() {
       !planInfo.deededArea ||
       !planInfo.facilitator ||
       !planInfo.pillarType ||
-      (planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION" && !planInfo.reasonForWithdrawalAndResubmission)
+      (planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION" &&
+        !planInfo.reasonForWithdrawalAndResubmission)
     ) {
       toast.error("Please fill in all required fields");
       return;
@@ -154,7 +195,9 @@ export default function CreateSurfPlan() {
         parsedGeometry = JSON.parse(geometry);
       } catch (error) {
         console.error("Error parsing geometry:", error);
-        toast.error("Invalid geometry data. Please try uploading the CSV again.");
+        toast.error(
+          "Invalid geometry data. Please try uploading the CSV again."
+        );
         return;
       }
 
@@ -354,14 +397,104 @@ export default function CreateSurfPlan() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Facilitator *
                 </label>
-                <input
-                  type="text"
-                  name="facilitator"
-                  value={planInfo.facilitator}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                {isLoadingFacilitators ? (
+                  <div className="animate-pulse h-10 bg-gray-200 rounded-md"></div>
+                ) : facilitatorError ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-600 text-sm">
+                      {facilitatorError}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          setIsLoadingFacilitators(true);
+                          setFacilitatorError(null);
+                          const result = await getAllFacilitators();
+                          if (result?.success && result?.data) {
+                            setFacilitators(result.data);
+                          } else {
+                            setFacilitatorError(
+                              result?.error || "Failed to load facilitators"
+                            );
+                          }
+                        } catch (error) {
+                          console.error("Error reloading facilitators:", error);
+                          setFacilitatorError(
+                            "Failed to reload. Please try again."
+                          );
+                        } finally {
+                          setIsLoadingFacilitators(false);
+                        }
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
+                      disabled={isLoadingFacilitators}
+                    >
+                      {isLoadingFacilitators ? "Loading..." : "Retry"}
+                    </button>
+                  </div>
+                ) : !showNewFacilitatorInput ? (
+                  <div className="flex gap-2">
+                    <select
+                      name="facilitator"
+                      value={planInfo.facilitator}
+                      onChange={(e) => {
+                        if (e.target.value === "new") {
+                          setShowNewFacilitatorInput(true);
+                          setPlanInfo((prev) => ({ ...prev, facilitator: "" }));
+                        } else {
+                          setPlanInfo((prev) => ({
+                            ...prev,
+                            facilitator: e.target.value,
+                          }));
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={isLoadingFacilitators}
+                    >
+                      <option value="">-- Select Facilitator --</option>
+                      {facilitators.map((facilitator) => (
+                        <option key={facilitator} value={facilitator}>
+                          {facilitator}
+                        </option>
+                      ))}
+                      <option value="new">+ Add New Facilitator</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="facilitator"
+                      value={planInfo.facilitator}
+                      onChange={handleInputChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter new facilitator name"
+                      required
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewFacilitatorInput(false);
+                        setPlanInfo((prev) => ({ ...prev, facilitator: "" }));
+                      }}
+                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                {planInfo.facilitator &&
+                  facilitators.some(
+                    (f) =>
+                      f.toLowerCase() === planInfo.facilitator.toLowerCase()
+                  ) && (
+                    <p className="mt-1 text-sm text-yellow-600">
+                      Note: This facilitator already exists in the system.
+                    </p>
+                  )}
               </div>
 
               <div>
@@ -430,7 +563,9 @@ export default function CreateSurfPlan() {
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-                    required={planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION"}
+                    required={
+                      planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION"
+                    }
                   />
                 </div>
               )}

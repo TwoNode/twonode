@@ -15,6 +15,98 @@ import {
 import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 
+// import * as QRCode from "qrcode";
+
+import QRCode from "qrcode";
+
+interface QRCodeOptions {
+  darkColor?: string;
+  lightColor?: string;
+  margin?: number;
+  scale?: number;
+  width?: number;
+}
+
+/**
+ * Generates a QR code URL for a surfboard plan with customizable colors and transparency
+ * @param planId - The ID of the surfboard plan
+ * @param options - QR code customization options
+ * @returns Object containing the QR code as a data URL
+ */
+export async function generatePlanQRCode(
+  planId: string,
+  options: QRCodeOptions = {}
+): Promise<ApiResult<{ qrCodeDataUrl: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    // Check if plan exists
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+      select: { id: true, planNumber: true },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    // Generate QR code URL for the public plan page
+    const baseUrl =
+      process.env.NODE_ENV === "production"
+        ? "https://www.twonodetechnologies.com"
+        : "http://localhost:3000";
+
+    const publicUrl = `${baseUrl}/surfboardplan/${planId}`;
+
+    // Generate QR code as a data URL (PNG with transparency)
+    const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
+      errorCorrectionLevel: "H",
+      margin: options.margin ?? 1,
+      scale: options.scale ?? 8,
+      width: options.width ?? 512,
+      color: {
+        dark: options.darkColor ?? "#000000",
+        light: options.lightColor ?? "#ffffff30", // Slightly transparent by default
+      },
+      type: "image/png",
+      rendererOpts: {
+        quality: 0.92,
+      },
+    } as QRCode.QRCodeToDataURLOptions);
+
+    return {
+      success: true,
+      data: { qrCodeDataUrl },
+    };
+  } catch (error) {
+    console.error("Error generating QR code:", error);
+    return {
+      success: false,
+      error: "Failed to generate QR code",
+    };
+  }
+}
+
+/**
+ * Gets the public URL for a surfboard plan
+ * @param planId - The ID of the surfboard plan
+ * @returns The public URL for the plan
+ */
+export async function getPlanPublicUrl(planId: string): Promise<string> {
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? "https://www.twonodetechnologies.com"
+      : "http://localhost:3000";
+
+  return `${baseUrl}/surfboardplan/${planId}`;
+}
+
 // Type guard to check if a value is a valid GeometryInput
 function isGeometryInput(value: any): value is GeometryInput {
   console.log("\n\n\n\nGeometry value", value, typeof value);
@@ -400,6 +492,88 @@ export async function getSurfPlanById(
             firstName: true,
             lastName: true,
             email: true,
+          },
+        },
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // Add area and centroid to the plan
+    let planWithGeometry: Plan = { ...plan, isOwner: plan.userId === user.id };
+
+    console.log(
+      "\n\n\n\nGeometry is valid",
+      plan.geometry,
+      isGeometryInput(plan.geometry)
+    );
+    if (plan.geometry && isGeometryInput(plan.geometry)) {
+      try {
+        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM,
+          centroid,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM: 0,
+          centroid: null,
+        };
+      }
+    } else {
+      planWithGeometry = {
+        ...planWithGeometry,
+        areaSqM: 0,
+        centroid: null,
+      };
+    }
+
+    return { success: true, data: planWithGeometry };
+  } catch (err) {
+    console.error("getSurfPlanById error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
+ * Fetches a single plan by ID.
+ */
+export async function getSurfPlanByIdWithSurveyor(
+  id: string
+): Promise<ApiResult<Plan>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    const ORArray = [
+      { userId: user.id }, // Owner
+    ].filter(Boolean);
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: {
+        id,
+        OR: ORArray,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            surconRegNumber: true,
+            surconRegName: true,
           },
         },
       },
@@ -926,6 +1100,58 @@ export async function editSurfboardPlan(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update plan",
+    };
+  }
+}
+
+/**
+ * Fetches all unique facilitators from existing plans
+ * @returns Array of unique facilitator names
+ */
+export async function getAllFacilitators(): Promise<ApiResult<string[]>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    // Get all plans and extract unique facilitators
+    const plans = await prisma.surfboardPlan.findMany({
+      select: {
+        facilitator: true,
+      },
+      distinct: ["facilitator"],
+      where: {
+        AND: [
+          { facilitator: { not: undefined } },
+          { facilitator: { not: "" } },
+        ],
+      },
+      orderBy: {
+        facilitator: "asc",
+      },
+    });
+
+    // Extract and clean up facilitator names
+    const facilitators = plans
+      .map((plan) => plan.facilitator?.trim())
+      .filter((facilitator): facilitator is string => Boolean(facilitator))
+      // Remove duplicates (case insensitive)
+      .filter(
+        (facilitator, index, self) =>
+          index ===
+          self.findIndex((f) => f.toLowerCase() === facilitator.toLowerCase())
+      );
+
+    return { success: true, data: facilitators };
+  } catch (error) {
+    console.error("Error fetching facilitators:", error);
+    return {
+      success: false,
+      error: "Failed to fetch facilitators",
     };
   }
 }

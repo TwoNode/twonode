@@ -13,14 +13,30 @@ import {
   Share2,
   Edit,
   Trash2,
+  QrCode,
+  RefreshCw,
 } from "lucide-react";
 import {
   getSurfPlanById,
   deleteSurfPlan,
+  generatePlanQRCode,
+  getPlanPublicUrl,
 } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 import dynamic from "next/dynamic";
 import { SharePlanModal } from "./SharePlanModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Copy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Dynamically import the ArcGISMap component with no SSR
 const ArcGISMap = dynamic(
@@ -58,7 +74,11 @@ export interface User {
   surconRegNumber: string | null;
 }
 
-export default function SinglePlanDetails({ planId }: { planId: string }) {
+interface SinglePlanDetailsProps {
+  planId: string;
+}
+
+export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const router = useRouter();
   const [plan, setPlan] = useState<PlanWithPillars | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +87,16 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
   const [sharedWith, setSharedWith] = useState<User[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [publicUrl, setPublicUrl] = useState<string>("");
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [qrOptions, setQrOptions] = useState({
+    darkColor: '#000000',
+    lightColor: '#ffffff00', // Transparent by default
+    margin: 1,
+    scale: 8,
+  });
 
   // Handle delete plan
   const handleDelete = async () => {
@@ -180,6 +210,10 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
     fetchPlan();
   }, [planId, router]);
 
+  useEffect(() => {
+    getPlanPublicUrl(planId).then((url) => setPublicUrl(url));
+  }, [planId]);
+
   // Fetch shared users for this plan
   useEffect(() => {
     const fetchSharedUsers = async () => {
@@ -229,6 +263,231 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
     }
   };
 
+  // Function to handle QR code generation
+  const handleGenerateQrCode = async () => {
+    try {
+      setIsGeneratingQr(true);
+      const result = await generatePlanQRCode(planId, qrOptions);
+
+      if (result.success && result.data) {
+        setQrCodeDataUrl(result.data.qrCodeDataUrl);
+        setIsQrModalOpen(true);
+      } else {
+        toast.error(result.error || "Failed to generate QR code");
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      toast.error("Failed to generate QR code");
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  // Function to handle copying the public URL to clipboard
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(publicUrl);
+    toast.success("Link copied to clipboard");
+  };
+
+  const renderQrCodeModal = () => (
+    <Dialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>QR Code</DialogTitle>
+          <DialogDescription>
+            Customize and download your QR code
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col items-center space-y-4">
+          {/* QR Code Preview */}
+          <div className="p-4 bg-white rounded-lg border border-gray-200">
+            {qrCodeDataUrl ? (
+              <img
+                src={qrCodeDataUrl}
+                alt="QR Code"
+                className="w-48 h-48 mx-auto"
+                style={{
+                  backgroundColor: qrOptions.lightColor === '#ffffff30' ? 'transparent' : qrOptions.lightColor
+                }}
+              />
+            ) : (
+              <div className="w-48 h-48 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            )}
+          </div>
+
+          {/* Color Customization */}
+          <div className="w-full space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dark Color
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    value={qrOptions.darkColor}
+                    onChange={(e) => setQrOptions(prev => ({
+                      ...prev,
+                      darkColor: e.target.value
+                    }))}
+                    className="h-10 w-10 rounded border border-gray-300"
+                  />
+                  <Input
+                    value={qrOptions.darkColor}
+                    onChange={(e) => setQrOptions(prev => ({
+                      ...prev,
+                      darkColor: e.target.value
+                    }))}
+                    className="flex-1"
+                    placeholder="#000000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Light Color
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={qrOptions.lightColor === '#ffffff30' ? '#ffffff' : qrOptions.lightColor}
+                      onChange={(e) => {
+                        const color = e.target.value + (qrOptions.lightColor.endsWith('30') ? '30' : '');
+                        setQrOptions(prev => ({
+                          ...prev,
+                          lightColor: color
+                        }));
+                      }}
+                      className="h-10 w-10 rounded border border-gray-300"
+                    />
+                    {qrOptions.lightColor.endsWith('30') && (
+                      <div className="absolute inset-0 border-2 border-red-500 pointer-events-none"></div>
+                    )}
+                  </div>
+                  <div className="flex-1 flex items-center">
+                    <Input
+                      value={qrOptions.lightColor}
+                      onChange={(e) => setQrOptions(prev => ({
+                        ...prev,
+                        lightColor: e.target.value
+                      }))}
+                      className="flex-1"
+                      placeholder="#ffffff30 (transparent)"
+                    />
+                    <button
+                      onClick={() => setQrOptions(prev => ({
+                        ...prev,
+                        lightColor: prev.lightColor.endsWith('30')
+                          ? prev.lightColor.slice(0, -2)
+                          : prev.lightColor + '30'
+                      }))}
+                      className="ml-2 px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200"
+                      title={qrOptions.lightColor.endsWith('30') ? "Make opaque" : "Make transparent"}
+                    >
+                      {qrOptions.lightColor.endsWith('30') ? "Opaque" : "Transparent"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Margin
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={qrOptions.margin}
+                  onChange={(e) => setQrOptions(prev => ({
+                    ...prev,
+                    margin: Math.min(10, Math.max(0, parseInt(e.target.value) || 0))
+                  }))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Scale
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={qrOptions.scale}
+                  onChange={(e) => setQrOptions(prev => ({
+                    ...prev,
+                    scale: Math.min(20, Math.max(1, parseInt(e.target.value) || 8))
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full flex space-x-2">
+            <Input
+              value={publicUrl}
+              readOnly
+              className="flex-1 text-sm"
+              onFocus={(e) => e.target.select()}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="shrink-0"
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Copy
+            </Button>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setIsQrModalOpen(false)}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={async () => {
+              // Regenerate QR code with new options
+              const result = await generatePlanQRCode(planId, qrOptions);
+              if (result.success && result.data) {
+                setQrCodeDataUrl(result.data.qrCodeDataUrl);
+              }
+            }}
+            variant="outline"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Update
+          </Button>
+          <Button
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = qrCodeDataUrl || '';
+              link.download = `plan-${plan?.planNumber || 'unknown'}-qrcode.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            disabled={!qrCodeDataUrl}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -267,8 +526,8 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div className="mb-4 md:mb-0">
+        <div className="flex flex-col md:items-center md:justify-between mb-6">
+          <div className="mb-4 md:mb-0 mr-auto">
             <h1 className="text-2xl font-bold text-gray-900">
               {plan.planNumber} - {plan.surveyTitle}
             </h1>
@@ -276,39 +535,61 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
               {plan.planType} • {plan.pillarType}
             </p>
           </div>
-          <div className="flex space-x-2">
+
+          <div className="flex flex-wrap gap-2 w-full md:w-auto ml-auto">
             <button
               onClick={toggleMap}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center flex-1 md:flex-none min-w-[120px]"
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              {showMap ? "Hide Map" : "Show Map"}
+              <MapPin className="w-4 h-4 mr-1.5 md:mr-2" />
+              <span className="text-sm md:text-base">{showMap ? "Hide Map" : "Show Map"}</span>
             </button>
             {isOwner && (
               <>
                 <button
                   onClick={() => setIsShareModalOpen(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+                  className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center justify-center flex-1 md:flex-none min-w-[120px]"
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Plan
+                  <Share2 className="w-4 h-4 mr-1.5 md:mr-2" />
+                  <span className="text-sm md:text-base">Share</span>
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center"
+                  className="px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center justify-center flex-1 md:flex-none min-w-[100px]"
                   disabled={isDeleting}
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
+                  <Edit className="w-4 h-4 mr-1.5 md:mr-2" />
+                  <span className="text-sm md:text-base">Edit</span>
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center flex-1 md:flex-none min-w-[100px]"
                   disabled={isDeleting}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  <Trash2 className="w-4 h-4 mr-1.5 md:mr-2" />
+                  <span className="text-sm md:text-base">
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </span>
                 </button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateQrCode}
+                  disabled={isGeneratingQr}
+                  className="flex-1 md:flex-none min-w-[120px] h-[36px] justify-center"
+                >
+                  {isGeneratingQr ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-1.5 md:mr-2" />
+                      <span className="text-sm md:text-base">Generating</span>
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="h-4 w-4 mr-1.5 md:mr-2" />
+                      <span className="text-sm md:text-base">QR Code</span>
+                    </>
+                  )}
+                </Button>
               </>
             )}
           </div>
@@ -410,18 +691,22 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
               )}
               <p>
                 <span className="font-medium">Area:</span>{" "}
-                {plan.areaSqM 
-                  ? plan.areaSqM < 10000 
-                    ? `${plan.areaSqM.toFixed(2)} m²` 
+                {plan.areaSqM
+                  ? plan.areaSqM < 10000
+                    ? `${plan.areaSqM.toFixed(2)} m²`
                     : `${(plan.areaSqM / 10000).toFixed(2)} ha`
-                  : 'N/A'}
+                  : "N/A"}
               </p>
-              {plan.centroid && Array.isArray(plan.centroid) && plan.centroid.length >= 2 && (
-                <p>
-                  <span className="font-medium">Centroid:</span>{" "}
-                  {`${plan.centroid[1].toFixed(6)}°N, ${plan.centroid[0].toFixed(6)}°E`}
-                </p>
-              )}
+              {plan.centroid &&
+                Array.isArray(plan.centroid) &&
+                plan.centroid.length >= 2 && (
+                  <p>
+                    <span className="font-medium">Centroid:</span>{" "}
+                    {`${plan.centroid[1].toFixed(
+                      6
+                    )}°N, ${plan.centroid[0].toFixed(6)}°E`}
+                  </p>
+                )}
             </div>
           </div>
 
@@ -489,6 +774,7 @@ export default function SinglePlanDetails({ planId }: { planId: string }) {
           </div>
         </div>
       </div>
+      {renderQrCodeModal()}
     </div>
   );
 }
