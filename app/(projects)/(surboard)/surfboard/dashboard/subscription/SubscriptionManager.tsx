@@ -349,7 +349,7 @@ export default function SubscriptionManager({
               {isSubscriptionActive
                 ? "You're currently subscribed to the " +
                     SUBSCRIPTION_PLANS[
-                      current.planCode as keyof typeof SUBSCRIPTION_PLANS
+                      current.interval as keyof typeof SUBSCRIPTION_PLANS
                     ]?.name || current.planName
                 : isSubscriptionCancelled
                 ? `Your subscription will expire on ${format(
@@ -364,16 +364,24 @@ export default function SubscriptionManager({
               <div>
                 <h3 className="text-lg font-semibold">
                   {SUBSCRIPTION_PLANS[
-                    current.planCode as keyof typeof SUBSCRIPTION_PLANS
+                    current.interval as keyof typeof SUBSCRIPTION_PLANS
                   ]?.name || current.planName}
                 </h3>
                 <p className="text-muted-foreground">
                   {isSubscriptionActive
                     ? current.nextPaymentDate
-                      ? `Next billing: ${format(
-                          new Date(current.nextPaymentDate),
-                          "MMM d, yyyy"
-                        )}`
+                      ? `Next billing: ${
+                          current.nextPaymentDate || current.currentEnd
+                            ? format(
+                                new Date(
+                                  current.nextPaymentDate ||
+                                    current.currentEnd ||
+                                    ""
+                                ),
+                                "MMM d, yyyy"
+                              )
+                            : ""
+                        }`
                       : "Billing cycle: " + (current.interval || "monthly")
                     : isSubscriptionCancelled
                     ? `Expires on ${format(
