@@ -334,9 +334,10 @@ export default function SubscriptionManager({
 
   // Check if subscription is cancelled but not yet expired
   const isSubscriptionCancelled =
-    current?.cancelledAt &&
-    current.currentEnd &&
-    isAfter(new Date(current.currentEnd), new Date());
+    current?.cancelledAt ||
+    (current?.status === "canceled" &&
+      current?.currentEnd &&
+      isAfter(new Date(current.currentEnd), new Date()));
 
   return (
     <div className="space-y-6">
