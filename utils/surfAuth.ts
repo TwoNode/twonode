@@ -11,7 +11,7 @@ export async function getUserFromSurfDB(userId: string) {
 
     return user;
   } catch (error) {
-    console.error("Error fetching user from Reva DB:", error);
+    console.error("Error fetching user from Surfboard DB:", error);
     return null;
   }
 }
@@ -29,7 +29,7 @@ export async function getAuthenticatedSurfUser() {
   const surfUser = await getUserFromSurfDB(user.id);
 
   if (!surfUser) {
-    throw new Error("User not found in Surf DB");
+    throw new Error("User not found in Surfboard DB");
   }
 
   return { ...user, ...surfUser };

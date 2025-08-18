@@ -1,9 +1,94 @@
-// Import ArcGIS projection utilities
 import * as projectOperator from "@arcgis/core/geometry/operators/projectOperator";
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 import Point from "@arcgis/core/geometry/Point";
+import { PlanId, SubscriptionPlan } from "./paystackSubscription";
 
-// Utility functions for surfboard operations
+const MS_PER_DAY = 86_400_000;
+
+export function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+export function endOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+}
+export function addDays(d: Date, days: number): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
+}
+export function daysInclusive(a: Date, b: Date): number {
+  const start = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+  const end = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY) + 1;
+}
+export function clampDate(d: Date, min: Date, max: Date): Date {
+  if (d < min) return min;
+  if (d > max) return max;
+  return d;
+}
+
+export function getQuarterIndex(d: Date): 1 | 2 | 3 | 4 {
+  const m = d.getMonth(); // 0-based
+  if (m <= 2) return 1;
+  if (m <= 5) return 2;
+  if (m <= 8) return 3;
+  return 4;
+}
+export function startOfQuarter(d: Date): Date {
+  const q = getQuarterIndex(d);
+  const startMonth = (q - 1) * 3; // 0,3,6,9
+  return new Date(d.getFullYear(), startMonth, 1);
+}
+export function endOfQuarter(d: Date): Date {
+  const q = getQuarterIndex(d);
+  const endMonth = q * 3; // 3,6,9,12 (but Date will roll back to last day)
+  return new Date(d.getFullYear(), endMonth, 0);
+}
+
+export function startOfYear(d: Date): Date {
+  return new Date(d.getFullYear(), 0, 1);
+}
+export function endOfYear(d: Date): Date {
+  return new Date(d.getFullYear(), 12, 0);
+}
+
+export interface Period {
+  periodStart: Date; // inclusive
+  periodEnd: Date; // inclusive
+  chargeDate: Date; // when we attempt to charge (the day after periodEnd)
+}
+
+export function getPeriodFor(plan: PlanId, ref: Date): Period {
+  if (plan === "monthly") {
+    const start = startOfMonth(ref);
+    const end = endOfMonth(ref);
+    return { periodStart: start, periodEnd: end, chargeDate: addDays(end, 1) };
+  }
+  if (plan === "quarterly") {
+    const start = startOfQuarter(ref);
+    const end = endOfQuarter(ref);
+    return { periodStart: start, periodEnd: end, chargeDate: addDays(end, 1) };
+  }
+  // yearly
+  const start = startOfYear(ref);
+  const end = endOfYear(ref);
+  return { periodStart: start, periodEnd: end, chargeDate: addDays(end, 1) };
+}
+
+export function proratedAmount(
+  plan: SubscriptionPlan,
+  usageStart: Date,
+  period: Period
+): number {
+  const usedStart = clampDate(usageStart, period.periodStart, period.periodEnd);
+  const usedDays = daysInclusive(usedStart, period.periodEnd);
+  const totalDays = daysInclusive(period.periodStart, period.periodEnd);
+  // Round to nearest naira
+  return Math.round((plan.price * usedDays) / totalDays);
+}
+
+// -----------------------------------------------------------------------------
+// EXISTING mapping utilities (kept intact, minimized for brevity). If you had
+// more here, paste them below or keep them in this same file.
+// -----------------------------------------------------------------------------
 export interface PillarData {
   easting: number;
   northing: number;
@@ -12,12 +97,6 @@ export interface PillarData {
   geometry?: string; // GeoJSON point
 }
 
-// Create a promise that resolves when projection is loaded
-let projectionLoadPromise: Promise<void> | null = null;
-
-/**
- * Ensures the projection module is loaded before performing coordinate transformations
- */
 export async function ensureProjectionLoaded(): Promise<void> {
   // If already loaded, return immediately
   if (projectOperator.isLoaded()) {
@@ -40,7 +119,9 @@ export async function ensureProjectionLoaded(): Promise<void> {
   return projectionLoadPromise;
 }
 
-// Enhanced coordinate conversion using ArcGIS projection
+// Create a promise that resolves when projection is loaded
+let projectionLoadPromise: Promise<void> | null = null;
+
 export async function convertCoordinates(
   easting: number,
   northing: number,

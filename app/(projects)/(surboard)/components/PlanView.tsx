@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import {
-  Plan,
-  PillarData,
-} from "@/app/(projects)/(surboard)/types/surfboardTypes";
-import { JsonValue } from "@prisma/client/runtime/library";
+import { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 
 const statusVariant = {
   PENDING: "outline",

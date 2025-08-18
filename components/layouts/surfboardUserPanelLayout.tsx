@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -12,16 +12,26 @@ import {
   FilePlus,
   Settings,
   LogOut,
+  CreditCard,
+  AlertTriangle,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
+import { isUserSubscribed } from "@/app/(projects)/(surboard)/actions/subscriptionActions";
+import Link from "next/link";
 
 // Surfboard dashboard navbar with logo and username
-function SurfboardUserDashboardNavbar({ username }: { username?: string }) {
+function SurfboardUserDashboardNavbar({
+  username,
+  showSubscriptionBadge = false,
+}: {
+  username?: string;
+  showSubscriptionBadge?: boolean;
+}) {
   return (
     <header
-      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-blue-100"
+      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-blue-100 relative"
       style={{
         background: `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 60%, ${SURFBOARD_COLORS.secondary.main} 100%)`,
       }}
@@ -37,6 +47,21 @@ function SurfboardUserDashboardNavbar({ username }: { username?: string }) {
         </span>
       </div>
       <div className="flex-1" />
+      {showSubscriptionBadge ? (
+        <Link href="/surfboard/dashboard/subscription" className="pointer">
+          <div className="flex items-center mr-4 bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+            <AlertTriangle className="w-4 h-4 mr-1" />
+            Subscription Required
+          </div>
+        </Link>
+      ) : (
+        <Link href="/surfboard/dashboard/newplan" className="pointer">
+          <div className="flex items-center mr-4 bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+            <AlertTriangle className="w-4 h-4 mr-1" />
+            New Plan
+          </div>
+        </Link>
+      )}
       {username && (
         <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
           {username}
@@ -51,26 +76,75 @@ export default function SurfboardUserPanelLayout({
   user,
 }: {
   children: React.ReactNode;
-  user?: { picture?: string; name?: string };
+  user?: { picture?: string; name?: string; id?: string };
 }) {
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/surfboard/dashboard";
 
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        console.log("--- Checking subscription access...");
+        const hasAccess = await isUserSubscribed();
+        setHasSubscriptionAccess(hasAccess);
+        console.log("--- Subscription access:", hasAccess);
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        // Default to showing dashboard if there's an error
+        setHasSubscriptionAccess(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSubscription();
+  }, []);
+
   const menuList = [
-    { icon: Home, label: "Home", url: dashboardUrl },
+    {
+      icon: Home,
+      label: "Home",
+      url: dashboardUrl,
+      requiresSubscription: false,
+    },
     {
       icon: ListChecks,
       label: "All Plans",
       url: `${dashboardUrl}/allplans`,
+      requiresSubscription: true,
     },
     {
       icon: ListChecks,
       label: "Shared Plans",
       url: `${dashboardUrl}/shared`,
+      requiresSubscription: true,
     },
-    { icon: Map, label: "Map Viewer", url: `${dashboardUrl}/map` },
-    { icon: FilePlus, label: "New Plan", url: `${dashboardUrl}/newplan` },
-    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
+    {
+      icon: Map,
+      label: "Map Viewer",
+      url: `${dashboardUrl}/map`,
+      requiresSubscription: true,
+    },
+    {
+      icon: FilePlus,
+      label: "New Plan",
+      url: `${dashboardUrl}/newplan`,
+      requiresSubscription: true,
+    },
+    {
+      icon: CreditCard,
+      label: "Subscription",
+      url: "/surfboard/dashboard/subscription",
+      requiresSubscription: false,
+    },
+    {
+      icon: Settings,
+      label: "Settings",
+      url: `${dashboardUrl}/settings`,
+      requiresSubscription: false,
+    },
     {
       element: (
         <LogoutLink
@@ -89,14 +163,30 @@ export default function SurfboardUserPanelLayout({
           </span>
         </LogoutLink>
       ),
+      requiresSubscription: false,
     },
-  ];
+  ].filter((item) => {
+    // Always show items that don't require subscription
+    if (!("requiresSubscription" in item) || !item.requiresSubscription)
+      return true;
+    // Only show subscription-required items if user has access
+    return hasSubscriptionAccess;
+  });
 
-  if (!sidebar) return null;
+  if (isLoading || !sidebar) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-blue-200">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
-      <SurfboardUserDashboardNavbar username={user?.name} />
+      <SurfboardUserDashboardNavbar
+        username={user?.name}
+        showSubscriptionBadge={!hasSubscriptionAccess}
+      />
       <main
         className={cn(
           "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] transition-[margin-left] ease-in-out duration-300",
@@ -108,12 +198,26 @@ export default function SurfboardUserPanelLayout({
           <Sidebar
             items={menuList}
             userImageUrl={user?.picture}
-            // background={`linear-gradient(180deg, ${SURFBOARD_COLORS.primary.main} 70%, ${SURFBOARD_COLORS.secondary.light} 100%)`}
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
           />
         </div>
         <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+          {!hasSubscriptionAccess && (
+            <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    Your subscription has expired. Please renew your
+                    subscription to access all features.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {children}
         </main>
       </main>

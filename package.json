@@ -11,6 +11,8 @@
     "prisma:generate": "npx prisma generate",
     "prisma:push": "npx prisma db push",
     "prisma:studio": "npx prisma studio",
+    "prisma:accept-data-loss": "npx prisma db push --accept-data-loss",
+    "prisma:create-only": "npx prisma migrate dev --create-only",
     "prisma:check": "npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datasource prisma/schema.prisma --script"
   },
   "dependencies": {

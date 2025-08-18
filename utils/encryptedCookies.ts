@@ -39,6 +39,14 @@ export interface EncryptedUserData {
   kindeId: string;
   sessionId: string; // Unique session identifier
   lastActivity: number; // For idle timeout tracking
+  subscription?: {
+    status: "active" | "cancelled" | "expired" | "past_due";
+    interval: "monthly" | "quarterly" | "annually";
+    expiresAt?: number | string | Date | null; // Unix timestamp in seconds
+    subCode?: string;
+    planCode?: string;
+    emailToken?: string;
+  };
 }
 
 // Extended JWT payload interface
@@ -52,6 +60,14 @@ interface UserJWTPayload extends JWTPayload {
   kindeId: string;
   sessionId: string;
   lastActivity: number;
+  subscription?: {
+    status: "active" | "cancelled" | "expired" | "past_due";
+    interval: "monthly" | "quarterly" | "annually";
+    expiresAt?: number | string | Date | null; // Unix timestamp in seconds
+    subCode?: string;
+    planCode?: string;
+    emailToken?: string;
+  };
 }
 
 // Generate a unique session ID
@@ -61,7 +77,9 @@ const generateSessionId = (): string => {
 
 // Encrypt user data using JOSE JWE
 export async function encryptUserData(
-  data: Omit<EncryptedUserData, "sessionId" | "lastActivity">
+  data: Omit<EncryptedUserData, "sessionId" | "lastActivity"> & {
+    subscription?: EncryptedUserData["subscription"];
+  }
 ): Promise<string> {
   try {
     const key = getEncryptionKey();
@@ -70,6 +88,7 @@ export async function encryptUserData(
     const payload: UserJWTPayload = {
       ...data,
       sessionId: generateSessionId(),
+      subscription: data.subscription, // Include subscription in payload
       lastActivity: now,
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
@@ -138,6 +157,7 @@ export async function decryptUserData(
       kindeId: userPayload.kindeId,
       sessionId: userPayload.sessionId,
       lastActivity: userPayload.lastActivity,
+      subscription: userPayload.subscription, // Include subscription in decrypted data
     };
 
     return userData;
@@ -208,6 +228,7 @@ export async function updateLastActivity(
       ...dataForEncryption,
       sessionId, // Preserve existing session ID
       lastActivity: now,
+      subscription: userData.subscription, // Include subscription in payload
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
       iat: now,
@@ -237,7 +258,9 @@ export async function updateLastActivity(
 
 // Set encrypted user cookie (server-side)
 export async function setEncryptedUserCookie(
-  userData: Omit<EncryptedUserData, "sessionId" | "lastActivity">,
+  userData: Omit<EncryptedUserData, "sessionId" | "lastActivity"> & {
+    subscription?: EncryptedUserData["subscription"];
+  },
   response?: NextResponse
 ): Promise<NextResponse> {
   const encryptedJWT = await encryptUserData(userData);

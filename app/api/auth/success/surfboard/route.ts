@@ -16,6 +16,16 @@ export async function GET(request: NextRequest) {
     // Prisma model is 'SurfboardUser', so the client property is 'surfboardUser'
     let dbUser = await prisma.surfboardUser.findUnique({
       where: { kindeId: user.id },
+      include: {
+        subscription: {
+          where: {
+            status: { in: ["active", "past_due"] },
+            currentEnd: { gte: new Date() },
+          },
+          orderBy: { currentEnd: "desc" },
+          take: 1,
+        },
+      },
     });
 
     if (!dbUser) {
@@ -27,6 +37,16 @@ export async function GET(request: NextRequest) {
         dbUser = await prisma.surfboardUser.update({
           where: { id: existingUser.id },
           data: { kindeId: user.id },
+          include: {
+            subscription: {
+              where: {
+                status: { in: ["active", "past_due"] },
+                currentEnd: { gte: new Date() },
+              },
+              orderBy: { currentEnd: "desc" },
+              take: 1,
+            },
+          },
         });
       } else {
         dbUser = await prisma.surfboardUser.create({
@@ -36,6 +56,9 @@ export async function GET(request: NextRequest) {
             lastName: user.family_name ?? "",
             email: user.email ?? "",
           },
+          include: {
+            subscription: true, // Will be empty for new users
+          },
         });
       }
     }
@@ -44,7 +67,7 @@ export async function GET(request: NextRequest) {
       throw new Error("Failed to create or find user in database");
     }
 
-    // Create encrypted user data
+    // Create encrypted user data with subscription if it exists
     const userData = {
       platform: Platform.SURFBOARD,
       role: dbUser.role as SurfboardRole,
@@ -53,6 +76,27 @@ export async function GET(request: NextRequest) {
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
       kindeId: dbUser.kindeId,
+      ...(dbUser.subscription?.[0]
+        ? {
+            subscription: {
+              status: dbUser.subscription[0].status as
+                | "active"
+                | "cancelled"
+                | "expired"
+                | "past_due",
+              interval: dbUser.subscription[0].interval as
+                | "monthly"
+                | "quarterly"
+                | "annually",
+              subCode: dbUser.subscription[0].subCode ?? "",
+              planCode: dbUser.subscription[0].planCode ?? "",
+              emailToken: dbUser.subscription[0].emailToken ?? "",
+              expiresAt:
+                dbUser.subscription[0].currentEnd ||
+                dbUser.subscription[0].nextPaymentDate,
+            },
+          }
+        : {}),
     };
 
     const postLoginRaw =

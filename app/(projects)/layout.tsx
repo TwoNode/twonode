@@ -3,8 +3,9 @@ import { Bricolage_Grotesque } from "next/font/google";
 import "../globals.css";
 import Head from "next/head";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
+// import { KindeProvider } from "@kinde-oss/kinde-auth-nextjs";
 import { KindeAuthProvider } from "@/providers/KindeAuthProvider";
+import ToasterComponent from "@/components/ToasterComponent";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -150,13 +151,17 @@ export default function RootLayout({
       </Head>
 
       <body className={`${bricolage.variable} ${bricolage.className}`}>
-        <KindeAuthProvider>
-          {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
-            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
-          )}
-
-          <main className="relative">{children}</main>
-        </KindeAuthProvider>
+        <>
+          <KindeAuthProvider>
+            <ToasterComponent />
+            {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
+              <GoogleAnalytics
+                gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
+              />
+            )}
+            <main className="relative">{children}</main>
+          </KindeAuthProvider>
+        </>
       </body>
     </html>
   );

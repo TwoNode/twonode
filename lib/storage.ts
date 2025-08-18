@@ -20,7 +20,7 @@ const config = {
   // Local storage configuration
   local: {
     uploadDir: path.join(process.cwd(), 'public/uploads'),
-    publicUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    publicUrl: process.env.BASE_URL || 'http://localhost:3000',
   },
 };
 

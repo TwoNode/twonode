@@ -165,40 +165,103 @@ enum SurfboardRole {
 }
 
 model SurfboardUser {
-  id                String         @id @default(uuid())
-  kindeId           String         @unique
-  email             String         @unique
-  firstName         String
-  lastName          String
-  role              SurfboardRole  @default(USER)
-  emailVerified     Boolean        @default(false)
-  is_active         Boolean        @default(true)
+  id                  String         @id @default(uuid())
+  kindeId             String         @unique
+  email               String         @unique
+  firstName           String
+  lastName            String
+  role                SurfboardRole  @default(USER)
+  emailVerified       Boolean        @default(false)
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+
+  isActive            Boolean        @default(true)
   
   // New fields
-  logo              String?        // URL to the user's logo
-  companyName       String?        // User's company name
-  surconRegNumber   String?        // SURCON registration number
-  surconRegName     String?        // Name as registered with SURCON
-  signature         String?        // URL to the user's signature image
-  prefix            String?        // Name prefix (e.g., Mr., Mrs., Dr.)
-  suffix            String?        // Name suffix (e.g., Jr., Sr., III)
-  residenceState    String?        // Residence state in Nigeria
+  logo                String?        // URL to the user's logo
+  companyName         String?        // User's company name
+  companyAddress      String?        // User's company address
+  surconRegNumber     String?        // SURCON registration number
+  surconRegName       String?        // Name as registered with SURCON
+  signature           String?        // URL to the user's signature image
+  prefix              String?        // Name prefix (e.g., Mr., Mrs., Dr.)
+  suffix              String?        // Name suffix (e.g., Jr., Sr., III)
+  residenceState      String?        // Residence state in Nigeria
+  postalCode          String?        // User's postal code
 
   // Relations
-  plans             SurfboardPlan[]
+  plans               SurfboardPlan[]
+  subscription        Subscription[]
+  subscriptionHistory SubscriptionHistory[]
 
   // Timestamps
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  metadata            Json?          @default("{}")
+
+  @@map("SurfboardUser")
 }
 
-
-/// Workflow states for a surfboard plan
 enum SurfboardPlanStatus {
   PENDING
   APPROVED
   REJECTED
   UNDER_REVIEW
+}
+
+model Subscription {
+  id                  String                  @id @default(uuid())
+  userId              String                  @unique
+  user                SurfboardUser           @relation(fields: [userId], references: [id])
+
+  provider            String                  @default("paystack")
+  email               String?
+  customerCode        String?
+  customerId          String?
+  emailToken          String?                 // required to enable/disable
+  authorization       String?
+  subCode             String?                 // Paystack subscription ID
+  planCode            String
+  planName            String
+  interval            String                  @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
+  amount              Int
+  currency            String                  @default("NGN")
+  currentStart        DateTime?
+  currentEnd          DateTime?
+  cancelledAt         DateTime?
+  nextPaymentDate     DateTime?
+  status              String                  // active, canceled, expired, etc.
+  platform            String                  @default("surfboard")  // surfboard or twonodes or reva or scram
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@map("Subscription")
+}
+
+model SubscriptionHistory {
+  id                  String                  @id @default(uuid())
+  reference           String
+
+  userId              String
+  user                SurfboardUser           @relation(fields: [userId], references: [id])
+
+  planCode            String
+  planName            String
+  amount              Int                     // Amount in kobo
+  interval            String                  @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
+  lastPaymentDate     DateTime?
+  startDate           DateTime?
+  endDate             DateTime?
+  status              String                  // 'active' | 'past_due' | 'canceled'
+  eventType           String                  // "subscription.create", "subscription.disable", "invoice.success", etc.
+
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+
+  @@index([reference])
+  @@map("SubscriptionHistory")
 }
 
 /// A single survey plan record.
@@ -269,7 +332,6 @@ model SurfboardPlan {
   /// Index by reference number
   @@index([planNumber])
 }
-
 
 enum SurfboardNotificationType {
   INFO

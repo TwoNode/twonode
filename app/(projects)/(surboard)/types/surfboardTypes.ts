@@ -95,3 +95,13 @@ export interface ApiResult<T> {
   data?: T;
   error?: string;
 }
+
+export type SubscriptionStatus = "active" | "cancelled" | "expired" | "pending";
+
+export type SubscriptionPlan = {
+  id: "monthly" | "quarterly" | "yearly";
+  name: string;
+  price: number;
+  description: string;
+  interval: string;
+};
