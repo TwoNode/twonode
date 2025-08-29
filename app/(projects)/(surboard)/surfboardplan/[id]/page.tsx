@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { format } from "date-fns";
 import { getSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import { Suspense } from "react";
@@ -6,6 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ResolvingMetadata } from "next";
 import { Metadata } from "next";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Ruler, Calendar, User, Briefcase, Hash, FileText, Layers, Share2, Download, Printer } from "lucide-react";
 
 type Props = {
   params: { id: string };
@@ -38,19 +41,47 @@ export async function generateMetadata(
 }
 
 function DetailItem({
+  icon: Icon,
   label,
   value,
+  className = "",
 }: {
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value?: string | number | null;
+  className?: string;
 }) {
   if (value === undefined || value === null || value === "") return null;
 
   return (
-    <div className="flex justify-between py-1">
-      <span className="font-medium text-gray-700">{label}:</span>
-      <span className="text-gray-900">{value}</span>
+    <div className={`flex items-start gap-3 ${className}`}>
+      <div className="mt-0.5 p-1.5 rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="flex-1">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="text-base font-medium text-foreground">{value}</p>
+      </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status?: string | null }) {
+  if (!status) return null;
+  
+  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    PENDING: { label: "Pending Review", variant: "outline" },
+    APPROVED: { label: "Approved", variant: "default" },
+    REJECTED: { label: "Rejected", variant: "destructive" },
+    UNDER_REVIEW: { label: "Under Review", variant: "secondary" },
+  };
+
+  const statusInfo = statusMap[status] || { label: status.replace(/_/g, " "), variant: "outline" as const };
+  
+  return (
+    <Badge variant={statusInfo.variant} className="text-xs font-medium px-2.5 py-1 rounded-full">
+      {statusInfo.label}
+    </Badge>
   );
 }
 
@@ -63,121 +94,298 @@ async function PlanDetails({ planId }: { planId: string }) {
 
   const { user, ...plan } = res.data;
   const formattedDate = format(new Date(plan.createdAt), "MMMM d, yyyy");
+  const coordinates = plan.centroid && Array.isArray(plan.centroid) && plan.centroid.length >= 2 
+    ? `${plan.centroid[1].toFixed(6)}°N, ${plan.centroid[0].toFixed(6)}°E`
+    : null;
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">
-            Survey Plan: {plan.planNumber}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {user
-              ? `Surveyed by ${user.firstName} ${user.lastName}${
-                  user.surconRegNumber
-                    ? ` (SURCON: ${user.surconRegNumber})`
-                    : ""
-                } on ${formattedDate}`
-              : `Created on ${formattedDate}`}
-          </p>
-        </CardHeader>
-
-        <CardContent className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section>
-              <h3 className="text-lg font-semibold mb-4 pb-2 border-b">
-                Plan Details
-              </h3>
-              <div className="space-y-3 text-sm">
-                <DetailItem label="Survey Title" value={plan.surveyTitle} />
-                <DetailItem label="Plan Number" value={plan.planNumber} />
-                <DetailItem label="LGA" value={plan.lga} />
-                <DetailItem label="Ward" value={plan.ward} />
-                <DetailItem
-                  label="Status"
-                  value={plan.status?.replace(/_/g, " ").toLowerCase()}
-                />
-                <DetailItem
-                  label="Area"
-                  value={
-                    plan.areaSqM
-                      ? `${plan.areaSqM.toLocaleString()} m²`
-                      : undefined
-                  }
-                />
-                <DetailItem label="Facilitator" value={plan.facilitator} />
-                <DetailItem label="Pillar Type" value={plan.pillarType} />
-                <DetailItem label="Plan Type" value={plan.planType} />
-                <DetailItem
-                  label="Reference Plan Number"
-                  value={plan.referencePlanNumber}
-                />
-                <DetailItem label="Deeded Area" value={plan.deededArea} />
-              </div>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold mb-4 pb-2 border-b">
-                Location Details
-              </h3>
-              <div className="space-y-3 text-sm">
-                <DetailItem
-                  label="Surveyor"
-                  value={user ? `${user.firstName} ${user.lastName}` : "N/A"}
-                />
-                <DetailItem label="Company" value={user?.companyName} />
-                <DetailItem label="SURCON No." value={user?.surconRegNumber} />
-                <DetailItem label="SURCON Name" value={user?.surconRegName} />
-                {plan.centroid &&
-                  Array.isArray(plan.centroid) &&
-                  plan.centroid.length >= 2 && (
-                    <DetailItem
-                      label="Coordinates"
-                      value={`${plan.centroid[1].toFixed(
-                        6
-                      )}°N, ${plan.centroid[0].toFixed(6)}°E`}
-                    />
-                  )}
-              </div>
-            </section>
-          </div>
-
-          {/* Reason for Withdrawal Section */}
-          {plan.reasonForWithdrawalAndResubmission && (
-            <div className="mt-6 p-4 bg-muted/50 rounded-md">
-              <h4 className="font-medium text-foreground mb-2">
-                Reason for Withdrawal and Resubmission
-              </h4>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {plan.surveyTitle || `Survey Plan ${plan.planNumber}`}
+            </h1>
+            <div className="flex items-center gap-2 mt-2">
+              <StatusBadge status={plan.status} />
               <p className="text-sm text-muted-foreground">
-                {plan.reasonForWithdrawalAndResubmission}
+                Created on {formattedDate}
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Plan Overview */}
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-muted/50 border-b">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                  <Layers className="h-5 w-5 text-primary" />
+                  Plan Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem 
+                  icon={Hash} 
+                  label="Plan Number" 
+                  value={plan.planNumber} 
+                />
+                <DetailItem 
+                  icon={FileText} 
+                  label="Reference Plan" 
+                  value={plan.referencePlanNumber || "N/A"} 
+                />
+                <DetailItem 
+                  icon={Ruler} 
+                  label="Area" 
+                  value={plan.areaSqM ? `${plan.areaSqM.toLocaleString()} m²` : undefined} 
+                />
+                <DetailItem 
+                  icon={Layers} 
+                  label="Plan Type" 
+                  value={plan.planType || "N/A"} 
+                />
+                <DetailItem 
+                  icon={Layers} 
+                  label="Pillar Type" 
+                  value={plan.pillarType || "N/A"} 
+                  className="md:col-span-2"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Location Details */}
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-muted/50 border-b">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Location Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem 
+                  icon={MapPin} 
+                  label="LGA" 
+                  value={plan.lga || "N/A"} 
+                />
+                <DetailItem 
+                  icon={MapPin} 
+                  label="Ward" 
+                  value={plan.ward || "N/A"} 
+                />
+                {coordinates && (
+                  <DetailItem 
+                    icon={MapPin} 
+                    label="Coordinates" 
+                    value={coordinates} 
+                    className="md:col-span-2"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Surveyor Information */}
+            {user && (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-muted/50 border-b">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                    <User className="h-5 w-5 text-primary" />
+                    Surveyor Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <DetailItem 
+                    icon={User} 
+                    label="Surveyor" 
+                    value={`${user.firstName} ${user.lastName}`} 
+                  />
+                  <DetailItem 
+                    icon={Briefcase} 
+                    label="Company" 
+                    value={user.companyName || "N/A"} 
+                  />
+                  <DetailItem 
+                    icon={Hash} 
+                    label="SURCON Number" 
+                    value={user.surconRegNumber || "N/A"} 
+                  />
+                  <DetailItem 
+                    icon={FileText} 
+                    label="SURCON Name" 
+                    value={user.surconRegName || "N/A"} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Additional Notes */}
+            {plan.reasonForWithdrawalAndResubmission && (
+              <Card className="overflow-hidden border-destructive/20">
+                <CardHeader className="bg-destructive/5 border-b border-destructive/20">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-destructive">
+                    <FileText className="h-5 w-5" />
+                    Reason for Withdrawal and Resubmission
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <p className="text-foreground">{plan.reasonForWithdrawalAndResubmission}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Plan Summary */}
+            <Card className="overflow-hidden border-primary/20">
+              <CardHeader className="bg-primary/5 border-b border-primary/20">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-primary">
+                  <FileText className="h-5 w-5" />
+                  Plan Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Status</span>
+                  <StatusBadge status={plan.status} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Created</span>
+                  <span className="text-sm font-medium">{formattedDate}</span>
+                </div>
+                {plan.updatedAt && plan.updatedAt !== plan.createdAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Last Updated</span>
+                    <span className="text-sm font-medium">
+                      {format(new Date(plan.updatedAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                )}
+                {plan.facilitator && (
+                  <div className="pt-4 mt-4 border-t border-border">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Facilitator</h4>
+                    <p className="text-sm font-medium">{plan.facilitator}</p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="bg-muted/20 px-6 py-4 border-t">
+                <Button className="w-full" size="sm">
+                  View Full Details
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b">
+                <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-2">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Download className="h-4 w-4" />
+                  Download Plan PDF
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Printer className="h-4 w-4" />
+                  Print Plan
+                </Button>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Share2 className="h-4 w-4" />
+                  Share Plan
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="max-w-4xl mx-auto space-y-4 p-4">
-      <Skeleton className="h-10 w-3/4 mb-2" />
-      <Skeleton className="h-5 w-1/2 mb-8" />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-1/3 mb-4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
-          <Skeleton className="h-4 w-3/4" />
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-64" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-24" />
+          </div>
         </div>
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-1/3 mb-4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <CardHeader className="bg-muted/50 border-b">
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="p-6 grid grid-cols-2 gap-6">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-5 w-full" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-primary/5 border-b border-primary/20">
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b">
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="p-4 space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-9 w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
