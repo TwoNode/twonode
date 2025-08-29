@@ -226,7 +226,7 @@ export default function CreateSurfPlan() {
         toast.success("Plan created successfully!", { id: loadingToast });
         // Redirect to the plan list after a short delay
         setTimeout(() => {
-          router.push("/surfboard/dashboard/allplans");
+          router.push("/surfboard/dashboard/plans");
           router.refresh(); // Ensure the list is up to date
         }, 1000);
       } else {

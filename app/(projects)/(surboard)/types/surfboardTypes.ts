@@ -105,3 +105,46 @@ export type SubscriptionPlan = {
   description: string;
   interval: string;
 };
+
+// Analytics Types
+export interface FacilitatorStat {
+  facilitator: string;
+  count: number;
+  totalArea: number;
+}
+
+export interface LGAStat {
+  lga: string;
+  count: number;
+}
+
+export interface PendingCertificate {
+  id: string;
+  planNumber: string;
+  surveyTitle: string;
+  status: string;
+  facilitator: string;
+  updatedAt: Date;
+}
+
+export interface PillarStat {
+  type: string;
+  count: number;
+  isRegular: boolean;
+}
+
+export interface TimeTrendData {
+  period: string;
+  count: number;
+  totalArea: number;
+}
+
+export interface AnalyticsData {
+  facilitatorStats: FacilitatorStat[];
+  lgaStats: LGAStat[];
+  pendingCertificates: PendingCertificate[];
+  pillarStats: PillarStat[];
+  timeTrends: TimeTrendData[];
+  provisionalPlansCount: number;
+  totalPlansCount: number;
+}

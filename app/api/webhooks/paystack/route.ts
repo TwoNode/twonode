@@ -16,7 +16,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { SUBSCRIPTION_PLANS } from "@/app/(projects)/(surboard)/utils/paystackSubscription";
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { PaystackWebhookType } from "@/types/PaystackWebhookType";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Types
@@ -105,19 +106,19 @@ async function validateWebhookRequest(request: Request): Promise<{
 }> {
   const signature = request.headers.get("x-paystack-signature");
   if (!signature) {
-    throw new WebhookError("Missing Paystack signature", 400);
+    throw new WebhookError("Missing Paystack signature", 200);
   }
 
-  const secret = await getPaystackSecretForWebhook();
+  const secret = getPaystackSecretForWebhook();
   if (!secret) {
-    throw new WebhookError("Server configuration error", 500);
+    throw new WebhookError("Server configuration error", 200);
   }
 
   const rawBody = new Uint8Array(await request.arrayBuffer());
   const isValid = verifySignatureRaw(rawBody, signature, secret);
 
   if (!isValid) {
-    throw new WebhookError("Invalid signature", 401);
+    throw new WebhookError("Invalid signature", 200);
   }
 
   try {
@@ -125,13 +126,13 @@ async function validateWebhookRequest(request: Request): Promise<{
     const event = JSON.parse(bodyText) as PaystackWebhookEvent;
 
     if (!event.event || !event.data) {
-      throw new WebhookError("Invalid webhook payload", 400);
+      throw new WebhookError("Invalid webhook payload", 200);
     }
 
     return { event, rawBody };
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new WebhookError("Invalid JSON payload", 400);
+      throw new WebhookError("Invalid JSON payload", 200);
     }
     throw error;
   }
@@ -299,6 +300,25 @@ export async function POST(request: Request) {
     const { event, rawBody } = await validateWebhookRequest(request);
     const { event: type, data } = event;
     const reference = extractReference(data);
+
+    const secret = getPaystackSecretForWebhook();
+    const signature = request.headers.get("x-paystack-signature");
+
+    const body = (await request.json()) as PaystackWebhookType;
+    const hash = createHmac("sha512", secret)
+      .update(JSON.stringify(body))
+      .digest("hex");
+
+    if (hash !== signature) {
+      console.log("Webhook: Invalid signature");
+      return Response.json(
+        { message: "Invalid signature" },
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Log incoming webhook for debugging
     console.log(`[Webhook Received] ${type}`, {

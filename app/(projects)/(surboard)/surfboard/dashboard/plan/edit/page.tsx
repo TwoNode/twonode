@@ -14,8 +14,8 @@ export default async function EditPlanPage({
   if (!result.success) {
     return (
       <SurfPageNotFound
-        url="/surfboard/dashboard/allplans"
-        urlText="Surfboard All Plans"
+        url="/surfboard/dashboard/plans"
+        urlText="Surfboard Plans"
       />
     );
   }
@@ -23,8 +23,8 @@ export default async function EditPlanPage({
   if (!result.data) {
     return (
       <SurfPageNotFound
-        url="/surfboard/dashboard/allplans"
-        urlText="Surfboard All Plans"
+        url="/surfboard/dashboard/plans"
+        urlText="Surfboard Plans"
       />
     );
   }

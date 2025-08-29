@@ -91,12 +91,88 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState<string>("");
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+
+  // Default: strong contrast, opaque light, safe quiet zone
   const [qrOptions, setQrOptions] = useState({
-    darkColor: '#000000',
-    lightColor: '#ffffff00', // Transparent by default
-    margin: 1,
+    darkColor: "#000000",
+    lightColor: "#ffffff",
+    minLightAlpha: 0.3, // server clamps alpha >= 0.3
+    margin: 4,
     scale: 8,
+    forceOpaque: false, // set true to generate JPEG (no alpha at all)
   });
+
+  function toggleMap() {
+    setShowMap((v) => !v);
+  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getSurfPlanById(planId);
+        if (result.success && result.data) {
+          setIsOwner(result?.data?.isOwner || false);
+          setPlan({
+            ...result.data,
+            createdAt: new Date(result.data.createdAt),
+            updatedAt: new Date(result.data.updatedAt),
+            areaSqM:
+              typeof result.data.deededArea === "number"
+                ? result.data.deededArea
+                : null,
+            centroid: result?.data?.centroid,
+            pillars: Array.isArray(result.data.pillars)
+              ? result.data.pillars
+                  .filter(
+                    (p: any) =>
+                      p && typeof p === "object" && "pillarNumber" in p
+                  )
+                  .map((p: any) => ({
+                    pillarNumber: String(p.pillarNumber || ""),
+                    easting: Number(p.easting) || 0,
+                    northing: Number(p.northing) || 0,
+                    pointIndex:
+                      typeof p.pointIndex === "number" ? p.pointIndex : 0,
+                  }))
+              : [],
+          });
+        } else {
+          toast.error(result.error || "Plan not found");
+          router.push("/surfboard/dashboard/plans");
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to load plan details");
+        router.push("/surfboard/dashboard/plans");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [planId, router]);
+
+  useEffect(() => {
+    getPlanPublicUrl(planId)
+      .then(setPublicUrl)
+      .catch(() => {});
+  }, [planId]);
+
+  const handleGenerateQrCode = async () => {
+    try {
+      setIsGeneratingQr(true);
+      const res = await generatePlanQRCode(planId, qrOptions as any);
+      if (res.success && res.data) {
+        setQrCodeDataUrl(res.data.qrCodeDataUrl);
+        setIsQrModalOpen(true);
+      } else {
+        toast.error(res.error || "Failed to generate QR code");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to generate QR code");
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
 
   // Handle delete plan
   const handleDelete = async () => {
@@ -115,7 +191,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       const result = await deleteSurfPlan(plan.id);
       if (result.success) {
         toast.success("Plan deleted successfully");
-        router.push("/surfboard/dashboard/allplans");
+        router.push("/surfboard/dashboard/plans");
       } else {
         toast.error(result.error || "Failed to delete plan");
       }
@@ -151,100 +227,6 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     return [sum[0] / pillars.length, sum[1] / pillars.length];
   };
 
-  // Toggle map visibility
-  const toggleMap = () => {
-    setShowMap(!showMap);
-  };
-
-  useEffect(() => {
-    const fetchPlan = async () => {
-      if (!planId) return;
-
-      try {
-        const result = await getSurfPlanById(planId);
-
-        if (result.success && result.data) {
-          setIsOwner(result?.data?.isOwner || false);
-          setPlan({
-            ...result.data,
-            createdAt: new Date(result.data.createdAt),
-            updatedAt: new Date(result.data.updatedAt),
-            areaSqM:
-              typeof result.data.deededArea === "number"
-                ? result.data.deededArea
-                : null,
-            centroid: result?.data?.centroid,
-            pillars: (() => {
-              if (!Array.isArray(result.data.pillars)) return [];
-              return result.data.pillars
-                .filter(
-                  (p): p is PillarData =>
-                    p !== null &&
-                    typeof p === "object" &&
-                    "pillarNumber" in p &&
-                    "easting" in p &&
-                    "northing" in p
-                )
-                .map((p) => ({
-                  pillarNumber: String(p.pillarNumber || ""),
-                  easting: Number(p.easting) || 0,
-                  northing: Number(p.northing) || 0,
-                  pointIndex:
-                    typeof p.pointIndex === "number" ? p.pointIndex : 0,
-                }));
-            })(),
-          });
-        } else {
-          toast.error(result.error || "Plan not found");
-          router.push("/surfboard/dashboard/allplans");
-        }
-      } catch (error) {
-        console.error("Error fetching plan:", error);
-        toast.error("Failed to load plan details");
-        router.push("/surfboard/dashboard/allplans");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlan();
-  }, [planId, router]);
-
-  useEffect(() => {
-    getPlanPublicUrl(planId).then((url) => setPublicUrl(url));
-  }, [planId]);
-
-  // Fetch shared users for this plan
-  useEffect(() => {
-    const fetchSharedUsers = async () => {
-      try {
-        // TODO: Replace with actual API call to fetch shared users
-        // const response = await fetch(`/api/plans/${planId}/shared-users`);
-        // const data = await response.json();
-        // setSharedWith(data);
-
-        // Mock data for now
-        setSharedWith([
-          // {
-          //   id: "1",
-          //   firstName: "John",
-          //   lastName: "Doe",
-          //   surconRegNumber: "ksadf_",
-          //   email: "john@example.com",
-          // },
-          // Add more mock users as needed
-        ]);
-      } catch (error) {
-        console.error("Error fetching shared users:", error);
-        toast.error("Failed to load shared users");
-      }
-    };
-
-    if (planId) {
-      fetchSharedUsers();
-    }
-  }, [planId]);
-
   const handleShareUpdate = async (updatedUsers: User[]) => {
     try {
       // TODO: Call API to update shared users in the backend
@@ -263,26 +245,6 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     }
   };
 
-  // Function to handle QR code generation
-  const handleGenerateQrCode = async () => {
-    try {
-      setIsGeneratingQr(true);
-      const result = await generatePlanQRCode(planId, qrOptions);
-
-      if (result.success && result.data) {
-        setQrCodeDataUrl(result.data.qrCodeDataUrl);
-        setIsQrModalOpen(true);
-      } else {
-        toast.error(result.error || "Failed to generate QR code");
-      }
-    } catch (error) {
-      console.error("Error generating QR code:", error);
-      toast.error("Failed to generate QR code");
-    } finally {
-      setIsGeneratingQr(false);
-    }
-  };
-
   // Function to handle copying the public URL to clipboard
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicUrl);
@@ -295,21 +257,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         <DialogHeader>
           <DialogTitle>QR Code</DialogTitle>
           <DialogDescription>
-            Customize and download your QR code
+            High-contrast with safe background (no full transparency)
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center space-y-4">
-          {/* QR Code Preview */}
-          <div className="p-4 bg-white rounded-lg border border-gray-200">
+          <div className="p-4 bg-white rounded-lg border">
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
                 alt="QR Code"
                 className="w-48 h-48 mx-auto"
-                style={{
-                  backgroundColor: qrOptions.lightColor === '#ffffff30' ? 'transparent' : qrOptions.lightColor
-                }}
               />
             ) : (
               <div className="w-48 h-48 flex items-center justify-center">
@@ -318,170 +276,176 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             )}
           </div>
 
-          {/* Color Customization */}
           <div className="w-full space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   Dark Color
                 </label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={qrOptions.darkColor}
-                    onChange={(e) => setQrOptions(prev => ({
-                      ...prev,
-                      darkColor: e.target.value
-                    }))}
-                    className="h-10 w-10 rounded border border-gray-300"
+                    onChange={(e) =>
+                      setQrOptions((p) => ({ ...p, darkColor: e.target.value }))
+                    }
+                    className="h-10 w-10 rounded border"
                   />
                   <Input
                     value={qrOptions.darkColor}
-                    onChange={(e) => setQrOptions(prev => ({
-                      ...prev,
-                      darkColor: e.target.value
-                    }))}
-                    className="flex-1"
-                    placeholder="#000000"
+                    onChange={(e) =>
+                      setQrOptions((p) => ({ ...p, darkColor: e.target.value }))
+                    }
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   Light Color
                 </label>
-                <div className="flex items-center space-x-2">
-                  <div className="relative">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={qrOptions.lightColor}
+                    onChange={(e) =>
+                      setQrOptions((p) => ({
+                        ...p,
+                        lightColor: e.target.value,
+                      }))
+                    }
+                    className="h-10 w-10 rounded border"
+                  />
+                  <Input
+                    value={qrOptions.lightColor}
+                    onChange={(e) =>
+                      setQrOptions((p) => ({
+                        ...p,
+                        lightColor: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <label className="text-xs">Min Light Alpha (0–1):</label>
+                  <Input
+                    type="number"
+                    step="0.05"
+                    min={0}
+                    max={1}
+                    value={qrOptions.minLightAlpha}
+                    onChange={(e) =>
+                      setQrOptions((p) => ({
+                        ...p,
+                        minLightAlpha: Math.max(
+                          0,
+                          Math.min(1, Number(e.target.value))
+                        ),
+                      }))
+                    }
+                    className="w-24"
+                  />
+                  <label className="text-xs flex items-center gap-1">
                     <input
-                      type="color"
-                      value={qrOptions.lightColor === '#ffffff30' ? '#ffffff' : qrOptions.lightColor}
-                      onChange={(e) => {
-                        const color = e.target.value + (qrOptions.lightColor.endsWith('30') ? '30' : '');
-                        setQrOptions(prev => ({
-                          ...prev,
-                          lightColor: color
-                        }));
-                      }}
-                      className="h-10 w-10 rounded border border-gray-300"
+                      type="checkbox"
+                      checked={qrOptions.forceOpaque}
+                      onChange={(e) =>
+                        setQrOptions((p) => ({
+                          ...p,
+                          forceOpaque: e.target.checked,
+                        }))
+                      }
                     />
-                    {qrOptions.lightColor.endsWith('30') && (
-                      <div className="absolute inset-0 border-2 border-red-500 pointer-events-none"></div>
-                    )}
-                  </div>
-                  <div className="flex-1 flex items-center">
-                    <Input
-                      value={qrOptions.lightColor}
-                      onChange={(e) => setQrOptions(prev => ({
-                        ...prev,
-                        lightColor: e.target.value
-                      }))}
-                      className="flex-1"
-                      placeholder="#ffffff30 (transparent)"
-                    />
-                    <button
-                      onClick={() => setQrOptions(prev => ({
-                        ...prev,
-                        lightColor: prev.lightColor.endsWith('30')
-                          ? prev.lightColor.slice(0, -2)
-                          : prev.lightColor + '30'
-                      }))}
-                      className="ml-2 px-2 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200"
-                      title={qrOptions.lightColor.endsWith('30') ? "Make opaque" : "Make transparent"}
-                    >
-                      {qrOptions.lightColor.endsWith('30') ? "Opaque" : "Transparent"}
-                    </button>
-                  </div>
+                    JPEG (no alpha)
+                  </label>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Margin
+                <label className="block text-sm font-medium mb-1">
+                  Margin (quiet zone)
                 </label>
                 <Input
                   type="number"
-                  min="0"
-                  max="10"
+                  min={0}
+                  max={12}
                   value={qrOptions.margin}
-                  onChange={(e) => setQrOptions(prev => ({
-                    ...prev,
-                    margin: Math.min(10, Math.max(0, parseInt(e.target.value) || 0))
-                  }))}
+                  onChange={(e) =>
+                    setQrOptions((p) => ({
+                      ...p,
+                      margin: Math.max(0, Math.min(12, Number(e.target.value))),
+                    }))
+                  }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Scale
-                </label>
+                <label className="block text-sm font-medium mb-1">Scale</label>
                 <Input
                   type="number"
-                  min="1"
-                  max="20"
+                  min={1}
+                  max={20}
                   value={qrOptions.scale}
-                  onChange={(e) => setQrOptions(prev => ({
-                    ...prev,
-                    scale: Math.min(20, Math.max(1, parseInt(e.target.value) || 8))
-                  }))}
+                  onChange={(e) =>
+                    setQrOptions((p) => ({
+                      ...p,
+                      scale: Math.max(1, Math.min(20, Number(e.target.value))),
+                    }))
+                  }
                 />
               </div>
             </div>
-          </div>
 
-          <div className="w-full flex space-x-2">
-            <Input
-              value={publicUrl}
-              readOnly
-              className="flex-1 text-sm"
-              onFocus={(e) => e.target.select()}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyLink}
-              className="shrink-0"
-            >
-              <Copy className="h-4 w-4 mr-1" />
-              Copy
-            </Button>
+            <div className="w-full flex gap-2">
+              <Input
+                value={publicUrl}
+                readOnly
+                className="flex-1 text-sm"
+                onFocus={(e) => e.target.select()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(publicUrl);
+                  toast.success("Link copied");
+                }}
+              >
+                <Copy className="h-4 w-4 mr-1" /> Copy
+              </Button>
+            </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setIsQrModalOpen(false)}
-          >
+          <Button variant="outline" onClick={() => setIsQrModalOpen(false)}>
             Close
           </Button>
           <Button
-            onClick={async () => {
-              // Regenerate QR code with new options
-              const result = await generatePlanQRCode(planId, qrOptions);
-              if (result.success && result.data) {
-                setQrCodeDataUrl(result.data.qrCodeDataUrl);
-              }
-            }}
             variant="outline"
+            onClick={async () => {
+              const res = await generatePlanQRCode(planId, qrOptions as any);
+              if (res.success && res.data)
+                setQrCodeDataUrl(res.data.qrCodeDataUrl);
+            }}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Update
+            <RefreshCw className="h-4 w-4 mr-2" /> Update
           </Button>
           <Button
             onClick={() => {
-              const link = document.createElement('a');
-              link.href = qrCodeDataUrl || '';
-              link.download = `plan-${plan?.planNumber || 'unknown'}-qrcode.png`;
+              const link = document.createElement("a");
+              link.href = qrCodeDataUrl || "";
+              link.download = `plan-${plan?.planNumber || "unknown"}-qrcode.${
+                qrOptions.forceOpaque ? "jpg" : "png"
+              }`;
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
             }}
             disabled={!qrCodeDataUrl}
           >
-            <Download className="h-4 w-4 mr-2" />
-            Download
+            <Download className="h-4 w-4 mr-2" /> Download
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -513,7 +477,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             The requested plan could not be found.
           </p>
           <button
-            onClick={() => router.push("/surfboard/dashboard/allplans")}
+            onClick={() => router.push("/surfboard/dashboard/plans")}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Back to All Plans
@@ -542,7 +506,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center flex-1 md:flex-none min-w-[120px]"
             >
               <MapPin className="w-4 h-4 mr-1.5 md:mr-2" />
-              <span className="text-sm md:text-base">{showMap ? "Hide Map" : "Show Map"}</span>
+              <span className="text-sm md:text-base">
+                {showMap ? "Hide Map" : "Show Map"}
+              </span>
             </button>
             {isOwner && (
               <>

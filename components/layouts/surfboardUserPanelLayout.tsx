@@ -112,7 +112,7 @@ export default function SurfboardUserPanelLayout({
     {
       icon: ListChecks,
       label: "All Plans",
-      url: `${dashboardUrl}/allplans`,
+      url: `${dashboardUrl}/plans`,
       requiresSubscription: true,
     },
     {

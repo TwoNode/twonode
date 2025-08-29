@@ -104,7 +104,7 @@ P4,500000,999900
 
 ### Viewing Plans
 
-1. Navigate to `/surfboard/dashboard/allplans`
+1. Navigate to `/surfboard/dashboard/plans`
 2. View all created plans in a table format
 3. Update plan status using the dropdown
 4. Delete plans (with confirmation) - this also deletes associated S3 files

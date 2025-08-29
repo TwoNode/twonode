@@ -68,7 +68,7 @@ export default function SurfboardAdminPanelLayout({
     {
       icon: ListChecks,
       label: "All Plans",
-      url: `${dashboardUrl}/allplans`,
+      url: `${dashboardUrl}/plans`,
     },
     {
       icon: ListChecks,

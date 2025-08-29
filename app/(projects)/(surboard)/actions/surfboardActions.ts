@@ -7,6 +7,7 @@ import type {
   ApiResult,
   CreatePlanData,
   FileUploadData,
+  AnalyticsData,
 } from "../types/surfboardTypes";
 import {
   uploadSurfboardFileToS3,
@@ -15,29 +16,131 @@ import {
 import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 
-// import * as QRCode from "qrcode";
-
 import QRCode from "qrcode";
 
 interface QRCodeOptions {
   darkColor?: string;
   lightColor?: string;
+  /** Minimum alpha allowed for the light color. Prevents full transparency */
+  minLightAlpha?: number; // 0..1
   margin?: number;
   scale?: number;
   width?: number;
+  /** If true, generate JPEG (no alpha channel) for guaranteed opaque bg */
+  forceOpaque?: boolean;
+}
+
+function isValidPlanId(planId: string): boolean {
+  return (
+    typeof planId === "string" &&
+    planId.length >= 20 &&
+    planId.length <= 100 &&
+    /^[a-f0-9-]+$/i.test(planId)
+  );
+}
+
+// --- Color helpers (keep QR readable & non-fully-transparent) ---
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGBA_RE =
+  /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(\d*\.?\d+))?\s*\)$/i;
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function hexToRgba(
+  hex: string
+): { r: number; g: number; b: number; a: number } | null {
+  if (!HEX_RE.test(hex)) return null;
+  const h = hex.replace("#", "");
+  if (h.length === 3) {
+    const r = parseInt(h[0] + h[0], 16);
+    const g = parseInt(h[1] + h[1], 16);
+    const b = parseInt(h[2] + h[2], 16);
+    return { r, g, b, a: 1 };
+  }
+  if (h.length === 6) {
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return { r, g, b, a: 1 };
+  }
+  if (h.length === 8) {
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    const a = parseInt(h.slice(6, 8), 16) / 255;
+    return { r, g, b, a };
+  }
+  return null;
+}
+
+function parseColorToRgba(
+  color: string
+): { r: number; g: number; b: number; a: number } | null {
+  if (!color) return null;
+  if (color.toLowerCase() === "transparent")
+    return { r: 255, g: 255, b: 255, a: 0 };
+  const hex = hexToRgba(color);
+  if (hex) return hex;
+  const m = color.match(RGBA_RE);
+  if (m) {
+    const r = clamp(parseInt(m[1], 10), 0, 255);
+    const g = clamp(parseInt(m[2], 10), 0, 255);
+    const b = clamp(parseInt(m[3], 10), 0, 255);
+    const a = m[4] !== undefined ? clamp(parseFloat(m[4]), 0, 1) : 1;
+    return { r, g, b, a };
+  }
+  return null;
+}
+
+function rgbaToHex({
+  r,
+  g,
+  b,
+  a,
+}: {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}): string {
+  // qrcode package expects HEX (#RRGGBB or #RRGGBBAA). No rgba() strings.
+  const rr = clamp(Math.round(r), 0, 255).toString(16).padStart(2, "0");
+  const gg = clamp(Math.round(g), 0, 255).toString(16).padStart(2, "0");
+  const bb = clamp(Math.round(b), 0, 255).toString(16).padStart(2, "0");
+  const aa = clamp(Math.round(a * 255), 0, 255)
+    .toString(16)
+    .padStart(2, "0");
+  return aa.toUpperCase() === "FF"
+    ? `#${rr}${gg}${bb}`.toUpperCase()
+    : `#${rr}${gg}${bb}${aa}`.toUpperCase();
+}
+
+function withMinAlpha(
+  color: string,
+  minAlpha: number,
+  fallback = "#ffffff"
+): string {
+  // Ensures background never fully transparent; scanners need contrast & quiet zone.
+  const parsed = parseColorToRgba(color) || parseColorToRgba(fallback);
+  if (!parsed) return fallback.toUpperCase();
+  const a = Math.max(parsed.a, clamp(minAlpha, 0, 1));
+  return rgbaToHex({ ...parsed, a });
 }
 
 /**
- * Generates a QR code URL for a surfboard plan with customizable colors and transparency
- * @param planId - The ID of the surfboard plan
- * @param options - QR code customization options
- * @returns Object containing the QR code as a data URL
+ * Generates a QR code URL for a surfboard plan with safe colors & quiet zone
  */
 export async function generatePlanQRCode(
   planId: string,
   options: QRCodeOptions = {}
 ): Promise<ApiResult<{ qrCodeDataUrl: string }>> {
   try {
+    if (!isValidPlanId(planId)) {
+      return { success: false, error: "Invalid plan ID format" };
+    }
+
     const user = await getAuthenticatedSurfUser();
     if (!user || !user.role) {
       return {
@@ -46,66 +149,209 @@ export async function generatePlanQRCode(
       };
     }
 
-    // Check if plan exists
     const plan = await prisma.surfboardPlan.findUnique({
-      where: { id: planId, userId: user.id },
+      where: { id: planId, userId: user.id }, // if this is not a composite unique, switch to findFirst
       select: { id: true, planNumber: true },
     });
 
     if (!plan) {
-      return { success: false, error: "Plan not found" };
+      return { success: false, error: "Plan not found or access denied" };
     }
 
-    // Generate QR code URL for the public plan page
     const baseUrl =
-      process.env.NODE_ENV === "production"
+      process.env.BASE_URL ||
+      (process.env.NODE_ENV === "production"
         ? "https://www.twonodetechnologies.com"
-        : "http://localhost:3000";
+        : "http://localhost:3000");
 
     const publicUrl = `${baseUrl}/surfboardplan/${planId}`;
 
-    // Generate QR code as a data URL (PNG with transparency)
-    const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
-      errorCorrectionLevel: "H",
-      margin: options.margin ?? 1,
-      scale: options.scale ?? 8,
-      width: options.width ?? 512,
-      color: {
-        dark: options.darkColor ?? "#000000",
-        light: options.lightColor ?? "#ffffff30", // Slightly transparent by default
-      },
-      type: "image/png",
-      rendererOpts: {
-        quality: 0.92,
-      },
-    } as QRCode.QRCodeToDataURLOptions);
+    // --- Normalize QR options ---
+    const minLightAlpha = options.minLightAlpha ?? 0.3; // >= 30% opaque
+    const lightColor = withMinAlpha(
+      options.lightColor ?? "#ffffff",
+      minLightAlpha,
+      "#ffffff"
+    );
+    const darkColor = options.darkColor ?? "#000000";
 
-    return {
-      success: true,
-      data: { qrCodeDataUrl },
-    };
+    // Quiet zone: scanners expect >= 4 modules
+    const margin = Math.max(options.margin ?? 4, 4);
+
+    // width and scale are mutually exclusive in qrcode API – prefer width
+    const width = options.width;
+    const scale = width ? undefined : options.scale ?? 8;
+
+    const type = options.forceOpaque
+      ? ("image/jpeg" as const)
+      : ("image/png" as const);
+
+    const qrOptions: QRCode.QRCodeToDataURLOptions = {
+      errorCorrectionLevel: "H",
+      margin,
+      ...(width ? { width } : { scale }),
+      color: {
+        dark: darkColor,
+        light: lightColor,
+      },
+      type,
+      rendererOpts: type === "image/jpeg" ? { quality: 0.92 } : undefined,
+    } as QRCode.QRCodeToDataURLOptions;
+
+    const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, qrOptions);
+
+    return { success: true, data: { qrCodeDataUrl } };
   } catch (error) {
     console.error("Error generating QR code:", error);
-    return {
-      success: false,
-      error: "Failed to generate QR code",
-    };
+    return { success: false, error: "Failed to generate QR code" };
   }
 }
 
-/**
- * Gets the public URL for a surfboard plan
- * @param planId - The ID of the surfboard plan
- * @returns The public URL for the plan
- */
 export async function getPlanPublicUrl(planId: string): Promise<string> {
+  if (!isValidPlanId(planId)) {
+    throw new Error("Invalid plan ID format");
+  }
   const baseUrl =
-    process.env.NODE_ENV === "production"
+    process.env.BASE_URL ||
+    (process.env.NODE_ENV === "production"
       ? "https://www.twonodetechnologies.com"
-      : "http://localhost:3000";
-
+      : "http://localhost:3000");
   return `${baseUrl}/surfboardplan/${planId}`;
 }
+
+// "use server";
+
+// import prisma from "@/lib/prisma";
+// import { revalidatePath } from "next/cache";
+// import type {
+//   Plan,
+//   ApiResult,
+//   CreatePlanData,
+//   FileUploadData,
+// } from "../types/surfboardTypes";
+// import {
+//   uploadSurfboardFileToS3,
+//   deleteMultipleSurfboardFilesFromS3,
+// } from "./awsActions";
+// import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
+// import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
+
+// // import * as QRCode from "qrcode";
+
+// import QRCode from "qrcode";
+
+// interface QRCodeOptions {
+//   darkColor?: string;
+//   lightColor?: string;
+//   margin?: number;
+//   scale?: number;
+//   width?: number;
+// }
+
+// /**
+//  * Validates if a plan ID is in the correct format
+//  * @param planId - The plan ID to validate
+//  * @returns boolean indicating if the ID is valid
+//  */
+// function isValidPlanId(planId: string): boolean {
+//   // Ensure the ID is a non-empty string with valid characters
+//   return (
+//     typeof planId === 'string' &&
+//     planId.length >= 20 &&
+//     planId.length <= 100 &&
+//     /^[a-f0-9-]+$/i.test(planId) // Only allow hex characters and hyphens
+//   );
+// }
+
+// /**
+//  * Generates a QR code URL for a surfboard plan with customizable colors and transparency
+//  * @param planId - The ID of the surfboard plan
+//  * @param options - QR code customization options
+//  * @returns Object containing the QR code as a data URL
+//  */
+// export async function generatePlanQRCode(
+//   planId: string,
+//   options: QRCodeOptions = {}
+// ): Promise<ApiResult<{ qrCodeDataUrl: string }>> {
+//   try {
+//     // Validate plan ID
+//     if (!isValidPlanId(planId)) {
+//       return { success: false, error: 'Invalid plan ID format' };
+//     }
+
+//     const user = await getAuthenticatedSurfUser();
+//     if (!user || !user.role) {
+//       return {
+//         success: false,
+//         error: "User not authenticated or role not found",
+//       };
+//     }
+
+//     // Check if plan exists
+//     const plan = await prisma.surfboardPlan.findUnique({
+//       where: { id: planId, userId: user.id },
+//       select: { id: true, planNumber: true },
+//     });
+
+//     if (!plan) {
+//       return { success: false, error: "Plan not found or access denied" };
+//     }
+
+//     // Generate QR code URL for the public plan page
+//     const baseUrl = process.env.BASE_URL ||
+//       (process.env.NODE_ENV === "production"
+//         ? "https://www.twonodetechnologies.com"
+//         : "http://localhost:3000");
+
+//     const publicUrl = `${baseUrl}/surfboardplan/${planId}`;
+
+//     // Generate QR code as a data URL (PNG with transparency)
+//     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, {
+//       errorCorrectionLevel: "H",
+//       margin: options.margin ?? 1,
+//       scale: options.scale ?? 8,
+//       width: options.width ?? 512,
+//       color: {
+//         dark: options.darkColor ?? "#000000",
+//         light: options.lightColor ?? "#ffffff30", // Slightly transparent by default
+//       },
+//       type: "image/png",
+//       rendererOpts: {
+//         quality: 0.92,
+//       },
+//     } as QRCode.QRCodeToDataURLOptions);
+
+//     return {
+//       success: true,
+//       data: { qrCodeDataUrl },
+//     };
+//   } catch (error) {
+//     console.error("Error generating QR code:", error);
+//     return {
+//       success: false,
+//       error: "Failed to generate QR code",
+//     };
+//   }
+// }
+
+// /**
+//  * Gets the public URL for a surfboard plan
+//  * @param planId - The ID of the surfboard plan
+//  * @returns The public URL for the plan
+//  */
+// export async function getPlanPublicUrl(planId: string): Promise<string> {
+//   // Validate plan ID
+//   if (!isValidPlanId(planId)) {
+//     throw new Error('Invalid plan ID format');
+//   }
+
+//   const baseUrl = process.env.BASE_URL ||
+//     (process.env.NODE_ENV === "production"
+//       ? "https://www.twonodetechnologies.com"
+//       : "http://localhost:3000");
+
+//   return `${baseUrl}/surfboardplan/${planId}`;
+// }
 
 // Type guard to check if a value is a valid GeometryInput
 function isGeometryInput(value: any): value is GeometryInput {
@@ -221,7 +467,7 @@ export async function createSurfPlan(
     });
 
     // 5) Revalidate cache and return
-    revalidatePath("/surfboard/dashboard/allplans");
+    revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: { planId: plan.id } };
   } catch (err) {
     console.error("createSurfboardPlan error:", err);
@@ -574,6 +820,7 @@ export async function getSurfPlanByIdWithSurveyor(
             email: true,
             surconRegNumber: true,
             surconRegName: true,
+            companyName: true,
           },
         },
       },
@@ -653,7 +900,7 @@ export async function updateSurfPlanStatus(
       data: { status },
     });
 
-    revalidatePath("/surfboard/dashboard/allplans");
+    revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: updatedPlan };
   } catch (err) {
     console.error("updateSurfboardPlanStatus error:", err);
@@ -701,7 +948,7 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
     }
 
     await prisma.surfboardPlan.delete({ where: { id, userId: user.id } });
-    revalidatePath("/surfboard/dashboard/allplans");
+    revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: null };
   } catch (err) {
     console.error("deleteSurfboardPlan error:", err);
@@ -777,7 +1024,7 @@ export async function addSurfUserToSharedSurfPlan(
       },
     });
 
-    revalidatePath("/surfboard/dashboard/allplans");
+    revalidatePath("/surfboard/dashboard/plans");
 
     return { success: true, data: updatedPlan };
   } catch (err) {
@@ -816,7 +1063,7 @@ export async function removeSurfUserFromSharedSurfPlan(
       },
     });
 
-    revalidatePath("/surfboard/dashboard/allplans");
+    revalidatePath("/surfboard/dashboard/plans");
 
     return { success: true, data: updatedPlan };
   } catch (err) {
@@ -1152,6 +1399,237 @@ export async function getAllFacilitators(): Promise<ApiResult<string[]>> {
     return {
       success: false,
       error: "Failed to fetch facilitators",
+    };
+  }
+}
+
+// Dashboard Analytics
+export async function getDashboardAnalytics(): Promise<
+  ApiResult<AnalyticsData>
+> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Get all plans for the current user
+    const plansResult = await getAllSurfPlans();
+    if (!plansResult.success) {
+      return { success: false, error: plansResult.error };
+    }
+
+    const allPlans = plansResult.data || [];
+
+    // Calculate total plans count (excluding provisional)
+    const totalPlansCount = allPlans.filter(
+      (plan) => !["PROVISIONAL", "PROVISIONAL_LAYOUT"].includes(plan.planType)
+    ).length;
+
+    // Get provisional plans count
+    const provisionalPlansCount = allPlans.filter((plan) =>
+      ["PROVISIONAL", "PROVISIONAL_LAYOUT"].includes(plan.planType)
+    ).length;
+
+    // Get facilitator stats (excluding provisional plans)
+    const facilitatorStats = await prisma.surfboardPlan.groupBy({
+      by: ["facilitator"],
+      where: {
+        userId: user.id,
+        planType: {
+          notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"],
+        },
+        facilitator: {
+          not: "",
+        },
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: "desc",
+        },
+      },
+    });
+
+    // Get all plans to calculate deededArea sum
+    const plansWithDeededArea = await prisma.surfboardPlan.findMany({
+      where: {
+        userId: user.id,
+        planType: {
+          notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"],
+        },
+        facilitator: {
+          not: "",
+        },
+        deededArea: {
+          not: "",
+        },
+      },
+      select: {
+        facilitator: true,
+        deededArea: true,
+      },
+    });
+
+    // Process facilitator stats to include sum of deededArea
+    const processedFacilitatorStats = facilitatorStats.map((stat) => {
+      const facilitatorPlans = plansWithDeededArea.filter(
+        (plan) => plan.facilitator === stat.facilitator
+      );
+
+      // Parse deededArea strings to numbers and calculate sum
+      const totalDeededArea = facilitatorPlans.reduce((sum, plan) => {
+        // Remove any non-numeric characters except decimal point and parse to float
+        const areaValue = parseFloat(plan.deededArea.replace(/[^0-9.]/g, ""));
+        return sum + (isNaN(areaValue) ? 0 : areaValue);
+      }, 0);
+
+      return {
+        ...stat,
+        _sum: {
+          deededArea: totalDeededArea,
+        },
+      };
+    });
+
+    // Get LGA stats (excluding provisional plans)
+    const lgaStats = await prisma.surfboardPlan.groupBy({
+      by: ["lga"],
+      where: {
+        userId: user.id,
+        planType: {
+          notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"],
+        },
+        lga: {
+          not: "",
+        },
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: "desc",
+        },
+      },
+    });
+
+    // Get pending certificates (excluding provisional plans)
+    const pendingCertificates = await prisma.surfboardPlan.findMany({
+      where: {
+        userId: user.id,
+        status: "PENDING",
+        planType: {
+          notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"],
+        },
+        surveyTitle: {
+          not: "",
+        },
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        facilitator: true,
+        updatedAt: true,
+        planType: true,
+        status: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      take: 10,
+    });
+
+    // Get pillar stats (excluding provisional plans)
+    const pillarStats = await prisma.surfboardPlan.groupBy({
+      by: ["pillarType"],
+      where: {
+        userId: user.id,
+        planType: {
+          notIn: ["PROVISIONAL", "PROVISIONAL_LAYOUT"],
+        },
+        pillarType: {
+          not: "",
+        },
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        _count: {
+          id: "desc",
+        },
+      },
+    });
+
+    // Format pillar stats for the frontend
+    const formattedPillarStats = pillarStats.map((stat) => ({
+      type: stat.pillarType || "UNKNOWN",
+      count: stat._count.id,
+    }));
+
+    // Get time trends (last 12 months, excluding provisional plans)
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const timeTrends = await prisma.$queryRaw`
+      SELECT  
+        TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month,
+        COUNT(*)::integer as count
+      FROM "SurfboardPlan"
+      WHERE 
+        "userId" = ${user.id}
+        AND "planType" NOT IN ('PROVISIONAL', 'PROVISIONAL_LAYOUT')
+        AND "createdAt" >= ${twelveMonthsAgo}
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY month ASC
+    `;
+
+    // Format time trends data
+    const formattedTimeTrends = Array.isArray(timeTrends)
+      ? timeTrends.map((item: any) => ({
+          period: item.month,
+          count: item.count,
+        }))
+      : [];
+
+    return {
+      success: true,
+      data: {
+        totalPlansCount,
+        provisionalPlansCount,
+        facilitatorStats: processedFacilitatorStats.map((stat: any) => ({
+          facilitator: stat.facilitator || "Unknown",
+          count: stat._count.id,
+          totalArea: stat._sum.deededArea
+            ? parseFloat(stat._sum.deededArea)
+            : 0,
+        })),
+        lgaStats: lgaStats.map((stat: any) => ({
+          lga: stat.lga || "Unknown",
+          count: stat._count.id,
+        })),
+        pendingCertificates: pendingCertificates.map((cert) => ({
+          id: cert.id,
+          planNumber: cert.planNumber,
+          surveyTitle: cert.surveyTitle || "Untitled Survey",
+          facilitator: cert.facilitator || "Unknown",
+          updatedAt: cert.updatedAt,
+          planType: cert.planType,
+          status: cert.status,
+        })),
+        pillarStats: formattedPillarStats as any,
+        timeTrends: formattedTimeTrends as any,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard analytics:", error);
+    return {
+      success: false,
+      error: "Failed to fetch dashboard analytics",
     };
   }
 }
