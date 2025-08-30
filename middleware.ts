@@ -28,6 +28,11 @@ const protectedRoutes = [
   "/surf-restricted/superadmin",
 ]; // Added Surfboard routes
 
+// Define public routes that bypass authentication
+const publicRoutes = [
+  "/surfboardplan/",  // This will match /surfboardplan/[id]
+];
+
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
   isReturnToCurrentPage?: boolean | ((req: NextRequest) => boolean);
@@ -91,6 +96,12 @@ const middlewareWithLogic = withDynamicAuth(
   async (req: NextRequest) => {
     const pathname = req.nextUrl.pathname;
     console.log("🛡️ Middleware - Pathname:", pathname);
+
+    // Skip middleware for public routes
+    if (publicRoutes.some(route => pathname.startsWith(route))) {
+      console.log("🛡️ Middleware - Public route detected, skipping auth");
+      return NextResponse.next();
+    }
 
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
       console.log("🛡️ Middleware - Protected route detected");

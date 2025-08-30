@@ -1,24 +1,37 @@
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { format } from "date-fns";
-import { getSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surboard)/actions/surfboardActions";
+import { getPublicSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ResolvingMetadata } from "next";
 import { Metadata } from "next";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Ruler, Calendar, User, Briefcase, Hash, FileText, Layers, Share2, Download, Printer } from "lucide-react";
+import {
+  MapPin,
+  Ruler,
+  User,
+  Briefcase,
+  Hash,
+  FileText,
+  Layers,
+  Share2,
+  Download,
+  Printer,
+} from "lucide-react";
 
 type Props = {
   params: { id: string };
 };
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const res = await getSurfPlanByIdWithSurveyor(params.id);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const res = await getPublicSurfPlanByIdWithSurveyor(params.id);
 
   if (!res.success || !res.data) {
     return {
@@ -68,25 +81,37 @@ function DetailItem({
 
 function StatusBadge({ status }: { status?: string | null }) {
   if (!status) return null;
-  
-  const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+
+  const statusMap: Record<
+    string,
+    {
+      label: string;
+      variant: "default" | "secondary" | "destructive" | "outline";
+    }
+  > = {
     PENDING: { label: "Pending Review", variant: "outline" },
     APPROVED: { label: "Approved", variant: "default" },
     REJECTED: { label: "Rejected", variant: "destructive" },
     UNDER_REVIEW: { label: "Under Review", variant: "secondary" },
   };
 
-  const statusInfo = statusMap[status] || { label: status.replace(/_/g, " "), variant: "outline" as const };
-  
+  const statusInfo = statusMap[status] || {
+    label: status.replace(/_/g, " "),
+    variant: "outline" as const,
+  };
+
   return (
-    <Badge variant={statusInfo.variant} className="text-xs font-medium px-2.5 py-1 rounded-full">
+    <Badge
+      variant={statusInfo.variant}
+      className="text-xs font-medium px-2.5 py-1 rounded-full"
+    >
       {statusInfo.label}
     </Badge>
   );
 }
 
 async function PlanDetails({ planId }: { planId: string }) {
-  const res = await getSurfPlanByIdWithSurveyor(planId);
+  const res = await getPublicSurfPlanByIdWithSurveyor(planId);
 
   if (!res.success || !res.data) {
     return <SurfPageNotFound />;
@@ -94,9 +119,10 @@ async function PlanDetails({ planId }: { planId: string }) {
 
   const { user, ...plan } = res.data;
   const formattedDate = format(new Date(plan.createdAt), "MMMM d, yyyy");
-  const coordinates = plan.centroid && Array.isArray(plan.centroid) && plan.centroid.length >= 2 
-    ? `${plan.centroid[1].toFixed(6)}°N, ${plan.centroid[0].toFixed(6)}°E`
-    : null;
+  const coordinates =
+    plan.centroid && Array.isArray(plan.centroid) && plan.centroid.length >= 2
+      ? `${plan.centroid[1].toFixed(6)}°N, ${plan.centroid[0].toFixed(6)}°E`
+      : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-8 px-4 sm:px-6 lg:px-8">
@@ -142,30 +168,34 @@ async function PlanDetails({ planId }: { planId: string }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <DetailItem 
-                  icon={Hash} 
-                  label="Plan Number" 
-                  value={plan.planNumber} 
+                <DetailItem
+                  icon={Hash}
+                  label="Plan Number"
+                  value={plan.planNumber}
                 />
-                <DetailItem 
-                  icon={FileText} 
-                  label="Reference Plan" 
-                  value={plan.referencePlanNumber || "N/A"} 
+                <DetailItem
+                  icon={FileText}
+                  label="Reference Plan"
+                  value={plan.referencePlanNumber || "N/A"}
                 />
-                <DetailItem 
-                  icon={Ruler} 
-                  label="Area" 
-                  value={plan.areaSqM ? `${plan.areaSqM.toLocaleString()} m²` : undefined} 
+                <DetailItem
+                  icon={Ruler}
+                  label="Area"
+                  value={
+                    plan.areaSqM
+                      ? `${plan.areaSqM.toLocaleString()} m²`
+                      : undefined
+                  }
                 />
-                <DetailItem 
-                  icon={Layers} 
-                  label="Plan Type" 
-                  value={plan.planType || "N/A"} 
+                <DetailItem
+                  icon={Layers}
+                  label="Plan Type"
+                  value={plan.planType || "N/A"}
                 />
-                <DetailItem 
-                  icon={Layers} 
-                  label="Pillar Type" 
-                  value={plan.pillarType || "N/A"} 
+                <DetailItem
+                  icon={Layers}
+                  label="Pillar Type"
+                  value={plan.pillarType || "N/A"}
                   className="md:col-span-2"
                 />
               </CardContent>
@@ -180,21 +210,21 @@ async function PlanDetails({ planId }: { planId: string }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <DetailItem 
-                  icon={MapPin} 
-                  label="LGA" 
-                  value={plan.lga || "N/A"} 
+                <DetailItem
+                  icon={MapPin}
+                  label="LGA"
+                  value={plan.lga || "N/A"}
                 />
-                <DetailItem 
-                  icon={MapPin} 
-                  label="Ward" 
-                  value={plan.ward || "N/A"} 
+                <DetailItem
+                  icon={MapPin}
+                  label="Ward"
+                  value={plan.ward || "N/A"}
                 />
                 {coordinates && (
-                  <DetailItem 
-                    icon={MapPin} 
-                    label="Coordinates" 
-                    value={coordinates} 
+                  <DetailItem
+                    icon={MapPin}
+                    label="Coordinates"
+                    value={coordinates}
                     className="md:col-span-2"
                   />
                 )}
@@ -211,25 +241,25 @@ async function PlanDetails({ planId }: { planId: string }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <DetailItem 
-                    icon={User} 
-                    label="Surveyor" 
-                    value={`${user.firstName} ${user.lastName}`} 
+                  <DetailItem
+                    icon={User}
+                    label="Surveyor"
+                    value={`${user.firstName} ${user.lastName}`}
                   />
-                  <DetailItem 
-                    icon={Briefcase} 
-                    label="Company" 
-                    value={user.companyName || "N/A"} 
+                  <DetailItem
+                    icon={Briefcase}
+                    label="Company"
+                    value={user.companyName || "N/A"}
                   />
-                  <DetailItem 
-                    icon={Hash} 
-                    label="SURCON Number" 
-                    value={user.surconRegNumber || "N/A"} 
+                  <DetailItem
+                    icon={Hash}
+                    label="SURCON Number"
+                    value={user.surconRegNumber || "N/A"}
                   />
-                  <DetailItem 
-                    icon={FileText} 
-                    label="SURCON Name" 
-                    value={user.surconRegName || "N/A"} 
+                  <DetailItem
+                    icon={FileText}
+                    label="SURCON Name"
+                    value={user.surconRegName || "N/A"}
                   />
                 </CardContent>
               </Card>
@@ -245,7 +275,9 @@ async function PlanDetails({ planId }: { planId: string }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <p className="text-foreground">{plan.reasonForWithdrawalAndResubmission}</p>
+                  <p className="text-foreground">
+                    {plan.reasonForWithdrawalAndResubmission}
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -263,16 +295,22 @@ async function PlanDetails({ planId }: { planId: string }) {
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Status</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </span>
                   <StatusBadge status={plan.status} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Created</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Created
+                  </span>
                   <span className="text-sm font-medium">{formattedDate}</span>
                 </div>
                 {plan.updatedAt && plan.updatedAt !== plan.createdAt && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Last Updated</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Last Updated
+                    </span>
                     <span className="text-sm font-medium">
                       {format(new Date(plan.updatedAt), "MMM d, yyyy")}
                     </span>
@@ -280,7 +318,9 @@ async function PlanDetails({ planId }: { planId: string }) {
                 )}
                 {plan.facilitator && (
                   <div className="pt-4 mt-4 border-t border-border">
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2">Facilitator</h4>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                      Facilitator
+                    </h4>
                     <p className="text-sm font-medium">{plan.facilitator}</p>
                   </div>
                 )}
@@ -295,18 +335,29 @@ async function PlanDetails({ planId }: { planId: string }) {
             {/* Quick Actions */}
             <Card className="overflow-hidden">
               <CardHeader className="border-b">
-                <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+                <CardTitle className="text-lg font-semibold">
+                  Quick Actions
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-2">
-                <Button variant="outline" className="w-full justify-start gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                >
                   <Download className="h-4 w-4" />
                   Download Plan PDF
                 </Button>
-                <Button variant="outline" className="w-full justify-start gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                >
                   <Printer className="h-4 w-4" />
                   Print Plan
                 </Button>
-                <Button variant="outline" className="w-full justify-start gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                >
                   <Share2 className="h-4 w-4" />
                   Share Plan
                 </Button>

@@ -86,12 +86,12 @@ export function AnalyticsDashboard() {
   }));
 
   const regularPillars = analytics.pillarStats.find(p => p.isRegular)?.count || 0;
-  const irregularPillars = analytics.pillarStats.reduce((sum, p) => sum + (p.isRegular ? 0 : p.count), 0);
-  const totalPillars = regularPillars + irregularPillars;
+  const specialPillars = analytics.pillarStats.reduce((sum, p) => sum + (p.isRegular ? 0 : p.count), 0);
+  const totalPillars = regularPillars + specialPillars;
   
   const pillarTypeData = [
     { label: 'Regular', value: regularPillars, color: '#10B981' },
-    { label: 'Irregular', value: irregularPillars, color: '#F59E0B' },
+    { label: 'Special', value: specialPillars, color: '#F59E0B' },
   ];
 
   return (
@@ -137,7 +137,7 @@ export function AnalyticsDashboard() {
           height={400}
           maxItems={8}
         />
-        
+
         {/* LGA Distribution */}
         <BarChart
           title="Records by LGA"
@@ -146,18 +146,18 @@ export function AnalyticsDashboard() {
           height={400}
           maxItems={8}
         />
-        
+
         {/* Pillar Type Analysis */}
         <PieChart
           title="Pillar Type Analysis"
-          subtitle="Distribution of regular vs irregular pillars"
+          subtitle="Distribution of regular vs special pillars"
           data={pillarTypeData}
           donut
           donutLabel="Total Pillars"
           donutValue={totalPillars}
           height={400}
         />
-        
+
         {/* Time Trends */}
         <BarChart
           title="Monthly Lodgements"

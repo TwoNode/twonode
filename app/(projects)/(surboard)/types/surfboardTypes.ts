@@ -39,7 +39,13 @@ export interface CreatePlanData {
   ward?: string;
   lcda?: string;
   lga?: string;
-  geometry: GeoJSONPolygon | any;
+  geometry:
+    | GeoJSONPolygon
+    | {
+        type: "Polygon";
+        coordinates: [[number, number][]];
+      }
+    | any;
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
@@ -67,7 +73,13 @@ export interface Plan {
   deededArea: string;
   facilitator: string;
   pillarType: string;
-  geometry: Prisma.JsonValue | GeoJSONPolygon; // Using Prisma's JsonValue type
+  geometry:
+    | Prisma.JsonValue
+    | GeoJSONPolygon
+    | {
+        type: "Polygon";
+        coordinates: [[number, number][]];
+      }; // Using Prisma's JsonValue type
   pdfFilePath: string | null;
   cadFilePath: string | null;
   certificateFilePath: string | null;

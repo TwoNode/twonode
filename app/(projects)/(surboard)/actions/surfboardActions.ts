@@ -870,6 +870,75 @@ export async function getSurfPlanByIdWithSurveyor(
 }
 
 /**
+ * Fetches a single plan by ID.
+ */
+export async function getPublicSurfPlanByIdWithSurveyor(
+  id: string
+): Promise<ApiResult<Plan>> {
+  try {
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            surconRegNumber: true,
+            surconRegName: true,
+            companyName: true,
+          },
+        },
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // Add area and centroid to the plan
+    let planWithGeometry: Plan = { ...plan };
+
+    console.log(
+      "\n\n\n\nGeometry is valid",
+      plan.geometry,
+      isGeometryInput(plan.geometry)
+    );
+    if (plan.geometry && isGeometryInput(plan.geometry)) {
+      try {
+        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM,
+          centroid,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        planWithGeometry = {
+          ...planWithGeometry,
+          areaSqM: 0,
+          centroid: null,
+        };
+      }
+    } else {
+      planWithGeometry = {
+        ...planWithGeometry,
+        areaSqM: 0,
+        centroid: null,
+      };
+    }
+
+    return { success: true, data: planWithGeometry };
+  } catch (err) {
+    console.error("getSurfPlanById error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
  * Updates a plan's status.
  */
 export async function updateSurfPlanStatus(

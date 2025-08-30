@@ -14,12 +14,14 @@ import {
   LogOut,
   CreditCard,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { isUserSubscribed } from "@/app/(projects)/(surboard)/actions/subscriptionActions";
 import Link from "next/link";
+import { Button } from "../ui/button";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
@@ -56,10 +58,12 @@ function SurfboardUserDashboardNavbar({
         </Link>
       ) : (
         <Link href="/surfboard/dashboard/newplan" className="pointer">
-          <div className="flex items-center mr-4 bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-            <AlertTriangle className="w-4 h-4 mr-1" />
-            New Plan
-          </div>
+          <Button variant="outline" className="mr-4">
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>New Plan</span>
+            </div>
+          </Button>
         </Link>
       )}
       {username && (
