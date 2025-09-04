@@ -22,7 +22,7 @@ import {
   generatePlanQRCode,
   getPlanPublicUrl,
 } from "@/app/(projects)/(surboard)/actions/surfboardActions";
-import type { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
+import type { PillarData, Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 import dynamic from "next/dynamic";
 import { SharePlanModal } from "./SharePlanModal";
 import {
@@ -45,15 +45,8 @@ const ArcGISMap = dynamic(
   { ssr: false }
 );
 
-interface PillarData {
-  pillarNumber: string;
-  easting: number;
-  northing: number;
-  pointIndex: number;
-}
-
 interface PlanWithPillars extends Omit<Plan, "deededArea" | "pillars"> {
-  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW";
+  status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
   areaSqM?: number | null;
   pdfFilePath: string | null;
   cadFilePath: string | null;
@@ -620,9 +613,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <span className="font-medium">Status:</span>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2 ${
-                    plan.status === "APPROVED"
+                    plan.status === "LODGED"
                       ? "bg-green-100 text-green-800"
-                      : plan.status === "REJECTED"
+                      : plan.status === "QUERIED"
                       ? "bg-red-100 text-red-800"
                       : plan.status === "UNDER_REVIEW"
                       ? "bg-yellow-100 text-yellow-800"

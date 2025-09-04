@@ -17,6 +17,7 @@ import { getAuthenticatedSurfUser } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 
 import QRCode from "qrcode";
+import { headers } from "next/headers";
 
 interface QRCodeOptions {
   darkColor?: string;
@@ -158,11 +159,7 @@ export async function generatePlanQRCode(
       return { success: false, error: "Plan not found or access denied" };
     }
 
-    const baseUrl =
-      process.env.BASE_URL ||
-      (process.env.NODE_ENV === "production"
-        ? "https://www.twonodetechnologies.com"
-        : "http://localhost:3000");
+    const baseUrl = await getBaseUrl();
 
     const publicUrl = `${baseUrl}/surfboardplan/${planId}`;
 
@@ -211,12 +208,43 @@ export async function getPlanPublicUrl(planId: string): Promise<string> {
   if (!isValidPlanId(planId)) {
     throw new Error("Invalid plan ID format");
   }
-  const baseUrl =
-    process.env.BASE_URL ||
-    (process.env.NODE_ENV === "production"
-      ? "https://www.twonodetechnologies.com"
-      : "http://localhost:3000");
+  const baseUrl = await getBaseUrl();
   return `${baseUrl}/surfboardplan/${planId}`;
+}
+
+/**
+ * Gets the base URL for the current environment.
+ * - In production: Uses the BASE_URL environment variable or defaults to twonodetechnologies.com
+ * - In development: Uses the request headers to determine the current host and port
+ * @returns The base URL as a string (e.g., 'https://www.twonodetechnologies.com' or 'http://localhost:3000')
+ */
+export async function getBaseUrl(): Promise<string> {
+  // If BASE_URL is explicitly set, use it
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL;
+  }
+
+  // In production, default to the main domain
+  if (process.env.NODE_ENV === "production") {
+    return "https://www.twonodetechnologies.com";
+  }
+
+  try {
+    // In development, get the current host from headers
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = headersList.get("x-forwarded-proto") || "http";
+
+    // If we have a host, use it (supports custom ports in development)
+    if (host) {
+      return `${protocol}://${host}`;
+    }
+  } catch (error) {
+    console.error("Error determining base URL from headers:", error);
+  }
+
+  // Fallback to default development URL
+  return "http://localhost:3000";
 }
 
 // "use server";
@@ -280,6 +308,7 @@ export async function getPlanPublicUrl(planId: string): Promise<string> {
 //     }
 
 //     const user = await getAuthenticatedSurfUser();
+
 //     if (!user || !user.role) {
 //       return {
 //         success: false,
@@ -434,6 +463,12 @@ export async function createSurfPlan(
           )
         ).url;
       }
+
+      console.log("\n\n\n\nPDF file path", pdfFilePath);
+      console.log("\n\n\n\nCAD file path", cadFilePath);
+      console.log("\n\n\n\nCertificate file path", certificateFilePath);
+      console.log("\n\n\n\nGeometry", data.geometry);
+      console.log("\n\n\n\nPillars", data.pillars);
     } catch (uploadErr) {
       // rollback any partial uploads
       await deleteMultipleSurfboardFilesFromS3(
@@ -441,6 +476,8 @@ export async function createSurfPlan(
           .filter((u): u is string => !!u)
           .map((url) => ({ url }))
       );
+
+      console.log("\n\n\n\nError uploading files", uploadErr);
       throw uploadErr;
     }
 
@@ -943,7 +980,7 @@ export async function getPublicSurfPlanByIdWithSurveyor(
  */
 export async function updateSurfPlanStatus(
   id: string,
-  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"
+  status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"
 ): Promise<ApiResult<Plan>> {
   try {
     const user = await getAuthenticatedSurfUser();
@@ -956,7 +993,7 @@ export async function updateSurfPlanStatus(
     }
 
     // Validate status
-    const validStatuses = ["PENDING", "APPROVED", "REJECTED", "UNDER_REVIEW"];
+    const validStatuses = ["PENDING", "LODGED", "QUERIED", "UNDER_REVIEW"];
     if (!validStatuses.includes(status)) {
       return {
         success: false,
@@ -1360,6 +1397,7 @@ export async function editSurfboardPlan(
         }
 
         certificateFilePath = uploadResult.url;
+        updateData.status = "LODGED"; // Update status to LODGED when a certificate is uploaded
       } catch (error) {
         console.error("Error uploading certificate file:", error);
         return { success: false, error: "Failed to upload certificate file" };
@@ -1406,8 +1444,8 @@ export async function editSurfboardPlan(
         ...updatedPlan,
         status: updatedPlan.status as
           | "PENDING"
-          | "APPROVED"
-          | "REJECTED"
+          | "LODGED"
+          | "QUERIED"
           | "UNDER_REVIEW",
       },
     };
@@ -1416,6 +1454,80 @@ export async function editSurfboardPlan(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update plan",
+    };
+  }
+}
+
+/**
+ * Fetches all unique facilitators and plan numbers from existing plans
+ * @returns Object containing arrays of unique facilitator names and plan numbers
+ */
+export async function getAllFacilitatorsAndPlanNumbers(): Promise<
+  ApiResult<{ facilitators: string[]; planNumbers: string[] }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    // Get all plans with facilitators and plan numbers
+    const plans = await prisma.surfboardPlan.findMany({
+      select: {
+        facilitator: true,
+        planNumber: true,
+      },
+      where: {
+        OR: [
+          {
+            AND: [
+              { facilitator: { not: undefined } },
+              { facilitator: { not: "" } },
+            ],
+          },
+          {
+            AND: [
+              { planNumber: { not: undefined } },
+              { planNumber: { not: "" } },
+            ],
+          },
+        ],
+      },
+    });
+
+    // Extract and clean up facilitator names
+    const facilitators = Array.from(
+      new Set(
+        plans
+          .map((plan) => plan.facilitator?.trim())
+          .filter((f): f is string => Boolean(f))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+
+    // Extract and clean up plan numbers
+    const planNumbers = Array.from(
+      new Set(
+        plans
+          .map((plan) => plan.planNumber?.trim())
+          .filter((p): p is string => Boolean(p))
+      )
+    ).sort((a, b) => a.localeCompare(b));
+
+    return {
+      success: true,
+      data: {
+        facilitators,
+        planNumbers,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return {
+      success: false,
+      error: "Failed to fetch data",
     };
   }
 }
@@ -1699,6 +1811,105 @@ export async function getDashboardAnalytics(): Promise<
     return {
       success: false,
       error: "Failed to fetch dashboard analytics",
+    };
+  }
+}
+
+export async function submitRedCopy(
+  planId: string,
+  file: File
+): Promise<ApiResult<{ id: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUser();
+    if (!user || !user.role) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // Get the plan to validate
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+      select: {
+        id: true,
+        planNumber: true,
+        planType: true,
+        status: true,
+        certificateFilePath: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    // Validate plan can be submitted for Red Copy
+    if (
+      plan.status !== "PENDING" ||
+      ["PROVISIONAL", "PROVISIONAL LAYOUT"].includes(plan.planType) ||
+      plan.certificateFilePath
+    ) {
+      return {
+        success: false,
+        error: "This plan is not eligible for Red Copy submission",
+      };
+    }
+
+    // Upload the Red Copy file to S3
+    const uploadResult = await uploadSurfboardFileToS3(
+      file,
+      "redcopy",
+      `${plan.planNumber}-${Date.now()}`
+    );
+
+    if (!uploadResult.url) {
+      return { success: false, error: "Failed to upload Red Copy file" };
+    }
+
+    // Call the Red Copy API
+    const response = await fetch("https://api.redcopy.com/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Add any required API keys here
+        // 'Authorization': `Bearer ${process.env.REDCOPY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        planNumber: plan.planNumber,
+        // Add other required fields for the Red Copy API
+        fileUrl: uploadResult.url,
+        // Add webhook URL for status updates
+        webhookUrl: `${process.env.NEXTAUTH_URL}/api/webhooks/redcopy`,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: error.message || "Failed to submit to Red Copy",
+      };
+    }
+
+    // Update the plan status to AWAITING
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        status: "UNDER_REVIEW",
+        redCopyStatus: "SUBMITTED",
+        redCopySubmittedAt: new Date(),
+        redCopyFileUrl: uploadResult.url,
+      },
+    });
+
+    revalidatePath(`/surfboard/dashboard/plan/${planId}`);
+    revalidatePath("/surfboard/dashboard/plans");
+
+    return { success: true, data: { id: planId } };
+  } catch (error) {
+    console.error("Error submitting Red Copy:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to submit Red Copy",
     };
   }
 }

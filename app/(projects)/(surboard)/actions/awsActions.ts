@@ -27,7 +27,7 @@ const s3 = new S3Client({
 
 export async function uploadSurfboardFileToS3(
   file: File,
-  fileType: "pdf" | "cad" | "certificate",
+  fileType: "pdf" | "cad" | "certificate" | "redcopy",
   planNumber?: string
 ) {
   try {

@@ -2,7 +2,7 @@
 CREATE TYPE "SurfboardRole" AS ENUM ('USER', 'ADMIN', 'SUPERADMIN');
 
 -- CreateEnum
-CREATE TYPE "SurfboardPlanStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'UNDER_REVIEW');
+CREATE TYPE "SurfboardPlanStatus" AS ENUM ('PENDING', 'LODGED', 'QUERIED', 'UNDER_REVIEW');
 
 -- CreateTable
 CREATE TABLE "SurfboardUser" (

@@ -8,7 +8,7 @@ This document provides a comprehensive guide to the Surfboard Plan Creation Syst
 - **File Management**: Support for PDF, CAD, and certificate file uploads to AWS S3
 - **Map Visualization**: Interactive map preview using Leaflet
 - **Coordinate Conversion**: Automatic conversion from local projection to WGS84
-- **Status Management**: Track plan status (Pending, Under Review, Approved, Rejected)
+- **Status Management**: Track plan status (Pending, Under Review, Lodged, Queried)
 - **Database Storage**: PostgreSQL with PostGIS for spatial data
 - **Cloud Storage**: AWS S3 for secure file storage
 

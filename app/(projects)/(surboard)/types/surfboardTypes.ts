@@ -87,7 +87,7 @@ export interface Plan {
   lcda: string | null;
   lga: string | null;
   pillars: Prisma.JsonValue | PillarData[] | null; // Using Prisma's JsonValue type
-  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
+  status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;
   dateOnSurveyPlan: Date | null;
   reasonForWithdrawalAndResubmission: string | null;

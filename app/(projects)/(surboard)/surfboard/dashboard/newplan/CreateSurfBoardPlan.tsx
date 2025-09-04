@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   createSurfPlan,
-  getAllFacilitators,
+  getAllFacilitatorsAndPlanNumbers,
 } from "@/app/(projects)/(surboard)/actions/surfboardActions";
 import type {
   CreatePlanData,
@@ -18,7 +18,7 @@ import {
   parseCSVContent,
 } from "../../../utils/surfboardUtils";
 import SurfboardCSVHeaderHelp from "@/components/SurfboardCSVHeaderHelp";
-import ArcGISMap, { PlanInfo } from "./ArcGISMap";
+import ArcGISMap from "./ArcGISMap";
 
 type FormFields = Omit<
   CreatePlanData,
@@ -60,29 +60,42 @@ export default function CreateSurfPlan() {
 
   const [facilitators, setFacilitators] = useState<string[]>([]);
   const [showNewFacilitatorInput, setShowNewFacilitatorInput] = useState(false);
-  const [isLoadingFacilitators, setIsLoadingFacilitators] = useState(true);
-  const [facilitatorError, setFacilitatorError] = useState<string | null>(null);
+  const [showNewPlanNumberInput, setShowNewPlanNumberInput] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
 
-  // Add this effect to load facilitators when the component mounts
+  // State for plan numbers and search
+  const [allPlanNumbers, setAllPlanNumbers] = useState<string[]>([]);
+  const [filteredPlanNumbers, setFilteredPlanNumbers] = useState<string[]>([]);
+  const [showPlanNumberDropdown, setShowPlanNumberDropdown] = useState(false);
+
+  // Load both facilitators and plan numbers in a single effect
   useEffect(() => {
-    const loadFacilitators = async () => {
+    const loadData = async () => {
       try {
-        setIsLoadingFacilitators(true);
-        const result = await getAllFacilitators();
-        if (result?.success && result?.data) {
-          setFacilitators(result.data);
+        setIsLoadingData(true);
+        setDataError(null);
+
+        const result = await getAllFacilitatorsAndPlanNumbers();
+
+        if (result?.success && result.data) {
+          setFacilitators(result.data.facilitators);
+          setAllPlanNumbers(result.data.planNumbers);
+          setFilteredPlanNumbers(result.data.planNumbers);
         } else {
-          setFacilitatorError(result?.error || "Failed to load facilitators");
+          setDataError(result?.error || "Failed to load data");
+          toast.error(result?.error || "Failed to load data");
         }
       } catch (error) {
-        console.error("Error loading facilitators:", error);
-        setFacilitatorError("An error occurred while loading facilitators");
+        console.error("Error loading data:", error);
+        setDataError("An error occurred while loading data");
+        toast.error("An error occurred while loading data");
       } finally {
-        setIsLoadingFacilitators(false);
+        setIsLoadingData(false);
       }
     };
 
-    loadFacilitators();
+    loadData();
   }, []);
 
   // Handle form input changes
@@ -159,6 +172,24 @@ export default function CreateSurfPlan() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle plan number search
+  const handlePlanNumberSearch = (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setFilteredPlanNumbers(allPlanNumbers);
+      return;
+    }
+    const filtered = allPlanNumbers.filter((planNumber) =>
+      planNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredPlanNumbers(filtered);
+  };
+
+  // Handle plan number selection
+  const handlePlanNumberSelect = (planNumber: string) => {
+    setPlanInfo((prev) => ({ ...prev, planNumber }));
+    setShowPlanNumberDropdown(false);
   };
 
   // Handle form submission
@@ -310,14 +341,127 @@ export default function CreateSurfPlan() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Plan Number *
                 </label>
-                <input
-                  type="text"
-                  name="planNumber"
-                  value={planInfo.planNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                {isLoadingData ? (
+                  <div className="animate-pulse h-10 bg-gray-200 rounded-md"></div>
+                ) : dataError ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-600 text-sm">{dataError}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          setIsLoadingData(true);
+                          setDataError(null);
+                          const result =
+                            await getAllFacilitatorsAndPlanNumbers();
+                          if (result?.success && result.data) {
+                            setFacilitators(result.data.facilitators);
+                            setAllPlanNumbers(result.data.planNumbers);
+                            setFilteredPlanNumbers(result.data.planNumbers);
+                          } else {
+                            setDataError(
+                              result?.error || "Failed to load data"
+                            );
+                            toast.error(result?.error || "Failed to load data");
+                          }
+                        } catch (error) {
+                          console.error("Error reloading data:", error);
+                          setDataError("Failed to reload. Please try again.");
+                          toast.error("Failed to reload. Please try again.");
+                        } finally {
+                          setIsLoadingData(false);
+                        }
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
+                      disabled={isLoadingData}
+                    >
+                      {isLoadingData ? "Loading..." : "Retry"}
+                    </button>
+                  </div>
+                ) : planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION" ? (
+                  <div className="flex gap-2">
+                    <select
+                      name="planNumber"
+                      value={planInfo.planNumber}
+                      onChange={(e) => {
+                        setPlanInfo((prev) => ({
+                          ...prev,
+                          planNumber: e.target.value,
+                        }));
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={isLoadingData}
+                    >
+                      <option value="">-- Select Plan Number --</option>
+                      {filteredPlanNumbers.map((planNumber) => (
+                        <option key={planNumber} value={planNumber}>
+                          {planNumber}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : !showNewPlanNumberInput ? (
+                  <div className="flex gap-2">
+                    <select
+                      name="planNumber"
+                      value={planInfo.planNumber}
+                      onChange={(e) => {
+                        if (e.target.value === "new") {
+                          setShowNewPlanNumberInput(true);
+                          setPlanInfo((prev) => ({ ...prev, planNumber: "" }));
+                        } else {
+                          setPlanInfo((prev) => ({
+                            ...prev,
+                            planNumber: e.target.value,
+                          }));
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                      disabled={isLoadingData}
+                    >
+                      <option value="">-- Select Plan Number --</option>
+                      {filteredPlanNumbers.map((planNumber) => (
+                        <option key={planNumber} value={planNumber}>
+                          {planNumber}
+                        </option>
+                      ))}
+                      <option value="new">+ Add New Plan Number</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      name="planNumber"
+                      value={planInfo.planNumber}
+                      onChange={handleInputChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter new plan number"
+                      required
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewPlanNumberInput(false);
+                        setPlanInfo((prev) => ({ ...prev, planNumber: "" }));
+                      }}
+                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                {planInfo.planNumber &&
+                  allPlanNumbers.some(
+                    (p) => p.toLowerCase() === planInfo.planNumber.toLowerCase()
+                  ) && (
+                    <p className="mt-1 text-sm text-yellow-600">
+                      Note: This plan number already exists in the system.
+                    </p>
+                  )}
               </div>
 
               <div>
@@ -365,17 +509,52 @@ export default function CreateSurfPlan() {
               {(planInfo.planType === "DEED CHANGE OF TITLE" ||
                 planInfo.planType === "DEED CHANGE OF TITLE(LAYOUT)" ||
                 planInfo.planType === "WITHDRAWAL AND RE-SUBMISSION") && (
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reference Plan Number
                   </label>
-                  <input
-                    type="text"
-                    name="referencePlanNumber"
-                    value={planInfo.referencePlanNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="referencePlanNumber"
+                      value={planInfo.referencePlanNumber}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        handlePlanNumberSearch(e.target.value);
+                        setShowPlanNumberDropdown(true);
+                      }}
+                      onFocus={() => setShowPlanNumberDropdown(true)}
+                      onBlur={() =>
+                        setTimeout(() => setShowPlanNumberDropdown(false), 200)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    {isLoadingData && (
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dropdown for plan numbers */}
+                  {showPlanNumberDropdown && filteredPlanNumbers.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                      <ul className="py-1">
+                        {filteredPlanNumbers.map((planNumber) => (
+                          <li
+                            key={planNumber}
+                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                            onMouseDown={() =>
+                              handlePlanNumberSelect(planNumber)
+                            }
+                          >
+                            {planNumber}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -397,40 +576,41 @@ export default function CreateSurfPlan() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Facilitator *
                 </label>
-                {isLoadingFacilitators ? (
+                {isLoadingData ? (
                   <div className="animate-pulse h-10 bg-gray-200 rounded-md"></div>
-                ) : facilitatorError ? (
+                ) : dataError ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-red-600 text-sm">
-                      {facilitatorError}
-                    </span>
+                    <span className="text-red-600 text-sm">{dataError}</span>
                     <button
                       type="button"
                       onClick={async () => {
                         try {
-                          setIsLoadingFacilitators(true);
-                          setFacilitatorError(null);
-                          const result = await getAllFacilitators();
-                          if (result?.success && result?.data) {
-                            setFacilitators(result.data);
+                          setIsLoadingData(true);
+                          setDataError(null);
+                          const result =
+                            await getAllFacilitatorsAndPlanNumbers();
+                          if (result?.success && result.data) {
+                            setFacilitators(result.data.facilitators);
+                            setAllPlanNumbers(result.data.planNumbers);
+                            setFilteredPlanNumbers(result.data.planNumbers);
                           } else {
-                            setFacilitatorError(
-                              result?.error || "Failed to load facilitators"
+                            setDataError(
+                              result?.error || "Failed to load data"
                             );
+                            toast.error(result?.error || "Failed to load data");
                           }
                         } catch (error) {
-                          console.error("Error reloading facilitators:", error);
-                          setFacilitatorError(
-                            "Failed to reload. Please try again."
-                          );
+                          console.error("Error reloading data:", error);
+                          setDataError("Failed to reload. Please try again.");
+                          toast.error("Failed to reload. Please try again.");
                         } finally {
-                          setIsLoadingFacilitators(false);
+                          setIsLoadingData(false);
                         }
                       }}
                       className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
-                      disabled={isLoadingFacilitators}
+                      disabled={isLoadingData}
                     >
-                      {isLoadingFacilitators ? "Loading..." : "Retry"}
+                      {isLoadingData ? "Loading..." : "Retry"}
                     </button>
                   </div>
                 ) : !showNewFacilitatorInput ? (
@@ -451,7 +631,7 @@ export default function CreateSurfPlan() {
                       }}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
-                      disabled={isLoadingFacilitators}
+                      disabled={isLoadingData}
                     >
                       <option value="">-- Select Facilitator --</option>
                       {facilitators.map((facilitator) => (
@@ -775,7 +955,7 @@ export default function CreateSurfPlan() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7"
                   />
                 </svg>
               </div>

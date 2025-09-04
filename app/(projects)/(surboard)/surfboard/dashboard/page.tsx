@@ -37,7 +37,9 @@ export default function DashboardHome() {
     totalPlans: 0,
     sharedPlans: 0,
     pending: 0,
-    approved: 0,
+    lodged: 0,
+    queried: 0,
+    underReview: 0,
   });
 
   const [recentPlans, setRecentPlans] = useState<Plan[]>([]);
@@ -69,15 +71,19 @@ export default function DashboardHome() {
         const pending = plans.filter(
           (plan) => plan.status === "PENDING"
         ).length;
-        const approved = plans.filter(
-          (plan) => plan.status === "APPROVED"
+        const lodged = plans.filter((plan) => plan.status === "LODGED").length;
+        const queried = plans.filter((plan) => plan.status === "QUERIED").length;
+        const underReview = plans.filter(
+          (plan) => plan.status === "UNDER_REVIEW"
         ).length;
 
         setStats({
           totalPlans,
           sharedPlans: sharedPlans.length,
           pending,
-          approved,
+          lodged,
+          queried,
+          underReview,
         });
 
         // Get recent plans (last 5 updated)
@@ -112,10 +118,10 @@ export default function DashboardHome() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "APPROVED":
+      case "LODGED":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <FiCheckCircle className="mr-1" /> Approved
+            <FiCheckCircle className="mr-1" /> Lodged
           </span>
         );
       case "PENDING":
@@ -124,10 +130,16 @@ export default function DashboardHome() {
             <FiClock className="mr-1" /> Pending
           </span>
         );
-      case "REJECTED":
+      case "QUERIED":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <FiAlertCircle className="mr-1" /> Rejected
+            <FiAlertCircle className="mr-1" /> Queried
+          </span>
+        );
+      case "UNDER_REVIEW":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <FiCheckCircle className="mr-1" /> Under Review
           </span>
         );
       default:
@@ -277,11 +289,11 @@ export default function DashboardHome() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Approved
+                    Lodged
                   </dt>
                   <dd className="flex items-baseline">
                     <div className="text-2xl font-semibold text-gray-900">
-                      {stats.approved}
+                      {stats.lodged}
                     </div>
                   </dd>
                 </dl>
@@ -291,10 +303,10 @@ export default function DashboardHome() {
           <div className="bg-gray-50 px-4 py-4 sm:px-6">
             <div className="text-sm">
               <Link
-                href="/surfboard/dashboard/plans?status=APPROVED"
+                href="/surfboard/dashboard/plans?status=LODGED"
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
-                View approved
+                View lodged
               </Link>
             </div>
           </div>

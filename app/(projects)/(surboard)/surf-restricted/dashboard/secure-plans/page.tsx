@@ -7,7 +7,7 @@ interface SecurePlan {
   id: string;
   title: string;
   description: string;
-  status: "pending" | "approved" | "rejected" | "under_review";
+  status: "pending" | "lodged" | "queried" | "under_review";
   priority: "low" | "medium" | "high" | "critical";
   submittedBy: string;
   submittedDate: string;
@@ -71,7 +71,7 @@ export default function SecurePlansPage() {
           id: "SP-2024-003",
           title: "Durban Port Development",
           description: "Coastal survey for port expansion and development",
-          status: "approved",
+          status: "lodged",
           priority: "high",
           submittedBy: "Lisa Chen",
           submittedDate: "2024-01-13T16:20:00Z",
@@ -86,7 +86,7 @@ export default function SecurePlansPage() {
           id: "SP-2024-004",
           title: "Pretoria Government Complex",
           description: "Survey for new government administrative complex",
-          status: "rejected",
+          status: "queried",
           priority: "medium",
           submittedBy: "Alex Thompson",
           submittedDate: "2024-01-12T12:00:00Z",
@@ -140,7 +140,7 @@ export default function SecurePlansPage() {
         return "bg-yellow-100 text-yellow-800";
       case "approved":
         return "bg-green-100 text-green-800";
-      case "rejected":
+      case "queried":
         return "bg-red-100 text-red-800";
       case "under_review":
         return "bg-blue-100 text-blue-800";
@@ -257,8 +257,8 @@ export default function SecurePlansPage() {
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending</option>
                   <option value="under_review">Under Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="lodged">Lodged</option>
+                  <option value="queried">Queried</option>
                 </select>
               </div>
 
@@ -381,11 +381,11 @@ export default function SecurePlansPage() {
                             <>
                               <button
                                 onClick={() =>
-                                  handleStatusChange(plan.id, "approved")
+                                  handleStatusChange(plan.id, "lodged")
                                 }
                                 className="text-green-600 hover:text-green-900 text-sm font-medium"
                               >
-                                Approve
+                                Lodge
                               </button>
                               <button
                                 onClick={() =>

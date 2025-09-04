@@ -176,7 +176,7 @@ model SurfboardUser {
   emailVerificationExpires DateTime?
 
   isActive            Boolean        @default(true)
-  
+
   // New fields
   logo                String?        // URL to the user's logo
   companyName         String?        // User's company name
@@ -205,9 +205,16 @@ model SurfboardUser {
 
 enum SurfboardPlanStatus {
   PENDING
-  APPROVED
-  REJECTED
+  LODGED    // APPROVED
+  QUERIED
   UNDER_REVIEW
+}
+
+enum SurfboardRedCopyStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  COMPLETED
+  FAILED
 }
 
 model Subscription {
@@ -298,6 +305,12 @@ model SurfboardPlan {
   pdfFilePath            String?
   cadFilePath            String?
   certificateFilePath    String?
+
+  /// Red Copy submission status
+  redCopyStatus          SurfboardRedCopyStatus @default(NOT_SUBMITTED) // NOT_SUBMITTED, SUBMITTED, COMPLETED, FAILED
+  redCopySubmittedAt     DateTime?           // When the Red Copy was submitted
+  redCopyFileUrl         String?             // URL to the uploaded Red Copy file
+  redCopyError           String?             // Error message if Red Copy submission failed
 
   // Location fields
   ward                   String?

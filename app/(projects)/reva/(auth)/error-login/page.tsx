@@ -1,4 +1,3 @@
-import React from "react";
 import RevaErrorLogin from "./RevaErrorLogin";
 import { SetCookieFromClient } from "@/components/SetCookieFromClient";
 

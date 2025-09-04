@@ -35,15 +35,15 @@ import { Plan } from "@/app/(projects)/(surboard)/types/surfboardTypes";
 
 const statusVariant = {
   PENDING: "outline",
-  APPROVED: "secondary",
-  REJECTED: "destructive",
+  LODGED: "secondary",
+  QUERIED: "destructive",
   UNDER_REVIEW: "default",
 } as const;
 
 const statusLabels = {
   PENDING: "Pending",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
+  LODGED: "Lodged",
+  QUERIED: "Queried",
   UNDER_REVIEW: "Under Review",
 } as const;
 

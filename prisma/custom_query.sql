@@ -297,3 +297,18 @@ WHERE email IN ('rojitech9@gmail.com', 'abowabaolamide@gmail.com');
 -- -- SET status = 'Completed'
 -- -- WHERE reference = 'REVA_86e628c17';
 
+-- UPDATE "Subscription"
+-- SET 
+--     "currentEnd" = CURRENT_DATE + INTERVAL '1 month',
+--     "nextPaymentDate" = CURRENT_DATE + INTERVAL '1 month',
+--     "updatedAt" = NOW()
+-- WHERE 
+--     id = '1294f498-7213-48ab-8f7c-9ad7b98f39f5';
+
+UPDATE "Subscription"
+SET 
+    "currentEnd" = "currentStart" + INTERVAL '1 month',
+    "nextPaymentDate" = "currentStart" + INTERVAL '1 month',
+    "updatedAt" = NOW()
+WHERE 
+    id = '1294f498-7213-48ab-8f7c-9ad7b98f39f5';

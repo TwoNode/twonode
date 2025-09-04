@@ -166,7 +166,10 @@ export async function isUserSubscribed(): Promise<boolean> {
     console.log("userData after", userData);
 
     const user = await getAuthenticatedSurfUser();
-    if (!user) return false;
+    if (!user) {
+      console.log("User not authenticated for Subscription");
+      return false;
+    }
 
     const sub = await prisma.subscription.findFirst({
       where: {
@@ -176,9 +179,13 @@ export async function isUserSubscribed(): Promise<boolean> {
       orderBy: { updatedAt: "desc" },
     });
 
-    if (!sub) return false;
+    if (!sub) {
+      console.log("No subscription found for user");
+      return false;
+    }
     // Visible if we are still in the current usage period
     const now = new Date();
+    console.log("Subscription found for user", sub);
     return now <= new Date(sub?.currentEnd!);
   } catch (error) {
     console.error("Error checking subscription:", error);
