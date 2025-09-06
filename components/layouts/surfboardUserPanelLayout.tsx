@@ -19,7 +19,7 @@ import {
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
-import { isUserSubscribed } from "@/app/(projects)/(surboard)/actions/subscriptionActions";
+import { isUserSubscribed } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
 import Link from "next/link";
 import { Button } from "../ui/button";
 

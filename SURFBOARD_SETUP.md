@@ -113,7 +113,7 @@ P4,500000,999900
 ## File Structure
 
 ```
-app/(projects)/(surboard)/
+app/(projects)/(surfboard)/
 ├── actions/
 │   ├── surfboardActions.ts          # Server actions for plan management
 │   └── awsActions.ts                # AWS S3 file operations

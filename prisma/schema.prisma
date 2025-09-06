@@ -302,9 +302,12 @@ model SurfboardPlan {
   geometry               Json
 
   /// S3 URLs for uploaded files
-  pdfFilePath            String?
-  cadFilePath            String?
-  certificateFilePath    String?
+  pdfFilePaths           String[]          @default([])
+  cadFilePaths           String[]          @default([])
+  certificateFilePaths   String[]          @default([])
+
+  /// Date when the plan was lodged
+  dateLodged             DateTime?
 
   /// Red Copy submission status
   redCopyStatus          SurfboardRedCopyStatus @default(NOT_SUBMITTED) // NOT_SUBMITTED, SUBMITTED, COMPLETED, FAILED
@@ -379,4 +382,28 @@ model SurfboardNotification {
 
   @@index([createdAt])
   @@index([audience])
+}
+
+
+// --------------------------------------------------------------------------------
+// Prisma schema for the Surfboard mapping application.
+// Defines the PostGIS‐enabled Postgres schema for storing survey plans,
+// with pillars stored as JSONB, and a simple status/isLive workflow.
+// --------------------------------------------------------------------------------
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  signature   String   @unique // x-paystack-signature; uniquely identifies a delivery payload
+  event       String
+  platform    String
+  entityKey   String?  // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
+  payload     Json
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+  status      String    // "pending" | "ok" | "error"
+  error       String?
+
+  @@index([event, platform])
+  @@index([entityKey])
+  @@index([receivedAt])
 }

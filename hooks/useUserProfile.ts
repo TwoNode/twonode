@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { getProfile, updateProfile, type ProfileData } from '@/app/(projects)/(surboard)/actions/profile';
+import { getProfile, updateProfile, type ProfileData } from '@/app/(projects)/(surfboard)/actions/profile';
 
 interface UserProfileState extends Omit<ProfileData, 'id' | 'email'> {
   email: string;

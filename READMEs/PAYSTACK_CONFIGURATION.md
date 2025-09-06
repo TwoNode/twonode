@@ -103,8 +103,8 @@ metadata: {
 - `utils/paystackConfig.ts` - **NEW**: Environment-based Paystack configuration
 - `app/(projects)/reva/actions/paystackActions.ts` - Updated to use new configuration
 - `app/(projects)/reva/actions/dbActions.ts` - Updated to include `isLive` field and pass to verification
-- `app/(projects)/(surboard)/subboard/actions/paystackActions.ts` - Updated to use new configuration
-- `app/(projects)/(surboard)/subboard/actions/dbActions.ts` - Updated to include `isLive` field and pass to verification
+- `app/(projects)/(surfboard)/subboard/actions/paystackActions.ts` - Updated to use new configuration
+- `app/(projects)/(surfboard)/subboard/actions/dbActions.ts` - Updated to include `isLive` field and pass to verification
 - `app/api/reva/webhooks/paystack/route.ts` - Updated to use environment-based secret key
 
 ## Troubleshooting
