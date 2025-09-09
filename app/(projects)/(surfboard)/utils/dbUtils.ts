@@ -14,10 +14,10 @@ import centroid from "@turf/centroid";
 /**
  * Input geometry type: WKT string, GeoJSON Polygon/MultiPolygon feature, or direct geometry
  */
-export type GeometryInput = 
-  | string 
-  | Feature<Polygon | MultiPolygon> 
-  | Polygon 
+export type GeometryInput =
+  | string
+  | Feature<Polygon | MultiPolygon>
+  | Polygon
   | MultiPolygon;
 
 /**
@@ -35,23 +35,30 @@ export interface GeometryDetails {
  */
 function normalizeToGeometry(input: GeometryInput): Polygon | MultiPolygon {
   // If it's already a geometry, return as is
-  if (input && typeof input === 'object' && 'type' in input && 'coordinates' in input) {
-    if (input.type === 'Polygon' || input.type === 'MultiPolygon') {
+  if (
+    input &&
+    typeof input === "object" &&
+    "type" in input &&
+    "coordinates" in input
+  ) {
+    if (input.type === "Polygon" || input.type === "MultiPolygon") {
       return input as Polygon | MultiPolygon;
     }
   }
 
   // If it's a string, try to parse it as JSON
-  if (typeof input === 'string') {
+  if (typeof input === "string") {
     try {
       const parsed = JSON.parse(input);
       return normalizeToGeometry(parsed);
     } catch (e) {
-      throw new Error('Failed to parse input as JSON');
+      throw new Error("Failed to parse input as JSON");
     }
   }
-  
-  throw new Error('Unsupported input format: must be a GeoJSON Polygon or MultiPolygon');
+
+  throw new Error(
+    "Unsupported input format: must be a GeoJSON Polygon or MultiPolygon"
+  );
 }
 
 /**
@@ -61,15 +68,20 @@ function normalizeToGeometry(input: GeometryInput): Polygon | MultiPolygon {
  * @throws Error if input is not a valid geometry
  */
 export function computeGeometryDetails(input: GeometryInput): GeometryDetails {
-  console.log("\n\n\n\computeGeometryDetails input", input);
+  console.log("\n\n\n computeGeometryDetails input", input);
   try {
     // Normalize the input to a GeoJSON Geometry
     const geometry = normalizeToGeometry(input);
-    
+
     // Validate the geometry type
-    if (!['Polygon', 'MultiPolygon'].includes(geometry.type) || !geometry.coordinates) {
+    if (
+      !["Polygon", "MultiPolygon"].includes(geometry.type) ||
+      !geometry.coordinates
+    ) {
       throw new Error(
-        `Invalid geometry: must be a valid GeoJSON Polygon or MultiPolygon. Got type: ${geometry?.type || 'unknown'}`
+        `Invalid geometry: must be a valid GeoJSON Polygon or MultiPolygon. Got type: ${
+          geometry?.type || "unknown"
+        }`
       );
     }
 
@@ -80,13 +92,18 @@ export function computeGeometryDetails(input: GeometryInput): GeometryDetails {
     const center = centroid(geometry as any);
     const [lon, lat] = center.geometry.coordinates;
 
-    return { 
-      areaSqM, 
-      centroid: [lon, lat] as [number, number] 
+    console.log("\nAREASQM COMPUTED", areaSqM);
+    console.log("\nCENTROID COMPUTED", center.geometry.coordinates);
+
+    return {
+      areaSqM,
+      centroid: [lon, lat] as [number, number],
     };
   } catch (error: any) {
-    console.error('Error in computeGeometryDetails:', error);
-    throw new Error(`Failed to compute geometry details: ${error?.message || error}`);
+    console.error("Error in computeGeometryDetails:", error);
+    throw new Error(
+      `Failed to compute geometry details: ${error?.message || error}`
+    );
   }
 }
 

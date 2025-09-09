@@ -1576,6 +1576,7 @@ export async function getSurfPlanById(
       plan.geometry,
       isGeometryInput(plan.geometry)
     );
+
     if (plan.geometry && isGeometryInput(plan.geometry)) {
       try {
         const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);

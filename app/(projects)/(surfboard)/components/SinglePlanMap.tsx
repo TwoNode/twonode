@@ -39,7 +39,7 @@ function closeRing(ring: number[][]) {
   return ring;
 }
 
-export default function SurfMapViewer({ plan }: { plan: Plan | any }) {
+export default function SinglePlanMap({ plan }: { plan: Plan }) {
   const divRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<MapView | null>(null);
   const hasInitRef = useRef(false);
@@ -52,135 +52,102 @@ export default function SurfMapViewer({ plan }: { plan: Plan | any }) {
     let cancelled = false;
     let view: MapView | null = null;
     let layer: GeoJSONLayer | null = null;
-    let abortController: AbortController | null = new AbortController();
 
-    const initializeMap = async () => {
-      try {
-        // 1) Fetch & build GeoJSON (and defensively close rings)
-        const feature = featureFromPlan({
-          id: plan.id,
-          planNumber: plan.planNumber,
-          geometry: plan.geometry,
-          properties: { planType: plan.planType },
-        });
+    (async () => {
+      // 1) Fetch & build GeoJSON (and defensively close rings)
+      const features = [plan]?.map((p: any) =>
+        featureFromPlan({
+          id: p.id,
+          planNumber: p.planNumber,
+          geometry: p.geometry,
+          properties: { planType: p.planType },
+        })
+      );
+      const fcRaw = toFeatureCollection(features || []);
+      const fc = closeRingsInFeatureCollection(fcRaw);
 
-        const fcRaw = toFeatureCollection([feature]);
-        const fc = closeRingsInFeatureCollection(fcRaw);
-
-        // Filter out invalid geometries
-        fc.features = fc.features.filter((f: any) => {
-          try {
-            return geometryEngine.simplify(f.geometry) != null;
-          } catch {
-            return false;
-          }
-        });
-
-        // 2) Create a more reliable basemap
-        const basemap = new Basemap({
-          baseLayers: [
-            new WebTileLayer({
-              urlTemplate:
-                "https://{subDomain}.tile.openstreetmap.org/{level}/{col}/{row}.png",
-              subDomains: ["a", "b", "c"],
-              title: "OpenStreetMap",
-              copyright: " OpenStreetMap contributors",
-            }),
-          ],
-        });
-
-        // 3) Create map and view
-        const map = new Map({
-          basemap,
-          ground: "world-elevation",
-        });
-
-        view = new MapView({
-          container: divRef.current as HTMLDivElement,
-          map,
-          zoom: 10,
-          center: [3.3792, 6.5244],
-          constraints: { snapToZoom: false },
-          popup: {
-            dockEnabled: true,
-            dockOptions: {
-              breakpoint: false,
-            },
-          },
-        });
-
-        viewRef.current = view;
-
-        // 4) Set up error handling for view
-        view
-          .when(() => {
-            console.log("Map view is ready");
-          })
-          .catch((error) => {
-            if (!cancelled) {
-              console.error("Map view failed to initialize:", error);
-            }
-          });
-
-        // 5) Create and add GeoJSON layer
-        const blob = new Blob([JSON.stringify(fc)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        blobUrlRef.current = url;
-
-        layer = new GeoJSONLayer({
-          url,
-          title: "Survey Plans",
-          outFields: ["*"],
-          renderer: {
-            type: "simple",
-            symbol: {
-              type: "simple-fill",
-              color: [59, 130, 246, 0.15],
-              outline: { color: [59, 130, 246, 1], width: 1.25 },
-            },
-          } as any,
-          popupTemplate: {
-            title: "{planNumber}",
-            content: [{ type: "fields" }],
-          },
-        });
-
-        map.add(layer);
-
-        // 6) Fit view to layer extent
+      // Optional: drop degenerate polygons to avoid renderer crashes
+      fc.features = fc.features.filter((f: any) => {
         try {
-          const { extent } = await layer.queryExtent();
-          if (extent && !extent.isEmpty) {
-            await view.goTo(extent.expand(1.1), { duration: 800 });
-          }
-        } catch (error) {
-          console.warn("Could not zoom to layer extent:", error);
+          return geometryEngine.simplify(f.geometry) != null;
+        } catch {
+          return true;
         }
-      } catch (error) {
-        console.error("Error initializing map:", error);
-      }
-    };
+      });
 
-    initializeMap();
+      const blob = new Blob([JSON.stringify(fc)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      blobUrlRef.current = url;
+
+      // 2) Create a stable OSM basemap via WebTileLayer (no API key needed)
+      const osm = new WebTileLayer({
+        urlTemplate:
+          "https://{subDomain}.tile.openstreetmap.org/{level}/{col}/{row}.png",
+        subDomains: ["a", "b", "c"],
+        copyright: "© OpenStreetMap contributors",
+      });
+      const basemap = new Basemap({ baseLayers: [osm], title: "OSM" });
+
+      const map = new Map({ basemap });
+      view = new MapView({
+        container: divRef.current as HTMLDivElement,
+        map,
+        zoom: 10,
+        center: [3.3792, 6.5244], // [lon, lat] ~ Lagos
+        constraints: { snapToZoom: false },
+        popup: { dockEnabled: true, dockOptions: { breakpoint: false } },
+      });
+      viewRef.current = view;
+
+      // 3) Add GeoJSON layer
+      layer = new GeoJSONLayer({
+        url,
+        title: "Survey Plans",
+        outFields: ["*"],
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [59, 130, 246, 0.15],
+            outline: { color: [59, 130, 246, 1], width: 1.25 },
+          },
+        } as any,
+        popupTemplate: {
+          title: "{planNumber}",
+          content: [{ type: "fields" }],
+        },
+      });
+      map.add(layer);
+
+      try {
+        await view.when();
+        await layer.when();
+
+        // 4) Fit once to layer extent (if any)
+        const { extent } = await layer.queryExtent();
+        if (extent && !extent.isEmpty) {
+          await view.goTo(extent.expand(1.1), { duration: 800 });
+        }
+      } catch (e) {
+        // If basemap/tiles abort during hot reload, just ignore – view remains usable
+        console.warn("SurfMapViewer init warning:", e);
+      }
+
+      if (cancelled) return;
+    })();
 
     return () => {
       cancelled = true;
-      if (abortController) {
-        abortController.abort();
-        abortController = null;
-      }
-      if (view) {
-        view.destroy();
-        view = null;
+      if (viewRef.current) {
+        viewRef.current.destroy();
+        viewRef.current = null;
       }
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
     };
-  }, [plan]);
+  }, []);
 
   return <div ref={divRef} className="w-full h-[600px] rounded-xl border" />;
 }

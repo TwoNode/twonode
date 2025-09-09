@@ -136,8 +136,8 @@ export async function createOrUpdateSubscription({
 
 export async function cancelSubscription() {
   try {
-    const session = await getAndRefreshUserSession();
-    const userId = session?.userData?.userId;
+    const user = await getAuthenticatedSurfUserFromCookie();
+    const userId = user?.userId;
     if (!userId) throw new Error("User not authenticated");
 
     const sub = await prisma.subscription.update({
@@ -155,21 +155,19 @@ export async function cancelSubscription() {
 
 export async function isUserSubscribed(): Promise<boolean> {
   try {
-    const session = await getAndRefreshUserSession();
-
-    console.log("userData before", session?.userData);
-
-    const userData = session?.userData;
-    if (userData && userData?.subscription?.status === "active") return true;
-    if (userData && userData?.subscription?.status === "past_due") return true;
-
-    console.log("userData after", userData);
-
     const user = await getAuthenticatedSurfUserFromCookie();
+
+    console.log("userData before", user);
+
     if (!user) {
       console.log("User not authenticated for Subscription");
       return false;
     }
+
+    if (user && user?.subscription?.status === "active") return true;
+    if (user && user?.subscription?.status === "past_due") return true;
+
+    console.log("userData after", user);
 
     const sub = await prisma.subscription.findFirst({
       where: {

@@ -16,8 +16,9 @@ import {
   isPlatformUser,
 } from "@/utils/encryptedCookies";
 import { Platform } from "@/utils/platform";
-import prisma from "@/lib/prisma";
 
+const ENTER_MSG = "\n\n\n ENTERING MIDDLEWARE \n";
+const EXIT_MSG = "\n EXITING MIDDLEWARE..... \n\n\n";
 // Define the paths that require authentication
 const protectedRoutes = [
   "/reva/dashboard",
@@ -30,7 +31,7 @@ const protectedRoutes = [
 
 // Define public routes that bypass authentication
 const publicRoutes = [
-  "/surfboardplan/",  // This will match /surfboardplan/[id]
+  "/surfboardplan/", // This will match /surfboardplan/[id]
 ];
 
 type DynamicAuthOptions = any & {
@@ -49,6 +50,7 @@ function withDynamicAuth(options?: DynamicAuthOptions, middlewareFn?: any) {
           : options?.loginPage,
     };
 
+    console.log(ENTER_MSG);
     if (middlewareFn) {
       // Handle case where middleware function is provided
       return withAuth(
@@ -56,7 +58,9 @@ function withDynamicAuth(options?: DynamicAuthOptions, middlewareFn?: any) {
         resolvedOptions,
         async ({ token, user }: { token: string; user: any }) => {
           (req as any).kindeAuth = { token, user };
-          return await middlewareFn(req);
+          const result = await middlewareFn(req);
+          console.log(EXIT_MSG);
+          return result;
         }
       );
     }
@@ -98,8 +102,9 @@ const middlewareWithLogic = withDynamicAuth(
     console.log("🛡️ Middleware - Pathname:", pathname);
 
     // Skip middleware for public routes
-    if (publicRoutes.some(route => pathname.startsWith(route))) {
+    if (publicRoutes.some((route) => pathname.startsWith(route))) {
       console.log("🛡️ Middleware - Public route detected, skipping auth");
+
       return NextResponse.next();
     }
 
