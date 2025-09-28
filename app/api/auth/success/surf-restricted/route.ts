@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
       kindeId: dbUser.kindeId,
+      picture: user.picture,
     };
 
     const postLoginRaw =

@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
       email: dbUser.email,
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
+      picture: user.picture,
       kindeId: dbUser.kindeId,
       ...(dbUser.subscription?.[0]
         ? {

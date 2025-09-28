@@ -39,6 +39,7 @@ export interface EncryptedUserData {
   kindeId: string;
   sessionId: string; // Unique session identifier
   lastActivity: number; // For idle timeout tracking
+  picture?: string | null; // Optional user picture URL
   subscription?: {
     status: "active" | "cancelled" | "expired" | "past_due";
     interval: "monthly" | "quarterly" | "annually";
@@ -60,6 +61,7 @@ interface UserJWTPayload extends JWTPayload {
   kindeId: string;
   sessionId: string;
   lastActivity: number;
+  picture?: string | null; // Optional user picture URL
   subscription?: {
     status: "active" | "cancelled" | "expired" | "past_due";
     interval: "monthly" | "quarterly" | "annually";
@@ -155,6 +157,7 @@ export async function decryptUserData(
       firstName: userPayload.firstName,
       lastName: userPayload.lastName,
       kindeId: userPayload.kindeId,
+      picture: userPayload.picture,
       sessionId: userPayload.sessionId,
       lastActivity: userPayload.lastActivity,
       subscription: userPayload.subscription, // Include subscription in decrypted data

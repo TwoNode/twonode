@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { canAccessSurfAdminPanel, canAccessSurfUserPanel } from "@/permissions";
 import { getAndRefreshUserSession } from "./encryptedCookies";
+import { cache } from "react";
 
 export async function getUserFromSurfDB(userId: string) {
   try {
@@ -36,7 +37,7 @@ export async function getAuthenticatedSurfUser() {
   return { ...user, ...surfUser };
 }
 
-export async function getAuthenticatedSurfUserFromCookie() {
+export const getAuthenticatedSurfUserFromCookie = cache(async () => {
   try {
     const { getUser, isAuthenticated } = getKindeServerSession();
 
@@ -50,11 +51,9 @@ export async function getAuthenticatedSurfUserFromCookie() {
     const sessionData = await getAndRefreshUserSession();
     const surfUser = sessionData?.userData;
     console.log(
-      "\n\n\n\n\n\n\n\n\n\n\n",
-      user,
-      "\n\n",
-      sessionData,
-      "\n\n\n\n\n\n\n\n\n\n\n"
+      "\n\n\n\n\n User Data from cookie",
+      { ...user, ...surfUser, id: surfUser?.userId },
+      "\n\n\n\n\n"
     );
 
     if (!surfUser) {
@@ -69,7 +68,7 @@ export async function getAuthenticatedSurfUserFromCookie() {
     );
     throw error;
   }
-}
+});
 
 // Function to verify if user can access admin panel
 export async function verifySurfAdminAccess() {

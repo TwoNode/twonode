@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import type {
   Plan,
@@ -1299,7 +1300,10 @@ export async function updatePlan(
 /**
  * Fetches all plans from the database.
  */
-export async function getAllSurfPlans(): Promise<ApiResult<Plan[]>> {
+export async function __getAllSurfPlans(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
@@ -1310,37 +1314,50 @@ export async function getAllSurfPlans(): Promise<ApiResult<Plan[]>> {
       };
     }
 
-    const plans = await prisma.surfboardPlan.findMany({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        id: true,
-        planNumber: true,
-        surveyTitle: true,
-        planType: true,
-        referencePlanNumber: true,
-        deededArea: true,
-        facilitator: true,
-        pillarType: true,
-        geometry: true,
-        pdfFilePaths: true,
-        cadFilePaths: true,
-        certificateFilePaths: true,
-        ward: true,
-        lcda: true,
-        lga: true,
-        pillars: true,
-        status: true,
-        isLive: true,
-        dateOnSurveyPlan: true,
-        dateLodged: true,
-        reasonForWithdrawalAndResubmission: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const skip = (page - 1) * pageSize;
+
+    const [plans, total] = await Promise.all([
+      prisma.surfboardPlan.findMany({
+        where: {
+          userId: user.id,
+        },
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          deededArea: true,
+          facilitator: true,
+          pillarType: true,
+          geometry: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+          ward: true,
+          lcda: true,
+          lga: true,
+          pillars: true,
+          status: true,
+          isLive: true,
+          dateOnSurveyPlan: true,
+          dateLodged: true,
+          reasonForWithdrawalAndResubmission: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.surfboardPlan.count({
+        where: {
+          userId: user.id,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -1363,17 +1380,41 @@ export async function getAllSurfPlans(): Promise<ApiResult<Plan[]>> {
       }
     });
 
-    return { success: true, data: plansWithGeometry };
+    return {
+      success: true,
+      data: {
+        plans: plansWithGeometry,
+        total,
+        totalPages,
+      },
+    };
   } catch (err) {
     console.error("getAllSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }
 
-/**
- * Fetches all plans from the database.
- */
-export async function getAllSharedSurfPlans(): Promise<ApiResult<Plan[]>> {
+// In surfboardActions.ts
+export interface PlanFilters {
+  search?: string;
+  status?: string[];
+  planType?: string[];
+  facilitator?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+export interface PlanSort {
+  field: "createdAt" | "updatedAt" | "surveyTitle" | "planNumber" | "status";
+  order: "asc" | "desc";
+}
+
+export async function getAllSurfPlans(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: PlanFilters,
+  sort?: PlanSort
+): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
@@ -1384,40 +1425,89 @@ export async function getAllSharedSurfPlans(): Promise<ApiResult<Plan[]>> {
       };
     }
 
-    const plans = await prisma.surfboardPlan.findMany({
-      where: {
-        userId: user.id,
-        sharedTo: {
-          isEmpty: false,
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause
+    const where: any = { userId: user.id };
+
+    if (filters) {
+      if (filters.search) {
+        where.OR = [
+          { planNumber: { contains: filters.search, mode: "insensitive" } },
+          { surveyTitle: { contains: filters.search, mode: "insensitive" } },
+          { facilitator: { contains: filters.search, mode: "insensitive" } },
+        ];
+      }
+
+      if (filters.status?.length) {
+        where.status = { in: filters.status };
+      }
+
+      if (filters.planType?.length) {
+        where.planType = { in: filters.planType };
+      }
+
+      if (filters.facilitator) {
+        where.facilitator = {
+          contains: filters.facilitator,
+          mode: "insensitive",
+        };
+      }
+
+      if (filters.dateFrom || filters.dateTo) {
+        where.createdAt = {};
+        if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+        if (filters.dateTo) {
+          const endOfDay = new Date(filters.dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          where.createdAt.lte = endOfDay;
+        }
+      }
+    }
+
+    // Build orderBy
+    const orderBy = sort
+      ? ({
+          [String(sort.field)]: sort.order,
+        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+      : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+    const [plans, total] = await Promise.all([
+      prisma.surfboardPlan.findMany({
+        where,
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          deededArea: true,
+          facilitator: true,
+          pillarType: true,
+          geometry: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+          ward: true,
+          lcda: true,
+          lga: true,
+          pillars: true,
+          status: true,
+          isLive: true,
+          dateOnSurveyPlan: true,
+          dateLodged: true,
+          reasonForWithdrawalAndResubmission: true,
+          createdAt: true,
+          updatedAt: true,
         },
-      },
-      select: {
-        id: true,
-        planNumber: true,
-        surveyTitle: true,
-        planType: true,
-        referencePlanNumber: true,
-        deededArea: true,
-        facilitator: true,
-        pillarType: true,
-        geometry: true,
-        pdfFilePaths: true,
-        cadFilePaths: true,
-        certificateFilePaths: true,
-        ward: true,
-        lcda: true,
-        lga: true,
-        pillars: true,
-        status: true,
-        isLive: true,
-        dateLodged: true,
-        dateOnSurveyPlan: true,
-        reasonForWithdrawalAndResubmission: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        skip,
+        take: pageSize,
+        orderBy,
+      }),
+      prisma.surfboardPlan.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -1440,17 +1530,374 @@ export async function getAllSharedSurfPlans(): Promise<ApiResult<Plan[]>> {
       }
     });
 
-    return { success: true, data: plansWithGeometry };
+    return {
+      success: true,
+      data: {
+        plans: plansWithGeometry,
+        total,
+        totalPages,
+      },
+    };
+  } catch (err) {
+    console.error("getAllSurfPlans error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// export async function getAllSharedSurfPlans(
+//   page: number = 1,
+//   pageSize: number = 10
+// ): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
+//   try {
+//     const user = await getAuthenticatedSurfUserFromCookie();
+
+//     if (!user || !user.role) {
+//       return {
+//         success: false,
+//         error: "User not authenticated or role not found",
+//       };
+//     }
+
+//     const skip = (page - 1) * pageSize;
+
+//     const [plans, total] = await Promise.all([
+//       prisma.surfboardPlan.findMany({
+//         where: {
+//           userId: user.id,
+//           sharedTo: {
+//             isEmpty: false,
+//           },
+//         },
+//         select: {
+//           id: true,
+//           planNumber: true,
+//           surveyTitle: true,
+//           planType: true,
+//           referencePlanNumber: true,
+//           deededArea: true,
+//           facilitator: true,
+//           pillarType: true,
+//           geometry: true,
+//           pdfFilePaths: true,
+//           cadFilePaths: true,
+//           certificateFilePaths: true,
+//           ward: true,
+//           lcda: true,
+//           lga: true,
+//           pillars: true,
+//           status: true,
+//           isLive: true,
+//           dateOnSurveyPlan: true,
+//           dateLodged: true,
+//           reasonForWithdrawalAndResubmission: true,
+//           createdAt: true,
+//           updatedAt: true,
+//         },
+//         skip,
+//         take: pageSize,
+//         orderBy: { createdAt: "desc" },
+//       }),
+//       prisma.surfboardPlan.count({
+//         where: {
+//           userId: user.id,
+//           sharedTo: {
+//             isEmpty: false,
+//           },
+//         },
+//       }),
+//     ]);
+
+//     const totalPages = Math.ceil(total / pageSize);
+
+//     // Add area and centroid to each plan
+//     const plansWithGeometry = plans.map((plan) => {
+//       if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+//         return { ...plan, areaSqM: 0, centroid: null };
+//       }
+
+//       try {
+//         const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+//           plan.geometry
+//         );
+//         return {
+//           ...plan,
+//           areaSqM,
+//           centroid: centroidCoords,
+//         };
+//       } catch (error) {
+//         console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+//         return { ...plan, areaSqM: 0, centroid: null };
+//       }
+//     });
+
+//     return {
+//       success: true,
+//       data: {
+//         plans: plansWithGeometry,
+//         total,
+//         totalPages,
+//       },
+//     };
+//   } catch (err) {
+//     console.error("getAllSharedSurfPlans error:", err);
+//     return { success: false, error: (err as Error).message };
+//   }
+// }
+
+// export async function getSharedWithMeSurfPlans(
+//   page: number = 1,
+//   pageSize: number = 10
+// ): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
+//   try {
+//     const user = await getAuthenticatedSurfUserFromCookie();
+
+//     if (!user || !user.role) {
+//       return {
+//         success: false,
+//         error: "User not authenticated or role not found",
+//       };
+//     }
+
+//     const skip = (page - 1) * pageSize;
+
+//     const [plans, total] = await Promise.all([
+//       prisma.surfboardPlan.findMany({
+//         where: {
+//           sharedTo: {
+//             has: user.id,
+//           },
+//         },
+//         select: {
+//           id: true,
+//           planNumber: true,
+//           surveyTitle: true,
+//           planType: true,
+//           referencePlanNumber: true,
+//           deededArea: true,
+//           facilitator: true,
+//           pillarType: true,
+//           geometry: true,
+//           pdfFilePaths: true,
+//           cadFilePaths: true,
+//           certificateFilePaths: true,
+//           ward: true,
+//           lcda: true,
+//           lga: true,
+//           pillars: true,
+//           status: true,
+//           isLive: true,
+//           dateOnSurveyPlan: true,
+//           dateLodged: true,
+//           reasonForWithdrawalAndResubmission: true,
+//           createdAt: true,
+//           updatedAt: true,
+//           user: {
+//             select: {
+//               id: true,
+//               firstName: true,
+//               lastName: true,
+//               email: true,
+//               companyName: true,
+//             },
+//           },
+//         },
+//         skip,
+//         take: pageSize,
+//         orderBy: { createdAt: "desc" },
+//       }),
+//       prisma.surfboardPlan.count({
+//         where: {
+//           sharedTo: {
+//             has: user.id,
+//           },
+//         },
+//       }),
+//     ]);
+
+//     const totalPages = Math.ceil(total / pageSize);
+
+//     // Add area and centroid to each plan
+//     const plansWithGeometry = plans.map((plan) => {
+//       if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+//         return { ...plan, areaSqM: 0, centroid: null };
+//       }
+
+//       try {
+//         const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+//           plan.geometry
+//         );
+//         return {
+//           ...plan,
+//           areaSqM,
+//           centroid: centroidCoords,
+//         };
+//       } catch (error) {
+//         console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+//         return { ...plan, areaSqM: 0, centroid: null };
+//       }
+//     });
+
+//     return {
+//       success: true,
+//       data: {
+//         plans: plansWithGeometry,
+//         total,
+//         totalPages,
+//       },
+//     };
+//   } catch (err) {
+//     console.error("getSharedWithMeSurfPlans error:", err);
+//     return { success: false, error: (err as Error).message };
+//   }
+// }
+
+// In surfboardActions.ts
+export async function getAllSharedSurfPlans(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: PlanFilters,
+  sort?: PlanSort
+): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause
+    const where: any = {
+      userId: user.id,
+      sharedTo: {
+        isEmpty: false,
+      },
+    };
+
+    if (filters) {
+      if (filters.search) {
+        where.OR = [
+          { planNumber: { contains: filters.search, mode: "insensitive" } },
+          { surveyTitle: { contains: filters.search, mode: "insensitive" } },
+          { facilitator: { contains: filters.search, mode: "insensitive" } },
+        ];
+      }
+
+      if (filters.status?.length) {
+        where.status = { in: filters.status };
+      }
+
+      if (filters.planType?.length) {
+        where.planType = { in: filters.planType };
+      }
+
+      if (filters.facilitator) {
+        where.facilitator = {
+          contains: filters.facilitator,
+          mode: "insensitive",
+        };
+      }
+
+      if (filters.dateFrom || filters.dateTo) {
+        where.createdAt = {};
+        if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+        if (filters.dateTo) {
+          const endOfDay = new Date(filters.dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          where.createdAt.lte = endOfDay;
+        }
+      }
+    }
+
+    // Build orderBy
+    const orderBy = sort
+      ? ({
+          [sort.field]: sort.order,
+        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+      : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+    const [plans, total] = await Promise.all([
+      prisma.surfboardPlan.findMany({
+        where,
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          deededArea: true,
+          facilitator: true,
+          pillarType: true,
+          geometry: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+          ward: true,
+          lcda: true,
+          lga: true,
+          pillars: true,
+          status: true,
+          isLive: true,
+          dateOnSurveyPlan: true,
+          dateLodged: true,
+          reasonForWithdrawalAndResubmission: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        skip,
+        take: pageSize,
+        orderBy,
+      }),
+      prisma.surfboardPlan.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Add area and centroid to each plan
+    const plansWithGeometry = plans.map((plan) => {
+      if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+
+      try {
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
+        return {
+          ...plan,
+          areaSqM,
+          centroid: centroidCoords,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        plans: plansWithGeometry,
+        total,
+        totalPages,
+      },
+    };
   } catch (err) {
     console.error("getAllSharedSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }
 
-/**
- * Fetches all plans shared with the current user.
- */
-export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
+export async function getSharedWithMeSurfPlans(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: PlanFilters,
+  sort?: PlanSort
+): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
@@ -1461,39 +1908,102 @@ export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
       };
     }
 
-    const plans = await prisma.surfboardPlan.findMany({
-      where: {
-        sharedTo: {
-          has: user.id,
+    const skip = (page - 1) * pageSize;
+
+    // Build where clause
+    const where: any = {
+      sharedTo: {
+        has: user.id,
+      },
+    };
+
+    if (filters) {
+      if (filters.search) {
+        where.OR = [
+          { planNumber: { contains: filters.search, mode: "insensitive" } },
+          { surveyTitle: { contains: filters.search, mode: "insensitive" } },
+          { facilitator: { contains: filters.search, mode: "insensitive" } },
+        ];
+      }
+
+      if (filters.status?.length) {
+        where.status = { in: filters.status };
+      }
+
+      if (filters.planType?.length) {
+        where.planType = { in: filters.planType };
+      }
+
+      if (filters.facilitator) {
+        where.facilitator = {
+          contains: filters.facilitator,
+          mode: "insensitive",
+        };
+      }
+
+      if (filters.dateFrom || filters.dateTo) {
+        where.createdAt = {};
+        if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+        if (filters.dateTo) {
+          const endOfDay = new Date(filters.dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          where.createdAt.lte = endOfDay;
+        }
+      }
+    }
+
+    // Build orderBy
+    const orderBy = sort
+      ? ({
+          [sort.field]: sort.order,
+        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+      : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+    const [plans, total] = await Promise.all([
+      prisma.surfboardPlan.findMany({
+        where,
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          deededArea: true,
+          facilitator: true,
+          pillarType: true,
+          geometry: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+          ward: true,
+          lcda: true,
+          lga: true,
+          pillars: true,
+          status: true,
+          isLive: true,
+          dateOnSurveyPlan: true,
+          dateLodged: true,
+          reasonForWithdrawalAndResubmission: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              companyName: true,
+            },
+          },
         },
-      },
-      select: {
-        id: true,
-        planNumber: true,
-        surveyTitle: true,
-        planType: true,
-        referencePlanNumber: true,
-        deededArea: true,
-        facilitator: true,
-        pillarType: true,
-        geometry: true,
-        pdfFilePaths: true,
-        cadFilePaths: true,
-        certificateFilePaths: true,
-        ward: true,
-        lcda: true,
-        lga: true,
-        pillars: true,
-        status: true,
-        isLive: true,
-        dateOnSurveyPlan: true,
-        dateLodged: true,
-        reasonForWithdrawalAndResubmission: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        skip,
+        take: pageSize,
+        orderBy,
+      }),
+      prisma.surfboardPlan.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -1516,13 +2026,19 @@ export async function getSharedWithMeSurfPlans(): Promise<ApiResult<Plan[]>> {
       }
     });
 
-    return { success: true, data: plansWithGeometry };
+    return {
+      success: true,
+      data: {
+        plans: plansWithGeometry,
+        total,
+        totalPages,
+      },
+    };
   } catch (err) {
     console.error("getSharedWithMeSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }
-
 /**
  * Fetches a single plan by ID.
  */
@@ -2248,15 +2764,15 @@ export async function getDashboardAnalytics(): Promise<
       return { success: false, error: plansResult.error };
     }
 
-    const allPlans = plansResult.data || [];
+    const allPlans = plansResult?.data ? plansResult.data.plans : [];
 
     // Calculate total plans count (excluding provisional)
-    const totalPlansCount = allPlans.filter(
+    const totalPlansCount = allPlans?.filter(
       (plan) => !["PROVISIONAL", "PROVISIONAL_LAYOUT"].includes(plan.planType)
     ).length;
 
     // Get provisional plans count
-    const provisionalPlansCount = allPlans.filter((plan) =>
+    const provisionalPlansCount = allPlans?.filter((plan) =>
       ["PROVISIONAL", "PROVISIONAL_LAYOUT"].includes(plan.planType)
     ).length;
 
@@ -2558,6 +3074,21 @@ export async function submitRedCopy(
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to submit Red Copy",
+    };
+  }
+}
+
+export async function importDbDataFromCsv(file: File) {
+  try {
+    const csvFile = file;
+
+    const csv = await csvFile.text();
+    const rows = csv.split("\n");
+  } catch (error) {
+    console.error("Error importing DB data from CSV:", error);
+    return {
+      success: false,
+      error: "Failed to import DB data from CSV",
     };
   }
 }

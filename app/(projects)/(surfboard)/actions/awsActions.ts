@@ -5,6 +5,9 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
@@ -416,6 +419,7 @@ export interface UploadTarget {
   key: string;
   url: string; // presigned PUT url
   publicUrl: string;
+  uploadId?: string;
 }
 
 function padIndex(i: number) {
@@ -446,47 +450,116 @@ export async function buildSurfboardObjectKey(params: {
 }
 
 // Create many presigned PUT URLs for multi-file upload; add audit logs
-export async function getSurfboardUploadTargetsMulti(input: {
-  planNumber: string;
-  category: UploadCategory;
-  files: { name: string; type?: string }[];
-}): Promise<UploadTarget[]> {
+export async function getSurfboardUploadTargetsMulti(formData: FormData): Promise<UploadTarget[]> {
   const user = await getAuthenticatedSurfUserFromCookie();
   if (!user) throw new Error("User not authenticated");
 
+  // Extract form data
+  const planNumber = formData.get('planNumber') as string;
+  const category = formData.get('category') as UploadCategory;
+  
+  if (!planNumber || !category) {
+    throw new Error("Missing required fields: planNumber and category are required");
+  }
+
+  // Extract files from FormData
+  const files: { file: File; name: string; type: string }[] = [];
+  let index = 0;
+  
+  while (formData.has(`file-${index}`)) {
+    const file = formData.get(`file-${index}`) as File;
+    const name = formData.get(`filename-${index}`) as string;
+    const type = formData.get(`filetype-${index}`) as string || 'application/octet-stream';
+    
+    if (file && name) {
+      files.push({ file, name, type });
+    }
+    index++;
+  }
+
   console.log("[awsActions] getSurfboardUploadTargetsMulti: start", {
     userId: user.id,
-    planNumber: input.planNumber,
-    category: input.category,
-    count: input.files.length,
+    planNumber,
+    category,
+    count: files.length,
   });
 
-  // TODO: Replace with your SDK/presign implementation
-  // The function below is a placeholder to illustrate expected return shape.
-  // In your real code, call your backend/lambda to generate presigned PUT urls
-  const basePublic = process.env.NEXT_PUBLIC_CDN_BASE || "https://example-cdn";
-  const baseUpload =
-    process.env.NEXT_PUBLIC_UPLOAD_BASE || "https://example-upload";
+  const targets: UploadTarget[] = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const key = await buildSurfboardObjectKey({
+      category,
+      planNumber,
+      index: i,
+      filename: file.name,
+    });
+    const cleanKey = key.replace(/^\/+/, "");
 
-  const targets: UploadTarget[] = await Promise.all(
-    input.files.map(async (f, i) => {
-      const key = await buildSurfboardObjectKey({
-        category: input.category,
-        planNumber: input.planNumber,
-        index: i,
-        filename: f.name,
-      });
-      return {
-        key,
-        url: `${baseUpload}/put/${encodeURIComponent(key)}`,
-        publicUrl: `${basePublic}/${key}`,
-      };
-    })
-  );
+    // Generate presigned URL for S3 upload
+    const command = new CreateMultipartUploadCommand({
+      Bucket: BUCKET,
+      Key: cleanKey,
+      ContentType: file.type,
+      Metadata: {
+        originalName: file.name,
+        fileType: category,
+        planNumber: planNumber || "unknown",
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    const result = await s3.send(command);
+    const uploadId = result.UploadId;
+    
+    // Create presigned URL for each part
+    const presignedUrl = await getSignedUrl(
+      s3,
+      new UploadPartCommand({
+        Bucket: BUCKET,
+        Key: cleanKey,
+        UploadId: uploadId,
+        PartNumber: 1, // For single part uploads
+      }),
+      { expiresIn: 3600 } // URL expires in 1 hour
+    );
+
+    const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${cleanKey}`;
+
+    targets.push({
+      key: cleanKey,
+      url: presignedUrl,
+      publicUrl: publicUrl,
+      uploadId: uploadId,
+    });
+  }
 
   console.log(
     "[awsActions] getSurfboardUploadTargetsMulti: generated targets",
     targets
   );
   return targets;
+}
+
+// Helper function to complete multipart upload
+export async function completeSurfboardUpload(params: {
+  key: string;
+  uploadId: string;
+  etag: string;
+}): Promise<void> {
+  const command = new CompleteMultipartUploadCommand({
+    Bucket: BUCKET,
+    Key: params.key,
+    UploadId: params.uploadId,
+    MultipartUpload: {
+      Parts: [
+        {
+          ETag: params.etag,
+          PartNumber: 1,
+        },
+      ],
+    },
+  });
+
+  await s3.send(command);
 }

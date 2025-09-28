@@ -1,9 +1,9 @@
-'use server';
+"use server";
 
-import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
-import { uploadFile } from '@/lib/storage';
-import { revalidatePath } from 'next/cache';
-import prisma from '@/lib/prisma';
+import { uploadFile } from "@/lib/storage";
+import { revalidatePath } from "next/cache";
+import prisma from "@/lib/prisma";
+import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 
 // Types
 export type ProfileData = {
@@ -21,17 +21,19 @@ export type ProfileData = {
   signature: string | null;
 };
 
-export async function getProfile(): Promise<{ data?: ProfileData; error?: string }> {
+export async function getProfile(): Promise<{
+  data?: ProfileData;
+  error?: string;
+}> {
   try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
+    const user = await getAuthenticatedSurfUserFromCookie();
 
     if (!user) {
-      return { error: 'Unauthorized' };
+      return { error: "Unauthorized" };
     }
 
     const dbUser = await prisma.surfboardUser.findUnique({
-      where: { kindeId: user.id },
+      where: { email: user.email },
       select: {
         id: true,
         firstName: true,
@@ -49,13 +51,13 @@ export async function getProfile(): Promise<{ data?: ProfileData; error?: string
     });
 
     if (!dbUser) {
-      return { error: 'User not found' };
+      return { error: "User not found" };
     }
 
     return { data: dbUser };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
-    return { error: 'Failed to fetch profile' };
+    console.error("Error fetching user profile:", error);
+    return { error: "Failed to fetch profile" };
   }
 }
 
@@ -63,36 +65,35 @@ export async function updateProfile(
   formData: FormData
 ): Promise<{ data?: ProfileData; error?: string }> {
   try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
+    const user = await getAuthenticatedSurfUserFromCookie();
 
     if (!user) {
-      return { error: 'Unauthorized' };
+      return { error: "Unauthorized" };
     }
 
     const updates: Record<string, any> = {};
-    
+
     // Handle text fields
     const textFields = [
-      'firstName',
-      'lastName',
-      'prefix',
-      'suffix',
-      'companyName',
-      'surconRegNumber',
-      'surconRegName',
-      'residenceState',
+      "firstName",
+      "lastName",
+      "prefix",
+      "suffix",
+      "companyName",
+      "surconRegNumber",
+      "surconRegName",
+      "residenceState",
     ] as const;
 
     textFields.forEach((field) => {
       const value = formData.get(field);
       if (value !== null) {
-        updates[field] = value === '' ? null : value;
+        updates[field] = value === "" ? null : value;
       }
     });
 
     // Handle file uploads
-    const fileFields = ['logo', 'signature'] as const;
+    const fileFields = ["logo", "signature"] as const;
 
     for (const field of fileFields) {
       const file = formData.get(field) as File | null;
@@ -105,14 +106,14 @@ export async function updateProfile(
           console.error(`Error uploading ${field}:`, error);
           // Continue with other updates if file upload fails
         }
-      } else if (formData.get(`remove-${field}`) === 'true') {
+      } else if (formData.get(`remove-${field}`) === "true") {
         updates[field] = null;
       }
     }
 
     // Update user in database
     const updatedUser = await prisma.surfboardUser.update({
-      where: { kindeId: user.id },
+      where: { email: user.email  },
       data: updates,
       select: {
         id: true,
@@ -131,11 +132,11 @@ export async function updateProfile(
     });
 
     // Revalidate the settings page to show updated data
-    revalidatePath('/dashboard/settings');
-    
+    revalidatePath("/surfboard/dashboard/settings");
+
     return { data: updatedUser };
   } catch (error) {
-    console.error('Error updating profile:', error);
-    return { error: 'Failed to update profile' };
+    console.error("Error updating profile:", error);
+    return { error: "Failed to update profile" };
   }
 }

@@ -18,19 +18,22 @@ import {
   searchReferencePlanNumbers,
   getAllFacilitatorsAndPlanNumbers,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getSurfboardUploadTargetsMulti } from "@/app/(projects)/(surfboard)/actions/awsActions";
+import {
+  completeSurfboardUpload,
+  getSurfboardUploadTargetsMulti,
+} from "@/app/(projects)/(surfboard)/actions/awsActions";
 import {
   generatePolygonFromPillars,
   parseCSVContent,
 } from "../utils/surfboardUtils";
 
-const ArcGISMap = dynamic(
-  () =>
-    import(
-      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
-    ),
-  { ssr: false }
-);
+// const ArcGISMap = dynamic(
+//   () =>
+//     import(
+//       "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+//     ),
+//   { ssr: false }
+// );
 
 export type Mode = "create" | "edit";
 
@@ -78,16 +81,17 @@ export default function SurfboardPlanForm({
 
   // 24h lock after mount only (avoid hydration mismatch)
   useEffect(() => {
-    if (mode !== "edit" || isSuperAdmin) return setLockNonCert(false);
-    const created = initial?.createdAt
-      ? new Date(initial.createdAt).getTime()
-      : 0;
-    if (!created) return setLockNonCert(false);
-    setLockNonCert(Date.now() - created > 24 * 60 * 60 * 1000);
+    // if (mode !== "edit" || isSuperAdmin) return setLockNonCert(false);
+    // const created = initial?.createdAt
+    //   ? new Date(initial.createdAt).getTime()
+    //   : 0;
+    // if (!created) return setLockNonCert(false);
+    // setLockNonCert(Date.now() - created > 24 * 60 * 60 * 1000);
   }, [mode, isSuperAdmin, initial?.createdAt]);
 
   // Facilitators dropdown
   const [facilitators, setFacilitators] = useState<string[]>([]);
+  const [showFacilitatorList, setShowFacilitatorList] = useState(false);
   useEffect(() => {
     (async () => {
       try {
@@ -237,29 +241,66 @@ export default function SurfboardPlanForm({
   ): Promise<string[]> {
     if (!files.length) return [];
 
-    // Acquire pre-signed targets for all files in this category
-    const targets = await getSurfboardUploadTargetsMulti({
-      planNumber: form.planNumber,
-      category: kind,
-      files: files.map((f) => ({ name: f.name, type: f.type })),
+    // Create FormData and append files and metadata
+    const formData = new FormData();
+
+    // Add plan and category info
+    formData.append("planNumber", form.planNumber);
+    formData.append("category", kind);
+
+    // Add files with their metadata
+    files.forEach((file, index) => {
+      formData.append(`file-${index}`, file);
+      formData.append(`filename-${index}`, file.name);
+      formData.append(
+        `filetype-${index}`,
+        file.type || "application/octet-stream"
+      );
     });
 
-    const uploaded: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const t = targets[i];
-      const res = await fetch(t.url, {
-        method: "PUT",
-        body: files[i],
-        headers: {
-          // Why: some S3 setups require a concrete content-type for integrity.
-          "Content-Type": files[i].type || "application/octet-stream",
-        },
-      });
-      if (!res.ok) throw new Error(`Upload failed for ${files[i].name}`);
-      uploaded.push(t.publicUrl);
-    }
+    try {
+      // Get presigned URLs and upload files
+      const targets = await getSurfboardUploadTargetsMulti(formData);
 
-    return uploaded;
+      // Upload each file using the presigned URL
+      const uploadedUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const target = targets[i];
+        const file = files[i];
+
+        const uploadResponse = await fetch(target.url, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed for ${file.name}`);
+        }
+
+        // Get the ETag from the response
+        const etag = uploadResponse.headers.get("ETag")?.replace(/"/g, "");
+
+        if (etag && target.uploadId) {
+          // Complete the multipart upload
+          await completeSurfboardUpload({
+            key: target.key,
+            uploadId: target.uploadId,
+            etag,
+          });
+        }
+
+        uploadedUrls.push(target.publicUrl);
+      }
+
+      return uploadedUrls;
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      throw error;
+    }
   }
 
   async function onSubmit() {
@@ -315,7 +356,7 @@ export default function SurfboardPlanForm({
   }
 
   return (
-    <div className="max-w-[100rem] mx-auto py-6 px-4">
+    <div className="mx-auto py-6 px-4">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">
           {mode === "create" ? "Create New Survey Plan" : "Edit Survey Plan"}
@@ -325,7 +366,7 @@ export default function SurfboardPlanForm({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[6fr_4fr] gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[5fr_5fr] gap-8">
         {/* Left — Form */}
         <div className="bg-white rounded-2xl shadow p-6 space-y-6">
           {/* Plan Number: plain input (no dropdown) */}
@@ -364,6 +405,7 @@ export default function SurfboardPlanForm({
                 </p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Plan Type *
@@ -385,60 +427,63 @@ export default function SurfboardPlanForm({
             </div>
           </div>
 
-          {/* Reference Plan Number (combo: dropdown + optional free input). Always visible; behavior per REFERENCE_FILTERS */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reference Plan Number
-            </label>
+          {/* Reference Plan Number (combo: dropdown + optional free input). Only shown for specific plan types */}
+          {(form.planType === PLAN_TYPES.DEED_CHANGE_OF_TITLE ||
+            form.planType === PLAN_TYPES.DEED_CHANGE_OF_TITLE_LAYOUT ||
+            form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION) && (
             <div className="relative">
-              <input
-                ref={refInputRef}
-                type="text"
-                value={form.referencePlanNumber ?? ""}
-                onChange={(e) => {
-                  // When free text allowed, track both field & query for filtering.
-                  if (refFilterConf.allowFreeText) {
-                    setRefQuery(e.target.value);
-                    setField("referencePlanNumber", e.target.value);
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reference Plan Number
+              </label>
+              <div className="relative">
+                <input
+                  ref={refInputRef}
+                  type="text"
+                  value={form.referencePlanNumber ?? ""}
+                  onChange={(e) => {
+                    // When free text allowed, track both field & query for filtering.
+                    if (refFilterConf.allowFreeText) {
+                      setRefQuery(e.target.value);
+                      setField("referencePlanNumber", e.target.value);
+                    }
+                  }}
+                  onFocus={() => setRefOpen(true)}
+                  onBlur={() => {
+                    // Give time for click selection before closing
+                    setTimeout(() => setRefOpen(false), 120);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black pr-8"
+                  placeholder={
+                    refFilterConf.allowFreeText
+                      ? "Type or select…"
+                      : "Select from list"
                   }
-                }}
-                onFocus={() => setRefOpen(true)}
-                onBlur={() => {
-                  // Give time for click selection before closing
-                  setTimeout(() => setRefOpen(false), 120);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black pr-8"
-                placeholder={
-                  refFilterConf.allowFreeText
-                    ? "Type or select…"
-                    : "Select from list"
-                }
-                readOnly={!refFilterConf.allowFreeText}
-              />
-              {/* Dropdown */}
-              {refOpen && (filteredRefOptions?.length || 0) > 0 && (
-                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                  <ul className="py-1">
-                    {filteredRefOptions.map((pn) => (
-                      <li
-                        key={pn}
-                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                        onMouseDown={() => {
-                          // BUGFIX: ensure we write into referencePlanNumber, not planNumber
-                          setField("referencePlanNumber", pn);
-                          setRefQuery("");
-                          setRefOpen(false);
-                        }}
-                      >
-                        {pn}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                  readOnly={!refFilterConf.allowFreeText}
+                />
+                {/* Dropdown */}
+                {refOpen && (filteredRefOptions?.length || 0) > 0 && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <ul className="py-1">
+                      {filteredRefOptions.map((pn) => (
+                        <li
+                          key={pn}
+                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          onMouseDown={() => {
+                            // BUGFIX: ensure we write into referencePlanNumber, not planNumber
+                            setField("referencePlanNumber", pn);
+                            setRefQuery("");
+                            setRefOpen(false);
+                          }}
+                        >
+                          {pn}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-
+          )}
           {/* Core fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -455,29 +500,52 @@ export default function SurfboardPlanForm({
                 <p className="text-sm text-red-600 mt-1">{errors.deededArea}</p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Facilitator *
               </label>
-              <select
-                value={form.facilitator}
-                onChange={(e) => setField("facilitator", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                disabled={lockNonCert && mode === "edit"}
-              >
-                <option value="">-- Select Facilitator --</option>
-                {facilitators.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={form.facilitator}
+                  onChange={(e) => setField("facilitator", e.target.value)}
+                  onFocus={() => setShowFacilitatorList(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowFacilitatorList(false), 200)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  disabled={lockNonCert && mode === "edit"}
+                  placeholder="Type or select a facilitator"
+                />
+                {showFacilitatorList && facilitators.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {facilitators
+                      .filter((f) =>
+                        f.toLowerCase().includes(form.facilitator.toLowerCase())
+                      )
+                      .map((f) => (
+                        <div
+                          key={f}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          onMouseDown={() => {
+                            setField("facilitator", f);
+                            setShowFacilitatorList(false);
+                          }}
+                        >
+                          {f}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
               {errors.facilitator && (
                 <p className="text-sm text-red-600 mt-1">
                   {errors.facilitator}
                 </p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Pillar Type *
@@ -496,6 +564,7 @@ export default function SurfboardPlanForm({
                 <p className="text-sm text-red-600 mt-1">{errors.pillarType}</p>
               )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date on Survey Plan *
@@ -740,19 +809,18 @@ export default function SurfboardPlanForm({
               </div>
             </div>
           )}
-        </div>
 
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Map Preview
-          </h2>
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">
+              Map Preview
+            </h2>
 
-          <div
-            className={`h-[40rem] w-full rounded overflow-auto ${
-              pillars?.length > 0 ? "border-4 border-red-700" : "border"
-            }`}
-          >
-            {pillars?.length > 0 ? (
+            <div
+              className={`h-[40rem] w-full rounded overflow-auto ${
+                pillars?.length > 0 ? "border-4 border-red-700" : "border"
+              }`}
+            >
+              {/* {pillars?.length > 0 ? (
               <ArcGISMap
                 planInfo={form}
                 pillars={pillars}
@@ -763,7 +831,8 @@ export default function SurfboardPlanForm({
               <p className="text-gray-500 text-sm">
                 Please add pillars to the plan to view the map.
               </p>
-            )}
+            )} */}
+            </div>
           </div>
         </div>
       </div>

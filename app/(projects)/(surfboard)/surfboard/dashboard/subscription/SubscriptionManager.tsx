@@ -33,6 +33,7 @@ import {
 } from "@/app/(projects)/(surfboard)/actions/paystackActions";
 import { format, isAfter } from "date-fns";
 import PaystackPop from "@paystack/inline-js";
+import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
 
 /**
  * SubscriptionManager
@@ -73,16 +74,19 @@ export default function SubscriptionManager({
   );
 
   useEffect(() => {
-    // hydrate current subscription from server prop
-    try {
-      setCurrent(sub || null);
-      setIsSubscriptionActive(sub?.status === "active" && !sub?.cancelledAt);
-    } catch {
-      setCurrent(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sub]);
+    const fetchSub = async () => {
+      try {
+        const sub = await getUserActiveSubscription();
+        setCurrent(sub || null);
+        setIsSubscriptionActive(sub?.status === "active" && !sub?.cancelledAt);
+      } catch {
+        setCurrent(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSub();
+  }, []);
 
   useEffect(() => {
     const { success, error } = searchParams || {};

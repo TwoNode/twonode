@@ -1,13 +1,49 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import "../globals.css";
 import Link from "next/link";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  display: "swap",
+const bricolage = localFont({
+  src: [
+    {
+      path: "../../public/fonts/BricolageGrotesque-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-ExtraLight.ttf",
+      weight: "200",
+      style: "normal",
+    },
+  ],
   variable: "--font-bricolage",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -19,10 +55,14 @@ export const metadata: Metadata = {
   publisher: "TwoNode Technologies",
   authors: [{ name: "TwoNode Technologies" }],
   creator: "TwoNode Technologies",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://twonode.tech'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://twonode.tech"
+  ),
   openGraph: {
-    title: "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
-    description: "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
+    title:
+      "TwoNode Technologies - The Platform for Industry Based GIS Solutions",
+    description:
+      "TwoNode Technologies: Real-time asset tracking and monitoring for industry-based GIS solutions and electric grid visualization.",
     url: "/",
     siteName: "TwoNode Technologies",
     locale: "en_US",
@@ -34,20 +74,20 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,

@@ -178,16 +178,16 @@ model SurfboardUser {
   isActive            Boolean        @default(true)
 
   // New fields
-  logo                String?        // URL to the user's logo
-  companyName         String?        // User's company name
-  companyAddress      String?        // User's company address
-  surconRegNumber     String?        // SURCON registration number
-  surconRegName       String?        // Name as registered with SURCON
-  signature           String?        // URL to the user's signature image
-  prefix              String?        // Name prefix (e.g., Mr., Mrs., Dr.)
-  suffix              String?        // Name suffix (e.g., Jr., Sr., III)
-  residenceState      String?        // Residence state in Nigeria
-  postalCode          String?        // User's postal code
+  logo                String?                 // URL to the user's logo
+  companyName         String?                 // User's company name
+  companyAddress      String?                 // User's company address
+  surconRegNumber     String?        @unique  @default(dbgenerated("concat('SURCON_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 5))"))
+  surconRegName       String?                 // Name as registered with SURCON
+  signature           String?                 // URL to the user's signature image
+  prefix              String?                 // Name prefix (e.g., Mr., Mrs., Dr.)
+  suffix              String?                 // Name suffix (e.g., Jr., Sr., III)
+  residenceState      String?                 // Residence state in Nigeria
+  postalCode          String?                 // User's postal code
 
   // Relations
   plans               SurfboardPlan[]

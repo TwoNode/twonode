@@ -19,16 +19,16 @@ import {
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
-import { isUserSubscribed } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
-  username,
+  user,
   showSubscriptionBadge = false,
 }: {
-  username?: string;
+  user?: { picture?: string; firstName?: string; id?: string } | any;
   showSubscriptionBadge?: boolean;
 }) {
   return (
@@ -66,10 +66,26 @@ function SurfboardUserDashboardNavbar({
           </Button>
         </Link>
       )}
-      {username && (
-        <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
-          {username}
-        </span>
+
+      {/* {user?.firstName ||
+        (user?.given_name && (
+          <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
+            {user?.firstName || user?.given_name}
+          </span>
+        ))} */}
+
+      {!user?.picture ? (
+        <img
+          src={user.picture}
+          alt="Profile"
+          className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
+        />
+      ) : (
+        <div className="flex items-center gap-1 rounded-lg bg-blue-900/60 px-2.5 py-1 shadow ml-2">
+          <div className="bg-white text-blue-900 font-bold text-lg rounded-full w-10 h-10 flex justify-center items-center">
+            {(user?.firstName || user?.given_name)?.charAt(0)}
+          </div>
+        </div>
       )}
     </header>
   );
@@ -77,15 +93,37 @@ function SurfboardUserDashboardNavbar({
 
 export default function SurfboardUserPanelLayout({
   children,
-  user,
 }: {
   children: React.ReactNode;
-  user?: { picture?: string; name?: string; id?: string };
 }) {
   const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/surfboard/dashboard";
+
+  async function isUserSubscribed(): Promise<boolean> {
+    try {
+      const session = await getAuthenticatedSurfUserFromCookie();
+      const userData = session || null;
+      setUser(userData);
+      if (userData && userData?.subscription?.status === "active") return true;
+      if (userData && userData?.subscription?.status === "past_due")
+        return true;
+
+      if (!userData) {
+        console.log("No subscription found for user");
+        return false;
+      }
+      // Visible if we are still in the current usage period
+      const now = new Date();
+      console.log("Subscription found for user", userData.subscription);
+      return now <= new Date(userData.subscription?.expiresAt!);
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      return false;
+    }
+  }
 
   useEffect(() => {
     const checkSubscription = async () => {
@@ -180,7 +218,14 @@ export default function SurfboardUserPanelLayout({
   if (isLoading || !sidebar) {
     return (
       <div className="flex items-center justify-center h-screen bg-blue-200">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+        <div className="h-20 w-20 relative">
+          <img
+            src="/surfboard/surf_logo.png"
+            alt="Surfboard Logo"
+            className="w-8/12 h-8/12 m-auto object-contain absolute inset-0"
+          />
+          <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-700"></div>
+        </div>
       </div>
     );
   }
@@ -188,7 +233,7 @@ export default function SurfboardUserPanelLayout({
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
       <SurfboardUserDashboardNavbar
-        username={user?.name}
+        user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
       />
       <main

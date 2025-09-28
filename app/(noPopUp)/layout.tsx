@@ -1,12 +1,48 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import "../globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  display: "swap",
+const bricolage = localFont({
+  src: [
+    {
+      path: "../../public/fonts/BricolageGrotesque-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/BricolageGrotesque-ExtraLight.ttf",
+      weight: "200",
+      style: "normal",
+    },
+  ],
   variable: "--font-bricolage",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

@@ -39,7 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import SinglePlanMap from "@/app/(projects)/(surfboard)/components/SinglePlanMap";
+// import SinglePlanMap from "@/app/(projects)/(surfboard)/components/SinglePlanMap";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -711,7 +711,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         {/* Map Section */}
         {!showMap && plan && (
           <div className="mb-8 rounded-lg overflow-hidden border border-gray-200">
-            <SinglePlanMap plan={plan} />
+            {/* <SinglePlanMap plan={plan} /> */}
           </div>
         )}
 
