@@ -18,11 +18,18 @@ type PlanInfo = {
     spatialReference?: { wkid?: number } | __esri.SpatialReferenceProperties;
   };
   color?: [number, number, number, number?];
+  metadata?: any;
 };
 
 type ViewPaddingLike =
   | number
-  | Partial<{ left: number; right: number; top: number; bottom: number }>;
+  | Partial<{
+      left?: number;
+      right?: number;
+      top?: number;
+      bottom?: number;
+      duration?: number;
+    }>;
 
 export type ArcGISMapProps = {
   className?: string;
@@ -258,7 +265,10 @@ export default function ArcGISMap({
             color: planInfo.color ?? [0, 120, 255, 0.08],
             outline: { color: [0, 120, 255, 0.8], width: 1 },
           },
-          attributes: { title: planInfo.title ?? "Plan Area" },
+          attributes: {
+            title: planInfo.title ?? "Plan Area",
+            ...(planInfo?.metadata || {}),
+          },
         });
         gLayer.add(fill);
         webmap.add(gLayer);

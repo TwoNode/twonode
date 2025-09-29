@@ -37,7 +37,9 @@ import { PillarData } from "../../types/surfboardTypes";
 
 const ArcGISMap = dynamic(
   () =>
-    import("@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"),
+    import(
+      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+    ),
   { ssr: false }
 );
 
@@ -336,13 +338,16 @@ function PlanDetails({ planId }: { planId: string }) {
                 <ArcGISMap
                   pillars={plan.pillars || []}
                   planInfo={{
-                    planNumber: plan.planNumber,
-                    surveyTitle: plan.surveyTitle,
-                    planType: plan.planType,
-                    pillarType: plan.pillarType,
+                    metadata: {
+                      planNumber: plan.planNumber,
+                      surveyTitle: plan.surveyTitle,
+                      planType: plan.planType,
+                      pillarType: plan.pillarType,
+                    },
                   }}
                   initialCenter={getMapCenter(plan.pillars || [])}
                   // initialCenter={initialCenter}
+                  
                   zoomPadding={{ duration: 1000 }}
                 />
               </div>
