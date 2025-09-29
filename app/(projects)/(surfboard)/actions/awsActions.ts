@@ -436,43 +436,150 @@ export async function buildSurfboardObjectKey(params: {
   planNumber: string;
   index: number; // 0-based
   filename?: string;
+  userId: string;
 }) {
-  const user = await getAuthenticatedSurfUserFromCookie();
-  if (!user) throw new Error("User not authenticated");
-
-  const { category, planNumber, index, filename } = params;
+  const { category, planNumber, index, filename, userId } = params;
   const ext = filename ? extOf(filename) : "";
   const safePlan = planNumber.replace(/[^a-zA-Z0-9_-]+/g, "-");
-  const key = `surfboard/${user.id}/${category}/${safePlan}${padIndex(
+  const key = `surfboard/${userId}/${category}/${safePlan}${padIndex(
     index
   )}${ext}`;
   return key;
 }
 
+// // Create many presigned PUT URLs for multi-file upload; add audit logs
+// export async function getSurfboardUploadTargetsMulti(
+//   formData: FormData
+// ): Promise<UploadTarget[]> {
+//   const user = await getAuthenticatedSurfUserFromCookie();
+//   if (!user) throw new Error("User not authenticated");
+
+//   // Extract form data
+//   const planNumber = formData.get("planNumber") as string;
+//   const category = formData.get("category") as UploadCategory;
+
+//   if (!planNumber || !category) {
+//     throw new Error(
+//       "Missing required fields: planNumber and category are required"
+//     );
+//   }
+
+//   // Extract files from FormData
+//   const files: { file: File; name: string; type: string }[] = [];
+//   let index = 0;
+
+//   while (formData.has(`file-${index}`)) {
+//     const file = formData.get(`file-${index}`) as File;
+//     const name = formData.get(`filename-${index}`) as string;
+//     const type =
+//       (formData.get(`filetype-${index}`) as string) ||
+//       "application/octet-stream";
+
+//     if (file && name) {
+//       // Decode the filename that was encoded on the client side
+//       const decodedName = decodeURIComponent(name);
+//       files.push({ file, name: decodedName, type });
+//     }
+//     index++;
+//   }
+
+//   console.log("[awsActions] getSurfboardUploadTargetsMulti: start", {
+//     userId: user.id,
+//     planNumber,
+//     category,
+//     count: files.length,
+//   });
+
+//   const targets: UploadTarget[] = [];
+
+//   for (let i = 0; i < files.length; i++) {
+//     const file = files[i];
+//     const key = await buildSurfboardObjectKey({
+//       category,
+//       planNumber,
+//       index: i,
+//       filename: file.name,
+//       userId: user.id,
+//     });
+//     const cleanKey = key.replace(/^\/+/, "");
+
+//     // Generate presigned URL for S3 upload
+//     const command = new CreateMultipartUploadCommand({
+//       Bucket: BUCKET,
+//       Key: cleanKey,
+//       ContentType: file.type,
+//       Metadata: {
+//         originalName: file.name,
+//         fileType: category,
+//         planNumber: planNumber || "unknown",
+//         uploadedAt: new Date().toISOString(),
+//       },
+//     });
+
+//     const result = await s3.send(command);
+//     const uploadId = result.UploadId;
+
+//     // Create presigned URL for each part
+//     const presignedUrl = await getSignedUrl(
+//       s3,
+//       new UploadPartCommand({
+//         Bucket: BUCKET,
+//         Key: cleanKey,
+//         UploadId: uploadId,
+//         PartNumber: 1, // For single part uploads
+//       }),
+//       { expiresIn: 3600 } // URL expires in 1 hour
+//     );
+
+//     const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${cleanKey}`;
+
+//     targets.push({
+//       key: cleanKey,
+//       url: presignedUrl,
+//       publicUrl: publicUrl,
+//       uploadId: uploadId,
+//     });
+//   }
+
+//   console.log(
+//     "[awsActions] getSurfboardUploadTargetsMulti: generated targets",
+//     targets
+//   );
+//   return targets;
+// }
+
 // Create many presigned PUT URLs for multi-file upload; add audit logs
-export async function getSurfboardUploadTargetsMulti(formData: FormData): Promise<UploadTarget[]> {
+export async function getSurfboardUploadTargetsMulti(
+  formData: FormData
+): Promise<UploadTarget[]> {
   const user = await getAuthenticatedSurfUserFromCookie();
   if (!user) throw new Error("User not authenticated");
 
   // Extract form data
-  const planNumber = formData.get('planNumber') as string;
-  const category = formData.get('category') as UploadCategory;
-  
+  const planNumber = formData.get("planNumber") as string;
+  const category = formData.get("category") as UploadCategory;
+
   if (!planNumber || !category) {
-    throw new Error("Missing required fields: planNumber and category are required");
+    throw new Error(
+      "Missing required fields: planNumber and category are required"
+    );
   }
 
   // Extract files from FormData
   const files: { file: File; name: string; type: string }[] = [];
   let index = 0;
-  
+
   while (formData.has(`file-${index}`)) {
     const file = formData.get(`file-${index}`) as File;
     const name = formData.get(`filename-${index}`) as string;
-    const type = formData.get(`filetype-${index}`) as string || 'application/octet-stream';
-    
+    const type =
+      (formData.get(`filetype-${index}`) as string) ||
+      "application/octet-stream";
+
     if (file && name) {
-      files.push({ file, name, type });
+      // Decode the filename that was encoded on the client side
+      const decodedName = decodeURIComponent(name);
+      files.push({ file, name: decodedName, type });
     }
     index++;
   }
@@ -485,59 +592,64 @@ export async function getSurfboardUploadTargetsMulti(formData: FormData): Promis
   });
 
   const targets: UploadTarget[] = [];
-  
+
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const key = await buildSurfboardObjectKey({
-      category,
-      planNumber,
-      index: i,
-      filename: file.name,
-    });
+    const { file, name, type } = files[i];
+
+    // const key = await buildSurfboardObjectKey({
+    //   category,
+    //   planNumber,
+    //   index: i,
+    //   filename: file.name,
+    //   userId: user.id,
+    // });
+
+    // Generate a unique key similar to uploadSurfboardFileToS3
+    const uniqueSuffix = `${planNumber}__${Date.now()}`;
+    const prefix = `surfboard/${user.id}/${category}`;
+    const key = `${prefix}/${uniqueSuffix}__${name}`;
     const cleanKey = key.replace(/^\/+/, "");
 
-    // Generate presigned URL for S3 upload
-    const command = new CreateMultipartUploadCommand({
-      Bucket: BUCKET,
-      Key: cleanKey,
-      ContentType: file.type,
-      Metadata: {
-        originalName: file.name,
-        fileType: category,
-        planNumber: planNumber || "unknown",
-        uploadedAt: new Date().toISOString(),
-      },
-    });
+    try {
+      // Read the file content
+      const buffer = Buffer.from(await file.arrayBuffer());
 
-    const result = await s3.send(command);
-    const uploadId = result.UploadId;
-    
-    // Create presigned URL for each part
-    const presignedUrl = await getSignedUrl(
-      s3,
-      new UploadPartCommand({
-        Bucket: BUCKET,
-        Key: cleanKey,
-        UploadId: uploadId,
-        PartNumber: 1, // For single part uploads
-      }),
-      { expiresIn: 3600 } // URL expires in 1 hour
-    );
+      // Upload the file directly using PutObjectCommand
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET,
+          Key: cleanKey,
+          Body: buffer,
+          ContentType: type,
+          Metadata: {
+            originalName: name,
+            fileType: category,
+            planNumber: planNumber || "unknown",
+            uploadedAt: new Date().toISOString(),
+          },
+        })
+      );
 
-    const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${cleanKey}`;
+      const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${cleanKey}`;
 
-    targets.push({
-      key: cleanKey,
-      url: presignedUrl,
-      publicUrl: publicUrl,
-      uploadId: uploadId,
-    });
+      targets.push({
+        key: cleanKey,
+        url: publicUrl,
+        publicUrl: publicUrl,
+      });
+    } catch (error) {
+      console.error(`Error uploading file ${name}:`, error);
+      throw new Error(
+        `Failed to upload file ${name}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
-  console.log(
-    "[awsActions] getSurfboardUploadTargetsMulti: generated targets",
-    targets
-  );
+  console.log("[awsActions] getSurfboardUploadTargetsMulti: upload completed", {
+    count: targets.length,
+  });
   return targets;
 }
 

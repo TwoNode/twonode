@@ -26,6 +26,7 @@ import {
   generatePolygonFromPillars,
   parseCSVContent,
 } from "../utils/surfboardUtils";
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 
 // const ArcGISMap = dynamic(
 //   () =>
@@ -193,7 +194,41 @@ export default function SurfboardPlanForm({
       }
       setPillars(parsed);
       const geom = await generatePolygonFromPillars(parsed);
-      if (geom) setField("geometry", geom as any);
+
+      if (geom) {
+        setField("geometry", geom as any);
+
+        // Query GIS service for administrative data
+        try {
+          const adminLayer = new FeatureLayer({
+            url: "https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/2",
+            outFields: ["WARD", "LCDA", "LGA"],
+          });
+
+          const query = adminLayer.createQuery();
+          query.geometry = geom as any;
+          query.spatialRelationship = "intersects";
+          query.returnGeometry = false;
+
+          const result = await adminLayer.queryFeatures(query);
+          if (result.features.length > 0) {
+            const attrs = result.features[0].attributes;
+            setForm((prev) => ({
+              ...prev,
+              ward: attrs.WARD || null,
+              lcda: attrs.LCDA || null,
+              lga: attrs.LGA || null,
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching administrative data:", error);
+          // Don't fail the upload if admin data fetch fails
+          toast.warning(
+            "Could not fetch administrative boundaries. Please enter them manually."
+          );
+        }
+      }
+
       toast.success(`Parsed ${parsed.length} pillars and generated geometry`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to parse CSV");
@@ -251,7 +286,8 @@ export default function SurfboardPlanForm({
     // Add files with their metadata
     files.forEach((file, index) => {
       formData.append(`file-${index}`, file);
-      formData.append(`filename-${index}`, file.name);
+      // Encode the filename to handle special characters
+      formData.append(`filename-${index}`, encodeURIComponent(file.name));
       formData.append(
         `filetype-${index}`,
         file.type || "application/octet-stream"
@@ -274,11 +310,17 @@ export default function SurfboardPlanForm({
           body: file,
           headers: {
             "Content-Type": file.type || "application/octet-stream",
+            // Add content-disposition header with proper encoding
+            "Content-Disposition": `attachment; filename="${encodeURIComponent(
+              file.name
+            )}"`,
           },
         });
 
         if (!uploadResponse.ok) {
-          throw new Error(`Upload failed for ${file.name}`);
+          throw new Error(
+            `Upload failed for ${file.name}: ${await uploadResponse.text()}`
+          );
         }
 
         // Get the ETag from the response
