@@ -28,13 +28,20 @@ import {
 } from "../utils/surfboardUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 
-// const ArcGISMap = dynamic(
-//   () =>
-//     import(
-//       "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
-//     ),
-//   { ssr: false }
-// );
+const ArcGISMap = dynamic(
+  () =>
+    import(
+      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
+        <div className="text-sm text-gray-600">Loading map…</div>
+      </div>
+    ),
+  }
+);
 
 export type Mode = "create" | "edit";
 
@@ -862,18 +869,25 @@ export default function SurfboardPlanForm({
                 pillars?.length > 0 ? "border-4 border-red-700" : "border"
               }`}
             >
-              {/* {pillars?.length > 0 ? (
-              <ArcGISMap
-                planInfo={form}
-                pillars={pillars}
-                onSubmit={handleAdminData}
-                initialCenter={form.geometry?.coordinates?.[0]?.[0]}
-              />
-            ) : (
-              <p className="text-gray-500 text-sm">
-                Please add pillars to the plan to view the map.
-              </p>
-            )} */}
+              {pillars?.length > 0 ? (
+                <ArcGISMap
+                  planInfo={{
+                    title: "Plan Preview",
+                    polygon: {
+                      rings: form.geometry?.coordinates,
+                      spatialReference: { wkid: 4326 },
+                    },
+                    color: [255, 0, 0, 0.5],
+                  }}
+                  pillars={pillars}
+                  // onSubmit={handleAdminData}
+                  initialCenter={form.geometry?.coordinates?.[0]?.[0]}
+                />
+              ) : (
+                <p className="text-gray-500 text-sm">
+                  Please add pillars to the plan to view the map.
+                </p>
+              )}
             </div>
           </div>
         </div>

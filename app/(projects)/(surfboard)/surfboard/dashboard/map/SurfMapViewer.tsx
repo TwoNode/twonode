@@ -59,7 +59,7 @@ export default function SurfMapViewer() {
     (async () => {
       // 1) Fetch & build GeoJSON (and defensively close rings)
       const plans = await getAllSurfPlans();
-      const features = plans.data?.map((p: any) =>
+      const features = plans.data?.plans?.map((p: any) =>
         featureFromPlan({
           id: p.id,
           planNumber: p.planNumber,
