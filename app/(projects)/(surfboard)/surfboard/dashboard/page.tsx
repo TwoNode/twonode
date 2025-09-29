@@ -62,24 +62,28 @@ export default function DashboardHome() {
         sharedResult.success &&
         sharedWithMeResult.success
       ) {
-        const plans = plansResult.data || [];
+        const plans = plansResult.data?.plans || [];
         const sharedPlans = sharedResult.data || [];
         const sharedWithMe = sharedWithMeResult.data || [];
 
         // Calculate stats
-        const totalPlans = plans.length;
-        const pending = plans.filter(
-          (plan) => plan.status === "PENDING"
-        ).length;
-        const lodged = plans.filter((plan) => plan.status === "LODGED").length;
-        const queried = plans.filter((plan) => plan.status === "QUERIED").length;
-        const underReview = plans.filter(
-          (plan) => plan.status === "UNDER_REVIEW"
-        ).length;
+        const totalPlans = plans.length || 0;
+        const pending =
+          plans.filter((plan: any) => plan.status === "PENDING").length || 0;
+        const lodged =
+          plans.filter((plan: any) => plan.status === "LODGED").length || 0;
+        const queried =
+          plans.filter((plan: any) => plan.status === "QUERIED").length || 0;
+        const underReview =
+          plans.filter((plan: any) => plan.status === "UNDER_REVIEW").length ||
+          0;
 
         setStats({
           totalPlans,
-          sharedPlans: sharedPlans.length,
+          sharedPlans:
+            typeof sharedPlans === "object" && "plans" in sharedPlans
+              ? sharedPlans.plans.length || 0
+              : 0,
           pending,
           lodged,
           queried,
@@ -95,7 +99,13 @@ export default function DashboardHome() {
           .slice(0, 5);
 
         setRecentPlans(recent);
-        setSharedPlans(sharedWithMe);
+        if (
+          sharedWithMe &&
+          typeof sharedWithMe === "object" &&
+          "plans" in sharedWithMe
+        ) {
+          setSharedPlans(sharedWithMe.plans);
+        }
       } else {
         setError("Failed to load data. Please try again.");
       }
