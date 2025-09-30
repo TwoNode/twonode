@@ -17,6 +17,7 @@ import {
   updatePlan,
   searchReferencePlanNumbers,
   getAllFacilitatorsAndPlanNumbers,
+  checkPlanNumberExists,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import {
   completeSurfboardUpload,
@@ -28,20 +29,20 @@ import {
 } from "../utils/surfboardUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 
-const ArcGISMap = dynamic(
-  () =>
-    import(
-      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
-        <div className="text-sm text-gray-600">Loading map…</div>
-      </div>
-    ),
-  }
-);
+// const ArcGISMap = dynamic(
+//   () =>
+//     import(
+//       "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+//     ),
+//   {
+//     ssr: false,
+//     loading: () => (
+//       <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
+//         <div className="text-sm text-gray-600">Loading map…</div>
+//       </div>
+//     ),
+//   }
+// );
 
 export type Mode = "create" | "edit";
 
@@ -80,12 +81,13 @@ export default function SurfboardPlanForm({
   }));
 
   // Certificate logic
-  const [certificateReady, setCertificateReady] = useState<boolean>(
-    !!initial?.certificateFilePaths?.length
+  const [certificateReady, setCertificateReady] = useState<boolean | undefined>(
+    initial?.certificateFilePaths?.length ? true : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCheckingPlanNumber, setIsCheckingPlanNumber] = useState(false);
 
   // 24h lock after mount only (avoid hydration mismatch)
   useEffect(() => {
@@ -121,11 +123,14 @@ export default function SurfboardPlanForm({
 
   // --- Reference Plan Combo (dropdown + optional free input) ---
   const [refOptions, setRefOptions] = useState<string[]>([]);
-  const [refOpen, setRefOpen] = useState(false);
   const [refQuery, setRefQuery] = useState("");
-  const refInputRef = useRef<HTMLInputElement | null>(null);
+  const [refOpen, setRefOpen] = useState(false);
+  const refTimeoutRef = useRef<NodeJS.Timeout>();
+  const refFilterConf = REFERENCE_FILTERS[form.planType];
+  const showReferenceField = refFilterConf.showField;
+  const isReferenceRequired = refFilterConf.required;
 
-  // Load reference options when plan type changes, server filters per REFERENCE_FILTERS
+  // Load reference plan numbers when plan type changes
   useEffect(() => {
     const load = async () => {
       try {
@@ -136,17 +141,19 @@ export default function SurfboardPlanForm({
         setRefOptions([]);
       }
     };
-    load();
-    setRefQuery("");
-  }, [form.planType]);
 
-  const refFilterConf = REFERENCE_FILTERS[form.planType];
+    if (showReferenceField) {
+      load();
+      setRefQuery("");
+    }
+  }, [form.planType, showReferenceField]);
 
   const filteredRefOptions = useMemo(() => {
-    if (!refFilterConf.allowFreeText || !refQuery.trim()) return refOptions;
+    if (refFilterConf && (!refFilterConf.allowFreeText || !refQuery.trim()))
+      return refOptions;
     const q = refQuery.toLowerCase();
     return refOptions.filter((o) => o.toLowerCase().includes(q));
-  }, [refOptions, refQuery, refFilterConf.allowFreeText]);
+  }, [refOptions, refQuery, refFilterConf]);
 
   // --- Defer uploads until submit ---
   const [selectedCadFiles, setSelectedCadFiles] = useState<File[]>([]);
@@ -243,7 +250,7 @@ export default function SurfboardPlanForm({
   }
 
   // Validation respects deferred uploads (checks either existing URLs or selected files)
-  function validateReq() {
+  function ___validateReq() {
     const errs: Record<string, string> = {};
     if (!form.planNumber?.trim()) errs.planNumber = "Required";
     if (!form.surveyTitle?.trim()) errs.surveyTitle = "Required";
@@ -262,6 +269,10 @@ export default function SurfboardPlanForm({
         (form.certificateFilePaths?.length || 0) + selectedCertFiles.length;
       if (certCount < 1) errs.cert = "Certificate file required";
       if (!form.dateLodged?.toString()) errs.dateLodged = "Required";
+    }
+
+    if (showReferenceField && !form.referencePlanNumber?.trim()) {
+      errs.referencePlanNumber = "Required";
     }
 
     // Basic per-file size check now (uploads run later)
@@ -302,53 +313,18 @@ export default function SurfboardPlanForm({
     });
 
     try {
-      // Get presigned URLs and upload files
+      // This will handle the upload and return the public URLs
       const targets = await getSurfboardUploadTargetsMulti(formData);
 
-      // Upload each file using the presigned URL
-      const uploadedUrls: string[] = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const target = targets[i];
-        const file = files[i];
-
-        const uploadResponse = await fetch(target.url, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-            // Add content-disposition header with proper encoding
-            "Content-Disposition": `attachment; filename="${encodeURIComponent(
-              file.name
-            )}"`,
-          },
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(
-            `Upload failed for ${file.name}: ${await uploadResponse.text()}`
-          );
-        }
-
-        // Get the ETag from the response
-        const etag = uploadResponse.headers.get("ETag")?.replace(/"/g, "");
-
-        if (etag && target.uploadId) {
-          // Complete the multipart upload
-          await completeSurfboardUpload({
-            key: target.key,
-            uploadId: target.uploadId,
-            etag,
-          });
-        }
-
-        uploadedUrls.push(target.publicUrl);
-      }
-
-      return uploadedUrls;
+      // Return the public URLs of the uploaded files
+      return targets.map(target => target.publicUrl);
     } catch (error) {
       console.error("Error uploading files:", error);
-      throw error;
+      throw new Error(
+        `Failed to upload ${kind} files: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -404,6 +380,79 @@ export default function SurfboardPlanForm({
     }
   }
 
+  // Check if plan number is unique
+  const handlePlanNumberBlur = async () => {
+    if (!form.planNumber.trim()) return;
+
+    setIsCheckingPlanNumber(true);
+    try {
+      const exists = await checkPlanNumberExists(
+        form.planNumber,
+        form.id // This will be undefined for new plans
+      );
+
+      if (exists) {
+        setErrors((prev) => ({
+          ...prev,
+          planNumber:
+            "This plan number already exists. Please choose a different one.",
+        }));
+      } else {
+        // Clear any existing error if the plan number is now unique
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.planNumber;
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      console.error("Error checking plan number:", error);
+      // Don't block the user if there's an error checking uniqueness
+    } finally {
+      setIsCheckingPlanNumber(false);
+    }
+  };
+
+  // Validation respects deferred uploads (checks either existing URLs or selected files)
+  function validateReq() {
+    const errs: Record<string, string> = {};
+    if (!form.planNumber?.trim()) errs.planNumber = "Required";
+    if (!form.surveyTitle?.trim()) errs.surveyTitle = "Required";
+    if (!form.deededArea?.trim()) errs.deededArea = "Required";
+    if (!form.facilitator?.trim()) errs.facilitator = "Required";
+    if (!form.pillarType?.trim()) errs.pillarType = "Required";
+    if (!form.dateOnSurveyPlan?.trim()) errs.dateOnSurveyPlan = "Required";
+
+    const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
+    const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
+    if (cadCount < 1) errs.cad = "At least one CAD file is required";
+    if (pdfCount < 1) errs.pdf = "At least one PDF file is required";
+
+    if (certificateReady === undefined) {
+      errs.certificateReady = "Please select if certificate is ready";
+    } else if (certificateReady) {
+      const certCount =
+        (form.certificateFilePaths?.length || 0) + selectedCertFiles.length;
+      if (certCount < 1) errs.cert = "Certificate file required";
+      if (!form.dateLodged?.toString()) errs.dateLodged = "Required";
+    }
+
+    if (showReferenceField && !form.referencePlanNumber?.trim()) {
+      errs.referencePlanNumber = "Required";
+    }
+
+    // Basic per-file size check now (uploads run later)
+    const overs = [
+      ...selectedCadFiles,
+      ...selectedPdfFiles,
+      ...selectedCertFiles,
+    ].filter((f) => f.size > MAX_FILE_BYTES);
+    if (overs.length) errs.files = "Some selected files exceed 50MB";
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   return (
     <div className="mx-auto py-6 px-4">
       <div className="mb-6">
@@ -427,10 +476,20 @@ export default function SurfboardPlanForm({
               type="text"
               value={form.planNumber}
               onChange={(e) => setField("planNumber", e.target.value)}
-              className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              onBlur={handlePlanNumberBlur}
+              className={`flex-1 w-full px-3 py-2 border ${
+                errors.planNumber ? "border-red-500" : "border-gray-300"
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-black`}
               placeholder="Enter plan number"
-              disabled={lockNonCert && mode === "edit"}
+              disabled={
+                (lockNonCert && mode === "edit") || isCheckingPlanNumber
+              }
             />
+            {isCheckingPlanNumber && (
+              <p className="text-sm text-gray-500 mt-1">
+                Checking availability...
+              </p>
+            )}
             {errors.planNumber && (
               <p className="text-sm text-red-600 mt-1">{errors.planNumber}</p>
             )}
@@ -476,17 +535,14 @@ export default function SurfboardPlanForm({
             </div>
           </div>
 
-          {/* Reference Plan Number (combo: dropdown + optional free input). Only shown for specific plan types */}
-          {(form.planType === PLAN_TYPES.DEED_CHANGE_OF_TITLE ||
-            form.planType === PLAN_TYPES.DEED_CHANGE_OF_TITLE_LAYOUT ||
-            form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION) && (
+          {/* Reference Plan Number */}
+          {showReferenceField && (
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reference Plan Number
+                Reference Plan Number *
               </label>
               <div className="relative">
                 <input
-                  ref={refInputRef}
                   type="text"
                   value={form.referencePlanNumber ?? ""}
                   onChange={(e) => {
@@ -531,6 +587,11 @@ export default function SurfboardPlanForm({
                   </div>
                 )}
               </div>
+              {errors.referencePlanNumber && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.referencePlanNumber}
+                </p>
+              )}
             </div>
           )}
           {/* Core fields */}
@@ -637,17 +698,39 @@ export default function SurfboardPlanForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Certificate Ready?
+                Certificate Ready? *
               </label>
               <select
-                value={certificateReady ? "yes" : "no"}
-                onChange={(e) => setCertificateReady(e.target.value === "yes")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                value={
+                  certificateReady === undefined
+                    ? ""
+                    : certificateReady
+                    ? "yes"
+                    : "no"
+                }
+                onChange={(e) => {
+                  if (e.target.value === "") {
+                    setCertificateReady(undefined);
+                  } else {
+                    setCertificateReady(e.target.value === "yes");
+                  }
+                }}
+                className={`w-full px-3 py-2 border ${
+                  errors.certificateReady ? "border-red-500" : "border-gray-300"
+                } rounded-md focus:outline-none focus:ring-2 focus:ring-black`}
+                required
               >
+                <option value="">Select Yes or No</option>
                 <option value="no">No</option>
                 <option value="yes">Yes</option>
               </select>
+              {errors.certificateReady && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.certificateReady}
+                </p>
+              )}
             </div>
+
             {certificateReady && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -869,7 +952,7 @@ export default function SurfboardPlanForm({
                 pillars?.length > 0 ? "border-4 border-red-700" : "border"
               }`}
             >
-              {pillars?.length > 0 ? (
+              {/* {pillars?.length > 0 ? (
                 <ArcGISMap
                   planInfo={{
                     title: "Plan Preview",
@@ -887,7 +970,7 @@ export default function SurfboardPlanForm({
                 <p className="text-gray-500 text-sm">
                   Please add pillars to the plan to view the map.
                 </p>
-              )}
+              )} */}
             </div>
           </div>
         </div>

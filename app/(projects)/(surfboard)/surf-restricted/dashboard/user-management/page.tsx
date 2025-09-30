@@ -1,7 +1,29 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string;
+  maxPlans: number;
+  price: number;
+  billingCycle: "monthly" | "yearly";
+  features: string[];
+}
+
+interface UserSubscription {
+  id: string;
+  planId: string;
+  status: "active" | "canceled" | "expired" | "pending";
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  usedPlans: number;
+  maxPlans: number;
+}
 
 interface User {
   id: string;
@@ -16,6 +38,7 @@ interface User {
   permissions: string[];
   loginCount: number;
   isOnline: boolean;
+  subscription?: UserSubscription;
 }
 
 interface Role {
@@ -37,6 +60,13 @@ export default function UserManagementPage() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showCreateRole, setShowCreateRole] = useState(false);
   const router = useRouter();
+
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
+  const [editingSubscription, setEditingSubscription] = useState<{
+    userId: string;
+    subscription: UserSubscription | null;
+  } | null>(null);
 
   useEffect(() => {
     // Simulate fetching users and roles data
@@ -245,6 +275,119 @@ export default function UserManagementPage() {
       prev.map((user) =>
         user.id === userId ? { ...user, role: newRole } : user
       )
+    );
+  };
+
+  // Add this new function to handle subscription updates
+  const handleUpdateSubscription = async (
+    subscriptionData: Partial<UserSubscription>
+  ) => {
+    if (!editingSubscription) return;
+
+    try {
+      // In a real app, you would call an API endpoint here
+      // await updateUserSubscription(editingSubscription.userId, subscriptionData);
+
+      // Update local state for demo purposes
+      setUsers(
+        users.map((user) => {
+          if (user.id === editingSubscription.userId) {
+            return {
+              ...user,
+              subscription: {
+                ...(user.subscription || { id: `sub_${Date.now()}` }),
+                ...subscriptionData,
+              } as UserSubscription,
+            };
+          }
+          return user;
+        })
+      );
+
+      toast.success("Subscription updated successfully");
+      setShowSubscriptionModal(false);
+      setEditingSubscription(null);
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      toast.error("Failed to update subscription");
+    }
+  };
+
+  // Add this function to open the subscription modal
+  const openSubscriptionModal = (user: User) => {
+    setEditingSubscription({
+      userId: user.id,
+      subscription: user.subscription || null,
+    });
+
+    // In a real app, you would fetch available plans from an API
+    setAvailablePlans([
+      {
+        id: "basic",
+        name: "Basic",
+        description: "Perfect for individual surveyors",
+        maxPlans: 10,
+        price: 29.99,
+        billingCycle: "monthly",
+        features: [
+          "Up to 10 survey plans",
+          "Basic support",
+          "Email notifications",
+        ],
+      },
+      {
+        id: "pro",
+        name: "Professional",
+        description: "For professional survey teams",
+        maxPlans: 50,
+        price: 99.99,
+        billingCycle: "monthly",
+        features: ["Up to 50 survey plans", "Priority support", "API access"],
+      },
+      {
+        id: "enterprise",
+        name: "Enterprise",
+        description: "For large organizations",
+        maxPlans: 500,
+        price: 499.99,
+        billingCycle: "monthly",
+        features: [
+          "Unlimited survey plans",
+          "24/7 support",
+          "Dedicated account manager",
+        ],
+      },
+    ]);
+
+    setShowSubscriptionModal(true);
+  };
+
+  // Add this function to render the subscription status badge
+  const renderSubscriptionStatus = (user: User) => {
+    if (!user.subscription) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+          No Subscription
+        </span>
+      );
+    }
+
+    const statusColors = {
+      active: "bg-green-100 text-green-800",
+      canceled: "bg-yellow-100 text-yellow-800",
+      expired: "bg-red-100 text-red-800",
+      pending: "bg-blue-100 text-blue-800",
+    };
+
+    return (
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${
+          statusColors[user.subscription.status]
+        }`}
+      >
+        {user.subscription.status.charAt(0).toUpperCase() +
+          user.subscription.status.slice(1)}
+      </span>
     );
   };
 
@@ -491,6 +634,9 @@ export default function UserManagementPage() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Subscription
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Last Login
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -551,6 +697,9 @@ export default function UserManagementPage() {
                           {user.status.toUpperCase()}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {renderSubscriptionStatus(user)}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {user.lastLogin === "Never"
                           ? "Never"
@@ -589,6 +738,26 @@ export default function UserManagementPage() {
                               Activate
                             </button>
                           )}
+                          <button
+                            onClick={() => openSubscriptionModal(user)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                            title="Manage Subscription"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                              />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -946,6 +1115,234 @@ export default function UserManagementPage() {
           )}
         </div>
       </div>
+
+      {showSubscriptionModal && editingSubscription && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingSubscription.subscription
+                    ? "Update Subscription"
+                    : "Add Subscription"}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowSubscriptionModal(false);
+                    setEditingSubscription(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-sm font-medium text-gray-500 mb-4">
+                  SELECT A PLAN
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {availablePlans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        editingSubscription.subscription?.planId === plan.id
+                          ? "border-blue-500 ring-2 ring-blue-200"
+                          : "border-gray-200 hover:border-blue-300"
+                      }`}
+                      onClick={() =>
+                        handleUpdateSubscription({
+                          planId: plan.id,
+                          maxPlans: plan.maxPlans,
+                          status: "active",
+                          startDate: new Date().toISOString(),
+                          endDate: new Date(
+                            Date.now() + 30 * 24 * 60 * 60 * 1000
+                          ).toISOString(),
+                          autoRenew: true,
+                          usedPlans: 0,
+                        })
+                      }
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-medium text-gray-900">
+                            {plan.name}
+                          </h5>
+                          <p className="text-sm text-gray-500">
+                            {plan.description}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-lg font-bold">
+                            ${plan.price}
+                          </span>
+                          <span className="text-sm text-gray-500">/month</span>
+                        </div>
+                      </div>
+                      <ul className="mt-4 space-y-2 text-sm">
+                        {plan.features.map((feature, i) => (
+                          <li key={i} className="flex items-center">
+                            <svg
+                              className="h-5 w-5 text-green-500 mr-2"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                {editingSubscription.subscription && (
+                  <div className="mt-8">
+                    <h4 className="text-sm font-medium text-gray-500 mb-4">
+                      SUBSCRIPTION DETAILS
+                    </h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Status</p>
+                          <p className="font-medium">
+                            {editingSubscription.subscription.status
+                              .charAt(0)
+                              .toUpperCase() +
+                              editingSubscription.subscription.status.slice(1)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Plan Usage</p>
+                          <div className="mt-1">
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div
+                                className="bg-blue-600 h-2.5 rounded-full"
+                                style={{
+                                  width: `${
+                                    (editingSubscription.subscription
+                                      .usedPlans /
+                                      editingSubscription.subscription
+                                        .maxPlans) *
+                                    100
+                                  }%`,
+                                }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {editingSubscription.subscription.usedPlans} of{" "}
+                              {editingSubscription.subscription.maxPlans} plans
+                              used
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Billing Cycle</p>
+                          <p className="font-medium">Monthly</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Next Billing Date
+                          </p>
+                          <p className="font-medium">
+                            {new Date(
+                              editingSubscription.subscription.endDate
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 flex space-x-4">
+                        <button
+                          onClick={() =>
+                            handleUpdateSubscription({
+                              status:
+                                editingSubscription.subscription?.status ===
+                                "active"
+                                  ? "canceled"
+                                  : "active",
+                            })
+                          }
+                          className={`px-4 py-2 text-sm font-medium rounded-md ${
+                            editingSubscription.subscription?.status ===
+                            "active"
+                              ? "bg-red-100 text-red-700 hover:bg-red-200"
+                              : "bg-green-100 text-green-700 hover:bg-green-200"
+                          }`}
+                        >
+                          {editingSubscription.subscription?.status === "active"
+                            ? "Cancel Subscription"
+                            : "Reactivate Subscription"}
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleUpdateSubscription({
+                              autoRenew:
+                                !editingSubscription.subscription?.autoRenew,
+                            })
+                          }
+                          className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200"
+                        >
+                          {editingSubscription.subscription?.autoRenew
+                            ? "Turn Off Auto-Renew"
+                            : "Turn On Auto-Renew"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSubscriptionModal(false);
+                    setEditingSubscription(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // In a real app, you would save the subscription here
+                    setShowSubscriptionModal(false);
+                    setEditingSubscription(null);
+                    toast.success("Subscription updated successfully");
+                  }}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3092,3 +3092,25 @@ export async function importDbDataFromCsv(file: File) {
     };
   }
 }
+
+export async function checkPlanNumberExists(
+  planNumber: string,
+  excludeId?: string
+): Promise<boolean> {
+  const user = await getAuthenticatedSurfUserFromCookie();
+  if (!user || !user.role) {
+    return false;
+  }
+
+  if (!planNumber.trim()) return false;
+
+  const count = await prisma.surfboardPlan.count({
+    where: {
+      planNumber: planNumber.trim(),
+      ...(excludeId && { id: { not: excludeId } }),
+      userId: user.id,
+    },
+  });
+
+  return count > 0;
+}
