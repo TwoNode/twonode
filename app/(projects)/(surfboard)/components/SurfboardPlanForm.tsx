@@ -11,6 +11,7 @@ import {
   REFERENCE_FILTERS,
   SurfboardPlanDTO,
   MAX_FILE_BYTES,
+  ApiResult,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import {
   createPlan,
@@ -28,21 +29,22 @@ import {
   parseCSVContent,
 } from "../utils/surfboardUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+import { useRouter } from "next/navigation";
 
-// const ArcGISMap = dynamic(
-//   () =>
-//     import(
-//       "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
-//     ),
-//   {
-//     ssr: false,
-//     loading: () => (
-//       <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
-//         <div className="text-sm text-gray-600">Loading map…</div>
-//       </div>
-//     ),
-//   }
-// );
+const ArcGISMap = dynamic(
+  () =>
+    import(
+      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
+        <div className="text-sm text-gray-600">Loading map…</div>
+      </div>
+    ),
+  }
+);
 
 export type Mode = "create" | "edit";
 
@@ -57,6 +59,8 @@ export default function SurfboardPlanForm({
   initial,
   isSuperAdmin,
 }: SurfboardPlanFormProps) {
+  const router = useRouter();
+
   // --- Form state ---
   const [form, setForm] = useState<SurfboardPlanDTO>(() => ({
     planNumber: initial?.planNumber ?? "",
@@ -234,6 +238,8 @@ export default function SurfboardPlanForm({
               lga: attrs.LGA || null,
             }));
           }
+
+          console.log(result)
         } catch (error) {
           console.error("Error fetching administrative data:", error);
           // Don't fail the upload if admin data fetch fails
@@ -317,7 +323,7 @@ export default function SurfboardPlanForm({
       const targets = await getSurfboardUploadTargetsMulti(formData);
 
       // Return the public URLs of the uploaded files
-      return targets.map(target => target.publicUrl);
+      return targets.map((target) => target.publicUrl);
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error(
@@ -357,8 +363,10 @@ export default function SurfboardPlanForm({
             : form.status,
       };
 
+      let res: ApiResult<{ id: string; planNumber: string }>;
+
       if (mode === "create") {
-        const res = await createPlan(payload);
+        res = await createPlan(payload);
         if (res.success) {
           toast.success("Plan created");
           // reset selected files after a successful create
@@ -369,9 +377,15 @@ export default function SurfboardPlanForm({
           toast.error(res.error || "Create failed");
         }
       } else {
-        const res = await updatePlan(payload);
+        res = await updatePlan(payload);
         if (res.success) toast.success("Plan updated");
         else toast.error(res.error || "Update failed");
+      }
+
+      console.log("res", res);
+
+      if (res.success && res?.data?.planNumber) {
+        router.push(`/surfboard/dashboard/plan?plan=${res?.data?.id}`);
       }
     } catch (e: any) {
       toast.error(e?.message || "Something went wrong");

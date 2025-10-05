@@ -898,8 +898,9 @@ function cutoffMs(createdAt?: Date | string) {
 export async function searchReferencePlanNumbers(
   planType: PlanType
 ): Promise<string[]> {
+  const user = await getAuthenticatedSurfUserFromCookie();
   const conf = REFERENCE_FILTERS[planType];
-  const where: any = {};
+  const where: any = { userId: user.id };
 
   // Apply filters based on configuration
   if (conf?.excludeTypes) {
@@ -1192,12 +1193,31 @@ export async function createPlan(dto: SurfboardPlanDTO) {
         status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
         userId: user.id,
       },
-      select: { id: true },
+      select: { id: true, planNumber: true },
     });
     revalidatePath("/surfboard/dashboard/plans");
-    return { success: true, id: rec.id };
+    return { success: true, data: { id: rec.id, planNumber: rec.planNumber } };
   } catch (error: any) {
-    return { success: false, error: error?.message || "Something went wrong" };
+    console.error("Error creating plan:", error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return {
+          success: false,
+          error: "Plan number already exists",
+        };
+      } else if (error.code === "P2003") {
+        return {
+          success: false,
+          error: "Plan not found",
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: "Something went wrong. Please try again later.",
+    };
   }
 }
 

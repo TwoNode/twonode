@@ -604,11 +604,31 @@ export async function getSurfboardUploadTargetsMulti(
     //   userId: user.id,
     // });
 
+    // First, extract the file extension
+    const extension = name.split(".").pop()?.toLowerCase() || "";
+    const baseName = name.substring(0, name.lastIndexOf(".")) || name;
+
+    // Clean the base name (allow only alphanumeric, space, hyphen, underscore)
+    const cleanBase = baseName
+      .normalize("NFD") // Normalize diacritics
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^a-zA-Z0-9\s_-]/g, "") // Remove special chars but keep spaces, hyphens, underscores
+      .trim() // Trim whitespace
+      .replace(/\s+/g, "-") // Replace spaces with single hyphen
+      .replace(/-+/g, "-") // Replace multiple hyphens with single
+      .toLowerCase();
+
+    // Rebuild the filename with extension
+    const cleanName = extension ? `${cleanBase}.${extension}` : cleanBase;
+
     // Generate a unique key similar to uploadSurfboardFileToS3
     const uniqueSuffix = `${planNumber}__${Date.now()}`;
     const prefix = `surfboard/${user.id}/${category}`;
-    const key = `${prefix}/${uniqueSuffix}__${name}`;
-    const cleanKey = key.replace(/^\/+/, "");
+    const key = `${prefix}/${uniqueSuffix}__${cleanName}`;
+    // Clean the full path
+    const cleanKey = key
+      .replace(/^\/+/, "") // Remove leading slashes
+      .replace(/\/+/g, "/"); // Replace multiple slashes with single
 
     try {
       // Read the file content
@@ -622,7 +642,7 @@ export async function getSurfboardUploadTargetsMulti(
           Body: buffer,
           ContentType: type,
           Metadata: {
-            originalName: name,
+            originalName: cleanName,
             fileType: category,
             planNumber: planNumber || "unknown",
             uploadedAt: new Date().toISOString(),
