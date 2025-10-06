@@ -234,58 +234,57 @@ const middlewareWithLogic = withDynamicAuth(
             "🛡️ Middleware - Checking Surfboard user dashboard access"
           );
 
-          hasAccess = canAccessSurfUserPanel(userData.role);
-          // if (
-          //   pathname == "/surfboard/dashboard" ||
-          //   pathname == "/surfboard/dashboard/settings" ||
-          //   pathname == "/surfboard/dashboard/subscription"
-          // ) {
-          //   hasAccess = canAccessSurfUserPanel(userData.role);
-          // } else {
-          //   const hasRoleAccess = canAccessSurfUserPanel(userData.role);
-          //   if (!hasRoleAccess) {
-          //     hasAccess = false;
-          //   } else {
-          //     try {
-          //       const sub = userData?.subscription;
+          if (
+            pathname == "/surfboard/dashboard" ||
+            pathname == "/surfboard/dashboard/settings" ||
+            pathname == "/surfboard/dashboard/subscription"
+          ) {
+            hasAccess = canAccessSurfUserPanel(userData.role);
+          } else {
+            const hasRoleAccess = canAccessSurfUserPanel(userData.role);
+            if (!hasRoleAccess) {
+              hasAccess = false;
+            } else {
+              try {
+                const sub = userData?.subscription;
 
-          //       if (!sub) {
-          //         hasAccess = false;
-          //       } else {
-          //         const now = new Date();
-          //         hasAccess = now <= new Date(sub.expiresAt!);
-          //         console.log(
-          //           "🛡️ Middleware - Checking subscription access",
-          //           now,
-          //           sub.expiresAt,
-          //           new Date(sub.expiresAt!).toString(),
-          //           hasAccess
-          //         );
-          //       }
+                if (!sub) {
+                  hasAccess = false;
+                } else {
+                  const now = new Date();
+                  hasAccess = now <= new Date(sub.expiresAt!);
+                  console.log(
+                    "🛡️ Middleware - Checking subscription access",
+                    now,
+                    sub.expiresAt,
+                    new Date(sub.expiresAt!).toString(),
+                    hasAccess
+                  );
+                }
 
-          //       if (!hasAccess) {
-          //         console.log(
-          //           "🛡️ Middleware - User is not subscribed, redirecting to:/surfboard/dashboard/subscription",
-          //           sub,
-          //           hasAccess,
-          //           "\n\n\n\n"
-          //         );
-          //         return createRedirectResponse(
-          //           req,
-          //           "/surfboard/dashboard/subscription"
-          //         );
-          //       }
-          //     } catch (error) {
-          //       console.log("🛡️ Middleware - Error processing session:", error);
-          //       hasAccess = false;
+                if (!hasAccess) {
+                  console.log(
+                    "🛡️ Middleware - User is not subscribed, redirecting to:/surfboard/dashboard/subscription",
+                    sub,
+                    hasAccess,
+                    "\n\n\n\n"
+                  );
+                  return createRedirectResponse(
+                    req,
+                    "/surfboard/dashboard/subscription"
+                  );
+                }
+              } catch (error) {
+                console.log("🛡️ Middleware - Error processing session:", error);
+                hasAccess = false;
 
-          //       return createRedirectResponse(
-          //         req,
-          //         "/surfboard/dashboard/subscription"
-          //       );
-          //     }
-          //   }
-          // }
+                return createRedirectResponse(
+                  req,
+                  "/surfboard/dashboard/subscription"
+                );
+              }
+            }
+          }
         } else if (pathname.startsWith("/surf-restricted/dashboard")) {
           // Surfboard admin dashboard - only ADMIN and SUPERADMIN can access
           console.log(
