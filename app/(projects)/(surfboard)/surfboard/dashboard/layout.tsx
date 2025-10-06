@@ -1,4 +1,5 @@
 import SurfboardUserPanelLayout from "@/components/layouts/surfboardUserPanelLayout";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 export default function DashboardLayout({
   children,
