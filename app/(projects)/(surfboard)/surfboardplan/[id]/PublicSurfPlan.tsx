@@ -38,7 +38,7 @@ import { PillarData } from "../../types/surfboardTypes";
 const ArcGISMap = dynamic(
   () =>
     import(
-      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
+      "@/app/(projects)/(surfboard)/components/maps/ArcGISMap"
     ),
   { ssr: false }
 );

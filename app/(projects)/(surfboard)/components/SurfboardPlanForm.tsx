@@ -30,12 +30,10 @@ import {
 } from "../utils/surfboardUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { useRouter } from "next/navigation";
+import MapLibreParcel from "./maps/MaplibreMap";
 
 const ArcGISMap = dynamic(
-  () =>
-    import(
-      "@/app/(projects)/(surfboard)/surfboard/dashboard/newplan/ArcGISMap"
-    ),
+  () => import("@/app/(projects)/(surfboard)/components/maps/ArcGISMap"),
   {
     ssr: false,
     loading: () => (
@@ -239,7 +237,7 @@ export default function SurfboardPlanForm({
             }));
           }
 
-          console.log(result)
+          console.log(result);
         } catch (error) {
           console.error("Error fetching administrative data:", error);
           // Don't fail the upload if admin data fetch fails
@@ -966,6 +964,19 @@ export default function SurfboardPlanForm({
                 pillars?.length > 0 ? "border-4 border-red-700" : "border"
               }`}
             >
+              <MapLibreParcel
+                planInfo={{
+                  title: "Plan Preview",
+                  polygon: {
+                    rings: form.geometry?.coordinates, // GeoJSON polygon coords work here
+                    spatialReference: { wkid: 4326 },
+                  },
+                }}
+                pillars={pillars} // can be FC<Point> OR [{lng,lat}] OR [{easting,northing}]
+                onSubmit={handleAdminData as any} // receives { admin, polygon, points, planInfo }
+                autofit
+              />
+
               {/* {pillars?.length > 0 ? (
                 <ArcGISMap
                   planInfo={{

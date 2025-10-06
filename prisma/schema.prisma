@@ -319,6 +319,7 @@ model SurfboardPlan {
   ward                   String?
   lcda                   String?
   lga                    String?
+  state                  String?
 
   /// Array of pillar objects
   pillars                Json
