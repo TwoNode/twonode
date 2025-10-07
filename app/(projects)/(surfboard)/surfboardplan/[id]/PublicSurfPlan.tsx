@@ -34,14 +34,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { PillarData } from "../../types/surfboardTypes";
-
-const ArcGISMap = dynamic(
-  () =>
-    import(
-      "@/app/(projects)/(surfboard)/components/maps/ArcGISMap"
-    ),
-  { ssr: false }
-);
+import MaplibreMap from "../../components/maps/MaplibreMap";
 
 function DetailItem({
   icon: Icon,
@@ -335,34 +328,11 @@ function PlanDetails({ planId }: { planId: string }) {
                 className="mb-8 rounded-lg overflow-hidden border border-gray-200"
                 style={{ height: "800px" }}
               >
-                <ArcGISMap
-                  pillars={plan.pillars || []}
-                  planInfo={{
-                    metadata: {
-                      planNumber: plan.planNumber,
-                      surveyTitle: plan.surveyTitle,
-                      planType: plan.planType,
-                      pillarType: plan.pillarType,
-                    },
-                  }}
-                  initialCenter={getMapCenter(plan.pillars || [])}
-                  // initialCenter={initialCenter}
-                  
-                  zoomPadding={{ duration: 1000 }}
-                />
+                <MaplibreMap processedPillars={mapPillars || []} />
               </div>
 
               {/* <div className="absolute inset-0">
-                <ArcGISMap
-                  pillars={mapPillars}
-                  planInfo={{
-                    planNumber: plan.planNumber,
-                    surveyTitle: plan.surveyTitle,
-                    planType: plan.planType,
-                    pillarType: plan.pillarType,
-                  }}
-                  zoomPadding={{ duration: 1000 }}
-                />
+    
               </div> */}
             </CardContent>
           </Card>

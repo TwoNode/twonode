@@ -24,7 +24,7 @@ export default function UpdateSurfPlanPage({
       try {
         const res = await getSurfPlanById(params.id);
         if (res.success && res.data) {
-          setPlan(res.data as SurfboardPlanDTO);
+          setPlan(res.data as any);
         } else {
           toast.error("Plan not found");
           router.push("/surf-restricted/dashboard");

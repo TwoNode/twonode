@@ -68,7 +68,7 @@ export interface Plan {
   id: string;
   planNumber: string;
   surveyTitle: string;
-  planType: string;
+  planType: string | PlanType | PlanType2;
   referencePlanNumber: string | null;
   deededArea: string;
   facilitator: string;
@@ -76,13 +76,15 @@ export interface Plan {
   geometry:
     | Prisma.JsonValue
     | GeoJSONPolygon
-    | { type: "Polygon"; coordinates: [[number, number][]] }; // Using Prisma's JsonValue type
+    | { type: "Polygon"; coordinates: [[number, number][]] }
+    | null; // Using Prisma's JsonValue type
   pdfFilePaths: string[];
   cadFilePaths: string[];
   certificateFilePaths: string[];
   ward: string | null;
   lcda: string | null;
   lga: string | null;
+  state: string | null;
   pillars: Prisma.JsonValue | PillarData[] | null; // Using Prisma's JsonValue type
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;
