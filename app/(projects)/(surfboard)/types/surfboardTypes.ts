@@ -330,6 +330,7 @@ export interface SurfboardPlanDTO {
   ward?: string | null;
   lcda?: string | null;
   lga?: string | null;
+  state: string | null;
   status?: string;
   isLive?: boolean;
   createdAt?: string | Date;

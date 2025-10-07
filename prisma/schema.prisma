@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 datasource db {
   provider = "postgresql"
@@ -408,3 +409,22 @@ model WebhookEvent {
   @@index([entityKey])
   @@index([receivedAt])
 }
+
+// model NigeriaWardAdminBoundaries {
+//   id           Int       @id
+// 
+//   geom         Json?     @db.Geometry(MultiPolygon, 4326)
+//   // geom         Json?     // Using Json type instead of @db.Geometry
+// 
+//   wardname     String?   @db.VarChar(112)
+//   lganame      String?   @db.VarChar(44)
+//   statename    String?   @db.VarChar(22)
+//   // Shape_Leng   Float?    @map("shape_leng") @db.Float8
+//   // Shape_Area   Float?    @map("shape_area") @db.Float8
+//   Shape_Leng   Float?    @map("shape_leng") @db.Decimal(18, 9) // Using Decimal instead of Float8
+//   Shape_Area   Float?    @map("shape_area") @db.Decimal(18, 9) // Using Decimal instead of Float8
+//   lcdaname     String?   @db.VarChar(254)
+//   
+//   @@map("nigeria_ward_admin_boundaries")
+//   @@schema("public")
+// }

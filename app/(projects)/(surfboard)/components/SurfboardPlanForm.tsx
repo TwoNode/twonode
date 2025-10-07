@@ -19,6 +19,7 @@ import {
   searchReferencePlanNumbers,
   getAllFacilitatorsAndPlanNumbers,
   checkPlanNumberExists,
+  getAdminBoundaries,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import {
   completeSurfboardUpload,
@@ -30,19 +31,8 @@ import {
 } from "../utils/surfboardUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { useRouter } from "next/navigation";
-import MapLibreParcel from "./maps/MaplibreMap";
-
-const ArcGISMap = dynamic(
-  () => import("@/app/(projects)/(surfboard)/components/maps/ArcGISMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[70vh] max-h-[1200px] rounded-xl border grid place-items-center">
-        <div className="text-sm text-gray-600">Loading map…</div>
-      </div>
-    ),
-  }
-);
+// import MapLibreParcel from "./maps/MaplibreMap";
+import MaplibreMap from "./maps/MaplibreMap";
 
 export type Mode = "create" | "edit";
 
@@ -77,6 +67,7 @@ export default function SurfboardPlanForm({
     ward: initial?.ward ?? null,
     lcda: initial?.lcda ?? null,
     lga: initial?.lga ?? null,
+    state: initial?.state ?? null,
     isLive: initial?.isLive ?? false,
     id: initial?.id,
     createdAt: initial?.createdAt,
@@ -225,6 +216,18 @@ export default function SurfboardPlanForm({
           query.geometry = geom as any;
           query.spatialRelationship = "intersects";
           query.returnGeometry = false;
+
+          const adminData = await getAdminBoundaries(geom as any);
+
+          if (adminData?.success && adminData.data) {
+            setForm((prev) => ({
+              ...prev,
+              ward: adminData.data.wardname,
+              lcda: adminData.data.lcdaname,
+              lga: adminData.data.lganame,
+              state: adminData.data.statename,
+            }));
+          }
 
           const result = await adminLayer.queryFeatures(query);
           if (result.features.length > 0) {
@@ -769,16 +772,6 @@ export default function SurfboardPlanForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-700 mb-1">
-                  Pillars CSV File
-                </label>
-                <input type="file" accept=".csv" onChange={handleCsvUpload} />
-                <p className="text-xs text-gray-500 mt-1">
-                  Format: PillarNumber,Easting,Northing
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
                   CAD Files *
                 </label>
                 <input
@@ -864,8 +857,19 @@ export default function SurfboardPlanForm({
             <h3 className="text-sm font-medium text-gray-800">
               Administrative Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">
+                Pillars CSV File
+              </label>
+              <input type="file" accept=".csv" onChange={handleCsvUpload} />
+              <p className="text-xs text-gray-500 mt-1">
+                Format: PillarNumber,Easting,Northing
+              </p>
+            </div>
+
+            <div className="flex-wrap flex justify-evenly gap-4">
+              <div className="min-w-[150px] basis-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   LGA
                 </label>
@@ -877,7 +881,7 @@ export default function SurfboardPlanForm({
                   placeholder="Will be set from map"
                 />
               </div>
-              <div>
+              <div className="min-w-[150px] basis-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   LCDA
                 </label>
@@ -889,7 +893,7 @@ export default function SurfboardPlanForm({
                   placeholder="Will be set from map"
                 />
               </div>
-              <div>
+              <div className="min-w-[150px] basis-1/3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Ward
                 </label>
@@ -897,6 +901,18 @@ export default function SurfboardPlanForm({
                   type="text"
                   readOnly
                   value={form.ward || ""}
+                  className="w-full p-2 border rounded bg-gray-50"
+                  placeholder="Will be set from map"
+                />
+              </div>
+              <div className="min-w-[150px] basis-1/3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={form.state || ""}
                   className="w-full p-2 border rounded bg-gray-50"
                   placeholder="Will be set from map"
                 />
@@ -961,41 +977,10 @@ export default function SurfboardPlanForm({
 
             <div
               className={`h-[40rem] w-full rounded overflow-auto ${
-                pillars?.length > 0 ? "border-4 border-red-700" : "border"
+                pillars?.length > 0 ? "border-4 border-blue-400" : "border"
               }`}
             >
-              <MapLibreParcel
-                planInfo={{
-                  title: "Plan Preview",
-                  polygon: {
-                    rings: form.geometry?.coordinates, // GeoJSON polygon coords work here
-                    spatialReference: { wkid: 4326 },
-                  },
-                }}
-                pillars={pillars} // can be FC<Point> OR [{lng,lat}] OR [{easting,northing}]
-                onSubmit={handleAdminData as any} // receives { admin, polygon, points, planInfo }
-                autofit
-              />
-
-              {/* {pillars?.length > 0 ? (
-                <ArcGISMap
-                  planInfo={{
-                    title: "Plan Preview",
-                    polygon: {
-                      rings: form.geometry?.coordinates,
-                      spatialReference: { wkid: 4326 },
-                    },
-                    color: [255, 0, 0, 0.5],
-                  }}
-                  pillars={pillars}
-                  // onSubmit={handleAdminData}
-                  initialCenter={form.geometry?.coordinates?.[0]?.[0]}
-                />
-              ) : (
-                <p className="text-gray-500 text-sm">
-                  Please add pillars to the plan to view the map.
-                </p>
-              )} */}
+              <MaplibreMap processedPillars={pillars} />
             </div>
           </div>
         </div>

@@ -505,7 +505,7 @@ export async function _createSurfPlan(
 //         planNumber: data.planNumber,
 //         surveyTitle: data.surveyTitle,
 //         planType: data.planType,
-//         referencePlanNumber: data.referencePlanNumber,
+//         referencePlanNumber: data.referencePlanNumber ?? null,
 //         deededArea: data.deededArea,
 //         facilitator: data.facilitator,
 //         pillarType: data.pillarType,
@@ -3133,4 +3133,82 @@ export async function checkPlanNumberExists(
   });
 
   return count > 0;
+}
+
+export async function __handleIntersect(geometry: any) {
+  try {
+    const geometryString =
+      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+
+    // If nigeria_ward_admin_boundaries.geom is already SRID=4326, this is good.
+    // If not, transform: ST_Intersects(ST_Transform(geom,4326), ST_SetSRID(...,4326))
+    const result = await prisma.$queryRaw<
+      Array<{
+        wardname: string;
+        lcdaname: string;
+        lganame: string;
+        statename: string;
+      }>
+    >`
+      SELECT wardname, lcdaname, lganame, statename
+      FROM nigeria_ward_admin_boundaries
+      WHERE ST_Intersects(
+        geom,
+        ST_SetSRID(ST_GeomFromGeoJSON(${geometryString}::json), 4326)
+      )
+      LIMIT 1;
+    `;
+
+    console.log("result:  -- ", result);
+
+    if (result?.length) return { success: true, data: result[0] };
+    return { success: false, message: "No intersection found" };
+  } catch (err) {
+    console.error("Intersection error:", err);
+    return { success: false, message: "Internal server error" };
+  }
+}
+
+// Define the expected return type for better type safety
+type AdminBoundaryResult = {
+  wardname: string;
+  lcdaname: string;
+  lganame: string;
+  statename: string;
+};
+
+/**
+ * Finds the administrative boundaries that intersect with a given GeoJSON polygon.
+ * @param geometry - A GeoJSON geometry object for the polygon.
+ * @returns An object with administrative boundary names or null if no intersection is found.
+ */
+export async function getAdminBoundaries(geometry: object) {
+  if (!geometry) {
+    console.error("getAdminBoundaries called with invalid geometry");
+    return null;
+  }
+
+  // Convert the geometry object to a JSON string for the query
+  const geoJsonString = JSON.stringify(geometry);
+
+  try {
+    const result = await prisma.$queryRaw<AdminBoundaryResult[]>`
+      SELECT wardname, lcdaname, lganame, statename
+      FROM "nigeria_ward_admin_boundaries"
+      WHERE ST_Intersects(
+        geom,
+        ST_SetSRID(ST_GeomFromGeoJSON(${geoJsonString}), 4326)
+      )
+      LIMIT 1;
+    `;
+
+    if (result?.length) return { success: true, data: result[0] };
+    console.log("No intersecting administrative boundary found.");
+    return { success: false, message: "No intersection found" };
+  } catch (error) {
+    console.error("Error querying for admin boundaries:", error);
+    // You might want to throw the error or return a specific error state
+    // depending on how you want to handle it on the client side.
+    return { success: false, message: "Internal server error" };
+  }
 }
