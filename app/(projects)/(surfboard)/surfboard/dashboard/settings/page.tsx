@@ -4,20 +4,35 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Loader2, Upload, X, User, Briefcase, FileSignature, Save, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  X,
+  User,
+  Briefcase,
+  FileSignature,
+  Save,
+  ArrowLeft,
+} from "lucide-react";
 import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("personal");
   const [profileCompletion, setProfileCompletion] = useState(0);
-  
+
   const {
     userData,
     isLoading,
@@ -37,10 +52,16 @@ export default function SettingsPage() {
         userData.email,
         userData.companyName,
         userData.surconRegNumber,
+        userData.signature,
+        userData.logo,
+        userData.surconRegName,
+        userData.residenceState,
       ];
-      
+
       const filledFields = requiredFields.filter(Boolean).length;
-      const completion = Math.round((filledFields / requiredFields.length) * 100);
+      const completion = Math.round(
+        (filledFields / requiredFields.length) * 100
+      );
       setProfileCompletion(completion);
     }
   }, [userData]);
@@ -55,11 +76,15 @@ export default function SettingsPage() {
         toast.success("Profile updated successfully", { id: toastId });
         router.refresh();
       } else {
-        toast.error("Failed to update profile. Please check your input.", { id: toastId });
+        toast.error("Failed to update profile. Please check your input.", {
+          id: toastId,
+        });
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("An unexpected error occurred. Please try again later.", { id: toastId });
+      toast.error("An unexpected error occurred. Please try again later.", {
+        id: toastId,
+      });
     }
   };
 
@@ -69,7 +94,9 @@ export default function SettingsPage() {
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
           <p className="text-xl font-medium">Loading your profile...</p>
-          <p className="text-muted-foreground">Please wait while we load your information</p>
+          <p className="text-muted-foreground">
+            Please wait while we load your information
+          </p>
         </div>
       </div>
     );
@@ -80,29 +107,35 @@ export default function SettingsPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
             className="mb-4 -ml-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Account Settings
+          </h1>
           <p className="text-muted-foreground mt-1">
             Manage your profile, security, and preferences
           </p>
         </div>
-        
+
         <div className="w-full md:w-auto">
           <Card className="p-4">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Profile Completion </span>
-                <span className="text-sm font-semibold"> {profileCompletion}%</span>
+                <span className="text-sm font-medium">
+                  Profile Completion &nbsp;
+                </span>
+                <span className="text-sm font-semibold">
+                  {profileCompletion}%
+                </span>
               </div>
-              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500 ease-in-out"
+              <div className="h-2 w-full bg-gray-200 rounded-full">
+                <div
+                  className="h-full bg-primary"
                   style={{ width: `${profileCompletion}%` }}
                 />
               </div>
@@ -111,8 +144,8 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs 
-        defaultValue="personal" 
+      <Tabs
+        defaultValue="personal"
         className="space-y-6"
         onValueChange={setActiveTab}
       >
@@ -393,7 +426,9 @@ export default function SettingsPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => document.getElementById("signature")?.click()}
+                        onClick={() =>
+                          document.getElementById("signature")?.click()
+                        }
                         disabled={isSaving}
                       >
                         {userData.signature ? "Change" : "Upload"} Signature
