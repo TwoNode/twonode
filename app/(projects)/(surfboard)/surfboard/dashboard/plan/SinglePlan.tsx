@@ -39,7 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
-// import SinglePlanMap from "@/app/(projects)/(surfboard)/components/SinglePlanMap";
+import MaplibreMap from "../../../components/maps/MaplibreMap";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -711,7 +711,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         {/* Map Section */}
         {!showMap && plan && (
           <div className="mb-8 rounded-lg overflow-hidden border border-gray-200">
-            {/* <SinglePlanMap plan={plan} /> */}
+            <MaplibreMap processedPillars={plan.pillars} />
           </div>
         )}
 
@@ -1146,7 +1146,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         {plan.updatedAt !== plan.createdAt
                           ? "Updated"
                           : "Created"}{" "}
-                        {plan.updatedAt && new Date(plan.updatedAt).toDateString()}
+                        {plan.updatedAt &&
+                          new Date(plan.updatedAt).toDateString()}
                       </p>
                     </div>
                   </div>

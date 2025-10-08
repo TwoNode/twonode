@@ -1320,10 +1320,7 @@ export async function updatePlan(
 /**
  * Fetches all plans from the database.
  */
-export async function __getAllSurfPlans(
-  page: number = 1,
-  pageSize: number = 10
-): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
+export async function getAllSurfPlans(): Promise<ApiResult<{ plans: Plan[] }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
@@ -1334,9 +1331,7 @@ export async function __getAllSurfPlans(
       };
     }
 
-    const skip = (page - 1) * pageSize;
-
-    const [plans, total] = await Promise.all([
+    const [plans] = await Promise.all([
       prisma.surfboardPlan.findMany({
         where: {
           userId: user.id,
@@ -1367,18 +1362,9 @@ export async function __getAllSurfPlans(
           createdAt: true,
           updatedAt: true,
         },
-        skip,
-        take: pageSize,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.surfboardPlan.count({
-        where: {
-          userId: user.id,
-        },
-      }),
     ]);
-
-    const totalPages = Math.ceil(total / pageSize);
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -1405,8 +1391,6 @@ export async function __getAllSurfPlans(
       success: true,
       data: {
         plans: plansWithGeometry,
-        total,
-        totalPages,
       },
     };
   } catch (err) {
@@ -1430,12 +1414,21 @@ export interface PlanSort {
   order: "asc" | "desc";
 }
 
-export async function getAllSurfPlans(
-  page: number = 1,
-  pageSize: number = 10,
-  filters?: PlanFilters,
-  sort?: PlanSort
-): Promise<ApiResult<{ plans: Plan[]; total: number; totalPages: number }>> {
+export async function getPaginatedSurfPlans({
+  page = 1,
+  pageSize = 10,
+  filters,
+  sort,
+  noPagination,
+}: {
+  page?: number;
+  pageSize?: number;
+  filters?: PlanFilters;
+  sort?: PlanSort;
+  noPagination?: boolean;
+} = {}): Promise<
+  ApiResult<{ plans: Plan[]; total: number; totalPages: number }>
+> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
@@ -1446,7 +1439,7 @@ export async function getAllSurfPlans(
       };
     }
 
-    const skip = (page - 1) * pageSize;
+    const skip = noPagination ? undefined : (page - 1) * pageSize;
 
     // Build where clause
     const where: any = { userId: user.id };
@@ -1523,13 +1516,13 @@ export async function getAllSurfPlans(
           updatedAt: true,
         },
         skip,
-        take: pageSize,
+        take: noPagination ? undefined : pageSize,
         orderBy,
       }),
       prisma.surfboardPlan.count({ where }),
     ]);
 
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = noPagination ? 1 : Math.ceil(total / pageSize);
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -2783,7 +2776,7 @@ export async function getDashboardAnalytics(): Promise<
     }
 
     // Get all plans for the current user
-    const plansResult = await getAllSurfPlans();
+    const plansResult = await getPaginatedSurfPlans();
     if (!plansResult.success) {
       return { success: false, error: plansResult.error };
     }

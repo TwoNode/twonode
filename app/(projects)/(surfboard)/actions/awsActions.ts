@@ -341,6 +341,7 @@ async function getPresignedPutUrl({
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { Readable } from "stream";
 
 const CDN = process.env.CDN_BASE_URL; // optional
 
@@ -694,4 +695,94 @@ export async function completeSurfboardUpload(params: {
   });
 
   await s3.send(command);
+}
+
+/**
+ * Uploads a file to S3 with proper type handling and metadata
+ * @param file The file to upload (File, Buffer, or Readable)
+ * @param fileType The type/category of the file (pdf, cad, certificate, etc.)
+ * @param userId The ID of the user uploading the file
+ * @param planNumber Optional plan number if related to a plan
+ * @param filename Optional custom filename
+ * @returns Object containing the file URL, S3 key, and original filename
+ */
+export async function uploadFile(
+  file: File | Buffer | Readable,
+  fileType: string,
+  userId: string,
+  planNumber?: string,
+  filename?: string
+): Promise<{ url: string; key: string; originalName: string }> {
+  try {
+    let fileBuffer: Buffer;
+    let originalName = 'file';
+    let contentType = 'application/octet-stream';
+
+    // Handle different file types
+    if (file instanceof File) {
+      originalName = file.name;
+      contentType = file.type || contentType;
+      const arrayBuffer = await file.arrayBuffer();
+      fileBuffer = Buffer.from(arrayBuffer);
+    } else if (file instanceof Buffer) {
+      fileBuffer = file;
+    } else if (file instanceof Readable) {
+      // Convert Readable to Buffer
+      const chunks: Buffer[] = [];
+      for await (const chunk of file) {
+        chunks.push(chunk);
+      }
+      fileBuffer = Buffer.concat(chunks as unknown as readonly Uint8Array[]);
+    } else {
+      throw new Error('Unsupported file type. Must be File, Buffer, or Readable');
+    }
+
+    // Generate a clean filename
+    const cleanName = (filename || originalName)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^a-zA-Z0-9\s._-]/g, '') // Remove special chars
+      .trim()
+      .replace(/\s+/g, '-') // Replace spaces with single hyphen
+      .replace(/-+/g, '-')
+      .toLowerCase();
+
+    // Generate a unique key
+    const uniqueSuffix = planNumber
+      ? `${planNumber}__${Date.now()}`
+      : `${Date.now()}__${Math.random().toString(36).substring(2, 8)}`;
+    
+    const prefix = `surfboard/${userId}/${fileType}`;
+    const key = `${prefix}/${uniqueSuffix}__${cleanName}`.replace(/\/+/g, '/').replace(/^\/+/, '');
+
+    // Upload to S3
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        Body: fileBuffer,
+        ContentType: contentType,
+        Metadata: {
+          originalName: cleanName,
+          fileType: fileType,
+          planNumber: planNumber || 'not-specified',
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: userId,
+        },
+      })
+    );
+
+    const fileUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
+
+    return {
+      url: fileUrl,
+      key: key,
+      originalName: cleanName,
+    };
+  } catch (error) {
+    console.error('Error uploading file to S3:', error);
+    throw new Error(
+      `Failed to upload file to S3: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }

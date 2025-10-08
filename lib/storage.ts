@@ -48,7 +48,7 @@ if (config.storageProvider === 'local') {
  * @param filePath The path where the file should be stored (without extension)
  * @returns The public URL of the uploaded file
  */
-export async function uploadFile(file: File | Buffer | Readable, filePath: string): Promise<string> {
+async function __uploadFile(file: File | Buffer | Readable, filePath: string): Promise<string> {
   // Generate a unique filename with extension
   let fileName = filePath;
   let fileBuffer: Buffer;

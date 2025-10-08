@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { getAllSurfPlans } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getPaginatedSurfPlans } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import PlanView from "../../../components/PlanView";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,18 +99,18 @@ export default function AllPlans() {
   ) => {
     try {
       setLoading(true);
-      const result = await getAllSurfPlans(
+      const result = await getPaginatedSurfPlans({
         page,
         pageSize,
-        {
+        filters: {
           ...filters,
           search: search || undefined,
         },
-        {
+        sort: {
           field: sort.field as any,
           order: sort.order,
-        }
-      );
+        },
+      });
 
       if (result?.success && result?.data) {
         setPlans(result.data.plans || []);

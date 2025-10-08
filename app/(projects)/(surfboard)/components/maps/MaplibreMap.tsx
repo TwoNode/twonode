@@ -1,8 +1,6 @@
-// components/SurveyMap.tsx
-
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import maplibregl, { Map, LngLatLike, GeoJSONSource } from "maplibre-gl";
 import * as turf from "@turf/turf";
 import { Feature, GeoJsonProperties, Point } from "geojson";
@@ -19,12 +17,6 @@ export interface PillarData {
 
 interface MaplibreMapProps {
   processedPillars: PillarData[];
-  onAdminDataReady?: (data: {
-    ward: string;
-    lcda: string;
-    lga: string;
-    state: string;
-  }) => void;
 }
 
 // Define the coordinate reference system
@@ -33,10 +25,7 @@ proj4.defs(
   "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
 );
 
-const MaplibreMap: React.FC<MaplibreMapProps> = ({
-  processedPillars,
-  onAdminDataReady,
-}) => {
+const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
 
@@ -244,10 +233,11 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({
         className="absolute top-0 bottom-0 w-full h-full"
       />
 
-      <div className="absolute bottom-5 left-5 w-56 bg-white p-3 z-50 shadow-lg rounded-xl font-sans text-sm">
+      <div className="absolute bottom-5 left-5 w-44 bg-white p-3 z-50 shadow-lg rounded-xl font-sans text-sm">
         <strong className="block text-base font-bold mb-1.5 text-gray-800">
           Basemaps
         </strong>
+
         <label className="flex items-center my-1 cursor-pointer">
           <input
             type="radio"

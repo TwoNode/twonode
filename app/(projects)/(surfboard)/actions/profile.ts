@@ -1,9 +1,9 @@
 "use server";
 
-import { uploadFile } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { uploadFile } from "./awsActions";
 
 // Types
 export type ProfileData = {
@@ -96,24 +96,26 @@ export async function updateProfile(
     const fileFields = ["logo", "signature"] as const;
 
     for (const field of fileFields) {
+      // In profile.ts, replace the file upload section with:
       const file = formData.get(field) as File | null;
       if (file && file.size > 0) {
         try {
-          // Upload file to storage
-          const fileUrl = await uploadFile(file, `users/${user.id}/${field}`);
-          updates[field] = fileUrl;
+          const { url } = await uploadFile(
+            file,
+            field, // 'logo' or 'signature'
+            user.id
+          );
+          updates[field] = url;
         } catch (error) {
           console.error(`Error uploading ${field}:`, error);
-          // Continue with other updates if file upload fails
+          // Handle error appropriately
         }
-      } else if (formData.get(`remove-${field}`) === "true") {
-        updates[field] = null;
       }
     }
 
     // Update user in database
     const updatedUser = await prisma.surfboardUser.update({
-      where: { email: user.email  },
+      where: { email: user.email },
       data: updates,
       select: {
         id: true,

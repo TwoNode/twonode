@@ -32,10 +32,6 @@ export default async function EditPlanPage({
 
   const plan = result.data;
 
-  // Check if the plan was created more than 24 hours ago
-  const isWithin24Hours =
-    plan.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000);
-
   return (
     <>
       <EditPlan plan={plan as SurfboardPlanDTO} />

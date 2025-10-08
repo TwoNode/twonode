@@ -12,9 +12,9 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import {
-  getAllSurfPlans,
   getAllSharedSurfPlans,
   getSharedWithMeSurfPlans,
+  getAllSurfPlans,
 } from "../../actions/surfboardActions";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 
@@ -50,6 +50,7 @@ export default function DashboardHome() {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       setRefreshing(true);
       setError(null);
 

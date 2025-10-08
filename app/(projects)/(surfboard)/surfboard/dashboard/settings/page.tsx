@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const toastId = toast.loading("Saving changes...");
-    
+
     try {
       const success = await saveProfile();
       if (success) {

@@ -29,7 +29,6 @@ import {
   generatePolygonFromPillars,
   parseCSVContent,
 } from "../utils/surfboardUtils";
-import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import { useRouter } from "next/navigation";
 // import MapLibreParcel from "./maps/MaplibreMap";
 import MaplibreMap from "./maps/MaplibreMap";
@@ -207,16 +206,6 @@ export default function SurfboardPlanForm({
 
         // Query GIS service for administrative data
         try {
-          const adminLayer = new FeatureLayer({
-            url: "https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/2",
-            outFields: ["WARD", "LCDA", "LGA"],
-          });
-
-          const query = adminLayer.createQuery();
-          query.geometry = geom as any;
-          query.spatialRelationship = "intersects";
-          query.returnGeometry = false;
-
           const adminData = await getAdminBoundaries(geom as any);
 
           if (adminData?.success && adminData.data) {
@@ -229,18 +218,7 @@ export default function SurfboardPlanForm({
             }));
           }
 
-          const result = await adminLayer.queryFeatures(query);
-          if (result.features.length > 0) {
-            const attrs = result.features[0].attributes;
-            setForm((prev) => ({
-              ...prev,
-              ward: attrs.WARD || null,
-              lcda: attrs.LCDA || null,
-              lga: attrs.LGA || null,
-            }));
-          }
-
-          console.log(result);
+          console.log(adminData);
         } catch (error) {
           console.error("Error fetching administrative data:", error);
           // Don't fail the upload if admin data fetch fails
@@ -351,6 +329,7 @@ export default function SurfboardPlanForm({
 
       const payload: SurfboardPlanDTO = {
         ...form,
+        pillars,
         cadFilePaths: [...(form.cadFilePaths || []), ...newCadUrls],
         pdfFilePaths: [...(form.pdfFilePaths || []), ...newPdfUrls],
         certificateFilePaths: [
@@ -386,7 +365,7 @@ export default function SurfboardPlanForm({
       console.log("res", res);
 
       if (res.success && res?.data?.planNumber) {
-        router.push(`/surfboard/dashboard/plan?plan=${res?.data?.id}`);
+        router.push(`/surfboard/dashboard/plan?planId=${res?.data?.id}`);
       }
     } catch (e: any) {
       toast.error(e?.message || "Something went wrong");
