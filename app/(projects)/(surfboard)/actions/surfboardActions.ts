@@ -2776,7 +2776,7 @@ export async function getDashboardAnalytics(): Promise<
     }
 
     // Get all plans for the current user
-    const plansResult = await getPaginatedSurfPlans();
+    const plansResult = await getAllSurfPlans();
     if (!plansResult.success) {
       return { success: false, error: plansResult.error };
     }
