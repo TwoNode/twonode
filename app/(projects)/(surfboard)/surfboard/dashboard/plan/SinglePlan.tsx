@@ -710,8 +710,20 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
         {/* Map Section */}
         {!showMap && plan && (
-          <div className="mb-8 rounded-lg overflow-hidden border border-gray-200">
-            <MaplibreMap processedPillars={plan.pillars} />
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">
+              Map Preview
+            </h2>
+
+            <div
+              className={`h-[40rem] w-full rounded overflow-auto ${
+                plan?.pillars?.length > 0
+                  ? "border-4 border-blue-400"
+                  : "border"
+              }`}
+            >
+              <MaplibreMap processedPillars={plan?.pillars} />
+            </div>
           </div>
         )}
 

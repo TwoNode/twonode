@@ -98,7 +98,6 @@ export default function AllPlans() {
     pageSize = pagination.pageSize
   ) => {
     try {
-      setLoading(true);
       const result = await getPaginatedSurfPlans({
         page,
         pageSize,

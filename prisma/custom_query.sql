@@ -1,6 +1,8 @@
-UPDATE "RevaUser"
-SET role = 'SUPERADMIN'
-WHERE email IN ('rojitech9@gmail.com', 'abowabaolamide@gmail.com');
+DELETE FROM "Subscription"
+
+-- UPDATE "RevaUser"
+-- SET role = 'SUPERADMIN'
+-- WHERE email IN ('rojitech9@gmail.com', 'abowabaolamide@gmail.com');
 
 
 -- -- First, delete all existing records from the Property table
@@ -305,10 +307,52 @@ WHERE email IN ('rojitech9@gmail.com', 'abowabaolamide@gmail.com');
 -- WHERE 
 --     id = '1294f498-7213-48ab-8f7c-9ad7b98f39f5';
 
-UPDATE "Subscription"
-SET 
-    "currentEnd" = "currentStart" + INTERVAL '1 month',
-    "nextPaymentDate" = "currentStart" + INTERVAL '1 month',
-    "updatedAt" = NOW()
-WHERE 
-    id = '1294f498-7213-48ab-8f7c-9ad7b98f39f5';
+-- First, get the user ID for rojitech9@gmail.com
+-- WITH target_user AS (
+--   SELECT id FROM "SurfboardUser" 
+--   WHERE email = 'rojitech9@gmail.com'
+--   LIMIT 1
+-- )
+
+-- DELETE * FROM "Subscription"
+-- SET 
+--     "currentEnd" = "currentEnd" + INTERVAL '1 month',
+--     "nextPaymentDate" = "currentEnd" + INTERVAL '1 month',
+--     "updatedAt" = NOW()
+-- WHERE 
+--     id = (SELECT id FROM target_user)
+-- ;
+
+
+-- -- Update the first 50 surf plans to be owned by this user
+-- UPDATE "SurfboardPlan"
+-- SET "userId" = (SELECT id FROM target_user),
+--     "updatedAt" = NOW()
+-- WHERE id IN (
+--   SELECT id 
+--   FROM "SurfboardPlan"
+--   WHERE "userId" IS DISTINCT FROM (SELECT id FROM target_user)
+--   ORDER BY "createdAt" ASC
+--   LIMIT 50
+-- )
+-- RETURNING id, "planNumber", "surveyTitle";
+
+-- First, get the user ID for rojitech9@gmail.com
+-- WITH target_user AS (
+--   SELECT id FROM "SurfboardUser" 
+--   WHERE id = 'e764640e-c5c9-405a-8525-e77118807b55'
+--   LIMIT 1
+-- )
+
+-- -- Update the first 50 surf plans to be owned by this user
+-- UPDATE "SurfboardPlan"
+-- SET "userId" = (SELECT id FROM target_user),
+--     "updatedAt" = NOW()
+-- WHERE id IN (
+--   SELECT id 
+--   FROM "SurfboardPlan"
+--   WHERE "userId" IS DISTINCT FROM (SELECT id FROM target_user)
+--   ORDER BY "createdAt" ASC
+--   LIMIT 50
+-- )
+-- RETURNING id, "planNumber", "surveyTitle", "userId";

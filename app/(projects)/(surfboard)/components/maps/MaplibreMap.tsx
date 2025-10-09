@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import maplibregl, { Map, LngLatLike, GeoJSONSource } from "maplibre-gl";
 import * as turf from "@turf/turf";
 import { Feature, GeoJsonProperties, Point } from "geojson";
@@ -28,6 +28,7 @@ proj4.defs(
 const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   // Initialize the map
   useEffect(() => {
@@ -153,6 +154,8 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
             .addTo(map.current!);
         }
       });
+
+      setIsReady(true);
     });
 
     return () => {
@@ -163,9 +166,15 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
 
   // Update map data when props change
   useEffect(() => {
-    if (!map.current || !processedPillars || processedPillars.length < 3) {
+    if (
+      !map.current ||
+      !processedPillars ||
+      processedPillars.length < 3 ||
+      !isReady
+    ) {
       return;
     }
+
     const mapInstance = map.current;
     const pointFeatures = processedPillars.map((p) => {
       const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
@@ -192,7 +201,7 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
       turf.bbox(polygonFeature) as [number, number, number, number],
       { padding: 40 }
     );
-  }, [processedPillars]);
+  }, [processedPillars, isReady]);
 
   const handleBasemapChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = `${e.target.value}-base`;

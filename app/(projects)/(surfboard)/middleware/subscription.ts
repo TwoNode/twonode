@@ -47,7 +47,7 @@ export async function checkSubscription(request: Request) {
         },
       },
     });
-    
+
     if (!subscription) {
       // Redirect to subscription page if no active subscription
       const subscriptionUrl = new URL('/surfboard/dashboard/subscription', request.url);

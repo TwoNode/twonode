@@ -149,7 +149,7 @@ function PillarsOverview({ pillars }: { pillars: any }) {
 }
 
 function PlanDetails({ planId }: { planId: string }) {
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [planData, setPlanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -191,20 +191,16 @@ function PlanDetails({ planId }: { planId: string }) {
             ? JSON.parse(res.data.pillars)
             : res.data.pillars || [];
 
-        const processedPillars = pillars.map((p: any, index: number) => ({
-          pillarNumber: p.pillarNumber || `Pillar ${index + 1}`,
-          easting: p.coordinates?.[0] || 0,
-          northing: p.coordinates?.[1] || 0,
-          pointIndex: index,
-        }));
-
-        setMapPillars(processedPillars);
+        const geometry =
+          typeof res.data.geometry === "string"
+            ? JSON.parse(res.data.geometry)
+            : res.data.geometry;
 
         // Set initial center from first pillar or use centroid if available
-        if (pillars[0]?.coordinates) {
+        if (geometry[0]?.coordinates) {
           setInitialCenter([
-            pillars[0].coordinates[1],
-            pillars[0].coordinates[0],
+            geometry[0].coordinates[1],
+            geometry[0].coordinates[0],
           ]);
         } else if (
           res.data.centroid &&
@@ -324,11 +320,24 @@ function PlanDetails({ planId }: { planId: string }) {
             </CardHeader>
             <CardContent className="flex-1 p-0 relative h-[800px] overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
               {/* Map Section */}
-              <div
-                className="mb-8 rounded-lg overflow-hidden border border-gray-200"
-                style={{ height: "800px" }}
-              >
-                <MaplibreMap processedPillars={mapPillars || []} />
+
+              <div className="bg-white rounded-2xl shadow p-6">
+                <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                  Map Preview
+                </h2>
+
+                <div
+                  className={`h-[40rem] w-full rounded overflow-auto ${
+                    plan?.pillars?.length > 0
+                      ? "border-4 border-blue-400"
+                      : "border"
+                  }`}
+                >
+                  <MaplibreMap
+                    // processedPillars={mapPillars || []}
+                    processedPillars={plan?.pillars}
+                  />
+                </div>
               </div>
 
               {/* <div className="absolute inset-0">
