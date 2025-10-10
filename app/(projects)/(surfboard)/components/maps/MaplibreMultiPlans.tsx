@@ -23,11 +23,29 @@ interface AllPlansMapProps {
   plans: Plan[];
 }
 
+// Temporary plan structure for uploaded CSVs
+interface TempPlan extends Omit<Plan, "status"> {
+  status: "UPLOADED";
+  planType: "CSV";
+}
+
 // Define the coordinate reference system for pillar conversion
 proj4.defs(
   "EPSG:26331",
   "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
 );
+
+// Helper to generate a unique signature from pillar data to detect duplicates
+const generatePlanSignature = (pillars: PillarData[]): string => {
+  if (!pillars || pillars.length === 0) return "";
+  // Sort by pillar number to ensure consistent order, then create a string
+  const sortedPillars = [...pillars].sort((a, b) =>
+    a.pillarNumber.localeCompare(b.pillarNumber)
+  );
+  return JSON.stringify(
+    sortedPillars.map((p) => [p.easting.toFixed(2), p.northing.toFixed(2)])
+  );
+};
 
 // Helper to generate consistent colors for plans
 const colorCache = new Map<string, string>();
@@ -57,6 +75,7 @@ interface LocationResult {
 const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MaplibreMap | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isReady, setIsReady] = useState(false);
 
   // --- Filter States ---
@@ -70,14 +89,41 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   const [locResults, setLocResults] = useState<LocationResult[]>([]);
   const [locLoading, setLocLoading] = useState(false);
 
+  // --- Temporary CSV data state ---
+  const [tempPlans, setTempPlans] = useState<TempPlan[]>([]);
+  const [visibleTempPlanIds, setVisibleTempPlanIds] = useState<string[]>([]);
+
+  // --- Notification State ---
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "info" | "error";
+  } | null>(null);
+
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
 
   // --- Memoized Derived Data ---
+  const combinedPlans = useMemo(
+    () => [...plans, ...tempPlans],
+    [plans, tempPlans]
+  );
+
+  const dbPlanSignatures = useMemo(() => {
+    const signatures = new Map<string, string>();
+    plans.forEach((plan) => {
+      if (Array.isArray(plan.pillars)) {
+        const signature = generatePlanSignature(plan.pillars as PillarData[]);
+        if (signature) signatures.set(signature, plan.id);
+      }
+    });
+    return signatures;
+  }, [plans]);
+
   const { allStatuses, allTypes } = useMemo(() => {
     const statuses = new Set<string>();
     const types = new Set<string>();
     plans.forEach((plan) => {
+      // Only use DB plans for filter options
       if (plan.status) statuses.add(plan.status);
       if (plan.planType) types.add(plan.planType as string);
     });
@@ -85,30 +131,164 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   }, [plans]);
 
   const filteredPlans = useMemo(() => {
-    return plans.filter((plan) => {
+    return combinedPlans.filter((plan) => {
+      if (plan.status === "UPLOADED") return true;
       const matchesStatus =
         statusFilter.length === 0 || statusFilter.includes(plan.status);
       const matchesType =
         typeFilter.length === 0 || typeFilter.includes(plan.planType as string);
-
       const query = searchQuery.toLowerCase().trim();
-      if (!query) {
-        return matchesStatus && matchesType;
-      }
-
+      if (!query) return matchesStatus && matchesType;
       const matchesSearch =
         plan.planNumber.toLowerCase().includes(query) ||
         plan.surveyTitle.toLowerCase().includes(query) ||
         plan.facilitator.toLowerCase().includes(query);
-
       return matchesStatus && matchesType && matchesSearch;
     });
-  }, [plans, searchQuery, statusFilter, typeFilter]);
+  }, [combinedPlans, searchQuery, statusFilter, typeFilter]);
 
-  // Set all filtered plans to be visible by default when filter changes
   useEffect(() => {
-    setVisiblePlanIds(filteredPlans.map((p) => p.id));
+    setVisiblePlanIds(
+      filteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id)
+    );
+    setVisibleTempPlanIds(
+      filteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id)
+    );
   }, [filteredPlans]);
+
+  // Effect to auto-hide notifications
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  // --- Interaction Callbacks ---
+  const flyToLoc = (lat: number, lon: number) => {
+    map.current?.flyTo({ center: [lon, lat], zoom: 15 });
+  };
+  const zoomToPlan = useCallback(
+    (planId: string) => {
+      const plan = combinedPlans.find((p) => p.id === planId);
+      if (
+        plan?.geometry &&
+        typeof plan.geometry === "object" &&
+        "type" in plan.geometry
+      ) {
+        const bounds = turf.bbox(plan.geometry as any);
+        map.current?.fitBounds(bounds as [number, number, number, number], {
+          padding: 50,
+          maxZoom: 17,
+        });
+      }
+    },
+    [combinedPlans]
+  );
+
+  // --- CSV Upload Handler ---
+  const handleCsvUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newTempPlans: TempPlan[] = [];
+
+    for (const file of Array.from(files)) {
+      try {
+        const text = await file.text();
+        const lines = text.trim().split("\n");
+        const headers = lines.shift()?.toLowerCase().split(",") || [];
+        const pillarIndex = headers.findIndex((h) => h.includes("pillar"));
+        const eastingIndex = headers.findIndex((h) => h.includes("easting"));
+        const northingIndex = headers.findIndex((h) => h.includes("northing"));
+
+        if (pillarIndex === -1 || eastingIndex === -1 || northingIndex === -1) {
+          console.warn(`Skipping file ${file.name}: Missing required columns.`);
+          continue;
+        }
+
+        const pillars: PillarData[] = lines
+          .map((line, index) => ({
+            pillarNumber: line.split(",")[pillarIndex]?.trim(),
+            easting: parseFloat(line.split(",")[eastingIndex]),
+            northing: parseFloat(line.split(",")[northingIndex]),
+            pointIndex: index,
+          }))
+          .filter(
+            (p) => p.pillarNumber && !isNaN(p.easting) && !isNaN(p.northing)
+          );
+
+        if (pillars.length < 3) continue;
+
+        // Check for duplicates
+        const signature = generatePlanSignature(pillars);
+        const existingPlanId = dbPlanSignatures.get(signature);
+        if (existingPlanId) {
+          const existingPlan = plans.find((p) => p.id === existingPlanId);
+          setNotification({
+            message: `CSV for "${existingPlan?.planNumber}" already exists. Zooming to plan.`,
+            type: "info",
+          });
+          zoomToPlan(existingPlanId);
+          continue; // Skip this file
+        }
+
+        const coords = pillars.map((p) => {
+          const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+            p.easting,
+            p.northing,
+          ]);
+          return [lon, lat];
+        });
+        if (
+          coords.length > 0 &&
+          (coords[0][0] !== coords[coords.length - 1][0] ||
+            coords[0][1] !== coords[coords.length - 1][1])
+        ) {
+          coords.push(coords[0]);
+        }
+
+        const polygon = turf.polygon([coords]);
+        const currentDate = new Date();
+        newTempPlans.push({
+          id: `csv-${file.name}-${Date.now()}`,
+          planNumber: file.name.replace(/\.csv$/i, ""),
+          surveyTitle: "Uploaded from CSV",
+          facilitator: "Local File",
+          status: "UPLOADED",
+          planType: "CSV",
+          geometry: {
+            type: "Polygon",
+            coordinates: polygon.geometry.coordinates,
+          },
+          pillars,
+          // Add all required fields with default values
+          referencePlanNumber: null,
+          deededArea: "0",
+          pillarType: "UNKNOWN",
+          pdfFilePaths: [],
+          cadFilePaths: [],
+          certificateFilePaths: [],
+          ward: null,
+          lcda: null,
+          lga: null,
+          state: null,
+          isLive: false,
+          dateOnSurveyPlan: currentDate,
+          dateLodged: null,
+          reasonForWithdrawalAndResubmission: null,
+          createdAt: currentDate,
+          updatedAt: currentDate,
+        });
+      } catch (error) {
+        console.error(`Failed to process file ${file.name}:`, error);
+      }
+    }
+    setTempPlans((prev) => [...prev, ...newTempPlans]);
+    if (event.target) event.target.value = "";
+  };
 
   // --- Map Initialization ---
   useEffect(() => {
@@ -228,55 +408,36 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         },
       });
 
-      const planPopup = new maplibregl.Popup({
+      const popup = new maplibregl.Popup({
         closeButton: true,
         closeOnClick: false,
       });
-      const pillarPopup = new maplibregl.Popup({
-        closeButton: true,
-        closeOnClick: false,
-      });
-
-      // Click listener for plan polygons
-      map.current.on("click", "plans-fill", (e) => {
-        const properties = e.features?.[0].properties;
-        if (properties) {
-          const popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600">${properties.surveyTitle}</p><p class="text-xs text-gray-500 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">${properties.status}</span></div>`;
-          planPopup
-            .setLngLat(e.lngLat)
-            .setHTML(popupContent)
-            .addTo(map.current!);
+      const showPopup = (
+        e: maplibregl.MapMouseEvent & {
+          features?: maplibregl.MapGeoJSONFeature[];
         }
-      });
-
-      // Click listener for pillar points
-      map.current.on("click", "pillars-symbol", (e) => {
+      ) => {
         const properties = e.features?.[0].properties;
-        if (properties) {
-          const popupContent = `
-             <div class="p-1 font-sans">
-               <h3 class="font-bold text-base text-gray-800">Pillar: ${
-                 properties.pillarNumber
-               }</h3>
-               <ul class="text-xs text-gray-600 mt-1 space-y-0.5">
-                 <li><strong>Index:</strong> ${
-                   properties.pointIndex ?? "N/A"
-                 }</li>
-                 <li><strong>Easting:</strong> ${
-                   properties.easting ?? "N/A"
-                 }</li>
-                 <li><strong>Northing:</strong> ${
-                   properties.northing ?? "N/A"
-                 }</li>
-               </ul>
-             </div>`;
-          pillarPopup
-            .setLngLat(e.lngLat)
-            .setHTML(popupContent)
-            .addTo(map.current!);
+        if (!properties || !map.current) return;
+        let popupContent = "";
+        if (properties.easting) {
+          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base text-gray-800">Pillar: ${
+            properties.pillarNumber
+          }</h3><ul class="text-xs text-gray-600 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
+            properties.pointIndex ?? "N/A"
+          }</li><li><strong>Easting:</strong> ${
+            properties.easting ?? "N/A"
+          }</li><li><strong>Northing:</strong> ${
+            properties.northing ?? "N/A"
+          }</li></ul></div>`;
+        } else {
+          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600">${properties.surveyTitle}</p><p class="text-xs text-gray-500 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">${properties.status}</span></div>`;
         }
-      });
+        popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
+      };
 
+      map.current.on("click", "plans-fill", showPopup);
+      map.current.on("click", "pillars-symbol", showPopup);
       map.current.on("mouseenter", "plans-fill", () => {
         if (map.current) map.current.getCanvas().style.cursor = "pointer";
       });
@@ -289,7 +450,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       map.current.on("mouseleave", "pillars-symbol", () => {
         if (map.current) map.current.getCanvas().style.cursor = "";
       });
-
       setIsReady(true);
     });
     return () => {
@@ -301,10 +461,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   // --- Data Update Effect ---
   useEffect(() => {
     if (!isReady || !map.current) return;
-
+    const allVisibleIds = [...visiblePlanIds, ...visibleTempPlanIds];
     const polygonFeatures: Feature<Polygon>[] = [];
     const pillarFeatures: Feature<Point>[] = [];
-
     filteredPlans.forEach((plan) => {
       const color = generateColor(plan.id);
       if (
@@ -325,52 +484,35 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             p.northing,
           ]);
           pillarFeatures.push(
-            turf.point([lon, lat], {
-              pillarNumber: p.pillarNumber,
-              pointIndex: p.pointIndex,
-              easting: p.easting,
-              northing: p.northing,
-              planId: plan.id,
-            })
+            turf.point([lon, lat], { ...p, planId: plan.id })
           );
         });
       }
     });
-
-    const polygonGeoJSON: FeatureCollection<Polygon> = {
+    (map.current.getSource("plansLayer") as GeoJSONSource)?.setData({
       type: "FeatureCollection",
       features: polygonFeatures,
-    };
-    const pillarGeoJSON: FeatureCollection<Point> = {
+    });
+    (map.current.getSource("pillarsLayer") as GeoJSONSource)?.setData({
       type: "FeatureCollection",
       features: pillarFeatures,
-    };
-
-    (map.current.getSource("plansLayer") as GeoJSONSource)?.setData(
-      polygonGeoJSON
-    );
-    (map.current.getSource("pillarsLayer") as GeoJSONSource)?.setData(
-      pillarGeoJSON
-    );
-
-    // Filter layers based on visiblePlanIds
-    const planFilter = (
-      visiblePlanIds.length > 0
-        ? ["in", ["get", "id"], ...visiblePlanIds]
+    });
+    const filter = (
+      allVisibleIds.length > 0
+        ? ["in", ["get", "id"], ...allVisibleIds]
         : ["==", true, false]
     ) as FilterSpecification;
     const pillarFilter = (
-      visiblePlanIds.length > 0
-        ? ["in", ["get", "planId"], ...visiblePlanIds]
+      allVisibleIds.length > 0
+        ? ["in", ["get", "planId"], ...allVisibleIds]
         : ["==", true, false]
     ) as FilterSpecification;
-
-    map.current.setFilter("plans-fill", planFilter);
-    map.current.setFilter("plans-labels", planFilter);
+    map.current.setFilter("plans-fill", filter);
+    map.current.setFilter("plans-labels", filter);
     map.current.setFilter("pillars-symbol", pillarFilter);
-    if (polygonFeatures.length > 0 && visiblePlanIds.length > 0) {
+    if (polygonFeatures.length > 0 && allVisibleIds.length > 0) {
       const visibleFeatures = polygonFeatures.filter((f) =>
-        visiblePlanIds.includes(f.properties?.id)
+        allVisibleIds.includes(f.properties?.id)
       );
       if (visibleFeatures.length > 0) {
         const bounds = turf.bbox({
@@ -384,7 +526,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         });
       }
     }
-  }, [filteredPlans, isReady, visiblePlanIds]);
+  }, [filteredPlans, isReady, visiblePlanIds, visibleTempPlanIds]);
 
   // --- Basemap Changer ---
   useEffect(() => {
@@ -427,32 +569,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         console.error("Failed to fetch location:", error);
       }
       setLocLoading(false);
-    }, 500); // Debounce API calls
+    }, 500);
     return () => clearTimeout(handler);
   }, [locQuery]);
-
-  // --- Interaction Callbacks ---
-  const flyToLoc = (lat: number, lon: number) => {
-    map.current?.flyTo({ center: [lon, lat], zoom: 15 });
-  };
-
-  const zoomToPlan = useCallback(
-    (planId: string) => {
-      const plan = plans.find((p) => p.id === planId);
-      if (
-        plan?.geometry &&
-        typeof plan.geometry === "object" &&
-        "type" in plan.geometry
-      ) {
-        const bounds = turf.bbox(plan.geometry as any);
-        map.current?.fitBounds(bounds as [number, number, number, number], {
-          padding: 50,
-          maxZoom: 17,
-        });
-      }
-    },
-    [plans]
-  );
 
   const clearAll = () => {
     setSearchQuery("");
@@ -462,6 +581,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     setLocResults([]);
     map.current?.flyTo({ center: [3.3792, 6.5244], zoom: 10 });
   };
+  const clearTempPlans = () => {
+    setTempPlans([]);
+  };
 
   return (
     <div className="relative w-full h-full font-sans">
@@ -470,31 +592,52 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         className="absolute top-0 bottom-0 w-full h-full"
       />
 
-      {/* Controls Panel - Compact Design */}
+      {notification && (
+        <div
+          className={`absolute z-[60] top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-xl text-sm font-semibold
+            ${
+              notification.type === "info"
+                ? "bg-blue-100 border border-blue-400 text-blue-800"
+                : ""
+            }
+            ${
+              notification.type === "error"
+                ? "bg-red-100 border border-red-400 text-red-800"
+                : ""
+            }`}
+        >
+          {notification.message}
+        </div>
+      )}
+
+      {/* Controls Panel */}
       <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 rounded-xl shadow-lg p-3 space-y-2">
-        {/* Location and Search */}
-        <div className="grid grid-cols-[1fr_1fr] max-sm:grid-cols-[1fr] gap-3">
-          {/* Location Search */}
+        <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
           <div className="relative">
+            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Location
-            </label>
+              {" "}
+              Location{" "}
+            </label>{" "}
             <div className="relative">
+              {" "}
               <input
                 type="text"
                 value={locQuery}
                 onChange={(e) => setLocQuery(e.target.value)}
                 placeholder="Search location..."
                 className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
-              />
+              />{" "}
               {locLoading && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
+                  {" "}
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />{" "}
                 </div>
-              )}
-            </div>
+              )}{" "}
+            </div>{" "}
             {locResults.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {" "}
                 {locResults.map((r, i) => (
                   <button
                     key={`${r.lon}-${i}`}
@@ -505,36 +648,65 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       setLocQuery(r.name);
                     }}
                   >
-                    {r.name}
+                    {" "}
+                    {r.name}{" "}
                   </button>
-                ))}
+                ))}{" "}
               </div>
-            )}
+            )}{" "}
           </div>
 
-          {/* Plan Search */}
           <div>
+            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Search Plans
-            </label>
+              {" "}
+              Search Plans{" "}
+            </label>{" "}
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Plan number, title, facilitator..."
               className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
-            />
+            />{" "}
+          </div>
+
+          <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
+            {" "}
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept=".csv"
+              onChange={handleCsvUpload}
+              className="hidden"
+            />{" "}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 text-green-700 border border-green-500 hover:bg-green-100 transition-colors whitespace-nowrap"
+            >
+              {" "}
+              Upload CSV{" "}
+            </button>{" "}
+            <button
+              onClick={clearAll}
+              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 text-gray-700 border border-red-400 hover:bg-red-200 transition-colors"
+            >
+              {" "}
+              Clear Filters{" "}
+            </button>{" "}
           </div>
         </div>
 
-        {/* Filters Row */}
         <div className="flex flex-wrap gap-4">
-          {/* Status Filter */}
-          <div className="shadow-md p-2">
+          <div className="shadow-md p-2 rounded-md">
+            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Status
-            </label>
+              {" "}
+              Status{" "}
+            </label>{" "}
             <div className="flex flex-wrap gap-1.5">
+              {" "}
               {allStatuses.map((s) => (
                 <button
                   key={s}
@@ -549,18 +721,21 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {s}
+                  {" "}
+                  {s}{" "}
                 </button>
-              ))}
-            </div>
+              ))}{" "}
+            </div>{" "}
           </div>
 
-          {/* Plan Type Filter */}
-          <div className="shadow-md p-2">
+          <div className="shadow-md p-2 rounded-md">
+            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Plan Type
-            </label>
+              {" "}
+              Plan Type{" "}
+            </label>{" "}
             <div className="flex flex-wrap gap-1.5">
+              {" "}
               {allTypes.map((t) => (
                 <button
                   key={t}
@@ -575,26 +750,17 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {t}
+                  {" "}
+                  {t}{" "}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Clear Button */}
-          <div className="flex items-end m-auto">
-            <button
-              onClick={clearAll}
-              className="w-full py-1.5 px-3 text-sm rounded-lg bg-blue-50 text-blue-700 border border-blue-500 hover:bg-blue-100 transition-colors"
-            >
-              Clear Filters
-            </button>
+              ))}{" "}
+            </div>{" "}
           </div>
         </div>
       </div>
 
       {/* Basemap and Plan Visibility */}
-      <div className="absolute z-40 bottom-2 left-2 w-52 bg-white/95 rounded-xl shadow-lg p-3">
+      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 rounded-xl shadow-lg p-3">
         <div className="text-sm font-semibold mb-1">Basemap</div>
         {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
           (k) => (
@@ -602,6 +768,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               key={k}
               className="flex items-center gap-2 cursor-pointer text-sm"
             >
+              {" "}
               <input
                 type="radio"
                 name="basemap"
@@ -609,84 +776,149 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 checked={activeBasemap === k}
                 onChange={() => setActiveBasemap(k)}
               />{" "}
-              <span className="capitalize">{k}</span>
+              <span className="capitalize">{k}</span>{" "}
             </label>
           )
         )}
+
         <hr className="my-2" />
         <div className="text-sm font-semibold mb-1">
-          Visible Plans ({visiblePlanIds.length})
+          {" "}
+          Database Plans ({visiblePlanIds.length}){" "}
         </div>
-        <div className="flex flex-col gap-1 max-h-28 overflow-y-auto pr-1">
-          {filteredPlans.map((p) => (
-            <label
-              key={p.id}
-              className="flex items-center gap-2 cursor-pointer text-sm"
-            >
-              <input
-                type="checkbox"
-                checked={visiblePlanIds.includes(p.id)}
-                onChange={(e) =>
-                  setVisiblePlanIds((prev) =>
-                    e.target.checked
-                      ? [...prev, p.id]
-                      : prev.filter((x) => x !== p.id)
-                  )
-                }
-              />
-              <span
-                className="inline-block w-3 h-3 rounded-sm"
-                style={{ background: generateColor(p.id) }}
-              />
-              <button
-                className="hover:underline truncate"
-                onClick={() => zoomToPlan(p.id)}
-                title="Zoom to plan"
+
+        <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+          {" "}
+          {filteredPlans
+            .filter((p) => p.status !== "UPLOADED")
+            .map((p) => (
+              <label
+                key={p.id}
+                className="flex items-center gap-2 cursor-pointer text-sm"
               >
-                {p.planNumber}
-              </button>
-            </label>
-          ))}
+                {" "}
+                <input
+                  type="checkbox"
+                  checked={visiblePlanIds.includes(p.id)}
+                  onChange={(e) =>
+                    setVisiblePlanIds((prev) =>
+                      e.target.checked
+                        ? [...prev, p.id]
+                        : prev.filter((x) => x !== p.id)
+                    )
+                  }
+                />{" "}
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ background: generateColor(p.id) }}
+                />{" "}
+                <button
+                  className="hover:underline truncate"
+                  onClick={() => zoomToPlan(p.id)}
+                  title="Zoom to plan"
+                >
+                  {" "}
+                  {p.planNumber}{" "}
+                </button>{" "}
+              </label>
+            ))}{" "}
         </div>
+
+        {tempPlans.length > 0 && (
+          <>
+            {" "}
+            <hr className="my-2" />{" "}
+            <div className="flex justify-between items-center">
+              {" "}
+              <div className="text-sm font-semibold">
+                Uploaded Layers ({visibleTempPlanIds.length})
+              </div>{" "}
+              <button
+                onClick={clearTempPlans}
+                className="text-xs text-red-500 hover:underline"
+              >
+                Clear
+              </button>{" "}
+            </div>{" "}
+            <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
+              {" "}
+              {tempPlans.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 cursor-pointer text-sm"
+                >
+                  {" "}
+                  <input
+                    type="checkbox"
+                    checked={visibleTempPlanIds.includes(p.id)}
+                    onChange={(e) =>
+                      setVisibleTempPlanIds((prev) =>
+                        e.target.checked
+                          ? [...prev, p.id]
+                          : prev.filter((x) => x !== p.id)
+                      )
+                    }
+                  />{" "}
+                  <span
+                    className="inline-block w-3 h-3 rounded-sm"
+                    style={{ background: generateColor(p.id) }}
+                  />{" "}
+                  <button
+                    className="hover:underline truncate"
+                    onClick={() => zoomToPlan(p.id)}
+                    title="Zoom to plan"
+                  >
+                    {" "}
+                    {p.planNumber}{" "}
+                  </button>{" "}
+                </label>
+              ))}{" "}
+            </div>{" "}
+          </>
+        )}
       </div>
 
       {/* Summary Strip */}
       {filteredPlans.length > 0 && (
         <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 rounded-xl shadow-lg p-3">
           <div className="text-sm font-semibold mb-2">
-            Filtered Plans ({filteredPlans.length})
+            {" "}
+            Filtered Plans ({filteredPlans.length}){" "}
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
+            {" "}
             {filteredPlans.map((p) => (
               <button
                 key={p.id}
                 className="p-2 border rounded-lg text-left hover:bg-gray-50 overflow-hidden"
                 onClick={() => {
-                  if (!visiblePlanIds.includes(p.id)) {
-                    setVisiblePlanIds((prev) => [...prev, p.id]);
+                  const allVisible = [...visiblePlanIds, ...visibleTempPlanIds];
+                  if (!allVisible.includes(p.id)) {
+                    if (p.status === "UPLOADED") {
+                      setVisibleTempPlanIds((prev) => [...prev, p.id]);
+                    } else {
+                      setVisiblePlanIds((prev) => [...prev, p.id]);
+                    }
                   }
                   zoomToPlan(p.id);
                 }}
               >
+                {" "}
                 <div className="flex items-center gap-2">
+                  {" "}
                   <span
                     className="inline-block w-3 h-3 rounded-sm"
                     style={{ background: generateColor(p.id) }}
-                  />
-                  <span className="font-medium text-sm">{p.planNumber}</span>
-                </div>
+                  />{" "}
+                  <span className="font-medium text-sm">{p.planNumber}</span>{" "}
+                </div>{" "}
                 <div className="text-xs text-gray-600 truncate">
-                  {p.planType as string} · {p.status}
-                </div>
+                  {" "}
+                  {p.planType as string} · {p.status}{" "}
+                </div>{" "}
               </button>
-            ))}
+            ))}{" "}
           </div>
-          {filteredPlans.length > 6 && (
-            <p className="text-xs text-gray-600 mt-2 text-center">
-              +{filteredPlans.length - 6} more plans
-            </p>
-          )}
         </div>
       )}
     </div>
