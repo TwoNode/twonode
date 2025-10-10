@@ -10,7 +10,6 @@ import React, {
 import * as turf from "@turf/turf";
 import maplibregl, {
   Map as MaplibreMap,
-  LngLatLike,
   GeoJSONSource,
   FilterSpecification,
 } from "maplibre-gl";
@@ -119,11 +118,19 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     return signatures;
   }, [plans]);
 
+  const tempPlanSignatures = useMemo(() => {
+    const signatures = new Map<string, string>();
+    tempPlans.forEach((plan) => {
+      const signature = generatePlanSignature(plan.pillars as PillarData[]);
+      if (signature) signatures.set(signature, plan.id);
+    });
+    return signatures;
+  }, [tempPlans]);
+
   const { allStatuses, allTypes } = useMemo(() => {
     const statuses = new Set<string>();
     const types = new Set<string>();
     plans.forEach((plan) => {
-      // Only use DB plans for filter options
       if (plan.status) statuses.add(plan.status);
       if (plan.planType) types.add(plan.planType as string);
     });
@@ -156,7 +163,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     );
   }, [filteredPlans]);
 
-  // Effect to auto-hide notifications
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(null), 5000);
@@ -164,7 +170,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     }
   }, [notification]);
 
-  // --- Interaction Callbacks ---
   const flyToLoc = (lat: number, lon: number) => {
     map.current?.flyTo({ center: [lon, lat], zoom: 15 });
   };
@@ -186,7 +191,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     [combinedPlans]
   );
 
-  // --- CSV Upload Handler ---
   const handleCsvUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -228,11 +232,24 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         if (existingPlanId) {
           const existingPlan = plans.find((p) => p.id === existingPlanId);
           setNotification({
-            message: `CSV for "${existingPlan?.planNumber}" already exists. Zooming to plan.`,
+            message: `CSV for "${existingPlan?.planNumber}" already exists in the database. Zooming to plan.`,
             type: "info",
           });
           zoomToPlan(existingPlanId);
-          continue; // Skip this file
+          continue;
+        }
+
+        const existingTempPlanId = tempPlanSignatures.get(signature);
+        if (existingTempPlanId) {
+          const existingTempPlan = tempPlans.find(
+            (p) => p.id === existingTempPlanId
+          );
+          setNotification({
+            message: `This CSV content is already uploaded as "${existingTempPlan?.planNumber}". Zooming.`,
+            type: "info",
+          });
+          zoomToPlan(existingTempPlanId);
+          continue;
         }
 
         const coords = pillars.map((p) => {
@@ -264,7 +281,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             coordinates: polygon.geometry.coordinates,
           },
           pillars,
-          // Add all required fields with default values
           referencePlanNumber: null,
           deededArea: "0",
           pillarType: "UNKNOWN",
@@ -290,7 +306,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     if (event.target) event.target.value = "";
   };
 
-  // --- Map Initialization ---
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
     map.current = new maplibregl.Map({
@@ -360,7 +375,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       center: [3.3792, 6.5244],
       zoom: 10,
     });
-
     map.current.on("load", () => {
       if (!map.current) return;
       map.current.addSource("plansLayer", {
@@ -407,7 +421,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
           "circle-stroke-color": "#FFFFFF",
         },
       });
-
       const popup = new maplibregl.Popup({
         closeButton: true,
         closeOnClick: false,
@@ -435,7 +448,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         }
         popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
       };
-
       map.current.on("click", "plans-fill", showPopup);
       map.current.on("click", "pillars-symbol", showPopup);
       map.current.on("mouseenter", "plans-fill", () => {
@@ -458,7 +470,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     };
   }, []);
 
-  // --- Data Update Effect ---
   useEffect(() => {
     if (!isReady || !map.current) return;
     const allVisibleIds = [...visiblePlanIds, ...visibleTempPlanIds];
@@ -528,7 +539,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     }
   }, [filteredPlans, isReady, visiblePlanIds, visibleTempPlanIds]);
 
-  // --- Basemap Changer ---
   useEffect(() => {
     if (!map.current || !isReady) return;
     ["roadmap", "satellite", "hybrid", "terrain", "osm"].forEach((bm) => {
@@ -543,7 +553,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     });
   }, [activeBasemap, isReady]);
 
-  // --- Location Search Effect ---
   useEffect(() => {
     if (!locQuery.trim()) {
       setLocResults([]);
@@ -584,6 +593,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   const clearTempPlans = () => {
     setTempPlans([]);
   };
+  const removeTempPlan = (idToRemove: string) => {
+    setTempPlans((prev) => prev.filter((p) => p.id !== idToRemove));
+  };
 
   return (
     <div className="relative w-full h-full font-sans">
@@ -614,30 +626,25 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 rounded-xl shadow-lg p-3 space-y-2">
         <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
           <div className="relative">
-            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              {" "}
-              Location{" "}
-            </label>{" "}
+              Location
+            </label>
             <div className="relative">
-              {" "}
               <input
                 type="text"
                 value={locQuery}
                 onChange={(e) => setLocQuery(e.target.value)}
                 placeholder="Search location..."
                 className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
-              />{" "}
+              />
               {locLoading && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  {" "}
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />{" "}
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
                 </div>
-              )}{" "}
-            </div>{" "}
+              )}
+            </div>
             {locResults.length > 0 && (
               <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {" "}
                 {locResults.map((r, i) => (
                   <button
                     key={`${r.lon}-${i}`}
@@ -648,27 +655,23 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       setLocQuery(r.name);
                     }}
                   >
-                    {" "}
-                    {r.name}{" "}
+                    {r.name}
                   </button>
-                ))}{" "}
+                ))}
               </div>
-            )}{" "}
+            )}
           </div>
-
           <div>
-            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              {" "}
-              Search Plans{" "}
-            </label>{" "}
+              Search Plans
+            </label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Plan number, title, facilitator..."
               className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
-            />{" "}
+            />
           </div>
 
           <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
@@ -685,28 +688,22 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               onClick={() => fileInputRef.current?.click()}
               className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 text-green-700 border border-green-500 hover:bg-green-100 transition-colors whitespace-nowrap"
             >
-              {" "}
-              Upload CSV{" "}
-            </button>{" "}
+              Upload CSV
+            </button>
             <button
               onClick={clearAll}
               className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 text-gray-700 border border-red-400 hover:bg-red-200 transition-colors"
             >
-              {" "}
-              Clear Filters{" "}
-            </button>{" "}
+              Clear Filters
+            </button>
           </div>
         </div>
-
         <div className="flex flex-wrap gap-4">
           <div className="shadow-md p-2 rounded-md">
-            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              {" "}
-              Status{" "}
-            </label>{" "}
+              Status
+            </label>
             <div className="flex flex-wrap gap-1.5">
-              {" "}
               {allStatuses.map((s) => (
                 <button
                   key={s}
@@ -721,21 +718,16 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {" "}
-                  {s}{" "}
+                  {s}
                 </button>
-              ))}{" "}
-            </div>{" "}
+              ))}
+            </div>
           </div>
-
           <div className="shadow-md p-2 rounded-md">
-            {" "}
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              {" "}
-              Plan Type{" "}
-            </label>{" "}
+              Plan Type
+            </label>
             <div className="flex flex-wrap gap-1.5">
-              {" "}
               {allTypes.map((t) => (
                 <button
                   key={t}
@@ -750,11 +742,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  {" "}
-                  {t}{" "}
+                  {t}
                 </button>
-              ))}{" "}
-            </div>{" "}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -768,7 +759,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               key={k}
               className="flex items-center gap-2 cursor-pointer text-sm"
             >
-              {" "}
               <input
                 type="radio"
                 name="basemap"
@@ -776,19 +766,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 checked={activeBasemap === k}
                 onChange={() => setActiveBasemap(k)}
               />{" "}
-              <span className="capitalize">{k}</span>{" "}
+              <span className="capitalize">{k}</span>
             </label>
           )
         )}
-
         <hr className="my-2" />
         <div className="text-sm font-semibold mb-1">
-          {" "}
-          Database Plans ({visiblePlanIds.length}){" "}
+          Database Plans ({visiblePlanIds.length})
         </div>
-
         <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
-          {" "}
           {filteredPlans
             .filter((p) => p.status !== "UPLOADED")
             .map((p) => (
@@ -796,7 +782,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 key={p.id}
                 className="flex items-center gap-2 cursor-pointer text-sm"
               >
-                {" "}
                 <input
                   type="checkbox"
                   checked={visiblePlanIds.includes(p.id)}
@@ -811,69 +796,68 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
                   style={{ background: generateColor(p.id) }}
-                />{" "}
+                />
                 <button
                   className="hover:underline truncate"
                   onClick={() => zoomToPlan(p.id)}
                   title="Zoom to plan"
                 >
-                  {" "}
-                  {p.planNumber}{" "}
-                </button>{" "}
+                  {p.planNumber}
+                </button>
               </label>
-            ))}{" "}
+            ))}
         </div>
-
         {tempPlans.length > 0 && (
           <>
-            {" "}
-            <hr className="my-2" />{" "}
+            <hr className="my-2" />
             <div className="flex justify-between items-center">
-              {" "}
               <div className="text-sm font-semibold">
                 Uploaded Layers ({visibleTempPlanIds.length})
-              </div>{" "}
+              </div>
               <button
                 onClick={clearTempPlans}
                 className="text-xs text-red-500 hover:underline"
               >
-                Clear
-              </button>{" "}
-            </div>{" "}
+                Clear All
+              </button>
+            </div>
             <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
-              {" "}
               {tempPlans.map((p) => (
-                <label
-                  key={p.id}
-                  className="flex items-center gap-2 cursor-pointer text-sm"
-                >
-                  {" "}
-                  <input
-                    type="checkbox"
-                    checked={visibleTempPlanIds.includes(p.id)}
-                    onChange={(e) =>
-                      setVisibleTempPlanIds((prev) =>
-                        e.target.checked
-                          ? [...prev, p.id]
-                          : prev.filter((x) => x !== p.id)
-                      )
-                    }
-                  />{" "}
-                  <span
-                    className="inline-block w-3 h-3 rounded-sm"
-                    style={{ background: generateColor(p.id) }}
-                  />{" "}
+                <div key={p.id} className="flex items-center gap-2 text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer flex-grow truncate">
+                    <input
+                      type="checkbox"
+                      checked={visibleTempPlanIds.includes(p.id)}
+                      onChange={(e) =>
+                        setVisibleTempPlanIds((prev) =>
+                          e.target.checked
+                            ? [...prev, p.id]
+                            : prev.filter((x) => x !== p.id)
+                        )
+                      }
+                    />{" "}
+                    <span
+                      className="inline-block w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ background: generateColor(p.id) }}
+                    />
+                    <button
+                      className="hover:underline truncate text-left"
+                      onClick={() => zoomToPlan(p.id)}
+                      title={p.planNumber}
+                    >
+                      {p.planNumber}
+                    </button>
+                  </label>
                   <button
-                    className="hover:underline truncate"
-                    onClick={() => zoomToPlan(p.id)}
-                    title="Zoom to plan"
+                    onClick={() => removeTempPlan(p.id)}
+                    className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none flex-shrink-0"
+                    title="Remove Layer"
                   >
-                    {" "}
-                    {p.planNumber}{" "}
-                  </button>{" "}
-                </label>
-              ))}{" "}
-            </div>{" "}
+                    &times;
+                  </button>
+                </div>
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -882,11 +866,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       {filteredPlans.length > 0 && (
         <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 rounded-xl shadow-lg p-3">
           <div className="text-sm font-semibold mb-2">
-            {" "}
-            Filtered Plans ({filteredPlans.length}){" "}
+            Filtered Plans ({filteredPlans.length})
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
-            {" "}
             {filteredPlans.map((p) => (
               <button
                 key={p.id}
@@ -903,21 +885,18 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   zoomToPlan(p.id);
                 }}
               >
-                {" "}
                 <div className="flex items-center gap-2">
-                  {" "}
                   <span
                     className="inline-block w-3 h-3 rounded-sm"
                     style={{ background: generateColor(p.id) }}
-                  />{" "}
-                  <span className="font-medium text-sm">{p.planNumber}</span>{" "}
-                </div>{" "}
+                  />
+                  <span className="font-medium text-sm">{p.planNumber}</span>
+                </div>
                 <div className="text-xs text-gray-600 truncate">
-                  {" "}
-                  {p.planType as string} · {p.status}{" "}
-                </div>{" "}
+                  {p.planType as string} · {p.status}
+                </div>
               </button>
-            ))}{" "}
+            ))}
           </div>
         </div>
       )}
