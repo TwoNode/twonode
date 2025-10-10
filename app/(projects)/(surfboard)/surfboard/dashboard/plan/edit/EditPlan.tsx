@@ -10,15 +10,17 @@ export default function EditPlan({
   isSuperAdmin?: boolean;
 }) {
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      <h1 className="text-xl font-semibold mb-4">Edit Surfboard Plan</h1>
-      {/* Map shows by default within the form */}
-      <SurfboardPlanForm
-        mode="edit"
-        initial={plan}
-        isSuperAdmin={!!isSuperAdmin}
-      />
-    </div>
+    <>
+      <div className="mx-auto p-4">
+        {/* <h1 className="text-xl font-semibold mb-4">Edit Surfboard Plan</h1> */}
+
+        <SurfboardPlanForm
+          mode="edit"
+          initial={plan}
+          isSuperAdmin={!!isSuperAdmin}
+        />
+      </div>
+    </>
   );
 }
 

@@ -3,7 +3,7 @@
 
 import { useMemo } from "react";
 import * as turf from "@turf/turf";
-import MaplibreMultiPlansWithSearch from "./MaplibreMultiPlans";
+import MaplibreMultiPlansWithSearch from "../../../components/maps/MaplibreMultiPlans";
 import { PillarData, Plan } from "../../../types/surfboardTypes";
 
 type DBPlan = {
