@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
-
 import { SidebarMobile } from "./navbar-mobile";
 import { navbarItems } from "./navbarItems";
 import { usePathname } from "next/navigation";
-
+import { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,8 +15,42 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
 
+interface NavbarItemProps {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+  important?: boolean;
+  className?: string;
+}
+
 const Navbar = () => {
   const pathname = usePathname();
+
+  const renderNavItem = (item: NavbarItemProps) => {
+    const isActive = pathname === item.href;
+    const Icon = item.icon;
+    
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`text-center text-base leading-7 transition-all duration-200 ${
+          item.important
+            ? `${item.className || ""} hover:opacity-90 hover:scale-105`
+            : `text-sky-950 hover:text-blue-600 ${isActive ? "font-bold" : "font-normal"}`
+        }`}
+      >
+        {item.important && Icon ? (
+          <span className="flex items-center gap-1.5">
+            <Icon className="w-4 h-4" />
+            {item.label}
+          </span>
+        ) : (
+          item.label
+        )}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -30,22 +62,8 @@ const Navbar = () => {
               <Link href={"/"} className="justify-start items-center flex">
                 <img alt="" className="" src="/logo.svg" />
               </Link>
-              <div className="justify-start items-center xl:gap-[35px] gap-[25px] flex transition-all duration-300 ease-in-out">
-                {navbarItems.links.map((item, ind) => (
-                  <Link
-                    key={ind}
-                    href={item.href}
-                    className={`text-center text-sky-950 text-base leading-7 ${
-                      pathname === item.href ? "font-bold" : "font-normal"
-                    } ${
-                      item.important
-                        ? "glow-link font-bold scale-125 hover:scale-125"
-                        : ""
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+              <div className="justify-start items-center xl:gap-[25px] gap-[15px] flex transition-all duration-300 ease-in-out">
+                {navbarItems.links.map((item) => renderNavItem(item))}
               </div>
 
               <div className="hidden 2xl:flex items-center justify-end gap-3">
@@ -102,7 +120,7 @@ const Navbar = () => {
         </div>
 
         {/* MOBILE NAVBAR RESPONSIVE */}
-        <div className="w-full z-[90] h-full lg:hidden">
+        <div className="lg:hidden w-full">
           <SidebarMobile sidebarItems={navbarItems} />
         </div>
       </div>

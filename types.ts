@@ -6,5 +6,6 @@ export interface SidebarItems {
     href: string;
     icon?: LucideIcon;
     important?: boolean;
+    className?: string;
   }>;
 }
