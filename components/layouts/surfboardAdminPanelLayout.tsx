@@ -133,7 +133,7 @@ export default function SurfboardAdminPanelLayout({
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
       <SurfboardAdminDashboardNavbar username={user?.name || userData?.name} />
 
-      <main
+      <div
         className={cn(
           "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
@@ -149,10 +149,10 @@ export default function SurfboardAdminPanelLayout({
             colorPalette={SURFBOARD_COLORS}
           />
         </div>
-        <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
           {children}
-        </main>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

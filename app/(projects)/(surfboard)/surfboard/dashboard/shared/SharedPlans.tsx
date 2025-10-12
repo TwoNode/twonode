@@ -242,7 +242,7 @@ export default function SharedPlans() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto py-8 px-4">
+    <div className="max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {activeTab === "myShared" ? "My Shared Plans" : "Shared with Me"}
@@ -574,7 +574,7 @@ export default function SharedPlans() {
            </TabsContent>
          </Tabs>
        </div>
-     </main>
+     </div>
    );
 
 }

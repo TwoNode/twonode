@@ -132,7 +132,7 @@ export default function RevaAdminPanelLayout({
         userData={userData}
       />
 
-      <main
+      <div
         className={cn(
           "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
           "flex"
@@ -146,10 +146,10 @@ export default function RevaAdminPanelLayout({
           />
         </div>
 
-        <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
           {children}
-        </main>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

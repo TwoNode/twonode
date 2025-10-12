@@ -236,7 +236,7 @@ export default function SurfboardUserPanelLayout({
         user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
       />
-      <main
+      <div
         className={cn(
           "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
@@ -251,7 +251,7 @@ export default function SurfboardUserPanelLayout({
             sideBarWidthClass={sideBarWidthClass}
           />
         </div>
-        <main className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
           {!hasSubscriptionAccess && (
             <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
               <div className="flex">
@@ -268,8 +268,8 @@ export default function SurfboardUserPanelLayout({
             </div>
           )}
           {children}
-        </main>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

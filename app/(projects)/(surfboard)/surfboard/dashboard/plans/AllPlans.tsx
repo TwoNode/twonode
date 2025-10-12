@@ -220,7 +220,7 @@ export default function AllPlans() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto py-8 px-4">
+    <div className="max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           All Survey Plans
@@ -577,6 +577,6 @@ export default function AllPlans() {
           </Button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

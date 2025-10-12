@@ -3186,7 +3186,12 @@ export async function getAdminBoundaries(geometry: object) {
   }
 
   // Convert the geometry object to a JSON string for the query
-  const geoJsonString = JSON.stringify(geometry);
+  let geoJsonString;
+  if (typeof geometry === "string") {
+    geoJsonString = geometry;
+  } else {
+    geoJsonString = JSON.stringify(geometry);
+  }
 
   try {
     const result = await prisma.$queryRaw<AdminBoundaryResult[]>`

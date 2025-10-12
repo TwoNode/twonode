@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function RevaAdminLogin() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4 py-12">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
         <div className="flex justify-center mb-6">
           <img
@@ -28,6 +28,6 @@ export default function RevaAdminLogin() {
           </Button>
         </LoginLink>
       </div>
-    </main>
+    </div>
   );
 }

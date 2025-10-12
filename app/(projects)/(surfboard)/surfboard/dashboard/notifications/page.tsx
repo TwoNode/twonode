@@ -40,7 +40,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main className="max-w-2xl mx-auto py-10 px-4">
+    <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold text-blue-900 mb-6">Notifications</h1>
       <div className="space-y-4">
         {notifications.length === 0 && (
@@ -67,6 +67,6 @@ export default function NotificationsPage() {
         ))}
       </div>
       {/* TODO: Integrate with backend notification system */}
-    </main>
+    </div>
   );
 }

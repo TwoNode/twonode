@@ -139,17 +139,29 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
       });
       map.current.on("click", "point-symbol", (e) => {
         const feature = e.features?.[0] as Feature<Point, GeoJsonProperties>;
-        console.log(feature);
         if (
           feature?.geometry?.type === "Point" &&
           feature.geometry.coordinates
         ) {
+          const { easting, northing, pointIndex, pillarNumber } =
+            feature.properties || {};
           popup
             .setLngLat(feature.geometry.coordinates as LngLatLike)
             .setHTML(
-              `<strong>Pillar:</strong> ${
-                feature.properties?.pillarNumber ?? "N/A"
-              }`
+              `
+              <div class="space-y-1">
+                <div><strong>Pillar Number:</strong> ${
+                  pillarNumber ?? "N/A"
+                }</div>
+                <div><strong>Index:</strong> ${pointIndex ?? "N/A"}</div>
+                <div><strong>Easting:</strong> ${
+                  easting ? easting.toFixed(3) : "N/A"
+                }</div>
+                <div><strong>Northing:</strong> ${
+                  northing ? northing.toFixed(3) : "N/A"
+                }</div>
+              </div>
+            `
             )
             .addTo(map.current!);
         }
@@ -181,7 +193,12 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
         p.easting,
         p.northing,
       ]);
-      return turf.point([lon, lat], { pillarNumber: p.pillarNumber });
+      return turf.point([lon, lat], {
+        pillarNumber: p.pillarNumber,
+        easting: p.easting,
+        northing: p.northing,
+        pointIndex: p.pointIndex,
+      });
     });
     const coords = pointFeatures.map((f) => f.geometry.coordinates);
     if (

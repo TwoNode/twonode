@@ -114,7 +114,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="space-y-4">
           <Alert className="border-green-200 bg-green-50">
             <div className="flex items-start gap-3">
@@ -524,7 +524,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
             <p className="text-sm text-blue-800">{formData.statusMessage}</p>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };

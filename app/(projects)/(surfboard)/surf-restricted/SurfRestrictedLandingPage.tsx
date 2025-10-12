@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function SurfRestrictedLandingPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-100 px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-100 px-4 py-12">
       <section className="max-w-2xl w-full text-center mb-10">
         <h1 className="text-4xl md:text-5xl font-extrabold text-blue-900 mb-4">
           Surfboard Restricted Area
@@ -32,6 +32,6 @@ export default function SurfRestrictedLandingPage() {
         &copy; {new Date().getFullYear()} TwoNode Technologies. All rights
         reserved.
       </footer>
-    </main>
+    </div>
   );
 }

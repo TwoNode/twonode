@@ -35,7 +35,7 @@ export default function MapViewerPage() {
   );
 
   return (
-    <main className="max-w-6xl mx-auto py-10 px-4">
+    <div className="max-w-6xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-bold text-blue-900 mb-6">Map Viewer</h1>
       <div className="mb-4 flex flex-col md:flex-row gap-4 items-center justify-between">
         <input
@@ -80,6 +80,6 @@ export default function MapViewerPage() {
         </div>
       )}
       {/* TODO: On map polygon click, setSelectedPlan(plan) */}
-    </main>
+    </div>
   );
 }
