@@ -36,24 +36,34 @@ export default function Home() {
       {/* Our Projects */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Our Projects</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Our Projects
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Surfboard Project */}
             <Link href="/surfboard" className="group block">
               <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 h-full">
                 <div className="relative h-48 bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
-                  <Image 
-                    src="/surfboard/surf_logo.png" 
-                    alt="Surfboard Project" 
-                    width={120} 
+                  <Image
+                    src="/surfboard/surf_logo.png"
+                    alt="Surfboard Project"
+                    width={120}
                     height={120}
                     className="object-contain"
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-blue-600">Surfboard</h3>
-                  <p className="text-gray-600">Advanced subscription management and billing platform with powerful analytics and reporting features.</p>
-                  <div className="mt-4 text-blue-600 font-medium">Learn more →</div>
+                  <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-blue-600">
+                    Surfboard
+                  </h3>
+                  <p className="text-gray-600">
+                    Unlock the value of geospatial data. Surfboard empowers
+                    surveyors, planners, and land administrators with actionable
+                    insights and structured land intelligence.
+                  </p>
+                  <div className="mt-4 text-blue-600 font-medium">
+                    Learn more →
+                  </div>
                 </div>
               </div>
             </Link>
@@ -62,18 +72,25 @@ export default function Home() {
             <Link href="/reva" className="group block">
               <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 h-full">
                 <div className="relative h-48 bg-gradient-to-r from-green-500 to-green-700 flex items-center justify-center">
-                  <Image 
-                    src="/reva/revaLogo.png" 
-                    alt="Reva Project" 
-                    width={180} 
+                  <Image
+                    src="/reva/revaLogo.png"
+                    alt="Reva Project"
+                    width={180}
                     height={100}
                     className="object-contain"
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-green-600">Reva</h3>
-                  <p className="text-gray-600">Comprehensive due diligence and property assessment platform for real estate professionals.</p>
-                  <div className="mt-4 text-green-600 font-medium">Learn more →</div>
+                  <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-green-600">
+                    Reva
+                  </h3>
+                  <p className="text-gray-600">
+                    Comprehensive due diligence and property assessment platform
+                    for real estate professionals.
+                  </p>
+                  <div className="mt-4 text-green-600 font-medium">
+                    Learn more →
+                  </div>
                 </div>
               </div>
             </Link>
