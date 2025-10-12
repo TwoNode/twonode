@@ -1,20 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { getPublicSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   MapPin,
   Ruler,
@@ -44,7 +37,7 @@ function DetailItem({
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value?: string | number | null;
+  value?: string | number | null | React.ReactNode;
   className?: string;
 }) {
   if (value === undefined || value === null || value === "") return null;
@@ -435,7 +428,39 @@ function PlanDetails({ planId }: { planId: string }) {
                   <DetailItem
                     icon={MapPin}
                     label="Coordinates"
-                    value={coordinates}
+                    value={
+                      <div className="flex flex-col">
+                        <span>{coordinates}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!plan.centroid) return;
+                            const [lng, lat] = plan.centroid;
+                            window.open(
+                              `https://www.google.com/maps?q=${lat},${lng}`,
+                              "_blank"
+                            );
+                          }}
+                          className="mt-1 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline self-start"
+                        >
+                          View on Google Maps
+                          <svg
+                            className="w-3 h-3 ml-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    }
                     className="md:col-span-2"
                   />
                 )}

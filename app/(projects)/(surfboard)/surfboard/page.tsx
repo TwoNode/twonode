@@ -100,7 +100,7 @@ export default function SurfboardLandingPage() {
     },
     {
       title: "Survey Plan Viewer",
-      desc: "Interactive map viewer (ArcGIS JS API + Google Maps API) for visualizing, searching, and querying survey plans and parcel boundaries.",
+      desc: "Interactive map viewer for visualizing, searching, and querying survey plans and parcel boundaries.",
       icon: Map,
     },
     {
@@ -205,7 +205,7 @@ export default function SurfboardLandingPage() {
                 <ShieldCheck className="h-4 w-4" /> Validation checks
               </span>
               <span className="inline-flex items-center gap-2">
-                <Layers className="h-4 w-4" /> PostGIS-ready
+                <Layers className="h-4 w-4" /> GIS-ready
               </span>
               <span className="inline-flex items-center gap-2">
                 <Map className="h-4 w-4" /> Interactive map
@@ -402,7 +402,7 @@ export default function SurfboardLandingPage() {
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="inline-flex items-center gap-2 text-sm text-white/80">
               <Image
-                src="/surfboard/surf_logo.png"
+                src="/surfboard/surf_light_logo.png"
                 alt="Surfboard"
                 width={64}
                 height={64}

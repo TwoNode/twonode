@@ -109,6 +109,7 @@ export interface ApiResult<T> {
 }
 
 export type SubscriptionStatus = "active" | "cancelled" | "expired" | "pending";
+export type SurfPlanStatus = "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
 
 export interface SubscriptionPlan {
   id: string | "monthly" | "quarterly" | "yearly";

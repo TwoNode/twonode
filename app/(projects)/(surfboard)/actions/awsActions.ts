@@ -448,107 +448,6 @@ export async function buildSurfboardObjectKey(params: {
   return key;
 }
 
-// // Create many presigned PUT URLs for multi-file upload; add audit logs
-// export async function getSurfboardUploadTargetsMulti(
-//   formData: FormData
-// ): Promise<UploadTarget[]> {
-//   const user = await getAuthenticatedSurfUserFromCookie();
-//   if (!user) throw new Error("User not authenticated");
-
-//   // Extract form data
-//   const planNumber = formData.get("planNumber") as string;
-//   const category = formData.get("category") as UploadCategory;
-
-//   if (!planNumber || !category) {
-//     throw new Error(
-//       "Missing required fields: planNumber and category are required"
-//     );
-//   }
-
-//   // Extract files from FormData
-//   const files: { file: File; name: string; type: string }[] = [];
-//   let index = 0;
-
-//   while (formData.has(`file-${index}`)) {
-//     const file = formData.get(`file-${index}`) as File;
-//     const name = formData.get(`filename-${index}`) as string;
-//     const type =
-//       (formData.get(`filetype-${index}`) as string) ||
-//       "application/octet-stream";
-
-//     if (file && name) {
-//       // Decode the filename that was encoded on the client side
-//       const decodedName = decodeURIComponent(name);
-//       files.push({ file, name: decodedName, type });
-//     }
-//     index++;
-//   }
-
-//   console.log("[awsActions] getSurfboardUploadTargetsMulti: start", {
-//     userId: user.id,
-//     planNumber,
-//     category,
-//     count: files.length,
-//   });
-
-//   const targets: UploadTarget[] = [];
-
-//   for (let i = 0; i < files.length; i++) {
-//     const file = files[i];
-//     const key = await buildSurfboardObjectKey({
-//       category,
-//       planNumber,
-//       index: i,
-//       filename: file.name,
-//       userId: user.id,
-//     });
-//     const cleanKey = key.replace(/^\/+/, "");
-
-//     // Generate presigned URL for S3 upload
-//     const command = new CreateMultipartUploadCommand({
-//       Bucket: BUCKET,
-//       Key: cleanKey,
-//       ContentType: file.type,
-//       Metadata: {
-//         originalName: file.name,
-//         fileType: category,
-//         planNumber: planNumber || "unknown",
-//         uploadedAt: new Date().toISOString(),
-//       },
-//     });
-
-//     const result = await s3.send(command);
-//     const uploadId = result.UploadId;
-
-//     // Create presigned URL for each part
-//     const presignedUrl = await getSignedUrl(
-//       s3,
-//       new UploadPartCommand({
-//         Bucket: BUCKET,
-//         Key: cleanKey,
-//         UploadId: uploadId,
-//         PartNumber: 1, // For single part uploads
-//       }),
-//       { expiresIn: 3600 } // URL expires in 1 hour
-//     );
-
-//     const publicUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${cleanKey}`;
-
-//     targets.push({
-//       key: cleanKey,
-//       url: presignedUrl,
-//       publicUrl: publicUrl,
-//       uploadId: uploadId,
-//     });
-//   }
-
-//   console.log(
-//     "[awsActions] getSurfboardUploadTargetsMulti: generated targets",
-//     targets
-//   );
-//   return targets;
-// }
-
 // Create many presigned PUT URLs for multi-file upload; add audit logs
 export async function getSurfboardUploadTargetsMulti(
   formData: FormData
@@ -596,36 +495,20 @@ export async function getSurfboardUploadTargetsMulti(
 
   for (let i = 0; i < files.length; i++) {
     const { file, name, type } = files[i];
-
-    // const key = await buildSurfboardObjectKey({
-    //   category,
-    //   planNumber,
-    //   index: i,
-    //   filename: file.name,
-    //   userId: user.id,
-    // });
-
-    // First, extract the file extension
     const extension = name.split(".").pop()?.toLowerCase() || "";
-    const baseName = name.substring(0, name.lastIndexOf(".")) || name;
 
-    // Clean the base name (allow only alphanumeric, space, hyphen, underscore)
-    const cleanBase = baseName
-      .normalize("NFD") // Normalize diacritics
-      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
-      .replace(/[^a-zA-Z0-9\s_-]/g, "") // Remove special chars but keep spaces, hyphens, underscores
-      .trim() // Trim whitespace
-      .replace(/\s+/g, "-") // Replace spaces with single hyphen
-      .replace(/-+/g, "-") // Replace multiple hyphens with single
-      .toLowerCase();
+    // Generate the new filename based on the convention
+    let newFilename: string;
+    if (files.length === 1) {
+      // Single file: {{planNumber}}.{{extension}}
+      newFilename = `${planNumber}.${extension}`;
+    } else {
+      // Multiple files: {{planNumber}}__1.{{ext}}, {{planNumber}}__2.{{ext}}, etc.
+      newFilename = `${planNumber}__${i + 1}.${extension}`;
+    }
 
-    // Rebuild the filename with extension
-    const cleanName = extension ? `${cleanBase}.${extension}` : cleanBase;
-
-    // Generate a unique key similar to uploadSurfboardFileToS3
-    const uniqueSuffix = `${planNumber}__${Date.now()}`;
     const prefix = `surfboard/${user.id}/${category}`;
-    const key = `${prefix}/${uniqueSuffix}__${cleanName}`;
+    const key = `${prefix}/${newFilename}`;
     // Clean the full path
     const cleanKey = key
       .replace(/^\/+/, "") // Remove leading slashes
@@ -643,7 +526,7 @@ export async function getSurfboardUploadTargetsMulti(
           Body: buffer,
           ContentType: type,
           Metadata: {
-            originalName: cleanName,
+            originalName: newFilename,
             fileType: category,
             planNumber: planNumber || "unknown",
             uploadedAt: new Date().toISOString(),
@@ -715,8 +598,8 @@ export async function uploadFile(
 ): Promise<{ url: string; key: string; originalName: string }> {
   try {
     let fileBuffer: Buffer;
-    let originalName = 'file';
-    let contentType = 'application/octet-stream';
+    let originalName = "file";
+    let contentType = "application/octet-stream";
 
     // Handle different file types
     if (file instanceof File) {
@@ -734,26 +617,30 @@ export async function uploadFile(
       }
       fileBuffer = Buffer.concat(chunks as unknown as readonly Uint8Array[]);
     } else {
-      throw new Error('Unsupported file type. Must be File, Buffer, or Readable');
+      throw new Error(
+        "Unsupported file type. Must be File, Buffer, or Readable"
+      );
     }
 
     // Generate a clean filename
     const cleanName = (filename || originalName)
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-      .replace(/[^a-zA-Z0-9\s._-]/g, '') // Remove special chars
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^a-zA-Z0-9\s._-]/g, "") // Remove special chars
       .trim()
-      .replace(/\s+/g, '-') // Replace spaces with single hyphen
-      .replace(/-+/g, '-')
+      .replace(/\s+/g, "-") // Replace spaces with single hyphen
+      .replace(/-+/g, "-")
       .toLowerCase();
 
     // Generate a unique key
     const uniqueSuffix = planNumber
       ? `${planNumber}__${Date.now()}`
       : `${Date.now()}__${Math.random().toString(36).substring(2, 8)}`;
-    
+
     const prefix = `surfboard/${userId}/${fileType}`;
-    const key = `${prefix}/${uniqueSuffix}__${cleanName}`.replace(/\/+/g, '/').replace(/^\/+/, '');
+    const key = `${prefix}/${uniqueSuffix}__${cleanName}`
+      .replace(/\/+/g, "/")
+      .replace(/^\/+/, "");
 
     // Upload to S3
     await s3.send(
@@ -765,7 +652,7 @@ export async function uploadFile(
         Metadata: {
           originalName: cleanName,
           fileType: fileType,
-          planNumber: planNumber || 'not-specified',
+          planNumber: planNumber || "not-specified",
           uploadedAt: new Date().toISOString(),
           uploadedBy: userId,
         },
@@ -780,9 +667,11 @@ export async function uploadFile(
       originalName: cleanName,
     };
   } catch (error) {
-    console.error('Error uploading file to S3:', error);
+    console.error("Error uploading file to S3:", error);
     throw new Error(
-      `Failed to upload file to S3: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to upload file to S3: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
     );
   }
 }

@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { PLAN_TYPES as PLAN_TYPES_OBJ } from "../../../types/surfboardTypes";
 
 interface PlanFilters {
   search?: string;
@@ -58,20 +59,8 @@ const SORT_OPTIONS: SortOption[] = [
   { field: "status", label: "Status", defaultOrder: "asc" },
 ];
 
-const PLAN_STATUSES = [
-  "Draft",
-  "Submitted",
-  "In Review",
-  "Approved",
-  "Rejected",
-];
-const PLAN_TYPES = [
-  "Residential",
-  "Commercial",
-  "Industrial",
-  "Agricultural",
-  "Other",
-];
+const PLAN_STATUSES = ["Pending", "In Review", "Lodged", "Rejected"];
+const PLAN_TYPES = Array.from(Object.values(PLAN_TYPES_OBJ));
 
 export default function AllPlans() {
   const [search, setSearch] = useState("");
@@ -121,7 +110,8 @@ export default function AllPlans() {
           totalPages: result?.data?.totalPages || 1,
         }));
       } else {
-        toast.error(result?.error || "Failed to load plans");
+        console.warn(result);
+        toast.error("Error loading plans");
       }
     } catch (error) {
       console.error("Error loading plans:", error);
@@ -220,7 +210,7 @@ export default function AllPlans() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4">
+    <div className="w-full max-w-full mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           All Survey Plans
@@ -501,7 +491,7 @@ export default function AllPlans() {
       </div>
 
       {/* Plans List */}
-      <div className="mb-4">
+      <div className="border-4 border-blue-200 grid grid-cols-1 gap-4 mb-4 max-w-full w-full overflow-x-hidden">
         <PlanView
           plans={plans}
           emptyMessage="No survey plans found. Try adjusting your filters or create a new plan."

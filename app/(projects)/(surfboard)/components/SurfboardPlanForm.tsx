@@ -21,10 +21,7 @@ import {
   checkPlanNumberExists,
   getAdminBoundaries,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import {
-  completeSurfboardUpload,
-  getSurfboardUploadTargetsMulti,
-} from "@/app/(projects)/(surfboard)/actions/awsActions";
+import { getSurfboardUploadTargetsMulti } from "@/app/(projects)/(surfboard)/actions/awsActions";
 import {
   generatePolygonFromPillars,
   parseCSVContent,
@@ -137,6 +134,8 @@ export type SurfboardPlanFormProps = {
   initial?: SurfboardPlanDTO;
   isSuperAdmin?: boolean;
 };
+
+const VALID_CAD_EXTENSIONS = [".dwg", ".dxf"];
 
 export default function SurfboardPlanForm({
   mode,
@@ -905,13 +904,35 @@ export default function SurfboardPlanForm({
                     id="cadFiles"
                     type="file"
                     multiple
+                    accept=".dwg,.dxf"
                     disabled={lockNonCert && mode === "edit"}
-                    onChange={(e) =>
-                      setSelectedCadFiles(Array.from(e.target.files || []))
-                    }
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      const invalidFiles = files.filter(
+                        (file) =>
+                          !VALID_CAD_EXTENSIONS.some((ext) =>
+                            file.name.toLowerCase().endsWith(ext)
+                          )
+                      );
+
+                      if (invalidFiles.length > 0) {
+                        toast.error(
+                          `Invalid file type. Only ${VALID_CAD_EXTENSIONS.join(
+                            ", "
+                          )} files are allowed.`
+                        );
+                        // Clear the input
+                        e.target.value = "";
+                        return;
+                      }
+                      setSelectedCadFiles(files);
+                    }}
                     className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
                   />
                   {errors.cad && <p className={errorCls}>{errors.cad}</p>}
+                  <p className={helpCls}>
+                    Allowed formats: {VALID_CAD_EXTENSIONS.join(", ")}
+                  </p>
                   <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
                     {(form.cadFilePaths || []).map((p) => (
                       <li key={p}>{p}</li>

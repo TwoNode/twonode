@@ -9,6 +9,7 @@ import type {
   CreatePlanData,
   FileUploadData,
   AnalyticsData,
+  SurfPlanStatus,
 } from "../types/surfboardTypes";
 import {
   uploadSurfboardFileToS3,
@@ -19,6 +20,17 @@ import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 
 import QRCode from "qrcode";
 import { headers } from "next/headers";
+
+// Map frontend status values to Prisma enum values
+const statusMap: Record<string, SurfPlanStatus> = {
+  Draft: "PENDING",
+  Pending: "PENDING",
+  Lodged: "LODGED",
+  Submitted: "LODGED",
+  "In Review": "UNDER_REVIEW",
+  Approved: "LODGED", // Assuming 'LODGED' is used for approved plans
+  Rejected: "QUERIED", // Assuming 'QUERIED' is used for rejected plans
+};
 
 interface QRCodeOptions {
   darkColor?: string;
@@ -383,459 +395,6 @@ export async function _createSurfPlan(
   }
 }
 
-// /**
-//  * Creates a new surfboard plan:
-//  * - Stores geometry & pillars as JSONB
-//  * - Uploads files to S3 with the specified path format
-//  */
-// export async function createSurfPlan(
-//   data: CreatePlanData,
-//   files: FileUploadData
-// ): Promise<ApiResult<{ planId: string }>> {
-//   try {
-//     const user = await getAuthenticatedSurfUserFromCookie();
-
-//     if (!user || !user.role) {
-//       return {
-//         success: false,
-//         error: "User not authenticated or role not found",
-//       };
-//     }
-
-//     // 1) Validate required fields and ≥3 pillars
-//     if (
-//       !data.planNumber ||
-//       !data.surveyTitle ||
-//       !data.planType ||
-//       !data.deededArea ||
-//       !data.facilitator ||
-//       !data.pillarType ||
-//       !data.geometry ||
-//       !Array.isArray(data.pillars) ||
-//       data.pillars.length < 3
-//     ) {
-//       throw new Error(
-//         "All fields are required and at least 3 pillars must be provided"
-//       );
-//     }
-
-//     // 2) Ensure unique planNumber
-//     if (
-//       await prisma.surfboardPlan.findUnique({
-//         where: { planNumber: data.planNumber },
-//       })
-//     ) {
-//       throw new Error("Plan number already exists");
-//     }
-
-//     // 3) Upload files to S3 with the new path format
-//     const uploadPromises: Promise<string[]>[] = [];
-//     const uploadedFiles: string[] = [];
-
-//     const cadFiles = files.cadFiles?.length ? files.cadFiles : [];
-//     const pdfFiles = files.pdfFiles?.length ? files.pdfFiles : [];
-//     const certificateFiles = files.certificateFiles?.length
-//       ? files.certificateFiles
-//       : [];
-
-//     // Prepare file uploads
-//     const fileUploads = [
-//       { type: "pdf" as const, files: pdfFiles },
-//       { type: "cad" as const, files: cadFiles },
-//       { type: "certificate" as const, files: certificateFiles },
-//     ];
-
-//     // Process each file type
-//     for (const { type, files: fileList } of fileUploads) {
-//       if (fileList?.length) {
-//         uploadPromises.push(
-//           uploadMultipleSurfboardFilesToS3(
-//             fileList.map((file) => ({ file, type })),
-//             data.planNumber,
-//             user.id
-//           ).then((results) => results.map((r) => r.url))
-//         );
-//       }
-//     }
-
-//     // Wait for all uploads to complete
-//     const uploadResults = await Promise.allSettled(uploadPromises);
-
-//     // Process upload results
-//     const fileUrls: Record<string, string[]> = {
-//       pdfFilePaths: [],
-//       cadFilePaths: [],
-//       certificateFilePaths: [],
-//     };
-
-//     uploadResults.forEach((result, index) => {
-//       if (result.status === "fulfilled" && result.value) {
-//         const fileType = fileUploads[index].type;
-//         const fieldName = `${fileType}FilePaths` as keyof typeof fileUrls;
-//         fileUrls[fieldName] = result.value;
-//         uploadedFiles.push(...result.value);
-//       } else if (result.status === "rejected") {
-//         console.error(
-//           `Error uploading ${fileUploads[index].type} files:`,
-//           result.reason
-//         );
-//       }
-//     });
-
-//     // Check for any upload failures
-//     const hasUploadFailures = uploadResults.some(
-//       (result) => result.status === "rejected"
-//     );
-
-//     if (hasUploadFailures) {
-//       // Clean up any successfully uploaded files
-//       await deleteMultipleSurfboardFilesFromSS3(
-//         uploadedFiles.map((url) => ({ url }))
-//       );
-//       throw new Error("Failed to upload one or more files. Please try again.");
-//     }
-
-//     // 4) Insert the plan record
-//     const plan = await prisma.surfboardPlan.create({
-//       data: {
-//         userId: user.id,
-//         planNumber: data.planNumber,
-//         surveyTitle: data.surveyTitle,
-//         planType: data.planType,
-//         referencePlanNumber: data.referencePlanNumber ?? null,
-//         deededArea: data.deededArea,
-//         facilitator: data.facilitator,
-//         pillarType: data.pillarType,
-//         ward: data.ward,
-//         lcda: data.lcda,
-//         lga: data.lga,
-//         geometry: data.geometry, // JSONB
-//         pillars: data.pillars, // JSONB
-//         pdfFilePaths: fileUrls.pdfFilePaths,
-//         cadFilePaths: fileUrls.cadFilePaths,
-//         certificateFilePaths: fileUrls.certificateFilePaths,
-//         status: "PENDING",
-//         isLive: true,
-//         dateOnSurveyPlan: data.dateOnSurveyPlan || null,
-//         reasonForWithdrawalAndResubmission:
-//           data.reasonForWithdrawalAndResubmission || null,
-//       },
-//     });
-
-//     revalidatePath("/surfboard/dashboard/plan");
-//     revalidatePath(`/surfboard/dashboard/plan/${plan.id}`);
-
-//     return {
-//       success: true,
-//       data: { planId: plan.id },
-//     };
-//   } catch (error) {
-//     console.error("Error creating plan:", error);
-//     return {
-//       success: false,
-//       error:
-//         error instanceof Error
-//           ? error.message
-//           : "An unknown error occurred while creating the plan",
-//     };
-//   }
-// }
-
-// export async function _editSurfboardPlan(
-//   formData: FormData
-// ): Promise<ApiResult<Plan>> {
-//   try {
-//     const user = await getAuthenticatedSurfUserFromCookie();
-//     if (!user) {
-//       return { success: false, error: "Unauthorized" };
-//     }
-
-//     const planId = formData.get("id") as string;
-//     if (!planId) {
-//       return { success: false, error: "Plan ID is required" };
-//     }
-
-//     // Get the existing plan to check creation time and current certificate
-//     const existingPlan = await prisma.surfboardPlan.findUnique({
-//       where: { id: planId },
-//     });
-
-//     if (!existingPlan) {
-//       return { success: false, error: "Plan not found" };
-//     }
-
-//     // Check if the plan was created more than 24 hours ago
-//     const isWithin24Hours =
-//       existingPlan.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-//     // Prepare update data
-//     const updateData: any = {};
-
-//     // Only update these fields if within 24 hours
-//     if (isWithin24Hours) {
-//       if (formData.get("planNumber")) {
-//         updateData.planNumber = formData.get("planNumber") as string;
-//       }
-//       if (formData.get("surveyTitle")) {
-//         updateData.surveyTitle = formData.get("surveyTitle") as string;
-//       }
-//       if (formData.get("planType")) {
-//         updateData.planType = formData.get("planType") as string;
-//       }
-//       if (formData.get("referencePlanNumber")) {
-//         updateData.referencePlanNumber = formData.get(
-//           "referencePlanNumber"
-//         ) as string;
-//       }
-//       if (formData.get("deededArea")) {
-//         updateData.deededArea = formData.get("deededArea") as string;
-//       }
-//       if (formData.get("facilitator")) {
-//         updateData.facilitator = formData.get("facilitator") as string;
-//       }
-//     }
-
-//     // Handle certificate file upload
-//     const certificateFile = formData.get("certificateFile") as File | null;
-//     let certificateFilePath = formData.get("certificateFilePath") as
-//       | string
-//       | null;
-
-//     console.log("\n\n\n\n\n\n\n\ncertificateFile", certificateFile);
-//     console.log("certificateFilePath", certificateFilePath);
-//     if (certificateFile && certificateFile.size > 0) {
-//       try {
-//         // Upload the new certificate file to S3
-//         const uploadResult = await uploadSurfboardFileToS3(
-//           certificateFile,
-//           "certificate",
-//           `${planId}`
-//         );
-
-//         console.log("uploadResult", uploadResult);
-
-//         if (!uploadResult.url) {
-//           return { success: false, error: "Failed to upload certificate file" };
-//         }
-
-//         certificateFilePath = uploadResult.url;
-//         updateData.status = "LODGED"; // Update status to LODGED when a certificate is uploaded
-//       } catch (error) {
-//         console.error("Error uploading certificate file:", error);
-//         return { success: false, error: "Failed to upload certificate file" };
-//       }
-
-//       // If there was a previous certificate file, delete it from S3
-//       if (existingPlan.certificateFilePaths) {
-//         try {
-//           const filesToDelete = existingPlan.certificateFilePaths.map(
-//             (url) => ({ url })
-//           );
-//           await deleteMultipleSurfboardFilesFromS3(filesToDelete);
-//         } catch (error) {
-//           console.error("Error deleting old certificate file:", error);
-//           // Continue even if deletion fails
-//         }
-//       }
-
-//       updateData.certificateFilePath = certificateFilePath;
-//     } else if (certificateFilePath) {
-//       // If no new file but path exists, keep the existing path
-//       updateData.certificateFilePath = certificateFilePath;
-//     }
-
-//     // Update the plan in the database
-//     const updatedPlan = await prisma.surfboardPlan.update({
-//       where: { id: planId },
-//       data: updateData,
-//       include: {
-//         user: {
-//           select: {
-//             id: true,
-//             firstName: true,
-//             lastName: true,
-//             email: true,
-//           },
-//         },
-//       },
-//     });
-
-//     revalidatePath(`/surfboard/dashboard/plan/edit?planId=${planId}`);
-
-//     return {
-//       success: true,
-//       data: {
-//         ...updatedPlan,
-//         status: updatedPlan.status as
-//           | "PENDING"
-//           | "LODGED"
-//           | "QUERIED"
-//           | "UNDER_REVIEW",
-//       },
-//     };
-//   } catch (error) {
-//     console.error("Error updating plan:", error);
-//     return {
-//       success: false,
-//       error: error instanceof Error ? error.message : "Failed to update plan",
-//     };
-//   }
-// }
-
-// export async function editSurfboardPlan(
-//   formData: FormData
-// ): Promise<ApiResult<Plan>> {
-//   try {
-//     const user = await getAuthenticatedSurfUserFromCookie();
-//     if (!user) {
-//       return { success: false, error: "Unauthorized" };
-//     }
-
-//     const planId = formData.get("id") as string;
-//     if (!planId) {
-//       return { success: false, error: "Plan ID is required" };
-//     }
-
-//     // Get the existing plan
-//     const existingPlan = await prisma.surfboardPlan.findUnique({
-//       where: { id: planId },
-//     });
-
-//     if (!existingPlan) {
-//       return { success: false, error: "Plan not found" };
-//     }
-
-//     // Check if the plan was created more than 24 hours ago
-//     const isWithin24Hours =
-//       Date.now() - existingPlan.createdAt.getTime() < 24 * 60 * 60 * 1000;
-
-//     // Only allow editing certificate files after 24 hours
-//     if (!isWithin24Hours) {
-//       const certificateFiles = formData.getAll("certificateFiles") as File[];
-//       if (certificateFiles.length === 0) {
-//         return {
-//           success: false,
-//           error: "Only certificate files can be edited after 24 hours",
-//         };
-//       }
-//     }
-
-//     // Prepare update data
-//     const updateData: any = {};
-
-//     // Only update these fields if within 24 hours
-//     if (isWithin24Hours) {
-//       if (formData.get("planNumber")) {
-//         updateData.planNumber = formData.get("planNumber") as string;
-//       }
-//       if (formData.get("surveyTitle")) {
-//         updateData.surveyTitle = formData.get("surveyTitle") as string;
-//       }
-//       if (formData.get("planType")) {
-//         updateData.planType = formData.get("planType") as string;
-//       }
-//       if (formData.get("referencePlanNumber")) {
-//         updateData.referencePlanNumber = formData.get(
-//           "referencePlanNumber"
-//         ) as string;
-//       }
-//       if (formData.get("deededArea")) {
-//         updateData.deededArea = formData.get("deededArea") as string;
-//       }
-//       if (formData.get("facilitator")) {
-//         updateData.facilitator = formData.get("facilitator") as string;
-//       }
-//     }
-
-//     // Handle file uploads
-//     const fileTypes = ["pdf", "cad", "certificate"] as const;
-//     const uploadedFileUrls: Record<string, string[]> = {
-//       pdfFilePaths: [],
-//       cadFilePaths: [],
-//       certificateFilePaths: [],
-//     };
-
-//     // Process each file type
-//     for (const fileType of fileTypes) {
-//       const files = formData.getAll(`${fileType}Files`) as File[];
-//       const existingFiles = formData.getAll(
-//         `existing${fileType.charAt(0).toUpperCase() + fileType.slice(1)}Files`
-//       ) as string[];
-
-//       if (files.length > 0 && files[0].size > 0) {
-//         try {
-//           // Upload new files
-//           const uploadResults = await uploadSameTypeSurfboardFilesToS3(
-//             files.map((file) => ({ file })),
-//             user.id,
-//             fileType,
-//             existingPlan.planNumber
-//           ).then((results) => results.map((r) => r.url));
-
-//           uploadedFileUrls[`${fileType}FilePaths`] = [
-//             ...(existingFiles || []),
-//             ...uploadResults,
-//           ];
-
-//           // If this is a certificate upload, update status to LODGED
-//           if (fileType === "certificate" && files.length > 0) {
-//             updateData.status = "LODGED";
-//             updateData.dateLodged = new Date();
-//           }
-//         } catch (error) {
-//           console.error(`Error uploading ${fileType} files:`, error);
-//           throw new Error(`Failed to upload ${fileType} files`);
-//         }
-//       } else {
-//         // Keep existing files if no new ones uploaded
-//         uploadedFileUrls[`${fileType}FilePaths`] = existingFiles || [];
-//       }
-//     }
-
-//     // Update the plan with new file paths
-//     updateData.pdfFilePaths = uploadedFileUrls.pdfFilePaths;
-//     updateData.cadFilePaths = uploadedFileUrls.cadFilePaths;
-//     updateData.certificateFilePaths = uploadedFileUrls.certificateFilePaths;
-
-//     // Update the plan in the database
-//     const updatedPlan = await prisma.surfboardPlan.update({
-//       where: { id: planId },
-//       data: updateData,
-//       include: {
-//         user: {
-//           select: {
-//             id: true,
-//             firstName: true,
-//             lastName: true,
-//             email: true,
-//           },
-//         },
-//       },
-//     });
-
-//     revalidatePath(`/surfboard/dashboard/plan/${planId}`);
-//     revalidatePath(`/surfboard/dashboard/plan/edit?planId=${planId}`);
-
-//     return {
-//       success: true,
-//       data: {
-//         ...updatedPlan,
-//         status: updatedPlan.status as
-//           | "PENDING"
-//           | "LODGED"
-//           | "QUERIED"
-//           | "UNDER_REVIEW",
-//       },
-//     };
-//   } catch (error) {
-//     console.error("Error updating plan:", error);
-//     return {
-//       success: false,
-//       error: error instanceof Error ? error.message : "Failed to update plan",
-//     };
-//   }
-// }
-
 // =============================================
 // File: surfboardActions.ts
 // =============================================
@@ -857,40 +416,6 @@ function cutoffMs(createdAt?: Date | string) {
       : createdAt.getTime();
   return t + 24 * 60 * 60 * 1000;
 }
-
-// export async function searchReferencePlanNumbers(
-//   planType: PlanType
-// ): Promise<string[]> {
-//   const conf = (referenceFilters as any)[planType];
-//   const where: any = {};
-//   if (conf?.where) {
-//     const plans = await prisma.surfboardPlan.findMany({
-//       select: { planNumber: true, planType: true },
-//     });
-//     return plans.filter(conf.where).map((p) => p.planNumber);
-//   }
-//   const plans = await prisma.surfboardPlan.findMany({
-//     select: { planNumber: true },
-//   });
-//   return plans.map((p) => p.planNumber);
-// }
-
-// export async function searchReferencePlanNumbers(
-//   planType: PlanType
-// ): Promise<string[]> {
-//   const conf = REFERENCE_FILTERS[planType];
-//   const where: any = {};
-//   if (conf?.excludeTypes)
-//     where.NOT = conf.excludeTypes.map((t) => ({ planType: t }));
-//   if (conf?.mustBeType) where.planType = { in: conf.mustBeType };
-//   const rows = await prisma.surfboardPlan.findMany({
-//     select: { planNumber: true },
-//     where,
-//     orderBy: { createdAt: "desc" },
-//     take: 100,
-//   });
-//   return rows.map((r) => r.planNumber);
-// }
 
 export async function searchReferencePlanNumbers(
   planType: PlanType
@@ -916,15 +441,6 @@ export async function searchReferencePlanNumbers(
 
   return rows.map((r) => r.planNumber);
 }
-
-// export async function _searchReferencePlanNumbers(planType: PlanType): Promise<string[]> {
-//   const conf = referenceFilters[planType]
-//   const where: any = {}
-//   if (conf?.excludeTypes) where.NOT = conf.excludeTypes.map((t) => ({ planType: t }))
-//   if (conf?.mustBeType) where.planType = { in: conf.mustBeType }
-//   const rows = await prisma.surfboardPlan.findMany({ select: { planNumber: true }, where, orderBy: { createdAt: 'desc' }, take: 100 })
-//   return rows.map((r) => r.planNumber)
-// }
 
 export async function _getAllSurfPlans() {
   const rows = await prisma.surfboardPlan.findMany({
@@ -1061,87 +577,6 @@ export async function _updatePlan(
   revalidatePath(`/surfboard/dashboard/plans/${dto.id}`);
   return { success: true };
 }
-
-// export async function createPlan(data: SurfboardPlanDTO) {
-//   // Server-side validation
-//   createPlanSchema.parse(data);
-
-//   // Persist
-//   const created = await prisma.surfboardPlan.create({
-//     data: {
-//       planNumber: data.planNumber,
-//       surveyTitle: data.surveyTitle,
-//       planType: data.planType,
-//       referencePlanNumber: data.referencePlanNumber ?? null,
-//       deededArea: data.deededArea,
-//       facilitator: data.facilitator,
-//       pillarType: data.pillarType,
-//       geometry: data.geometry,
-//       pdfFilePaths: data.pdfFilePaths,
-//       cadFilePaths: data.cadFilePaths,
-//       certificateFilePaths: data.certificateFilePaths || [],
-//       dateOnSurveyPlan: new Date(data.dateOnSurveyPlan),
-//       dateLodged: data.dateLodged ? new Date(data.dateLodged) : null,
-//       ward: data.ward ?? null,
-//       lcda: data.lcda ?? null,
-//       lga: data.lga ?? null,
-//       isLive: data.isLive ?? false,
-//     },
-//   });
-//   return { id: created.id };
-// }
-
-// export async function updatePlan(
-//   data: SurfboardPlanDTO & { userRole?: "USER" | "ADMIN" | "SUPERADMIN" }
-// ) {
-//   editPlanSchema.parse(data);
-//   const plan = await prisma.surfboardPlan.findUnique({
-//     where: { id: data.id! },
-//   });
-//   if (!plan) throw new Error("Plan not found");
-
-//   const createdAt = plan.createdAt?.getTime?.() ?? 0;
-//   const locked = Date.now() - createdAt > 24 * 60 * 60 * 1000;
-//   const canBypass = data.userRole === "SUPERADMIN";
-
-//   const updateData: any = {};
-//   if (!locked || canBypass) {
-//     Object.assign(updateData, {
-//       planNumber: data.planNumber,
-//       surveyTitle: data.surveyTitle,
-//       planType: data.planType,
-//       referencePlanNumber: data.referencePlanNumber ?? null,
-//       deededArea: data.deededArea,
-//       facilitator: data.facilitator,
-//       pillarType: data.pillarType,
-//       geometry: data.geometry,
-//       pdfFilePaths: data.pdfFilePaths,
-//       cadFilePaths: data.cadFilePaths,
-//       dateOnSurveyPlan: new Date(data.dateOnSurveyPlan),
-//       ward: data.ward ?? null,
-//       lcda: data.lcda ?? null,
-//       lga: data.lga ?? null,
-//       isLive: data.isLive ?? false,
-//     });
-//   }
-
-//   // Certificate area always editable
-//   if (data.certificateFilePaths)
-//     updateData.certificateFilePaths = data.certificateFilePaths;
-//   if (data.dateLodged !== undefined)
-//     updateData.dateLodged = data.dateLodged ? new Date(data.dateLodged) : null;
-
-//   // If certificate uploaded, mark status LODGED
-//   if ((data.certificateFilePaths?.length || 0) > 0) {
-//     updateData.status = "LODGED";
-//   }
-
-//   await prisma.surfboardPlan.update({
-//     where: { id: data.id! },
-//     data: updateData,
-//   });
-//   return { ok: true };
-// }
 
 export async function createPlan(dto: SurfboardPlanDTO) {
   try {
@@ -1451,7 +886,19 @@ export async function getPaginatedSurfPlans({
       }
 
       if (filters.status?.length) {
-        where.status = { in: filters.status };
+        // Map frontend status values to database enum values
+        const dbStatuses = filters.status
+          .map((status) => statusMap[status])
+          .filter(
+            (
+              status
+            ): status is "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW" =>
+              status !== undefined
+          );
+
+        if (dbStatuses.length > 0) {
+          where.status = { in: dbStatuses };
+        }
       }
 
       if (filters.planType?.length) {
@@ -1479,7 +926,7 @@ export async function getPaginatedSurfPlans({
     // Build orderBy
     const orderBy = sort
       ? ({
-          [String(sort.field)]: sort.order,
+          [sort.field]: sort.order,
         } as Prisma.SurfboardPlanOrderByWithRelationInput)
       : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
@@ -1800,7 +1247,14 @@ export async function getAllSharedSurfPlans(
       }
 
       if (filters.status?.length) {
-        where.status = { in: filters.status };
+        // Map frontend status values to database enum values
+        const dbStatuses = filters.status
+          .map((status) => statusMap[status])
+          .filter((status): status is SurfPlanStatus => status !== undefined);
+
+        if (dbStatuses.length > 0) {
+          where.status = { in: dbStatuses };
+        }
       }
 
       if (filters.planType?.length) {
@@ -1940,7 +1394,14 @@ export async function getSharedWithMeSurfPlans(
       }
 
       if (filters.status?.length) {
-        where.status = { in: filters.status };
+        // Map frontend status values to database enum values
+        const dbStatuses = filters.status
+          .map((status) => statusMap[status])
+          .filter((status): status is SurfPlanStatus => status !== undefined);
+
+        if (dbStatuses.length > 0) {
+          where.status = { in: dbStatuses };
+        }
       }
 
       if (filters.planType?.length) {
@@ -2308,7 +1769,12 @@ export async function updateSurfPlanStatus(
     }
 
     // Validate status
-    const validStatuses = ["PENDING", "LODGED", "QUERIED", "UNDER_REVIEW"];
+    const validStatuses = [
+      "PENDING",
+      "LODGED",
+      "QUERIED",
+      "UNDER_REVIEW",
+    ] as const;
     if (!validStatuses.includes(status)) {
       return {
         success: false,
