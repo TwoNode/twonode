@@ -202,10 +202,10 @@ export async function generatePlanQRCode(
       ...(width ? { width } : { scale }),
       color: {
         dark: darkColor,
-        light: lightColor,
+        light: lightColor + "70",
       },
       type,
-      rendererOpts: type === "image/jpeg" ? { quality: 0.92 } : undefined,
+      rendererOpts: type === "image/jpeg" ? { quality: 0.90 } : undefined,
     } as QRCode.QRCodeToDataURLOptions;
 
     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, qrOptions);
