@@ -796,12 +796,19 @@ export default function SurfboardPlanForm({
 
                 <div>
                   <label className={labelCls} htmlFor="dateOnSurveyPlan">
-                    Date on Survey Plan {reqBadge} {form.dateOnSurveyPlan}
+                    Date on Survey Plan {reqBadge}
                   </label>
                   <input
                     id="dateOnSurveyPlan"
                     type="date"
-                    value={form.dateOnSurveyPlan}
+                    value={
+                      form.dateOnSurveyPlan &&
+                      typeof form.dateOnSurveyPlan == "object"
+                        ? new Date(form.dateOnSurveyPlan)
+                            ?.toISOString()
+                            .split("T")[0]
+                        : form.dateOnSurveyPlan
+                    }
                     onChange={(e) =>
                       setField("dateOnSurveyPlan", e.target.value)
                     }

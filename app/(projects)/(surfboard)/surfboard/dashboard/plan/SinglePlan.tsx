@@ -82,11 +82,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Default: strong contrast, opaque light, safe quiet zone
+  // Default: strong contrast, blue background with 0.5 transparency, safe quiet zone
   const [qrOptions, setQrOptions] = useState({
     darkColor: "#000000",
-    lightColor: "#ffffff",
-    minLightAlpha: 0.3, // server clamps alpha >= 0.3
+    lightColor: "rgba(59, 130, 246, 0.5)", // Blue with 0.5 alpha
+    minLightAlpha: 0.4, // Set to match the desired transparency
     margin: 4,
     scale: 8,
     forceOpaque: false, // set true to generate JPEG (no alpha at all)

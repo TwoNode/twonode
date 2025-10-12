@@ -13,9 +13,6 @@ import type {
 import {
   uploadSurfboardFileToS3,
   deleteMultipleSurfboardFilesFromS3,
-  deleteMultipleSurfboardFilesFromSS3,
-  uploadMultipleSurfboardFilesToS3,
-  uploadSameTypeSurfboardFilesToS3,
 } from "./awsActions";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
