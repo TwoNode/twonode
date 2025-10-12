@@ -1,12 +1,14 @@
+import React from "react";
 import type { Metadata } from "next";
-import RevaLayout from "./RevaLayout";
+import ToastProvider from "@/providers/ToastProvider";
 
 export const metadata: Metadata = {
   title: {
     default: "Reva by TwoNode - Advanced Geospatial Intelligence Platform",
-    template: "%s | Reva by TwoNode"
+    template: "%s | Reva by TwoNode",
   },
-  description: "Reva is a cutting-edge geospatial intelligence platform by TwoNode Technologies, providing advanced survey plan analysis and mapping solutions for professionals.",
+  description:
+    "Reva is a cutting-edge geospatial intelligence platform by TwoNode Technologies, providing advanced survey plan analysis and mapping solutions for professionals.",
   keywords: [
     "reva",
     "geospatial intelligence",
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
     "two node technologies",
     "cadastral mapping",
     "spatial data",
-    "surveying software"
+    "surveying software",
   ],
   authors: [{ name: "TwoNode Technologies" }],
   creator: "TwoNode Technologies",
@@ -27,7 +29,8 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://www.twonodetechnologies.com/reva",
     title: "Reva - Advanced Geospatial Intelligence Platform",
-    description: "Transform your survey plans with Reva's advanced geospatial intelligence solutions by TwoNode Technologies.",
+    description:
+      "Transform your survey plans with Reva's advanced geospatial intelligence solutions by TwoNode Technologies.",
     siteName: "Reva by TwoNode",
     locale: "en_US",
     images: [
@@ -44,7 +47,8 @@ export const metadata: Metadata = {
     site: "@TwoNodeTech",
     creator: "@TwoNodeTech",
     title: "Reva - Advanced Geospatial Intelligence Platform",
-    description: "Transform your survey plans with Reva's advanced geospatial intelligence solutions by TwoNode Technologies.",
+    description:
+      "Transform your survey plans with Reva's advanced geospatial intelligence solutions by TwoNode Technologies.",
     images: ["/reva/favicon.jpg"],
   },
   icons: {
@@ -53,16 +57,16 @@ export const metadata: Metadata = {
     apple: "/reva/apple-touch-icon.png",
     other: [
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
-        url: '/reva/favicon-32x32.png',
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        url: "/reva/favicon-32x32.png",
       },
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
-        url: '/reva/favicon-16x16.png',
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        url: "/reva/favicon-16x16.png",
       },
     ],
   },
@@ -72,20 +76,20 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   alternates: {
-    canonical: 'https://www.twonodetechnologies.com/reva',
+    canonical: "https://www.twonodetechnologies.com/reva",
   },
 };
 
-export default function RootLayout({
+export default function RevaLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  return <RevaLayout>{children}</RevaLayout>;
+}) {
+  return <ToastProvider>{children}</ToastProvider>;
 }
