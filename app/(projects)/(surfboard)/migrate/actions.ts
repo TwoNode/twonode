@@ -34,6 +34,12 @@ type UserLite = {
 };
 
 // ---------- Expected headers (exact order not enforced here) ----------
+// NOTE: The uploaded CSV files may use slightly different header names for file path columns
+// (e.g. `pdfFilePath` instead of `pdfFilePaths`). We define the canonical set
+// of expected headers here. During parsing we will map any known aliases to
+// their canonical names so that the import can handle both variations. If a
+// particular header is optional (like `state` in some legacy exports) it
+// should not cause the header check to fail.
 const EXPECTED_HEADERS = [
   "planNumber",
   "surveyTitle",
@@ -45,6 +51,7 @@ const EXPECTED_HEADERS = [
   "ward",
   "lcda",
   "lga",
+  // canonical names for file path columns
   "pdfFilePaths",
   "cadFilePaths",
   "certificateFilePaths",
@@ -60,8 +67,21 @@ const EXPECTED_HEADERS = [
   "reasonForWithdrawalAndResubmission",
   "sharedTo",
   "dateLodged",
+  // `state` may appear in some CSVs but is optional and ignored
+  // Optional SURCON registration number
   "SURCONRegNum",
 ];
+
+// Mapping of canonical header names to potential aliases found in CSV files.
+// When a header defined in EXPECTED_HEADERS is not present in the uploaded CSV
+// we will check this mapping to see if an alias is present. If found, we
+// consider the header satisfied and will copy the alias column to the
+// canonical name during record normalization.
+const HEADER_ALIASES: Record<string, string> = {
+  pdfFilePaths: "pdfFilePath",
+  cadFilePaths: "cadFilePath",
+  certificateFilePaths: "certificateFilePath",
+};
 
 // ---------- CSV Schema (make planNumber REQUIRED) ----------
 const RowSchema = z.object({
@@ -91,6 +111,8 @@ const RowSchema = z.object({
   sharedTo: z.string().nullish(),
   dateLodged: z.string().nullish(),
   SURCONRegNum: z.string().nullish(),
+  // Additional optional column seen in some exports; ignored during import.
+  state: z.string().nullish(),
 });
 
 // ---------- Small utils ----------
@@ -377,17 +399,49 @@ export async function migrateSurfboardCsvAction(
 
   // Header sanity: the first record should contain these keys
   const firstKeys = new Set(Object.keys(records[0] ?? {}).map((k) => k.trim()));
-  const missing = EXPECTED_HEADERS.filter((h) => !firstKeys.has(h));
-
+  // Determine which expected headers are missing from the CSV. If a header is
+  // absent but an alias exists, treat it as present. Optional columns should not
+  // cause the check to fail.
+  const missing: string[] = [];
+  for (const h of EXPECTED_HEADERS) {
+    // Skip check for optional headers (currently none are marked optional here).
+    const alias = HEADER_ALIASES[h as keyof typeof HEADER_ALIASES];
+    if (!firstKeys.has(h) && !(alias && firstKeys.has(alias))) {
+      missing.push(h);
+    }
+  }
   console.log(firstKeys, missing);
-
   if (missing.length) {
     return {
       ok: false,
       message:
         `CSV header check failed. Missing columns: ${missing.join(", ")}. ` +
-        `Ensure the FIRST ROW is the header line exactly as specified.`,
+        `Ensure the FIRST ROW is the header line or provide appropriate column aliases.`,
     };
+  }
+
+  // Normalize column names across all records by copying any alias column to
+  // its canonical name if the canonical column is missing or empty. This allows
+  // uploaded CSVs that use singular file path column names (e.g. pdfFilePath)
+  // to be processed without error.
+  for (const rec of records) {
+    for (const [canon, alias] of Object.entries(HEADER_ALIASES)) {
+      // Only copy if canonical is missing or nullish and alias exists
+      const aliasValue = (rec as any)[alias];
+      if (
+        ((rec as any)[canon] === undefined ||
+          (rec as any)[canon] === null ||
+          (rec as any)[canon] === "") &&
+        aliasValue != null &&
+        aliasValue !== ""
+      ) {
+        (rec as any)[canon] = aliasValue;
+      }
+      // Remove the alias column entirely to avoid unknown-key errors in zod
+      if (alias in rec) {
+        delete (rec as any)[alias];
+      }
+    }
   }
 
   const normalized: Normalized[] = [];

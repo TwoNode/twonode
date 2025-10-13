@@ -621,6 +621,7 @@ export async function createPlan(dto: SurfboardPlanDTO) {
         ward: dto.ward || null,
         lcda: dto.lcda || null,
         lga: dto.lga || null,
+        state: dto.state || null,
         isLive: dto.isLive ?? false,
         status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
         userId: user.id,
@@ -717,6 +718,7 @@ export async function updatePlan(
         (dto.ward && dto.ward !== existing.ward) ||
         (dto.lcda && dto.lcda !== existing.lcda) ||
         (dto.lga && dto.lga !== existing.lga) ||
+        (dto.state && dto.state !== existing.state) ||
         (dto.dateOnSurveyPlan &&
           new Date(dto.dateOnSurveyPlan).toISOString() !==
             new Date(existing.dateOnSurveyPlan ?? "").toISOString());

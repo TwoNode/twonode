@@ -483,6 +483,11 @@ export default function SurfboardPlanForm({
     if (!form.pillarType?.trim()) errs.pillarType = "Required";
     if (!form.dateOnSurveyPlan?.trim()) errs.dateOnSurveyPlan = "Required";
 
+    // Add validation for CSV upload (pillars)
+    if (pillars.length === 0) {
+      errs.pillars = "CSV file with pillar data is required";
+    }
+
     const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
     const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
     if (cadCount < 1) errs.cad = "At least one CAD file is required";
@@ -1003,75 +1008,93 @@ export default function SurfboardPlanForm({
               id="admin"
               step={showReferenceField ? 6 : 5}
               title="Administrative Information"
-              subtitle="Populate via CSV or map; fields are read-only."
+              subtitle="Upload a CSV file with pillar data (required). Fields will be auto-populated."
               accent="rose"
             >
               <div>
                 <label className={labelCls} htmlFor="pillarsCsv">
-                  Pillars CSV File
+                  Pillars CSV File {reqBadge}
                 </label>
                 <input
                   id="pillarsCsv"
                   type="file"
                   accept=".csv"
                   onChange={handleCsvUpload}
-                  className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                  className={cn(
+                    "block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100",
+                    errors.pillars ? "border-red-500" : ""
+                  )}
                 />
-                <p className={helpCls}>Format: PillarNumber,Easting,Northing</p>
+                {errors.pillars && <p className={errorCls}>{errors.pillars}</p>}
+                <p className={helpCls}>
+                  Upload a CSV file containing pillar coordinates (at least 3
+                  points required)
+                </p>
+                {pillars.length > 0 && (
+                  <p className="mt-2 text-sm text-green-600">
+                    ✓ {pillars.length} pillars loaded successfully
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-wrap justify-between gap-4">
-                <div className="min-w-[150px] grow">
-                  <label className={labelCls} htmlFor="lga">
-                    LGA
-                  </label>
-                  <input
-                    id="lga"
-                    type="text"
-                    readOnly
-                    value={form.lga || ""}
-                    className="w-full p-2 border rounded-md bg-gray-50 border-gray-200"
-                    placeholder="Will be set from map"
-                  />
-                </div>
-                <div className="min-w-[150px] grow">
-                  <label className={labelCls} htmlFor="lcda">
-                    LCDA
-                  </label>
-                  <input
-                    id="lcda"
-                    type="text"
-                    readOnly
-                    value={form.lcda || ""}
-                    className="w-full p-2 border rounded-md bg-gray-50 border-gray-200"
-                    placeholder="Will be set from map"
-                  />
-                </div>
-                <div className="min-w-[150px] grow">
-                  <label className={labelCls} htmlFor="ward">
+                <div className="flex-1 min-w-[200px]">
+                  <label
+                    className={cn(labelCls, !form.ward && "text-gray-400")}
+                  >
                     Ward
                   </label>
                   <input
-                    id="ward"
                     type="text"
-                    readOnly
                     value={form.ward || ""}
-                    className="w-full p-2 border rounded-md bg-gray-50 border-gray-200"
-                    placeholder="Will be set from map"
+                    placeholder="Will be set from CSV Upload"
+                    readOnly
+                    className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
-                <div className="min-w-[150px] grow">
-                  <label className={labelCls} htmlFor="state">
+                <div className="flex-1 min-w-[200px]">
+                  <label
+                    className={cn(labelCls, !form.lcda && "text-gray-400")}
+                  >
+                    LCDA
+                  </label>
+                  <input
+                    type="text"
+                    value={form.lcda || ""}
+                    readOnly
+                    placeholder="Will be set from CSV Upload"
+                    className={cn(inputBase, "bg-gray-50")}
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label className={cn(labelCls, !form.lga && "text-gray-400")}>
+                    LGA
+                  </label>
+                  <input
+                    type="text"
+                    value={form.lga || ""}
+                    readOnly
+                    className={cn(inputBase, "bg-gray-50")}
+                    placeholder="Will be set from CSV Upload"
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label
+                    className={cn(labelCls, !form.state && "text-gray-400")}
+                  >
                     State
                   </label>
                   <input
-                    id="state"
                     type="text"
-                    readOnly
                     value={form.state || ""}
-                    className="w-full p-2 border rounded-md bg-gray-50 border-gray-200"
-                    placeholder="Will be set from map"
+                    onChange={(e) => setField("state", e.target.value)}
+                    className={cn(
+                      inputBase,
+                      errors.state ? inputError : inputBorder
+                    )}
+                    placeholder="Will be set from CSV Upload"
                   />
+                  {errors.state && <p className={errorCls}>{errors.state}</p>}
                 </div>
               </div>
             </Section>
