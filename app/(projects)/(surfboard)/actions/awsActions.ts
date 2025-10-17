@@ -219,23 +219,26 @@ export async function deleteMultipleSurfboardFilesFromS3(
 }
 
 export async function deleteMultipleSurfboardFilesFromS3WithUrl(
-  files: string[] | { url: string }[]
+  files: Array<string | { url: string }>
 ): Promise<void> {
   try {
-    // Convert string array to array of objects with url property if needed
-    const normalizedFiles =
-      Array.isArray(files) && typeof files[0] === "string"
-        ? files.map((url) => ({ url }))
-        : (files as { url: string }[]);
+    // Normalize all items to have the { url: string } shape
+    const normalizedFiles = files.map((file) => ({
+      url: typeof file === "string" ? file : file.url,
+    }));
+
+    const bucketName =
+      process.env.SURFBOARD_AWS_BUCKET_NAME ||
+      process.env.REVA_AWS_BUCKET_NAME!;
+    const region =
+      process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
+
+    // Extract the key from the URL
+    const urlObj = new URL(normalizedFiles[0].url);
+    const key = urlObj.pathname.substring(1); // Remove leading '/'
 
     const deletePromises = normalizedFiles.map(({ url }) => {
       if (!url) return Promise.resolve();
-
-      const bucketName =
-        process.env.SURFBOARD_AWS_BUCKET_NAME ||
-        process.env.REVA_AWS_BUCKET_NAME!;
-      const region =
-        process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
 
       // Extract the key from the URL
       const urlObj = new URL(url);
