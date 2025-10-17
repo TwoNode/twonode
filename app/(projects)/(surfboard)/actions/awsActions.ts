@@ -218,7 +218,50 @@ export async function deleteMultipleSurfboardFilesFromS3(
   }
 }
 
-export async function deleteMultipleSurfboardFilesFromSS3(
+export async function deleteMultipleSurfboardFilesFromS3WithUrl(
+  files: string[] | { url: string }[]
+): Promise<void> {
+  try {
+    // Convert string array to array of objects with url property if needed
+    const normalizedFiles =
+      Array.isArray(files) && typeof files[0] === "string"
+        ? files.map((url) => ({ url }))
+        : (files as { url: string }[]);
+
+    const deletePromises = normalizedFiles.map(({ url }) => {
+      if (!url) return Promise.resolve();
+
+      const bucketName =
+        process.env.SURFBOARD_AWS_BUCKET_NAME ||
+        process.env.REVA_AWS_BUCKET_NAME!;
+      const region =
+        process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
+
+      // Extract the key from the URL
+      const urlObj = new URL(url);
+      const key = urlObj.pathname.substring(1); // Remove leading '/'
+
+      return s3
+        .send(
+          new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: key,
+          })
+        )
+        .catch((error) => {
+          console.error(`Failed to delete file ${key}:`, error);
+          // Continue with other deletions even if one fails
+        });
+    });
+
+    await Promise.all(deletePromises);
+  } catch (error) {
+    console.error("Error in deleteMultipleSurfboardFilesFromSS3:", error);
+    // Don't rethrow to allow the main error to be handled by the caller
+  }
+}
+
+export async function __deleteMultipleSurfboardFilesFromS3WithUrl(
   files: { url: string }[]
 ): Promise<void> {
   try {

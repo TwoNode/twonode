@@ -14,6 +14,7 @@ import type {
 import {
   uploadSurfboardFileToS3,
   deleteMultipleSurfboardFilesFromS3,
+  deleteMultipleSurfboardFilesFromS3WithUrl,
 } from "./awsActions";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
@@ -205,7 +206,7 @@ export async function generatePlanQRCode(
         light: lightColor + "70",
       },
       type,
-      rendererOpts: type === "image/jpeg" ? { quality: 0.90 } : undefined,
+      rendererOpts: type === "image/jpeg" ? { quality: 0.9 } : undefined,
     } as QRCode.QRCodeToDataURLOptions;
 
     const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, qrOptions);
@@ -1516,6 +1517,7 @@ export async function getSharedWithMeSurfPlans(
     return { success: false, error: (err as Error).message };
   }
 }
+
 /**
  * Fetches a single plan by ID.
  */
@@ -1572,11 +1574,13 @@ export async function getSurfPlanById(
 
     if (plan.geometry && isGeometryInput(plan.geometry)) {
       try {
-        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
         planWithGeometry = {
           ...planWithGeometry,
           areaSqM,
-          centroid,
+          centroid: centroidCoords,
         };
       } catch (error) {
         console.error(`Error calculating geometry for plan ${plan.id}:`, error);
@@ -1655,11 +1659,13 @@ export async function getSurfPlanByIdWithSurveyor(
     );
     if (plan.geometry && isGeometryInput(plan.geometry)) {
       try {
-        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
         planWithGeometry = {
           ...planWithGeometry,
           areaSqM,
-          centroid,
+          centroid: centroidCoords,
         };
       } catch (error) {
         console.error(`Error calculating geometry for plan ${plan.id}:`, error);
@@ -1724,11 +1730,13 @@ export async function getPublicSurfPlanByIdWithSurveyor(
     );
     if (plan.geometry && isGeometryInput(plan.geometry)) {
       try {
-        const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
         planWithGeometry = {
           ...planWithGeometry,
           areaSqM,
-          centroid,
+          centroid: centroidCoords,
         };
       } catch (error) {
         console.error(`Error calculating geometry for plan ${plan.id}:`, error);
@@ -1824,19 +1832,38 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
       return { success: false, error: "Plan not found" };
     }
 
-    const filesToDelete = [
-      ...plan.pdfFilePaths,
-      ...plan.cadFilePaths,
-      ...plan.certificateFilePaths,
+    // Get all file URLs to delete
+    const filesToDeleteUrls = [
+      ...(plan.pdfFilePaths || []),
+      ...(plan.cadFilePaths || []),
+      ...(plan.certificateFilePaths || []),
     ]
       .filter((u): u is string => Boolean(u))
       .map((url) => ({ url }));
 
-    if (filesToDelete.length) {
-      await deleteMultipleSurfboardFilesFromS3(filesToDelete);
+    // Delete files from S3 if there are any
+    if (filesToDeleteUrls.length > 0) {
+      try {
+        console.log(
+          `Attempting to delete ${filesToDeleteUrls.length} files from S3`
+        );
+        await deleteMultipleSurfboardFilesFromS3WithUrl(filesToDeleteUrls);
+        console.log("Successfully deleted files from S3");
+      } catch (error) {
+        console.error("Error deleting files from S3:", error);
+        return {
+          success: false,
+          error: `Failed to delete files from storage: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        };
+      }
     }
 
+    // Only proceed with database deletion if file deletion was successful
     await prisma.surfboardPlan.delete({ where: { id, userId: user.id } });
+    console.log(`Successfully deleted plan ${id}`);
+
     revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: null };
   } catch (err) {
