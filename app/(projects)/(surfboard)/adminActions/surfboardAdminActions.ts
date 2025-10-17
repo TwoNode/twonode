@@ -13,9 +13,6 @@ import type {
 import {
   uploadSurfboardFileToS3,
   deleteMultipleSurfboardFilesFromS3,
-  deleteMultipleSurfboardFilesFromSS3,
-  uploadMultipleSurfboardFilesToS3,
-  uploadSameTypeSurfboardFilesToS3,
 } from "../actions/awsActions";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
@@ -847,10 +844,6 @@ import {
   REFERENCE_FILTERS,
   SurfboardPlanDTO,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
-import {
-  createPlanSchema,
-  editPlanSchema,
-} from "@/app/(projects)/(surfboard)/utils/validation";
 
 function cutoffMs(createdAt?: Date | string) {
   if (!createdAt) return 0;
