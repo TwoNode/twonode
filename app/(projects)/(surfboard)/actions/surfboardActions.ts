@@ -670,7 +670,8 @@ export async function updatePlan(
 
     const now = Date.now();
     const locked = now > cutoffMs(existing.createdAt);
-    const enforceLock = locked && !dto.canBypassLock;
+    // const enforceLock = locked && !dto.canBypassLock;
+    const enforceLock = false;
 
     // Only certificate fields editable when locked
     const data: any = {};
