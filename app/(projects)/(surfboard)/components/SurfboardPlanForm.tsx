@@ -169,7 +169,11 @@ export default function SurfboardPlanForm({
 
   // Certificate logic (unchanged)
   const [certificateReady, setCertificateReady] = useState<boolean | undefined>(
-    initial?.certificateFilePaths?.length ? true : undefined
+    initial?.certificateFilePaths?.length
+      ? true
+      : mode === "edit"
+      ? false
+      : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -328,7 +332,7 @@ export default function SurfboardPlanForm({
     if (!form.deededArea?.trim()) errs.deededArea = "Required";
     if (!form.facilitator?.trim()) errs.facilitator = "Required";
     if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    if (!form.dateOnSurveyPlan?.trim()) errs.dateOnSurveyPlan = "Required";
+    if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
 
     const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
     const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
@@ -389,6 +393,12 @@ export default function SurfboardPlanForm({
 
   async function onSubmit() {
     if (!validateReq()) return;
+    if (mode === "edit") {
+      toast.info("Editing plan...");
+    } else {
+      toast.info("Creating plan...");
+    }
+
     setBusy(true);
     try {
       const [newCadUrls, newPdfUrls, newCertUrls] = await Promise.all([
@@ -480,7 +490,8 @@ export default function SurfboardPlanForm({
     if (!form.deededArea?.trim()) errs.deededArea = "Required";
     if (!form.facilitator?.trim()) errs.facilitator = "Required";
     if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    if (!form.dateOnSurveyPlan?.trim()) errs.dateOnSurveyPlan = "Required";
+    console.log(form);
+    if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
 
     // Add validation for CSV upload (pillars)
     if (pillars.length === 0) {

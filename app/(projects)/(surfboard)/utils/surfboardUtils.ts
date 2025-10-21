@@ -158,7 +158,7 @@ export async function convertCoordinates(
   }
 }
 
-// Enhanced CSV parsing with better error handling
+// Enhanced CSV parsing with better error handling and flexible column name matching
 export function parseCSVContent(csvContent: string): PillarData[] {
   try {
     const lines = csvContent.trim().split("\n");
@@ -166,30 +166,52 @@ export function parseCSVContent(csvContent: string): PillarData[] {
       throw new Error("CSV file must have at least 3 rows");
     }
 
-    // Parse header
-    const header = lines[0].split(",").map((h) =>
-      h
-        .trim()
-        .split(" ")
-        .map((word) => word.trim())
-        .join("")
-        .toLowerCase()
+    // Parse header and normalize column names
+    const header = lines[0].split(",").map(
+      (h) =>
+        h
+          .trim()
+          .split(/\s+/)
+          .map((word) => word.trim())
+          .join("") // Remove all spaces
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "") // Remove any remaining special characters
     );
 
+    // Define possible column name variations
+    const pillarVariations = [
+      "pillarnumber",
+      "pillarno",
+      "pillarnumbers",
+      "pillarnos",
+      "pillar",
+    ];
+    const eastingVariations = ["easting", "eastings", "x"];
+    const northingVariations = ["northing", "northings", "y"];
+
+    // Find column indices with flexible matching
+    const findColumnIndex = (variations: string[]): number => {
+      for (const variation of variations) {
+        const index = header.findIndex((h) => h.includes(variation));
+        if (index !== -1) return index;
+      }
+      return -1;
+    };
+
+    const pillarNumberIndex = findColumnIndex(pillarVariations);
+    const eastingIndex = findColumnIndex(eastingVariations);
+    const northingIndex = findColumnIndex(northingVariations);
+
     // Validate required columns
-    const requiredColumns = ["pillarnumber", "easting", "northing"];
-    const missingColumns = requiredColumns.filter(
-      (col) => !header.includes(col)
-    );
+    const missingColumns = [];
+    if (pillarNumberIndex === -1)
+      missingColumns.push("Pillar Number (or variation)");
+    if (eastingIndex === -1) missingColumns.push("Easting (or X)");
+    if (northingIndex === -1) missingColumns.push("Northing (or Y)");
 
     if (missingColumns.length > 0) {
       throw new Error(`Missing required columns: ${missingColumns.join(", ")}`);
     }
-
-    // Get column indices
-    const pillarNumberIndex = header.indexOf("pillarnumber");
-    const eastingIndex = header.indexOf("easting");
-    const northingIndex = header.indexOf("northing");
 
     // Parse data rows
     const pillars: PillarData[] = [];

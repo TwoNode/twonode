@@ -1,12 +1,8 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
-import {
-  SUBSCRIPTION_PLANS,
-  type PlanId,
-} from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+import { SUBSCRIPTION_PLANS } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import { createOrUpdateSubscription } from "./subscriptionActions";
 import {
   createPaystackInstance,
