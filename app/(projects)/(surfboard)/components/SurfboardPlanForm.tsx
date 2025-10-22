@@ -446,7 +446,7 @@ export default function SurfboardPlanForm({
 
       console.log("res", res);
 
-      if (res.success && res?.data?.planNumber) {
+      if (res.success && res?.data?.id) {
         router.push(`/surfboard/dashboard/plan?planId=${res?.data?.id}`);
       }
     } catch (e: any) {
@@ -562,7 +562,11 @@ export default function SurfboardPlanForm({
                     id="planNumber"
                     type="text"
                     value={form.planNumber}
-                    onChange={(e) => setField("planNumber", e.target.value)}
+                    onChange={(e) => {
+                      // Remove all spaces from the input
+                      const cleanValue = e.target.value.replace(/\s+/g, "");
+                      setField("planNumber", cleanValue);
+                    }}
                     onBlur={handlePlanNumberBlur}
                     aria-invalid={!!errors.planNumber}
                     aria-describedby={

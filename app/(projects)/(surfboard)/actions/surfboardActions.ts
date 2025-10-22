@@ -732,8 +732,8 @@ export async function updatePlan(
       where: { id: dto.id, userId: user.id },
       data,
     });
-    revalidatePath(`/surfboard/dashboard/plans/${dto.id}`);
-    return { success: true };
+    revalidatePath(`/surfboard/dashboard/plans?planId=${dto.id}`);
+    return { success: true, data: { id: dto.id, planNumber: dto.planNumber } };
   } catch (error: any) {
     return { success: false, error: error?.message || "Something went wrong" };
   }
