@@ -293,7 +293,7 @@ export default function SurfboardPlanForm({
         toast.error("Need at least 3 pillars");
         return;
       }
-      setPillars(parsed);
+      setPillars(() => parsed);
       const geom = await generatePolygonFromPillars(parsed);
 
       if (geom) {
