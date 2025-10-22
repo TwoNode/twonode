@@ -545,12 +545,13 @@ export async function getSurfboardUploadTargetsMulti(
 
     // Generate the new filename based on the convention
     let newFilename: string;
+    const safePlanNumber = planNumber.replace(/\//g, "_"); // Replace all forward slashes with underscores
     if (files.length === 1) {
       // Single file: {{planNumber}}.{{extension}}
-      newFilename = `${planNumber}.${extension}`;
+      newFilename = `${safePlanNumber}.${extension}`;
     } else {
       // Multiple files: {{planNumber}}__1.{{ext}}, {{planNumber}}__2.{{ext}}, etc.
-      newFilename = `${planNumber}__${i + 1}.${extension}`;
+      newFilename = `${safePlanNumber}__${i + 1}.${extension}`;
     }
 
     const prefix = `surfboard/${user.id}/${category}`;
