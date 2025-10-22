@@ -684,6 +684,8 @@ export async function updatePlan(
       if (dto.facilitator) data.facilitator = dto.facilitator;
       if (dto.pillarType) data.pillarType = dto.pillarType;
       if (dto.geometry) data.geometry = dto.geometry;
+      if (dto.pillars) data.pillars = dto.pillars;
+
       data.ward = dto.ward ?? null;
       data.lcda = dto.lcda ?? null;
       data.lga = dto.lga ?? null;
