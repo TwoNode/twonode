@@ -153,6 +153,7 @@ export default function SurfboardPlanForm({
     facilitator: initial?.facilitator ?? "",
     pillarType: initial?.pillarType ?? "",
     geometry: initial?.geometry ?? null,
+    // pillars: initial?.pillars ?? [],
     pdfFilePaths: initial?.pdfFilePaths ?? [],
     cadFilePaths: initial?.cadFilePaths ?? [],
     certificateFilePaths: initial?.certificateFilePaths ?? [],
@@ -527,6 +528,26 @@ export default function SurfboardPlanForm({
     return Object.keys(errs).length === 0;
   }
 
+  const handleGeometryDisplay = () => {
+    if (form.geometry && typeof form.geometry === "string") {
+      try {
+        const geometry = JSON.parse(form.geometry);
+        if (geometry.coordinates && Array.isArray(geometry.coordinates)) {
+          return geometry;
+        }
+        return { type: "Polygon", coordinates: [] };
+      } catch (error) {
+        console.error("Error parsing geometry:", error);
+      }
+    }
+
+    if (form.geometry && typeof form.geometry === "object") {
+      return form.geometry;
+    }
+
+    return { type: "Polygon", coordinates: [] };
+  };
+
   return (
     <div className="mx-auto py-0 px-0">
       {/* Gradient Header */}
@@ -684,9 +705,9 @@ export default function SurfboardPlanForm({
                     {refOpen && (filteredRefOptions?.length || 0) > 0 && (
                       <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
                         <ul className="py-1">
-                          {filteredRefOptions.map((pn) => (
+                          {filteredRefOptions.map((pn, i) => (
                             <li
-                              key={pn}
+                              key={pn + i}
                               className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                               onMouseDown={() => {
                                 // why: ensure we set the correct field
@@ -953,11 +974,11 @@ export default function SurfboardPlanForm({
                     Allowed formats: {VALID_CAD_EXTENSIONS.join(", ")}
                   </p>
                   <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                    {(form.cadFilePaths || []).map((p) => (
-                      <li key={p}>{p}</li>
+                    {(form.cadFilePaths || []).map((p, i) => (
+                      <li key={p + i}>{p}</li>
                     ))}
-                    {selectedCadFiles.map((f) => (
-                      <li key={f.name}>{f.name}</li>
+                    {selectedCadFiles.map((f, i) => (
+                      <li key={f.name + i}>{f.name}</li>
                     ))}
                   </ul>
                 </div>
@@ -979,11 +1000,11 @@ export default function SurfboardPlanForm({
                   />
                   {errors.pdf && <p className={errorCls}>{errors.pdf}</p>}
                   <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                    {(form.pdfFilePaths || []).map((p) => (
-                      <li key={p}>{p}</li>
+                    {(form.pdfFilePaths || []).map((p, i) => (
+                      <li key={p + i}>{p}</li>
                     ))}
-                    {selectedPdfFiles.map((f) => (
-                      <li key={f.name}>{f.name}</li>
+                    {selectedPdfFiles.map((f, i) => (
+                      <li key={f.name + i}>{f.name}</li>
                     ))}
                   </ul>
                 </div>
@@ -1005,11 +1026,11 @@ export default function SurfboardPlanForm({
                     />
                     {errors.cert && <p className={errorCls}>{errors.cert}</p>}
                     <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                      {(form.certificateFilePaths || []).map((p) => (
-                        <li key={p}>{p}</li>
+                      {(form.certificateFilePaths || []).map((p, i) => (
+                        <li key={p + i}>{p}</li>
                       ))}
-                      {selectedCertFiles.map((f) => (
-                        <li key={f.name}>{f.name}</li>
+                      {selectedCertFiles.map((f, i) => (
+                        <li key={f.name + i}>{f.name}</li>
                       ))}
                     </ul>
                   </div>
@@ -1182,13 +1203,59 @@ export default function SurfboardPlanForm({
                       {pillars.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600">Geometry:</span>
+                  <div className="flex flex-col  gap-2">
+                    <span className="text-gray-600 ">Geometry:</span>
+
                     <span className="font-medium text-gray-900">
-                      {form.geometry ? "Polygon" : "—"}
+                      {form.geometry ? (
+                        <div className="flex flex-col">
+                          {handleGeometryDisplay()?.type === "Polygon" &&
+                            handleGeometryDisplay()?.coordinates?.map(
+                              (coordSet: [number, number][], i: number) => (
+                                <div
+                                  key={i}
+                                  className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
+                                >
+                                  {handleGeometryDisplay()?.coordinates &&
+                                  handleGeometryDisplay()?.coordinates?.length >
+                                    1 ? (
+                                    <span>
+                                      Polygon {i + 1} (
+                                      {
+                                        handleGeometryDisplay()?.coordinates[i]
+                                          ?.length
+                                      }{" "}
+                                      points):
+                                    </span>
+                                  ) : (
+                                    <span>
+                                      Polygon (
+                                      {
+                                        handleGeometryDisplay()?.coordinates[i]
+                                          ?.length
+                                      }{" "}
+                                      points):
+                                    </span>
+                                  )}
+                                  {coordSet.map(
+                                    (coord: [number, number], j: number) => (
+                                      <div key={j} className="py-0.5">
+                                        Point {j + 1}: ({coord[0].toFixed(6)},{" "}
+                                        {coord[1].toFixed(6)})
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              )
+                            )}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </span>
                   </div>
                 </div>
+
                 <div className="max-h-40 overflow-y-auto mt-3 text-sm">
                   {pillars.slice(0, 10).map((p, i) => (
                     <div key={i} className="text-gray-700 py-0.5">

@@ -14,6 +14,7 @@ import {
   Trash2,
   QrCode,
   RefreshCw,
+  MapPinIcon,
 } from "lucide-react";
 import {
   getSurfPlanById,
@@ -240,6 +241,30 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicUrl);
     toast.success("Link copied to clipboard");
+  };
+
+  const handleGeometryDisplay = () => {
+    const _plan = plan || ({} as any);
+
+    if (!_plan) return { type: "Polygon", coordinates: [] };
+
+    if (_plan.geometry && typeof _plan.geometry === "string") {
+      try {
+        const geometry = JSON.parse(_plan.geometry);
+        if (geometry.coordinates && Array.isArray(geometry.coordinates)) {
+          return geometry;
+        }
+        return { type: "Polygon", coordinates: [] };
+      } catch (error) {
+        console.error("Error parsing geometry:", error);
+      }
+    }
+
+    if (_plan.geometry && typeof _plan.geometry === "object") {
+      return _plan.geometry;
+    }
+
+    return { type: "Polygon", coordinates: [] };
   };
 
   const renderQrCodeModal = () => (
@@ -1168,6 +1193,70 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           </div>
         </div>
 
+        {/* Geometry Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+            <MapPinIcon className="h-5 w-5 text-blue-500 mr-2" />
+            Geometry Coordinates
+          </h3>
+
+          <div className="bg-gray-50 rounded-md p-3 border border-gray-100">
+            {plan.geometry ? (
+              <div className="space-y-4">
+                {(() => {
+                  const geometry = handleGeometryDisplay();
+                  if (!geometry || !geometry.coordinates?.length) {
+                    return (
+                      <div className="text-gray-500 italic">
+                        No geometry data available
+                      </div>
+                    );
+                  }
+
+                  return geometry.coordinates.map(
+                    (coordSet: [number, number][], i: number) => (
+                      <div key={i} className="space-y-2">
+                        <div className="flex items-center text-sm font-medium text-gray-700">
+                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-mono mr-2">
+                            {i + 1}
+                          </span>
+                          Boundary{" "}
+                          {geometry.coordinates.length > 1 ? i + 1 : ""}
+                          <span className="ml-2 text-xs text-gray-500 font-normal">
+                            ({coordSet.length} points)
+                          </span>
+                        </div>
+
+                        <div className="ml-7 bg-white border border-gray-200 rounded-md p-2 max-h-40 overflow-y-auto">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+                            {coordSet.map(([x, y], j) => (
+                              <div
+                                key={j}
+                                className="flex items-center py-1 px-2 hover:bg-gray-50 rounded"
+                              >
+                                <span className="text-gray-500 w-5">
+                                  {j + 1}.
+                                </span>
+                                <span className="text-gray-700">
+                                  {x.toFixed(6)}, {y.toFixed(6)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                No boundary coordinates available
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Documents Section */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Documents</h3>
@@ -1324,8 +1413,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </table>
           </div>
         </div>
+
+        {renderQrCodeModal()}
       </div>
-      {renderQrCodeModal()}
     </div>
   );
 }
