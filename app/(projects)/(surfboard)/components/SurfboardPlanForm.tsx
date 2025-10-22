@@ -909,15 +909,23 @@ export default function SurfboardPlanForm({
                     <label className={labelCls} htmlFor="dateLodged">
                       Date Lodged {reqBadge}
                     </label>
+
                     <input
                       id="dateLodged"
                       type="date"
-                      value={form.dateLodged ?? ""}
+                      value={
+                        form?.dateLodged && typeof form.dateLodged == "object"
+                          ? new Date(form.dateLodged)
+                              ?.toISOString()
+                              .split("T")[0]
+                          : form?.dateLodged ?? ""
+                      }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
                         inputBase,
                         errors.dateLodged ? inputError : inputBorder
                       )}
+                      disabled={lockNonCert && mode === "edit"}
                     />
                     {errors.dateLodged && (
                       <p className={errorCls}>{errors.dateLodged}</p>
