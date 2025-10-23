@@ -585,13 +585,6 @@ export async function createPlan(dto: SurfboardPlanDTO) {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) throw new Error("User not authenticated");
 
-    console.log(
-      "\n\n\n\n\n\n\n\ncreatePlan",
-      typeof dto.pillars,
-      typeof dto.geometry
-    );
-    console.log(dto.pillars, dto.geometry);
-
     if (
       !dto.planNumber ||
       !dto.surveyTitle ||
@@ -691,6 +684,16 @@ export async function updatePlan(
     // const enforceLock = locked && !dto?.canBypassLock;
     const enforceLock = false;
 
+    let geometry = dto.geometry;
+
+    try {
+      if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
+
+      if (typeof geometry === "string") geometry = JSON.parse(geometry);
+    } catch (error) {
+      geometry = dto.geometry;
+    }
+
     // Only certificate fields editable when locked
     const data: any = {};
     if (!enforceLock) {
@@ -701,7 +704,7 @@ export async function updatePlan(
       if (dto.deededArea) data.deededArea = dto.deededArea;
       if (dto.facilitator) data.facilitator = dto.facilitator;
       if (dto.pillarType) data.pillarType = dto.pillarType;
-      if (dto.geometry) data.geometry = dto.geometry;
+      if (dto.geometry) data.geometry = geometry;
       if (dto.pillars) data.pillars = dto.pillars;
 
       data.ward = dto.ward ?? null;
@@ -736,7 +739,7 @@ export async function updatePlan(
         (dto.facilitator && dto.facilitator !== existing.facilitator) ||
         (dto.pillarType && dto.pillarType !== existing.pillarType) ||
         (dto.geometry &&
-          JSON.stringify(dto.geometry) !== JSON.stringify(existing.geometry)) ||
+          JSON.stringify(geometry) !== JSON.stringify(existing.geometry)) ||
         (dto.ward && dto.ward !== existing.ward) ||
         (dto.lcda && dto.lcda !== existing.lcda) ||
         (dto.lga && dto.lga !== existing.lga) ||

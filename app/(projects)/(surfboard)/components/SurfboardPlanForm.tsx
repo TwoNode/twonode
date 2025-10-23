@@ -1431,6 +1431,7 @@ export default function SurfboardPlanForm({
                     type="text"
                     value={form.state || ""}
                     onChange={(e) => setField("state", e.target.value)}
+                    readOnly
                     className={cn(
                       inputBase,
                       errors.state ? inputError : inputBorder
