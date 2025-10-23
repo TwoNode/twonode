@@ -585,6 +585,13 @@ export async function createPlan(dto: SurfboardPlanDTO) {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) throw new Error("User not authenticated");
 
+    console.log(
+      "\n\n\n\n\n\n\n\ncreatePlan",
+      typeof dto.pillars,
+      typeof dto.geometry
+    );
+    console.log(dto.pillars, dto.geometry);
+
     if (
       !dto.planNumber ||
       !dto.surveyTitle ||
@@ -604,6 +611,16 @@ export async function createPlan(dto: SurfboardPlanDTO) {
         "dateLodged is required when certificate files are present"
       );
 
+    let geometry = dto.geometry;
+
+    try {
+      if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
+
+      if (typeof geometry === "string") geometry = JSON.parse(geometry);
+    } catch (error) {
+      geometry = dto.geometry;
+    }
+
     const rec = await prisma.surfboardPlan.create({
       data: {
         planNumber: dto.planNumber || "",
@@ -613,7 +630,7 @@ export async function createPlan(dto: SurfboardPlanDTO) {
         deededArea: dto.deededArea,
         facilitator: dto.facilitator,
         pillarType: dto.pillarType,
-        geometry: dto.geometry,
+        geometry: geometry,
         pillars: dto.pillars || null,
         pdfFilePaths: dto.pdfFilePaths,
         cadFilePaths: dto.cadFilePaths,
