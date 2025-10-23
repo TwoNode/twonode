@@ -731,7 +731,7 @@ export default function SurfboardPlanForm({
 
   const handleDeleteFile = async (
     file: string | File,
-    fileType: "cad" | "pdf" | "cert"
+    fileType: "cad" | "pdf" | "certificate"
   ) => {
     try {
       const field = `${fileType}FilePaths` as
@@ -1321,7 +1321,7 @@ export default function SurfboardPlanForm({
                         if (typeof fileToDelete === "string") {
                           const deleteSuccess = await handleDeleteFile(
                             fileToDelete,
-                            "cert"
+                            "certificate"
                           );
                           if (!deleteSuccess) return;
                           setForm((prev) => ({

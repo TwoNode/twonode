@@ -24,6 +24,7 @@ import {
   deleteSurfPlan,
   generatePlanQRCode,
   getPlanPublicUrl,
+  updatePlan,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import type {
   PillarData,
@@ -44,6 +45,7 @@ import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import MaplibreMap from "../../../components/maps/MaplibreMap";
 import Link from "next/link";
+import { deleteSurfboardFileFromS3 } from "../../../actions/awsActions";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -204,7 +206,9 @@ const FileCard = ({
             <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
               <button
                 type="button"
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
+                className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 ${
+                  isDeleting ? "bg-red-600" : "bg-gray-200"
+                } text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm`}
                 onClick={handleDelete}
                 disabled={isDeleting}
               >
@@ -641,6 +645,64 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     fetchPlanData();
   };
 
+  const handleDeleteFile = async (
+    file: string | File,
+    fileType: "cad" | "pdf" | "certificate"
+  ) => {
+    const INITIALS = (initial: any) => ({
+      planNumber: initial?.planNumber ?? "",
+      surveyTitle: initial?.surveyTitle ?? "",
+      planType: initial?.planType,
+      referencePlanNumber: initial?.referencePlanNumber ?? "",
+      deededArea: initial?.deededArea ?? "",
+      facilitator: initial?.facilitator ?? "",
+      pillarType: initial?.pillarType ?? "",
+      geometry: initial?.geometry ?? null,
+      // pillars: initial?.pillars ?? [],
+      pdfFilePaths: initial?.pdfFilePaths ?? [],
+      cadFilePaths: initial?.cadFilePaths ?? [],
+      certificateFilePaths: initial?.certificateFilePaths ?? [],
+      dateOnSurveyPlan: initial?.dateOnSurveyPlan ?? "",
+      dateLodged: initial?.dateLodged ?? null,
+      ward: initial?.ward ?? null,
+      lcda: initial?.lcda ?? null,
+      lga: initial?.lga ?? null,
+      state: initial?.state ?? null,
+      isLive: initial?.isLive ?? false,
+      id: initial?.id,
+      createdAt: initial?.createdAt,
+    });
+
+    try {
+      const field = `${fileType}FilePaths` as
+        | "cadFilePaths"
+        | "pdfFilePaths"
+        | "certificateFilePaths";
+
+      if (typeof file === "string") {
+        // It's an existing file URL, delete from S3
+        await deleteSurfboardFileFromS3({ url: file });
+        await updatePlan({
+          ...INITIALS(plan),
+          [field]: plan?.[field].filter((f) => f !== file),
+        } as any);
+      }
+
+      setPlan((p: any) => ({
+        ...p,
+        [field]: p?.[field].filter((f: any) => f !== file),
+      }));
+
+      // No need to delete newly selected files from S3 as they haven't been uploaded yet
+      toast.success(`Deleted ${fileType} file from storage`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting ${fileType} file:`, error);
+      toast.error(`Failed to delete ${fileType} file from storage`);
+      return false;
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -679,105 +741,6 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        {/* <div className="flex flex-col md:items-center md:justify-between mb-6">
-          <div className="flex flex-col items-center justify-between md:flex-row md:items-start">
-            <div className="mb-4 md:mb-0 md:mr-8">
-              <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">
-                {plan.planNumber}
-              </h1>
-              <h2 className="text-lg font-medium text-gray-600">
-                {plan.surveyTitle}
-              </h2>
-            </div>
-            <div className="flex flex-col items-center md:items-start">
-              <div className="flex items-center">
-                <div className="flex items-center gap-x-2 text-sm font-medium text-gray-600">
-                  <span>{plan.planType}</span>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                  <span>{plan.pillarType}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 w-full md:w-auto ml-auto">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center justify-center flex-1 md:flex-none min-w-[100px]"
-            >
-              {isRefreshing ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-1.5 md:mr-2 animate-spin" />
-                  <span className="text-sm md:text-base">Refreshing...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-1.5 md:mr-2" />
-                  <span className="text-sm md:text-base">Refresh</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={toggleMap}
-              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center flex-1 md:flex-none min-w-[120px]"
-            >
-              <MapPin className="w-4 h-4 mr-1.5 md:mr-2" />
-              <span className="text-sm md:text-base">
-                {showMap ? "Hide Map" : "Show Map"}
-              </span>
-            </button>
-            {isOwner && (
-              <>
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center justify-center flex-1 md:flex-none min-w-[120px]"
-                >
-                  <Share2 className="w-4 h-4 mr-1.5 md:mr-2" />
-                  <span className="text-sm md:text-base">Share</span>
-                </button>
-                <button
-                  onClick={handleEdit}
-                  className="px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center justify-center flex-1 md:flex-none min-w-[100px]"
-                  disabled={isDeleting}
-                >
-                  <Edit className="w-4 h-4 mr-1.5 md:mr-2" />
-                  <span className="text-sm md:text-base">Edit</span>
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center flex-1 md:flex-none min-w-[100px]"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="w-4 h-4 mr-1.5 md:mr-2" />
-                  <span className="text-sm md:text-base">
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </span>
-                </button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateQrCode}
-                  disabled={isGeneratingQr}
-                  className="flex-1 md:flex-none min-w-[120px] h-[36px] justify-center"
-                >
-                  {isGeneratingQr ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-1.5 md:mr-2" />
-                      <span className="text-sm md:text-base">Generating</span>
-                    </>
-                  ) : (
-                    <>
-                      <QrCode className="h-4 w-4 mr-1.5 md:mr-2" />
-                      <span className="text-sm md:text-base">QR Code</span>
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
-        </div> */}
-
         <div className="mb-8">
           {/* Header Card with Gradient Background */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
@@ -918,130 +881,6 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           </div>
         )}
 
-        {/* Plan Details */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Plan Information
-            </h3>
-            <div className="space-y-2">
-              <p>
-                <span className="font-medium">Plan Number:</span>{" "}
-                {plan.planNumber}
-                {plan.referencePlanNumber && (
-                  <span className="ml-4">
-                    <span className="font-medium">Reference:</span>{" "}
-                    {plan.referencePlanNumber}
-                  </span>
-                )}
-              </p>
-              <p>
-                <span className="font-medium">Survey Title:</span>{" "}
-                {plan.surveyTitle}
-              </p>
-              <p>
-                <span className="font-medium">Plan Type:</span> {plan.planType}
-              </p>
-              <p>
-                <span className="font-medium">Pillar Type:</span>{" "}
-                {plan.pillarType}
-              </p>
-              <p>
-                <span className="font-medium">Facilitator:</span>{" "}
-                {plan.facilitator}
-              </p>
-              <p>
-                <span className="font-medium">Deeded Area:</span>{" "}
-                {plan.deededArea || "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Date on Survey Plan:</span>{" "}
-                {plan.dateOnSurveyPlan
-                  ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
-                  : "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Date Lodged:</span>{" "}
-                {plan.dateLodged
-                  ? new Date(plan.dateLodged).toLocaleDateString()
-                  : "Not lodged"}
-              </p>
-              <p>
-                <span className="font-medium">Status:</span>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-2 ${
-                    plan.status === "LODGED"
-                      ? "bg-green-100 text-green-800"
-                      : plan.status === "QUERIED"
-                      ? "bg-red-100 text-red-800"
-                      : plan.status === "UNDER_REVIEW"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {plan.status.replace("_", " ")}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Location Details
-            </h3>
-            <div className="space-y-2">
-              {plan?.ward && (
-                <p>
-                  <span className="font-medium">Ward:</span> {plan.ward}
-                </p>
-              )}
-              {plan?.lcda && (
-                <p>
-                  <span className="font-medium">LCDA:</span> {plan.lcda}
-                </p>
-              )}
-              {plan?.lga && (
-                <p>
-                  <span className="font-medium">LGA:</span> {plan.lga}
-                </p>
-              )}
-              <p>
-                <span className="font-medium">Area:</span>{" "}
-                {plan.areaSqM
-                  ? plan.areaSqM < 10000
-                    ? `${plan.areaSqM.toFixed(2)} m²`
-                    : `${(plan.areaSqM / 10000).toFixed(2)} ha`
-                  : "N/A"}
-              </p>
-              {plan.centroid &&
-                Array.isArray(plan.centroid) &&
-                plan.centroid.length >= 2 && (
-                  <p>
-                    <span className="font-medium">Centroid:</span>{" "}
-                    {`${plan.centroid[1].toFixed(
-                      6
-                    )}°N, ${plan.centroid[0].toFixed(6)}°E`}
-                  </p>
-                )}
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Timestamps
-            </h3>
-            <div className="space-y-2">
-              <p>
-                <span className="font-medium">Created:</span>{" "}
-                {new Date(plan.createdAt).toLocaleString()}
-              </p>
-              <p>
-                <span className="font-medium">Last Updated:</span>{" "}
-                {new Date(plan.updatedAt).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div> */}
         {/* Plan Details */}
         <div className="space-y-6 mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1375,10 +1214,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       filePath={filePath}
                       type="pdf"
                       onDelete={async () => {
-                        // Add your delete logic here
-                        // Example:
-                        // await deleteFile(filePath, 'pdf');
-                        // Update the state to remove the file
+                        await handleDeleteFile(filePath, "pdf");
                       }}
                       showDelete={plan.isOwner}
                     />
@@ -1398,7 +1234,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       filePath={filePath}
                       type="cert"
                       onDelete={async () => {
-                        // Add your delete logic here
+                        await handleDeleteFile(filePath, "certificate");
                       }}
                       showDelete={plan.isOwner}
                     />
@@ -1418,7 +1254,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       filePath={filePath}
                       type="cad"
                       onDelete={async () => {
-                        // Add your delete logic here
+                        await handleDeleteFile(filePath, "cad");
                       }}
                       showDelete={plan.isOwner}
                     />
