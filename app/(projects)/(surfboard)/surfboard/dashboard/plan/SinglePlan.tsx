@@ -12,9 +12,12 @@ import {
   Share2,
   Edit,
   Trash2,
+  X,
   QrCode,
   RefreshCw,
   MapPinIcon,
+  AlertTriangle,
+  File,
 } from "lucide-react";
 import {
   getSurfPlanById,
@@ -40,6 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import MaplibreMap from "../../../components/maps/MaplibreMap";
+import Link from "next/link";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -62,6 +66,169 @@ export interface User {
   email: string;
   surconRegNumber: string | null;
 }
+
+interface FileCardProps {
+  filePath: string;
+  type: "pdf" | "cad" | "cert";
+  onDelete?: () => Promise<void>;
+  showDelete?: boolean;
+}
+
+const FileCard = ({
+  filePath,
+  type,
+  onDelete,
+  showDelete = true,
+}: FileCardProps) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const fileName = filePath.split("/").pop() || "";
+  const isDwg = fileName.toLowerCase().endsWith(".dwg");
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await onDelete();
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast.error("Failed to delete file");
+    } finally {
+      setIsDeleting(false);
+      setShowConfirm(false);
+    }
+  };
+
+  const getFileIcon = () => {
+    switch (type) {
+      case "pdf":
+        return <FileText className="h-5 w-5 text-red-500 mr-2" />;
+      case "cad":
+        return <FileType2 className="h-5 w-5 text-blue-500 mr-2" />;
+      case "cert":
+        return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
+      default:
+        return <File className="h-5 w-5 text-gray-500 mr-2" />;
+    }
+  };
+
+  return (
+    <div className="border rounded-md p-3 hover:bg-gray-50 relative group">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center min-w-0">
+          {getFileIcon()}
+          <span className="text-sm truncate" title={fileName}>
+            {fileName}
+          </span>
+        </div>
+
+        {showDelete && onDelete && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowConfirm(true);
+            }}
+            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity ml-2"
+            title="Delete file"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-2 space-x-2">
+        {type === "pdf" || type === "cert" ? (
+          <a
+            href={filePath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {type === "pdf" ? "View PDF" : "View Certificate"}
+          </a>
+        ) : (
+          <>
+            <a
+              href={filePath}
+              download
+              className="text-sm text-blue-600 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Download
+            </a>
+            {!isDwg && (
+              <a
+                href={filePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View
+              </a>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Delete File
+                </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Are you sure you want to delete this file? This action
+                    cannot be undone.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+              <button
+                type="button"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+              <button
+                type="button"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowConfirm(false);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface SinglePlanDetailsProps {
   planId: string;
@@ -1203,25 +1370,18 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <h4 className="font-medium mb-2">PDF Documents</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {plan.pdfFilePaths.map((filePath, index) => (
-                    <div
+                    <FileCard
                       key={index}
-                      className="border rounded-md p-3 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-red-500 mr-2" />
-                        <span className="text-sm truncate">
-                          {filePath.split("/").pop()}
-                        </span>
-                      </div>
-                      <a
-                        href={filePath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline mt-1 inline-block"
-                      >
-                        View PDF
-                      </a>
-                    </div>
+                      filePath={filePath}
+                      type="pdf"
+                      onDelete={async () => {
+                        // Add your delete logic here
+                        // Example:
+                        // await deleteFile(filePath, 'pdf');
+                        // Update the state to remove the file
+                      }}
+                      showDelete={plan.isOwner}
+                    />
                   ))}
                 </div>
               </div>
@@ -1233,25 +1393,15 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <h4 className="font-medium mb-2">Certificates</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {plan.certificateFilePaths.map((filePath, index) => (
-                    <div
+                    <FileCard
                       key={index}
-                      className="border rounded-md p-3 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center">
-                        <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />
-                        <span className="text-sm truncate">
-                          {filePath.split("/").pop()}
-                        </span>
-                      </div>
-                      <a
-                        href={filePath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline mt-1 inline-block"
-                      >
-                        View Certificate
-                      </a>
-                    </div>
+                      filePath={filePath}
+                      type="cert"
+                      onDelete={async () => {
+                        // Add your delete logic here
+                      }}
+                      showDelete={plan.isOwner}
+                    />
                   ))}
                 </div>
               </div>
@@ -1262,41 +1412,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div>
                 <h4 className="font-medium mb-2">CAD Files</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {plan.cadFilePaths.map((filePath, index) => {
-                    const fileName = filePath.split("/").pop() || "";
-                    const isDwg = fileName.toLowerCase().endsWith(".dwg");
-
-                    return (
-                      <div
-                        key={index}
-                        className="border rounded-md p-3 hover:bg-gray-50"
-                      >
-                        <div className="flex items-center">
-                          <FileType2 className="h-5 w-5 text-blue-500 mr-2" />
-                          <span className="text-sm truncate">{fileName}</span>
-                        </div>
-                        <div className="mt-2 space-x-2">
-                          <a
-                            href={filePath}
-                            download
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            Download
-                          </a>
-                          {!isDwg && (
-                            <a
-                              href={filePath}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline"
-                            >
-                              View
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {plan.cadFilePaths.map((filePath, index) => (
+                    <FileCard
+                      key={index}
+                      filePath={filePath}
+                      type="cad"
+                      onDelete={async () => {
+                        // Add your delete logic here
+                      }}
+                      showDelete={plan.isOwner}
+                    />
+                  ))}
                 </div>
               </div>
             )}

@@ -157,68 +157,133 @@ export async function isUserSubscribed(): Promise<boolean> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
-    console.log("userData before", user);
-
     if (!user) {
       console.log("User not authenticated for Subscription");
       return false;
     }
 
-    if (user && user?.subscription?.status === "active") return true;
-    if (user && user?.subscription?.status === "past_due") return true;
+    // First check if user has an active subscription from the user object
+    if (user?.subscription?.status === "active") return true;
+    if (user?.subscription?.status === "past_due") return true;
 
-    console.log("userData after", user);
-
+    // If not in user object, check the database
     const sub = await prisma.subscription.findFirst({
       where: {
         userId: user.id,
-        status: { in: ["active", "past_due"] }, // show limited even if a single failure
+        status: { in: ["active", "past_due"] },
       },
       orderBy: { updatedAt: "desc" },
     });
 
     if (!sub) {
-      console.log("No subscription found for user");
+      console.log("No active subscription found for user");
       return false;
     }
-    // Visible if we are still in the current usage period
+
+    // Check if subscription is still within the valid period
     const now = new Date();
-    console.log("Subscription found for user", sub);
-    return now <= new Date(sub?.currentEnd!);
+    const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
+
+    // Add a 1-day grace period for subscription end
+    const gracePeriod = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+    const endDateWithGrace = currentEnd
+      ? new Date(currentEnd.getTime() + gracePeriod)
+      : null;
+
+    return endDateWithGrace ? now <= endDateWithGrace : false;
   } catch (error) {
-    console.error("Error checking subscription:", error);
+    console.error("Error checking subscription status:", error);
     return false;
   }
 }
 
+/**
+ * Computes the subscription period based on interval and reference date
+ * @param interval - The subscription interval (monthly, quarterly, annually)
+ * @param _ref - Optional reference date (defaults to current time)
+ * @returns Object containing start (s), end (e), and next charge date (c)
+ */
 function computePeriod(
   interval: "monthly" | "quarterly" | "annually",
-  _ref: string | Date | undefined
+  _ref?: string | Date
 ) {
-  const ref = _ref ? new Date(_ref) : new Date();
-  const add = (d: Date, days: number) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
-  const som = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
-  const eom = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  const soq = (d: Date) =>
-    new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
-  const eoq = (d: Date) =>
-    new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3 + 3, 0);
-  const soy = (d: Date) => new Date(d.getFullYear(), 0, 1);
-  const eoy = (d: Date) => new Date(d.getFullYear(), 12, 0);
+  const timeZone = "Africa/Lagos"; // Default timezone, consider making this configurable
+  const now = _ref ? new Date(_ref) : new Date();
+
+  // Create Intl.DateTimeFormat instance for consistent timezone handling
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+  });
+
+  // Helper to get start of day in the specified timezone
+  const startOfDay = (date: Date) => {
+    const [year, month, day] = formatter
+      .formatToParts(date)
+      .filter(
+        (part) =>
+          part.type === "year" || part.type === "month" || part.type === "day"
+      )
+      .map((part) => parseInt(part.value));
+    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  };
+
+  // Helper to get end of day in the specified timezone
+  const endOfDay = (date: Date) => {
+    const [year, month, day] = formatter
+      .formatToParts(date)
+      .filter(
+        (part) =>
+          part.type === "year" || part.type === "month" || part.type === "day"
+      )
+      .map((part) => parseInt(part.value));
+    return new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+  };
+
+  const start = startOfDay(now);
+
   if (interval === "monthly") {
-    const s = som(ref),
-      e = eom(ref);
-    return { s, e, c: add(e, 1) };
+    const end = endOfDay(
+      new Date(start.getFullYear(), start.getMonth() + 1, 0)
+    );
+    return {
+      s: start,
+      e: end,
+      c: startOfDay(new Date(end.getFullYear(), end.getMonth() + 1, 1)),
+    };
   }
+
   if (interval === "quarterly") {
-    const s = soq(ref),
-      e = eoq(ref);
-    return { s, e, c: add(e, 1) };
+    const quarter = Math.floor(now.getMonth() / 3);
+    const startOfQuarter = new Date(now.getFullYear(), quarter * 3, 1);
+    const endOfQuarter = endOfDay(
+      new Date(now.getFullYear(), (quarter + 1) * 3, 0)
+    );
+
+    return {
+      s: startOfQuarter,
+      e: endOfQuarter,
+      c: startOfDay(
+        new Date(endOfQuarter.getFullYear(), endOfQuarter.getMonth() + 1, 1)
+      ),
+    };
   }
-  const s = soy(ref),
-    e = eoy(ref);
-  return { s, e, c: add(e, 1) };
+
+  // Annually
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const endOfYear = endOfDay(new Date(now.getFullYear(), 11, 31));
+
+  return {
+    s: startOfYear,
+    e: endOfYear,
+    c: startOfDay(new Date(now.getFullYear() + 1, 0, 1)),
+  };
 }
 
 export async function listSubscriptionHistory(userId: string) {

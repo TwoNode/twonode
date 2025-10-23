@@ -15,6 +15,7 @@ import {
   uploadSurfboardFileToS3,
   deleteMultipleSurfboardFilesFromS3,
   deleteMultipleSurfboardFilesFromS3WithUrl,
+  deleteSurfboardFileFromS3,
 } from "./awsActions";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
@@ -670,7 +671,7 @@ export async function updatePlan(
 
     const now = Date.now();
     const locked = now > cutoffMs(existing.createdAt);
-    // const enforceLock = locked && !dto.canBypassLock;
+    // const enforceLock = locked && !dto?.canBypassLock;
     const enforceLock = false;
 
     // Only certificate fields editable when locked
@@ -2707,5 +2708,146 @@ export async function getAdminBoundaries(geometry: object) {
     // You might want to throw the error or return a specific error state
     // depending on how you want to handle it on the client side.
     return { success: false, message: "Internal server error" };
+  }
+}
+
+/**
+ * Deletes a file attachment from S3 and updates the database
+ * @param planId - The ID of the plan containing the file
+ * @param fileUrl - The URL of the file to delete
+ * @param fileType - The type of file ('pdf', 'cad', or 'certificate')
+ */
+export async function deletePlanAttachment(
+  planId: string,
+  fileUrl: string,
+  fileType: "pdf" | "cad" | "certificate"
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user?.id) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // 1. Verify the plan exists and belongs to the user
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+      select: { id: true, [`${fileType}FilePaths`]: true },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // 2. Delete the file from S3
+    const deleteResult = await deleteMultipleSurfboardFilesFromS3WithUrl([
+      fileUrl,
+    ]);
+
+    if (!deleteResult.success) {
+      return {
+        success: false,
+        error: deleteResult.error || "Failed to delete file from storage",
+      };
+    }
+
+    // 3. Update the database to remove the file reference
+    const currentFiles = (plan as any)[`${fileType}FilePaths`] as string[];
+    const updatedFiles = currentFiles.filter((url) => url !== fileUrl);
+
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        [`${fileType}FilePaths`]: updatedFiles,
+      },
+    });
+
+    // 4. Revalidate the cache
+    revalidatePath(`/surfboard/dashboard/plans/${planId}`);
+    revalidatePath(`/surfboard/dashboard/plans/${planId}/edit`);
+    revalidatePath("/surfboard/dashboard/plans");
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error(`Error deleting ${fileType} file:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete file",
+    };
+  }
+}
+
+/**
+ * Deletes a file from S3 and updates the plan in the database
+ * @param planId - The ID of the plan
+ * @param fileUrl - The URL of the file to delete
+ * @param fileType - The type of file ('pdf' | 'cad' | 'certificate')
+ * @returns The updated plan or an error
+ */
+export async function _deletePlanAttachment(
+  planId: string,
+  fileUrl: string,
+  fileType: "pdf" | "cad" | "certificate"
+): Promise<ApiResult<Plan>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    // 1. Get the current plan to verify ownership and get current files
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId, userId: user.id },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // 2. Delete the file from S3
+    try {
+      await deleteSurfboardFileFromS3({ url: fileUrl });
+    } catch (error) {
+      console.error("Error deleting file from S3:", error);
+      // Continue even if S3 deletion fails to ensure database consistency
+    }
+
+    // 3. Update the plan to remove the file reference
+    const fileArrayField = `${fileType}FilePaths` as const;
+    const currentFiles = (plan[fileArrayField] as string[]) || [];
+    const updatedFiles = currentFiles.filter((file) => file !== fileUrl);
+
+    // 4. Update the plan in the database
+    const updatedPlan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        [fileArrayField]: updatedFiles,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    // 5. Revalidate the cache
+    revalidatePath(`/surfboard/dashboard/plans/${planId}`);
+    revalidatePath("/surfboard/dashboard/plans");
+
+    return { success: true, data: updatedPlan as unknown as Plan };
+  } catch (error) {
+    console.error("Error deleting plan attachment:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete attachment",
+    };
   }
 }

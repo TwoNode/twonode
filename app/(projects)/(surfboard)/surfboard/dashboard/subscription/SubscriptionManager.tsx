@@ -31,7 +31,7 @@ import {
   verifySubscription,
   disableSubscription,
 } from "@/app/(projects)/(surfboard)/actions/paystackActions";
-import { format, isAfter } from "date-fns";
+import { isAfter, addDays } from "date-fns";
 import PaystackPop from "@paystack/inline-js";
 import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
 
@@ -108,6 +108,90 @@ export default function SubscriptionManager({
   }, [searchParams, router, pathname]);
 
   const nairaToKobo = (naira: number) => Math.round(naira * 100);
+
+  const formatLocalDate = (
+    dateString: string | Date | null | undefined,
+    formatStr = "MMM d, yyyy"
+  ) => {
+    if (!dateString) return "N/A";
+    try {
+      const date =
+        typeof dateString === "string" ? new Date(dateString) : dateString;
+
+      // For the format string, we'll use Intl.DateTimeFormat for the timezone conversion
+      // and fall back to the original format function for custom formatting
+      const timeZone = "Africa/Lagos";
+
+      // First convert the date to the target timezone
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+
+      // If we need to support custom format strings, we'll need to handle them
+      // For now, we'll use the default format
+      return formatter.format(date);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  const isSubscriptionActiveMemo = useMemo(() => {
+    if (!current) return false;
+    if (current.status === "active" && !current.cancelledAt) return true;
+    return false;
+  }, [current]);
+
+  const isSubscriptionInGracePeriod = useMemo(() => {
+    if (!current?.currentEnd) return false;
+    const gracePeriodDays = 1; // 1 day grace period
+    const endDate = new Date(current.currentEnd);
+    const gracePeriodEnd = addDays(endDate, gracePeriodDays);
+    return isAfter(gracePeriodEnd, new Date());
+  }, [current]);
+
+  const getSubscriptionStatus = useMemo(() => {
+    if (isSubscriptionActiveMemo) {
+      return `You're currently subscribed to the ${
+        SUBSCRIPTION_PLANS[current?.interval as keyof typeof SUBSCRIPTION_PLANS]
+          ?.name || current?.planName
+      }`;
+    }
+
+    if (isSubscriptionInGracePeriod && current?.currentEnd) {
+      return `Your subscription will expire on ${formatLocalDate(
+        current.currentEnd
+      )}`;
+    }
+
+    return "You don't have an active subscription";
+  }, [current, isSubscriptionActiveMemo, isSubscriptionInGracePeriod]);
+
+  const getNextBillingText = useMemo(() => {
+    if (!current) return "";
+
+    if (isSubscriptionActiveMemo) {
+      if (current.nextPaymentDate || current.currentEnd) {
+        return `Next billing: ${formatLocalDate(
+          current.nextPaymentDate || current.currentEnd
+        )}`;
+      }
+      return `Billing cycle: ${current.interval || "monthly"}`;
+    }
+
+    if (isSubscriptionInGracePeriod && current.currentEnd) {
+      return `Expires on ${formatLocalDate(current.currentEnd)}`;
+    }
+
+    return "No active subscription";
+  }, [current, isSubscriptionActiveMemo, isSubscriptionInGracePeriod]);
 
   const onSubscribe = async (planId: PlanId) => {
     if (!publicKey) {
@@ -272,9 +356,8 @@ export default function SubscriptionManager({
     } else if (current?.cancelledAt) {
       // If subscription is already cancelled but not yet expired
       toast.error(
-        `Your current plan is set to expire on ${format(
-          new Date(current.currentEnd),
-          "MMM d, yyyy"
+        `Your current plan is set to expire on ${formatLocalDate(
+          current.currentEnd
         )}. ` +
           "Please wait until the plan expires before subscribing to a new one."
       );
@@ -336,13 +419,6 @@ export default function SubscriptionManager({
     }
   };
 
-  // Check if subscription is cancelled but not yet expired
-  const isSubscriptionCancelled =
-    current?.cancelledAt ||
-    (current?.status === "canceled" &&
-      current?.currentEnd &&
-      isAfter(new Date(current.currentEnd), new Date()));
-
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
@@ -350,19 +426,7 @@ export default function SubscriptionManager({
         <Card>
           <CardHeader>
             <CardTitle>Current Plan</CardTitle>
-            <CardDescription>
-              {isSubscriptionActive
-                ? "You're currently subscribed to the " +
-                    SUBSCRIPTION_PLANS[
-                      current.interval as keyof typeof SUBSCRIPTION_PLANS
-                    ]?.name || current.planName
-                : isSubscriptionCancelled
-                ? `Your subscription will expire on ${format(
-                    new Date(current.currentEnd),
-                    "MMM d, yyyy"
-                  )}`
-                : "You don't have an active subscription"}
-            </CardDescription>
+            <CardDescription>{getSubscriptionStatus}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -372,31 +436,9 @@ export default function SubscriptionManager({
                     current.interval as keyof typeof SUBSCRIPTION_PLANS
                   ]?.name || current.planName}
                 </h3>
-                <p className="text-muted-foreground">
-                  {isSubscriptionActive
-                    ? current.nextPaymentDate
-                      ? `Next billing: ${
-                          current.nextPaymentDate || current.currentEnd
-                            ? format(
-                                new Date(
-                                  current.nextPaymentDate ||
-                                    current.currentEnd ||
-                                    ""
-                                ),
-                                "MMM d, yyyy"
-                              )
-                            : ""
-                        }`
-                      : "Billing cycle: " + (current.interval || "monthly")
-                    : isSubscriptionCancelled
-                    ? `Expires on ${format(
-                        new Date(current.currentEnd),
-                        "MMM d, yyyy"
-                      )}`
-                    : "No active subscription"}
-                </p>
+                <p className="text-muted-foreground">{getNextBillingText}</p>
               </div>
-              {isSubscriptionActive && (
+              {isSubscriptionActiveMemo && (
                 <Button
                   variant="destructive"
                   onClick={handleDisableSubscription}
@@ -422,13 +464,11 @@ export default function SubscriptionManager({
         <CardHeader>
           <CardTitle>Available Plans</CardTitle>
           <CardDescription>
-            {isSubscriptionActive
+            {isSubscriptionActiveMemo
               ? "Cancel your current plan to subscribe to a new one"
-              : isSubscriptionCancelled
+              : isSubscriptionInGracePeriod
               ? `Your current plan will expire on ${
-                  current
-                    ? format(new Date(current.currentEnd), "MMM d, yyyy")
-                    : ""
+                  current ? formatLocalDate(current.currentEnd) : ""
                 }`
               : "Choose the plan that works best for you"}
           </CardDescription>
@@ -510,7 +550,7 @@ export default function SubscriptionManager({
                     <CardFooter className="pt-0">
                       <Button
                         size="lg"
-                        disabled={isWorking || isSubscriptionActive}
+                        disabled={isWorking || isSubscriptionActiveMemo}
                         onClick={() => handlePlanSelect(plan.id)}
                         className={`w-full font-medium transition-all text-white ${
                           isPopular
@@ -556,7 +596,7 @@ export default function SubscriptionManager({
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md border border-yellow-200 dark:border-yellow-800">
                     <p className="text-yellow-800 dark:text-yellow-200 font-medium">
                       Your current plan will remain active until{" "}
-                      {format(new Date(current.currentEnd), "MMM d, yyyy")}.
+                      {formatLocalDate(current.currentEnd)}.
                     </p>
                     <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
                       You can subscribe to a new plan after your current

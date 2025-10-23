@@ -1,4 +1,3 @@
-// app/(projects)/(surfboard)/components/SurfboardPlanForm.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -20,13 +19,192 @@ import {
   checkPlanNumberExists,
   getAdminBoundaries,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getSurfboardUploadTargetsMulti } from "@/app/(projects)/(surfboard)/actions/awsActions";
+import {
+  getSurfboardUploadTargetsMulti,
+  deleteSurfboardFileFromS3,
+} from "@/app/(projects)/(surfboard)/actions/awsActions";
 import {
   generatePolygonFromPillars,
   parseCSVContent,
 } from "../utils/surfboardUtils";
 import { useRouter } from "next/navigation";
 import MaplibreMap from "./maps/MaplibreMap";
+import Link from "next/link";
+import {
+  ChevronLeft,
+  File,
+  X,
+  FileText,
+  FileCheck,
+  AlertTriangle,
+} from "lucide-react";
+
+// Confirmation Modal Component
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const ConfirmationModal = ({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+}: ConfirmationModalProps) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="ml-4">
+            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">{message}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+          <button
+            type="button"
+            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
+            onClick={onConfirm}
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// File list component with delete functionality
+interface FileListProps {
+  files: Array<string | File>;
+  onDelete: (index: number) => void;
+  type: "cad" | "pdf" | "cert";
+}
+
+const FileList = ({ files, onDelete, type }: FileListProps) => {
+  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(
+    null
+  );
+
+  const getFileIcon = (fileName: string) => {
+    if (type === "cad") return <File className="w-4 h-4 text-blue-500" />;
+    if (type === "pdf") return <FileText className="w-4 h-4 text-red-500" />;
+    return <FileCheck className="w-4 h-4 text-green-500" />;
+  };
+
+  const handleDeleteClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPendingDeleteIndex(index);
+    setShowConfirmModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (pendingDeleteIndex !== null) {
+      onDelete(pendingDeleteIndex);
+      setDeletingIndex(null);
+      setShowConfirmModal(false);
+      setPendingDeleteIndex(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowConfirmModal(false);
+    setPendingDeleteIndex(null);
+  };
+
+  const formatFileName = (
+    fileName: string
+  ): { displayText: string; isUrl: boolean; href?: string } => {
+    // Check if it's an S3 URL
+    const s3Match = fileName.match(/surfboard\/([^/]+)\/(.+)$/);
+    if (s3Match) {
+      return {
+        displayText: s3Match[2], // Path after user_id
+        isUrl: true,
+        href: fileName,
+      };
+    }
+    return { displayText: fileName, isUrl: false };
+  };
+
+  if (files.length === 0) return null;
+
+  return (
+    <>
+      <ul className="mt-2 space-y-1">
+        {files.map((file, index) => {
+          const fileName = typeof file === "string" ? file : file.name;
+          const { displayText, isUrl, href } = formatFileName(fileName);
+
+          return (
+            <li
+              key={fileName + index}
+              className="flex items-center justify-between group px-2 py-1 rounded hover:bg-gray-50"
+            >
+              <div className="flex items-center space-x-2 min-w-0">
+                {getFileIcon(fileName)}
+                {isUrl ? (
+                  <Link
+                    href={href || ""}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline truncate max-w-xs"
+                    title={fileName}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {displayText}
+                  </Link>
+                ) : (
+                  <span
+                    className="text-xs text-gray-700 truncate max-w-xs"
+                    title={fileName}
+                  >
+                    {displayText}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={(e) => handleDeleteClick(index, e)}
+                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                title="Delete file"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        title="Delete File"
+        message="Are you sure you want to delete this file? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+    </>
+  );
+};
 
 // ------------------------
 // UI helpers (style only)
@@ -136,6 +314,30 @@ export type SurfboardPlanFormProps = {
 
 const VALID_CAD_EXTENSIONS = [".dwg", ".dxf"];
 
+const INITIALS = (initial: any) => ({
+  planNumber: initial?.planNumber ?? "",
+  surveyTitle: initial?.surveyTitle ?? "",
+  planType: (initial?.planType as PlanType) ?? PLAN_TYPES.DEED,
+  referencePlanNumber: initial?.referencePlanNumber ?? "",
+  deededArea: initial?.deededArea ?? "",
+  facilitator: initial?.facilitator ?? "",
+  pillarType: initial?.pillarType ?? "",
+  geometry: initial?.geometry ?? null,
+  // pillars: initial?.pillars ?? [],
+  pdfFilePaths: initial?.pdfFilePaths ?? [],
+  cadFilePaths: initial?.cadFilePaths ?? [],
+  certificateFilePaths: initial?.certificateFilePaths ?? [],
+  dateOnSurveyPlan: initial?.dateOnSurveyPlan ?? "",
+  dateLodged: initial?.dateLodged ?? null,
+  ward: initial?.ward ?? null,
+  lcda: initial?.lcda ?? null,
+  lga: initial?.lga ?? null,
+  state: initial?.state ?? null,
+  isLive: initial?.isLive ?? false,
+  id: initial?.id,
+  createdAt: initial?.createdAt,
+});
+
 export default function SurfboardPlanForm({
   mode,
   initial,
@@ -144,29 +346,7 @@ export default function SurfboardPlanForm({
   const router = useRouter();
 
   // --- Form state (unchanged) ---
-  const [form, setForm] = useState<SurfboardPlanDTO>(() => ({
-    planNumber: initial?.planNumber ?? "",
-    surveyTitle: initial?.surveyTitle ?? "",
-    planType: (initial?.planType as PlanType) ?? PLAN_TYPES.DEED,
-    referencePlanNumber: initial?.referencePlanNumber ?? "",
-    deededArea: initial?.deededArea ?? "",
-    facilitator: initial?.facilitator ?? "",
-    pillarType: initial?.pillarType ?? "",
-    geometry: initial?.geometry ?? null,
-    // pillars: initial?.pillars ?? [],
-    pdfFilePaths: initial?.pdfFilePaths ?? [],
-    cadFilePaths: initial?.cadFilePaths ?? [],
-    certificateFilePaths: initial?.certificateFilePaths ?? [],
-    dateOnSurveyPlan: initial?.dateOnSurveyPlan ?? "",
-    dateLodged: initial?.dateLodged ?? null,
-    ward: initial?.ward ?? null,
-    lcda: initial?.lcda ?? null,
-    lga: initial?.lga ?? null,
-    state: initial?.state ?? null,
-    isLive: initial?.isLive ?? false,
-    id: initial?.id,
-    createdAt: initial?.createdAt,
-  }));
+  const [form, setForm] = useState<SurfboardPlanDTO>(() => INITIALS(initial));
 
   // Certificate logic (unchanged)
   const [certificateReady, setCertificateReady] = useState<boolean | undefined>(
@@ -192,6 +372,7 @@ export default function SurfboardPlanForm({
   // Facilitators dropdown (unchanged behavior)
   const [facilitators, setFacilitators] = useState<string[]>([]);
   const [showFacilitatorList, setShowFacilitatorList] = useState(false);
+
   useEffect(() => {
     (async () => {
       try {
@@ -548,14 +729,60 @@ export default function SurfboardPlanForm({
     return { type: "Polygon", coordinates: [] };
   };
 
+  const handleDeleteFile = async (
+    file: string | File,
+    fileType: "cad" | "pdf" | "cert"
+  ) => {
+    try {
+      const field = `${fileType}FilePaths` as
+        | "cadFilePaths"
+        | "pdfFilePaths"
+        | "certificateFilePaths";
+
+      if (typeof file === "string") {
+        // It's an existing file URL, delete from S3
+        await deleteSurfboardFileFromS3({ url: file });
+        await updatePlan({
+          ...INITIALS(initial),
+          [field]: form[field].filter((f) => f !== file),
+        } as any);
+      }
+      // No need to delete newly selected files from S3 as they haven't been uploaded yet
+      toast.success(`Deleted ${fileType} file from storage`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting ${fileType} file:`, error);
+      toast.error(`Failed to delete ${fileType} file from storage`);
+      return false;
+    }
+  };
+
   return (
     <div className="mx-auto py-0 px-0">
       {/* Gradient Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-sm">
         <div className="mx-auto px-4 py-6">
-          <h1 className="text-xl md:text-2xl font-semibold">
-            {mode === "create" ? "Create New Survey Plan" : "Edit Survey Plan"}
+          <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
+            {mode !== "create" && (
+              <Link href={`/surfboard/dashboard/plan?planId=${initial?.id}`}>
+                <button className="flex items-center rounded-full p-2 bg-white/10 hover:bg-white/20 focus:bg-white/30">
+                  <ChevronLeft className="h-6 w-6 text-white" />
+                </button>
+              </Link>
+            )}
+
+            {mode === "create" ? (
+              "Create New Survey Plan"
+            ) : (
+              <>
+                Edit Survey Plan &nbsp;
+                <span className="italic text-[#9ec8ff]">
+                  {initial?.surveyTitle}
+                </span>
+              </>
+            )}
           </h1>
+
           <p className="text-white/80 text-sm">
             Upload files on submit, fill plan details, and preview geometry
           </p>
@@ -624,6 +851,7 @@ export default function SurfboardPlanForm({
                   <label className={labelCls} htmlFor="surveyTitle">
                     Survey Title {reqBadge}
                   </label>
+
                   <input
                     id="surveyTitle"
                     value={form.surveyTitle}
@@ -635,6 +863,7 @@ export default function SurfboardPlanForm({
                     disabled={lockNonCert && mode === "edit"}
                     placeholder="e.g., Parcel Layout for…"
                   />
+
                   {errors.surveyTitle && (
                     <p className={errorCls}>{errors.surveyTitle}</p>
                   )}
@@ -948,6 +1177,7 @@ export default function SurfboardPlanForm({
                   <label className={labelCls} htmlFor="cadFiles">
                     CAD Files {reqBadge}
                   </label>
+
                   <input
                     id="cadFiles"
                     type="file"
@@ -981,14 +1211,36 @@ export default function SurfboardPlanForm({
                   <p className={helpCls}>
                     Allowed formats: {VALID_CAD_EXTENSIONS.join(", ")}
                   </p>
-                  <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                    {(form.cadFilePaths || []).map((p, i) => (
-                      <li key={p + i}>{p}</li>
-                    ))}
-                    {selectedCadFiles.map((f, i) => (
-                      <li key={f.name + i}>{f.name}</li>
-                    ))}
-                  </ul>
+                  <FileList
+                    files={[...(form.cadFilePaths || []), ...selectedCadFiles]}
+                    onDelete={async (index) => {
+                      const allFiles = [
+                        ...(form.cadFilePaths || []),
+                        ...selectedCadFiles,
+                      ];
+                      const fileToDelete = allFiles[index];
+                      if (typeof fileToDelete === "string") {
+                        const deleteSuccess = await handleDeleteFile(
+                          fileToDelete,
+                          "cad"
+                        );
+                        if (!deleteSuccess) return;
+                        setForm((prev) => ({
+                          ...prev,
+                          cadFilePaths: prev.cadFilePaths?.filter(
+                            (f) => f !== fileToDelete
+                          ),
+                        }));
+                      } else {
+                        const selectedIndex =
+                          index - (form.cadFilePaths?.length || 0);
+                        setSelectedCadFiles((prev) =>
+                          prev.filter((_, i) => i !== selectedIndex)
+                        );
+                      }
+                    }}
+                    type="cad"
+                  />
                 </div>
 
                 {/* PDF */}
@@ -1007,14 +1259,36 @@ export default function SurfboardPlanForm({
                     className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
                   />
                   {errors.pdf && <p className={errorCls}>{errors.pdf}</p>}
-                  <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                    {(form.pdfFilePaths || []).map((p, i) => (
-                      <li key={p + i}>{p}</li>
-                    ))}
-                    {selectedPdfFiles.map((f, i) => (
-                      <li key={f.name + i}>{f.name}</li>
-                    ))}
-                  </ul>
+                  <FileList
+                    files={[...(form.pdfFilePaths || []), ...selectedPdfFiles]}
+                    onDelete={async (index) => {
+                      const allFiles = [
+                        ...(form.pdfFilePaths || []),
+                        ...selectedPdfFiles,
+                      ];
+                      const fileToDelete = allFiles[index];
+                      if (typeof fileToDelete === "string") {
+                        const deleteSuccess = await handleDeleteFile(
+                          fileToDelete,
+                          "pdf"
+                        );
+                        if (!deleteSuccess) return;
+                        setForm((prev) => ({
+                          ...prev,
+                          pdfFilePaths: prev.pdfFilePaths?.filter(
+                            (f) => f !== fileToDelete
+                          ),
+                        }));
+                      } else {
+                        const selectedIndex =
+                          index - (form.pdfFilePaths?.length || 0);
+                        setSelectedPdfFiles((prev) =>
+                          prev.filter((_, i) => i !== selectedIndex)
+                        );
+                      }
+                    }}
+                    type="pdf"
+                  />
                 </div>
 
                 {/* Certificate Files */}
@@ -1033,14 +1307,40 @@ export default function SurfboardPlanForm({
                       className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
                     />
                     {errors.cert && <p className={errorCls}>{errors.cert}</p>}
-                    <ul className="mt-2 text-xs list-disc pl-4 text-gray-700 space-y-0.5">
-                      {(form.certificateFilePaths || []).map((p, i) => (
-                        <li key={p + i}>{p}</li>
-                      ))}
-                      {selectedCertFiles.map((f, i) => (
-                        <li key={f.name + i}>{f.name}</li>
-                      ))}
-                    </ul>
+                    <FileList
+                      files={[
+                        ...(form.certificateFilePaths || []),
+                        ...selectedCertFiles,
+                      ]}
+                      onDelete={async (index) => {
+                        const allFiles = [
+                          ...(form.certificateFilePaths || []),
+                          ...selectedCertFiles,
+                        ];
+                        const fileToDelete = allFiles[index];
+                        if (typeof fileToDelete === "string") {
+                          const deleteSuccess = await handleDeleteFile(
+                            fileToDelete,
+                            "cert"
+                          );
+                          if (!deleteSuccess) return;
+                          setForm((prev) => ({
+                            ...prev,
+                            certificateFilePaths:
+                              prev.certificateFilePaths?.filter(
+                                (f) => f !== fileToDelete
+                              ),
+                          }));
+                        } else {
+                          const selectedIndex =
+                            index - (form.certificateFilePaths?.length || 0);
+                          setSelectedCertFiles((prev) =>
+                            prev.filter((_, i) => i !== selectedIndex)
+                          );
+                        }
+                      }}
+                      type="cert"
+                    />
                   </div>
                 )}
               </div>

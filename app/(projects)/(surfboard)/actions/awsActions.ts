@@ -220,7 +220,7 @@ export async function deleteMultipleSurfboardFilesFromS3(
 
 export async function deleteMultipleSurfboardFilesFromS3WithUrl(
   files: Array<string | { url: string }>
-): Promise<void> {
+): Promise<ApiResult<{ success: boolean }>> {
   try {
     // Normalize all items to have the { url: string } shape
     const normalizedFiles = files.map((file) => ({
@@ -258,9 +258,12 @@ export async function deleteMultipleSurfboardFilesFromS3WithUrl(
     });
 
     await Promise.all(deletePromises);
+
+    return { success: true };
   } catch (error) {
     console.error("Error in deleteMultipleSurfboardFilesFromSS3:", error);
     // Don't rethrow to allow the main error to be handled by the caller
+    return { success: false };
   }
 }
 
@@ -388,6 +391,7 @@ async function getPresignedPutUrl({
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { Readable } from "stream";
+import { ApiResult } from "../types/surfboardTypes";
 
 const CDN = process.env.CDN_BASE_URL; // optional
 
