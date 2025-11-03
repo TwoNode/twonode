@@ -360,6 +360,30 @@ export default function SurfboardLandingPage() {
           <h2 className="text-2xl font-semibold">Frequently asked</h2>
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
             <FAQ
+              q="Can I upload survey plans outside Lagos?"
+              a="Yes, you can upload survey plans for anywhere in the world."
+            />
+            <FAQ
+              q="Is every QR Code unique to a survey plan?"
+              a="Yes, each survey record automatically generates a unique QR Code for secure identification."
+            />
+            <FAQ
+              q="When I scan the QR Code, will it show the location of the survey plan?"
+              a="Yes, scanning the QR Code displays the location of the survey plan on an interactive map, along with additional details about the record."
+            />
+            <FAQ
+              q="Can I navigate to the location of the survey plan?"
+              a="Yes, simply click 'View on Google Maps' to get directions to the exact location."
+            />
+            <FAQ
+              q="What is the required CSV file format?"
+              a="Your file should have the following columns: Column 1: Pillar No, Column 2: X coordinate, Column 3: Y coordinate"
+            />
+            <FAQ
+              q="Can I edit a record after upload?"
+              a="Absolutely! You can click 'Edit' to make and save any necessary changes."
+            />
+            <FAQ
               q="Can Surfboard auto-detect wards and LGAs?"
               a="Yes. Given polygon geometry, Surfboard intersects against a Nigeria wards dataset to return ward, LCDA/LGA, and state metadata."
             />

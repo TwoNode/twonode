@@ -376,7 +376,7 @@ function PlanDetails({ planId }: { planId: string }) {
                   />
                 </div>
                 <div className="space-y-4">
-                  <DetailItem
+                  {/* <DetailItem
                     icon={Ruler}
                     label="Area"
                     value={
@@ -385,7 +385,7 @@ function PlanDetails({ planId }: { planId: string }) {
                         : undefined
                     }
                     className="border-b pb-3"
-                  />
+                  /> */}
                   <DetailItem
                     icon={Ruler}
                     label="Deeded Area"
