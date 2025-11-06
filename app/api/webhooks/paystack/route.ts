@@ -46,7 +46,7 @@ async function loadRevaActions() {
       return null;
     }
   };
-  return (await tryImport("@/app/(projects)/reva/actions/revaActions")) || null;
+  return (await tryImport("@/app/(projects)/reva/actions/revaActions2")) || null;
 }
 
 // ─────────────────────────── Types ───────────────────────────
