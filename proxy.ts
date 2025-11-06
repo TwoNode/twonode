@@ -17,8 +17,8 @@ import {
 } from "@/utils/encryptedCookies";
 import { Platform } from "@/utils/platform";
 
-const ENTER_MSG = "\n\n\n ENTERING MIDDLEWARE \n";
-const EXIT_MSG = "\n EXITING MIDDLEWARE..... \n\n\n";
+const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
+const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
 // Define the paths that require authentication
 const protectedRoutes = [
   "/reva/dashboard",
@@ -39,7 +39,7 @@ type DynamicAuthOptions = any & {
   isReturnToCurrentPage?: boolean | ((req: NextRequest) => boolean);
 };
 
-function withDynamicAuth(options?: DynamicAuthOptions, middlewareFn?: any) {
+function withDynamicAuth(options?: DynamicAuthOptions, proxyFn?: any) {
   return async (req: NextRequest) => {
     // Resolve dynamic login page if provided as a function
     const resolvedOptions: any = {
@@ -51,21 +51,21 @@ function withDynamicAuth(options?: DynamicAuthOptions, middlewareFn?: any) {
     };
 
     console.log(ENTER_MSG);
-    if (middlewareFn) {
-      // Handle case where middleware function is provided
+    if (proxyFn) {
+      // Handle case where proxy function is provided
       return withAuth(
         req,
         resolvedOptions,
         async ({ token, user }: { token: string; user: any }) => {
           (req as any).kindeAuth = { token, user };
-          const result = await middlewareFn(req);
+          const result = await proxyFn(req);
           console.log(EXIT_MSG);
           return result;
         }
       );
     }
 
-    // Basic auth handling without middleware function
+    // Basic auth handling without proxy function
     return withAuth(req, resolvedOptions);
   };
 }
@@ -80,8 +80,8 @@ function createRedirectResponse(
   return NextResponse.redirect(url);
 }
 
-// 2. With additional middleware logic
-const middlewareWithLogic = withDynamicAuth(
+// 2. With additional proxy logic
+const proxyWithLogic = withDynamicAuth(
   {
     loginPage: (req: NextRequest) => {
       const pathname = req.nextUrl.pathname;
@@ -99,23 +99,23 @@ const middlewareWithLogic = withDynamicAuth(
   },
   async (req: NextRequest) => {
     const pathname = req.nextUrl.pathname;
-    console.log("🛡️ Middleware - Pathname:", pathname);
+    console.log("🛡️ Proxy - Pathname:", pathname);
 
-    // Skip middleware for public routes
+    // Skip proxy for public routes
     if (publicRoutes.some((route) => pathname.startsWith(route))) {
-      console.log("🛡️ Middleware - Public route detected, skipping auth");
+      console.log("🛡️ Proxy - Public route detected, skipping auth");
 
       return NextResponse.next();
     }
 
     if (protectedRoutes.some((route) => pathname.startsWith(route))) {
-      console.log("🛡️ Middleware - Protected route detected");
+      console.log("🛡️ Proxy - Protected route detected");
 
       // Get the authenticated user from Kinde
       const { getUser } = getKindeServerSession();
       const kindeUser = await getUser();
 
-      console.log("🛡️ Middleware - Kinde user:", kindeUser?.id);
+      console.log("🛡️ Proxy - Kinde user:", kindeUser?.id);
 
       if (!kindeUser || !kindeUser.id) {
         let redirectPath = "/reva/login";
@@ -127,7 +127,7 @@ const middlewareWithLogic = withDynamicAuth(
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
         console.log(
-          "🛡️ Middleware - User not authenticated, redirecting to:",
+          "🛡️ Proxy - User not authenticated, redirecting to:",
           redirectPath
         );
         return createRedirectResponse(req, redirectPath);
@@ -142,9 +142,7 @@ const middlewareWithLogic = withDynamicAuth(
           // If no session data, check if we're coming from the success route
           if (pathname.includes("/api/auth/success")) {
             // Allow the request to continue to set the cookie
-            console.log(
-              "🛡️ Middleware - Auth success route, allowing cookie setup"
-            );
+            console.log("🛡️ Proxy - Auth success route, allowing cookie setup");
             return NextResponse.next();
           }
 
@@ -157,7 +155,7 @@ const middlewareWithLogic = withDynamicAuth(
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
           console.log(
-            "🛡️ Middleware - No session data found, redirecting to:",
+            "🛡️ Proxy - No session data found, redirecting to:",
             redirectPath
           );
           return createRedirectResponse(req, redirectPath);
@@ -166,7 +164,7 @@ const middlewareWithLogic = withDynamicAuth(
         const { userData, response: refreshedResponse } = sessionData;
 
         console.log(
-          "🛡️ Middleware - User data:",
+          "🛡️ Proxy - User data:",
           userData
             ? {
                 platform: userData.platform,
@@ -198,7 +196,7 @@ const middlewareWithLogic = withDynamicAuth(
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
           console.log(
-            "🛡️ Middleware - Wrong platform, redirecting to:",
+            "🛡️ Proxy - Wrong platform, redirecting to:",
             redirectPath
           );
           return createRedirectResponse(req, redirectPath);
@@ -209,16 +207,16 @@ const middlewareWithLogic = withDynamicAuth(
 
         if (pathname.startsWith("/reva/dashboard")) {
           // Regular user dashboard - any authenticated REVA user can access
-          console.log("🛡️ Middleware - Checking user dashboard access");
+          console.log("🛡️ Proxy - Checking user dashboard access");
           hasAccess = canAccessRevaUserPanel(userData.role);
         } else if (pathname.startsWith("/reva-restricted/dashboard")) {
           // Admin dashboard - only ADMIN and SUPERADMIN can access
-          console.log("🛡️ Middleware - Checking admin dashboard access");
+          console.log("🛡️ Proxy - Checking admin dashboard access");
 
           // Special check for superadmin routes within dashboard
           if (pathname.startsWith("/reva-restricted/dashboard/superadmin")) {
             console.log(
-              "🛡️ Middleware - Checking superadmin access within dashboard"
+              "🛡️ Proxy - Checking superadmin access within dashboard"
             );
             hasAccess = canAccessRevaSuperAdminPanel(userData.role);
           } else {
@@ -226,13 +224,11 @@ const middlewareWithLogic = withDynamicAuth(
           }
         } else if (pathname.startsWith("/reva-restricted/superadmin")) {
           // Superadmin dashboard - only SUPERADMIN can access
-          console.log("🛡️ Middleware - Checking superadmin access");
+          console.log("🛡️ Proxy - Checking superadmin access");
           hasAccess = canAccessRevaSuperAdminPanel(userData.role);
         } else if (pathname.startsWith("/surfboard/dashboard")) {
           // Surfboard user dashboard - any authenticated Surfboard user can access
-          console.log(
-            "🛡️ Middleware - Checking Surfboard user dashboard access"
-          );
+          console.log("🛡️ Proxy - Checking Surfboard user dashboard access");
 
           if (
             pathname == "/surfboard/dashboard" ||
@@ -254,7 +250,7 @@ const middlewareWithLogic = withDynamicAuth(
                   const now = new Date();
                   hasAccess = now <= new Date(sub.expiresAt!);
                   console.log(
-                    "🛡️ Middleware - Checking subscription access",
+                    "🛡️ Proxy - Checking subscription access",
                     now,
                     sub.expiresAt,
                     new Date(sub.expiresAt!).toString(),
@@ -264,7 +260,7 @@ const middlewareWithLogic = withDynamicAuth(
 
                 if (!hasAccess) {
                   console.log(
-                    "🛡️ Middleware - User is not subscribed, redirecting to:/surfboard/dashboard/subscription",
+                    "🛡️ Proxy - User is not subscribed, redirecting to:/surfboard/dashboard/subscription",
                     sub,
                     hasAccess,
                     "\n\n\n\n"
@@ -275,7 +271,7 @@ const middlewareWithLogic = withDynamicAuth(
                   );
                 }
               } catch (error) {
-                console.log("🛡️ Middleware - Error processing session:", error);
+                console.log("🛡️ Proxy - Error processing session:", error);
                 hasAccess = false;
 
                 return createRedirectResponse(
@@ -287,14 +283,12 @@ const middlewareWithLogic = withDynamicAuth(
           }
         } else if (pathname.startsWith("/surf-restricted/dashboard")) {
           // Surfboard admin dashboard - only ADMIN and SUPERADMIN can access
-          console.log(
-            "🛡️ Middleware - Checking Surfboard admin dashboard access"
-          );
+          console.log("🛡️ Proxy - Checking Surfboard admin dashboard access");
 
           // Special check for superadmin routes within dashboard
           if (pathname.startsWith("/surf-restricted/dashboard/superadmin")) {
             console.log(
-              "🛡️ Middleware - Checking Surfboard superadmin access within dashboard"
+              "🛡️ Proxy - Checking Surfboard superadmin access within dashboard"
             );
             hasAccess = canAccessSurfSuperAdminPanel(userData.role);
           } else {
@@ -302,11 +296,11 @@ const middlewareWithLogic = withDynamicAuth(
           }
         } else if (pathname.startsWith("/surf-restricted/superadmin")) {
           // Surfboard superadmin dashboard - only SUPERADMIN can access
-          console.log("🛡️ Middleware - Checking Surfboard superadmin access");
+          console.log("🛡️ Proxy - Checking Surfboard superadmin access");
           hasAccess = canAccessSurfSuperAdminPanel(userData.role);
         }
 
-        console.log("🛡️ Middleware - Access granted:", hasAccess);
+        console.log("🛡️ Proxy - Access granted:", hasAccess);
 
         if (!hasAccess) {
           let redirectPath = "/reva/login";
@@ -318,14 +312,14 @@ const middlewareWithLogic = withDynamicAuth(
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
           console.log(
-            "🛡️ Middleware - User does not have required role, redirecting to:",
+            "🛡️ Proxy - User does not have required role, redirecting to:",
             redirectPath
           );
           return createRedirectResponse(req, redirectPath);
         }
 
         // Return the refreshed response to update the cookie
-        console.log("🛡️ Middleware - Proceeding with refreshed session");
+        console.log("🛡️ Proxy - Proceeding with refreshed session");
         return refreshedResponse;
 
         // Option 2: Alternative approach without auto-refresh
@@ -338,7 +332,7 @@ const middlewareWithLogic = withDynamicAuth(
             ? "/reva-restricted/login"
             : "/reva/login";
           console.log(
-            "🛡️ Middleware - No user data found, redirecting to:",
+            "🛡️ Proxy - No user data found, redirecting to:",
             redirectPath
           );
           return createRedirectResponse(req, redirectPath);
@@ -346,11 +340,11 @@ const middlewareWithLogic = withDynamicAuth(
 
         // ... rest of the permission checks ...
         
-        console.log("🛡️ Middleware - Proceeding to next");
+        console.log("🛡️ Proxy - Proceeding to next");
         return NextResponse.next();
         */
       } catch (error) {
-        console.error("🛡️ Middleware - Error processing session:", error);
+        console.error("🛡️ Proxy - Error processing session:", error);
 
         let redirectPath = "/reva/login";
         if (pathname.startsWith("/reva-restricted"))
@@ -360,20 +354,17 @@ const middlewareWithLogic = withDynamicAuth(
           redirectPath = "/surf-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        console.log(
-          "🛡️ Middleware - Session error, redirecting to:",
-          redirectPath
-        );
+        console.log("🛡️ Proxy - Session error, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
       }
     }
 
-    console.log("🛡️ Middleware - Proceeding to next (unprotected route)");
+    console.log("🛡️ Proxy - Proceeding to next (unprotected route)");
     return NextResponse.next();
   }
 );
 
-export default middlewareWithLogic;
+export default proxyWithLogic;
 
 export const config = {
   matcher: [

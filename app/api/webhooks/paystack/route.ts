@@ -1,6 +1,8 @@
 // File: app/api/webhooks/paystack/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import * as mailer from "@/utils/email";
+import * as reva from "@/app/(projects)/reva/actions/revaActions2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,29 +29,29 @@ try {
   try {
     prisma = await import("@/lib/prisma");
     prisma = prisma.default;
-    console.log("Prisma loaded from lib/prisma", prisma);
+    console.log("Prisma loaded from lib/prisma");
   } catch (error) {
     const { PrismaClient } = await import("@prisma/client");
     prisma = new PrismaClient();
-    console.log("Prisma loaded from @prisma/client", prisma);
+    console.log("Prisma loaded from @prisma/client");
   }
 } catch {
   console.log("Unable to load Prisma");
 }
 
 // Try to load Reva actions (paths differ per project; try a few)
-async function loadRevaActions() {
-  const tryImport = async (p: string) => {
-    try {
-      return await import(p);
-    } catch {
-      return null;
-    }
-  };
-  return (
-    (await tryImport("@/app/(projects)/reva/actions/revaActions2")) || null
-  );
-}
+// async function loadRevaActions() {
+//   const tryImport = async (p: string) => {
+//     try {
+//       return await import(p);
+//     } catch {
+//       return null;
+//     }
+//   };
+//   return (
+//     (await tryImport("@/app/(projects)/reva/actions/revaActions2")) || null
+//   );
+// }
 
 // ─────────────────────────── Types ───────────────────────────
 export type PaystackWebhookPayload = { event: string; data: any };
@@ -101,17 +103,29 @@ export type ChargeSuccessData = {
 
 // ─────────────────────────── Route ───────────────────────────
 export async function POST(req: NextRequest) {
+  console.log("Starting webhook processing \n\n\n");
   const secret = process.env.PAYSTACK_SECRET_KEY;
-  if (!secret)
-    return NextResponse.json(
-      { error: "Missing PAYSTACK_SECRET_KEY" },
-      { status: 500 }
-    );
+  if (!secret) return NextResponse.json({ error: "___NS__" }, { status: 400 });
 
   const raw = await req.text();
   const signature = req.headers.get("x-paystack-signature") ?? "";
+
+  console.log("Reva actions loaded", reva);
+  console.log("Mailer actions loaded", mailer);
+
+  await sendWebhookEmail({
+    to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
+    platform: "surfboard",
+    event: "test",
+    signature,
+    headers: {},
+    payload: {},
+    diff: { changed: [] },
+    entityKey: "",
+  });
+
   if (!verifySignature(raw, signature, secret)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return NextResponse.json({ error: "___I___" }, { status: 401 });
   }
 
   let payload: PaystackWebhookPayload;
@@ -609,7 +623,9 @@ async function handleReva(event: string, data: ChargeSuccessData) {
     return;
   }
 
-  const reva = await loadRevaActions();
+  // const reva = await loadRevaActions();
+  console.log("Reva actions loaded", reva);
+
   const updateFn = isAuth
     ? reva?.updatePropertyTransactionStatus
     : reva?.updateOneTimeTransactionStatus;
@@ -653,17 +669,17 @@ function escapeHtml(str: string) {
   );
 }
 
-async function loadMailer() {
-  const tryImport = async (p: string) => {
-    try {
-      return await import(p);
-    } catch {
-      return null;
-    }
-  };
+// async function loadMailer() {
+//   const tryImport = async (p: string) => {
+//     try {
+//       return await import(p);
+//     } catch {
+//       return null;
+//     }
+//   };
 
-  return (await tryImport("@/utils/email")) || null;
-}
+//   return (await tryImport("@/utils/email")) || null;
+// }
 
 function getField(
   customFields:
@@ -840,24 +856,28 @@ async function sendWebhookEmail(args: {
     </div>
   `;
   const text = `Paystack Webhook
-Platform: ${args.platform}
-Event: ${args.event}
-Signature: ${args.signature}
-Entity: ${args.entityKey || ""}
+    Platform: ${args.platform}
+    Event: ${args.event}
+    Signature: ${args.signature}
+    Entity: ${args.entityKey || ""}
 
-Diff:
-${diffText}
+    Diff:
+    ${diffText}
 
-Headers:
-${prettyHeaders}
+    Headers:
+    ${prettyHeaders}
 
-Payload:
-${prettyPayload}
-`;
+    Payload:
+    ${prettyPayload}
+  `;
 
-  const mailer = await loadMailer();
-  if (!mailer) return;
+  // const mailer = await loadMailer();
+  if (!mailer) {
+    console.log("Mailer not loaded");
+    return;
+  }
 
+  console.log("Mailer loaded");
   if (typeof (mailer as any).sendEmail === "function") {
     const fn = (mailer as any).sendEmail;
     try {
