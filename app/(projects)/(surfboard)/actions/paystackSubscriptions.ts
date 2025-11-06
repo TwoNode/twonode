@@ -249,7 +249,7 @@ export async function findSubscriptionsByCustomerRefUser(
   customerId: string,
   args: { reference?: string; userId?: string }
 ) {
-  const secret = PAYSTACK_SECRET_KEY;
+  const secret = await getPaystackSecretForWebhook();
   if (!secret) throw new Error("Missing PAYSTACK_SECRET_KEY");
   return findSubscriptionsByCustomerMeta(secret, customerId, args);
 }

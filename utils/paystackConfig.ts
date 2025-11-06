@@ -59,7 +59,7 @@ export const getPaystackConfig = async (
  * @param reference - Transaction reference to determine environment
  * @returns Secret key for webhook verification
  */
-export const getPaystackSecretForWebhook = () => {
+export const getPaystackSecretForWebhook = async () => {
   // Check if this is a live transaction by looking up the database record
   // For now, we'll use a simple heuristic based on environment
   const isLive = process.env.NODE_ENV === "production";

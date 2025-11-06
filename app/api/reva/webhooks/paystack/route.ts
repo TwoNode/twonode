@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Get the appropriate Paystack secret key for webhook verification
-  const PAYSTACK_SECRET = getPaystackSecretForWebhook();
+  const PAYSTACK_SECRET = await getPaystackSecretForWebhook();
 
   const hash = crypto
     .createHmac("sha512", PAYSTACK_SECRET)

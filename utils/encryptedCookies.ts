@@ -291,7 +291,7 @@ export async function getEncryptedUserData(
   req?: NextRequest
 ): Promise<EncryptedUserData | null> {
   try {
-    const cookieStore = req ? req.cookies : cookies();
+    const cookieStore = req ? req.cookies : await cookies();
     const encryptedJWT = cookieStore.get("USER_SESSION")?.value;
 
     if (!encryptedJWT) {
@@ -328,7 +328,7 @@ export async function getAndRefreshUserSession(
   req?: NextRequest
 ): Promise<{ userData: EncryptedUserData; response: NextResponse } | null> {
   try {
-    const cookieStore = req && req?.cookies ? req.cookies : cookies();
+    const cookieStore = req && req?.cookies ? req.cookies : await cookies();
     const encryptedJWT = cookieStore.get("USER_SESSION")?.value;
 
     if (!encryptedJWT) {
@@ -355,9 +355,9 @@ export async function getAndRefreshUserSession(
 }
 
 // Clear encrypted user cookie
-export function clearEncryptedUserCookie(
+export async function clearEncryptedUserCookie(
   response?: NextResponse
-): NextResponse {
+): Promise<NextResponse> {
   const cookieName = "USER_SESSION";
 
   const cookieOptions = {
@@ -371,16 +371,18 @@ export function clearEncryptedUserCookie(
   if (response) {
     response.cookies.set(cookieName, "", cookieOptions);
 
-    cookies().set(cookieName, "", { maxAge: 0 });
-    cookies().delete(cookieName);
+    const cookieStore = await cookies();
+    cookieStore.set(cookieName, "", cookieOptions);
+    cookieStore.delete(cookieName);
 
     return response;
   } else {
     const newResponse = NextResponse.next();
     newResponse.cookies.set(cookieName, "", cookieOptions);
 
-    cookies().set(cookieName, "", { maxAge: 0 });
-    cookies().delete(cookieName);
+    const cookieStore = await cookies();
+    cookieStore.set(cookieName, "", cookieOptions);
+    cookieStore.delete(cookieName);
 
     return newResponse;
   }
