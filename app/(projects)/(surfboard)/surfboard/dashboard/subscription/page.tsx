@@ -8,16 +8,23 @@ export const metadata: Metadata = {
 };
 
 export default async function SubscriptionPage({
-  searchParams: { success, error },
+  searchParams,
 }: {
   searchParams: { success?: string; error?: string };
 }) {
   const sub = await getUserActiveSubscription();
+  const sp = await searchParams; // Await the Promise
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <SubscriptionManager searchParams={{ success, error }} sub={sub} />
+        <SubscriptionManager
+          searchParams={{
+            success: sp.success,
+            error: sp.error,
+          }}
+          sub={sub}
+        />
       </div>
     </div>
   );
