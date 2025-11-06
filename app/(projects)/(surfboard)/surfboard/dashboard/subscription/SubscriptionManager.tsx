@@ -246,20 +246,31 @@ export default function SubscriptionManager({
               value: planId,
             },
             {
+              display_name: "Subscription Plan ID",
+              variable_name: "subscription_plan_id",
+              value: planId,
+            },
+            {
               display_name: "Plan Code",
               variable_name: "plan_code",
               value: planCode,
+            },
+            {
+              display_name: "Platform",
+              variable_name: "platform",
+              value: "surfboard",
+            },
+            {
+              display_name: "Reference",
+              variable_name: "reference",
+              value: reference,
             },
             {
               display_name: "User ID",
               variable_name: "user_id",
               value: userId,
             },
-            {
-              display_name: "Email",
-              variable_name: "email",
-              value: email,
-            },
+            { display_name: "Email", variable_name: "email", value: email },
           ].filter(Boolean) as {
             display_name: string;
             variable_name: string;
@@ -290,17 +301,17 @@ export default function SubscriptionManager({
               const errorMsg =
                 verification?.error || "Payment verification failed";
               toast.error(errorMsg);
-              return router.replace(
-                `/surfboard/dashboard/subscription?error=${encodeURIComponent(
-                  errorMsg
-                )}`
-              );
+              // return router.replace(
+              //   `/surfboard/dashboard/subscription?error=${encodeURIComponent(
+              //     errorMsg
+              //   )}`
+              // );
             }
 
             // Show success and redirect
             toast.success("Subscription updated successfully!");
-            router.replace("/surfboard/dashboard/subscription?success=true");
-            refreshAfter();
+            // router.replace("/surfboard/dashboard/subscription?success=true");
+            // refreshAfter();
           } catch (error: any) {
             console.error("Payment processing error:", error);
             const errorMsg = error?.message || "An unexpected error occurred";

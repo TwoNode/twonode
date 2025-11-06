@@ -24,6 +24,8 @@ export async function initiateSubscription(
       throw new Error("User not authenticated");
     }
 
+    console.log("INITIATING PAYMENT FOR USER: " + planId, user);
+
     const plan = SUBSCRIPTION_PLANS[planId];
     if (!plan) {
       throw new Error("Invalid subscription plan");
@@ -192,14 +194,14 @@ export async function verifySubscription(reference: string) {
     const paidAt = verification.data.paid_at;
 
     console.log(
-      "\n\n\n\n",
+      "\n\n\n\n verifySubscription",
       verification,
       planCode,
       customerId,
       customerCode,
       authorization,
       paidAt,
-      "\n\n\n\n"
+      " verifySubscription \n\n\n\n"
     );
     if (!planCode) throw new Error("Invalid plan in transaction");
 
@@ -223,7 +225,7 @@ export async function verifySubscription(reference: string) {
       userId,
     });
 
-    console.log("\n\n\n\n", sub, "\n\n\n\n");
+    console.log("\n\n\n\n findSubscriptionsByCustomerRefUser", sub, "\n\n\n\n");
 
     const subCode = sub?.firstMatch?.subscription_code;
     const emailToken = sub?.firstMatch?.email_token || "";
