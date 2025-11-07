@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -19,12 +19,16 @@ const config = {
     },
     extend: {
       screens: {
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
         "1400lg": "1400px",
         "1500lg": "1500px",
       },
       fontFamily: {
         bricolage: ["var(--font-bricolage)"],
-        // mono: ['var(bricolage)'],
       },
       boxShadow: {
         shadow: "var(--shadow)",
