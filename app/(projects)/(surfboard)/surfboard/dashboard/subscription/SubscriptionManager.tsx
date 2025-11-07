@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,15 +43,10 @@ import { getUserActiveSubscription } from "../../../actions/subscriptionActions"
  * - Starts Paystack popup on the same page (no redirect to authorization_url).
  * - Closes popup and refreshes data on success/cancel.
  */
-export default function SubscriptionManager({
-  searchParams,
-  sub,
-}: {
-  searchParams: { success?: string; error?: string };
-  sub: any;
-}) {
+export default function SubscriptionManager() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [current, setCurrent] = useState<any>(null);
@@ -73,23 +68,32 @@ export default function SubscriptionManager({
     []
   );
 
+  // Get search params
+  const success = searchParams?.get('success');
+  const error = searchParams?.get('error');
+
+  // Fetch subscription data on component mount
   useEffect(() => {
-    const fetchSub = async () => {
+    const fetchSubscription = async () => {
       try {
-        const sub = await getUserActiveSubscription();
-        setCurrent(sub || null);
-        setIsSubscriptionActive(sub?.status === "active" && !sub?.cancelledAt);
-      } catch {
+        setIsLoading(true);
+        const subscription = await getUserActiveSubscription();
+        setCurrent(subscription || null);
+        setIsSubscriptionActive(subscription?.status === "active" && !subscription?.cancelledAt);
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+        toast.error("Failed to load subscription data");
         setCurrent(null);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSub();
+
+    fetchSubscription();
   }, []);
 
+  // Handle search params changes
   useEffect(() => {
-    const { success, error } = searchParams || {};
     if (success) {
       toast.success("Subscription updated successfully");
       router.replace(pathname);
@@ -105,7 +109,7 @@ export default function SubscriptionManager({
       toast.error(map[error] || error);
       router.replace(pathname);
     }
-  }, [searchParams, router, pathname]);
+  }, [success, error, router, pathname]);
 
   const nairaToKobo = (naira: number) => Math.round(naira * 100);
 
@@ -565,7 +569,7 @@ export default function SubscriptionManager({
                         onClick={() => handlePlanSelect(plan.id)}
                         className={`w-full font-medium transition-all text-white ${
                           isPopular
-                            ? "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-blue-200"
+                            ? "bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-blue-200"
                             : ""
                         }`}
                       >

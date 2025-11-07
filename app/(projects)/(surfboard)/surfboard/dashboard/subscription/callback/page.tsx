@@ -7,7 +7,7 @@ export default async function SubscriptionCallbackPage({
 }: {
   searchParams: { reference: string };
 }) {
-  const reference = searchParams?.reference || "";
+  const { reference } = await searchParams;
   // const res = await verifySubscription(reference);
 
   // if (res?.success)

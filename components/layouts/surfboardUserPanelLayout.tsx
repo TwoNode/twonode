@@ -58,7 +58,7 @@ function SurfboardUserDashboardNavbar({
         </Link>
       ) : (
         <Link href="/surfboard/dashboard/newplan" className="pointer">
-          <Button variant="outline" className="mr-4">
+          <Button variant="default" className="mr-4 bg-blue-300 text-blue-900 cursor-pointer">
             <div className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               <span>New Plan</span>
@@ -76,7 +76,7 @@ function SurfboardUserDashboardNavbar({
 
       {!user?.picture ? (
         <img
-          src={user.picture}
+          src={user?.picture || "#"}
           alt="Profile"
           className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
         />
@@ -130,6 +130,8 @@ export default function SurfboardUserPanelLayout({
       try {
         console.log("--- Checking subscription access...");
         const hasAccess = await isUserSubscribed();
+        // const hasAccess = true;
+
         setHasSubscriptionAccess(hasAccess);
         console.log("--- Subscription access:", hasAccess);
       } catch (error) {
@@ -231,14 +233,14 @@ export default function SurfboardUserPanelLayout({
   }
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
+    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
       <SurfboardUserDashboardNavbar
         user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
       />
       <div
         className={cn(
-          "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] transition-[margin-left] ease-in-out duration-300",
+          "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
         )}
         style={{ background: SURFBOARD_COLORS.background.default }}
@@ -255,7 +257,7 @@ export default function SurfboardUserPanelLayout({
           {!hasSubscriptionAccess && (
             <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
               <div className="flex">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <AlertTriangle className="h-5 w-5 text-yellow-400" />
                 </div>
                 <div className="ml-3">

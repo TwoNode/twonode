@@ -13,7 +13,7 @@ const ViewDetailsPage = async ({
 }: {
   searchParams: { reference?: string };
 }) => {
-  const reference = searchParams?.reference;
+  const { reference } = await searchParams;
 
   if (!reference) {
     console.error("Missing reference in URL.");

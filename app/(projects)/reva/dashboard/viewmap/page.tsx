@@ -1,11 +1,7 @@
 import { getUserProperties } from "@/app/(projects)/reva/actions/revaActions";
 import RequestsMap from "./RequestsMap";
 
-const ViewDetailsPage = async ({
-  searchParams,
-}: {
-  searchParams: { reference?: string };
-}) => {
+const ViewDetailsPage = async () => {
   const { data, success } = await getUserProperties();
 
   console.log("\n\n\n\n\n\n", success, data, "\n\n\n\n\n\n\n");

@@ -92,7 +92,7 @@ const RevaFormPage = async ({
 }: {
   searchParams: { reference?: string };
 }) => {
-  const reference = searchParams?.reference;
+  const { reference } = await searchParams;
   console.log(reference);
 
   // if (!reference) {

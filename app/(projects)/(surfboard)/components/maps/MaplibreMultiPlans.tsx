@@ -510,12 +510,12 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     });
     const filter = (
       allVisibleIds.length > 0
-        ? ["in", ["get", "id"], ...allVisibleIds]
+        ? ["in", ["get", "id"], ["literal", allVisibleIds]]
         : ["==", true, false]
     ) as FilterSpecification;
     const pillarFilter = (
       allVisibleIds.length > 0
-        ? ["in", ["get", "planId"], ...allVisibleIds]
+        ? ["in", ["get", "planId"], ["literal", allVisibleIds]]
         : ["==", true, false]
     ) as FilterSpecification;
     map.current.setFilter("plans-fill", filter);

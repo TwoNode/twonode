@@ -8,7 +8,7 @@ export default async function EditPlanPage({
 }: {
   searchParams: { planId: string };
 }) {
-  const planId = searchParams.planId;
+  const { planId } = await searchParams;
 
   const result = await getSurfPlanById(planId, { forEdit: true });
 

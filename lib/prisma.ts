@@ -9,9 +9,43 @@ declare global {
 const prisma =
   globalThis.prisma ||
   new PrismaClient({
-    log: ["query", "info", "warn", "error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? [
+            // "query",
+            "info",
+            "warn",
+            "error",
+          ]
+        : ["warn", "error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
-
+// In development, enable HMR by storing the Prisma instance in globalThis
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = prisma;
+}
 export default prisma;
+
+// // Add connection pool configuration to the database URL if in production
+// const databaseUrl = process.env.DATABASE_URL;
+// const connectionString =
+//   process.env.NODE_ENV === "production"
+//     ? `${databaseUrl}?connection_limit=20&pool_timeout=30`
+//     : databaseUrl;
+
+// const prisma =
+//   globalThis.prisma ||
+//   new PrismaClient({
+//     log:
+//       process.env.NODE_ENV === "development"
+//         ? [
+//             // "query",
+//             "info",
+//             "warn",
+//             "error",
+//           ]
+//         : ["warn", "error"],
+//     datasourceUrl: connectionString,
+//   });
+
+// export default prisma;

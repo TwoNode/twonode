@@ -65,7 +65,7 @@ const PLAN_TYPES = Array.from(Object.values(PLAN_TYPES_OBJ));
 export default function AllPlans() {
   const [search, setSearch] = useState("");
   const [plans, setPlans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<PlanFilters>({
     status: [],
@@ -87,6 +87,7 @@ export default function AllPlans() {
     pageSize = pagination.pageSize
   ) => {
     try {
+      setLoading(true);
       const result = await getPaginatedSurfPlans({
         page,
         pageSize,
@@ -123,6 +124,12 @@ export default function AllPlans() {
 
   useEffect(() => {
     loadPlans(1, pagination.pageSize);
+  }, []);
+
+  useEffect(() => {
+    setTimeout(() => {
+      loadPlans(1, pagination.pageSize);
+    }, 1000);
   }, [filters, sort, search]);
 
   const handlePageChange = (newPage: number) => {
@@ -201,14 +208,6 @@ export default function AllPlans() {
     );
   };
 
-  if (loading && plans.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full max-w-full mx-auto py-8 px-4">
       <div className="mb-8">
@@ -225,10 +224,11 @@ export default function AllPlans() {
         <div className="flex-1 max-w-md relative">
           <Input
             type="text"
-            className="w-full pl-10"
+            className="w-full pl-10 bg-transparent"
             placeholder="Search plans..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            disabled={loading}
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         </div>
@@ -237,6 +237,7 @@ export default function AllPlans() {
             variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2"
+            disabled={loading}
           >
             <Filter className="h-4 w-4" />
             Filters{" "}
@@ -254,6 +255,7 @@ export default function AllPlans() {
               (window.location.href = "/surfboard/dashboard/newplan")
             }
             className="bg-green-600 hover:bg-green-700"
+            disabled={loading}
           >
             Create New Plan
           </Button>
@@ -272,7 +274,7 @@ export default function AllPlans() {
               Status: {status}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => handleStatusChange(status)}
+                onClick={() => !loading && handleStatusChange(status)}
               />
             </Badge>
           ))}
@@ -285,7 +287,7 @@ export default function AllPlans() {
               Type: {type}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => handlePlanTypeChange(type)}
+                onClick={() => !loading && handlePlanTypeChange(type)}
               />
             </Badge>
           ))}
@@ -294,7 +296,9 @@ export default function AllPlans() {
               From: {format(filters.dateFrom, "MMM d, yyyy")}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => handleDateChange("dateFrom", undefined)}
+                onClick={() =>
+                  !loading && handleDateChange("dateFrom", undefined)
+                }
               />
             </Badge>
           )}
@@ -303,7 +307,9 @@ export default function AllPlans() {
               To: {format(filters.dateTo, "MMM d, yyyy")}
               <X
                 className="h-3 w-3 cursor-pointer"
-                onClick={() => handleDateChange("dateTo", undefined)}
+                onClick={() =>
+                  !loading && handleDateChange("dateTo", undefined)
+                }
               />
             </Badge>
           )}
@@ -313,6 +319,7 @@ export default function AllPlans() {
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() =>
+                  !loading &&
                   setFilters((prev) => ({ ...prev, facilitator: undefined }))
                 }
               />
@@ -323,6 +330,7 @@ export default function AllPlans() {
             size="sm"
             className="text-blue-600 hover:text-blue-800 hover:bg-transparent"
             onClick={clearFilters}
+            disabled={loading}
           >
             Clear all
           </Button>
@@ -345,8 +353,9 @@ export default function AllPlans() {
                       type="checkbox"
                       id={`status-${status}`}
                       checked={filters.status.includes(status)}
-                      onChange={() => handleStatusChange(status)}
+                      onChange={() => !loading && handleStatusChange(status)}
                       className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      disabled={loading}
                     />
                     <label
                       htmlFor={`status-${status}`}
@@ -371,8 +380,9 @@ export default function AllPlans() {
                       type="checkbox"
                       id={`type-${type}`}
                       checked={filters.planType.includes(type)}
-                      onChange={() => handlePlanTypeChange(type)}
+                      onChange={() => !loading && handlePlanTypeChange(type)}
                       className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                      disabled={loading}
                     />
                     <label
                       htmlFor={`type-${type}`}
@@ -403,6 +413,7 @@ export default function AllPlans() {
                           "w-full justify-start text-left font-normal",
                           !filters.dateFrom && "text-muted-foreground"
                         )}
+                        disabled={loading}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {filters.dateFrom ? (
@@ -417,6 +428,7 @@ export default function AllPlans() {
                         mode="single"
                         selected={filters.dateFrom}
                         onSelect={(date: any) =>
+                          !loading &&
                           handleDateChange("dateFrom", date || undefined)
                         }
                         initialFocus
@@ -434,6 +446,7 @@ export default function AllPlans() {
                           "w-full justify-start text-left font-normal",
                           !filters.dateTo && "text-muted-foreground"
                         )}
+                        disabled={loading}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {filters.dateTo ? (
@@ -448,6 +461,7 @@ export default function AllPlans() {
                         mode="single"
                         selected={filters.dateTo}
                         onSelect={(date: any) =>
+                          !loading &&
                           handleDateChange("dateTo", date || undefined)
                         }
                         initialFocus
@@ -470,7 +484,11 @@ export default function AllPlans() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">Sort by:</span>
-          <Select value={sort.field} onValueChange={handleSortChange}>
+          <Select
+            value={sort.field}
+            onValueChange={handleSortChange}
+            disabled={loading}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -490,13 +508,25 @@ export default function AllPlans() {
         </div>
       </div>
 
-      {/* Plans List */}
-      <div className="border-4 border-blue-200 grid grid-cols-1 gap-4 mb-4 max-w-full w-full overflow-x-hidden">
-        <PlanView
-          plans={plans}
-          emptyMessage="No survey plans found. Try adjusting your filters or create a new plan."
-          defaultView="list"
-        />
+      {/* Plans List with Loading State */}
+      <div className="relative border-4 border-blue-200 rounded-lg overflow-hidden">
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+        <div
+          className={cn(
+            "transition-opacity",
+            loading ? "opacity-50" : "opacity-100"
+          )}
+        >
+          <PlanView
+            plans={plans}
+            emptyMessage="No survey plans found. Try adjusting your filters or create a new plan."
+            defaultView="list"
+          />
+        </div>
       </div>
 
       {/* Pagination Controls */}
@@ -505,7 +535,9 @@ export default function AllPlans() {
           <span className="text-sm text-gray-700">
             Showing{" "}
             <span className="font-medium">
-              {(pagination.page - 1) * pagination.pageSize + 1}
+              {pagination.total === 0
+                ? 0
+                : (pagination.page - 1) * pagination.pageSize + 1}
             </span>{" "}
             to{" "}
             <span className="font-medium">
@@ -520,6 +552,7 @@ export default function AllPlans() {
             value={pagination.pageSize}
             onChange={handlePageSizeChange}
             className="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            disabled={loading}
           >
             {[5, 10, 20, 50].map((size) => (
               <option key={size} value={size}>

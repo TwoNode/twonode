@@ -1,11 +1,11 @@
 import SinglePlanDetails from "./SinglePlan";
 
-export default function PlanDetailsPage({
+export default async function PlanDetailsPage({
   searchParams,
 }: {
   searchParams: { planId: string };
 }) {
-  const { planId } = searchParams;
+  const { planId } = await searchParams;
 
   if (!planId) {
     return (

@@ -27,7 +27,7 @@ interface PageProps {
 }
 
 export default async function OneTimeRequestPage({ searchParams }: PageProps) {
-  const { reference, email } = searchParams;
+  const { reference, email } = await searchParams;
 
   if (!reference || !email) {
     return (

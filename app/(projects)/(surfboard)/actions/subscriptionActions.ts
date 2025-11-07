@@ -15,10 +15,13 @@ export async function getUserActiveSubscription() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) return null;
-    return prisma.subscription.findFirst({
+
+    const sub = await prisma.subscription.findFirst({
       where: { userId: user.id, status: "active" }, // prioritize active subscription
       orderBy: { createdAt: "desc" },
     });
+
+    return sub
   } catch (error) {
     console.error("Error fetching user subscription:", error);
     return null;
