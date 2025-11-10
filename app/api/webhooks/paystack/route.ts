@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     event: "test",
     signature,
     headers: {},
-    payload: {},
+    payload: { raw: raw },
     diff: { changed: [] },
     entityKey: "",
   });

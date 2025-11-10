@@ -34,6 +34,7 @@ import {
 import { isAfter, addDays } from "date-fns";
 import PaystackPop from "@paystack/inline-js";
 import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
+import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
 
 /**
  * SubscriptionManager
@@ -69,8 +70,8 @@ export default function SubscriptionManager() {
   );
 
   // Get search params
-  const success = searchParams?.get('success');
-  const error = searchParams?.get('error');
+  const success = searchParams?.get("success");
+  const error = searchParams?.get("error");
 
   // Fetch subscription data on component mount
   useEffect(() => {
@@ -79,7 +80,9 @@ export default function SubscriptionManager() {
         setIsLoading(true);
         const subscription = await getUserActiveSubscription();
         setCurrent(subscription || null);
-        setIsSubscriptionActive(subscription?.status === "active" && !subscription?.cancelledAt);
+        setIsSubscriptionActive(
+          subscription?.status === "active" && !subscription?.cancelledAt
+        );
       } catch (error) {
         console.error("Error fetching subscription:", error);
         toast.error("Failed to load subscription data");
@@ -455,9 +458,10 @@ export default function SubscriptionManager() {
               </div>
               {isSubscriptionActiveMemo && (
                 <Button
-                  variant="destructive"
+                  variant="default"
                   onClick={handleDisableSubscription}
                   disabled={isDisabling}
+                  className="border border-gray-200 hover:border-gray-400 dark:border-gray-700 dark:hover:border-gray-600"
                 >
                   {isDisabling ? (
                     <>
@@ -500,7 +504,7 @@ export default function SubscriptionManager() {
                   {/* Popular Badge */}
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full shadow-md">
+                      <span className="bg-blue-900 text-white text-xs font-medium px-3 py-1 rounded-full shadow-md">
                         MOST POPULAR
                       </span>
                     </div>
@@ -509,8 +513,8 @@ export default function SubscriptionManager() {
                   <Card
                     className={`border-2 transition-all duration-300 hover:shadow-lg ${
                       isCurrent
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-border hover:border-primary/50"
+                        ? "border-blue-600 ring-2 ring-blue-600/20"
+                        : "border-border hover:border-blue-600/50"
                     } ${isPopular ? "relative pt-10 pb-6 shadow-lg" : ""}`}
                   >
                     <CardHeader className="pb-4">
@@ -567,9 +571,9 @@ export default function SubscriptionManager() {
                         size="lg"
                         disabled={isWorking || isSubscriptionActiveMemo}
                         onClick={() => handlePlanSelect(plan.id)}
-                        className={`w-full font-medium transition-all text-white ${
+                        className={`w-full font-medium transition-all bg-gray-500 hover:bg-gray-600 text-white ${
                           isPopular
-                            ? "bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-blue-200"
+                            ? "bg-linear-to-r from-black/50 to-[#0166ff] hover:from-blue-600/90 hover:to-blue-600 text-white"
                             : ""
                         }`}
                       >
@@ -648,6 +652,9 @@ export default function SubscriptionManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button for Admin Actions */}
+      {process.env.NODE_ENV === "development" && <SubscriptionAdminFAB />}
     </div>
   );
 }

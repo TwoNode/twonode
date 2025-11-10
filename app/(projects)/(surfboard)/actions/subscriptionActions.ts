@@ -21,7 +21,7 @@ export async function getUserActiveSubscription() {
       orderBy: { createdAt: "desc" },
     });
 
-    return sub
+    return sub;
   } catch (error) {
     console.error("Error fetching user subscription:", error);
     return null;
@@ -295,4 +295,49 @@ export async function listSubscriptionHistory(userId: string) {
     orderBy: { startDate: "desc" },
     take: 50,
   });
+}
+
+/**
+ * Clears the current user's subscription from the database
+ * WARNING: This is a destructive action that permanently deletes subscription data
+ * Use with caution, especially in production environments
+ */
+export async function clearUserSubscription() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    const userId = user?.userId;
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "User not authenticated",
+      };
+    }
+
+    // Delete subscription history first (due to foreign key constraints)
+    await prisma.subscriptionHistory.deleteMany({
+      where: { userId },
+    });
+
+    // Delete the main subscription record
+    const deletedSubscription = await prisma.subscription.deleteMany({
+      where: { userId },
+    });
+
+    // Revalidate the subscription page to reflect changes
+    revalidatePath("/surfboard/dashboard/subscription");
+
+    return {
+      success: true,
+      message: "Subscription cleared successfully",
+      deletedCount: deletedSubscription.count,
+    };
+  } catch (error) {
+    console.error("Error clearing subscription:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to clear subscription",
+    };
+  }
 }
