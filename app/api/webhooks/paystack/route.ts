@@ -21,6 +21,12 @@ export const dynamic = "force-dynamic";
  * DB‑backed idempotency
  *  - Optional `WebhookEvent` table (id, signature[unique], event, platform, payload, status, error[, entityKey])
  *  - If not present, handler still works (no-ops the ledger)
+ * 
+ * Sample data
+ 
+{
+  "raw": "{\"event\":\"charge.success\",\"data\":{\"id\":5520043315,\"domain\":\"test\",\"status\":\"success\",\"reference\":\"SURFBOARD_SUB_test_1762780085531_e764640e-c5c9-405a-8525-e77118807b55\",\"amount\":5000000,\"message\":null,\"gateway_response\":\"Successful\",\"paid_at\":\"2025-11-10T13:08:13.000Z\",\"created_at\":\"2025-11-10T13:08:06.000Z\",\"channel\":\"card\",\"currency\":\"NGN\",\"ip_address\":\"102.89.69.124\",\"metadata\":{\"custom_fields\":[{\"display_name\":\"Platform\",\"variable_name\":\"platform\",\"value\":\"surfboard\"},{\"display_name\":\"Subscription Plan\",\"variable_name\":\"subscription_plan\",\"value\":\"Quarterly\"},{\"display_name\":\"Subscription Plan ID\",\"variable_name\":\"subscription_plan_id\",\"value\":\"quarterly\"},{\"display_name\":\"Reference\",\"variable_name\":\"reference\",\"value\":\"SURFBOARD_SUB_test_1762780085531_e764640e-c5c9-405a-8525-e77118807b55\"},{\"display_name\":\"User ID\",\"variable_name\":\"user_id\",\"value\":\"e764640e-c5c9-405a-8525-e77118807b55\"},{\"display_name\":\"Email\",\"variable_name\":\"email\",\"value\":\"rojitech9@gmail.com\"}]},\"fees_breakdown\":null,\"log\":null,\"fees\":85000,\"fees_split\":null,\"authorization\":{\"authorization_code\":\"AUTH_q8zseh2eew\",\"bin\":\"408408\",\"last4\":\"4081\",\"exp_month\":\"12\",\"exp_year\":\"2030\",\"channel\":\"card\",\"card_type\":\"visa \",\"bank\":\"TEST BANK\",\"country_code\":\"NG\",\"brand\":\"visa\",\"reusable\":true,\"signature\":\"SIG_wkAaGsI0EEXUmCX7fcNj\",\"account_name\":null,\"receiver_bank_account_number\":null,\"receiver_bank\":null},\"customer\":{\"id\":256979707,\"first_name\":\"\",\"last_name\":\"\",\"email\":\"rojitech9@gmail.com\",\"customer_code\":\"CUS_o766tgq8j92klql\",\"phone\":\"\",\"metadata\":null,\"risk_action\":\"default\",\"international_format_phone\":null},\"plan\":{\"id\":2909642,\"name\":\"Quarterly\",\"plan_code\":\"PLN_jbq0p961zph3gf9\",\"description\":\"Postpaid, billed quarterly (charged in Apr/Jul/Oct/Jan for the previous quarter)\",\"amount\":5000000,\"interval\":\"quarterly\",\"send_invoices\":1,\"send_sms\":1,\"currency\":\"NGN\"},\"subaccount\":{},\"split\":{},\"order_id\":null,\"paidAt\":\"2025-11-10T13:08:13.000Z\",\"requested_amount\":5000000,\"pos_transaction_data\":null,\"source\":{\"type\":\"api\",\"source\":\"merchant_api\",\"entry_point\":\"transaction_initialize\",\"identifier\":null}}}"
+}
  */
 
 // ─────────────────────────── Lazy deps ───────────────────────────
@@ -113,17 +119,6 @@ export async function POST(req: NextRequest) {
   console.log("Reva actions loaded", reva);
   console.log("Mailer actions loaded", mailer);
 
-  await sendWebhookEmail({
-    to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
-    platform: "surfboard",
-    event: "test",
-    signature,
-    headers: {},
-    payload: { raw: raw },
-    diff: { changed: [] },
-    entityKey: "",
-  });
-
   if (!verifySignature(raw, signature, secret)) {
     return NextResponse.json({ error: "___I___" }, { status: 401 });
   }
@@ -137,6 +132,17 @@ export async function POST(req: NextRequest) {
 
   const { event, data } = payload;
   const platform = detectPlatform(event, data);
+
+  await sendWebhookEmail({
+    to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
+    platform,
+    event,
+    signature,
+    headers: {},
+    payload,
+    diff: { changed: [] },
+    entityKey: "",
+  });
 
   // Email BEFORE idempotency (as requested), with diff against previous entity payload
   try {
