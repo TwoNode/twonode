@@ -119,10 +119,6 @@ export async function POST(req: NextRequest) {
   console.log("Reva actions loaded", reva);
   console.log("Mailer actions loaded", mailer);
 
-  if (!verifySignature(raw, signature, secret)) {
-    return NextResponse.json({ error: "___I___" }, { status: 401 });
-  }
-
   let payload: PaystackWebhookPayload;
   try {
     payload = JSON.parse(raw);
@@ -140,7 +136,7 @@ export async function POST(req: NextRequest) {
     await sendWebhookEmail({
       to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
       platform: "surfboard",
-      event: "test",
+      event: "Invalid JSON",
       signature,
       headers: {},
       payload: { raw: raw },
@@ -148,6 +144,10 @@ export async function POST(req: NextRequest) {
       entityKey: "",
     });
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (!verifySignature(raw, signature, secret)) {
+    return NextResponse.json({ error: "___I___" }, { status: 401 });
   }
 
   const { event, data } = payload;
