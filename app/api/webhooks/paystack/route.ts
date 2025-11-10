@@ -126,23 +126,32 @@ export async function POST(req: NextRequest) {
   let payload: PaystackWebhookPayload;
   try {
     payload = JSON.parse(raw);
+    await sendWebhookEmail({
+      to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
+      platform: "surfboard",
+      event: "test",
+      signature,
+      headers: {},
+      payload: { raw: raw, payload: payload },
+      diff: { changed: [] },
+      entityKey: "",
+    });
   } catch {
+    await sendWebhookEmail({
+      to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
+      platform: "surfboard",
+      event: "test",
+      signature,
+      headers: {},
+      payload: { raw: raw },
+      diff: { changed: [] },
+      entityKey: "",
+    });
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const { event, data } = payload;
   const platform = detectPlatform(event, data);
-
-  await sendWebhookEmail({
-    to: process.env.WEBHOOK_EMAIL_TO || process.env.ADMIN_EMAIL || "",
-    platform,
-    event,
-    signature,
-    headers: {},
-    payload,
-    diff: { changed: [] },
-    entityKey: "",
-  });
 
   // Email BEFORE idempotency (as requested), with diff against previous entity payload
   try {
