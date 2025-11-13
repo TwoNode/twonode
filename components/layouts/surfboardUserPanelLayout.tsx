@@ -21,7 +21,7 @@ import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "../ui/button";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getUserAndActiveSub } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
@@ -58,7 +58,10 @@ function SurfboardUserDashboardNavbar({
         </Link>
       ) : (
         <Link href="/surfboard/dashboard/newplan" className="pointer">
-          <Button variant="default" className="mr-4 bg-blue-300 text-blue-900 cursor-pointer">
+          <Button
+            variant="default"
+            className="mr-4 bg-blue-300 text-blue-900 cursor-pointer"
+          >
             <div className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               <span>New Plan</span>
@@ -104,21 +107,15 @@ export default function SurfboardUserPanelLayout({
 
   async function isUserSubscribed(): Promise<boolean> {
     try {
-      const session = await getAuthenticatedSurfUserFromCookie();
-      const userData = session || null;
+      const session = await getUserAndActiveSub();
+      const userData = session?.user || null;
       setUser(userData);
-      if (userData && userData?.subscription?.status === "active") return true;
-      if (userData && userData?.subscription?.status === "past_due")
-        return true;
 
-      if (!userData) {
-        console.log("No subscription found for user");
-        return false;
-      }
-      // Visible if we are still in the current usage period
-      const now = new Date();
-      console.log("Subscription found for user", userData.subscription);
-      return now <= new Date(userData.subscription?.expiresAt!);
+      if (!session?.subscription) return false;
+
+      const sub = session.subscription;
+
+      return sub ? true : false;
     } catch (error) {
       console.error("Error checking subscription:", error);
       return false;

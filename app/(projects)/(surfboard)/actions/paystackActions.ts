@@ -11,9 +11,300 @@ import {
 } from "@/utils/paystackConfig";
 import prisma from "@/lib/prisma";
 import { getAndRefreshUserSession } from "@/utils/encryptedCookies";
-import { findSubscriptionsByCustomerRefUser } from "./paystackSubscriptions";
 
 const PAYSTACK_SECRET_KEY = getPaystackSecretForWebhook();
+
+export type VerificationResponse = {
+  status: boolean;
+  message: string;
+  data: {
+    id: number;
+    domain: string;
+    status: string;
+    reference: string;
+    receipt_number: string | null;
+    amount: number;
+    message: string | null;
+    gateway_response: string;
+    paid_at: string;
+    created_at: string;
+    channel: string;
+    currency: string;
+    ip_address: string;
+    metadata: {
+      custom_fields: Array<{
+        display_name: string;
+        variable_name: string;
+        value: string;
+      }>;
+    };
+    log: {
+      start_time: number;
+      time_spent: number;
+      attempts: number;
+      errors: number;
+      success: boolean;
+      mobile: boolean;
+      input: Array<any>;
+      history: Array<{
+        time_spent: number;
+        type: string;
+        name: string;
+        message: string;
+        success: boolean;
+      }>;
+    };
+    fees: number;
+    fees_split: null | object;
+    authorization: {
+      authorization_code: string;
+      bin: string;
+      last4: string;
+      exp_month: string;
+      exp_year: string;
+      channel: string;
+      card_type: string;
+      bank: string;
+      country_code: string;
+      brand: string;
+      reusable: boolean;
+      signature: string;
+      account_name: string | null;
+      receiver_bank_account_number: string | null;
+      receiver_bank: string | null;
+    };
+    customer: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      email: string;
+      customer_code: string;
+      phone: string;
+      metadata: object | null;
+      risk_action: string;
+      international_format_phone: string | null;
+    };
+    plan: string;
+    split: object;
+    order_id: string | null;
+    paidAt: string;
+    createdAt: string;
+    requested_amount: number;
+    pos_transaction_data: object | null;
+    source: string | null;
+    fees_breakdown: object | null;
+    connect: object | null;
+    transaction_date: string;
+    plan_object: {
+      id: number;
+      name: string;
+      plan_code: string;
+      description: string;
+      amount: number;
+      interval: string;
+      send_invoices: boolean;
+      send_sms: boolean;
+      currency: string;
+    };
+    subaccount: object;
+  };
+};
+
+export type Plan = {
+  subscriptions?: {
+    customer: number;
+    plan: number;
+    integration: number;
+    domain: string;
+    start: number;
+    status: string;
+    quantity: number;
+    amount: number;
+    subscription_code: string;
+    email_token: string;
+    authorization: {
+      authorization_code: string;
+      bin: string;
+      last4: string;
+      exp_month: string;
+      exp_year: string;
+      channel: string;
+      card_type: string;
+      bank: string;
+      country_code: string;
+      brand: string;
+      reusable: boolean;
+      signature: string;
+      account_name: string;
+    };
+    easy_cron_id: null | string;
+    cron_expression: string;
+    next_payment_date: string;
+    open_invoice: null | string;
+    id: number;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  description?: null | string;
+  hosted_page_url?: null | string;
+  hosted_page_summary?: null | string;
+
+  name: string;
+  amount: number;
+  interval: "monthly" | "quarterly" | "annually";
+  integration: number;
+  domain: string;
+  plan_code: string;
+  send_invoices: boolean;
+  send_sms: boolean;
+  hosted_page: boolean;
+  currency: string;
+  id: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PaystackPlanCreateResponse = {
+  status: boolean;
+  message: string;
+  data: Plan;
+};
+
+export type PaystackPlansList = {
+  status: boolean;
+  message: string;
+  data: Plan[];
+  meta: {
+    total: number;
+    skipped: number;
+    perPage: number;
+    page: number;
+    pageCount: number;
+  };
+};
+
+type SubscriptionListResponse = {
+  status: boolean;
+  message: string;
+  data: Array<{
+    id: number;
+    domain: string;
+    status: string;
+    start: number;
+    quantity: number;
+    subscription_code: string;
+    email_token: string;
+    amount: number;
+    cron_expression: string;
+    next_payment_date: string;
+    open_invoice: null | string;
+    createdAt: string;
+    integration: number;
+    plan: {
+      name: string;
+      amount: number;
+      interval: string;
+      integration: number;
+      domain: string;
+      currency: string;
+      plan_code: string;
+      invoice_limit: number;
+      send_invoices: boolean;
+      send_sms: boolean;
+      hosted_page: boolean;
+      migrate: boolean;
+      id: number;
+      createdAt: string;
+      updatedAt: string;
+    };
+    authorization: {
+      authorization_code: string;
+      reference: string;
+      domain: string;
+      status: string;
+      method: string;
+      currency: string;
+      amount: number;
+      message: string;
+      gateway_response: string;
+      paid_at: string;
+      createdAt: string;
+      channel: string;
+      ip_address: string;
+      log: string;
+      channel_data: string;
+      reauthorise: boolean;
+      id: number;
+    };
+    customer: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone: string;
+      metadata: null | string;
+      customer_code: string;
+      RiskAction: string;
+      account_id: number;
+      domain: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+    invoice_limit: number;
+    split_code: null | string;
+    metadata: null | string;
+    payments_count: number;
+    most_recent_invoice: {
+      id: number;
+      integration: number;
+      domain: string;
+      subaccount_code: null | string;
+      amount: number;
+      paid_at: string;
+      invoice_number: string;
+      currency: string;
+      status: string;
+      reference: string;
+      customer: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        email: string;
+        phone: string;
+        metadata: null | string;
+        customer_code: string;
+        RiskAction: string;
+        account_id: number;
+        domain: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+      plan: {
+        name: string;
+        amount: number;
+        interval: string;
+        integration: number;
+        domain: string;
+        currency: string;
+        plan_code: string;
+        invoice_limit: number;
+        send_invoices: boolean;
+        send_sms: boolean;
+        hosted_page: boolean;
+        migrate: boolean;
+        id: number;
+        createdAt: string;
+        updatedAt: string;
+      };
+      invoice_limit: number;
+      split_code: null | string;
+      metadata: null | string;
+      paidAt: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>;
+};
 
 export async function initiateSubscription(
   planId: keyof typeof SUBSCRIPTION_PLANS
@@ -24,10 +315,8 @@ export async function initiateSubscription(
       throw new Error("User not authenticated");
     }
 
-    console.log("INITIATING PAYMENT FOR USER: " + planId, user);
-
-    const plan = SUBSCRIPTION_PLANS[planId];
-    if (!plan) {
+    const selectedPlan = SUBSCRIPTION_PLANS[planId];
+    if (!selectedPlan) {
       throw new Error("Invalid subscription plan");
     }
 
@@ -38,14 +327,14 @@ export async function initiateSubscription(
     const reference = `SURFBOARD_SUB_${
       isLive ? "live" : "test"
     }_${Date.now()}_${user.id}`;
+    const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-    const planCode = await getOrCreatePaystackPlan(plan, isLive);
-
+    // Initialize transaction with plan
     const response = await paystack.transaction.initialize({
       email: user.email,
-      amount: plan.price * 100,
+      amount: plan.amount, // Convert to kobo
       reference,
-      callback_url: `${process.env.BASE_URL}/surfboard/dashboard/subscription/callback?reference=${reference}`,
+      plan: plan.plan_code, // CRITICAL: This links the transaction to the subscription plan
       metadata: {
         custom_fields: [
           {
@@ -64,6 +353,11 @@ export async function initiateSubscription(
             value: plan.id,
           },
           {
+            display_name: "Plan Code",
+            variable_name: "plan_code",
+            value: plan.plan_code,
+          },
+          {
             display_name: "Reference",
             variable_name: "reference",
             value: reference,
@@ -72,164 +366,143 @@ export async function initiateSubscription(
           { display_name: "Email", variable_name: "email", value: user.email },
         ],
       },
-      plan: planCode,
     });
 
-    if (!response.status || !response.data?.authorization_url) {
-      console.log("Paystack initiateSubscription Error response:", response);
+    if (!response.status) {
+      console.error("Paystack initialization error:", response);
       throw new Error(response.message || "Failed to initialize payment");
     }
 
-    console.log("Paystack initiateSubscription response:", response);
-
-    // Instead of returning the URL, we redirect from the server action
     return {
       success: true,
       data: {
-        ...response.data,
-        planCode,
-        email: user.email,
-        amount: plan.price,
         reference,
+        email: user.email,
+        amount: plan.amount,
+        plan,
+        currency: "NGN",
         userId: user.id,
+        authorization_url: response.data.authorization_url,
       },
     };
   } catch (error) {
-    console.error("Error initiating Paystack subscription:", error);
-    // In case of an error, redirect back with an error message
+    console.error("Error initiating subscription:", error);
     return {
       success: false,
-      error: "initiation_failed",
+      error: (error as Error).message || "initiation_failed",
     };
   }
 }
 
-async function getOrCreatePaystackPlan(
+export async function getOrCreatePaystackPlan(
   plan: {
     id: string;
     planCode: string;
     name: string;
-    price: number;
+    amount: number;
     description: string;
     interval: string;
   },
   isLive: boolean
-): Promise<string> {
+): Promise<Plan> {
   const paystack = await createPaystackInstance(isLive);
-  const amountInKobo = plan.price * 100; // Convert to kobo for Paystack
-
-  // {"status":true,"message":"Plans retrieved","data":[{"subscriptions":[],"pages":[],"domain":"live","name":"yearly","plan_code":"PLN_sp36u33nqqxe6mr","description":"Postpaid, billed yearly (charged on Jan 1 for the previous year","amount":20000000,"interval":"annually","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2740357,"integration":1410813,"createdAt":"2025-08-14T11:57:21.000Z","updatedAt":"2025-08-14T11:57:21.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0},{"subscriptions":[],"pages":[],"domain":"live","name":"quarterly","plan_code":"PLN_op8wb4hoxs9v96b","description":"Postpaid, billed quarterly (charged in Apr/Jul/Oct/Jan for the previous quarter","amount":5000000,"interval":"quarterly","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2740348,"integration":1410813,"createdAt":"2025-08-14T11:55:19.000Z","updatedAt":"2025-08-14T11:55:19.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0},{"subscriptions":[],"pages":[],"domain":"live","name":"monthly","plan_code":"PLN_55ftd3cu1vuhy7v","description":"Postpaid, billed monthly (charged on the 1st of the next month","amount":1670000,"interval":"monthly","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2740340,"integration":1410813,"createdAt":"2025-08-14T11:52:55.000Z","updatedAt":"2025-08-14T11:52:55.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0}],"meta":{"total":3,"skipped":0,"perPage":50,"page":1,"pageCount":1}}
-  //
-
-  // {"status":true,"message":"Plans retrieved","data":[{"subscriptions":[],"pages":[],"domain":"test","name":"yearly","plan_code":"PLN_8tim0wubm0jope1","description":"Postpaid, billed yearly (charged on Jan 1 for the previous year","amount":20000000,"interval":"annually","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2745849,"integration":1410813,"createdAt":"2025-08-15T11:56:01.000Z","updatedAt":"2025-08-15T11:56:01.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0},{"subscriptions":[],"pages":[],"domain":"test","name":"quarterly","plan_code":"PLN_j8rkhp2u9s9gndu","description":"Postpaid, billed quarterly (charged in Apr/Jul/Oct/Jan for the previous quarter","amount":5000000,"interval":"quarterly","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2745843,"integration":1410813,"createdAt":"2025-08-15T11:55:17.000Z","updatedAt":"2025-08-15T11:55:17.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0},{"subscriptions":[],"pages":[],"domain":"test","name":"Monthly","plan_code":"PLN_vm2mrnqlo44s9jv","description":"Monthly subscription","amount":1670000,"interval":"monthly","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":true,"is_archived":false,"id":2745565,"integration":1410813,"createdAt":"2025-08-15T10:40:10.000Z","updatedAt":"2025-08-15T11:54:26.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0},{"subscriptions":[],"pages":[],"domain":"test","name":"Monthly","plan_code":"PLN_f0ypt743xzpoejs","description":"Monthly subscription","amount":1670000,"interval":"monthly","invoice_limit":0,"send_invoices":true,"send_sms":true,"hosted_page":false,"hosted_page_url":null,"hosted_page_summary":null,"currency":"NGN","migrate":false,"is_deleted":false,"is_archived":false,"id":2745517,"integration":1410813,"createdAt":"2025-08-15T10:26:08.000Z","updatedAt":"2025-08-15T10:26:08.000Z","total_subscriptions":0,"active_subscriptions":0,"total_subscriptions_revenue":0}],"meta":{"total":4,"skipped":0,"perPage":50,"page":1,"pageCount":1}}
+  const amountInKobo = plan.amount * 100;
 
   try {
-    // List all plans with pagination
-    const plansResponse = await paystack.plan.list({
+    // List all plans
+    const plansResponse: PaystackPlansList = await paystack.plan.list({
       perPage: 50,
       page: 1,
+      filter: {
+        interval: plan.interval,
+      },
     });
 
-    console.log("\n\n\n\n", plansResponse, "\n\n\n\n\n");
-
-    // Find existing plan by name and amount (converted to kobo)
+    // Find existing plan by plan_code (most reliable)
     const existingPlan = plansResponse.data.find(
-      (p: any) =>
-        (p.plan_code.toLowerCase() === plan.planCode.toLowerCase() ||
-          (p.amount === amountInKobo &&
-            p.interval === plan.interval.toLowerCase())) &&
-        !p.is_deleted
+      (p: any) => p.name === plan.name && !p.is_deleted && !p.is_archived
     );
 
-    console.log("\n\n\n\n", existingPlan, "\n\n\n\n");
-
     if (existingPlan) {
-      return existingPlan.plan_code;
+      console.log("\n\n\n\n Found existing plan:", existingPlan.plan_code);
+      return existingPlan;
     }
+
+    // // If plan code doesn't exist, check by name and amount as fallback
+    // const matchingPlan = plansResponse.data.find(
+    //   (p: any) =>
+    //     p.name.toLowerCase() === plan.name.toLowerCase() &&
+    //     p.amount === amountInKobo &&
+    //     p.interval === plan.interval.toLowerCase() &&
+    //     !p.is_deleted &&
+    //     !p.is_archived
+    // );
+
+    // if (matchingPlan) {
+    //   console.log("Found matching plan by attributes:", matchingPlan.plan_code);
+    //   return matchingPlan;
+    // }
   } catch (error) {
     console.warn("Error fetching existing plans:", error);
-    // Continue to create a new plan if listing fails
   }
 
-  // Create new plan if no existing one found
-  const planResponse = await paystack.plan.create({
+  // Create new plan if none exists
+  console.log("Creating new plan:", plan.name);
+  const planResponse: {
+    status: boolean;
+    message: string;
+    data: {
+      name: string;
+      interval: "monthly" | "quarterly" | "annually";
+      amount: number;
+      integration: number;
+      domain: string;
+      currency: string;
+      plan_code: string;
+      invoice_limit: number;
+      send_invoices: boolean;
+      send_sms: boolean;
+      hosted_page: boolean;
+      migrate: boolean;
+      id: number;
+      createdAt: string;
+      updatedAt: string;
+    };
+  } = await paystack.plan.create({
     name: plan.name,
     amount: amountInKobo,
-    interval: plan.interval,
-    description: plan.description || `${plan.name} subscription`,
+    interval: plan.interval.toLowerCase(),
+    description: plan.description,
     currency: "NGN",
     send_invoices: true,
     send_sms: true,
-    metadata: {
-      planId: plan.id,
-      planName: plan.name,
-    },
   });
 
   if (!planResponse.status) {
-    throw new Error(
-      planResponse.message || "Failed to create subscription plan"
-    );
+    throw new Error(planResponse.message || "Failed to create plan");
   }
 
-  return planResponse.data.plan_code;
+  console.log("Created plan:", planResponse.data.plan_code);
+  return planResponse.data;
 }
 
 export async function verifySubscription(reference: string) {
   try {
-    console.log("\n\n\n\n", reference, "\n\n\n\n");
     const sessionData = await getAndRefreshUserSession();
+    const userId = sessionData?.userData?.userId;
+
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
 
     const isLive = process.env.NODE_ENV === "production";
     const paystack = await createPaystackInstance(isLive);
-    await logPaystackEnvironment(isLive);
-    const verification = await paystack.transaction.verify({ reference });
 
-    const userId = sessionData?.userData?.userId || "";
-    const planCode = verification.data.plan_object.plan_code || "";
-    const planObject = verification.data.plan_object;
-    const customerId = verification.data.customer.id;
-    const customerCode = verification.data.customer.customer_code;
-    const authorization = verification.data.authorization.authorization_code;
-    const paidAt = verification.data.paid_at;
+    // Verify the transaction
+    const verification: VerificationResponse =
+      await paystack.transaction.verify({ reference });
 
-    console.log(
-      "\n\n\n\n verifySubscription",
-      verification,
-      planCode,
-      customerId,
-      customerCode,
-      authorization,
-      paidAt,
-      " verifySubscription \n\n\n\n"
-    );
-    if (!planCode) throw new Error("Invalid plan in transaction");
-
-    let plan = Object.values(SUBSCRIPTION_PLANS).find(
-      (p) => p.planCode === planCode
-    );
-
-    if (!plan) {
-      plan = {
-        id: planObject.interval,
-        name: planObject.name,
-        planCode: planObject.plan_code,
-        interval: planObject.interval,
-        price: planObject.amount,
-        description: planObject.description,
-      };
-    }
-
-    const sub = await findSubscriptionsByCustomerRefUser(customerId, {
-      reference,
-      userId,
-    });
-
-    console.log("\n\n\n\n findSubscriptionsByCustomerRefUser", sub, "\n\n\n\n");
-
-    const subCode = sub?.firstMatch?.subscription_code;
-    const emailToken = sub?.firstMatch?.email_token || "";
-    const nextPaymentDate = sub?.firstMatch?.next_payment_date || "";
+    console.log("\n\n\n\n\n Subscription verification:", verification);
 
     if (verification.data?.status !== "success") {
       throw new Error(
@@ -237,137 +510,101 @@ export async function verifySubscription(reference: string) {
       );
     }
 
-    // Create or update the subscription
-    await createOrUpdateSubscription({
+    const { data } = verification;
+
+    // Extract subscription data
+    const planObject = data.plan_object;
+    if (!planObject) {
+      throw new Error("No subscription plan found in transaction");
+    }
+
+    const customerId = data.customer.id;
+    const customerCode = data.customer.customer_code;
+    const authorization = data.authorization.authorization_code;
+    const paidAt = data.paid_at;
+
+    // Find matching plan in our system
+    const availablePlan = Object.values(SUBSCRIPTION_PLANS).find(
+      (p) => p.name === planObject.name
+    );
+
+    const plan = {
+      ...planObject,
+      ...availablePlan,
+      id: planObject.id,
+    };
+
+    console.log("\n\n\n\n\n Plan:", plan);
+
+    if (!plan) {
+      throw new Error("No matching plan found in transaction");
+    }
+
+    // Fetch subscription details from Paystack
+    let subscriptionCode = "";
+    let emailToken = "";
+    let nextPaymentDate = "";
+
+    try {
+      // List subscriptions for this customer
+      const subscriptionsResponse: SubscriptionListResponse =
+        await paystack.subscription.list({
+          customer: customerId,
+          // plan: planObject.plan_code,
+        });
+
+      console.log(
+        "\n\n\n\n\n\n Subscriptions response:",
+        subscriptionsResponse,
+        "\n\n\n\n\n\n"
+      );
+
+      // Find the most recent active subscription
+      const activeSubscription = subscriptionsResponse.data.find(
+        (sub: any) => sub.status === "active"
+      );
+
+      if (activeSubscription) {
+        subscriptionCode = activeSubscription.subscription_code;
+        emailToken = activeSubscription.email_token;
+        nextPaymentDate = activeSubscription.next_payment_date;
+      }
+    } catch (error) {
+      console.warn("Error fetching subscription details:", error);
+      // Continue without subscription details - they'll be updated via webhook
+    }
+
+    // Create or update subscription in database
+    const sub = await createOrUpdateSubscription({
       reference,
-      subCode,
-      planId: plan.id,
+      subCode: subscriptionCode,
+      planId: plan.interval as keyof typeof SUBSCRIPTION_PLANS,
       customerCode,
       customerId: String(customerId),
       authorization,
       emailToken,
       status: "active",
       paidAt,
-      nextPaymentDate,
+      nextPaymentDate: nextPaymentDate || undefined,
     });
-
-    // Create subscription history if it doesn't exist
-    const historyExists = await prisma.subscriptionHistory.findFirst({
-      where: {
-        userId,
-        reference,
-        eventType: "subscription.success",
-        startDate: paidAt,
-      },
-    });
-
-    if (!historyExists) {
-      const now = new Date();
-      await prisma.subscriptionHistory.create({
-        data: {
-          userId,
-          reference,
-          planCode: planCode,
-          planName: plan.name,
-          amount: plan.price * 100,
-          interval: plan.interval,
-          status: "active",
-          eventType: "subscription.create",
-          startDate: paidAt,
-          ...(nextPaymentDate ? { endDate: nextPaymentDate } : {}),
-        },
-      });
-    }
-
-    // {
-    //   status: true,
-    //   message: 'Verification successful',
-    //   data: {
-    //     id: 5247515175,
-    //     domain: 'test',
-    //     status: 'success',
-    //     reference: 'SURFBOARD_SUB_test_1755429242049_e764640e-c5c9-405a-8525-e77118807b55',
-    //     receipt_number: null,
-    //     amount: 5000000,
-    //     message: null,
-    //     gateway_response: 'Successful',
-    //     paid_at: '2025-08-17T11:14:20.000Z',
-    //     created_at: '2025-08-17T11:14:08.000Z',
-    //     channel: 'card',
-    //     currency: 'NGN',
-    //     ip_address: '102.91.101.84',
-    //     metadata: { custom_fields: [Array] },
-    //     log: {
-    //       start_time: 1755429252,
-    //       time_spent: 9,
-    //       attempts: 1,
-    //       errors: 0,
-    //       success: true,
-    //       mobile: false,
-    //       input: [],
-    //       history: [Array]
-    //     },
-    //     fees: 85000,
-    //     fees_split: null,
-    //     authorization: {
-    //       authorization_code: 'AUTH_tw9q9ve5ng',
-    //       bin: '408408',
-    //       last4: '4081',
-    //       exp_month: '12',
-    //       exp_year: '2030',
-    //       channel: 'card',
-    //       card_type: 'visa ',
-    //       bank: 'TEST BANK',
-    //       country_code: 'NG',
-    //       brand: 'visa',
-    //       reusable: true,
-    //       signature: 'SIG_wkAaGsI0EEXUmCX7fcNj',
-    //       account_name: null,
-    //       receiver_bank_account_number: null,
-    //       receiver_bank: null
-    //     },
-    //     customer: {
-    //       id: 256979707,
-    //       first_name: '',
-    //       last_name: '',
-    //       email: 'rojitech9@gmail.com',
-    //       customer_code: 'CUS_o766tgq8j92klql',
-    //       phone: '',
-    //       metadata: null,
-    //       risk_action: 'default',
-    //       international_format_phone: null
-    //     },
-    //     plan: 'PLN_j8rkhp2u9s9gndu',
-    //     split: {},
-    //     order_id: null,
-    //     paidAt: '2025-08-17T11:14:20.000Z',
-    //     createdAt: '2025-08-17T11:14:08.000Z',
-    //     requested_amount: 5000000,
-    //     pos_transaction_data: null,
-    //     source: null,
-    //     fees_breakdown: null,
-    //     connect: null,
-    //     transaction_date: '2025-08-17T11:14:08.000Z',
-    //     plan_object: {
-    //       id: 2745843,
-    //       name: 'quarterly',
-    //       plan_code: 'PLN_j8rkhp2u9s9gndu',
-    //       description: 'Postpaid, billed quarterly (charged in Apr/Jul/Oct/Jan for the previous quarter',
-    //       amount: 5000000,
-    //       interval: 'quarterly',
-    //       send_invoices: true,
-    //       send_sms: true,
-    //       currency: 'NGN'
-    //     },
-    //     subaccount: {}
-    //   }
-    // }
 
     revalidatePath("/surfboard/dashboard/subscription");
-    return { success: true };
+
+    return {
+      success: true,
+      data: {
+        subscriptionCode,
+        nextPaymentDate,
+        planName: plan.name,
+        subscription: sub,
+      },
+    };
   } catch (error) {
     console.error("Error verifying subscription:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
   }
 }
 
@@ -392,7 +629,6 @@ export async function disableSubscription(): Promise<{
     }
 
     const { userData } = sessionData;
-
     const subscription = await prisma.subscription.findUnique({
       where: { userId: userData.userId },
     });
@@ -400,70 +636,78 @@ export async function disableSubscription(): Promise<{
     if (!subscription) {
       return {
         success: false,
-        message: "User not found",
-        error: "user_not_found",
+        message: "No subscription found",
+        error: "subscription_not_found",
       };
     }
 
-    if (!subscription?.status) {
+    if (subscription.status !== "active") {
+      await getAndRefreshUserSession(undefined, true);
+
       return {
         success: false,
-        message: "No active subscription found",
+        message: "No active subscription to cancel",
         error: "no_active_subscription",
       };
     }
 
-    // If already cancelled, return the current end date
-    if (subscription?.status === "canceled" || subscription?.cancelledAt) {
+    // If already cancelled, return current status
+    if (subscription.cancelledAt) {
+      await getAndRefreshUserSession(undefined, true);
+
       return {
         success: true,
-        message:
-          "Subscription is already set to cancel at the end of the billing period",
+        message: "Subscription is already cancelled",
         data: {
-          currentEnd: subscription?.currentEnd || new Date(),
-          nextPaymentDate: subscription?.nextPaymentDate,
+          currentEnd: subscription.currentEnd || new Date(),
+          nextPaymentDate: subscription.nextPaymentDate,
         },
       };
     }
 
-    // Disable the subscription in Paystack
-    const response = await fetch(
-      `https://api.paystack.co/subscription/disable`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-        body: JSON.stringify({
-          code: subscription.subCode,
-          token: subscription.emailToken,
-        }),
+    // Disable subscription in Paystack
+    if (subscription.subCode && subscription.emailToken) {
+      try {
+        const response = await fetch(
+          "https://api.paystack.co/subscription/disable",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            },
+            body: JSON.stringify({
+              code: subscription.subCode,
+              token: subscription.emailToken,
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error("Paystack disable error:", result);
+          // Don't fail if Paystack disable fails - update our DB anyway
+        }
+      } catch (error) {
+        console.error("Error calling Paystack disable API:", error);
+        // Continue to update our database
       }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("Error disabling Paystack subscription:", result);
-      return {
-        success: false,
-        message: result.message || "Failed to disable subscription",
-        error: "disable_failed",
-      };
     }
 
-    // Update the subscription in our database
+    await getAndRefreshUserSession(undefined, true);
+
+    // Update subscription in database
     const updatedSubscription = await prisma.subscription.update({
       where: { userId: userData.userId },
       data: {
         status: "canceled",
         cancelledAt: new Date(),
-        nextPaymentDate: null, // No next payment as it's being canceled
+        nextPaymentDate: null,
       },
     });
 
-    // Record this action in the subscription history
+    // Record in history
     await prisma.subscriptionHistory.create({
       data: {
         userId: userData.userId,
@@ -474,17 +718,19 @@ export async function disableSubscription(): Promise<{
         interval: subscription.interval,
         status: "canceled",
         eventType: "subscription.disable",
-        startDate: subscription?.currentStart,
-        endDate: subscription?.currentEnd,
+        startDate: subscription.currentStart || new Date(),
+        endDate: subscription.currentEnd || new Date(),
       },
     });
+
+    revalidatePath("/surfboard/dashboard/subscription");
 
     return {
       success: true,
       message:
-        "Subscription will be canceled at the end of the current billing period",
+        "Subscription cancelled. Access continues until end of billing period",
       data: {
-        currentEnd: updatedSubscription?.currentEnd || new Date(),
+        currentEnd: updatedSubscription.currentEnd || new Date(),
         nextPaymentDate: null,
       },
     };
@@ -492,7 +738,7 @@ export async function disableSubscription(): Promise<{
     console.error("Error in disableSubscription:", error);
     return {
       success: false,
-      message: "An error occurred while disabling the subscription",
+      message: "An error occurred while cancelling the subscription",
       error: "internal_error",
     };
   }

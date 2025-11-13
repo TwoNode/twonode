@@ -1780,7 +1780,7 @@ export async function getPublicSurfPlanByIdWithSurveyor(
 
     return { success: true, data: planWithGeometry };
   } catch (err) {
-    console.error("getSurfPlanById error:", err);
+    console.error("getPublicSurfPlanByIdWithSurveyor error:", err);
     return { success: false, error: (err as Error).message };
   }
 }

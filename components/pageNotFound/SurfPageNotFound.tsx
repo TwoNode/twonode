@@ -16,7 +16,7 @@ export const SurfPageNotFound = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-white p-4">
       <div className="max-w-md w-full space-y-6 text-center p-8 rounded-xl bg-white shadow-lg border border-gray-100">
         <div className="flex justify-center">
           <div className="bg-red-100 p-4 rounded-full">

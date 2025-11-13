@@ -188,7 +188,7 @@ const FileCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-start">
-              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div className="ml-4">
@@ -743,7 +743,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       <div className="mb-8">
         <div className="mb-8">
           {/* Header Card with Gradient Background */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 {/* Plan Info */}
@@ -753,7 +753,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       Survey Plan
                     </span>
                   </div>
-                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     {plan.planNumber}
                   </h1>
                   <p className="text-lg text-gray-600 max-w-2xl">
@@ -870,7 +870,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </h2>
 
             <div
-              className={`h-[40rem] w-full rounded overflow-auto ${
+              className={`h-160 w-full rounded overflow-auto ${
                 plan?.pillars?.length > 0
                   ? "border-4 border-blue-400"
                   : "border"
@@ -886,7 +886,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Plan Information Card */}
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <svg
                     className="w-5 h-5 text-blue-500 mr-2"
@@ -989,7 +989,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
             {/* Location Details Card */}
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <svg
                     className="w-5 h-5 text-green-500 mr-2"
@@ -1104,7 +1104,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
             {/* Timestamps Card */}
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-gradient-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100">
+              <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <svg
                     className="w-5 h-5 text-purple-500 mr-2"
@@ -1125,7 +1125,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div className="p-6">
                 <div className="space-y-4">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div className="shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
                       <svg
                         className="h-5 w-5 text-purple-600"
                         fill="none"
@@ -1156,7 +1156,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div className="shrink-0 h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
                       <svg
                         className="h-5 w-5 text-purple-600"
                         fill="none"

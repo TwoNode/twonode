@@ -8,7 +8,8 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const res = await getPublicSurfPlanByIdWithSurveyor(params.id);
+  const { id } = await params;
+  const res = await getPublicSurfPlanByIdWithSurveyor(id);
 
   if (!res.success || !res.data) {
     return {
@@ -25,19 +26,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `Survey Plan ${planNumber} | ${surveyTitle}`,
       description: `View survey plan details for ${surveyTitle} in ${ward}, ${lga}.`,
       type: "website",
-      url: `https://www.twonodetechnologies.com/surfboardplan/${params.id}`,
+      url: `https://www.twonodetechnologies.com/surfboardplan/${id}`,
     },
   };
 }
 
-export default function PublicSurfboardPlanPage({
+export default async function PublicSurfboardPlanPage({
   params,
 }: {
   params: { id: string };
 }) {
-  if (!params?.id) {
+  const { id } = await params;
+
+  if (!id) {
     return <SurfPageNotFound />;
   }
 
-  return <PublicSurfboardPlan params={params} />;
+  return <PublicSurfboardPlan planId={id} />;
 }

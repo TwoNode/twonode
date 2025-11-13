@@ -12,10 +12,10 @@ import {
 } from "@/permissions";
 import {
   getAndRefreshUserSession,
-  getEncryptedUserDataFromRequest,
   isPlatformUser,
 } from "@/utils/encryptedCookies";
 import { Platform } from "@/utils/platform";
+import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -242,18 +242,17 @@ const proxyWithLogic = withDynamicAuth(
               hasAccess = false;
             } else {
               try {
-                const sub = userData?.subscription;
+                const userSub = await getUserAndActiveSub();
 
-                if (!sub) {
+                const subscription = userSub?.subscription;
+
+                if (!userSub || !subscription) {
                   hasAccess = false;
                 } else {
-                  const now = new Date();
-                  hasAccess = now <= new Date(sub.expiresAt!);
+                  hasAccess = true;
                   console.log(
                     "🛡️ Proxy - Checking subscription access",
-                    now,
-                    sub.expiresAt,
-                    new Date(sub.expiresAt!).toString(),
+                    subscription.currentEnd,
                     hasAccess
                   );
                 }
@@ -261,7 +260,7 @@ const proxyWithLogic = withDynamicAuth(
                 if (!hasAccess) {
                   console.log(
                     "🛡️ Proxy - User is not subscribed, redirecting to:/surfboard/dashboard/subscription",
-                    sub,
+                    subscription,
                     hasAccess,
                     "\n\n\n\n"
                   );

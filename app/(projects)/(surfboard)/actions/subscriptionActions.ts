@@ -1,34 +1,74 @@
 "use server";
 
-// ────────────────────────────────────────────────────────────────────────────────
-// File: app/(projects)/(surfboard)/actions/subscriptionActions.ts
-// Purpose: Prisma helpers for `Subscription` + `SubscriptionHistory` with history alignment
-// ────────────────────────────────────────────────────────────────────────────────
-
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { revalidatePath } from "next/cache";
 import { SUBSCRIPTION_PLANS, type PlanId } from "../utils/paystackSubscription";
 import { getAndRefreshUserSession } from "@/utils/encryptedCookies";
+import { getOrCreatePaystackPlan } from "./paystackActions";
+import { computePeriodPerTimestamp } from "../utils/computePeriod";
 
 export async function getUserActiveSubscription() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) return null;
 
-    const sub = await prisma.subscription.findFirst({
-      where: { userId: user.id, status: "active" }, // prioritize active subscription
-      orderBy: { createdAt: "desc" },
+    const sub = await prisma.subscription.findUnique({
+      where: {
+        userId: user.id,
+        OR: [
+          { status: "active" },
+          {
+            // Include cancelled subscriptions still in grace period
+            AND: [{ status: "canceled" }, { currentEnd: { gte: new Date() } }],
+          },
+        ],
+      },
     });
 
-    return sub;
+    await getAndRefreshUserSession(undefined, true);
+
+    return { ...sub, user };
   } catch (error) {
     console.error("Error fetching user subscription:", error);
     return null;
   }
 }
 
-// This function is now primarily called from the webhook after a subscription is confirmed.
+export async function getUserAndActiveSub() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) return null;
+
+    try {
+      const sub = await prisma.subscription.findUnique({
+        where: {
+          userId: user.id,
+          OR: [
+            { status: "active" },
+            {
+              // Include cancelled subscriptions still in grace period
+              AND: [
+                { status: "canceled" },
+                { currentEnd: { gte: new Date() } },
+              ],
+            },
+          ],
+        },
+      });
+
+      await getAndRefreshUserSession(undefined, true);
+
+      return { subscription: sub, user };
+    } catch (error) {
+      return { subscription: null, user };
+    }
+  } catch (error) {
+    console.error("Error fetching user subscription:", error);
+    return null;
+  }
+}
+
 export async function createOrUpdateSubscription({
   planId,
   reference,
@@ -54,122 +94,152 @@ export async function createOrUpdateSubscription({
 }) {
   try {
     const session = await getAndRefreshUserSession();
-    const user = session?.userData;
-    const userId = user?.userId;
-    if (!userId) throw new Error("User not authenticated");
+    const userId = session?.userData?.userId;
 
-    const plan = SUBSCRIPTION_PLANS[planId];
-    const { s, e, c } = computePeriod(plan.interval, paidAt);
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
 
-    // Upsert main subscri
+    const selectedPlan = SUBSCRIPTION_PLANS[planId];
+    if (!selectedPlan) {
+      throw new Error("Invalid subscription plan");
+    }
 
-    if (!plan) throw new Error("Invalid subscription plan");
+    const isLive = process.env.NODE_ENV === "production";
+
+    const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
     const now = new Date();
+    const paidDate = paidAt ? new Date(paidAt) : now;
 
-    let _nextPaymentDate = nextPaymentDate || c;
+    // Calculate subscription period
+    const { currentStart, currentEnd, nextCharge } = computePeriodPerTimestamp(
+      plan.interval,
+      paidDate
+    );
 
+    const _nextPaymentDate = nextPaymentDate
+      ? new Date(nextPaymentDate)
+      : nextCharge;
+
+    console.log("My Plan", plan);
+    // Upsert subscription
     const sub = await prisma.subscription.upsert({
       where: { userId },
       update: {
         status,
-        planCode: plan.planCode,
+        planCode: plan.plan_code,
         planName: plan.name,
         interval: plan.interval,
-        amount: plan.price * 100,
+        amount: plan.amount,
         currency: "NGN",
         customerCode,
         customerId,
         authorization,
         emailToken,
+        subCode: subCode || undefined,
+        currentStart,
+        currentEnd,
         nextPaymentDate: _nextPaymentDate,
+        cancelledAt: status === "canceled" ? now : null,
+        updatedAt: now,
       },
       create: {
         userId,
         subCode: subCode || "",
-        planCode: plan.planCode,
+        planCode: plan.plan_code,
         planName: plan.name,
         interval: plan.interval,
-        amount: plan.price * 100,
+        amount: plan.amount,
         status,
+        currency: plan.currency,
         customerCode,
         customerId,
         authorization,
         emailToken,
-        currentStart: now,
-        currentEnd: _nextPaymentDate,
+        currentStart,
+        currentEnd,
         nextPaymentDate: _nextPaymentDate,
+        createdAt: now,
+        updatedAt: now,
       },
     });
 
-    // Append a history row for the initial successful charge (if not already there)
-    const exists = await prisma.subscriptionHistory.findFirst({
+    // Create history entry if it doesn't exist
+    const historyExists = await prisma.subscriptionHistory.findFirst({
       where: {
         userId,
-        eventType: "subscription.success",
-        startDate: paidAt,
+        reference,
+        eventType: "subscription.create",
       },
     });
 
-    if (!exists) {
+    if (!historyExists) {
       await prisma.subscriptionHistory.create({
         data: {
           userId,
           reference,
-          planCode: plan.planCode,
+          planCode: plan.plan_code,
           planName: plan.name,
-          amount: plan.price * 100, // kobo
+          amount: plan.amount,
           interval: plan.interval,
-          lastPaymentDate: paidAt,
-          startDate: paidAt,
-          endDate: e,
           status: "active",
-          eventType: "subscription.success",
+          eventType: "subscription.create",
+          startDate: currentStart,
+          endDate: currentEnd,
+          lastPaymentDate: paidDate,
         },
       });
     }
+
+    console.log("My Subscriptioon", sub);
 
     revalidatePath("/surfboard/dashboard/subscription");
     return sub;
   } catch (error) {
     console.error("Error creating or updating subscription:", error);
-    return null;
+    throw error;
   }
 }
 
 export async function cancelSubscription() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    const userId = user?.userId;
-    if (!userId) throw new Error("User not authenticated");
+    if (!user?.id) {
+      throw new Error("User not authenticated");
+    }
 
     const sub = await prisma.subscription.update({
-      where: { userId },
-      data: { status: "cancelled", cancelledAt: new Date() },
+      where: { userId: user.id },
+      data: {
+        status: "canceled",
+        cancelledAt: new Date(),
+        nextPaymentDate: null,
+      },
     });
+
+    await getAndRefreshUserSession(undefined, true);
 
     revalidatePath("/surfboard/dashboard/subscription");
     return sub;
   } catch (error) {
     console.error("Error cancelling subscription:", error);
-    return null;
+    throw error;
   }
 }
 
 export async function isUserSubscribed(): Promise<boolean> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-
     if (!user) {
-      console.log("User not authenticated for Subscription");
       return false;
     }
 
-    // First check if user has an active subscription from the user object
+    // Check user object first
     if (user?.subscription?.status === "active") return true;
     if (user?.subscription?.status === "past_due") return true;
 
-    // If not in user object, check the database
+    // Check database
     const sub = await prisma.subscription.findFirst({
       where: {
         userId: user.id,
@@ -178,115 +248,23 @@ export async function isUserSubscribed(): Promise<boolean> {
       orderBy: { updatedAt: "desc" },
     });
 
-    if (!sub) {
-      console.log("No active subscription found for user");
-      return false;
-    }
+    if (!sub) return false;
 
-    // Check if subscription is still within the valid period
+    // Check if within valid period (with grace period)
     const now = new Date();
     const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
 
-    // Add a 1-day grace period for subscription end
-    const gracePeriod = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-    const endDateWithGrace = currentEnd
-      ? new Date(currentEnd.getTime() + gracePeriod)
-      : null;
+    if (!currentEnd) return false;
 
-    return endDateWithGrace ? now <= endDateWithGrace : false;
+    // 1-day grace period
+    const gracePeriodMs = 24 * 60 * 60 * 1000;
+    const endDateWithGrace = new Date(currentEnd.getTime() + gracePeriodMs);
+
+    return now <= endDateWithGrace;
   } catch (error) {
     console.error("Error checking subscription status:", error);
     return false;
   }
-}
-
-/**
- * Computes the subscription period based on interval and reference date
- * @param interval - The subscription interval (monthly, quarterly, annually)
- * @param _ref - Optional reference date (defaults to current time)
- * @returns Object containing start (s), end (e), and next charge date (c)
- */
-function computePeriod(
-  interval: "monthly" | "quarterly" | "annually",
-  _ref?: string | Date
-) {
-  const timeZone = "Africa/Lagos"; // Default timezone, consider making this configurable
-  const now = _ref ? new Date(_ref) : new Date();
-
-  // Create Intl.DateTimeFormat instance for consistent timezone handling
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    hour12: false,
-  });
-
-  // Helper to get start of day in the specified timezone
-  const startOfDay = (date: Date) => {
-    const [year, month, day] = formatter
-      .formatToParts(date)
-      .filter(
-        (part) =>
-          part.type === "year" || part.type === "month" || part.type === "day"
-      )
-      .map((part) => parseInt(part.value));
-    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-  };
-
-  // Helper to get end of day in the specified timezone
-  const endOfDay = (date: Date) => {
-    const [year, month, day] = formatter
-      .formatToParts(date)
-      .filter(
-        (part) =>
-          part.type === "year" || part.type === "month" || part.type === "day"
-      )
-      .map((part) => parseInt(part.value));
-    return new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
-  };
-
-  const start = startOfDay(now);
-
-  if (interval === "monthly") {
-    const end = endOfDay(
-      new Date(start.getFullYear(), start.getMonth() + 1, 0)
-    );
-    return {
-      s: start,
-      e: end,
-      c: startOfDay(new Date(end.getFullYear(), end.getMonth() + 1, 1)),
-    };
-  }
-
-  if (interval === "quarterly") {
-    const quarter = Math.floor(now.getMonth() / 3);
-    const startOfQuarter = new Date(now.getFullYear(), quarter * 3, 1);
-    const endOfQuarter = endOfDay(
-      new Date(now.getFullYear(), (quarter + 1) * 3, 0)
-    );
-
-    return {
-      s: startOfQuarter,
-      e: endOfQuarter,
-      c: startOfDay(
-        new Date(endOfQuarter.getFullYear(), endOfQuarter.getMonth() + 1, 1)
-      ),
-    };
-  }
-
-  // Annually
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const endOfYear = endOfDay(new Date(now.getFullYear(), 11, 31));
-
-  return {
-    s: startOfYear,
-    e: endOfYear,
-    c: startOfDay(new Date(now.getFullYear() + 1, 0, 1)),
-  };
 }
 
 export async function listSubscriptionHistory(userId: string) {
@@ -298,39 +276,36 @@ export async function listSubscriptionHistory(userId: string) {
 }
 
 /**
- * Clears the current user's subscription from the database
- * WARNING: This is a destructive action that permanently deletes subscription data
- * Use with caution, especially in production environments
+ * DANGER: Permanently deletes all subscription data for current user
  */
 export async function clearUserSubscription() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    const userId = user?.userId;
-
-    if (!userId) {
+    if (!user?.id) {
       return {
         success: false,
         error: "User not authenticated",
       };
     }
 
-    // Delete subscription history first (due to foreign key constraints)
+    // Delete history first (foreign key constraint)
     await prisma.subscriptionHistory.deleteMany({
-      where: { userId },
+      where: { userId: user.id },
     });
 
-    // Delete the main subscription record
-    const deletedSubscription = await prisma.subscription.deleteMany({
-      where: { userId },
+    // Delete subscription
+    const deleted = await prisma.subscription.deleteMany({
+      where: { userId: user.id },
     });
 
-    // Revalidate the subscription page to reflect changes
     revalidatePath("/surfboard/dashboard/subscription");
+
+    await getAndRefreshUserSession(undefined, true);
 
     return {
       success: true,
       message: "Subscription cleared successfully",
-      deletedCount: deletedSubscription.count,
+      deletedCount: deleted.count,
     };
   } catch (error) {
     console.error("Error clearing subscription:", error);

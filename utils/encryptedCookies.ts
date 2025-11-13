@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { EncryptJWT, jwtDecrypt, JWTPayload } from "jose";
@@ -259,6 +260,103 @@ export async function updateLastActivity(
   }
 }
 
+type Subscription = {
+  status: "active" | "cancelled" | "expired" | "past_due";
+  interval: "monthly" | "quarterly" | "annually";
+  expiresAt?: number | string | Date | null; // Unix timestamp in seconds
+  subCode?: string;
+  planCode?: string;
+  emailToken?: string;
+};
+
+async function getUserActiveSubscription(user: EncryptedUserData) {
+  try {
+    if (!user) return null;
+
+    const sub = await prisma.subscription.findUnique({
+      where: {
+        userId: user.userId,
+        OR: [
+          { status: "active" },
+          {
+            // Include cancelled subscriptions still in grace period
+            AND: [{ status: "canceled" }, { currentEnd: { gte: new Date() } }],
+          },
+        ],
+      },
+    });
+
+    return {
+      status: sub?.status,
+      interval: sub?.interval,
+      expiresAt: sub?.currentEnd,
+      subCode: sub?.subCode,
+      planCode: sub?.planCode,
+      emailToken: sub?.emailToken,
+    } as Subscription;
+  } catch (error) {
+    console.error("Error fetching user subscription:", error);
+    return null;
+  }
+}
+
+// Update last activity timestamp
+export async function updateLastActivityAndSubscription(
+  encryptedJWT: string
+): Promise<string> {
+  try {
+    const userData = await decryptUserData(encryptedJWT);
+    const sub = await getUserActiveSubscription(userData);
+
+    const currentSub = sub ? sub : undefined;
+
+    // Create new JWT with updated lastActivity
+    const updatedData = {
+      ...userData,
+      lastActivity: Math.floor(Date.now() / 1000),
+    };
+
+    // Remove sessionId and lastActivity from the data passed to encryptUserData
+    const { sessionId, lastActivity, ...dataForEncryption } = updatedData;
+
+    // Create new encrypted JWT with preserved sessionId
+    const key = getEncryptionKey();
+    const now = Math.floor(Date.now() / 1000);
+
+    const payload: UserJWTPayload = {
+      ...dataForEncryption,
+      sessionId, // Preserve existing session ID
+      lastActivity: now,
+      subscription: currentSub, // Include subscription in payload
+      iss: JWT_ISSUER,
+      aud: JWT_AUDIENCE,
+      iat: now,
+      exp: now + 24 * 60 * 60,
+      nbf: now,
+    };
+
+    console.log("Payload for enc", payload);
+
+    const jwt = await new EncryptJWT(payload)
+      .setProtectedHeader({
+        alg: JWT_ALGORITHM,
+        enc: JWT_ENCRYPTION,
+        typ: "JWT",
+      })
+      .setIssuedAt()
+      .setExpirationTime("24h")
+      .setNotBefore(0)
+      .setIssuer(JWT_ISSUER)
+      .setAudience(JWT_AUDIENCE)
+      .encrypt(key);
+
+    return jwt;
+  } catch (error) {
+    console.error("Error updating last activity:", error);
+    throw new Error("Failed to update session");
+  }
+}
+
 // Set encrypted user cookie (server-side)
 export async function setEncryptedUserCookie(
   userData: Omit<EncryptedUserData, "sessionId" | "lastActivity"> & {
@@ -325,7 +423,8 @@ export async function getEncryptedUserDataFromRequest(
 
 // Get and refresh user session (updates last activity)
 export async function getAndRefreshUserSession(
-  req?: NextRequest
+  req?: NextRequest,
+  updateSubscription?: boolean
 ): Promise<{ userData: EncryptedUserData; response: NextResponse } | null> {
   try {
     const cookieStore = req && req?.cookies ? req.cookies : await cookies();
@@ -336,7 +435,17 @@ export async function getAndRefreshUserSession(
     }
 
     const userData = await decryptUserData(encryptedJWT);
-    const refreshedJWT = await updateLastActivity(encryptedJWT);
+    const refreshedJWT =
+      updateSubscription || !userData.subscription
+        ? await updateLastActivityAndSubscription(encryptedJWT)
+        : await updateLastActivity(encryptedJWT);
+
+    console.log(
+      "\n\n\n\n\n\n\n getAndRefreshUserSession User Data from cookie",
+      updateSubscription,
+      userData.subscription,
+      refreshedJWT
+    );
 
     const response = NextResponse.next();
     response.cookies.set("USER_SESSION", refreshedJWT, {

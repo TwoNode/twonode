@@ -25,7 +25,6 @@ import {
   CalendarDays,
   X,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import { PillarData } from "../../types/surfboardTypes";
 import MaplibreMap from "../../components/maps/MaplibreMap";
 
@@ -49,7 +48,7 @@ function DetailItem({
       </div>
       <div className="flex-1">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="text-base font-medium text-foreground">{value}</p>
+        <div className="text-base font-medium text-foreground">{value}</div>
       </div>
     </div>
   );
@@ -103,7 +102,7 @@ function PillarsOverview({ pillars }: { pillars: any }) {
   return (
     <Card className="overflow-hidden border border-slate-200 shadow-sm">
       <CardHeader
-        className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100"
+        className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
@@ -238,7 +237,7 @@ function PlanDetails({ planId }: { planId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-cyan-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-4">
@@ -294,7 +293,7 @@ function PlanDetails({ planId }: { planId: string }) {
         {/* Map Section */}
         {showMap && (
           <Card className="overflow-hidden border-cyan-200 shadow-md h-[800px] flex flex-col">
-            <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 border-b border-cyan-100 p-4">
+            <CardHeader className="bg-linear-to-r from-cyan-50 to-blue-50 border-b border-cyan-100 p-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
                   <MapPin className="h-5 w-5" />
@@ -320,7 +319,7 @@ function PlanDetails({ planId }: { planId: string }) {
                 </h2>
 
                 <div
-                  className={`h-[40rem] w-full rounded overflow-auto ${
+                  className={`h-160 w-full rounded overflow-auto ${
                     plan?.pillars?.length > 0
                       ? "border-4 border-blue-400"
                       : "border"
@@ -345,7 +344,7 @@ function PlanDetails({ planId }: { planId: string }) {
           <div className="lg:col-span-2 space-y-6">
             {/* Plan Overview */}
             <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                   <Layers className="h-5 w-5 text-cyan-600" />
                   Plan Overview
@@ -407,7 +406,7 @@ function PlanDetails({ planId }: { planId: string }) {
 
             {/* Location Details */}
             <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                   <MapPin className="h-5 w-5 text-cyan-600" />
                   Location Details
@@ -470,7 +469,7 @@ function PlanDetails({ planId }: { planId: string }) {
             {/* Surveyor Information */}
             {user && (
               <Card className="overflow-hidden border border-slate-200 shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+                <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
                   <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                     <User className="h-5 w-5 text-cyan-600" />
                     Surveyor Information
@@ -523,7 +522,7 @@ function PlanDetails({ planId }: { planId: string }) {
           <div className="space-y-6">
             {/* Plan Summary */}
             <Card className="overflow-hidden border border-cyan-100 shadow-sm">
-              <CardHeader className="bg-gradient-to-b from-cyan-50 to-white border-b border-cyan-100">
+              <CardHeader className="bg-linear-to-b from-cyan-50 to-white border-b border-cyan-100">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
                   <FileText className="h-5 w-5" />
                   Plan Summary
@@ -559,7 +558,7 @@ function PlanDetails({ planId }: { planId: string }) {
 
             {/* Quick Actions */}
             <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
                 <CardTitle className="text-lg font-semibold text-slate-800">
                   Quick Actions
                 </CardTitle>
@@ -669,18 +668,14 @@ function LoadingSkeleton() {
   );
 }
 
-export default function PublicSurfboardPlan({
-  params,
-}: {
-  params: { id: string };
-}) {
-  if (!params?.id) {
+export default function PublicSurfboardPlan({ planId }: { planId: string }) {
+  if (!planId) {
     return <SurfPageNotFound />;
   }
 
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <PlanDetails planId={params.id} />
+      <PlanDetails planId={planId} />
     </Suspense>
   );
 }
