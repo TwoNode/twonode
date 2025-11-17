@@ -42,3 +42,4 @@ next-env.d.ts
 prisma/generated/
 test.js
 .cursor-settings.json
+public/sitemap-0.xml
