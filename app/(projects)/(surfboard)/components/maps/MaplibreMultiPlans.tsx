@@ -606,7 +606,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
       {notification && (
         <div
-          className={`absolute z-[60] top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-xl text-sm font-semibold
+          className={`absolute z-60 top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-xl text-sm font-semibold
             ${
               notification.type === "info"
                 ? "bg-blue-100 border border-blue-400 text-blue-800"
@@ -824,7 +824,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
               {tempPlans.map((p) => (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer flex-grow truncate">
+                  <label className="flex items-center gap-2 cursor-pointer grow truncate">
                     <input
                       type="checkbox"
                       checked={visibleTempPlanIds.includes(p.id)}

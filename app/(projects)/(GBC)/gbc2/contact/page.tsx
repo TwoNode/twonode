@@ -26,7 +26,14 @@ export default async function SponsorsPage() {
       {/* Hero Section */}
       <section className="relative py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-
+        <div className="absolute top-6 left-6 z-10">
+          <Link href="/gbc2" className="flex items-center text-white/80 hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-1">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back to Home
+          </Link>
+        </div>
         <div className="relative container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
