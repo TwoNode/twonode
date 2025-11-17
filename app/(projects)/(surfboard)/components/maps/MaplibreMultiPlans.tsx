@@ -837,7 +837,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                       }
                     />{" "}
                     <span
-                      className="inline-block w-3 h-3 rounded-sm flex-shrink-0"
+                      className="inline-block w-3 h-3 rounded-sm shrink-0"
                       style={{ background: generateColor(p.id) }}
                     />
                     <button
@@ -850,7 +850,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   </label>
                   <button
                     onClick={() => removeTempPlan(p.id)}
-                    className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none flex-shrink-0"
+                    className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none shrink-0"
                     title="Remove Layer"
                   >
                     &times;

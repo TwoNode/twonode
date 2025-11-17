@@ -20,7 +20,7 @@ export const navbarItems: SidebarItems = {
       icon: LayoutDashboard,
       important: true,
       className:
-        "bg-gradient-to-r from-green-600 to-green-800 text-white px-3 py-1.5 rounded-md",
+        "bg-linear-to-r from-green-600 to-green-800 text-white px-3 py-1.5 rounded-md",
     },
     {
       label: "Surfboard",
@@ -28,7 +28,7 @@ export const navbarItems: SidebarItems = {
       icon: Zap,
       important: true,
       className:
-        "bg-gradient-to-r from-blue-600 to-blue-800 text-white px-3 py-1.5 rounded-md",
+        "bg-linear-to-r from-blue-600 to-blue-800 text-white px-3 py-1.5 rounded-md",
     },
     { label: "Events", href: "/gbc", icon: Calendar },
     // { label: "Present", href: "/present", icon: Calendar },

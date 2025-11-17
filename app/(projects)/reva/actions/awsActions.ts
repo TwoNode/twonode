@@ -7,15 +7,42 @@ import {
   DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 
+// Validate required environment variables
+const requiredEnvVars = [
+  "REVA_AWS_REGION",
+  "REVA_AWS_ACCESS_KEY_ID",
+  "REVA_AWS_SECRET_ACCESS_KEY",
+  "REVA_AWS_BUCKET_NAME",
+] as const;
+
+// Check for missing environment variables
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
+
+
+if (missingEnvVars.length > 0) {
+  console.error("Missing required environment variables:", missingEnvVars);
+  throw new Error(
+    `Missing required environment variables: ${missingEnvVars.join(", ")}`
+  );
+}
+
 const s3 = new S3Client({
-  region: process.env.REVA_AWS_REGION!,
+  region: process.env.REVA_AWS_REGION,
   credentials: {
     accessKeyId: process.env.REVA_AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.REVA_AWS_SECRET_ACCESS_KEY!,
   },
-  // endpoint: `https://${process.env.REVA_AWS_BUCKET_NAME}.s3.${process.env.REVA_AWS_REGION}.amazonaws.com`, // Explicitly set endpoint
-  endpoint: `https://s3.${process.env.REVA_AWS_REGION}.amazonaws.com`, // Correct endpoint format
-  forcePathStyle: true, // Force path-style for compatibility
+  endpoint: `https://s3.${process.env.REVA_AWS_REGION}.amazonaws.com`,
+  forcePathStyle: true,
+});
+
+const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
+const BUCKET_REGION = process.env.REVA_AWS_REGION!;
+
+console.log("S3 Configuration:", {
+  region: BUCKET_REGION,
+  bucket: BUCKET_NAME,
+  endpoint: `https://s3.${BUCKET_REGION}.amazonaws.com`,
 });
 
 export async function uploadToS3(formData: FormData) {
@@ -33,7 +60,7 @@ export async function uploadToS3(formData: FormData) {
 
     await s3.send(
       new PutObjectCommand({
-        Bucket: process.env.REVA_AWS_BUCKET_NAME!,
+        Bucket: BUCKET_NAME,
         Key: key,
         Body: buffer,
         ContentType: file.type,
@@ -49,7 +76,6 @@ export async function uploadToS3FromServer(
 ) {
   console.log("Uploading File to S3 Bucket...");
   if (files.length === 0) {
-    console.log(files);
     console.warn("S3 upload Error: No file(s) provided");
     throw new Error("No file(s) provided");
   }
@@ -60,30 +86,36 @@ export async function uploadToS3FromServer(
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const uniqueSuffix = `${
-      reference ? reference + "-" : ""
+      reference ? `${reference}-` : ""
     }${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
     const key = options?.useDirectFileName
       ? `reva/uploads/${file.name}`
       : `reva/uploads/${uniqueSuffix}-${file.name}`;
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.REVA_AWS_BUCKET_NAME!,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-      })
-    );
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+          Body: buffer,
+          ContentType: file.type,
+        })
+      );
 
-    const fileUrl = `https://${process.env.REVA_AWS_BUCKET_NAME!}.s3.${process
-      .env.REVA_AWS_REGION!}.amazonaws.com/${key}`;
-
-    fileUrls.push(fileUrl);
+      const fileUrl = `https://${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/${key}`;
+      fileUrls.push(fileUrl);
+    } catch (error) {
+      console.error("Error uploading file to S3:", error);
+      throw new Error(
+        `Failed to upload file ${file.name}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 
-  console.log("Uploaded files:", fileUrls);
-
+  console.log("Successfully uploaded files:", fileUrls);
   return fileUrls;
 }
 
@@ -91,54 +123,75 @@ export async function deleteFromS3(input: { key?: string; url?: string }) {
   const { key, url } = input;
 
   let objectKey = key;
+  const bucketHost = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
 
   if (!objectKey && url) {
-    const bucketHost = `${process.env.REVA_AWS_BUCKET_NAME!}.s3.${process.env
-      .REVA_AWS_REGION!}.amazonaws.com/`;
     const idx = url.indexOf(bucketHost);
-    if (idx === -1) throw new Error("Invalid S3 URL format");
-
+    if (idx === -1)
+      throw new Error(`Invalid S3 URL format. Expected host: ${bucketHost}`);
     objectKey = url.substring(idx + bucketHost.length);
   }
 
   if (!objectKey) throw new Error("Missing key or valid url");
 
-  await s3.send(
-    new DeleteObjectCommand({
-      Bucket: process.env.REVA_AWS_BUCKET_NAME!,
-      Key: objectKey,
-    })
-  );
+  try {
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: objectKey,
+      })
+    );
+  } catch (error) {
+    console.error("Error deleting file from S3:", error);
+    throw new Error(
+      `Failed to delete file: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 }
 
 export async function deleteManyFromS3(
   items: { key?: string; url?: string }[]
 ) {
-  const bucket = process.env.REVA_AWS_BUCKET_NAME!;
-  const region = process.env.REVA_AWS_REGION!;
-  const bucketHost = `${bucket}.s3.${region}.amazonaws.com/`;
+  const bucketHost = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
 
   const keys = items
     .map(({ key, url }) => {
       if (key) return key;
       if (url) {
         const idx = url.indexOf(bucketHost);
-        if (idx === -1) return null;
+        if (idx === -1) {
+          console.warn(`Invalid S3 URL format: ${url}`);
+          return null;
+        }
         return url.substring(idx + bucketHost.length);
       }
       return null;
     })
-    .filter((k): k is string => !!k); // Ensure only valid strings
+    .filter((k): k is string => !!k);
 
-  if (keys.length === 0) throw new Error("No valid keys or URLs provided");
+  if (keys.length === 0) {
+    console.warn("No valid keys or URLs provided for deletion");
+    throw new Error("No valid keys or URLs provided");
+  }
 
-  await s3.send(
-    new DeleteObjectsCommand({
-      Bucket: bucket,
-      Delete: {
-        Objects: keys.map((Key) => ({ Key })),
-        Quiet: false,
-      },
-    })
-  );
+  try {
+    await s3.send(
+      new DeleteObjectsCommand({
+        Bucket: BUCKET_NAME,
+        Delete: {
+          Objects: keys.map((Key) => ({ Key })),
+          Quiet: false,
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error deleting files from S3:", error);
+    throw new Error(
+      `Failed to delete files: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 }

@@ -67,7 +67,7 @@ export function Welcome({
         </div>
         <div className="flex flex-col md:flex-row items-center gap-6 p-8">
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {userAvatar ? (
               <img
                 src={userAvatar}
@@ -105,7 +105,7 @@ export function Welcome({
             >
               {defaultDescription}
             </p>
-            <div className="mt-4 w-full bg-gradient-to-r from-transparent via-blue-100 to-transparent h-0.5 rounded-full opacity-60" />
+            <div className="mt-4 w-full bg-linear-to-r from-transparent via-blue-100 to-transparent h-0.5 rounded-full opacity-60" />
             <div className="mt-4 flex flex-col gap-2 w-full">
               {defaultInstructions.map((instruction, index) => (
                 <p

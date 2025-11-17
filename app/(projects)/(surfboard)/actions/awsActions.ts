@@ -5,12 +5,8 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
-  CreateMultipartUploadCommand,
-  UploadPartCommand,
   CompleteMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 
 const s3 = new S3Client({
   region: process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!,

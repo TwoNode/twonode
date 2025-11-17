@@ -170,22 +170,22 @@ export default function PlanView({
                 <div className="space-y-3 text-sm">
                   {plan.facilitator && (
                     <div className="flex items-start gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="line-clamp-1">{plan.facilitator}</div>
                     </div>
                   )}
                   <div className="flex items-start gap-2">
-                    <Ruler className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <Ruler className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>Area: {formatArea(plan.areaSqM)}</div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div className="truncate">
                       {formatCoordinates(plan.centroid as number[])}
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
                       Updated {format(new Date(plan.updatedAt), "MMM d, yyyy")}
                     </div>

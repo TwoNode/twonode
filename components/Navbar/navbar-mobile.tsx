@@ -76,7 +76,7 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
                   >
                     {Icon && (
                       <div
-                        className={`mr-3 flex-shrink-0 ${
+                        className={`mr-3 shrink-0 ${
                           isActive ? "text-blue-600" : "text-gray-500"
                         }`}
                       >
@@ -85,7 +85,7 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
                     )}
                     <span className="text-base">{item.label}</span>
                     {item.important && (
-                      <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700">
+                      <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-linear-to-r from-blue-100 to-blue-50 text-blue-700">
                         New
                       </span>
                     )}

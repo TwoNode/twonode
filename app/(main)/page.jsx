@@ -43,7 +43,7 @@ export default function Home() {
             {/* Surfboard Project */}
             <Link href="/surfboard" className="group block">
               <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 h-full">
-                <div className="relative h-48 bg-gradient-to-r from-blue-500 to-blue-700 flex items-center justify-center">
+                <div className="relative h-48 bg-linear-to-r from-blue-500 to-blue-700 flex items-center justify-center">
                   <Image
                     src="/surfboard/surf_logo.png"
                     alt="Surfboard Project"
@@ -71,7 +71,7 @@ export default function Home() {
             {/* Reva Project */}
             <Link href="/reva" className="group block">
               <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 h-full">
-                <div className="relative h-48 bg-gradient-to-r from-green-500 to-green-700 flex items-center justify-center">
+                <div className="relative h-48 bg-linear-to-r from-green-500 to-green-700 flex items-center justify-center">
                   <Image
                     src="/reva/revaLogo.png"
                     alt="Reva Project"

@@ -81,7 +81,7 @@ const RevaLandingPage: FC = () => {
       <RevaHeroSection />
 
       {/* About Section */}
-      <section className="py-20 px-5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 text-center">
+      <section className="py-20 px-5 bg-linear-to-r from-gray-100 to-gray-200 text-gray-900 text-center">
         <h2 className="text-4xl font-extrabold text-gray-800 mb-10">
           About REVA
         </h2>
@@ -172,7 +172,7 @@ const RevaLandingPage: FC = () => {
         </div>
       </section>
 
-      <div className="p-10 bg-black bg-gradient-to-r from-blue-800 to-gray-900 text-white">
+      <div className="p-10 bg-black bg-linear-to-r from-blue-800 to-gray-900 text-white">
         <div className="p-10 gap-6 lg:basis-1/2 max-h-[642px] flex justify-center items-center bg-transparent">
           <Carousel
             centerMode={true}

@@ -31,6 +31,10 @@ import {
   verifySubscription,
   disableSubscription,
 } from "@/app/(projects)/(surfboard)/actions/paystackActions";
+import PaystackPop from "@paystack/inline-js";
+import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
+import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
+
 // Date utilities
 const addDays = (date: Date, days: number) => {
   const result = new Date(date);
@@ -39,9 +43,6 @@ const addDays = (date: Date, days: number) => {
 };
 
 const isAfter = (date1: Date, date2: Date) => date1.getTime() > date2.getTime();
-import PaystackPop from "@paystack/inline-js";
-import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
-import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
 
 export default function SubscriptionManager() {
   const router = useRouter();

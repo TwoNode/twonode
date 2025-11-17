@@ -12,12 +12,12 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
   reference,
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Error Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden">
           {/* Header with Icon */}
-          <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-center">
+          <div className="bg-linear-to-r from-red-500 to-red-600 p-6 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
               <svg
                 className="w-8 h-8 text-white"

@@ -1,0 +1,165 @@
+// src/app/(public)/gallery/page.tsx
+import { Play, Image as ImageIcon } from "lucide-react";
+import { getGalleryItems } from "../../actions/sponsor-actions";
+
+export default async function GalleryPage() {
+  const galleryResult = await getGalleryItems();
+  const items = galleryResult.success ? galleryResult.data : [];
+
+  // Group by year
+  const itemsByYear =
+    items?.reduce((acc: any, item: any) => {
+      if (!acc[item.year]) {
+        acc[item.year] = [];
+      }
+      acc[item.year].push(item);
+      return acc;
+    }, {}) || {};
+
+  const years = Object.keys(itemsByYear).sort(
+    (a, b) => parseInt(b) - parseInt(a)
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="relative py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+
+        <div className="relative container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">Gallery</h1>
+            <p className="text-xl md:text-2xl text-gray-100">
+              Moments from past GBC editions
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Content */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          {years.length === 0 ? (
+            <div className="text-center py-24">
+              <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-400 mb-2">
+                No Media Yet
+              </h2>
+              <p className="text-gray-500">Gallery items will be added soon</p>
+            </div>
+          ) : (
+            <div className="space-y-16">
+              {years.map((year) => (
+                <div key={year}>
+                  <div className="mb-8">
+                    <h2 className="text-3xl font-bold mb-2">GBC {year}</h2>
+                    <div className="h-1 w-20 bg-purple-600 rounded" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {itemsByYear[year].map((item: any) => (
+                      <GalleryItem key={item.id} item={item} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Social Media Feed Placeholder */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-6">
+              Follow Us on Social Media
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Stay updated with the latest news and highlights from GBC
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-4">
+              <a
+                href="https://twitter.com/search?q=%23GBC2.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+              >
+                Twitter/X - #GBC2.0
+              </a>
+              <a
+                href="https://www.linkedin.com/search/results/all/?keywords=%23GBC2.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition"
+              >
+                LinkedIn - #GBC2.0
+              </a>
+              <a
+                href="https://www.instagram.com/explore/tags/GBC2.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
+              >
+                Instagram - #GBC2.0
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function GalleryItem({ item }: { item: any }) {
+  return (
+    <div className="group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow">
+      <div className="relative aspect-video bg-gray-100">
+        {item.mediaType === "VIDEO" ? (
+          <>
+            {item.thumbnailUrl ? (
+              <img
+                src={item.thumbnailUrl}
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <Play className="h-16 w-16 text-gray-400" />
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <Play className="h-8 w-8 text-purple-600 ml-1" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <img
+            src={item.mediaUrl}
+            alt={item.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
+      </div>
+
+      <div className="p-4">
+        <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+        {item.description && (
+          <p className="text-gray-600 text-sm line-clamp-2">
+            {item.description}
+          </p>
+        )}
+      </div>
+
+      <a
+        href={item.mediaUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute inset-0"
+        aria-label={`View ${item.title}`}
+      />
+    </div>
+  );
+}

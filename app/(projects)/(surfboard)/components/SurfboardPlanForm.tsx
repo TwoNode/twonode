@@ -61,7 +61,7 @@ const ConfirmationModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex items-start">
-          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
           <div className="ml-4">
@@ -760,7 +760,7 @@ export default function SurfboardPlanForm({
   return (
     <div className="mx-auto py-0 px-0">
       {/* Gradient Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-sm">
+      <div className="bg-linear-to-r from-indigo-600 to-blue-600 text-white rounded-t-sm">
         <div className="mx-auto px-4 py-6">
           <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2">
             {mode !== "create" && (
@@ -1459,7 +1459,7 @@ export default function SurfboardPlanForm({
                   aria-busy={busy}
                   className={cn(
                     "inline-flex items-center justify-center gap-2 w-full",
-                    "bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-md font-medium",
+                    "bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-md font-medium",
                     "shadow hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
                   )}
                 >
@@ -1609,7 +1609,7 @@ export default function SurfboardPlanForm({
               <hr className="border-dashed border-gray-200" />
               <div
                 className={cn(
-                  "h-[40rem] w-full rounded-lg overflow-hidden",
+                  "h-160 w-full rounded-lg overflow-hidden",
                   pillars?.length > 0
                     ? "border-4 border-blue-400"
                     : "border border-gray-200"

@@ -43,7 +43,7 @@
     "app/(main)/gbc/page.jsx",
     "app/(main)/page.jsx",
     ".next/dev/types/**/*.ts"
-  ],
+, "app/(projects)/(GBC)/gbc2/tickets_", "app/(projects)/(GBC)/gbc2/tickets/success"  ],
   "exclude": [
     "node_modules"
   ]

@@ -220,7 +220,7 @@ export default function SurfboardLandingPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             {/* Replace with a product screenshot */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
               <div className="absolute inset-0 grid place-items-center">
                 <Image
                   src="/surfboard/map_screenshot.png"
@@ -241,7 +241,7 @@ export default function SurfboardLandingPage() {
       {/* TRUST / METRICS */}
       {/* <section
         aria-label="stats"
-        className="border-y border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent"
+        className="border-y border-white/5 bg-linear-to-b from-white/[0.02] to-transparent"
       >
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 sm:grid-cols-4 sm:px-6">
           {[
@@ -310,12 +310,12 @@ export default function SurfboardLandingPage() {
             {steps.map((s, index) => (
               <li
                 key={s.title}
-                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
+                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/[0.02] p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
               >
                 <div className="absolute -right-6 -top-6 text-7xl font-bold text-white/5 transition-all duration-300 group-hover:text-white/10">
                   {index + 1}
                 </div>
-                <div className="relative z-10 mx-auto mb-4 inline-flex rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 p-3 ring-1 ring-white/10 ring-offset-2 ring-offset-slate-900">
+                <div className="relative z-10 mx-auto mb-4 inline-flex rounded-xl bg-linear-to-br from-emerald-500/20 to-emerald-600/20 p-3 ring-1 ring-white/10 ring-offset-2 ring-offset-slate-900">
                   <s.icon className="h-6 w-6 text-emerald-400" />
                 </div>
                 <h3 className="mb-2 text-base font-semibold text-white">
@@ -328,9 +328,9 @@ export default function SurfboardLandingPage() {
             ))}
           </ol>
 
-          <div className="mx-auto mt-16 max-w-4xl rounded-2xl border border-emerald-400/20 bg-gradient-to-r from-emerald-500/5 to-emerald-600/5 p-6 backdrop-blur-sm">
+          <div className="mx-auto mt-16 max-w-4xl rounded-2xl border border-emerald-400/20 bg-linear-to-r from-emerald-500/5 to-emerald-600/5 p-6 backdrop-blur-sm">
             <div className="flex items-start gap-4">
-              <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
@@ -400,7 +400,7 @@ export default function SurfboardLandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="border-y border-white/5 bg-gradient-to-br from-cyan-500/10 via-sky-500/10 to-blue-500/10 py-16">
+      <section className="border-y border-white/5 bg-linear-to-br from-cyan-500/10 via-sky-500/10 to-blue-500/10 py-16">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
           <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
             Ready to ship accurate survey plans?

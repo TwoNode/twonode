@@ -14,6 +14,30 @@ datasource db {
 }
 
 
+model nigeria_ward_admin_boundaries {
+  id         Int                      @id @default(autoincrement())
+  geom       Unsupported("geometry")?
+  wardname   String?                  @db.VarChar(112)
+  lganame    String?                  @db.VarChar(44)
+  statename  String?                  @db.VarChar(22)
+  Shape_Leng Float?
+  Shape_Area Float?
+  lcdaname   String?                  @db.VarChar(254)
+
+  @@index([geom], map: "sidx_nigeria_ward_admin_boundaries_geom", type: Gist)
+}
+
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+
 model Property {
   id                     String   @id @default(uuid())
   reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
@@ -428,3 +452,311 @@ model WebhookEvent {
 //   @@map("nigeria_ward_admin_boundaries")
 //   @@schema("public")
 // }
+
+
+// --------------------------------------------------------------------------------
+// Prisma schema for the GBC mapping application.
+// Defines the PostGIS‐enabled Postgres schema for storing survey plans,
+// with pillars stored as JSONB, and a simple status/isLive workflow.
+// --------------------------------------------------------------------------------
+
+
+enum GBCProfession {
+  SURVEYOR
+  GIS_ANALYST
+  URBAN_PLANNER
+  LAWYER
+  ENGINEER
+  ARCHITECT
+  DATA_SCIENTIST
+  DEVELOPER
+  PROJECT_MANAGER
+  STUDENT
+  RESEARCHER
+  ENTREPRENEUR
+  GOVERNMENT_OFFICIAL
+  NGO_STAFF
+  CONSULTANT
+  OTHER
+}
+
+enum GBCRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum GBCGender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum GBCTicketType {
+  EARLY_BIRD
+  REGULAR
+  COMPANY
+  VIP
+  STUDENT
+}
+
+enum GBCPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+
+model GBCUser {
+  id        String      @id @default(cuid())
+  kindeId   String      @unique
+  email     String      @unique
+  name      String?
+  phone     String?
+  role      GBCRole     @default(USER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  @@index([kindeId])
+  @@index([email])
+  @@map("gbc_users")
+}
+
+
+model GBCTicket {
+  id              String            @id @default(cuid())
+  ticketNumber    String            @unique @default(dbgenerated("concat('GBC2_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 6))"))
+  name            String
+  email           String
+  phone           String?
+  gender          GBCGender
+  profession      String            @default("")
+  ticketType      GBCTicketType
+  price           Int
+  paymentStatus   GBCPaymentStatus  @default(PENDING)
+  paymentRef      String?           @unique
+  paymentDate     DateTime?
+  paymentMethod   String?
+  paymentDetails  Json?
+  qrCode          String?
+  qrCodeS3Key     String?
+  checkedIn       Boolean           @default(false)
+  checkedInAt     DateTime?
+  checkedInBy     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([email])
+  @@index([phone])
+  @@index([ticketNumber])
+  @@index([paymentRef])
+  @@index([paymentStatus])
+  @@map("gbc_tickets")
+}
+
+
+model GBCSponsor {
+  id          String         @id @default(cuid())
+  name        String
+  logo        String
+  logoS3Key   String?
+  tier        GBCSponsorTier
+  description String?        @db.Text
+  website     String?
+  order       Int            @default(0)
+  visible     Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@map("gbc_sponsors")
+}
+
+enum GBCSponsorTier {
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+  PARTNER
+}
+
+model GBCPartner {
+  id          String   @id @default(cuid())
+  name        String
+  logo        String
+  logoS3Key   String?
+  description String?  @db.Text
+  website     String?
+  order       Int      @default(0)
+  visible     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("gbc_partners")
+}
+
+model GBCGallery {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  mediaType   GBCMediaType
+  mediaUrl    String
+  mediaS3Key  String?
+  thumbnailUrl String?
+  thumbnailS3Key String?
+  year        Int
+  order       Int          @default(0)
+  visible     Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  @@index([year])
+  @@map("gbc_gallery")
+}
+
+enum GBCMediaType {
+  IMAGE
+  VIDEO
+}
+
+model GBCSpeaker {
+  id          String   @id @default(cuid())
+  name        String
+  title       String
+  bio         String   @db.Text
+  photo       String
+  photoS3Key  String?
+  company     String?
+  linkedin    String?
+  twitter     String?
+  order       Int      @default(0)
+  visible     Boolean  @default(true)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("gbc_speakers")
+}
+
+model GBCPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.Text
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("gbc_pages")
+}
+
+model GBCSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  category    String?
+  updatedAt   DateTime @updatedAt
+  
+  @@map("gbc_settings")
+}
+
+model GBCContactInquiry {
+  id        String           @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String           @db.Text
+  type      GBCInquiryType
+  status    GBCInquiryStatus @default(PENDING)
+  notes     String?          @db.Text
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([type])
+  @@map("gbc_contact_inquiries")
+}
+
+enum GBCInquiryType {
+  GENERAL
+  SPONSORSHIP
+  TECHNICAL
+  MEDIA
+  SPEAKING
+}
+
+enum GBCInquiryStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model GBCEventStats {
+  id              String   @id @default(cuid())
+  date            DateTime @unique @default(now())
+  ticketsSold     Int      @default(0)
+  revenue         Int      @default(0)
+  checkedIn       Int      @default(0)
+  newInquiries    Int      @default(0)
+  websiteVisits   Int      @default(0)
+  emailsSent      Int      @default(0)
+  smsSent         Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([date])
+  @@map("gbc_event_stats")
+}
+
+model GBCNotification {
+  id          String               @id @default(cuid())
+  type        GBCNotificationType
+  recipient   String
+  subject     String?
+  message     String               @db.Text
+  status      GBCNotificationStatus @default(PENDING)
+  sentAt      DateTime?
+  error       String?              @db.Text
+  metadata    String?              @db.Text
+  createdAt   DateTime             @default(now())
+  
+  @@index([status])
+  @@index([type])
+  @@map("gbc_notifications")
+}
+
+enum GBCNotificationType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum GBCNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  QUEUED
+}
+
+model GBCAuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  changes     String?  @db.Text
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("gbc_audit_logs")
+}
+

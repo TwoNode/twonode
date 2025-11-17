@@ -76,13 +76,13 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Image
                   src="/reva/revaLogo.png"
                   alt="REVA Logo"
@@ -118,7 +118,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
         <div className="space-y-4">
           <Alert className="border-green-200 bg-green-50">
             <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
               <div>
                 <AlertTitle className="text-green-800 font-semibold">
                   {isPaid ? "Payment Successful!" : "Payment Pending"}
@@ -208,7 +208,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-start">
-                      <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-2 shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {formData.address || "No address provided"}
@@ -415,7 +415,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
             {isReportReady ? (
               <div className="space-y-4">
                 <div className="bg-green-50 text-green-700 p-3 rounded-md flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium">Report Ready</p>
                     <p className="text-sm">
@@ -433,7 +433,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
             ) : (
               <div className="space-y-4">
                 <div className="bg-blue-50 text-blue-700 p-3 rounded-md flex items-start gap-3">
-                  <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                  <div className="h-5 w-5 shrink-0 flex items-center justify-center">
                     <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                   <div>

@@ -200,7 +200,7 @@ const SingleRequestPage = ({
 
         {/* Property Information */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
             <CardTitle className="text-xl text-gray-800">
               Property Information
             </CardTitle>
@@ -238,7 +238,7 @@ const SingleRequestPage = ({
 
         {/* Site Images */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
+          <CardHeader className="bg-linear-to-r from-yellow-50 to-orange-50 border-b">
             <CardTitle className="text-xl text-gray-800">Site Images</CardTitle>
           </CardHeader>
           <CardContent>
@@ -282,7 +282,7 @@ const SingleRequestPage = ({
 
         {/* Financial */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+          <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b">
             <CardTitle className="text-xl text-gray-800">
               Financial Details
             </CardTitle>
@@ -325,7 +325,7 @@ const SingleRequestPage = ({
 
         {/* Comments */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+          <CardHeader className="bg-linear-to-r from-purple-50 to-pink-50 border-b">
             <CardTitle className="text-xl text-gray-800">
               Comments & Notes
             </CardTitle>
@@ -342,7 +342,7 @@ const SingleRequestPage = ({
 
         {/* Report Status */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
             <CardTitle className="text-xl text-gray-800">
               Due Diligence Report
             </CardTitle>
@@ -388,7 +388,7 @@ const SingleRequestPage = ({
                   </p>
                 )}
               </div>
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Button
                   onClick={handleDownloadReport}
                   disabled={!isReportReady()}
