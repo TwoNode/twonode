@@ -130,12 +130,12 @@ export default function SurfboardAdminPanelLayout({
   }
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
+    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
       <SurfboardAdminDashboardNavbar username={user?.name || userData?.name} />
 
       <div
         className={cn(
-          "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] transition-[margin-left] ease-in-out duration-300",
+          "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
         )}
         style={{ background: SURFBOARD_COLORS.background.paper }}

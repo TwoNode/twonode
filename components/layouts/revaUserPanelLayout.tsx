@@ -87,12 +87,12 @@ export default function RevaUserPanelLayout({
   // const { getOpenState, settings } = sidebar;
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh_-_80px)]">
+    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
       <RevaUserDashboardNavbar items={menuList} userImageUrl={user?.picture!} />
 
       <div
         className={cn(
-          "relative min-h-[calc(100vh_-_80px)] max-h-[calc(100vh_-_80px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
+          "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
           "flex"
         )}
       >

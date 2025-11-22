@@ -33,7 +33,7 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
   const isActive = (url: string) => pathname === url;
 
   return (
-    <ScrollArea className="bg-transparent [&>div>div[style]]:!block h-full">
+    <ScrollArea className="bg-transparent [&>div>div[style]]:block! h-full">
       <nav className="pt-16 h-full w-full flex flex-col justify-between overflow-y-auto box-border max-h-[85vh]">
         <ul className="flex flex-col gap-3 items-start space-y-1 px-2 justify-center">
           {items.map((item, index) =>
