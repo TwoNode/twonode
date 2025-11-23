@@ -5,6 +5,7 @@ export enum Platform {
   REVA = "reva",
   SCRAM = "scram",
   SURFBOARD = "surfboard", // Added for Surfboard platform (uses SurfboardUser model)
+  GBC = "gbc", // Added for GBC platform
   // Add more platforms as needed
 }
 
@@ -16,6 +17,12 @@ export enum RevaRole {
 }
 
 export enum SurfboardRole {
+  USER = "USER",
+  ADMIN = "ADMIN",
+  SUPERADMIN = "SUPERADMIN",
+}
+
+export enum GBCRole {
   USER = "USER",
   ADMIN = "ADMIN",
   SUPERADMIN = "SUPERADMIN",

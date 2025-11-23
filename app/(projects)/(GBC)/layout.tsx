@@ -1,34 +1,34 @@
-import type { Metadata } from "next";
+import ToastProvider from "@/providers/ToastProvider";
+import type { Metadata } from "next/";
 
 export const metadata: Metadata = {
-  title:
-    "Surfboard By TwoNode Technologies - Geospatial Intelligence for Survey Plans",
-  description: "Surfboard: Geospatial Intelligence for Survey Plans.",
+  title: "GBC 2025 By TwoNode Technologies - Global Business Conference",
+  description: "GBC 2025: The Premier Global Business Conference.",
   keywords:
-    "surfboard, Surfboard By TwoNode Technologies, Survey Plans, twonode, twonode-technologies, GIS, innovative_GIS_solution, Industry, tech, technology, technologies, limited",
-  publisher: "Surfboard By TwoNode Technologies",
-  metadataBase: new URL("https://www.twonodetechnologies.com/surfboard"),
+    "gbc, GBC By TwoNode Technologies, Global Business Conference, twonode, twonode-technologies, conference, tech, technology, technologies, limited",
+  publisher: "GBC By TwoNode Technologies",
+  metadataBase: new URL("https://www.twonodetechnologies.com/gbc2"),
   openGraph: {
     type: "article",
     url: "/",
-    title: "Surfboard - Geospatial Intelligence for Survey Plans",
-    description: "Surfboard: Geospatial Intelligence for Survey Plans.",
+    title: "GBC 2025 - Global Business Conference",
+    description: "GBC 2025: The Premier Global Business Conference.",
     images: [
       {
         url: "/favicon.jpg",
         width: 800,
         height: 600,
-        alt: "Surfboard By TwoNode Technologies",
+        alt: "GBC By TwoNode Technologies",
       },
     ],
-    siteName: "Surfboard By TwoNode Technologies",
+    siteName: "GBC By TwoNode Technologies",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    site: "@SurfboardByTwoNodeTechnologies",
-    title: "Surfboard - Geospatial Intelligence for Survey Plans",
-    description: "Surfboard: Geospatial Intelligence for Survey Plans.",
+    site: "@GBCByTwoNodeTechnologies",
+    title: "GBC 2025 - Global Business Conference",
+    description: "GBC 2025: The Premier Global Business Conference.",
     images: ["/favicon.jpg"],
   },
   icons: {
@@ -37,10 +37,15 @@ export const metadata: Metadata = {
     apple: "/favicon.ico",
   },
 };
-export default function RootLayout({
+
+export default function GBCLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="relative">{children}</div>;
+  return (
+    <ToastProvider>
+      <div className="relative">{children}</div>
+    </ToastProvider>
+  );
 }

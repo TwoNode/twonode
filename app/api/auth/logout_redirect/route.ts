@@ -9,6 +9,7 @@ import {
   canAccessRevaAdminPanel,
   canAccessSurfAdminPanel,
   canAccessSurfSuperAdminPanel,
+  canAccessGBCAdminPanel,
 } from "@/permissions";
 
 export async function GET() {
@@ -37,6 +38,12 @@ export async function GET() {
           redirectUrl = "/surf-restricted/login";
         } else {
           redirectUrl = "/surfboard/login";
+        }
+      } else if (userData.platform === Platform.GBC) {
+        if (canAccessGBCAdminPanel(userData.role)) {
+          redirectUrl = "/gbc2/restricted-login";
+        } else {
+          redirectUrl = "/gbc2/login";
         }
       }
     }

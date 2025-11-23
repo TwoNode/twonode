@@ -21,18 +21,22 @@ export default async function AdminDashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {user.name}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Welcome back, {user.name}
+          </p>
         </div>
         <LogoutLink>
-          <Button variant="outline">Sign Out</Button>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
+            Sign Out
+          </Button>
         </LogoutLink>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <StatsCard
           title="Total Tickets Sold"
           value={stats.completedTickets}
@@ -66,50 +70,64 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Charts and Lists */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Recent Tickets */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Recent Tickets</h2>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+            Recent Tickets
+          </h2>
           <RecentTickets />
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-          <div className="space-y-3">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+            Quick Actions
+          </h2>
+          <div className="space-y-2 sm:space-y-3">
             <a
               href="/gbc2/restricted/tickets"
-              className="block p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
+              className="block p-3 sm:p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
             >
-              <h3 className="font-semibold">Manage Tickets</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="font-semibold text-sm sm:text-base">
+                Manage Tickets
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
                 View and manage all ticket purchases
               </p>
             </a>
             <a
               href="/gbc2/restricted/check-in"
-              className="block p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+              className="block p-3 sm:p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
             >
-              <h3 className="font-semibold">Check-In Attendees</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="font-semibold text-sm sm:text-base">
+                Check-In Attendees
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
                 Scan QR codes for check-in
               </p>
             </a>
             <a
               href="/gbc2/restricted/sponsors"
-              className="block p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
+              className="block p-3 sm:p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
             >
-              <h3 className="font-semibold">Manage Sponsors</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="font-semibold text-sm sm:text-base">
+                Manage Sponsors
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
                 Add or edit sponsor information
               </p>
             </a>
             <a
               href="/gbc2/restricted/gallery"
-              className="block p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+              className="block p-3 sm:p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
             >
-              <h3 className="font-semibold">Manage Gallery</h3>
-              <p className="text-sm text-gray-600">Upload photos and videos</p>
+              <h3 className="font-semibold text-sm sm:text-base">
+                Manage Gallery
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Upload photos and videos
+              </p>
             </a>
           </div>
         </div>

@@ -131,33 +131,37 @@ export function GBCTicketPurchaseForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 bg-white p-8 rounded-xl shadow-lg"
+      className="space-y-4 sm:space-y-6 bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-lg"
     >
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Full Name */}
         <div>
-          <Label htmlFor="name">Full Name *</Label>
+          <Label htmlFor="name" className="text-sm sm:text-base">
+            Full Name *
+          </Label>
           <Input
             id="name"
             name="name"
             type="text"
             required
             placeholder="John Doe"
-            className="mt-1"
+            className="mt-1 text-sm sm:text-base"
             disabled={isSubmitting}
           />
         </div>
 
         {/* Email */}
         <div>
-          <Label htmlFor="email">Email Address *</Label>
+          <Label htmlFor="email" className="text-sm sm:text-base">
+            Email Address *
+          </Label>
           <Input
             id="email"
             name="email"
             type="email"
             required
             placeholder="john@example.com"
-            className="mt-1"
+            className="mt-1 text-sm sm:text-base"
             disabled={isSubmitting}
           />
         </div>
@@ -165,28 +169,32 @@ export function GBCTicketPurchaseForm() {
 
       {/* Phone Number */}
       <div>
-        <Label htmlFor="phone">Phone Number (Optional)</Label>
+        <Label htmlFor="phone" className="text-sm sm:text-base">
+          Phone Number (Optional)
+        </Label>
         <Input
           id="phone"
           name="phone"
           type="tel"
           placeholder="e.g., 08012345678"
-          className="mt-1"
+          className="mt-1 text-sm sm:text-base"
           disabled={isSubmitting}
           maxLength={11}
           pattern="[0-9]{11}"
           title="Please enter a valid 11-digit phone number"
         />
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           For SMS notifications and event updates (11 digits, no spaces or
           special characters)
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Gender */}
         <div>
-          <Label htmlFor="gender">Gender *</Label>
+          <Label htmlFor="gender" className="text-sm sm:text-base">
+            Gender *
+          </Label>
           <Select name="gender" required disabled={isSubmitting}>
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Select gender" />
@@ -204,7 +212,9 @@ export function GBCTicketPurchaseForm() {
 
         {/* Profession */}
         <div>
-          <Label htmlFor="profession">Profession *</Label>
+          <Label htmlFor="profession" className="text-sm sm:text-base">
+            Profession *
+          </Label>
           <Select
             name="profession"
             required
@@ -240,7 +250,7 @@ export function GBCTicketPurchaseForm() {
           {/* Other Profession Input */}
           {selectedProfession === "OTHER" && (
             <div className="mt-2">
-              <Label htmlFor="otherProfession">
+              <Label htmlFor="otherProfession" className="text-sm sm:text-base">
                 Please specify your profession *
               </Label>
               <Input
@@ -260,7 +270,9 @@ export function GBCTicketPurchaseForm() {
 
       {/* Ticket Type */}
       <div>
-        <Label htmlFor="ticketType">Ticket Type *</Label>
+        <Label htmlFor="ticketType" className="text-sm sm:text-base">
+          Ticket Type *
+        </Label>
         <Select
           name="ticketType"
           required
@@ -272,19 +284,19 @@ export function GBCTicketPurchaseForm() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="EARLY_BIRD">
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Early Bird</span>
                 <span className="ml-4 font-bold">₦100,000</span>
               </div>
             </SelectItem>
             <SelectItem value="REGULAR">
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Regular</span>
                 <span className="ml-4 font-bold">₦120,000</span>
               </div>
             </SelectItem>
             <SelectItem value="COMPANY">
-              <div className="flex items-center justify-between w-full">
+              <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Company</span>
                 <span className="ml-4 font-bold">₦250,000</span>
               </div>
@@ -294,7 +306,7 @@ export function GBCTicketPurchaseForm() {
       </div>
 
       {/* Terms and Conditions */}
-      <div className="border-t pt-6">
+      <div className="border-t pt-4 sm:pt-6">
         <div className="flex items-start space-x-3">
           <input
             type="checkbox"
@@ -305,7 +317,7 @@ export function GBCTicketPurchaseForm() {
           />
           <Label
             htmlFor="terms"
-            className="text-sm text-gray-600 cursor-pointer"
+            className="text-xs sm:text-sm text-gray-600 cursor-pointer"
           >
             I agree to the terms and conditions and understand that tickets are
             non-refundable. I consent to receive event updates via email and
@@ -318,7 +330,7 @@ export function GBCTicketPurchaseForm() {
       <Button
         type="submit"
         disabled={isSubmitting || !paystack}
-        className="w-full btn-glow relative"
+        className="w-full btn-glow relative text-sm sm:text-base"
         size="lg"
       >
         {isSubmitting ? (
@@ -335,7 +347,7 @@ export function GBCTicketPurchaseForm() {
       </Button>
 
       {(formError || paymentError) && (
-        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
+        <div className="mt-4 p-3 sm:p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
           <p className="font-medium">
             {formError ? "Form Error" : "Payment Error"}
           </p>

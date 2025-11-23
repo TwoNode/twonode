@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { EncryptJWT, jwtDecrypt, JWTPayload } from "jose";
 import { Platform, RevaRole } from "@/utils/platform";
-import type { SurfboardRole } from "@/utils/platform";
+import type { SurfboardRole, GBCRole } from "@/utils/platform";
 
 // JWT configuration
 const JWT_ALGORITHM = "dir"; // Direct key agreement
@@ -31,8 +31,8 @@ const getEncryptionKey = (): Uint8Array => {
 
 // Interface for user data to be encrypted
 export interface EncryptedUserData {
-  platform: Platform; // Platform.REVA, Platform.SCRAM, Platform.SURFBOARD, etc.
-  role: RevaRole | SurfboardRole; // RevaRole.USER, SurfboardRole.USER, etc.
+  platform: Platform; // Platform.REVA, Platform.SCRAM, Platform.SURFBOARD, Platform.GBC, etc.
+  role: RevaRole | SurfboardRole | GBCRole; // RevaRole.USER, SurfboardRole.USER, GBCRole.USER, etc.
   userId: string;
   email: string;
   firstName: string;
@@ -54,7 +54,7 @@ export interface EncryptedUserData {
 // Extended JWT payload interface
 interface UserJWTPayload extends JWTPayload {
   platform: Platform;
-  role: RevaRole | SurfboardRole;
+  role: RevaRole | SurfboardRole | GBCRole;
   userId: string;
   email: string;
   firstName: string;

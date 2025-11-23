@@ -14,34 +14,28 @@ export async function GET(request: NextRequest) {
 
     let dbUser = await prisma.revaUser.findFirst({
       where: {
-        kindeId: user.id,
+        OR: [{ kindeId: user.id }, { email: user.email ?? "" }],
         role: {
           in: ["SUPERADMIN", "ADMIN"],
         },
       },
     });
 
+    // If still no user found, reject the login
     if (!dbUser) {
-      const existingUser = await prisma.revaUser.findUnique({
-        where: {
-          email: user.email ?? "",
-          role: {
-            in: ["SUPERADMIN", "ADMIN"],
-          },
-        },
-      });
+      console.error(
+        `Admin login denied for ${user.email} - User not found or lacks admin privileges`
+      );
+      throw new Error(
+        "Access denied: You must be registered as an admin to access this area"
+      );
+    }
 
-      if (
-        existingUser &&
-        existingUser.kindeId?.startsWith("REVA_ADMIN_KINDE_ID_")
-      ) {
-        dbUser = await prisma.revaUser.update({
-          where: { id: existingUser.id },
-          data: { kindeId: user.id },
-        });
-      } else {
-        throw new Error("Admin User not found!");
-      }
+    if (dbUser && dbUser.kindeId !== user.id && dbUser.email !== user.email) {
+      dbUser = await prisma.revaUser.update({
+        where: { id: dbUser.id },
+        data: { kindeId: user.id, email: user.email ?? "" },
+      });
     }
 
     // Create encrypted user data

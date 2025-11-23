@@ -354,22 +354,35 @@ export async function getGBCTicketStats() {
   try {
     // await requireAdmin();
 
-    const [
-      totalTickets,
-      completedTickets,
-      pendingTickets,
-      checkedInTickets,
-      totalRevenue,
-    ] = await Promise.all([
-      prisma.gBCTicket.count(),
-      prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED" } }),
-      prisma.gBCTicket.count({ where: { paymentStatus: "PENDING" } }),
-      prisma.gBCTicket.count({ where: { checkedIn: true } }),
-      prisma.gBCTicket.aggregate({
-        where: { paymentStatus: "COMPLETED" },
+    // Optimize queries by combining related operations
+    // Query 1: Get aggregated stats by payment status in a single query
+    const [statusStats, checkedInCount] = await Promise.all([
+      // Get ticket counts grouped by payment status AND total revenue in one query
+      prisma.gBCTicket.groupBy({
+        by: ["paymentStatus"],
+        _count: { id: true },
         _sum: { price: true },
       }),
+      // Query 2: Get checked-in tickets count
+      prisma.gBCTicket.count({ where: { checkedIn: true } }),
     ]);
+
+    // Process the grouped results to extract individual stats
+    const totalTickets = statusStats.reduce(
+      (sum, stat) => sum + stat._count.id,
+      0
+    );
+    const completedStat = statusStats.find(
+      (stat) => stat.paymentStatus === "COMPLETED"
+    );
+    const pendingStat = statusStats.find(
+      (stat) => stat.paymentStatus === "PENDING"
+    );
+
+    const completedTickets = completedStat?._count.id || 0;
+    const pendingTickets = pendingStat?._count.id || 0;
+    const checkedInTickets = checkedInCount;
+    const totalRevenue = completedStat?._sum.price || 0;
 
     const maxTickets = parseInt(process.env.NEXT_PUBLIC_MAX_TICKETS || "1000");
     const availableTickets = maxTickets - completedTickets;
@@ -382,7 +395,7 @@ export async function getGBCTicketStats() {
         pendingTickets,
         checkedInTickets,
         availableTickets,
-        totalRevenue: totalRevenue._sum.price || 0,
+        totalRevenue,
         maxTickets,
       },
     };

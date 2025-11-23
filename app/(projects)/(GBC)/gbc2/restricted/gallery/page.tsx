@@ -2,6 +2,7 @@ import { requireAdmin } from "../../../utils/auth";
 import { getAllGalleryItems } from "../../../actions/sponsor-actions";
 import { AddGalleryButton } from "../../../components/admin/AddGalleryButton";
 import { GalleryGrid } from "../../../components/admin/GalleryGrid";
+import { GalleryFilters } from "../../../components/admin/GalleryFilters";
 import { GalleryItem } from "../../../types/gallery";
 import { Card } from "@/components/ui/card";
 
@@ -34,25 +35,7 @@ export default async function AdminGalleryPage() {
             </p>
           </div>
 
-          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              placeholder="Search gallery..."
-              className="px-4 py-2 border rounded-lg text-sm w-full"
-            />
-            <select className="px-4 py-2 border rounded-lg text-sm bg-white">
-              <option>All Media</option>
-              <option>Photos</option>
-              <option>Videos</option>
-              <option>Featured</option>
-            </select>
-            <select className="px-4 py-2 border rounded-lg text-sm bg-white">
-              <option>Sort by: Newest</option>
-              <option>Oldest</option>
-              <option>Name (A-Z)</option>
-              <option>Name (Z-A)</option>
-            </select>
-          </div>
+          <GalleryFilters />
         </div>
 
         {items.length > 0 ? (

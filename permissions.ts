@@ -99,3 +99,40 @@ export const isSurfSuperAdmin = (role: string | null = "") => {
 export const isSurfRegularUser = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.user;
 };
+
+// GBC permission helpers
+const GBC_USER_ROLE = "USER";
+const GBC_ADMIN_ROLE = "ADMIN";
+const GBC_SUPERADMIN_ROLE = "SUPERADMIN";
+
+export const GBC_ROLES = {
+  user: GBC_USER_ROLE,
+  admin: GBC_ADMIN_ROLE,
+  super_admin: GBC_SUPERADMIN_ROLE,
+};
+
+export const isGBCAdmin = (role: string | null = "") => {
+  return [GBC_ROLES.admin, GBC_ROLES.super_admin].includes(role ?? "");
+};
+
+export const canAccessGBCAdminPanel = (role: string | null = "") => {
+  return [GBC_ROLES.admin, GBC_ROLES.super_admin].includes(role ?? "");
+};
+
+export const canAccessGBCUserPanel = (role: string | null = "") => {
+  return [GBC_ROLES.user, GBC_ROLES.admin, GBC_ROLES.super_admin].includes(
+    role ?? ""
+  );
+};
+
+export const canAccessGBCSuperAdminPanel = (role: string | null = "") => {
+  return role === GBC_ROLES.super_admin;
+};
+
+export const isGBCSuperAdmin = (role: string | null = "") => {
+  return role === GBC_ROLES.super_admin;
+};
+
+export const isGBCRegularUser = (role: string | null = "") => {
+  return role === GBC_ROLES.user;
+};

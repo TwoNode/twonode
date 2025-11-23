@@ -24,7 +24,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600">
+      <section className="relative min-h-[60vh] sm:min-h-[70vh] pt-6 flex items-center justify-center overflow-hidden bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600">
         <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div
@@ -35,19 +35,19 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="relative z-10 container mx-auto px-4 text-center text-white">
+        <div className="relative z-10 container flex flex-col items-center justify-center mx-auto px-4 pb-16 sm:px-6 lg:px-8 text-center text-white">
           <div className="animate-fade-in">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
               Geospatial Builders
               <br />
               Conference 2.0
             </h1>
 
-            <p className="text-2xl md:text-3xl mb-4 font-semibold">
+            <p className="text-base sm:text-xl md:text-2xl lg:text-3xl mb-3 sm:mb-4 font-semibold px-2">
               Geospatial Capital: A Catalyst for Inclusive Growth
             </p>
 
-            <p className="text-xl md:text-2xl mb-8 text-gray-200">
+            <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-gray-200 px-2">
               Driving Transformation in Land Administration and Energy
             </p>
 
@@ -71,7 +71,7 @@ export default async function HomePage() {
               <Link href="/gbc2/tickets">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100 btn-glow"
+                  className="text-lg px-8 py-4 bg-white text-purple-600 hover:bg-gray-100 btn-glow"
                 >
                   Buy Tickets Now
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -97,41 +97,49 @@ export default async function HomePage() {
         </div>
 
         {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white rounded-full flex items-start justify-center p-2">
-            <div className="w-1 h-3 bg-white rounded-full" />
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-4 h-6 border-2 border-white rounded-full flex items-start justify-center p-1">
+            <div className="w-1 h-2 bg-white rounded-full" />
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
       {stats && (
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <section className="py-12 sm:py-16 bg-gray-50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
                   {stats.completedTickets}
                 </div>
-                <div className="text-gray-600">Tickets Sold</div>
+                <div className="text-sm sm:text-base text-gray-600">
+                  Tickets Sold
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
                   {stats.maxTickets}
                 </div>
-                <div className="text-gray-600">Total Capacity</div>
+                <div className="text-sm sm:text-base text-gray-600">
+                  Total Capacity
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
                   50+
                 </div>
-                <div className="text-gray-600">Speakers</div>
+                <div className="text-sm sm:text-base text-gray-600">
+                  Speakers
+                </div>
               </div>
               <div className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-2">
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
                   100+
                 </div>
-                <div className="text-gray-600">Companies</div>
+                <div className="text-sm sm:text-base text-gray-600">
+                  Companies
+                </div>
               </div>
             </div>
           </div>
@@ -139,13 +147,13 @@ export default async function HomePage() {
       )}
 
       {/* What is GBC Section */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-16 sm:py-20 md:py-24 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               What is GBC?
             </h2>
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed px-2">
               The Geospatial Builders Conference (GBC) is Nigeria's premier
               annual platform dedicated to unlocking the power of geospatial
               technology as capital. It is not just a gathering of geospatial
@@ -154,7 +162,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
             <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-purple-50 to-indigo-50">
               <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-white" />
@@ -192,19 +200,19 @@ export default async function HomePage() {
       </section>
 
       {/* Industries Section */}
-      <section className="py-24 bg-gray-900 text-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-16 sm:py-20 md:py-24 bg-gray-900 text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               Industries We Serve
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto px-2">
               GBC showcases the economic, social, and governance value that
               geospatial technology brings to various sectors
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {[
               "Energy & Oil/Gas",
               "Real Estate & Infrastructure",
@@ -217,10 +225,12 @@ export default async function HomePage() {
             ].map((industry, index) => (
               <div
                 key={index}
-                className="p-6 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer"
+                className="p-4 sm:p-6 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer"
               >
-                <Building2 className="h-8 w-8 mb-3 text-purple-400" />
-                <h3 className="font-semibold">{industry}</h3>
+                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 mb-2 sm:mb-3 text-purple-400" />
+                <h3 className="font-semibold text-sm sm:text-base">
+                  {industry}
+                </h3>
               </div>
             ))}
           </div>
@@ -229,18 +239,18 @@ export default async function HomePage() {
 
       {/* Sponsors Section */}
       {sponsors && sponsors.length > 0 && (
-        <section className="py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        <section className="py-16 sm:py-20 md:py-24 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
                 Our Sponsors & Partners
               </h2>
-              <p className="text-xl text-gray-600">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 px-2">
                 Thank you to our amazing sponsors who make GBC possible
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 md:gap-8 items-center max-w-6xl mx-auto">
               {sponsors.map((sponsor: any) => (
                 <div
                   key={sponsor.id}
@@ -268,19 +278,19 @@ export default async function HomePage() {
       )}
 
       {/* CTA Section */}
-      <section className="py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
             Ready to Join GBC 2.0?
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
             Don't miss this opportunity to be part of Nigeria's premier
             geospatial technology conference
           </p>
 
           {stats && stats.availableTickets > 0 ? (
             <>
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
                 <div className="bg-white/10 px-4 py-2 rounded-full text-sm">
                   <span className="font-medium">Early Bird</span> ₦100K
                 </div>
@@ -315,9 +325,9 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+      <footer className="bg-gray-900 text-white py-10 sm:py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
               <h3 className="text-xl font-bold mb-4">GBC 2.0</h3>
               <p className="text-gray-400">

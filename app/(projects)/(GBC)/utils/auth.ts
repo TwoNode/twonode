@@ -50,12 +50,13 @@ export async function requireAdmin() {
   // }
 
   // // Check if user is admin
-  // if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  // if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
   //   // redirect("/unauthorized");
   // }
 
   return {
-    name: "James Bond",
+    firstName: "James",
+    lastName: "Bond",
     id: "ririeo-352354-rewt",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -88,9 +89,8 @@ export async function getCurrentGBCUser() {
       data: {
         kindeId: kindeUser.id,
         email: kindeUser.email || "",
-        name: `${kindeUser.given_name || ""} ${
-          kindeUser.family_name || ""
-        }`.trim(),
+        firstName: kindeUser.given_name || "",
+        lastName: kindeUser.family_name || "",
         phone: kindeUser.phone_number || undefined,
         role: "USER",
       },
@@ -102,10 +102,10 @@ export async function getCurrentGBCUser() {
 
 export async function checkIsAdmin() {
   const user = await getCurrentGBCUser();
-  return user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  return user?.role === "ADMIN" || user?.role === "SUPERADMIN";
 }
 
 export async function checkIsSuperAdmin() {
   const user = await getCurrentGBCUser();
-  return user?.role === "SUPER_ADMIN";
+  return user?.role === "SUPERADMIN";
 }

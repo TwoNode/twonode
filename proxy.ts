@@ -9,6 +9,9 @@ import {
   canAccessSurfAdminPanel,
   canAccessSurfUserPanel,
   canAccessSurfSuperAdminPanel,
+  canAccessGBCAdminPanel,
+  canAccessGBCUserPanel,
+  canAccessGBCSuperAdminPanel,
 } from "@/permissions";
 import {
   getAndRefreshUserSession,
@@ -27,7 +30,8 @@ const protectedRoutes = [
   "/surfboard/dashboard",
   "/surf-restricted/dashboard",
   "/surf-restricted/superadmin",
-]; // Added Surfboard routes
+  "/gbc2/restricted",
+]; // Added Surfboard and GBC routes
 
 // Define public routes that bypass authentication
 const publicRoutes = [
@@ -92,6 +96,9 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/surf-restricted"))
         return "/surf-restricted/login";
       if (pathname.startsWith("/surfboard")) return "/surfboard/login";
+      if (pathname.startsWith("/gbc2/restricted"))
+        return "/gbc2/restricted-login";
+      if (pathname.startsWith("/gbc2")) return "/gbc2/login";
 
       return "/reva/login"; // Default fallback
     },
@@ -126,6 +133,9 @@ const proxyWithLogic = withDynamicAuth(
           redirectPath = "/surf-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
+        else if (pathname.startsWith("/gbc2/restricted"))
+          redirectPath = "/gbc2/restricted-login";
+        else if (pathname.startsWith("/gbc2")) redirectPath = "/gbc2/login";
         console.log(
           "🛡️ Proxy - User not authenticated, redirecting to:",
           redirectPath
@@ -154,6 +164,9 @@ const proxyWithLogic = withDynamicAuth(
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
+          else if (pathname.startsWith("/gbc2/restricted"))
+            redirectPath = "/gbc2/restricted-login";
+          else if (pathname.startsWith("/gbc2")) redirectPath = "/gbc2/login";
           console.log(
             "🛡️ Proxy - No session data found, redirecting to:",
             redirectPath
@@ -184,6 +197,8 @@ const proxyWithLogic = withDynamicAuth(
           pathname.startsWith("/surf-restricted")
         ) {
           platformCheck = isPlatformUser(userData, Platform.SURFBOARD);
+        } else if (pathname.startsWith("/gbc2")) {
+          platformCheck = isPlatformUser(userData, Platform.GBC);
         }
 
         if (!platformCheck) {
@@ -195,6 +210,9 @@ const proxyWithLogic = withDynamicAuth(
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
+          else if (pathname.startsWith("/gbc2/restricted"))
+            redirectPath = "/gbc2/restricted-login";
+          else if (pathname.startsWith("/gbc2")) redirectPath = "/gbc2/login";
           console.log(
             "🛡️ Proxy - Wrong platform, redirecting to:",
             redirectPath
@@ -297,6 +315,19 @@ const proxyWithLogic = withDynamicAuth(
           // Surfboard superadmin dashboard - only SUPERADMIN can access
           console.log("🛡️ Proxy - Checking Surfboard superadmin access");
           hasAccess = canAccessSurfSuperAdminPanel(userData.role);
+        } else if (pathname.startsWith("/gbc2/restricted")) {
+          // GBC admin dashboard - only ADMIN and SUPERADMIN can access
+          console.log("🛡️ Proxy - Checking GBC admin dashboard access");
+
+          // Special check for superadmin routes within dashboard
+          if (pathname.startsWith("/gbc2/restricted/superadmin")) {
+            console.log(
+              "🛡️ Proxy - Checking GBC superadmin access within dashboard"
+            );
+            hasAccess = canAccessGBCSuperAdminPanel(userData.role);
+          } else {
+            hasAccess = canAccessGBCAdminPanel(userData.role);
+          }
         }
 
         console.log("🛡️ Proxy - Access granted:", hasAccess);
@@ -310,6 +341,9 @@ const proxyWithLogic = withDynamicAuth(
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
             redirectPath = "/surfboard/login";
+          else if (pathname.startsWith("/gbc2/restricted"))
+            redirectPath = "/gbc2/restricted-login";
+          else if (pathname.startsWith("/gbc2")) redirectPath = "/gbc2/login";
           console.log(
             "🛡️ Proxy - User does not have required role, redirecting to:",
             redirectPath
@@ -353,6 +387,9 @@ const proxyWithLogic = withDynamicAuth(
           redirectPath = "/surf-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
+        else if (pathname.startsWith("/gbc2/restricted"))
+          redirectPath = "/gbc2/restricted-login";
+        else if (pathname.startsWith("/gbc2")) redirectPath = "/gbc2/login";
         console.log("🛡️ Proxy - Session error, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
       }
@@ -373,5 +410,6 @@ export const config = {
     "/surfboard/dashboard/:path*",
     "/surf-restricted/dashboard/:path*",
     "/surf-restricted/superadmin/:path*",
+    "/gbc2/restricted/:path*",
   ],
 };

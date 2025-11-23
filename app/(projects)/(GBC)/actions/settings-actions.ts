@@ -231,7 +231,7 @@ export async function deleteSetting(key: string) {
       where: { kindeId: user.id },
     });
 
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || currentUser.role !== "SUPERADMIN") {
       return { success: false, error: "Only Super Admins can delete settings" };
     }
 

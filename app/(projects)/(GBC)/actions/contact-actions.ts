@@ -405,7 +405,7 @@ export async function getGBCUsers() {
 
 export async function updateGBCUserRole(
   userId: string,
-  role: "USER" | "ADMIN" | "SUPER_ADMIN"
+  role: "USER" | "ADMIN" | "SUPERADMIN"
 ) {
   try {
     await requireAdmin();

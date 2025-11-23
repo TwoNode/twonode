@@ -3,6 +3,7 @@ import { getGBCContactInquiries } from "../../../actions/contact-actions";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
 import { InquiriesTable } from "../../../components/admin/InquiriesTable";
+import { InquiriesFilters } from "../../../components/admin/InquiriesFilters";
 
 export default async function AdminInquiriesPage({
   searchParams,
@@ -87,58 +88,7 @@ export default async function AdminInquiriesPage({
 
       {/* Filters */}
       <Card className="p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2">
-              Filter by Type
-            </label>
-            <select
-              className="w-full px-4 py-2 border rounded-lg"
-              defaultValue={searchParams.type || "all"}
-              onChange={(e) => {
-                const params = new URLSearchParams(searchParams);
-                if (e.target.value === "all") {
-                  params.delete("type");
-                } else {
-                  params.set("type", e.target.value);
-                }
-                window.location.href = `?${params.toString()}`;
-              }}
-            >
-              <option value="all">All Types</option>
-              <option value="GENERAL">General</option>
-              <option value="SPONSORSHIP">Sponsorship</option>
-              <option value="TECHNICAL">Technical</option>
-              <option value="MEDIA">Media</option>
-              <option value="SPEAKING">Speaking</option>
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2">
-              Filter by Status
-            </label>
-            <select
-              className="w-full px-4 py-2 border rounded-lg"
-              defaultValue={searchParams.status || "all"}
-              onChange={(e) => {
-                const params = new URLSearchParams(searchParams);
-                if (e.target.value === "all") {
-                  params.delete("status");
-                } else {
-                  params.set("status", e.target.value);
-                }
-                window.location.href = `?${params.toString()}`;
-              }}
-            >
-              <option value="all">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="CLOSED">Closed</option>
-            </select>
-          </div>
-        </div>
+        <InquiriesFilters currentType={type} currentStatus={status} />
       </Card>
 
       {/* Inquiries Table */}

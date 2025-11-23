@@ -18,6 +18,8 @@ const prisma =
             "error",
           ]
         : ["warn", "error"],
+    // Prisma 7: Pass database URL directly to client
+    datasourceUrl: process.env.DATABASE_URL,
   });
 
 // In development, enable HMR by storing the Prisma instance in globalThis

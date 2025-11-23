@@ -24,12 +24,12 @@ export default async function GalleryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute top-6 left-6 z-10">
+        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
             href="/gbc2"
-            className="flex items-center text-white/80 hover:text-white transition-colors"
+            className="flex items-center text-white/80 hover:text-white transition-colors text-sm sm:text-base"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -41,17 +41,19 @@ export default async function GalleryPage() {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="w-5 h-5 mr-1"
+              className="w-4 h-4 sm:w-5 sm:h-5 mr-1"
             >
               <path d="m15 18-6-6 6-6" />
             </svg>
             Back to Home
           </Link>
         </div>
-        <div className="relative container mx-auto px-4">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">Gallery</h1>
-            <p className="text-xl md:text-2xl text-gray-100">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
+              Gallery
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-100 px-2">
               Moments from past GBC editions
             </p>
           </div>
@@ -59,8 +61,8 @@ export default async function GalleryPage() {
       </section>
 
       {/* Gallery Content */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
+      <section className="py-12 sm:py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {years.length === 0 ? (
             <div className="text-center py-24">
               <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
@@ -70,12 +72,14 @@ export default async function GalleryPage() {
               <p className="text-gray-500">Gallery items will be added soon</p>
             </div>
           ) : (
-            <div className="space-y-16">
+            <div className="space-y-12 sm:space-y-16">
               {years.map((year) => (
                 <div key={year}>
-                  <div className="mb-8">
-                    <h2 className="text-3xl font-bold mb-2">GBC {year}</h2>
-                    <div className="h-1 w-20 bg-purple-600 rounded" />
+                  <div className="mb-6 sm:mb-8">
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+                      GBC {year}
+                    </h2>
+                    <div className="h-1 w-16 sm:w-20 bg-purple-600 rounded" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -91,13 +95,13 @@ export default async function GalleryPage() {
       </section>
 
       {/* Social Media Feed Placeholder */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-4">
+      <section className="py-16 sm:py-20 md:py-24 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
               Follow Us on Social Media
             </h2>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 px-2">
               Stay updated with the latest news and highlights from GBC
             </p>
 

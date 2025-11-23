@@ -11,9 +11,10 @@ export function AddAdminModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    name: "",
+    firstName: "",
+    lastName: "",
     phone: "",
-    role: "ADMIN" as "ADMIN" | "SUPER_ADMIN",
+    role: "ADMIN" as "ADMIN" | "SUPERADMIN",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +26,7 @@ export function AddAdminModal() {
       if (result.success) {
         toast.success("Admin added successfully");
         setIsOpen(false);
-        setFormData({ email: "", name: "", phone: "", role: "ADMIN" });
+        setFormData({ email: "", firstName: "", lastName: "", phone: "", role: "ADMIN" });
         window.location.reload(); // Refresh to show new admin
       } else {
         toast.error(result.error || "Failed to add admin");
@@ -83,12 +84,27 @@ export function AddAdminModal() {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
+                  value={formData.firstName}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, firstName: e.target.value })
                   }
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Doe"
                 />
               </div>
 
@@ -116,13 +132,13 @@ export function AddAdminModal() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as "ADMIN" | "SUPER_ADMIN",
+                      role: e.target.value as "ADMIN" | "SUPERADMIN",
                     })
                   }
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="ADMIN">Admin</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="SUPERADMIN">Super Admin</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   Super Admins have full system access including user management

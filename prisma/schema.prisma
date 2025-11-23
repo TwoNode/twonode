@@ -483,7 +483,7 @@ enum GBCProfession {
 enum GBCRole {
   USER
   ADMIN
-  SUPER_ADMIN
+  SUPERADMIN
 }
 
 enum GBCGender {
@@ -511,18 +511,20 @@ enum GBCPaymentStatus {
 
 
 model GBCUser {
-  id        String      @id @default(cuid())
-  kindeId   String      @unique
-  email     String      @unique
-  name      String?
-  phone     String?
-  role      GBCRole     @default(USER)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  
+  id              String      @id @default(cuid())
+  kindeId         String      @unique
+  email           String      @unique
+  firstName       String?
+  lastName        String?
+  phone           String?
+  role            GBCRole     @default(USER)
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
   @@index([kindeId])
   @@index([email])
-  @@map("gbc_users")
+  @@index([isActive])
 }
 
 

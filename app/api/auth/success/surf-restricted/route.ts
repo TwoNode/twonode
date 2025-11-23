@@ -13,35 +13,32 @@ export async function GET(request: NextRequest) {
     if (!user || user == null || !user.id)
       throw new Error("Auth User is " + user);
 
-    // Prisma model is 'SurfboardUser', so the client property is 'surfboardUser'
-    let dbUser = await prisma.surfboardUser.findUnique({
-      where: { kindeId: user.id },
+    // Try to find admin user by kindeId OR email
+    let dbUser = await prisma.surfboardUser.findFirst({
+      where: {
+        OR: [{ kindeId: user.id }, { email: user.email ?? "" }],
+        role: {
+          in: ["SUPERADMIN", "ADMIN"],
+        },
+      },
     });
 
-    if (!dbUser) {
-      const existingUser = await prisma.surfboardUser.findUnique({
-        where: { email: user.email ?? "" },
+    // If user was found by email but doesn't have kindeId, update it
+    if (dbUser && (dbUser.kindeId !== user.id || dbUser.email !== user.email)) {
+      dbUser = await prisma.surfboardUser.update({
+        where: { id: dbUser.id },
+        data: { kindeId: user.id, email: user.email ?? "" },
       });
-
-      if (existingUser) {
-        dbUser = await prisma.surfboardUser.update({
-          where: { id: existingUser.id },
-          data: { kindeId: user.id },
-        });
-      } else {
-        dbUser = await prisma.surfboardUser.create({
-          data: {
-            kindeId: user.id,
-            firstName: user.given_name ?? "",
-            lastName: user.family_name ?? "",
-            email: user.email ?? "",
-          },
-        });
-      }
     }
 
+    // If still no user found, reject the login
     if (!dbUser) {
-      throw new Error("Failed to create or find user in database");
+      console.error(
+        `Admin login denied for ${user.email} - User not found or lacks admin privileges`
+      );
+      throw new Error(
+        "Access denied: You must be registered as an admin to access this area"
+      );
     }
 
     // Create encrypted user data
