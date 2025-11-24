@@ -38,7 +38,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
 
     try {
       const settingsToUpdate = Object.entries(formData).map(([key, value]) => ({
-        key,
+        path: key,
         value,
       }));
 

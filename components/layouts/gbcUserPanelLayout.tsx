@@ -36,7 +36,7 @@ function GBCUserDashboardNavbar({
           <Ticket className="w-6 h-6 text-purple-700" />
         </div>
         <span className="text-xl font-bold text-white tracking-wide drop-shadow">
-          GBC 2025
+          GBC 2.0
         </span>
       </div>
       <div className="flex-1" />

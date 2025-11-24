@@ -53,8 +53,6 @@ export async function getAllAdmins() {
       },
     });
 
-    console.log("\n\n\n\n\n\n\n\n admins", admins);
-
     return {
       success: true,
       data: admins.map((admin) => ({

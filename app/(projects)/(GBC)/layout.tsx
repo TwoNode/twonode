@@ -2,8 +2,8 @@ import ToastProvider from "@/providers/ToastProvider";
 import type { Metadata } from "next/";
 
 export const metadata: Metadata = {
-  title: "GBC 2025 By TwoNode Technologies - Global Business Conference",
-  description: "GBC 2025: The Premier Global Business Conference.",
+  title: "GBC 2.0 By TwoNode Technologies - Global Business Conference",
+  description: "GBC 2.0: The Premier Global Business Conference.",
   keywords:
     "gbc, GBC By TwoNode Technologies, Global Business Conference, twonode, twonode-technologies, conference, tech, technology, technologies, limited",
   publisher: "GBC By TwoNode Technologies",
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "/",
-    title: "GBC 2025 - Global Business Conference",
-    description: "GBC 2025: The Premier Global Business Conference.",
+    title: "GBC 2.0 - Global Business Conference",
+    description: "GBC 2.0: The Premier Global Business Conference.",
     images: [
       {
         url: "/favicon.jpg",
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@GBCByTwoNodeTechnologies",
-    title: "GBC 2025 - Global Business Conference",
-    description: "GBC 2025: The Premier Global Business Conference.",
+    title: "GBC 2.0 - Global Business Conference",
+    description: "GBC 2.0: The Premier Global Business Conference.",
     images: ["/favicon.jpg"],
   },
   icons: {

@@ -9,8 +9,20 @@ import {
   Globe2,
   TrendingUp,
 } from "lucide-react";
+import { getAllGBCSettings } from "../../actions/settings-actions";
 
 export default async function AboutPage() {
+  // Fetch settings for dynamic event information
+  const settingsResult = await getAllGBCSettings();
+  const settings = settingsResult.success ? settingsResult.data : null;
+
+  const eventTheme =
+    settings?.event.theme ??
+    "Geospatial Capital: A Catalyst for Inclusive Growth";
+  const eventSubTheme =
+    settings?.event.subTheme ??
+    "Driving Transformation in Land Administration and Energy";
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -285,11 +297,10 @@ export default async function AboutPage() {
                   GBC 2.0 Theme
                 </p>
                 <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600 mb-2">
-                  Geospatial Capital: A Catalyst for Inclusive Growth
+                  {eventTheme}
                 </p>
                 <p className="text-sm sm:text-base md:text-lg text-purple-800">
-                  Sub-Theme: Driving Transformation in Land Administration and
-                  Energy
+                  Sub-Theme: {eventSubTheme}
                 </p>
               </div>
             </div>

@@ -655,12 +655,19 @@ model GBCPage {
 }
 
 model GBCSettings {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String   @db.Text
-  description String?
-  category    String?
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  /// Stores the entire application configuration as a JSON object.
+  /// Structure: GBCSettingsData (see utils/settings.ts)
+  /// {
+  ///   event: { name, theme, date, venue, time, ... },
+  ///   tickets: { earlyBirdPrice, regularPrice, maxCapacity, ... },
+  ///   notifications: { emailTicketConfirmation, ... },
+  ///   system: { maintenanceMode, ... }
+  /// }
+  settings         Json     @default("{}")
+  previousSettings Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
   @@map("gbc_settings")
 }

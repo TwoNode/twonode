@@ -19,6 +19,7 @@ export default async function AdminGalleryPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Gallery Management</h1>
+
           <p className="text-gray-600">
             Upload and manage event photos and videos
           </p>

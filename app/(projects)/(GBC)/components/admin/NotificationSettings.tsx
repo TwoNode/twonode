@@ -1,24 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { updateGBCSetting } from "../../actions/settings-actions";
+import { useState } from "react";
+import { updateGBCSettingsSection } from "../../actions/settings-actions";
 import { toast } from "sonner";
 import { Bell, Mail, Smartphone, Save, X, Edit } from "lucide-react";
-
-interface Setting {
-  id: string;
-  key: string;
-  value: string;
-  description?: string | null;
-  category?: string | null;
-}
+import { GBCSettingsData } from "../../utils/settings";
 
 interface Props {
-  settings: Setting[];
+  settings: GBCSettingsData | null;
 }
 
 type NotificationType = {
-  key: string;
+  key: keyof NotificationSettings;
   title: string;
   description: string;
   icon: any;
@@ -26,27 +19,36 @@ type NotificationType = {
   defaultValue: boolean;
 };
 
+type NotificationSettings = {
+  emailTicketConfirmation: boolean;
+  emailEventReminder7Days: boolean;
+  emailEventReminder1Day: boolean;
+  emailAdminNewTicket: boolean;
+  emailCheckinConfirmation: boolean;
+  smsTicketConfirmation: boolean;
+};
+
 export function NotificationSettings({ settings }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [notificationSettings, setNotificationSettings] = useState<
-    Record<string, boolean>
-  >({});
-
-  useEffect(() => {
-    const initialSettings = settings.reduce((acc, setting) => {
-      if (setting.key.startsWith("email_") || setting.key.startsWith("sms_")) {
-        acc[setting.key] = setting.value === "true";
-      }
-      return acc;
-    }, {} as Record<string, boolean>);
-
-    setNotificationSettings(initialSettings);
-  }, [settings]);
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings>({
+      emailTicketConfirmation:
+        settings?.notifications.emailTicketConfirmation ?? true,
+      emailEventReminder7Days:
+        settings?.notifications.emailEventReminder7Days ?? true,
+      emailEventReminder1Day:
+        settings?.notifications.emailEventReminder1Day ?? true,
+      emailAdminNewTicket: settings?.notifications.emailAdminNewTicket ?? true,
+      emailCheckinConfirmation:
+        settings?.notifications.emailCheckinConfirmation ?? false,
+      smsTicketConfirmation:
+        settings?.notifications.smsTicketConfirmation ?? false,
+    });
 
   const notificationTypes: NotificationType[] = [
     {
-      key: "email_ticket_confirmation",
+      key: "emailTicketConfirmation",
       title: "Ticket Confirmation",
       description: "Send email when a ticket is purchased",
       icon: Mail,
@@ -54,7 +56,7 @@ export function NotificationSettings({ settings }: Props) {
       defaultValue: true,
     },
     {
-      key: "email_event_reminder_7days",
+      key: "emailEventReminder7Days",
       title: "Event Reminder (7 Days)",
       description: "Send reminder email 7 days before the event",
       icon: Mail,
@@ -62,7 +64,7 @@ export function NotificationSettings({ settings }: Props) {
       defaultValue: true,
     },
     {
-      key: "email_event_reminder_1day",
+      key: "emailEventReminder1Day",
       title: "Event Reminder (1 Day)",
       description: "Send reminder email 1 day before the event",
       icon: Mail,
@@ -70,7 +72,7 @@ export function NotificationSettings({ settings }: Props) {
       defaultValue: true,
     },
     {
-      key: "email_admin_new_ticket",
+      key: "emailAdminNewTicket",
       title: "Admin Notification",
       description: "Notify admins when a new ticket is purchased",
       icon: Bell,
@@ -78,7 +80,7 @@ export function NotificationSettings({ settings }: Props) {
       defaultValue: true,
     },
     {
-      key: "email_checkin_confirmation",
+      key: "emailCheckinConfirmation",
       title: "Check-in Confirmation",
       description: "Send confirmation email when attendee checks in",
       icon: Mail,
@@ -86,7 +88,7 @@ export function NotificationSettings({ settings }: Props) {
       defaultValue: false,
     },
     {
-      key: "sms_ticket_confirmation",
+      key: "smsTicketConfirmation",
       title: "SMS Confirmation",
       description: "Send SMS when ticket is purchased",
       icon: Smartphone,
@@ -95,7 +97,7 @@ export function NotificationSettings({ settings }: Props) {
     },
   ];
 
-  const handleToggle = (key: string) => {
+  const handleToggle = (key: keyof NotificationSettings) => {
     setNotificationSettings((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -105,17 +107,16 @@ export function NotificationSettings({ settings }: Props) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const updates = Object.entries(notificationSettings).map(([key, value]) =>
-        updateGBCSetting(key, String(value))
+      const result = await updateGBCSettingsSection(
+        "notifications",
+        notificationSettings
       );
 
-      const results = await Promise.all(updates);
-
-      if (results.every((r) => r.success)) {
+      if (result.success) {
         toast.success("Notification settings updated successfully");
         setIsEditing(false);
       } else {
-        throw new Error("Some settings failed to update");
+        throw new Error(result.error || "Failed to update");
       }
     } catch (error) {
       toast.error("Failed to update notification settings");
@@ -162,8 +163,7 @@ export function NotificationSettings({ settings }: Props) {
       <div className="space-y-4">
         {notificationTypes.map((notification) => {
           const Icon = notification.icon;
-          const isEnabled =
-            notificationSettings[notification.key] ?? notification.defaultValue;
+          const isEnabled = notificationSettings[notification.key];
 
           return (
             <div
@@ -203,27 +203,6 @@ export function NotificationSettings({ settings }: Props) {
           );
         })}
       </div>
-
-      {isEditing && (
-        <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
-          >
-            {isLoading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

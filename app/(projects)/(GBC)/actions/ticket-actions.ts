@@ -13,6 +13,7 @@ import { requireAdmin } from "../utils/auth";
 import { calculateTicketPrice } from "../utils";
 import { sendGBCTicketSMS } from "../utils/sms";
 import { generateQRCodeBuffer } from "../utils/qr_code";
+import { getAllGBCSettings } from "./settings-actions";
 
 export async function createGBCTicket(formData: FormData) {
   try {
@@ -39,7 +40,11 @@ export async function createGBCTicket(formData: FormData) {
       where: { paymentStatus: "COMPLETED" },
     });
 
-    const maxTickets = parseInt(process.env.NEXT_PUBLIC_MAX_TICKETS || "150");
+    const settingsResult = await getAllGBCSettings();
+    const maxTickets =
+      settingsResult.success && settingsResult.data
+        ? settingsResult.data.tickets.maxCapacity
+        : 150;
 
     if (soldTickets >= maxTickets) {
       return {
@@ -111,6 +116,114 @@ export async function createGBCTicket(formData: FormData) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to create ticket",
+    };
+  }
+}
+
+// Create group tickets for Company ticket type (5 attendees)
+export async function createGBCGroupTicket(attendeesData: any[]) {
+  try {
+    // Validate that we have exactly 5 attendees
+    if (!attendeesData || attendeesData.length !== 5) {
+      return {
+        success: false,
+        error: "Group tickets require exactly 5 attendees",
+      };
+    }
+
+    // Check ticket availability (need 5 seats)
+    const soldTickets = await prisma.gBCTicket.count({
+      where: { paymentStatus: "COMPLETED" },
+    });
+
+    const settingsResult = await getAllGBCSettings();
+    const maxTickets =
+      settingsResult.success && settingsResult.data
+        ? settingsResult.data.tickets.maxCapacity
+        : 150;
+
+    if (soldTickets + 5 > maxTickets) {
+      return {
+        success: false,
+        error: `Sorry, only ${
+          maxTickets - soldTickets
+        } tickets remaining. Not enough for a group purchase.`,
+      };
+    }
+
+    // Get the price for company tickets
+    const price = calculateTicketPrice("COMPANY");
+
+    // Create all 5 tickets
+    const ticketPromises = attendeesData.map((attendee) => {
+      const professionValue =
+        attendee.profession === "OTHER" && attendee.otherProfession
+          ? `Other: ${attendee.otherProfession}`
+          : attendee.profession;
+
+      return prisma.gBCTicket.create({
+        data: {
+          name: attendee.name,
+          email: attendee.email,
+          phone: attendee.phone || undefined,
+          gender: attendee.gender,
+          profession: professionValue,
+          ticketType: "COMPANY",
+          price: price / 5, // Split the price equally among attendees
+          paymentStatus: "PENDING",
+        },
+      });
+    });
+
+    const tickets = await Promise.all(ticketPromises);
+
+    // Use the first attendee's email for payment (primary contact)
+    const primaryEmail = attendeesData[0].email;
+    const ticketNumbers = tickets.map((t) => t.ticketNumber).join(", ");
+
+    // Initialize payment for the group
+    const paymentResponse = await initializeTicketPayment(
+      primaryEmail,
+      price,
+      ticketNumbers, // Pass all ticket numbers
+      "COMPANY",
+      {
+        name: `Group Ticket (${attendeesData.length} attendees)`,
+        phone: attendeesData[0].phone,
+        profession: "GROUP_PURCHASE",
+        ticketIds: tickets.map((t) => t.id),
+      }
+    );
+
+    // Update all tickets with the same payment reference
+    await Promise.all(
+      tickets.map((ticket) =>
+        prisma.gBCTicket.update({
+          where: { id: ticket.id },
+          data: { paymentRef: paymentResponse.data.reference },
+        })
+      )
+    );
+
+    revalidatePath("/gbc2/restricted/tickets");
+    revalidatePath("/gbc2/tickets");
+
+    return {
+      success: true,
+      data: {
+        tickets,
+        reference: paymentResponse.data.reference,
+        paymentUrl: paymentResponse.data.authorization_url,
+      },
+    };
+  } catch (error) {
+    console.error("Group ticket creation error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create group tickets",
     };
   }
 }
@@ -384,7 +497,11 @@ export async function getGBCTicketStats() {
     const checkedInTickets = checkedInCount;
     const totalRevenue = completedStat?._sum.price || 0;
 
-    const maxTickets = parseInt(process.env.NEXT_PUBLIC_MAX_TICKETS || "1000");
+    const settingsResult = await getAllGBCSettings();
+    const maxTickets =
+      settingsResult.success && settingsResult.data
+        ? settingsResult.data.tickets.maxCapacity
+        : 1000;
     const availableTickets = maxTickets - completedTickets;
 
     return {

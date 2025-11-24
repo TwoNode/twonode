@@ -1,387 +1,83 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { revalidatePath } from "next/cache";
+import { GBCSettingsData, defaultSettings } from "../utils/settings";
 
-// Default settings to initialize
-const defaultSettings = [
-  // Event Configuration
-  {
-    key: "event_name",
-    value: "Geospatial Builders Conference 2.0",
-    category: "event",
-  },
-  { key: "event_date", value: "2025-03-15", category: "event" },
-  { key: "event_time", value: "09:00", category: "event" },
-  {
-    key: "event_venue",
-    value: "Eko Hotel & Suites, Lagos",
-    category: "event",
-  },
-  {
-    key: "event_theme",
-    value: "Geospatial Capital: A Catalyst for Inclusive Growth",
-    category: "event",
-  },
-  {
-    key: "event_sub_theme",
-    value: "Driving Transformation in Land Administration and Energy",
-    category: "event",
-  },
-  {
-    key: "event_description",
-    value: "The premier platform for geospatial innovation in Nigeria",
-    category: "event",
-  },
-  { key: "registration_opens", value: "2025-01-01", category: "event" },
-  { key: "registration_closes", value: "2025-03-10", category: "event" },
+// Get the current user and check authorization
+async function checkAuthorization(requireSuperAdmin = false) {
+  const { getUser } = getKindeServerSession();
+  const user = await getUser();
 
-  // Ticket Pricing
-  { key: "ticket_early_bird_price", value: "100000", category: "tickets" },
-  { key: "ticket_regular_price", value: "120000", category: "tickets" },
-  { key: "ticket_company_price", value: "150000", category: "tickets" },
-  { key: "ticket_vip_price", value: "200000", category: "tickets" },
-  { key: "ticket_student_price", value: "50000", category: "tickets" },
-  {
-    key: "ticket_early_bird_deadline",
-    value: "2025-02-28",
-    category: "tickets",
-  },
-  { key: "ticket_max_capacity", value: "150", category: "tickets" },
-
-  // Notification Settings
-  {
-    key: "email_ticket_confirmation",
-    value: "true",
-    category: "notifications",
-  },
-  {
-    key: "email_event_reminder_7days",
-    value: "true",
-    category: "notifications",
-  },
-  {
-    key: "email_event_reminder_1day",
-    value: "true",
-    category: "notifications",
-  },
-  {
-    key: "email_admin_new_ticket",
-    value: "true",
-    category: "notifications",
-  },
-  {
-    key: "email_checkin_confirmation",
-    value: "false",
-    category: "notifications",
-  },
-  {
-    key: "sms_ticket_confirmation",
-    value: "false",
-    category: "notifications",
-  },
-
-  // System Settings
-  { key: "maintenance_mode", value: "false", category: "system" },
-  { key: "debug_mode", value: "false", category: "system" },
-  { key: "automatic_backups", value: "true", category: "system" },
-];
-
-// export async function updateGBCSetting(key: string, value: string) {
-//   try {
-//     const { getUser } = getKindeServerSession();
-//     const user = await getUser();
-
-//     if (!user) {
-//       return { success: false, error: "Not authenticated" };
-//     }
-
-//     // Check if user is admin
-//     const currentUser = await prisma.gBCUser.findUnique({
-//       where: { kindeId: user.id },
-//     });
-
-//     if (!currentUser || currentUser.role === "USER") {
-//       return { success: false, error: "Not authorized" };
-//     }
-
-//     // Upsert setting (update if exists, create if doesn't)
-//     const setting = await prisma.gBCSettings.upsert({
-//       where: { key },
-//       update: { value },
-//       create: {
-//         key,
-//         value,
-//         category: "general",
-//       },
-//     });
-
-//     // Log the action
-//     await prisma.gBCAuditLog.create({
-//       data: {
-//         userId: currentUser.id,
-//         action: "UPDATE_SETTING",
-//         entity: "GBCSettings",
-//         entityId: setting.id,
-//         changes: JSON.stringify({ key, value }),
-//       },
-//     });
-
-//     revalidatePath("/admin/settings");
-
-//     return { success: true, data: setting };
-//   } catch (error) {
-//     console.error("Error updating setting:", error);
-//     return { success: false, error: "Failed to update setting" };
-//   }
-// }
-
-// export async function getAllGBCSettings() {
-//   try {
-//     const { getUser } = getKindeServerSession();
-//     const user = await getUser();
-
-//     if (!user) {
-//       return { success: false, error: "Not authenticated" };
-//     }
-
-//     const settings = await prisma.gBCSettings.findMany({
-//       orderBy: {
-//         category: "asc",
-//       },
-//     });
-
-//     return {
-//       success: true,
-//       data: settings.map((s) => ({
-//         ...s,
-//         updatedAt: s.updatedAt.toISOString(),
-//       })),
-//     };
-//   } catch (error) {
-//     console.error("Error fetching settings:", error);
-//     return { success: false, error: "Failed to fetch settings" };
-//   }
-// }
-
-export async function bulkUpdateSettings(
-  settings: Array<{ key: string; value: string }>
-) {
-  try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
-
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    const currentUser = await prisma.gBCUser.findUnique({
-      where: { kindeId: user.id },
-    });
-
-    if (!currentUser || currentUser.role === "USER") {
-      return { success: false, error: "Not authorized" };
-    }
-
-    // Update all settings in a transaction
-    const results = await Promise.all(
-      settings.map((setting) =>
-        prisma.gBCSettings.upsert({
-          where: { key: setting.key },
-          update: { value: setting.value },
-          create: {
-            key: setting.key,
-            value: setting.value,
-            category: "general",
-          },
-        })
-      )
-    );
-
-    // Log the action
-    await prisma.gBCAuditLog.create({
-      data: {
-        userId: currentUser.id,
-        action: "BULK_UPDATE_SETTINGS",
-        entity: "GBCSettings",
-        changes: JSON.stringify(settings),
-      },
-    });
-
-    revalidatePath("/admin/settings");
-
-    return { success: true, data: results };
-  } catch (error) {
-    console.error("Error bulk updating settings:", error);
-    return { success: false, error: "Failed to bulk update settings" };
+  if (!user) {
+    return { success: false, error: "Not authenticated", user: null };
   }
+
+  const currentUser = await prisma.gBCUser.findUnique({
+    where: { kindeId: user.id },
+  });
+
+  if (!currentUser) {
+    return { success: false, error: "User not found", user: null };
+  }
+
+  if (currentUser.role === "USER") {
+    return { success: false, error: "Not authorized", user: null };
+  }
+
+  if (requireSuperAdmin && currentUser.role !== "SUPERADMIN") {
+    return {
+      success: false,
+      error: "Only Super Admins can perform this action",
+      user: null,
+    };
+  }
+
+  return { success: true, user: currentUser };
 }
 
-export async function deleteSetting(key: string) {
+/**
+ * Get all GBC settings
+ * Returns the settings object, initializes with defaults if not found
+ */
+export async function getAllGBCSettings(): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
   try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
+    // Try to get the first (and should be only) settings record
+    const settingsRecord = await prisma.gBCSettings.findFirst();
 
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
+    if (!settingsRecord) {
+      // Initialize with default settings if none exist
+      const initialized = await initializeDefaultSettings();
+      if (!initialized.success) {
+        return { success: false, error: initialized.error };
+      }
+      return { success: true, data: defaultSettings };
     }
 
-    const currentUser = await prisma.gBCUser.findUnique({
-      where: { kindeId: user.id },
-    });
+    const savedSettings = (settingsRecord.settings ||
+      {}) as Partial<GBCSettingsData>;
 
-    if (!currentUser || currentUser.role !== "SUPERADMIN") {
-      return { success: false, error: "Only Super Admins can delete settings" };
-    }
-
-    await prisma.gBCSettings.delete({
-      where: { key },
-    });
-
-    await prisma.gBCAuditLog.create({
-      data: {
-        userId: currentUser.id,
-        action: "DELETE_SETTING",
-        entity: "GBCSettings",
-        changes: JSON.stringify({ key }),
+    // Merge saved settings with defaults to ensure all fields exist
+    const mergedSettings: GBCSettingsData = {
+      event: { ...defaultSettings.event, ...(savedSettings.event || {}) },
+      tickets: { ...defaultSettings.tickets, ...(savedSettings.tickets || {}) },
+      notifications: {
+        ...defaultSettings.notifications,
+        ...(savedSettings.notifications || {}),
       },
-    });
-
-    revalidatePath("/admin/settings");
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting setting:", error);
-    return { success: false, error: "Failed to delete setting" };
-  }
-}
-
-// Function to initialize default settings if they don't exist
-export async function initializeDefaultSettings() {
-  try {
-    const { getUser } = getKindeServerSession();
-    const user = await getUser();
-
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    // Check if user is admin
-    const currentUser = await prisma.gBCUser.findUnique({
-      where: { kindeId: user.id },
-    });
-
-    if (!currentUser || currentUser.role === "USER") {
-      return { success: false, error: "Not authorized" };
-    }
-
-    // Get existing settings to avoid duplicates
-    const existingSettings = await prisma.gBCSettings.findMany({
-      where: {
-        key: {
-          in: defaultSettings.map((s) => s.key),
-        },
-      },
-    });
-
-    const existingKeys = existingSettings.map((s) => s.key);
-    const settingsToCreate = defaultSettings.filter(
-      (s) => !existingKeys.includes(s.key)
-    );
-
-    if (settingsToCreate.length === 0) {
-      return {
-        success: true,
-        message: "All default settings already exist",
-        created: 0,
-      };
-    }
-
-    // Create all missing settings in a transaction
-    const results = await prisma.$transaction(
-      settingsToCreate.map((setting) =>
-        prisma.gBCSettings.create({
-          data: {
-            key: setting.key,
-            value: setting.value,
-            category: setting.category,
-          },
-        })
-      )
-    );
-
-    // Log the initialization
-    if (results.length > 0) {
-      await prisma.gBCAuditLog.create({
-        data: {
-          userId: currentUser.id,
-          action: "INITIALIZE_SETTINGS",
-          entity: "GBCSettings",
-          changes: JSON.stringify({
-            count: results.length,
-            settings: results.map((r) => r.key),
-          }),
-        },
-      });
-    }
-
-    revalidatePath("/admin/settings");
+      system: { ...defaultSettings.system, ...(savedSettings.system || {}) },
+    };
 
     return {
       success: true,
-      message: `Successfully initialized ${results.length} settings`,
-      created: results.length,
+      data: mergedSettings,
     };
-  } catch (error) {
-    console.error("Error initializing settings:", error);
-    return {
-      success: false,
-      error: "Failed to initialize settings",
-      details: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-// ============ SETTINGS ============
-
-export async function getGBCSetting(key: string) {
-  try {
-    const setting = await prisma.gBCSettings.findUnique({
-      where: { key },
-    });
-
-    return { success: true, data: setting };
-  } catch (error) {
-    console.error("Get setting error:", error);
-    return {
-      success: false,
-      error: "Failed to fetch setting",
-    };
-  }
-}
-
-export async function getAllGBCSettings() {
-  try {
-    let settings = await prisma.gBCSettings.findMany({
-      orderBy: { key: "asc" },
-    });
-
-    // Check if any settings are missing and initialize them
-    const missingSettings = defaultSettings.filter(
-      (setting) => !settings?.some((s: any) => s.key === setting.key)
-    );
-
-    if (missingSettings.length > 0) {
-      // In a real app, you would save these to the database
-      await initializeDefaultSettings();
-
-      settings = await prisma.gBCSettings.findMany({
-        orderBy: { key: "asc" },
-      });
-    }
-
-    return { success: true, data: settings };
   } catch (error) {
     console.error("Get all settings error:", error);
     return {
@@ -391,17 +87,204 @@ export async function getAllGBCSettings() {
   }
 }
 
-export async function updateGBCSetting(key: string, value: string) {
+/**
+ * Get a specific setting value by path (e.g., "event.name" or "tickets.earlyBirdPrice")
+ */
+export async function getGBCSetting(path: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    const setting = await prisma.gBCSettings.upsert({
-      where: { key },
-      update: { value },
-      create: { key, value },
+    const result = await getAllGBCSettings();
+    if (!result.success || !result.data) {
+      return { success: false, error: result.error };
+    }
+
+    const keys = path.split(".");
+    let value: any = result.data;
+
+    for (const key of keys) {
+      if (value && typeof value === "object" && key in value) {
+        value = value[key];
+      } else {
+        return { success: false, error: `Setting not found: ${path}` };
+      }
+    }
+
+    return { success: true, data: value };
+  } catch (error) {
+    console.error("Get setting error:", error);
+    return {
+      success: false,
+      error: "Failed to fetch setting",
+    };
+  }
+}
+
+/**
+ * Update the entire settings object
+ */
+export async function updateAllGBCSettings(settings: GBCSettingsData): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization();
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    // Get the first settings record or create if doesn't exist
+    const existingSettings = await prisma.gBCSettings.findFirst();
+
+    let updatedSettings;
+    if (existingSettings) {
+      // Save current settings as previous before updating
+      updatedSettings = await prisma.gBCSettings.update({
+        where: { id: existingSettings.id },
+        data: {
+          settings: settings as Prisma.InputJsonValue,
+          previousSettings: existingSettings.settings as Prisma.InputJsonValue,
+        },
+      });
+    } else {
+      // First time initialization - no previous settings
+      updatedSettings = await prisma.gBCSettings.create({
+        data: {
+          settings: settings as Prisma.InputJsonValue,
+          previousSettings: Prisma.JsonNull,
+        },
+      });
+    }
+
+    // Log the action
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: auth.user.id,
+        action: "UPDATE_ALL_SETTINGS",
+        entity: "GBCSettings",
+        entityId: updatedSettings.id,
+        changes: JSON.stringify(settings),
+      },
     });
 
     revalidatePath("/gbc2/restricted/settings");
 
-    return { success: true, data: setting };
+    return {
+      success: true,
+      data: updatedSettings.settings as GBCSettingsData,
+    };
+  } catch (error) {
+    console.error("Update all settings error:", error);
+    return {
+      success: false,
+      error: "Failed to update settings",
+    };
+  }
+}
+
+/**
+ * Update a specific section of settings (e.g., just "event" or "tickets")
+ */
+export async function updateGBCSettingsSection(
+  section: keyof GBCSettingsData,
+  data: any
+): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization();
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    const currentSettings = await getAllGBCSettings();
+    if (!currentSettings.success || !currentSettings.data) {
+      return { success: false, error: currentSettings.error };
+    }
+
+    const updatedSettings = {
+      ...currentSettings.data,
+      [section]: data,
+    };
+
+    return await updateAllGBCSettings(updatedSettings);
+  } catch (error) {
+    console.error("Update settings section error:", error);
+    return {
+      success: false,
+      error: "Failed to update settings section",
+    };
+  }
+}
+
+/**
+ * Update a single setting value by path (e.g., updateGBCSetting("event.name", "New Name"))
+ */
+export async function updateGBCSetting(
+  path: string,
+  value: any
+): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization();
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    const currentSettings = await getAllGBCSettings();
+    if (!currentSettings.success || !currentSettings.data) {
+      return { success: false, error: currentSettings.error };
+    }
+
+    const keys = path.split(".");
+    if (keys.length === 0) {
+      return { success: false, error: "Invalid path" };
+    }
+
+    // Validate top-level section
+    const topLevelKey = keys[0] as keyof GBCSettingsData;
+    const validSections: (keyof GBCSettingsData)[] = [
+      "event",
+      "tickets",
+      "notifications",
+      "system",
+    ];
+
+    if (!validSections.includes(topLevelKey)) {
+      return {
+        success: false,
+        error: `Invalid settings section: ${topLevelKey}`,
+      };
+    }
+
+    const updatedSettings = JSON.parse(JSON.stringify(currentSettings.data));
+    let target: any = updatedSettings;
+
+    // Navigate to the parent of the target property
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!(key in target)) {
+        return { success: false, error: `Invalid path: ${path}` };
+      }
+      target = target[key];
+    }
+
+    // Set the value
+    const lastKey = keys[keys.length - 1];
+    if (!(lastKey in target)) {
+      return { success: false, error: `Invalid path: ${path}` };
+    }
+    target[lastKey] = value;
+
+    return await updateAllGBCSettings(updatedSettings);
   } catch (error) {
     console.error("Update setting error:", error);
     return {
@@ -411,28 +294,310 @@ export async function updateGBCSetting(key: string, value: string) {
   }
 }
 
+/**
+ * Update multiple settings at once using path-value pairs
+ */
 export async function updateMultipleGBCSettings(
-  settings: Array<{ key: string; value: string }>
-) {
+  updates: Array<{ path: string; value: any }>
+): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
   try {
-    await Promise.all(
-      settings.map((setting) =>
-        prisma.gBCSettings.upsert({
-          where: { key: setting.key },
-          update: { value: setting.value },
-          create: { key: setting.key, value: setting.value },
-        })
-      )
-    );
+    const auth = await checkAuthorization();
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
 
-    revalidatePath("/gbc2/restricted/settings");
+    const currentSettings = await getAllGBCSettings();
+    if (!currentSettings.success || !currentSettings.data) {
+      return { success: false, error: currentSettings.error };
+    }
+    const updatedSettings = JSON.parse(JSON.stringify(currentSettings.data));
 
-    return { success: true, message: "Settings updated successfully" };
+    // Apply all updates
+    for (const update of updates) {
+      const keys = update.path.split(".");
+      if (keys.length === 0) {
+        return { success: false, error: "Invalid path" };
+      }
+
+      // Validate top-level section
+      const topLevelKey = keys[0] as keyof GBCSettingsData;
+      const validSections: (keyof GBCSettingsData)[] = [
+        "event",
+        "tickets",
+        "notifications",
+        "system",
+      ];
+
+      if (!validSections.includes(topLevelKey)) {
+        return {
+          success: false,
+          error: `Invalid settings section: ${topLevelKey}`,
+        };
+      }
+
+      let target: any = updatedSettings;
+
+      // Navigate to the parent of the target property
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        if (!(key in target)) {
+          return { success: false, error: `Invalid path: ${update.path}` };
+        }
+        target = target[key];
+      }
+
+      // Set the value
+      const lastKey = keys[keys.length - 1];
+      if (!(lastKey in target)) {
+        return { success: false, error: `Invalid path: ${update.path}` };
+      }
+      target[lastKey] = update.value;
+    }
+
+    return await updateAllGBCSettings(updatedSettings);
   } catch (error) {
     console.error("Update multiple settings error:", error);
     return {
       success: false,
       error: "Failed to update settings",
+    };
+  }
+}
+
+/**
+ * Initialize default settings
+ */
+export async function initializeDefaultSettings(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization();
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    // Check if settings already exist
+    const existingSettings = await prisma.gBCSettings.findFirst();
+
+    if (existingSettings) {
+      return {
+        success: true,
+        message: "Settings already initialized",
+      };
+    }
+
+    // Create settings with defaults
+    const newSettings = await prisma.gBCSettings.create({
+      data: {
+        settings: defaultSettings as Prisma.InputJsonValue,
+        previousSettings: Prisma.JsonNull,
+      },
+    });
+
+    // Log the initialization
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: auth.user.id,
+        action: "INITIALIZE_SETTINGS",
+        entity: "GBCSettings",
+        entityId: newSettings.id,
+        changes: JSON.stringify({ action: "initialized_with_defaults" }),
+      },
+    });
+
+    revalidatePath("/gbc2/restricted/settings");
+
+    return {
+      success: true,
+      message: "Successfully initialized settings with defaults",
+    };
+  } catch (error) {
+    console.error("Error initializing settings:", error);
+    return {
+      success: false,
+      error: "Failed to initialize settings",
+    };
+  }
+}
+
+/**
+ * Reset settings to defaults (Super Admin only)
+ */
+export async function resetGBCSettingsToDefaults(): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization(true); // Require Super Admin
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    const result = await updateAllGBCSettings(defaultSettings);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    // Log the reset
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: auth.user.id,
+        action: "RESET_SETTINGS",
+        entity: "GBCSettings",
+        changes: JSON.stringify({ action: "reset_to_defaults" }),
+      },
+    });
+
+    return {
+      success: true,
+      message: "Successfully reset settings to defaults",
+    };
+  } catch (error) {
+    console.error("Error resetting settings:", error);
+    return {
+      success: false,
+      error: "Failed to reset settings",
+    };
+  }
+}
+
+/**
+ * Legacy compatibility function for bulk updates
+ * Converts old key-value format to new path-value format
+ */
+export async function bulkUpdateSettings(
+  settings: Array<{ key: string; value: string }>
+): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  error?: string;
+}> {
+  // Convert old format to new format
+  const updates = settings.map((s) => ({
+    path: s.key.replace(/_/g, "."), // Convert snake_case to dot notation
+    value: s.value,
+  }));
+
+  return updateMultipleGBCSettings(updates);
+}
+
+/**
+ * Get previous settings (the state before the last update)
+ */
+export async function getPreviousGBCSettings(): Promise<{
+  success: boolean;
+  data?: GBCSettingsData | null;
+  error?: string;
+}> {
+  try {
+    const settingsRecord = await prisma.gBCSettings.findFirst();
+
+    if (!settingsRecord) {
+      return { success: false, error: "No settings found" };
+    }
+
+    if (!settingsRecord.previousSettings) {
+      return {
+        success: true,
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      data: settingsRecord.previousSettings as GBCSettingsData,
+    };
+  } catch (error) {
+    console.error("Get previous settings error:", error);
+    return {
+      success: false,
+      error: "Failed to fetch previous settings",
+    };
+  }
+}
+
+/**
+ * Rollback to previous settings (Super Admin only)
+ * This will restore the settings to the state before the last update
+ */
+export async function rollbackGBCSettings(): Promise<{
+  success: boolean;
+  data?: GBCSettingsData;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const auth = await checkAuthorization(true); // Require Super Admin
+    if (!auth.success || !auth.user) {
+      return { success: false, error: auth.error };
+    }
+
+    const previous = await getPreviousGBCSettings();
+    if (!previous.success) {
+      return { success: false, error: previous.error };
+    }
+
+    if (!previous.data) {
+      return {
+        success: false,
+        error: "No previous settings available to rollback to",
+      };
+    }
+
+    // Get current settings before rolling back
+    const current = await getAllGBCSettings();
+    if (!current.success || !current.data) {
+      return { success: false, error: "Failed to get current settings" };
+    }
+
+    // Perform the rollback - update with previous settings
+    const settingsRecord = await prisma.gBCSettings.findFirst();
+    if (!settingsRecord) {
+      return { success: false, error: "Settings record not found" };
+    }
+
+    const rolledBackSettings = await prisma.gBCSettings.update({
+      where: { id: settingsRecord.id },
+      data: {
+        settings: previous.data as Prisma.InputJsonValue,
+        previousSettings: current.data as Prisma.InputJsonValue,
+      },
+    });
+
+    // Log the rollback action
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: auth.user.id,
+        action: "ROLLBACK_SETTINGS",
+        entity: "GBCSettings",
+        entityId: rolledBackSettings.id,
+        changes: JSON.stringify({
+          action: "rolled_back_to_previous",
+          rolledBackFrom: current.data,
+          rolledBackTo: previous.data,
+        }),
+      },
+    });
+
+    revalidatePath("/gbc2/restricted/settings");
+
+    return {
+      success: true,
+      data: rolledBackSettings.settings as GBCSettingsData,
+      message: "Successfully rolled back to previous settings",
+    };
+  } catch (error) {
+    console.error("Rollback settings error:", error);
+    return {
+      success: false,
+      error: "Failed to rollback settings",
     };
   }
 }

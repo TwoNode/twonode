@@ -1,5 +1,10 @@
+"use server";
+
 import prisma from "@/lib/prisma";
 import { GBCRole as GBCRoleType } from "@prisma/client";
+import { requireAdmin } from "../utils/auth";
+import { revalidatePath } from "next/cache";
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
 export interface GBCUserData {
   id: string;
@@ -16,6 +21,8 @@ export const GBCRole = GBCRoleType;
 
 export async function getGBCUsers() {
   try {
+    await requireAdmin();
+
     const users = await prisma.gBCUser.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -28,6 +35,8 @@ export async function getGBCUsers() {
 
 export async function getGBCUserById(id: string) {
   try {
+    await requireAdmin();
+
     const user = await prisma.gBCUser.findUnique({
       where: { id },
     });
@@ -45,10 +54,25 @@ export async function getGBCUserById(id: string) {
 
 export async function updateGBCUserRole(id: string, role: GBCRoleType) {
   try {
+    const admin = await requireAdmin();
+
     const updatedUser = await prisma.gBCUser.update({
       where: { id },
       data: { role },
     });
+
+    // Log the action
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: admin.id,
+        action: "UPDATE_USER_ROLE",
+        entity: "GBCUser",
+        entityId: id,
+        changes: JSON.stringify({ role }),
+      },
+    });
+
+    revalidatePath("/gbc2/restricted/users");
 
     return { success: true, data: updatedUser };
   } catch (error) {
@@ -59,9 +83,23 @@ export async function updateGBCUserRole(id: string, role: GBCRoleType) {
 
 export async function deleteGBCUser(id: string) {
   try {
+    const admin = await requireAdmin();
+
     await prisma.gBCUser.delete({
       where: { id },
     });
+
+    // Log the action
+    await prisma.gBCAuditLog.create({
+      data: {
+        userId: admin.id,
+        action: "DELETE_USER",
+        entity: "GBCUser",
+        entityId: id,
+      },
+    });
+
+    revalidatePath("/gbc2/restricted/users");
 
     return { success: true };
   } catch (error) {

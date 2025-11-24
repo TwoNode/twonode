@@ -7,6 +7,8 @@ export default async function GalleryPage() {
   const galleryResult = await getGalleryItems();
   const items = galleryResult.success ? galleryResult.data : [];
 
+  console.log(items);
+
   // Group by year
   const itemsByYear =
     items?.reduce((acc: any, item: any) => {

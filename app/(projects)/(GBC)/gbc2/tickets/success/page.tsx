@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { verifyGBCPayment } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { getAllGBCSettings } from "@/app/(projects)/(GBC)/actions/settings-actions";
 import { notFound, redirect } from "next/navigation";
 
 export default async function TicketSuccessPage({
@@ -54,12 +55,28 @@ export default async function TicketSuccessPage({
   }
 
   const ticket = verification.data;
-  const eventDate = new Date("2025-12-15T09:00:00");
-  const formattedDate = eventDate.toLocaleDateString("en-US", {
+
+  // Fetch settings for event details
+  const settingsResult = await getAllGBCSettings();
+  const settings = settingsResult.success ? settingsResult.data : null;
+
+  const eventDate = settings?.event.date ?? "2025-05-15";
+  const eventTime = settings?.event.time ?? "09:00";
+  const eventVenue = settings?.event.venue ?? "Eko Hotel & Suites, Lagos";
+
+  // Format the date
+  const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);
+  const formattedDate = eventDateTime.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
+  });
+
+  const formattedTime = eventDateTime.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 
   return (
@@ -164,8 +181,9 @@ export default async function TicketSuccessPage({
                 <div>
                   <h3 className="font-medium">Save the date</h3>
                   <p className="text-sm text-gray-500">
-                    {formattedDate} at 9:00 AM
+                    {formattedDate} at {formattedTime}
                   </p>
+                  <p className="text-sm text-gray-500 mt-1">📍 {eventVenue}</p>
                 </div>
               </div>
             </div>

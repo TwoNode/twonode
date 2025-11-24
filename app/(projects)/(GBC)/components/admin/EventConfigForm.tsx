@@ -5,35 +5,26 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Save, Calendar, MapPin, Tag, Edit } from "lucide-react";
 import { z } from "zod";
-import { updateGBCSetting } from "../../actions/settings-actions";
+import { updateGBCSettingsSection } from "../../actions/settings-actions";
+import { GBCSettingsData } from "../../utils/settings";
 
 // Define form validation schema
 const eventFormSchema = z.object({
-  event_name: z.string().min(3, "Event name must be at least 3 characters"),
-  event_date: z.string().min(1, "Event date is required"),
-  event_time: z.string().min(1, "Event time is required"),
-  event_venue: z.string().min(3, "Venue must be at least 3 characters"),
-  event_theme: z.string().min(3, "Theme must be at least 3 characters"),
-  event_sub_theme: z.string().optional(),
-  event_description: z
-    .string()
-    .min(10, "Description must be at least 10 characters"),
-  registration_opens: z.string().min(1, "Registration open date is required"),
-  registration_closes: z.string().min(1, "Registration close date is required"),
+  name: z.string().min(3, "Event name must be at least 3 characters"),
+  date: z.string().min(1, "Event date is required"),
+  time: z.string().min(1, "Event time is required"),
+  venue: z.string().min(3, "Venue must be at least 3 characters"),
+  theme: z.string().min(3, "Theme must be at least 3 characters"),
+  subTheme: z.string().optional(),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  registrationOpens: z.string().min(1, "Registration open date is required"),
+  registrationCloses: z.string().min(1, "Registration close date is required"),
 });
 
 type EventFormData = z.infer<typeof eventFormSchema>;
 
-interface Setting {
-  id: string;
-  key: string;
-  value: string;
-  description?: string | null;
-  category?: string | null;
-}
-
 interface Props {
-  settings: Setting[];
+  settings: GBCSettingsData | null;
 }
 
 export function EventConfigForm({ settings }: Props) {
@@ -42,30 +33,22 @@ export function EventConfigForm({ settings }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Initialize form data from settings
-  const getSetting = (key: string, defaultValue: string = "") => {
-    const setting = settings.find((s) => s.key === key);
-    return setting?.value || defaultValue;
-  };
-
   const [formData, setFormData] = useState<EventFormData>({
-    event_name: getSetting("event_name", "Geospatial Builders Conference 2.0"),
-    event_date: getSetting("event_date", "2025-03-15"),
-    event_time: getSetting("event_time", "09:00 AM"),
-    event_venue: getSetting("event_venue", "Eko Hotel & Suites, Lagos"),
-    event_theme: getSetting(
-      "event_theme",
-      "Geospatial Capital: A Catalyst for Inclusive Growth"
-    ),
-    event_sub_theme: getSetting(
-      "event_sub_theme",
-      "Driving Transformation in Land Administration and Energy"
-    ),
-    event_description: getSetting(
-      "event_description",
-      "The premier platform for geospatial innovation in Nigeria"
-    ),
-    registration_opens: getSetting("registration_opens", "2025-01-01"),
-    registration_closes: getSetting("registration_closes", "2025-03-10"),
+    name: settings?.event.name ?? "Geospatial Builders Conference 2.0",
+    date: settings?.event.date ?? "2025-03-15",
+    time: settings?.event.time ?? "09:00",
+    venue: settings?.event.venue ?? "Eko Hotel & Suites, Lagos",
+    theme:
+      settings?.event.theme ??
+      "Geospatial Capital: A Catalyst for Inclusive Growth",
+    subTheme:
+      settings?.event.subTheme ??
+      "Driving Transformation in Land Administration and Energy",
+    description:
+      settings?.event.description ??
+      "The premier platform for geospatial innovation in Nigeria",
+    registrationOpens: settings?.event.registrationOpens ?? "2025-01-01",
+    registrationCloses: settings?.event.registrationCloses ?? "2025-03-10",
   });
 
   const handleChange = (
@@ -120,18 +103,14 @@ export function EventConfigForm({ settings }: Props) {
     setIsLoading(true);
 
     try {
-      // Update all settings
-      const updates = Object.entries(formData).map(([key, value]) =>
-        updateGBCSetting(key, String(value))
-      );
+      // Update all event settings at once
+      const result = await updateGBCSettingsSection("event", formData);
 
-      const results = await Promise.all(updates);
-
-      if (results.every((r) => r.success)) {
+      if (result.success) {
         toast.success("Event configuration updated successfully");
         setIsEditing(false);
       } else {
-        throw new Error("Some settings failed to update");
+        throw new Error(result.error || "Failed to update");
       }
     } catch (error) {
       console.error("Update error:", error);
@@ -161,9 +140,7 @@ export function EventConfigForm({ settings }: Props) {
               <Tag className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">
-                {formData.event_name}
-              </h3>
+              <h3 className="font-medium text-gray-900">{formData.name}</h3>
               <p className="text-sm text-gray-500">Event Name</p>
             </div>
           </div>
@@ -174,7 +151,7 @@ export function EventConfigForm({ settings }: Props) {
             </div>
             <div>
               <h3 className="font-medium text-gray-900">
-                {formatDate(formData.event_date)} at {formData.event_time}
+                {formatDate(formData.date)} at {formData.time}
               </h3>
               <p className="text-sm text-gray-500">Event Date & Time</p>
             </div>
@@ -185,25 +162,23 @@ export function EventConfigForm({ settings }: Props) {
               <MapPin className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">
-                {formData.event_venue}
-              </h3>
+              <h3 className="font-medium text-gray-900">{formData.venue}</h3>
               <p className="text-sm text-gray-500">Venue</p>
             </div>
           </div>
 
           <div className="pt-2">
             <h4 className="font-medium text-gray-900">Theme</h4>
-            <p className="text-gray-700">{formData.event_theme}</p>
-            {formData.event_sub_theme && (
-              <p className="text-gray-600 mt-1">{formData.event_sub_theme}</p>
+            <p className="text-gray-700">{formData.theme}</p>
+            {formData.subTheme && (
+              <p className="text-gray-600 mt-1">{formData.subTheme}</p>
             )}
           </div>
 
           <div className="pt-2">
             <h4 className="font-medium text-gray-900">Description</h4>
             <p className="text-gray-700 whitespace-pre-line">
-              {formData.event_description}
+              {formData.description}
             </p>
           </div>
 
@@ -211,13 +186,13 @@ export function EventConfigForm({ settings }: Props) {
             <div>
               <h4 className="font-medium text-gray-900">Registration Opens</h4>
               <p className="text-gray-700">
-                {formatDate(formData.registration_opens)}
+                {formatDate(formData.registrationOpens)}
               </p>
             </div>
             <div>
               <h4 className="font-medium text-gray-900">Registration Closes</h4>
               <p className="text-gray-700">
-                {formatDate(formData.registration_closes)}
+                {formatDate(formData.registrationCloses)}
               </p>
             </div>
           </div>
@@ -240,113 +215,105 @@ export function EventConfigForm({ settings }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
-        <div className={errors.event_name ? "space-y-1" : ""}>
+        <div className={errors.name ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Event Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            name="event_name"
-            value={formData.event_name}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.event_name
+              errors.name
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
             placeholder="Geospatial Builders Conference 2.0"
-            data-error={!!errors.event_name}
+            data-error={!!errors.name}
           />
-          {errors.event_name && (
-            <p className="text-sm text-red-600">{errors.event_name}</p>
-          )}
+          {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
         </div>
 
-        <div className={errors.event_date ? "space-y-1" : ""}>
+        <div className={errors.date ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Event Date <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
-            name="event_date"
-            value={formData.event_date}
+            name="date"
+            value={formData.date}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.event_date
+              errors.date
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
-            data-error={!!errors.event_date}
+            data-error={!!errors.date}
           />
-          {errors.event_date && (
-            <p className="text-sm text-red-600">{errors.event_date}</p>
-          )}
+          {errors.date && <p className="text-sm text-red-600">{errors.date}</p>}
         </div>
 
-        <div className={errors.event_time ? "space-y-1" : ""}>
+        <div className={errors.time ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Event Time <span className="text-red-500">*</span>
           </label>
           <input
             type="time"
-            name="event_time"
-            value={formData.event_time}
+            name="time"
+            value={formData.time}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.event_time
+              errors.time
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
-            data-error={!!errors.event_time}
+            data-error={!!errors.time}
           />
-          {errors.event_time && (
-            <p className="text-sm text-red-600">{errors.event_time}</p>
-          )}
+          {errors.time && <p className="text-sm text-red-600">{errors.time}</p>}
         </div>
 
-        <div className={errors.event_venue ? "space-y-1" : ""}>
+        <div className={errors.venue ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Venue <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            name="event_venue"
-            value={formData.event_venue}
+            name="venue"
+            value={formData.venue}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.event_venue
+              errors.venue
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
             placeholder="Eko Hotel & Suites, Lagos"
-            data-error={!!errors.event_venue}
+            data-error={!!errors.venue}
           />
-          {errors.event_venue && (
-            <p className="text-sm text-red-600">{errors.event_venue}</p>
+          {errors.venue && (
+            <p className="text-sm text-red-600">{errors.venue}</p>
           )}
         </div>
       </div>
 
-      <div className={errors.event_theme ? "space-y-1" : ""}>
+      <div className={errors.theme ? "space-y-1" : ""}>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Event Theme <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          name="event_theme"
-          value={formData.event_theme}
+          name="theme"
+          value={formData.theme}
           onChange={handleChange}
           className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-            errors.event_theme
+            errors.theme
               ? "border-red-500 focus:ring-red-200"
               : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
           }`}
           placeholder="Geospatial Capital: A Catalyst for Inclusive Growth"
-          data-error={!!errors.event_theme}
+          data-error={!!errors.theme}
         />
-        {errors.event_theme && (
-          <p className="text-sm text-red-600">{errors.event_theme}</p>
-        )}
+        {errors.theme && <p className="text-sm text-red-600">{errors.theme}</p>}
       </div>
 
       <div>
@@ -355,76 +322,76 @@ export function EventConfigForm({ settings }: Props) {
         </label>
         <input
           type="text"
-          name="event_sub_theme"
-          value={formData.event_sub_theme || ""}
+          name="subTheme"
+          value={formData.subTheme || ""}
           onChange={handleChange}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           placeholder="Driving Transformation in Land Administration and Energy"
         />
       </div>
 
-      <div className={errors.event_description ? "space-y-1" : ""}>
+      <div className={errors.description ? "space-y-1" : ""}>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Description <span className="text-red-500">*</span>
         </label>
         <textarea
           rows={4}
-          name="event_description"
-          value={formData.event_description}
+          name="description"
+          value={formData.description}
           onChange={handleChange}
           className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-            errors.event_description
+            errors.description
               ? "border-red-500 focus:ring-red-200"
               : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
           }`}
           placeholder="The premier platform for geospatial innovation in Nigeria"
-          data-error={!!errors.event_description}
+          data-error={!!errors.description}
         />
-        {errors.event_description && (
-          <p className="text-sm text-red-600">{errors.event_description}</p>
+        {errors.description && (
+          <p className="text-sm text-red-600">{errors.description}</p>
         )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <div className={errors.registration_opens ? "space-y-1" : ""}>
+        <div className={errors.registrationOpens ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Registration Opens <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
-            name="registration_opens"
-            value={formData.registration_opens}
+            name="registrationOpens"
+            value={formData.registrationOpens}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.registration_opens
+              errors.registrationOpens
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
-            data-error={!!errors.registration_opens}
+            data-error={!!errors.registrationOpens}
           />
-          {errors.registration_opens && (
-            <p className="text-sm text-red-600">{errors.registration_opens}</p>
+          {errors.registrationOpens && (
+            <p className="text-sm text-red-600">{errors.registrationOpens}</p>
           )}
         </div>
 
-        <div className={errors.registration_closes ? "space-y-1" : ""}>
+        <div className={errors.registrationCloses ? "space-y-1" : ""}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Registration Closes <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
-            name="registration_closes"
-            value={formData.registration_closes}
+            name="registrationCloses"
+            value={formData.registrationCloses}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-              errors.registration_closes
+              errors.registrationCloses
                 ? "border-red-500 focus:ring-red-200"
                 : "border-gray-300 focus:ring-purple-500 focus:border-purple-500"
             }`}
-            data-error={!!errors.registration_closes}
+            data-error={!!errors.registrationCloses}
           />
-          {errors.registration_closes && (
-            <p className="text-sm text-red-600">{errors.registration_closes}</p>
+          {errors.registrationCloses && (
+            <p className="text-sm text-red-600">{errors.registrationCloses}</p>
           )}
         </div>
       </div>

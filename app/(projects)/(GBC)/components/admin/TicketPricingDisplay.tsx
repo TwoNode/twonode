@@ -1,47 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  DollarSign,
-  Users,
-  Calendar,
-  AlertCircle,
-  Edit,
-  Save,
-  X,
-} from "lucide-react";
-import { updateGBCSetting } from "../../actions/settings-actions";
+import { useState } from "react";
+import { DollarSign, Users, Calendar, Edit, Save, X } from "lucide-react";
+import { updateGBCSettingsSection } from "../../actions/settings-actions";
 import { toast } from "sonner";
+import { GBCSettingsData } from "../../utils/settings";
 
 interface TicketPricingDisplayProps {
-  settings?: Array<{
-    id: string;
-    key: string;
-    value: string;
-    description?: string | null;
-  }>;
+  settings: GBCSettingsData | null;
 }
 
-export function TicketPricingDisplay({
-  settings = [],
-}: TicketPricingDisplayProps) {
+type TicketPricing = {
+  earlyBirdPrice: number;
+  regularPrice: number;
+  companyPrice: number;
+  earlyBirdDeadline: string;
+  maxCapacity: number;
+};
+
+export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [pricing, setPricing] = useState<Record<string, string>>({});
+  const [pricing, setPricing] = useState<TicketPricing>({
+    earlyBirdPrice: settings?.tickets.earlyBirdPrice ?? 100000,
+    regularPrice: settings?.tickets.regularPrice ?? 120000,
+    companyPrice: settings?.tickets.companyPrice ?? 250000,
+    earlyBirdDeadline: settings?.tickets.earlyBirdDeadline ?? "2025-02-28",
+    maxCapacity: settings?.tickets.maxCapacity ?? 150,
+  });
 
-  useEffect(() => {
-    if (settings) {
-      const initialPricing = settings.reduce((acc, setting) => {
-        if (setting.key.startsWith("ticket_")) {
-          acc[setting.key] = setting.value;
-        }
-        return acc;
-      }, {} as Record<string, string>);
-      setPricing(initialPricing);
-    }
-  }, [settings]);
-
-  const handlePriceChange = (key: string, value: string) => {
+  const handlePriceChange = (key: keyof TicketPricing, value: any) => {
     setPricing((prev) => ({
       ...prev,
       [key]: value,
@@ -51,17 +39,13 @@ export function TicketPricingDisplay({
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const updates = Object.entries(pricing).map(([key, value]) =>
-        updateGBCSetting(key, value)
-      );
+      const result = await updateGBCSettingsSection("tickets", pricing);
 
-      const results = await Promise.all(updates);
-
-      if (results.every((r) => r.success)) {
+      if (result.success) {
         toast.success("Ticket prices updated successfully");
         setIsEditing(false);
       } else {
-        throw new Error("Some prices failed to update");
+        throw new Error(result.error || "Failed to update");
       }
     } catch (error) {
       toast.error("Failed to update ticket prices");
@@ -71,18 +55,32 @@ export function TicketPricingDisplay({
     }
   };
 
-  const formatPrice = (price: string) => {
+  const formatPrice = (price: number | string) => {
+    let parsedPrice: number = 0;
+
+    if (typeof price === "string") {
+      try {
+        parsedPrice = parseFloat(price);
+      } catch (error) {
+        console.error("Failed to parse price string:", error);
+        return price;
+      }
+    }
+    if (price === null || price === undefined) {
+      return "N/A";
+    }
+
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency: "NGN",
       minimumFractionDigits: 0,
-    }).format(parseInt(price || "0"));
+    }).format(parsedPrice);
   };
 
   const ticketTypes = [
     {
       name: "Early Bird",
-      key: "ticket_early_bird_price",
+      key: "earlyBirdPrice" as keyof TicketPricing,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50",
@@ -90,7 +88,7 @@ export function TicketPricingDisplay({
     },
     {
       name: "Regular",
-      key: "ticket_regular_price",
+      key: "regularPrice" as keyof TicketPricing,
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
@@ -98,7 +96,7 @@ export function TicketPricingDisplay({
     },
     {
       name: "Company",
-      key: "ticket_company_price",
+      key: "companyPrice" as keyof TicketPricing,
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
@@ -143,7 +141,7 @@ export function TicketPricingDisplay({
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {ticketTypes.map((ticket) => {
           const Icon = ticket.icon;
-          const price = pricing[ticket.key] || "0";
+          const price = pricing[ticket.key];
 
           return (
             <div
@@ -164,9 +162,9 @@ export function TicketPricingDisplay({
                       type="number"
                       value={price}
                       onChange={(e) =>
-                        handlePriceChange(ticket.key, e.target.value)
+                        handlePriceChange(ticket.key, parseInt(e.target.value))
                       }
-                      className="w-24 pl-6 pr-2 py-1 text-right border rounded bg-white/50"
+                      className="w-28 pl-6 pr-2 py-1 text-right border rounded bg-white/50"
                       min="0"
                       step="1000"
                     />
@@ -193,12 +191,9 @@ export function TicketPricingDisplay({
             <div>
               <input
                 type="date"
-                value={pricing["ticket_early_bird_deadline"] || ""}
+                value={pricing.earlyBirdDeadline}
                 onChange={(e) =>
-                  handlePriceChange(
-                    "ticket_early_bird_deadline",
-                    e.target.value
-                  )
+                  handlePriceChange("earlyBirdDeadline", e.target.value)
                 }
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
@@ -209,9 +204,7 @@ export function TicketPricingDisplay({
           ) : (
             <>
               <p className="text-2xl font-bold text-purple-600">
-                {new Date(
-                  pricing["ticket_early_bird_deadline"] || ""
-                ).toLocaleDateString() || "Not set"}
+                {new Date(pricing.earlyBirdDeadline).toLocaleDateString()}
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 Early bird pricing ends on this date
@@ -227,20 +220,15 @@ export function TicketPricingDisplay({
           </div>
           {isEditing ? (
             <div>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={pricing["ticket_max_capacity"] || ""}
-                  onChange={(e) =>
-                    handlePriceChange("ticket_max_capacity", e.target.value)
-                  }
-                  className="w-full px-3 py-2 pl-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  min="1"
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  Seats
-                </span>
-              </div>
+              <input
+                type="number"
+                value={pricing.maxCapacity}
+                onChange={(e) =>
+                  handlePriceChange("maxCapacity", parseInt(e.target.value))
+                }
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+              />
               <p className="text-xs text-gray-500 mt-1">
                 Total available tickets for the event
               </p>
@@ -248,7 +236,7 @@ export function TicketPricingDisplay({
           ) : (
             <>
               <p className="text-2xl font-bold text-purple-600">
-                {pricing["ticket_max_capacity"] || "0"} seats
+                {pricing.maxCapacity} seats
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 Total available tickets for the event
@@ -257,27 +245,6 @@ export function TicketPricingDisplay({
           )}
         </div>
       </div>
-
-      {isEditing && (
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50"
-          >
-            {isLoading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

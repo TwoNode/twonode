@@ -11,15 +11,40 @@ import {
 } from "lucide-react";
 import { getGBCTicketStats } from "../actions/ticket-actions";
 import { getSponsors } from "../actions/sponsor-actions";
+import { getAllGBCSettings } from "../actions/settings-actions";
 
 export default async function HomePage() {
   const statsResult = await getGBCTicketStats();
   const sponsorsResult = await getSponsors();
+  const settingsResult = await getAllGBCSettings();
 
   const stats = statsResult.success ? statsResult.data : null;
   const sponsors = sponsorsResult.success
     ? sponsorsResult.data?.slice(0, 6)
     : [];
+  const settings = settingsResult.success ? settingsResult.data : null;
+
+  // Get settings with fallbacks
+  const eventName =
+    settings?.event.name ?? "Geospatial Builders Conference 2.0";
+  const eventTheme =
+    settings?.event.theme ??
+    "Geospatial Capital: A Catalyst for Inclusive Growth";
+  const eventSubTheme =
+    settings?.event.subTheme ??
+    "Driving Transformation in Land Administration and Energy";
+  const eventDate = settings?.event.date ?? "2025-05-15";
+  const eventVenue = settings?.event.venue ?? "Lagos, Nigeria";
+  const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
+  const regularPrice = settings?.tickets.regularPrice ?? 120000;
+  const companyPrice = settings?.tickets.companyPrice ?? 150000;
+
+  // Format date for display
+  const formattedDate = new Date(eventDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="min-h-screen">
@@ -38,32 +63,26 @@ export default async function HomePage() {
         <div className="relative z-10 container flex flex-col items-center justify-center mx-auto px-4 pb-16 sm:px-6 lg:px-8 text-center text-white">
           <div className="animate-fade-in">
             <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
-              Geospatial Builders
-              <br />
-              Conference 2.0
+              {eventName}
             </h1>
 
             <p className="text-base sm:text-xl md:text-2xl lg:text-3xl mb-3 sm:mb-4 font-semibold px-2">
-              Geospatial Capital: A Catalyst for Inclusive Growth
+              {eventTheme}
             </p>
 
             <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-gray-200 px-2">
-              Driving Transformation in Land Administration and Energy
+              {eventSubTheme}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <div className="flex items-center gap-2 text-lg">
                 <Calendar className="h-5 w-5" />
-                <span>
-                  {process.env.NEXT_PUBLIC_EVENT_DATE || "May 15, 2025"}
-                </span>
+                <span>{formattedDate}</span>
               </div>
               <div className="hidden sm:block text-gray-300">|</div>
               <div className="flex items-center gap-2 text-lg">
                 <MapPin className="h-5 w-5" />
-                <span>
-                  {process.env.NEXT_PUBLIC_EVENT_LOCATION || "Lagos, Nigeria"}
-                </span>
+                <span>{eventVenue}</span>
               </div>
             </div>
 
@@ -292,14 +311,16 @@ export default async function HomePage() {
             <>
               <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
                 <div className="bg-white/10 px-4 py-2 rounded-full text-sm">
-                  <span className="font-medium">Early Bird</span> ₦100K
+                  <span className="font-medium">Early Bird</span> ₦
+                  {(earlyBirdPrice / 1000).toFixed(0)}K
                 </div>
                 <div className="bg-white/10 px-4 py-2 rounded-full text-sm">
-                  <span className="font-medium">Regular</span> ₦120K
+                  <span className="font-medium">Regular</span> ₦
+                  {(regularPrice / 1000).toFixed(0)}K
                 </div>
                 <div className="bg-amber-500/90 px-4 py-2 rounded-full text-sm font-medium">
-                  <span className="font-semibold">Company</span> ₦250K (3
-                  passes)
+                  <span className="font-semibold">Company</span> ₦
+                  {(companyPrice / 1000).toFixed(0)}K (5 passes)
                 </div>
               </div>
 
