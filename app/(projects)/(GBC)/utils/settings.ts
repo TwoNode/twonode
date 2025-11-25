@@ -19,6 +19,17 @@ export type GBCSettingsData = {
     studentPrice: number;
     earlyBirdDeadline: string;
     maxCapacity: number;
+    maxEarlyBirdCapacity: number;
+    maxCompanyCapacity: number;
+    maxStudentCapacity: number;
+    maxVipCapacity: number;
+    maxRegularCapacity: number;
+    earlyBirdInfoList: string[];
+    companyInfoList: string[];
+    vipInfoList: string[];
+    studentInfoList: string[];
+    regularInfoList: string[];
+    pauseTicketReg: boolean;
   };
   notifications: {
     emailTicketConfirmation: boolean;
@@ -55,7 +66,58 @@ export const defaultSettings: GBCSettingsData = {
     vipPrice: 200000,
     studentPrice: 50000,
     earlyBirdDeadline: "2026-02-28",
-    maxCapacity: 150,
+    maxCapacity: 1000,
+    maxEarlyBirdCapacity: 500,
+    maxCompanyCapacity: 500,
+    maxStudentCapacity: 500,
+    maxVipCapacity: 500,
+    maxRegularCapacity: 500,
+    earlyBirdInfoList: [
+      "Full conference access",
+      "All keynote sessions",
+      "Networking opportunities",
+      "Lunch & refreshments",
+      "Conference materials",
+      "Certificate of attendance",
+      "Access to exhibition area",
+    ],
+    companyInfoList: [
+      "Tickets for 5 attendees",
+      "Full conference access",
+      "All keynote sessions",
+      "Premium seating",
+      "Company mention in materials",
+      "Dedicated networking area",
+      "VIP access to all sessions",
+    ],
+    vipInfoList: [
+      "Full conference access",
+      "All keynote sessions",
+      "Networking opportunities",
+      "Lunch & refreshments",
+      "Conference materials",
+      "Certificate of attendance",
+      "Access to exhibition area",
+    ],
+    studentInfoList: [
+      "Full conference access",
+      "All keynote sessions",
+      "Networking opportunities",
+      "Lunch & refreshments",
+      "Conference materials",
+      "Certificate of attendance",
+      "Access to exhibition area",
+    ],
+    regularInfoList: [
+      "Full conference access",
+      "All keynote sessions",
+      "Networking opportunities",
+      "Lunch & refreshments",
+      "Conference materials",
+      "Certificate of attendance",
+      "Access to exhibition area",
+    ],
+    pauseTicketReg: false,
   },
   notifications: {
     emailTicketConfirmation: true,

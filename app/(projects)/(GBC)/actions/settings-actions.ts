@@ -125,15 +125,24 @@ export async function getGBCSetting(path: string): Promise<{
 /**
  * Update the entire settings object
  */
-export async function updateAllGBCSettings(settings: GBCSettingsData): Promise<{
+export async function updateAllGBCSettings(
+  settings: GBCSettingsData,
+  auth?: {
+    success: boolean;
+    user?: any;
+    error?: string;
+  }
+): Promise<{
   success: boolean;
   data?: GBCSettingsData;
   error?: string;
 }> {
   try {
-    const auth = await checkAuthorization();
-    if (!auth.success || !auth.user) {
-      return { success: false, error: auth.error };
+    if (!auth || !auth.success || !auth.user) {
+      const auth = await checkAuthorization();
+      if (!auth.success || !auth.user) {
+        return { success: false, error: auth.error };
+      }
     }
 
     // Get the first settings record or create if doesn't exist
@@ -162,7 +171,7 @@ export async function updateAllGBCSettings(settings: GBCSettingsData): Promise<{
     // Log the action
     await prisma.gBCAuditLog.create({
       data: {
-        userId: auth.user.id,
+        userId: auth?.user?.id,
         action: "UPDATE_ALL_SETTINGS",
         entity: "GBCSettings",
         entityId: updatedSettings.id,
@@ -212,7 +221,7 @@ export async function updateGBCSettingsSection(
       [section]: data,
     };
 
-    return await updateAllGBCSettings(updatedSettings);
+    return await updateAllGBCSettings(updatedSettings, auth);
   } catch (error) {
     console.error("Update settings section error:", error);
     return {
@@ -284,7 +293,7 @@ export async function updateGBCSetting(
     }
     target[lastKey] = value;
 
-    return await updateAllGBCSettings(updatedSettings);
+    return await updateAllGBCSettings(updatedSettings, auth);
   } catch (error) {
     console.error("Update setting error:", error);
     return {
@@ -358,7 +367,7 @@ export async function updateMultipleGBCSettings(
       target[lastKey] = update.value;
     }
 
-    return await updateAllGBCSettings(updatedSettings);
+    return await updateAllGBCSettings(updatedSettings, auth);
   } catch (error) {
     console.error("Update multiple settings error:", error);
     return {
@@ -440,7 +449,7 @@ export async function resetGBCSettingsToDefaults(): Promise<{
       return { success: false, error: auth.error };
     }
 
-    const result = await updateAllGBCSettings(defaultSettings);
+    const result = await updateAllGBCSettings(defaultSettings, auth);
     if (!result.success) {
       return { success: false, error: result.error };
     }

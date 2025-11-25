@@ -21,6 +21,31 @@ export default async function TicketsPage() {
   const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 250000;
+  const maxEarlyBirdCapacity = settings?.tickets.maxEarlyBirdCapacity ?? 500;
+  const pauseTicketReg = settings?.tickets.pauseTicketReg ?? false;
+
+  const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Lunch & refreshments",
+    "Conference materials",
+  ];
+  const regularInfoList = settings?.tickets.regularInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Lunch & refreshments",
+    "Conference materials",
+  ];
+  const companyInfoList = settings?.tickets.companyInfoList ?? [
+    "Tickets for 5 attendees",
+    "Full conference access",
+    "Premium seating",
+    "Company mention",
+    "Dedicated networking",
+  ];
+
   const eventName =
     settings?.event.name ?? "Geospatial Builders Conference 2.0";
   const eventTheme =
@@ -66,7 +91,7 @@ export default async function TicketsPage() {
               Join us at {eventName} - {eventTheme}
             </p>
 
-            {stats && !isSoldOut && (
+            {stats && !isSoldOut && !pauseTicketReg && (
               <div className="inline-block bg-white/20 backdrop-blur-sm px-4 sm:px-6 py-2 sm:py-3 rounded-full">
                 <p className="text-sm sm:text-base md:text-lg">
                   <span className="font-bold text-yellow-300">
@@ -80,7 +105,23 @@ export default async function TicketsPage() {
         </div>
       </section>
 
-      {isSoldOut ? (
+      {pauseTicketReg ? (
+        // Registration Paused Message
+        <section className="py-24">
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="h-12 w-12 text-yellow-600" />
+              </div>
+              <h2 className="text-4xl font-bold mb-4">Registration Paused</h2>
+              <p className="text-xl text-gray-600 mb-8">
+                Ticket registration is currently paused. Please check back later
+                or follow our social media channels for updates.
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : isSoldOut ? (
         // Sold Out Message
         <section className="py-24">
           <div className="container mx-auto px-4">
@@ -109,6 +150,10 @@ export default async function TicketsPage() {
                   earlyBirdPrice={earlyBirdPrice}
                   regularPrice={regularPrice}
                   companyPrice={companyPrice}
+                  maxEarlyBirdCapacity={maxEarlyBirdCapacity}
+                  earlyBirdInfoList={earlyBirdInfoList}
+                  regularInfoList={regularInfoList}
+                  companyInfoList={companyInfoList}
                 />
               </div>
             </div>

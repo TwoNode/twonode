@@ -3,6 +3,7 @@ import { Settings, Ticket, Calendar, Mail, Database } from "lucide-react";
 import { NotificationSettings } from "../../../components/admin/NotificationSettings";
 import { TicketPricingDisplay } from "../../../components/admin/TicketPricingDisplay";
 import { EventConfigForm } from "../../../components/admin/EventConfigForm";
+import { SystemSettings } from "../../../components/admin/SystemSettings";
 import { getAllGBCSettings } from "../../../actions/settings-actions";
 
 export default async function AdminSettingsPage() {
@@ -79,49 +80,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium">Maintenance Mode</h3>
-                <p className="text-sm text-gray-500">
-                  Temporarily disable ticket sales
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  defaultChecked={settings?.system.maintenanceMode ?? false}
-                  // onChange={async (e) => {
-                  //   // In a real implementation, you would call updateGBCSetting here
-                  //   console.log("Maintenance mode:", e.target.checked);
-                  // }}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-              </label>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium">Debug Mode</h3>
-                <p className="text-sm text-gray-500">
-                  Enable detailed logging for troubleshooting
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  defaultChecked={settings?.system.debugMode ?? false}
-                  // onChange={async (e) => {
-                  //   // In a real implementation, you would call updateGBCSetting here
-                  //   console.log("Debug mode:", e.target.checked);
-                  // }}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-              </label>
-            </div>
-          </div>
+          <SystemSettings settings={settings || null} />
         </Card>
 
         {/* API & Integration Settings */}

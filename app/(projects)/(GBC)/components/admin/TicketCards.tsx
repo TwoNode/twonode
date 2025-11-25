@@ -7,12 +7,20 @@ interface TicketCardsProps {
   earlyBirdPrice: number;
   regularPrice: number;
   companyPrice: number;
+  maxEarlyBirdCapacity: number;
+  earlyBirdInfoList: string[];
+  regularInfoList: string[];
+  companyInfoList: string[];
 }
 
 export function TicketCards({
   earlyBirdPrice,
   regularPrice,
   companyPrice,
+  maxEarlyBirdCapacity,
+  earlyBirdInfoList,
+  regularInfoList,
+  companyInfoList,
 }: TicketCardsProps) {
   const router = useRouter();
 
@@ -40,19 +48,13 @@ export function TicketCards({
           <div className="text-3xl sm:text-4xl font-bold text-purple-600 mb-2">
             ₦{(earlyBirdPrice / 1000).toFixed(0)}K
           </div>
-          <p className="text-sm text-gray-600">Limited availability</p>
+          <p className="text-sm text-gray-600">
+            Limited to {maxEarlyBirdCapacity} seats
+          </p>
         </div>
 
         <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-          {[
-            "Full conference access",
-            "All keynote sessions",
-            "Networking opportunities",
-            "Lunch & refreshments",
-            "Conference materials",
-            "Certificate of attendance",
-            "Access to exhibition area",
-          ].map((feature, idx) => (
+          {earlyBirdInfoList.map((feature, idx) => (
             <li key={idx} className="flex items-start gap-1.5 sm:gap-2">
               <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0 mt-0.5" />
               <span className="text-gray-700">{feature}</span>
@@ -75,15 +77,7 @@ export function TicketCards({
         </div>
 
         <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-          {[
-            "Full conference access",
-            "All keynote sessions",
-            "Networking opportunities",
-            "Lunch & refreshments",
-            "Conference materials",
-            "Certificate of attendance",
-            "Access to exhibition area",
-          ].map((feature, idx) => (
+          {regularInfoList.map((feature, idx) => (
             <li key={idx} className="flex items-start gap-1.5 sm:gap-2">
               <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0 mt-0.5" />
               <span className="text-gray-700">{feature}</span>
@@ -110,15 +104,7 @@ export function TicketCards({
         </div>
 
         <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-          {[
-            "Tickets for 5 attendees",
-            "Full conference access",
-            "All keynote sessions",
-            "Premium seating",
-            "Company mention in materials",
-            "Dedicated networking area",
-            "VIP access to all sessions",
-          ].map((feature, idx) => (
+          {companyInfoList.map((feature, idx) => (
             <li key={idx} className="flex items-start gap-1.5 sm:gap-2">
               <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0 mt-0.5" />
               <span className="text-gray-700">{feature}</span>

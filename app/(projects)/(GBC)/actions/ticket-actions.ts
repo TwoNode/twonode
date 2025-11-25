@@ -41,10 +41,16 @@ export async function createGBCTicket(formData: FormData) {
     });
 
     const settingsResult = await getAllGBCSettings();
-    const maxTickets =
-      settingsResult.success && settingsResult.data
-        ? settingsResult.data.tickets.maxCapacity
-        : 150;
+    const settings = settingsResult.success ? settingsResult.data : null;
+
+    if (settings?.tickets.pauseTicketReg) {
+      return {
+        success: false,
+        error: "Ticket registration is currently paused.",
+      };
+    }
+
+    const maxTickets = settings ? settings.tickets.maxCapacity : 150;
 
     if (soldTickets >= maxTickets) {
       return {
@@ -137,10 +143,16 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
     });
 
     const settingsResult = await getAllGBCSettings();
-    const maxTickets =
-      settingsResult.success && settingsResult.data
-        ? settingsResult.data.tickets.maxCapacity
-        : 150;
+    const settings = settingsResult.success ? settingsResult.data : null;
+
+    if (settings?.tickets.pauseTicketReg) {
+      return {
+        success: false,
+        error: "Ticket registration is currently paused.",
+      };
+    }
+
+    const maxTickets = settings ? settings.tickets.maxCapacity : 150;
 
     if (soldTickets + 5 > maxTickets) {
       return {

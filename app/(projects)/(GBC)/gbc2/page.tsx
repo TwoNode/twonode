@@ -39,6 +39,28 @@ export default async function HomePage() {
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 150000;
 
+  const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Lunch & refreshments",
+    "Conference materials",
+  ];
+  const regularInfoList = settings?.tickets.regularInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Lunch & refreshments",
+    "Conference materials",
+  ];
+  const companyInfoList = settings?.tickets.companyInfoList ?? [
+    "Tickets for 5 attendees",
+    "Full conference access",
+    "Premium seating",
+    "Company mention",
+    "Dedicated networking",
+  ];
+
   // Format date for display
   const formattedDate = new Date(eventDate).toLocaleDateString("en-US", {
     year: "numeric",
@@ -309,31 +331,92 @@ export default async function HomePage() {
 
           {stats && stats.availableTickets > 0 ? (
             <>
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
-                <div className="bg-white/10 px-4 py-2 rounded-full text-sm">
-                  <span className="font-medium">Early Bird</span> ₦
-                  {(earlyBirdPrice / 1000).toFixed(0)}K
+              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
+                {/* Early Bird Card */}
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">Early Bird</h3>
+                    <div className="text-3xl font-bold text-yellow-300 mt-2">
+                      ₦{(earlyBirdPrice / 1000).toFixed(0)}K
+                    </div>
+                    <p className="text-sm text-gray-300 mt-1">
+                      Limited to {settings?.tickets.maxEarlyBirdCapacity ?? 500}{" "}
+                      seats
+                    </p>
+                  </div>
+                  <ul className="space-y-2 mb-6 grow">
+                    {earlyBirdInfoList.map((item: string, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-200"
+                      >
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="bg-white/10 px-4 py-2 rounded-full text-sm">
-                  <span className="font-medium">Regular</span> ₦
-                  {(regularPrice / 1000).toFixed(0)}K
+
+                {/* Regular Card */}
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col">
+                  <div className="absolute top-0 right-0 bg-purple-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    POPULAR
+                  </div>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">Regular</h3>
+                    <div className="text-3xl font-bold text-white mt-2">
+                      ₦{(regularPrice / 1000).toFixed(0)}K
+                    </div>
+                    <p className="text-sm text-gray-300 mt-1">
+                      Standard access
+                    </p>
+                  </div>
+                  <ul className="space-y-2 mb-6 grow">
+                    {regularInfoList.map((item: string, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-200"
+                      >
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="bg-amber-500/90 px-4 py-2 rounded-full text-sm font-medium">
-                  <span className="font-semibold">Company</span> ₦
-                  {(companyPrice / 1000).toFixed(0)}K (5 passes)
+
+                {/* Company Card */}
+                <div className="bg-linear-to-br from-amber-500/20 to-purple-600/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">Company</h3>
+                    <div className="text-3xl font-bold text-amber-300 mt-2">
+                      ₦{(companyPrice / 1000).toFixed(0)}K
+                    </div>
+                    <p className="text-sm text-gray-300 mt-1">Group of 5</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 grow">
+                    {companyInfoList.map((item: string, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-200"
+                      >
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
               <Link href="/gbc2/tickets">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100"
+                  className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
                 >
                   Get Your Ticket Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <p className="mt-4 text-yellow-300">
+              <p className="mt-4 text-yellow-300 font-medium animate-pulse">
                 Only {stats.availableTickets} tickets left!
               </p>
             </>
