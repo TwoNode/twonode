@@ -23,7 +23,7 @@ export default function AdminLayout({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
           {/* Sidebar */}
@@ -34,7 +34,7 @@ export default function AdminLayout({
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main className="flex flex-1 flex-col overflow-y-auto">
         {/* Mobile Header */}
         <AdminMobileNav onMenuClick={() => setSidebarOpen(true)} />
 

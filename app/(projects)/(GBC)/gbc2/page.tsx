@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Building2,
   Zap,
+  AlertCircle,
 } from "lucide-react";
 import { getGBCTicketStats } from "../actions/ticket-actions";
 import { getSponsors } from "../actions/sponsor-actions";
@@ -38,6 +39,7 @@ export default async function HomePage() {
   const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 150000;
+  const importantNotices = settings?.event.importantNotices ?? [];
 
   const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
     "Full conference access",
@@ -277,6 +279,54 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Important Notices */}
+      {/* Important Notices */}
+      {importantNotices.length > 0 && (
+        <section className="py-8 sm:py-12 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="relative overflow-hidden rounded-2xl bg-amber-50 border border-amber-100 shadow-lg">
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-amber-400 to-orange-500" />
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-start gap-4 sm:gap-6">
+                    <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
+                      <AlertCircle className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="sm:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
+                          <AlertCircle className="h-4 w-4" />
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                          Important Updates
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {importantNotices.map(
+                          (notice: string, index: number) => (
+                            <div
+                              key={index}
+                              className="flex gap-3 text-gray-700"
+                            >
+                              <span className="text-amber-500 font-bold mt-0.5">
+                                •
+                              </span>
+                              <p className="text-base sm:text-lg leading-relaxed">
+                                {notice}
+                              </p>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Sponsors Section */}
       {sponsors && sponsors.length > 0 && (

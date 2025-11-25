@@ -3,7 +3,16 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Save, Calendar, MapPin, Tag, Edit } from "lucide-react";
+import {
+  Save,
+  Calendar,
+  MapPin,
+  Tag,
+  Edit,
+  Plus,
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
 import { z } from "zod";
 import { updateGBCSettingsSection } from "../../actions/settings-actions";
 import { GBCSettingsData } from "../../utils/settings";
@@ -19,6 +28,7 @@ const eventFormSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   registrationOpens: z.string().min(1, "Registration open date is required"),
   registrationCloses: z.string().min(1, "Registration close date is required"),
+  importantNotices: z.array(z.string()).optional(),
 });
 
 type EventFormData = z.infer<typeof eventFormSchema>;
@@ -49,6 +59,7 @@ export function EventConfigForm({ settings }: Props) {
       "The premier platform for geospatial innovation in Nigeria",
     registrationOpens: settings?.event.registrationOpens ?? "2025-01-01",
     registrationCloses: settings?.event.registrationCloses ?? "2025-03-10",
+    importantNotices: settings?.event.importantNotices ?? [],
   });
 
   const handleChange = (
@@ -118,6 +129,31 @@ export function EventConfigForm({ settings }: Props) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const addNotice = () => {
+    setFormData((prev) => ({
+      ...prev,
+      importantNotices: [...(prev.importantNotices || []), ""],
+    }));
+  };
+
+  const removeNotice = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      importantNotices: (prev.importantNotices || []).filter(
+        (_, i) => i !== index
+      ),
+    }));
+  };
+
+  const updateNotice = (index: number, value: string) => {
+    const newNotices = [...(formData.importantNotices || [])];
+    newNotices[index] = value;
+    setFormData((prev) => ({
+      ...prev,
+      importantNotices: newNotices,
+    }));
   };
 
   // Format date for display
@@ -197,6 +233,26 @@ export function EventConfigForm({ settings }: Props) {
             </div>
           </div>
         </div>
+
+        {formData.importantNotices && formData.importantNotices.length > 0 && (
+          <div className="pt-2">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-yellow-100 text-yellow-600">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900 mb-2">
+                  Important Notices
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  {formData.importantNotices.map((notice, index) => (
+                    <li key={index}>{notice}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="pt-4">
           <button
@@ -393,6 +449,40 @@ export function EventConfigForm({ settings }: Props) {
           {errors.registrationCloses && (
             <p className="text-sm text-red-600">{errors.registrationCloses}</p>
           )}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          Important Notices
+        </label>
+        <div className="space-y-3">
+          {formData.importantNotices?.map((notice, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={notice}
+                onChange={(e) => updateNotice(index, e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Enter important notice..."
+              />
+              <button
+                type="button"
+                onClick={() => removeNotice(index)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addNotice}
+            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+          >
+            <Plus className="h-4 w-4" />
+            Add Notice
+          </button>
         </div>
       </div>
 

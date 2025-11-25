@@ -10,6 +10,7 @@ export type GBCSettingsData = {
     description: string;
     registrationOpens: string;
     registrationCloses: string;
+    importantNotices: string[];
   };
   tickets: {
     earlyBirdPrice: number;
@@ -58,6 +59,11 @@ export const defaultSettings: GBCSettingsData = {
     description: "The premier platform for geospatial innovation in Nigeria",
     registrationOpens: "2026-01-01",
     registrationCloses: "2026-03-10",
+    importantNotices: [
+      "Registration has a deadline",
+      "Tickets are limited",
+      "Early bird tickets are still available",
+    ],
   },
   tickets: {
     earlyBirdPrice: 100000,
