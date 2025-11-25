@@ -12,71 +12,72 @@
 
 /* Import Bricolage Grotesque font */
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-ExtraLight.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-ExtraLight.ttf") format("truetype");
   font-weight: 200;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Light.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Regular.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Medium.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-SemiBold.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-SemiBold.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-Bold.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/BricolageGrotesque-ExtraBold.ttf') format('truetype');
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  --font-bricolage: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
-  
+  --font-bricolage: "Bricolage Grotesque", system-ui, -apple-system, sans-serif;
+
   font-size: 15px;
   font-optical-sizing: auto;
   font-weight: 500;
   font-style: normal;
   font-family: var(--font-bricolage);
-  
-  --shadow: 0px 33.50785446166992px 67.01570892333984px 0px rgba(162, 169, 192, 0.15);
+
+  --shadow: 0px 33.50785446166992px 67.01570892333984px 0px
+    rgba(162, 169, 192, 0.15);
   box-sizing: border-box;
 }
 
@@ -193,4 +194,32 @@ body::-webkit-scrollbar-thumb:hover {
   animation: none;
   text-shadow: 0 0 12px #1e3a8a, 0 0 24px #0ea5e9, 0 0 36px #fde68a;
   color: #0ea5e9;
+}
+
+/* Blob animations for contact page */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
