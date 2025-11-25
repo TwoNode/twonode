@@ -28,7 +28,7 @@ export function TicketCards({
     const formElement = document.getElementById("registration-form");
     if (formElement) {
       formElement.scrollIntoView({ behavior: "smooth", block: "start" });
-      router.push(`/gbc2/tickets?tier=${tier}`, { scroll: false });
+      router.push(`/gbc/tickets?tier=${tier}`, { scroll: false });
     }
   };
 

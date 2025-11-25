@@ -6,15 +6,15 @@ import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const routeTitles: Record<string, string> = {
-  "/gbc2/restricted": "Dashboard",
-  "/gbc2/restricted/tickets": "Tickets Management",
-  "/gbc2/restricted/check-in": "Check-In",
-  "/gbc2/restricted/attendees": "Attendees",
-  "/gbc2/restricted/sponsors": "Sponsors",
-  "/gbc2/restricted/gallery": "Gallery",
-  "/gbc2/restricted/inquiries": "Inquiries",
-  "/gbc2/restricted/users": "Users",
-  "/gbc2/restricted/settings": "Settings",
+  "/gbc/restricted": "Dashboard",
+  "/gbc/restricted/tickets": "Tickets Management",
+  "/gbc/restricted/check-in": "Check-In",
+  "/gbc/restricted/attendees": "Attendees",
+  "/gbc/restricted/sponsors": "Sponsors",
+  "/gbc/restricted/gallery": "Gallery",
+  "/gbc/restricted/inquiries": "Inquiries",
+  "/gbc/restricted/users": "Users",
+  "/gbc/restricted/settings": "Settings",
 };
 
 export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {

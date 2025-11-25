@@ -32,7 +32,7 @@ export async function RecentTickets() {
         </div>
       ))}
       <a
-        href="/gbc2/restricted/tickets"
+        href="/gbc/restricted/tickets"
         className="block text-center text-sm text-purple-600 hover:text-purple-700 font-medium"
       >
         View all tickets →

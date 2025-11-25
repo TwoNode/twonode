@@ -36,13 +36,13 @@ export default function GBCErrorLogin() {
         </ul>
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <Button asChild variant="outline" className="flex-1">
-            <Link href="/gbc2/login">
+            <Link href="/gbc/login">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Login
             </Link>
           </Button>
           <Button asChild className="flex-1 bg-purple-600 hover:bg-purple-700">
-            <Link href="/gbc2">Go to Home</Link>
+            <Link href="/gbc">Go to Home</Link>
           </Button>
         </div>
         <p className="text-xs text-gray-500 mt-6">

@@ -202,7 +202,7 @@ export function GBCTicketPurchaseForm() {
               );
             }
             toast.success("Payment verified successfully!");
-            router.push(`/gbc2/tickets/success?reference=${reference}`);
+            router.push(`/gbc/tickets/success?reference=${reference}`);
           } catch (error) {
             console.error("Verification error:", error);
             const errorMessage =

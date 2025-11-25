@@ -49,7 +49,7 @@ export default async function ContactPage() {
         {/* Back to Home Link */}
         <div className="absolute top-6 left-6 z-10">
           <Link
-            href="/gbc2"
+            href="/gbc"
             className="flex items-center text-white/80 hover:text-white transition-colors group"
           >
             <svg
@@ -373,7 +373,7 @@ export default async function ContactPage() {
                 <p className="mt-4 text-gray-600">
                   Visit our{" "}
                   <Link
-                    href="/gbc2/tickets"
+                    href="/gbc/tickets"
                     className="text-purple-600 hover:underline font-semibold"
                   >
                     tickets page

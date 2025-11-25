@@ -99,7 +99,7 @@ export async function updateGBCInquiryStatus(id: string, status: string) {
       data: { status: status as any },
     });
 
-    revalidatePath("/gbc2/restricted/inquiries");
+    revalidatePath("/gbc/restricted/inquiries");
 
     return { success: true, data: inquiry };
   } catch (error) {
@@ -119,7 +119,7 @@ export async function deleteGBCInquiry(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc2/restricted/inquiries");
+    revalidatePath("/gbc/restricted/inquiries");
 
     return { success: true, message: "Inquiry deleted successfully" };
   } catch (error) {
@@ -163,7 +163,7 @@ export async function updateGBCUserRole(
       data: { role },
     });
 
-    revalidatePath("/gbc2/restricted/users");
+    revalidatePath("/gbc/restricted/users");
 
     return {
       success: true,

@@ -72,7 +72,7 @@ export async function updateGBCUserRole(id: string, role: GBCRoleType) {
       },
     });
 
-    revalidatePath("/gbc2/restricted/users");
+    revalidatePath("/gbc/restricted/users");
 
     return { success: true, data: updatedUser };
   } catch (error) {
@@ -99,7 +99,7 @@ export async function deleteGBCUser(id: string) {
       },
     });
 
-    revalidatePath("/gbc2/restricted/users");
+    revalidatePath("/gbc/restricted/users");
 
     return { success: true };
   } catch (error) {

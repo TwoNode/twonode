@@ -68,10 +68,10 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/gbc2/restricted";
+    const fallbackUrl = "/gbc/restricted";
 
     const redirectUrl = (() => {
-      if (postLoginRaw && postLoginRaw.startsWith("/gbc2/restricted")) {
+      if (postLoginRaw && postLoginRaw.startsWith("/gbc/restricted")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
       }
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
-    console.error("Error in GET /auth/success/gbc2-restricted:", error);
-    return NextResponse.redirect(addBaseUrl("/gbc2/error-login"));
+    console.error("Error in GET /auth/success/gbc-restricted:", error);
+    return NextResponse.redirect(addBaseUrl("/gbc/error-login"));
   }
 }

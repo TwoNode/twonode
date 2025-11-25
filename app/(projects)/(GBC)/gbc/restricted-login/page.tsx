@@ -28,7 +28,7 @@ export default function GBCAdminLogin() {
             </p>
           </div>
         </div>
-        <LoginLink postLoginRedirectURL="/api/auth/success/gbc2-restricted">
+        <LoginLink postLoginRedirectURL="/api/auth/success/gbc-restricted">
           <Button className="w-full px-6 py-3 bg-purple-800 text-white rounded-lg font-semibold hover:bg-purple-900 transition mb-4 text-lg shadow">
             Sign in as Admin
           </Button>

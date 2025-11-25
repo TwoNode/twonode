@@ -181,7 +181,7 @@ export async function updateAllGBCSettings(
       },
     });
 
-    revalidatePath("/gbc2/restricted/settings");
+    revalidatePath("/gbc/restricted/settings");
 
     return {
       success: true,
@@ -426,7 +426,7 @@ export async function initializeDefaultSettings(): Promise<{
       },
     });
 
-    revalidatePath("/gbc2/restricted/settings");
+    revalidatePath("/gbc/restricted/settings");
 
     return {
       success: true,
@@ -601,7 +601,7 @@ export async function rollbackGBCSettings(): Promise<{
       },
     });
 
-    revalidatePath("/gbc2/restricted/settings");
+    revalidatePath("/gbc/restricted/settings");
 
     return {
       success: true,

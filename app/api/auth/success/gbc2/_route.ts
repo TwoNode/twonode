@@ -58,10 +58,10 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/gbc2";
+    const fallbackUrl = "/gbc";
 
     const redirectUrl = (() => {
-      if (postLoginRaw && postLoginRaw.startsWith("/gbc2")) {
+      if (postLoginRaw && postLoginRaw.startsWith("/gbc")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
       }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
-    console.error("Error in GET /auth/success/gbc2:", error);
-    return NextResponse.redirect(addBaseUrl("/gbc2/error-login"));
+    console.error("Error in GET /auth/success/gbc:", error);
+    return NextResponse.redirect(addBaseUrl("/gbc/error-login"));
   }
 }

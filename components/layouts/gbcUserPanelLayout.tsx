@@ -62,7 +62,7 @@ export default function GBCUserPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const dashboardUrl = "/gbc2";
+  const dashboardUrl = "/gbc";
   const { user, isUser, isLoading } = useGBCUserAccess();
 
   const menuList = [

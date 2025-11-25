@@ -76,8 +76,8 @@ export async function createGBCGalleryItem(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc2/restricted/gallery");
-    revalidatePath("/gbc2/gallery");
+    revalidatePath("/gbc/restricted/gallery");
+    revalidatePath("/gbc/gallery");
 
     return { success: true, data: item };
   } catch (error) {
@@ -118,8 +118,8 @@ export async function updateGBCGalleryItem(id: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc2/restricted/gallery");
-    revalidatePath("/gbc2/gallery");
+    revalidatePath("/gbc/restricted/gallery");
+    revalidatePath("/gbc/gallery");
 
     return { success: true, data: item };
   } catch (error) {
@@ -165,8 +165,8 @@ export async function deleteGBCGalleryItem(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc2/restricted/gallery");
-    revalidatePath("/gbc2/gallery");
+    revalidatePath("/gbc/restricted/gallery");
+    revalidatePath("/gbc/gallery");
 
     return { success: true, message: "Gallery item deleted successfully" };
   } catch (error) {

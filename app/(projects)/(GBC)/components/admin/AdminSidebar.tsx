@@ -19,19 +19,19 @@ import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
-  { name: "Dashboard", href: "/gbc2/restricted", icon: LayoutDashboard },
-  { name: "Tickets", href: "/gbc2/restricted/tickets", icon: Ticket },
-  { name: "Check-In", href: "/gbc2/restricted/check-in", icon: QrCode },
-  { name: "Sponsors", href: "/gbc2/restricted/sponsors", icon: Building2 },
-  { name: "Speakers", href: "/gbc2/restricted/speakers", icon: Mic },
-  { name: "Gallery", href: "/gbc2/restricted/gallery", icon: Images },
+  { name: "Dashboard", href: "/gbc/restricted", icon: LayoutDashboard },
+  { name: "Tickets", href: "/gbc/restricted/tickets", icon: Ticket },
+  { name: "Check-In", href: "/gbc/restricted/check-in", icon: QrCode },
+  { name: "Sponsors", href: "/gbc/restricted/sponsors", icon: Building2 },
+  { name: "Speakers", href: "/gbc/restricted/speakers", icon: Mic },
+  { name: "Gallery", href: "/gbc/restricted/gallery", icon: Images },
   {
     name: "Inquiries",
-    href: "/gbc2/restricted/inquiries",
+    href: "/gbc/restricted/inquiries",
     icon: MessageSquare,
   },
-  { name: "Users", href: "/gbc2/restricted/users", icon: Users },
-  { name: "Settings", href: "/gbc2/restricted/settings", icon: Settings },
+  { name: "Users", href: "/gbc/restricted/users", icon: Users },
+  { name: "Settings", href: "/gbc/restricted/settings", icon: Settings },
 ];
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {
@@ -82,7 +82,11 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
             "text-gray-700 hover:bg-gray-100"
           )}
         >
-          <Button variant="outline" size="sm" className="w-full px-3 py-2.5 sm:py-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full px-3 py-2.5 sm:py-2"
+          >
             Sign Out
           </Button>
         </LogoutLink>

@@ -21,7 +21,7 @@ export default async function TicketSuccessPage({
   const reference = (await searchParams)?.reference;
 
   if (!reference) {
-    redirect("/gbc2/tickets");
+    redirect("/gbc/tickets");
   }
 
   // Verify the payment
@@ -42,7 +42,7 @@ export default async function TicketSuccessPage({
               "Unable to verify your payment. Please try again or contact support if the issue persists."}
           </p>
           <div className="mt-6">
-            <Link href="/gbc2/tickets">
+            <Link href="/gbc/tickets">
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Tickets
@@ -223,13 +223,13 @@ export default async function TicketSuccessPage({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/gbc2" className="flex-1">
+              <Link href="/gbc" className="flex-1">
                 <Button variant="outline" className="w-full" size="lg">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Home
                 </Button>
               </Link>
-              <Link href="/gbc2/contact" className="flex-1">
+              <Link href="/gbc/contact" className="flex-1">
                 <Button
                   className="w-full bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                   size="lg"

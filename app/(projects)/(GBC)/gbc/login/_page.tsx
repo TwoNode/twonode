@@ -23,7 +23,7 @@ export default function GBCUserLogin() {
         <p className="text-gray-600 mb-6 text-sm">
           Sign in to access your tickets, gallery, and event information
         </p>
-        <LoginLink postLoginRedirectURL="/api/auth/success/gbc2">
+        <LoginLink postLoginRedirectURL="/api/auth/success/gbc">
           <Button className="w-full px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition mb-4 text-lg shadow-lg">
             Sign in to GBC
           </Button>

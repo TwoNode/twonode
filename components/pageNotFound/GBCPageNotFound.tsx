@@ -5,7 +5,7 @@ import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export const GBCPageNotFound = ({
-  url = "/gbc2",
+  url = "/gbc",
   urlText = "GBC Dashboard",
 }: {
   url?: string;

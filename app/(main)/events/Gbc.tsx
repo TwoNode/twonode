@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Accordion,
@@ -17,7 +17,7 @@ import {
   BuyTicketSvg,
   StandardTicketSvg,
   LocationSvg,
-} from "@/app/(main)/gbc/svgs";
+} from "@/app/(main)/events/svgs";
 import { DesktopScreen } from "@/utils/responsiveness";
 
 export const Gbc = () => {

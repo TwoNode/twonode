@@ -155,7 +155,7 @@ export async function initializeTicketPayment(
   metadata?: Record<string, any>
 ) {
   const reference = generatePaymentReference(ticketNumber);
-  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/gbc2/tickets/success?reference=${reference}`;
+  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/gbc/tickets/success?reference=${reference}`;
 
   return initializePayment({
     email,

@@ -46,7 +46,7 @@ export function useGBCUserAccess() {
         if (isMounted) {
           setIsUser(false);
           setIsLoading(false);
-          router.push("/gbc2/login");
+          router.push("/gbc/login");
         }
         return;
       }
@@ -62,7 +62,7 @@ export function useGBCUserAccess() {
         if (fetchedUserData.platform !== "gbc") {
           if (isMounted) {
             setIsUser(false);
-            router.push("/gbc2/login");
+            router.push("/gbc/login");
           }
           return;
         }
@@ -73,13 +73,13 @@ export function useGBCUserAccess() {
         }
 
         if (!canAccess) {
-          router.push("/gbc2");
+          router.push("/gbc");
         }
       } catch (error) {
         console.error("Error checking GBC user access:", error);
         if (isMounted) {
           setIsUser(false);
-          router.push("/gbc2/login");
+          router.push("/gbc/login");
         }
       } finally {
         if (isMounted) {

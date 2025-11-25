@@ -96,7 +96,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bricolage.variable}`}>
+    <html
+      lang="en"
+      className={`${bricolage.variable}`}
+      suppressHydrationWarning
+    >
       <body className={`${bricolage.variable} ${bricolage.className}`}>
         <>
           <KindeAuthProvider>

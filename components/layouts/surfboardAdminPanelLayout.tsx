@@ -57,7 +57,7 @@ export default function SurfboardAdminPanelLayout({
   userData?: { role?: string; name?: string };
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const dashboardUrl = "/surfboard/dashboard";
+  const dashboardUrl = "/surf-restricted/dashboard";
 
   // TODO: Replace with actual surfboard admin role check
   const isAdmin = true;
@@ -67,24 +67,29 @@ export default function SurfboardAdminPanelLayout({
     { icon: Home, label: "Home", url: dashboardUrl },
     {
       icon: ListChecks,
-      label: "All Plans",
-      url: `${dashboardUrl}/plans`,
-    },
-    {
-      icon: ListChecks,
-      label: "Review",
-      url: `${dashboardUrl}/review`,
-    },
-    {
-      icon: CreditCard,
-      label: "Payment Verification",
-      url: `${dashboardUrl}/payment-verification`,
+      label: "Surf Plans",
+      url: `${dashboardUrl}/surf-plans`,
     },
     {
       icon: Map,
-      label: "Spatial Record",
-      url: `${dashboardUrl}/spatial-record`,
+      label: "Map Viewer",
+      url: `${dashboardUrl}/map`,
     },
+    {
+      icon: ListChecks,
+      label: "User Management",
+      url: `${dashboardUrl}/user-management`,
+    },
+    // {
+    //   icon: ListChecks,
+    //   label: "Secure Plans",
+    //   url: `${dashboardUrl}/secure-plans`,
+    // },
+    // {
+    //   icon: Settings,
+    //   label: "Admin Tools",
+    //   url: `${dashboardUrl}/admin-tools`,
+    // },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
     ...(userData?.role === "SUPERADMIN"
       ? [
@@ -95,8 +100,8 @@ export default function SurfboardAdminPanelLayout({
           },
           {
             icon: Bell,
-            label: "Notifications",
-            url: `${dashboardUrl}/notifications`,
+            label: "Analytics",
+            url: `${dashboardUrl}/analytics`,
           },
         ]
       : []),

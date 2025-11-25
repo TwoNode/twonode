@@ -48,8 +48,8 @@ export async function createGBCPartner(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc2/restricted/partners");
-    revalidatePath("/gbc2/sponsors");
+    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc/sponsors");
 
     return { success: true, data: partner };
   } catch (error) {
@@ -69,8 +69,8 @@ export async function deleteGBCPartner(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc2/restricted/partners");
-    revalidatePath("/gbc2/sponsors");
+    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc/sponsors");
 
     return { success: true, message: "Partner deleted successfully" };
   } catch (error) {

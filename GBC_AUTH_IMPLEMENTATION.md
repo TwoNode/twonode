@@ -26,8 +26,8 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 - **`/gbc-colors.ts`**: Purple/violet themed color palette for GBC branding
 
 ### 5. API Routes
-- **`/app/api/auth/success/gbc2/route.ts`**: User login success handler
-- **`/app/api/auth/success/gbc2-restricted/route.ts`**: Admin login success handler
+- **`/app/api/auth/success/gbc/route.ts`**: User login success handler
+- **`/app/api/auth/success/gbc-restricted/route.ts`**: Admin login success handler
 
 ## Files Modified
 
@@ -46,8 +46,8 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 
 ### 4. Proxy Middleware
 - **`/proxy.ts`**: Added GBC routes to protected routes and authentication flow
-  - Routes: `/gbc2/restricted/*`
-  - Login pages: `/gbc2/login`, `/gbc2/restricted/login`
+  - Routes: `/gbc/restricted/*`
+  - Login pages: `/gbc/login`, `/gbc/restricted/login`
   - Platform checks and role-based access control
 
 ### 5. Authentication Flow Routes
@@ -61,28 +61,28 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 ## Route Structure
 
 ### User Routes (Public)
-- `/gbc2` - Main landing page
-- `/gbc2/login` - User login page
-- `/gbc2/tickets` - View tickets
-- `/gbc2/gallery` - Event gallery
-- `/gbc2/sponsors` - Sponsors page
-- `/gbc2/contact` - Contact page
-- `/gbc2/settings` - User settings
+- `/gbc` - Main landing page
+- `/gbc/login` - User login page
+- `/gbc/tickets` - View tickets
+- `/gbc/gallery` - Event gallery
+- `/gbc/sponsors` - Sponsors page
+- `/gbc/contact` - Contact page
+- `/gbc/settings` - User settings
 
 ### Admin Routes (Protected)
-- `/gbc2/restricted` - Admin dashboard
-- `/gbc2/restricted/login` - Admin login
-- `/gbc2/restricted/tickets` - Manage tickets
-- `/gbc2/restricted/check-in` - Check-in attendees
-- `/gbc2/restricted/qr-code` - QR code management
-- `/gbc2/restricted/attendees` - Attendee management
-- `/gbc2/restricted/settings` - Admin settings
-- `/gbc2/restricted/superadmin` - Superadmin panel (SUPERADMIN only)
+- `/gbc/restricted` - Admin dashboard
+- `/gbc/restricted/login` - Admin login
+- `/gbc/restricted/tickets` - Manage tickets
+- `/gbc/restricted/check-in` - Check-in attendees
+- `/gbc/restricted/qr-code` - QR code management
+- `/gbc/restricted/attendees` - Attendee management
+- `/gbc/restricted/settings` - Admin settings
+- `/gbc/restricted/superadmin` - Superadmin panel (SUPERADMIN only)
 
 ## Authentication Flow
 
 1. **Login**: User clicks login → Redirected to Kinde
-2. **Callback**: Kinde redirects to `/api/auth/success/gbc2` or `/api/auth/success/gbc2-restricted`
+2. **Callback**: Kinde redirects to `/api/auth/success/gbc` or `/api/auth/success/gbc-restricted`
 3. **User Creation/Update**: User record created/updated in database
 4. **Session Creation**: Encrypted cookie set with user data (platform, role, userId, etc.)
 5. **Redirect**: User redirected to appropriate dashboard based on role
@@ -96,13 +96,13 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 
 ### ADMIN
 - All USER permissions
-- Access to admin panel (`/gbc2/restricted`)
+- Access to admin panel (`/gbc/restricted`)
 - Manage tickets, check-in, QR codes
 - View attendee list
 
 ### SUPERADMIN
 - All ADMIN permissions
-- Access to superadmin panel  (`/gbc2/restricted/superadmin`)
+- Access to superadmin panel  (`/gbc/restricted/superadmin`)
 - Full system control
 
 ## Database Schema
@@ -130,12 +130,12 @@ The GBC platform uses a purple/violet color palette:
 To complete the implementation:
 
 1. **Create Login Pages**:
-   - `/app/(projects)/(GBC)/gbc2/login/page.tsx`
-   - `/app/(projects)/(GBC)/gbc2/restricted/login/page.tsx`
+   - `/app/(projects)/(GBC)/gbc/login/page.tsx`
+   - `/app/(projects)/(GBC)/gbc/restricted/login/page.tsx`
 
 2. **Create Dashboard Pages**:
-   - User dashboard at `/app/(projects)/(GBC)/gbc2/page.tsx`
-   - Admin dashboard at `/app/(projects)/(GBC)/gbc2/restricted/page.tsx`
+   - User dashboard at `/app/(projects)/(GBC)/gbc/page.tsx`
+   - Admin dashboard at `/app/(projects)/(GBC)/gbc/restricted/page.tsx`
 
 3. **Configure Kinde**:
    - Add GBC callback URLs in Kinde dashboard

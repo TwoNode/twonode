@@ -14,6 +14,13 @@ import { getGBCTicketStats } from "../actions/ticket-actions";
 import { getSponsors } from "../actions/sponsor-actions";
 import { getAllGBCSettings } from "../actions/settings-actions";
 
+// Import new components
+import Navbar from "@/components/Navbar";
+import HomeSpeakers from "@/app/(projects)/(GBC)/components/HomeSpeakers";
+import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
+import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
+// import HomeGallery from "@/components/HomeGallery";
+
 export default async function HomePage() {
   const statsResult = await getGBCTicketStats();
   const sponsorsResult = await getSponsors();
@@ -72,6 +79,9 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Hero Section */}
       <section className="relative min-h-[60vh] sm:min-h-[70vh] pt-6 flex items-center justify-center overflow-hidden bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600">
         <div className="absolute inset-0 bg-black/20" />
@@ -79,7 +89,7 @@ export default async function HomePage() {
         <div
           className="absolute inset-0 bg-cover bg-center opacity-50"
           style={{
-            backgroundImage: "url('/gbc2/gbc2Bg.webp')",
+            backgroundImage: "url('/gbc/gbcBg.webp')",
             mixBlendMode: "overlay",
           }}
         />
@@ -111,7 +121,7 @@ export default async function HomePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/gbc2/tickets">
+              <Link href="/gbc/tickets">
                 <Button
                   size="lg"
                   className="text-lg px-8 py-4 bg-white text-purple-600 hover:bg-gray-100 btn-glow"
@@ -120,7 +130,7 @@ export default async function HomePage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/gbc2/about">
+              <Link href="/gbc/about">
                 <Button
                   size="lg"
                   variant="outline"
@@ -281,7 +291,6 @@ export default async function HomePage() {
       </section>
 
       {/* Important Notices */}
-      {/* Important Notices */}
       {importantNotices.length > 0 && (
         <section className="py-8 sm:py-12 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -328,45 +337,14 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Speakers Section */}
+      <HomeSpeakers />
+
       {/* Sponsors Section */}
-      {sponsors && sponsors.length > 0 && (
-        <section className="py-16 sm:py-20 md:py-24 bg-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
-                Our Sponsors & Partners
-              </h2>
-              <p className="text-base sm:text-lg md:text-xl text-gray-600 px-2">
-                Thank you to our amazing sponsors who make GBC possible
-              </p>
-            </div>
+      <HomeSponsors />
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 md:gap-8 items-center max-w-6xl mx-auto">
-              {sponsors.map((sponsor: any) => (
-                <div
-                  key={sponsor.id}
-                  className="flex items-center justify-center p-6 bg-gray-50 rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  <img
-                    src={sponsor.logo}
-                    alt={sponsor.name}
-                    className="max-h-16 w-auto object-contain"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <Link href="/gbc2/sponsors">
-                <Button variant="outline" size="lg">
-                  View All Sponsors
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Gallery Section */}
+      <HomeGallery />
 
       {/* CTA Section */}
       <section className="py-16 sm:py-20 md:py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
@@ -457,7 +435,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <Link href="/gbc2/tickets">
+              <Link href="/gbc/tickets">
                 <Button
                   size="lg"
                   className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
@@ -493,22 +471,22 @@ export default async function HomePage() {
               <h4 className="font-bold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/gbc2/about" className="hover:text-white">
+                  <Link href="/gbc/about" className="hover:text-white">
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link href="/gbc2/tickets" className="hover:text-white">
+                  <Link href="/gbc/tickets" className="hover:text-white">
                     Tickets
                   </Link>
                 </li>
                 <li>
-                  <Link href="/gbc2/sponsors" className="hover:text-white">
+                  <Link href="/gbc/sponsors" className="hover:text-white">
                     Sponsors
                   </Link>
                 </li>
                 <li>
-                  <Link href="/gbc2/gallery" className="hover:text-white">
+                  <Link href="/gbc/gallery" className="hover:text-white">
                     Gallery
                   </Link>
                 </li>
@@ -521,7 +499,7 @@ export default async function HomePage() {
                 <li>+234-916-0002-740</li>
                 <li>info@twonodetechnologies.com</li>
                 <li>
-                  <Link href="/gbc2/contact" className="hover:text-white">
+                  <Link href="/gbc/contact" className="hover:text-white">
                     Contact Form
                   </Link>
                 </li>

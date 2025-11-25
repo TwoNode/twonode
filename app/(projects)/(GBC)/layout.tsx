@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   keywords:
     "gbc, GBC By TwoNode Technologies, Global Business Conference, twonode, twonode-technologies, conference, tech, technology, technologies, limited",
   publisher: "GBC By TwoNode Technologies",
-  metadataBase: new URL("https://www.twonodetechnologies.com/gbc2"),
+  metadataBase: new URL("https://www.twonodetechnologies.com/gbc"),
   openGraph: {
     type: "article",
     url: "/",

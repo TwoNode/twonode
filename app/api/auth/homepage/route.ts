@@ -11,10 +11,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/surfboard", req.url));
   } else if (url.pathname.startsWith("/surf-restricted/")) {
     return NextResponse.redirect(new URL("/surf-restricted", req.url));
-  } else if (url.pathname.startsWith("/gbc2/")) {
-    return NextResponse.redirect(new URL("/gbc2", req.url));
-  } else if (url.pathname.startsWith("/gbc2-restricted/")) {
-    return NextResponse.redirect(new URL("/gbc2-restricted", req.url));
+  } else if (url.pathname.startsWith("/gbc/")) {
+    return NextResponse.redirect(new URL("/gbc", req.url));
+  } else if (url.pathname.startsWith("/gbc-restricted/")) {
+    return NextResponse.redirect(new URL("/gbc-restricted", req.url));
   } else {
     return NextResponse.redirect(new URL("/", req.url));
   }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
 import { getAllSurfPlans } from "../../../actions/surfboardActions";
-import PlansMapClient from "./PlansMapClient";
+import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 text-center p-6">

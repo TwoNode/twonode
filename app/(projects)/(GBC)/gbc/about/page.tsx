@@ -30,7 +30,7 @@ export default async function AboutPage() {
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
-            href="/gbc2"
+            href="/gbc"
             className="flex items-center text-white/80 hover:text-white transition-colors text-sm sm:text-base"
           >
             <svg
@@ -320,7 +320,7 @@ export default async function AboutPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/gbc2/tickets">
+            <Link href="/gbc/tickets">
               <Button
                 size="lg"
                 className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100"
@@ -329,7 +329,7 @@ export default async function AboutPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/gbc2/contact">
+            <Link href="/gbc/contact">
               <Button
                 size="lg"
                 variant="outline"

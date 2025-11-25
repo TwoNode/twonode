@@ -62,7 +62,7 @@ export default async function TicketsPage() {
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
-            href="/gbc2"
+            href="/gbc"
             className="flex items-center text-white/80 hover:text-white transition-colors text-sm sm:text-base"
           >
             <svg

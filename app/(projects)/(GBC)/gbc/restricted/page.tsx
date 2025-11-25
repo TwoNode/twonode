@@ -31,7 +31,7 @@ export default async function AdminDashboard() {
           </p>
         </div>
 
-        <Link href="/gbc2/restricted/tickets">
+        <Link href="/gbc/restricted/tickets">
           <Button variant="default" size="sm" className="w-fit">
             Tickets
           </Button>
@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
           </h2>
           <div className="space-y-2 sm:space-y-3">
             <a
-              href="/gbc2/restricted/tickets"
+              href="/gbc/restricted/tickets"
               className="block p-3 sm:p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
             >
               <h3 className="font-semibold text-sm sm:text-base">
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
               </p>
             </a>
             <a
-              href="/gbc2/restricted/check-in"
+              href="/gbc/restricted/check-in"
               className="block p-3 sm:p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
             >
               <h3 className="font-semibold text-sm sm:text-base">
@@ -111,7 +111,7 @@ export default async function AdminDashboard() {
               </p>
             </a>
             <a
-              href="/gbc2/restricted/sponsors"
+              href="/gbc/restricted/sponsors"
               className="block p-3 sm:p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
             >
               <h3 className="font-semibold text-sm sm:text-base">
@@ -122,7 +122,7 @@ export default async function AdminDashboard() {
               </p>
             </a>
             <a
-              href="/gbc2/restricted/speakers"
+              href="/gbc/restricted/speakers"
               className="block p-3 sm:p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition"
             >
               <h3 className="font-semibold text-sm sm:text-base">
@@ -133,7 +133,7 @@ export default async function AdminDashboard() {
               </p>
             </a>
             <a
-              href="/gbc2/restricted/gallery"
+              href="/gbc/restricted/gallery"
               className="block p-3 sm:p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
             >
               <h3 className="font-semibold text-sm sm:text-base">

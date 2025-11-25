@@ -45,7 +45,7 @@ export function useGBCAdminAccess() {
         if (isMounted) {
           setIsAdmin(false);
           setIsLoading(false);
-          router.push("/gbc2/restricted/login");
+          router.push("/gbc/restricted/login");
         }
         return;
       }
@@ -73,7 +73,7 @@ export function useGBCAdminAccess() {
           console.log("❌ Wrong platform, redirecting to login");
           if (isMounted) {
             setIsAdmin(false);
-            router.push("/gbc2/restricted/login");
+            router.push("/gbc/restricted/login");
           }
           return;
         }
@@ -88,13 +88,13 @@ export function useGBCAdminAccess() {
 
         if (!hasAdminRole) {
           console.log("❌ User does not have admin role, redirecting");
-          router.push("/gbc2");
+          router.push("/gbc");
         }
       } catch (error) {
         console.error("❌ Error checking GBC admin access:", error);
         if (isMounted) {
           setIsAdmin(false);
-          router.push("/gbc2/restricted/login");
+          router.push("/gbc/restricted/login");
         }
       } finally {
         if (isMounted) {

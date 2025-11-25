@@ -1,15 +1,15 @@
 const GBC_ROUTES = {
-  tickets: "/gbc2/tickets",
-  about: "/gbc2/about",
-  contact: "/gbc2/contact",
-  gallery: "/gbc2/gallery",
-  sponsors: "/gbc2/sponsors",
+  tickets: "/gbc/tickets",
+  about: "/gbc/about",
+  contact: "/gbc/contact",
+  gallery: "/gbc/gallery",
+  sponsors: "/gbc/sponsors",
 
-  admin_tickets: "/gbc2/restricted/tickets",
-  admin_check_in: "/gbc2/restricted/check-in",
-  admin_qr_code: "/gbc2/restricted/qr-code",
-  admin_restricted: "/gbc2/restricted/restricted",
-  admin: "/gbc2/restricted",
+  admin_tickets: "/gbc/restricted/tickets",
+  admin_check_in: "/gbc/restricted/check-in",
+  admin_qr_code: "/gbc/restricted/qr-code",
+  admin_restricted: "/gbc/restricted/restricted",
+  admin: "/gbc/restricted",
 };
 
 export default GBC_ROUTES;

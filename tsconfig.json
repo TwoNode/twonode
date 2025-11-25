@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -25,9 +21,7 @@
     ],
     "baseUrl": "./", // Base directory for resolving non-relative modules
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
@@ -42,9 +36,9 @@
     "app/(main)/contact/OurMap.jsx",
     "app/(main)/gbc/page.jsx",
     "app/(main)/page.jsx",
-    ".next/dev/types/**/*.ts"
-, "app/(projects)/(GBC)/gbc2/tickets_", "app/(projects)/(GBC)/gbc2/tickets/success"  ],
-  "exclude": [
-    "node_modules"
-  ]
+    ".next/dev/types/**/*.ts",
+    "app/(projects)/(GBC)/gbc/tickets_",
+    "app/(projects)/(GBC)/gbc/tickets/success"
+  ],
+  "exclude": ["node_modules"]
 }

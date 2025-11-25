@@ -7,8 +7,6 @@ export default async function GalleryPage() {
   const galleryResult = await getGalleryItems();
   const items = galleryResult.success ? galleryResult.data : [];
 
-  console.log(items);
-
   // Group by year
   const itemsByYear =
     items?.reduce((acc: any, item: any) => {
@@ -30,7 +28,7 @@ export default async function GalleryPage() {
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
-            href="/gbc2"
+            href="/gbc"
             className="flex items-center text-white/80 hover:text-white transition-colors text-sm sm:text-base"
           >
             <svg
@@ -125,7 +123,7 @@ export default async function GalleryPage() {
                 LinkedIn - #GBC2.0
               </a>
               <a
-                href="https://www.instagram.com/explore/tags/GBC2.0/"
+                href="https://www.instagram.com/explore/tags/gbc.0/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
