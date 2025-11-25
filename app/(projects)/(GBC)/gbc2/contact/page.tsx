@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ContactForm } from "../../components/ContactForm";
 import { Mail, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
+import { getAllGBCSettings } from "../../actions/settings-actions";
 
 export const metadata = {
   title: "Contact Us | GBC 2.0",
@@ -9,7 +10,31 @@ export const metadata = {
     "Get in touch with the GBC 2.0 team for inquiries about sponsorship, speaking opportunities, technical support, or general questions.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  // Fetch settings from database
+  const settingsResult = await getAllGBCSettings();
+  const settings = settingsResult.success ? settingsResult.data : null;
+
+  // Extract settings with fallbacks
+  const eventName =
+    settings?.event.name || "Geospatial Builders Conference 2.0";
+  const eventDate = settings?.event.date || "2026-03-15";
+  const eventVenue = settings?.event.venue || "Eko Hotel & Suites, Lagos";
+
+  const contactEmail = settings?.contact.email || "info@gbc.ng";
+  const contactPhone = settings?.contact.phone || "+234 800 GBC 2024";
+  const contactCity = settings?.contact.city || "Lagos, Nigeria";
+  const officeHours = settings?.contact.officeHours || "Mon-Fri 9AM-5PM";
+  const responseTime = settings?.contact.responseTime || "24hrs";
+  const satisfactionRate = settings?.contact.satisfactionRate || "98%";
+
+  // Format event date for display
+  const formattedDate = new Date(eventDate).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       {/* Hero Section */}
@@ -75,7 +100,7 @@ export default function ContactPage() {
                   <Mail className="h-6 w-6 text-purple-600" />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Email Us</h3>
-                <p className="text-sm text-gray-600">info@gbc.ng</p>
+                <p className="text-sm text-gray-600">{contactEmail}</p>
               </div>
             </div>
 
@@ -85,7 +110,7 @@ export default function ContactPage() {
                   <Phone className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Call Us</h3>
-                <p className="text-sm text-gray-600">+234 800 GBC 2024</p>
+                <p className="text-sm text-gray-600">{contactPhone}</p>
               </div>
             </div>
 
@@ -95,7 +120,7 @@ export default function ContactPage() {
                   <MapPin className="h-6 w-6 text-indigo-600" />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Visit Us</h3>
-                <p className="text-sm text-gray-600">Lagos, Nigeria</p>
+                <p className="text-sm text-gray-600">{contactCity}</p>
               </div>
             </div>
 
@@ -105,7 +130,7 @@ export default function ContactPage() {
                   <Clock className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Office Hours</h3>
-                <p className="text-sm text-gray-600">Mon-Fri 9AM-5PM</p>
+                <p className="text-sm text-gray-600">{officeHours}</p>
               </div>
             </div>
           </div>
@@ -129,9 +154,9 @@ export default function ContactPage() {
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
                   Whether you&apos;re interested in sponsoring, speaking, or
-                  simply want to learn more about GBC 2.0, we&apos;re here to
-                  help. Fill out the form and we&apos;ll get back to you within
-                  24-48 hours.
+                  simply want to learn more about {eventName}, we&apos;re here
+                  to help. Fill out the form and we&apos;ll get back to you
+                  within {responseTime}.
                 </p>
               </div>
 
@@ -250,11 +275,15 @@ export default function ContactPage() {
                 <h3 className="text-2xl font-bold mb-6">Response Time</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <div className="text-4xl font-bold mb-2">24hrs</div>
+                    <div className="text-4xl font-bold mb-2">
+                      {responseTime}
+                    </div>
                     <p className="text-purple-100">Average response time</p>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold mb-2">98%</div>
+                    <div className="text-4xl font-bold mb-2">
+                      {satisfactionRate}
+                    </div>
                     <p className="text-purple-100">Satisfaction rate</p>
                   </div>
                 </div>
@@ -278,7 +307,7 @@ export default function ContactPage() {
             <div className="space-y-4">
               <details className="group bg-gray-50 rounded-lg p-6 hover:bg-gray-100 transition-colors">
                 <summary className="cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-                  When is GBC 2.0 taking place?
+                  When is {eventName} taking place?
                   <svg
                     className="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform"
                     fill="none"
@@ -294,8 +323,9 @@ export default function ContactPage() {
                   </svg>
                 </summary>
                 <p className="mt-4 text-gray-600">
-                  GBC 2.0 will be held on [Event Date]. Check our homepage for
-                  the most up-to-date information about the event schedule.
+                  {eventName} will be held on {formattedDate} at {eventVenue}.
+                  Check our homepage for the most up-to-date information about
+                  the event schedule.
                 </p>
               </details>
 

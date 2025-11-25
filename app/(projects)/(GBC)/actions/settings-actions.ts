@@ -66,6 +66,7 @@ export async function getAllGBCSettings(): Promise<{
     // Merge saved settings with defaults to ensure all fields exist
     const mergedSettings: GBCSettingsData = {
       event: { ...defaultSettings.event, ...(savedSettings.event || {}) },
+      contact: { ...defaultSettings.contact, ...(savedSettings.contact || {}) },
       tickets: { ...defaultSettings.tickets, ...(savedSettings.tickets || {}) },
       notifications: {
         ...defaultSettings.notifications,
@@ -263,6 +264,7 @@ export async function updateGBCSetting(
     const topLevelKey = keys[0] as keyof GBCSettingsData;
     const validSections: (keyof GBCSettingsData)[] = [
       "event",
+      "contact",
       "tickets",
       "notifications",
       "system",
@@ -338,6 +340,7 @@ export async function updateMultipleGBCSettings(
       const topLevelKey = keys[0] as keyof GBCSettingsData;
       const validSections: (keyof GBCSettingsData)[] = [
         "event",
+        "contact",
         "tickets",
         "notifications",
         "system",

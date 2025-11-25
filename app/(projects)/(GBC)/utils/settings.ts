@@ -12,6 +12,15 @@ export type GBCSettingsData = {
     registrationCloses: string;
     importantNotices: string[];
   };
+  contact: {
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    officeHours: string;
+    responseTime: string;
+    satisfactionRate: string;
+  };
   tickets: {
     earlyBirdPrice: number;
     regularPrice: number;
@@ -70,6 +79,15 @@ export const defaultSettings: GBCSettingsData = {
       "Tickets are limited",
       "Early bird tickets are still available",
     ],
+  },
+  contact: {
+    email: "info@gbc.ng",
+    phone: "+234 800 GBC 2024",
+    address: "Eko Hotel & Suites",
+    city: "Lagos, Nigeria",
+    officeHours: "Mon-Fri 9AM-5PM",
+    responseTime: "24hrs",
+    satisfactionRate: "98%",
   },
   tickets: {
     earlyBirdPrice: 100000,
