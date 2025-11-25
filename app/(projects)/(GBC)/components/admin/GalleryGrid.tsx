@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, Eye, EyeOff, Play, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { deleteGBCGalleryItem } from "../../actions/sponsor-actions";
+import { deleteGBCGalleryItem } from "../../actions/gallery-actions";
 import { GalleryItem, GBCMediaType } from "../../types/gallery";
+import { EditGalleryModal } from "./EditGalleryModal";
 
 interface GalleryGridProps {
   items: GalleryItem[];
@@ -170,10 +171,11 @@ function GalleryItemCard({
           </div>
         )}
         <div className="absolute top-2 right-2 flex gap-2">
+          <EditGalleryModal item={item} />
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full bg-white/90 hover:bg-white"
+            className="h-8 w-8 rounded-full bg-white/90 text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();

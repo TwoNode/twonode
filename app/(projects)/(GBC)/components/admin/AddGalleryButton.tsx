@@ -23,7 +23,7 @@ import {
 import { Plus, Loader2, Image, Video } from "lucide-react";
 import { toast } from "sonner";
 import { uploadGBCGalleryMedia } from "../../actions/upload-actions";
-import { createGBCGalleryItem } from "../../actions/sponsor-actions";
+import { createGBCGalleryItem } from "../../actions/gallery-actions";
 
 export function AddGalleryButton() {
   const [open, setOpen] = useState(false);

@@ -40,6 +40,12 @@ export type GBCSettingsData = {
     emailCheckinConfirmation: boolean;
     smsTicketConfirmation: boolean;
   };
+  gallery: {
+    enabled: boolean;
+    showYearFilter: boolean;
+    defaultYear: number;
+    itemsPerPage: number;
+  };
   system: {
     maintenanceMode: boolean;
     debugMode: boolean;
@@ -132,6 +138,12 @@ export const defaultSettings: GBCSettingsData = {
     emailAdminNewTicket: true,
     emailCheckinConfirmation: false,
     smsTicketConfirmation: false,
+  },
+  gallery: {
+    enabled: true,
+    showYearFilter: true,
+    defaultYear: 2025,
+    itemsPerPage: 12,
   },
   system: {
     maintenanceMode: false,

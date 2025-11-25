@@ -1,6 +1,6 @@
 // src/app/(public)/gallery/page.tsx
 import { Play, Image as ImageIcon } from "lucide-react";
-import { getGalleryItems } from "../../actions/sponsor-actions";
+import { getGalleryItems } from "../../actions/gallery-actions";
 import Link from "next/link";
 
 export default async function GalleryPage() {

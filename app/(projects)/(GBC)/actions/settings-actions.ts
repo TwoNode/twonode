@@ -71,6 +71,7 @@ export async function getAllGBCSettings(): Promise<{
         ...defaultSettings.notifications,
         ...(savedSettings.notifications || {}),
       },
+      gallery: { ...defaultSettings.gallery, ...(savedSettings.gallery || {}) },
       system: { ...defaultSettings.system, ...(savedSettings.system || {}) },
     };
 
@@ -265,6 +266,7 @@ export async function updateGBCSetting(
       "tickets",
       "notifications",
       "system",
+      "gallery",
     ];
 
     if (!validSections.includes(topLevelKey)) {
@@ -339,6 +341,7 @@ export async function updateMultipleGBCSettings(
         "tickets",
         "notifications",
         "system",
+        "gallery",
       ];
 
       if (!validSections.includes(topLevelKey)) {

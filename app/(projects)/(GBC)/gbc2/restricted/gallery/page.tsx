@@ -1,5 +1,5 @@
 import { requireAdmin } from "../../../utils/auth";
-import { getAllGalleryItems } from "../../../actions/sponsor-actions";
+import { getAllGalleryItems } from "../../../actions/gallery-actions";
 import { AddGalleryButton } from "../../../components/admin/AddGalleryButton";
 import { GalleryGrid } from "../../../components/admin/GalleryGrid";
 import { GalleryFilters } from "../../../components/admin/GalleryFilters";
