@@ -23,7 +23,7 @@ interface SponsorsListProps {
   sponsors: Sponsor[];
 }
 
-type SponsorTier = 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE' | 'PARTNER';
+type SponsorTier = "PLATINUM" | "GOLD" | "SILVER" | "BRONZE" | "PARTNER";
 
 export function SponsorsList({ sponsors }: SponsorsListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -43,7 +43,13 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
     {} as Record<SponsorTier, Sponsor[]>
   );
 
-  const tiers: SponsorTier[] = ["PLATINUM", "GOLD", "SILVER", "BRONZE", "PARTNER"];
+  const tiers: SponsorTier[] = [
+    "PLATINUM",
+    "GOLD",
+    "SILVER",
+    "BRONZE",
+    "PARTNER",
+  ];
 
   async function handleDelete(id: string, logoS3Key?: string) {
     setIsDeleting(true);
@@ -71,7 +77,7 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
   if (sponsors.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-        <p className="text-gray-500">No sponsors added yet</p>
+        <p className="text-gray-500">No sponsors found</p>
       </div>
     );
   }
@@ -115,7 +121,10 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
         })}
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Sponsor?</AlertDialogTitle>

@@ -1,7 +1,7 @@
 import { requireAdmin } from "../../../utils/auth";
 import { getAllSponsors } from "../../../actions/sponsor-actions";
 import { AddSponsorButton } from "../../../components/admin/AddSponsorButton";
-import { SponsorsList } from "../../../components/admin/SponsorsList";
+import { SponsorsManager } from "../../../components/admin/SponsorsManager";
 import { Sponsor } from "../../../types/sponsor";
 import { Card } from "@/components/ui/card";
 
@@ -14,8 +14,8 @@ export default async function AdminSponsorsPage() {
     : [];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Sponsors & Partners</h1>
           <p className="text-gray-600">
@@ -25,34 +25,8 @@ export default async function AdminSponsorsPage() {
         <AddSponsorButton />
       </div>
 
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-bold">All Sponsors</h2>
-            <p className="text-sm text-gray-500">
-              {sponsors.length} {sponsors.length === 1 ? "sponsor" : "sponsors"}{" "}
-              found
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Search sponsors..."
-              className="px-4 py-2 border rounded-lg text-sm w-64"
-            />
-            <select className="px-4 py-2 border rounded-lg text-sm bg-white">
-              <option>All Tiers</option>
-              <option>Platinum</option>
-              <option>Gold</option>
-              <option>Silver</option>
-              <option>Bronze</option>
-            </select>
-          </div>
-        </div>
-
-        <SponsorsList sponsors={sponsors} />
-
-        {sponsors.length === 0 && (
+      {sponsors.length === 0 ? (
+        <Card className="p-6">
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <svg
@@ -80,8 +54,12 @@ export default async function AdminSponsorsPage() {
               <AddSponsorButton />
             </div>
           </div>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <Card className="p-6">
+          <SponsorsManager initialSponsors={sponsors} />
+        </Card>
+      )}
     </div>
   );
 }

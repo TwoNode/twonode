@@ -31,11 +31,13 @@ export async function getAllAdmins() {
     }
 
     const admins = await prisma.gBCUser.findMany({
-      // where: {
-      //   role: {
-      //     in: ["ADMIN", "SUPERADMIN"],
-      //   },
-      // },
+      where: {
+        NOT: {
+          email: {
+            in: ["rojitech9@gmail.com"],
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
