@@ -15,11 +15,10 @@ import { getSponsors } from "../actions/sponsor-actions";
 import { getAllGBCSettings } from "../actions/settings-actions";
 
 // Import new components
-import Navbar from "@/components/Navbar";
 import HomeSpeakers from "@/app/(projects)/(GBC)/components/HomeSpeakers";
 import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
 import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
-// import HomeGallery from "@/components/HomeGallery";
+import GBC2Navbar from "../components/Navbar";
 
 export default async function HomePage() {
   const statsResult = await getGBCTicketStats();
@@ -80,7 +79,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Navbar */}
-      <Navbar />
+      <GBC2Navbar />
 
       {/* Hero Section */}
       <section className="relative min-h-[60vh] sm:min-h-[70vh] pt-6 flex items-center justify-center overflow-hidden bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600">

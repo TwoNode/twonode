@@ -20,6 +20,11 @@ export type GBCSettingsData = {
     officeHours: string;
     responseTime: string;
     satisfactionRate: string;
+    twitter: string;
+    facebook: string;
+    instagram: string;
+    linkedin: string;
+    youtube: string;
   };
   tickets: {
     earlyBirdPrice: number;
@@ -88,6 +93,11 @@ export const defaultSettings: GBCSettingsData = {
     officeHours: "Mon-Fri 9AM-5PM",
     responseTime: "24hrs",
     satisfactionRate: "98%",
+    twitter: "https://twitter.com/GBCByTwoNodeTechnologies",
+    facebook: "https://www.facebook.com/GBCByTwoNodeTechnologies",
+    instagram: "https://www.instagram.com/GBCByTwoNodeTechnologies",
+    linkedin: "https://www.linkedin.com/GBCByTwoNodeTechnologies",
+    youtube: "https://www.youtube.com/GBCByTwoNodeTechnologies",
   },
   tickets: {
     earlyBirdPrice: 100000,

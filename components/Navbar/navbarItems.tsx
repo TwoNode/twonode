@@ -30,7 +30,7 @@ export const navbarItems: SidebarItems = {
       className:
         "bg-linear-to-r from-blue-600 to-blue-800 text-white px-3 py-1.5 rounded-md",
     },
-    { label: "Events", href: "/gbc", icon: Calendar },
+    { label: "Events", href: "/events", icon: Calendar },
     // { label: "Present", href: "/present", icon: Calendar },
     { label: "About Us", href: "/about-us", icon: Users },
     { label: "Our Services", href: "/services", icon: Columns3 },

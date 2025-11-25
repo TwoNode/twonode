@@ -34,7 +34,7 @@ export default function GBCAdminLogin() {
           </Button>
         </LoginLink>
         <p className="text-sm text-gray-500 mt-4">
-          Global Business Conference 2.0
+          Geospatial Builders Conference 2.0
         </p>
       </div>
     </div>

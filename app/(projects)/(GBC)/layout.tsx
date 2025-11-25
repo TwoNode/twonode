@@ -2,17 +2,17 @@ import ToastProvider from "@/providers/ToastProvider";
 import type { Metadata } from "next/";
 
 export const metadata: Metadata = {
-  title: "GBC 2.0 By TwoNode Technologies - Global Business Conference",
-  description: "GBC 2.0: The Premier Global Business Conference.",
+  title: "GBC 2.0 By TwoNode Technologies - Geospatial Builders Conference",
+  description: "GBC 2.0: The Premier Geospatial Builders Conference.",
   keywords:
-    "gbc, GBC By TwoNode Technologies, Global Business Conference, twonode, twonode-technologies, conference, tech, technology, technologies, limited",
+    "gbc, GBC By TwoNode Technologies, Geospatial Builders Conference, twonode, twonode-technologies, conference, tech, technology, technologies, limited",
   publisher: "GBC By TwoNode Technologies",
   metadataBase: new URL("https://www.twonodetechnologies.com/gbc"),
   openGraph: {
     type: "article",
     url: "/",
-    title: "GBC 2.0 - Global Business Conference",
-    description: "GBC 2.0: The Premier Global Business Conference.",
+    title: "GBC 2.0 - Geospatial Builders Conference",
+    description: "GBC 2.0: The Premier Geospatial Builders Conference.",
     images: [
       {
         url: "/favicon.jpg",
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     site: "@GBCByTwoNodeTechnologies",
-    title: "GBC 2.0 - Global Business Conference",
-    description: "GBC 2.0: The Premier Global Business Conference.",
+    title: "GBC 2.0 - Geospatial Builders Conference",
+    description: "GBC 2.0: The Premier Geospatial Builders Conference.",
     images: ["/favicon.jpg"],
   },
   icons: {

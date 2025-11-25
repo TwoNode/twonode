@@ -11,7 +11,6 @@ import {
 import { Button } from "../ui/button";
 import { Menu, X, Newspaper } from "lucide-react";
 import Link from "next/link";
-import { SidebarButtonSheet as SidebarButton } from "./sidebar-button";
 import { usePathname } from "next/navigation";
 
 interface SidebarMobileProps {
@@ -29,7 +28,7 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
 
   return (
     <Sheet>
-      <div className="z-[200] w-full overflow-y-auto flex h-[54px] justify-between items-center gap-[80px]">
+      <div className="z-200 w-full overflow-y-auto flex h-[54px] justify-between items-center gap-[80px]">
         <Link href={"/"} className="justify-start items-center flex">
           <img alt="" className="w-[202px] h-11" src="/logo.svg" />
         </Link>
@@ -43,7 +42,7 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
 
       <SheetContent
         side="left"
-        className="z-[999] bg-blue-100 px-3 py-4"
+        className="z-999 bg-blue-100 px-3 py-4"
         hideClose
       >
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 pb-6 pt-5 pr-3">

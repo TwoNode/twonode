@@ -1,11 +1,17 @@
 // src/app/(public)/gallery/page.tsx
 import { Play, Image as ImageIcon } from "lucide-react";
 import { getGalleryItems } from "../../actions/gallery-actions";
+import { getAllGBCSettings } from "../../actions/settings-actions";
 import Link from "next/link";
 
 export default async function GalleryPage() {
   const galleryResult = await getGalleryItems();
   const items = galleryResult.success ? galleryResult.data : [];
+
+  const settingsResult = await getAllGBCSettings();
+  const socialLinks = settingsResult.success
+    ? settingsResult.data?.contact
+    : null;
 
   // Group by year
   const itemsByYear =
@@ -94,7 +100,7 @@ export default async function GalleryPage() {
         </div>
       </section>
 
-      {/* Social Media Feed Placeholder */}
+      {/* Social Media Feed */}
       <section className="py-16 sm:py-20 md:py-24 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
@@ -106,30 +112,56 @@ export default async function GalleryPage() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-4">
-              <a
-                href="https://twitter.com/search?q=%23GBC2.0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-              >
-                Twitter/X - #GBC2.0
-              </a>
-              <a
-                href="https://www.linkedin.com/search/results/all/?keywords=%23GBC2.0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition"
-              >
-                LinkedIn - #GBC2.0
-              </a>
-              <a
-                href="https://www.instagram.com/explore/tags/gbc.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
-              >
-                Instagram - #GBC2.0
-              </a>
+              {socialLinks?.twitter && (
+                <Link
+                  href={socialLinks.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
+                  Twitter/X
+                </Link>
+              )}
+              {socialLinks?.linkedin && (
+                <Link
+                  href={socialLinks.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition"
+                >
+                  LinkedIn
+                </Link>
+              )}
+              {socialLinks?.instagram && (
+                <Link
+                  href={socialLinks.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
+                >
+                  Instagram
+                </Link>
+              )}
+              {socialLinks?.facebook && (
+                <Link
+                  href={socialLinks.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Facebook
+                </Link>
+              )}
+              {socialLinks?.youtube && (
+                <Link
+                  href={socialLinks.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  YouTube
+                </Link>
+              )}
             </div>
           </div>
         </div>

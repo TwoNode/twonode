@@ -6,12 +6,14 @@ import {
   Mail,
   Database,
   Image,
+  Share2,
 } from "lucide-react";
 import { NotificationSettings } from "../../../components/admin/NotificationSettings";
 import { TicketPricingDisplay } from "../../../components/admin/TicketPricingDisplay";
 import { EventConfigForm } from "../../../components/admin/EventConfigForm";
 import { SystemSettings } from "../../../components/admin/SystemSettings";
 import { GallerySettings } from "../../../components/admin/GallerySettings";
+import { SocialLinksSettings } from "../../../components/admin/SocialLinksSettings";
 import { getAllGBCSettings } from "../../../actions/settings-actions";
 
 export default async function AdminSettingsPage() {
@@ -76,19 +78,19 @@ export default async function AdminSettingsPage() {
           <TicketPricingDisplay settings={settings || null} />
         </Card>
 
-        {/* Gallery Settings */}
+        {/* Social Links Settings */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <Image className="h-6 w-6 text-purple-600" />
+            <Share2 className="h-6 w-6 text-purple-600" />
             <div>
-              <h2 className="text-xl font-bold">Gallery Settings</h2>
+              <h2 className="text-xl font-bold">Social Media Links</h2>
               <p className="text-sm text-gray-500">
-                Configure gallery display and behavior
+                Configure social media platform URLs
               </p>
             </div>
           </div>
 
-          <GallerySettings settings={settings || null} />
+          <SocialLinksSettings settings={settings || null} />
         </Card>
 
         {/* Email Notifications */}

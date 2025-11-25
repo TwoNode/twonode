@@ -18,7 +18,7 @@ export default function GBCUserLogin() {
           Welcome to GBC 2.5
         </h1>
         <p className="text-purple-700 mb-2 text-lg font-medium">
-          Global Business Conference
+          Geospatial Builders Conference
         </p>
         <p className="text-gray-600 mb-6 text-sm">
           Sign in to access your tickets, gallery, and event information

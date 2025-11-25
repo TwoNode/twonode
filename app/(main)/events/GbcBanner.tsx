@@ -1,5 +1,3 @@
-import React from "react";
-
 export const GbcBanner = () => {
   return (
     <div className="mywrapper max-h-[785px] py-12 bg-white flex justify-center items-start gap-2.5">
