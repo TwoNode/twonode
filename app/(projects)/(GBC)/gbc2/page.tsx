@@ -287,7 +287,7 @@ export default async function HomePage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
               <div className="relative overflow-hidden rounded-2xl bg-amber-50 border border-amber-100 shadow-lg">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-amber-400 to-orange-500" />
+                <div className="absolute top-0 left-0 w-1.5 h-full bg-linear-to-b from-amber-400 to-orange-500" />
                 <div className="p-6 sm:p-8">
                   <div className="flex items-start gap-4 sm:gap-6">
                     <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">

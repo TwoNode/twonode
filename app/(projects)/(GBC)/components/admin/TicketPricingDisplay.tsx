@@ -122,8 +122,8 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="max-w-full">
+      <div className="max-w-full flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Ticket Pricing</h2>
         {!isEditing ? (
           <button
@@ -155,7 +155,7 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 mb-6">
+      <div className="max-w-full grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-6">
         {ticketTypes.map((ticket) => {
           const Icon = ticket.icon;
           const price = pricing[ticket.key];
@@ -164,7 +164,7 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
           return (
             <div
               key={ticket.key}
-              className={`${ticket.bgColor} min-w-[300px] border border-gray-200 rounded-lg p-4`}
+              className={`${ticket.bgColor} w-full max-w-full border border-gray-200 rounded-lg p-4`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
