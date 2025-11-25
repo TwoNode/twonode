@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 // import { getSponsors, getPartners } from "@/actions/sponsor-actions";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
 import { getPartners, getSponsors } from "../../actions/sponsor-actions";
+import GBC2Navbar from "../../components/Navbar";
 
 export default async function SponsorsPage() {
   const sponsorsResult = await getSponsors();
@@ -21,6 +22,8 @@ export default async function SponsorsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

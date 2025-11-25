@@ -5,6 +5,7 @@ import { getAllGBCSettings } from "../../actions/settings-actions";
 import { TicketCards } from "../../components/admin/TicketCards";
 import Link from "next/link";
 import { Suspense } from "react";
+import GBC2Navbar from "../../components/Navbar";
 
 export default async function TicketsPage() {
   const statsResult = await getGBCTicketStats();
@@ -57,6 +58,8 @@ export default async function TicketsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

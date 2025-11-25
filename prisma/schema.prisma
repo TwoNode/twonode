@@ -684,7 +684,7 @@ model GBCContactInquiry {
   phone     String?
   subject   String
   message   String           @db.Text
-  type      GBCInquiryType
+  type      String?
   status    GBCInquiryStatus @default(PENDING)
   notes     String?          @db.Text
   createdAt DateTime         @default(now())
@@ -693,14 +693,6 @@ model GBCContactInquiry {
   @@index([status])
   @@index([type])
   @@map("gbc_contact_inquiries")
-}
-
-enum GBCInquiryType {
-  GENERAL
-  SPONSORSHIP
-  TECHNICAL
-  MEDIA
-  SPEAKING
 }
 
 enum GBCInquiryStatus {

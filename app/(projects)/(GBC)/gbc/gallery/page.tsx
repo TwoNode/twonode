@@ -3,6 +3,7 @@ import { Play, Image as ImageIcon } from "lucide-react";
 import { getGalleryItems } from "../../actions/gallery-actions";
 import { getAllGBCSettings } from "../../actions/settings-actions";
 import Link from "next/link";
+import GBC2Navbar from "../../components/Navbar";
 
 export default async function GalleryPage() {
   const galleryResult = await getGalleryItems();
@@ -29,6 +30,8 @@ export default async function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

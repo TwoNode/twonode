@@ -131,6 +131,65 @@ export async function deleteGBCInquiry(id: string) {
   }
 }
 
+export async function replyToGBCInquiry(
+  id: string,
+  replySubject: string,
+  replyMessage: string
+) {
+  try {
+    await requireAdmin();
+
+    // Get the inquiry details
+    const inquiry = await prisma.gBCContactInquiry.findUnique({
+      where: { id },
+    });
+
+    if (!inquiry) {
+      return {
+        success: false,
+        error: "Inquiry not found",
+      };
+    }
+
+    // Send the reply email
+    const { sendGBCInquiryReply } = await import("../utils/email");
+    const emailResult = await sendGBCInquiryReply(
+      inquiry.email,
+      inquiry.name,
+      replySubject,
+      replyMessage
+    );
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        error: emailResult.error || "Failed to send reply email",
+      };
+    }
+
+    // Update inquiry status to IN_PROGRESS or RESOLVED
+    await prisma.gBCContactInquiry.update({
+      where: { id },
+      data: {
+        status: "IN_PROGRESS",
+      },
+    });
+
+    revalidatePath("/gbc/restricted/inquiries");
+
+    return {
+      success: true,
+      message: "Reply sent successfully",
+    };
+  } catch (error) {
+    console.error("Reply to inquiry error:", error);
+    return {
+      success: false,
+      error: "Failed to send reply",
+    };
+  }
+}
+
 // ============ USER MANAGEMENT ============
 
 export async function getGBCUsers() {

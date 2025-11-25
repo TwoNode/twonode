@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getAllGBCSettings } from "../../actions/settings-actions";
+import GBC2Navbar from "../../components/Navbar";
 
 export default async function AboutPage() {
   // Fetch settings for dynamic event information
@@ -25,6 +26,8 @@ export default async function AboutPage() {
 
   return (
     <div className="min-h-screen">
+      <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

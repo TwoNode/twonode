@@ -56,7 +56,8 @@ export const contactFormSchema = z.object({
     .string()
     .min(10, "Message must be at least 10 characters")
     .max(1000),
-  type: z.enum(["GENERAL", "SPONSORSHIP", "TECHNICAL"]),
+
+  type: z.enum(["GENERAL", "SPONSORSHIP", "TECHNICAL", "MEDIA", "SPEAKING"]),
 });
 
 export type ContactFormInput = z.infer<typeof contactFormSchema>;

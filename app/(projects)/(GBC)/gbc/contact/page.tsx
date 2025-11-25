@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ContactForm } from "../../components/ContactForm";
 import { Mail, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import { getAllGBCSettings } from "../../actions/settings-actions";
+import GBC2Navbar from "../../components/Navbar";
 
 export const metadata = {
   title: "Contact Us | GBC 2.0",
@@ -37,6 +38,8 @@ export default async function ContactPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
+      <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="relative py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

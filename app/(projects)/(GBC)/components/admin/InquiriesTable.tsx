@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   updateGBCInquiryStatus,
   deleteGBCInquiry,
+  replyToGBCInquiry,
 } from "../../actions/contact-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,9 +39,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, Trash2, Mail } from "lucide-react";
+import { Eye, Trash2, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "../../utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface InquiriesTableProps {
   inquiries: any[];
@@ -50,6 +54,10 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
   const [viewInquiry, setViewInquiry] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [replyInquiry, setReplyInquiry] = useState<any>(null);
+  const [replySubject, setReplySubject] = useState("");
+  const [replyMessage, setReplyMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   async function handleStatusChange(id: string, status: string) {
     try {
@@ -62,6 +70,35 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
       }
     } catch (error) {
       toast.error("An error occurred");
+    }
+  }
+
+  async function handleSendReply() {
+    if (!replySubject.trim() || !replyMessage.trim()) {
+      toast.error("Please provide both subject and message");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const result = await replyToGBCInquiry(
+        replyInquiry.id,
+        replySubject,
+        replyMessage
+      );
+      if (result.success) {
+        toast.success("Reply sent successfully");
+        setReplyInquiry(null);
+        setReplySubject("");
+        setReplyMessage("");
+        window.location.reload();
+      } else {
+        toast.error(result.error || "Failed to send reply");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -254,6 +291,18 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
 
               <div className="flex gap-2 pt-4">
                 <Button
+                  variant="default"
+                  onClick={() => {
+                    setReplyInquiry(viewInquiry);
+                    setReplySubject(`Re: ${viewInquiry.subject}`);
+                    setViewInquiry(null);
+                  }}
+                  className="flex-1"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Reply
+                </Button>
+                <Button
                   variant="outline"
                   onClick={() =>
                     window.open(`mailto:${viewInquiry.email}`, "_blank")
@@ -261,7 +310,87 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
                   className="flex-1"
                 >
                   <Mail className="h-4 w-4 mr-2" />
-                  Reply via Email
+                  Open Email Client
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reply Dialog */}
+      <Dialog
+        open={!!replyInquiry}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReplyInquiry(null);
+            setReplySubject("");
+            setReplyMessage("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reply to Inquiry</DialogTitle>
+            <DialogDescription>
+              {replyInquiry &&
+                `Replying to ${replyInquiry.name} (${replyInquiry.email})`}
+            </DialogDescription>
+          </DialogHeader>
+          {replyInquiry && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Original Message:
+                </p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {replyInquiry.message}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reply-subject">Subject *</Label>
+                <Input
+                  id="reply-subject"
+                  value={replySubject}
+                  onChange={(e) => setReplySubject(e.target.value)}
+                  placeholder="Enter email subject"
+                  disabled={isSending}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reply-message">Message *</Label>
+                <Textarea
+                  id="reply-message"
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your reply message here..."
+                  rows={8}
+                  disabled={isSending}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReplyInquiry(null);
+                    setReplySubject("");
+                    setReplyMessage("");
+                  }}
+                  disabled={isSending}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendReply}
+                  disabled={isSending}
+                  className="flex-1"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {isSending ? "Sending..." : "Send Reply"}
                 </Button>
               </div>
             </div>

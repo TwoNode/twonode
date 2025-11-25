@@ -29,7 +29,7 @@ const GBC2Navbar = () => {
           item.important
             ? `${item.className || ""} hover:opacity-90 hover:scale-105`
             : `text-sky-950 hover:text-blue-600 ${
-                isActive ? "font-bold" : "font-normal"
+                isActive ? "font-bold text-blue-600" : "font-normal"
               }`
         }`}
       >
@@ -47,10 +47,10 @@ const GBC2Navbar = () => {
 
   return (
     <>
-      <div className="h-[90px] w-full" />
-      <div className="absolute top-0 right-0 left-0 z-999 inline-flex w-full h-[90px] px-[1%] pt-[19px] pb-5 bg-white justify-center items-center">
+      <div className="h-[60px] w-full" />
+      <div className="absolute top-0 right-0 left-0 z-999 inline-flex w-full h-[60px] px-[1%] py-4 bg-white justify-center items-center">
         <div className="w-full hidden lg:flex h-[54px] justify-between items-center gap-[80px]">
-          <div className="w-full h-[84px] px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
+          <div className="w-full h-[60px] px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
             <div className="w-full justify-between items-center inline-flex">
               <Link href={"/"} className="justify-start items-center flex">
                 <img alt="" className="" src="/logo.svg" />

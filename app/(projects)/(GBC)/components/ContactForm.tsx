@@ -20,17 +20,20 @@ import { submitGBCContactForm } from "../actions/contact-actions";
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setIsSubmitting(true);
 
     try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+
       const result = await submitGBCContactForm(formData);
 
       if (result.success) {
         toast.success(result.message || "Message sent successfully!");
         // Reset form
-        const form = document.getElementById("contact-form") as HTMLFormElement;
-        form?.reset();
+        form.reset();
       } else {
         toast.error(result.error || "Failed to send message");
       }
@@ -44,7 +47,7 @@ export function ContactForm() {
   return (
     <form
       id="contact-form"
-      action={handleSubmit}
+      onSubmit={handleSubmit}
       className="space-y-6 bg-white p-8 rounded-xl shadow-lg"
     >
       <div className="grid md:grid-cols-2 gap-6">

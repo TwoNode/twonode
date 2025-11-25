@@ -1,4 +1,5 @@
 import { getSpeakers } from "../../actions/speaker-actions";
+import GBC2Navbar from "../../components/Navbar";
 import { Speaker } from "../../types/speaker";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
@@ -23,6 +24,8 @@ export default async function SpeakersPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
+       <GBC2Navbar />
+
       {/* Hero Section */}
       <section className="bg-linear-to-r from-purple-600 to-indigo-600 text-white py-20">
         <div className="container mx-auto px-4">
