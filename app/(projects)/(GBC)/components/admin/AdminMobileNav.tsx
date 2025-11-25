@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -29,6 +31,12 @@ export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
         <Menu className="h-5 w-5 text-gray-600" />
       </button>
       <h1 className="text-lg font-bold text-gray-900">{title}</h1>
+
+      <LogoutLink className="ml-auto">
+        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+          Sign Out
+        </Button>
+      </LogoutLink>
     </div>
   );
 }

@@ -1,0 +1,205 @@
+import { getSpeakers } from "../../actions/speaker-actions";
+import { Speaker } from "../../types/speaker";
+import { Card } from "@/components/ui/card";
+import { Linkedin, Twitter, Building2 } from "lucide-react";
+
+export const metadata = {
+  title: "Speakers | GBC 2.0",
+  description: "Meet our distinguished speakers at GBC 2.0",
+};
+
+export default async function SpeakersPage() {
+  const speakersResult = await getSpeakers();
+  const allSpeakers: Speaker[] = speakersResult.success
+    ? speakersResult.data || []
+    : [];
+
+  // Group speakers by tier
+  const keynoteSpeakers = allSpeakers.filter((s) => s.tier === "KEYNOTE");
+  const panelists = allSpeakers.filter((s) => s.tier === "PANELIST");
+  const firesideSpeakers = allSpeakers.filter(
+    (s) => s.tier === "FIRESIDE_CHAT"
+  );
+
+  return (
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <section className="bg-linear-to-r from-purple-600 to-indigo-600 text-white py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Meet Our Speakers
+            </h1>
+            <p className="text-xl md:text-2xl text-purple-100">
+              Industry leaders and innovators sharing their insights at GBC 2.0
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-16">
+        {/* Keynote Speakers */}
+        {keynoteSpeakers.length > 0 && (
+          <section className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-linear-to-r from-purple-100 to-indigo-100 px-6 py-3 rounded-full mb-4">
+                <span className="text-3xl">🎤</span>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Keynote Speakers
+                </h2>
+              </div>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Distinguished thought leaders delivering inspirational keynote
+                addresses
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {keynoteSpeakers.map((speaker) => (
+                <SpeakerCard key={speaker.id} speaker={speaker} featured />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Panelists */}
+        {panelists.length > 0 && (
+          <section className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-linear-to-r from-blue-100 to-cyan-100 px-6 py-3 rounded-full mb-4">
+                <span className="text-3xl">💬</span>
+                <h2 className="text-3xl font-bold text-gray-900">Panelists</h2>
+              </div>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Expert panelists engaging in dynamic discussions
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {panelists.map((speaker) => (
+                <SpeakerCard key={speaker.id} speaker={speaker} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Fireside Chat */}
+        {firesideSpeakers.length > 0 && (
+          <section className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-linear-to-r from-orange-100 to-red-100 px-6 py-3 rounded-full mb-4">
+                <span className="text-3xl">🔥</span>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Fireside Chat
+                </h2>
+              </div>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Intimate conversations with industry pioneers
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {firesideSpeakers.map((speaker) => (
+                <SpeakerCard key={speaker.id} speaker={speaker} featured />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {allSpeakers.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-2xl text-gray-500">
+              Speaker lineup coming soon...
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SpeakerCard({
+  speaker,
+  featured = false,
+}: {
+  speaker: Speaker;
+  featured?: boolean;
+}) {
+  return (
+    <Card
+      className={`overflow-hidden group hover:shadow-2xl transition-all duration-300 ${
+        featured ? "md:col-span-1" : ""
+      }`}
+    >
+      <div className="relative overflow-hidden bg-linear-to-br from-gray-100 to-gray-200">
+        <img
+          src={speaker.photo}
+          alt={speaker.name}
+          className={`w-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+            featured ? "h-80" : "h-64"
+          }`}
+        />
+        {speaker.featured && (
+          <div className="absolute top-4 right-4 bg-linear-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+            ⭐ Featured
+          </div>
+        )}
+      </div>
+
+      <div className="p-6">
+        <h3
+          className={`font-bold text-gray-900 mb-2 ${
+            featured ? "text-2xl" : "text-xl"
+          }`}
+        >
+          {speaker.name}
+        </h3>
+
+        <p className="text-purple-600 font-semibold mb-2">{speaker.title}</p>
+
+        {speaker.company && (
+          <div className="flex items-center gap-2 text-gray-600 mb-4">
+            <Building2 className="h-4 w-4" />
+            <span className="text-sm">{speaker.company}</span>
+          </div>
+        )}
+
+        <p
+          className={`text-gray-600 mb-4 ${
+            featured ? "line-clamp-4" : "line-clamp-3"
+          }`}
+        >
+          {speaker.bio}
+        </p>
+
+        {/* Social Links */}
+        {(speaker.linkedin || speaker.twitter) && (
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            {speaker.linkedin && (
+              <a
+                href={speaker.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
+                <span className="text-sm font-medium">LinkedIn</span>
+              </a>
+            )}
+            {speaker.twitter && (
+              <a
+                href={speaker.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-sky-600 hover:text-sky-700 transition-colors"
+              >
+                <Twitter className="h-5 w-5" />
+                <span className="text-sm font-medium">X/Twitter</span>
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}

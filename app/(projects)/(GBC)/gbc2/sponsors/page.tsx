@@ -14,11 +14,9 @@ export default async function SponsorsPage() {
 
   // Group sponsors by tier
   const sponsorsByTier = {
-    PLATINUM: sponsors?.filter((s) => s.tier === "PLATINUM") || [],
-    GOLD: sponsors?.filter((s) => s.tier === "GOLD") || [],
-    SILVER: sponsors?.filter((s) => s.tier === "SILVER") || [],
-    BRONZE: sponsors?.filter((s) => s.tier === "BRONZE") || [],
-    PARTNER: sponsors?.filter((s) => s.tier === "PARTNER") || [],
+    HEADLINE: sponsors?.filter((s) => s.tier === "HEADLINE") || [],
+    IMPACT: sponsors?.filter((s) => s.tier === "IMPACT") || [],
+    SUPPORTING: sponsors?.filter((s) => s.tier === "SUPPORTING") || [],
   };
 
   return (
@@ -84,19 +82,19 @@ export default async function SponsorsPage() {
         </div>
       </section>
 
-      {/* Platinum Sponsors */}
-      {sponsorsByTier.PLATINUM.length > 0 && (
+      {/* Headline Sponsors */}
+      {sponsorsByTier.HEADLINE.length > 0 && (
         <section className="py-12 sm:py-16 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 sm:mb-12">
               <div className="inline-block px-6 py-2 bg-purple-100 text-purple-600 rounded-full font-bold mb-4">
-                PLATINUM SPONSORS
+                HEADLINE SPONSORS
               </div>
               <p className="text-gray-600">Our premier partners</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
-              {sponsorsByTier.PLATINUM.map((sponsor: any) => (
+              {sponsorsByTier.HEADLINE.map((sponsor: any) => (
                 <SponsorCard key={sponsor.id} sponsor={sponsor} featured />
               ))}
             </div>
@@ -104,18 +102,18 @@ export default async function SponsorsPage() {
         </section>
       )}
 
-      {/* Gold Sponsors */}
-      {sponsorsByTier.GOLD.length > 0 && (
+      {/* Impact Sponsors */}
+      {sponsorsByTier.IMPACT.length > 0 && (
         <section className="py-12 sm:py-16 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 sm:mb-12">
               <div className="inline-block px-6 py-2 bg-yellow-100 text-yellow-600 rounded-full font-bold mb-4">
-                GOLD SPONSORS
+                IMPACT SPONSORS
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
-              {sponsorsByTier.GOLD.map((sponsor: any) => (
+              {sponsorsByTier.IMPACT.map((sponsor: any) => (
                 <SponsorCard key={sponsor.id} sponsor={sponsor} />
               ))}
             </div>
@@ -123,37 +121,18 @@ export default async function SponsorsPage() {
         </section>
       )}
 
-      {/* Silver Sponsors */}
-      {sponsorsByTier.SILVER.length > 0 && (
+      {/* Supporting Sponsors */}
+      {sponsorsByTier.SUPPORTING.length > 0 && (
         <section className="py-12 sm:py-16 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 sm:mb-12">
               <div className="inline-block px-6 py-2 bg-gray-200 text-gray-700 rounded-full font-bold mb-4">
-                SILVER SPONSORS
+                SUPPORTING SPONSORS
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
-              {sponsorsByTier.SILVER.map((sponsor: any) => (
-                <SponsorCard key={sponsor.id} sponsor={sponsor} compact />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Bronze Sponsors */}
-      {sponsorsByTier.BRONZE.length > 0 && (
-        <section className="py-12 sm:py-16 bg-gray-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-orange-100 text-orange-600 rounded-full font-bold mb-4">
-                BRONZE SPONSORS
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto">
-              {sponsorsByTier.BRONZE.map((sponsor: any) => (
+              {sponsorsByTier.SUPPORTING.map((sponsor: any) => (
                 <SponsorCard key={sponsor.id} sponsor={sponsor} compact />
               ))}
             </div>

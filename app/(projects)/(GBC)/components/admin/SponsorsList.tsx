@@ -18,12 +18,13 @@ import { deleteGBCFile } from "../../actions/upload-actions";
 import { Pencil, Trash2, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Sponsor } from "../../types/sponsor";
+import { EditSponsorModal } from "./EditSponsorModal";
 
 interface SponsorsListProps {
   sponsors: Sponsor[];
 }
 
-type SponsorTier = "PLATINUM" | "GOLD" | "SILVER" | "BRONZE" | "PARTNER";
+type SponsorTier = "HEADLINE" | "IMPACT" | "SUPPORTING";
 
 export function SponsorsList({ sponsors }: SponsorsListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -43,13 +44,7 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
     {} as Record<SponsorTier, Sponsor[]>
   );
 
-  const tiers: SponsorTier[] = [
-    "PLATINUM",
-    "GOLD",
-    "SILVER",
-    "BRONZE",
-    "PARTNER",
-  ];
+  const tiers: SponsorTier[] = ["HEADLINE", "IMPACT", "SUPPORTING"];
 
   async function handleDelete(id: string, logoS3Key?: string) {
     setIsDeleting(true);
@@ -93,11 +88,9 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
             <div key={tier}>
               <div className="mb-4">
                 <h2 className="text-2xl font-bold flex items-center gap-2">
-                  {tier === "PLATINUM" && "💎"}
-                  {tier === "GOLD" && "🥇"}
-                  {tier === "SILVER" && "🥈"}
-                  {tier === "BRONZE" && "🥉"}
-                  {tier === "PARTNER" && "🤝"}
+                  {tier === "HEADLINE" && "💎"}
+                  {tier === "IMPACT" && "🌟"}
+                  {tier === "SUPPORTING" && "🤝"}
                   {tier} ({tierSponsors.length})
                 </h2>
               </div>
@@ -202,18 +195,7 @@ function SponsorCard({
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              // TODO: Implement edit functionality
-              toast.error("Edit feature coming soon");
-            }}
-          >
-            <Pencil className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
+          <EditSponsorModal sponsor={sponsor} />
           <Button
             variant="outline"
             size="sm"

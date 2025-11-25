@@ -4,6 +4,7 @@ import { getGBCTicketStats } from "../../actions/ticket-actions";
 import { requireAdmin } from "../../utils/auth";
 import { StatsCard } from "../../components/admin/StatsCard";
 import { RecentTickets } from "../../components/admin/RecentTickets";
+import Link from "next/link";
 
 export default async function AdminDashboard() {
   const user = {
@@ -21,22 +22,24 @@ export default async function AdminDashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-6 sm:mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+
           <p className="text-sm sm:text-base text-gray-600">
             Welcome back, {user.name}
           </p>
         </div>
-        <LogoutLink>
-          <Button variant="outline" size="sm" className="w-full sm:w-auto">
-            Sign Out
+
+        <Link href="/gbc2/restricted/tickets">
+          <Button variant="default" size="sm" className="w-fit">
+            Tickets
           </Button>
-        </LogoutLink>
+        </Link>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 mb-6 sm:mb-8">
         <StatsCard
           title="Total Tickets Sold"
           value={stats.completedTickets}
@@ -116,6 +119,17 @@ export default async function AdminDashboard() {
               </h3>
               <p className="text-xs sm:text-sm text-gray-600">
                 Add or edit sponsor information
+              </p>
+            </a>
+            <a
+              href="/gbc2/restricted/speakers"
+              className="block p-3 sm:p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition"
+            >
+              <h3 className="font-semibold text-sm sm:text-base">
+                Manage Speakers
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Add or edit speakers and their tiers
               </p>
             </a>
             <a

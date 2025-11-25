@@ -24,6 +24,7 @@ import { Plus, Loader2, Image, Video } from "lucide-react";
 import { toast } from "sonner";
 import { uploadGBCGalleryMedia } from "../../actions/upload-actions";
 import { createGBCGalleryItem } from "../../actions/gallery-actions";
+import { Switch } from "@/components/ui/switch";
 
 export function AddGalleryButton() {
   const [open, setOpen] = useState(false);
@@ -31,6 +32,7 @@ export function AddGalleryButton() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string>("");
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
+  const [visible, setVisible] = useState(true);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -79,6 +81,7 @@ export function AddGalleryButton() {
       formData.set("mediaUrl", uploadResult.data.url);
       formData.set("mediaS3Key", uploadResult.data.key);
       formData.set("mediaType", mediaType);
+      formData.set("visible", visible.toString());
 
       if (uploadResult.data.thumbnailUrl) {
         formData.set("thumbnailUrl", uploadResult.data.thumbnailUrl);
@@ -232,14 +235,15 @@ export function AddGalleryButton() {
 
           {/* Visible */}
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Switch
               id="visible"
               name="visible"
               defaultChecked
+              checked={visible}
+              onCheckedChange={() => setVisible(!visible)}
               disabled={isSubmitting}
-              className="h-4 w-4"
             />
+
             <Label htmlFor="visible" className="cursor-pointer">
               Visible in gallery
             </Label>

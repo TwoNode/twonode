@@ -577,11 +577,9 @@ model GBCSponsor {
 }
 
 enum GBCSponsorTier {
-  PLATINUM
-  GOLD
-  SILVER
-  BRONZE
-  PARTNER
+  HEADLINE
+  IMPACT
+  SUPPORTING
 }
 
 model GBCPartner {
@@ -623,21 +621,28 @@ enum GBCMediaType {
   VIDEO
 }
 
+enum GBCSpeakerTier {
+  KEYNOTE
+  PANELIST
+  FIRESIDE_CHAT
+}
+
 model GBCSpeaker {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   title       String
-  bio         String   @db.Text
+  bio         String          @db.Text
   photo       String
   photoS3Key  String?
+  tier        GBCSpeakerTier
   company     String?
   linkedin    String?
   twitter     String?
-  order       Int      @default(0)
-  visible     Boolean  @default(true)
-  featured    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int             @default(0)
+  visible     Boolean         @default(true)
+  featured    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   
   @@map("gbc_speakers")
 }

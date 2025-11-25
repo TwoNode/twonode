@@ -173,11 +173,9 @@ export function AddSponsorButton() {
                 <SelectValue placeholder="Select tier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PLATINUM">Platinum</SelectItem>
-                <SelectItem value="GOLD">Gold</SelectItem>
-                <SelectItem value="SILVER">Silver</SelectItem>
-                <SelectItem value="BRONZE">Bronze</SelectItem>
-                <SelectItem value="PARTNER">Partner</SelectItem>
+                <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
+                <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
+                <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
               </SelectContent>
             </Select>
           </div>

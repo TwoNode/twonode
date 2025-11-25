@@ -3,7 +3,7 @@ export interface Sponsor {
   name: string;
   logo: string;
   logoS3Key?: string | null;
-  tier: "PLATINUM" | "GOLD" | "SILVER" | "BRONZE" | "PARTNER";
+  tier: "HEADLINE" | "IMPACT" | "SUPPORTING";
   description?: string | null;
   website?: string | null;
   order: number;

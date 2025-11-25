@@ -90,6 +90,8 @@ export async function updateGBCSponsor(id: string, formData: FormData) {
   try {
     await requireAdmin();
 
+    const logoS3Key = formData.get("logoS3Key") as string | null;
+
     const data = {
       name: formData.get("name") as string,
       logo: formData.get("logo") as string,
@@ -102,9 +104,24 @@ export async function updateGBCSponsor(id: string, formData: FormData) {
 
     const validated = sponsorSchema.parse(data);
 
+    // If there's a new logo S3 key, we might need to delete the old one
+    if (logoS3Key) {
+      const currentSponsor = await prisma.gBCSponsor.findUnique({
+        where: { id },
+        select: { logoS3Key: true },
+      });
+
+      if (currentSponsor?.logoS3Key) {
+        await deleteFromS3(currentSponsor.logoS3Key);
+      }
+    }
+
     const sponsor = await prisma.gBCSponsor.update({
       where: { id },
-      data: validated,
+      data: {
+        ...validated,
+        ...(logoS3Key ? { logoS3Key } : {}),
+      },
     });
 
     revalidatePath("/gbc2/restricted/sponsors");

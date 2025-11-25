@@ -13,13 +13,17 @@ import {
   QrCode,
   MessageSquare,
   X,
+  Mic,
 } from "lucide-react";
+import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/gbc2/restricted", icon: LayoutDashboard },
   { name: "Tickets", href: "/gbc2/restricted/tickets", icon: Ticket },
   { name: "Check-In", href: "/gbc2/restricted/check-in", icon: QrCode },
   { name: "Sponsors", href: "/gbc2/restricted/sponsors", icon: Building2 },
+  { name: "Speakers", href: "/gbc2/restricted/speakers", icon: Mic },
   { name: "Gallery", href: "/gbc2/restricted/gallery", icon: Images },
   {
     name: "Inquiries",
@@ -70,6 +74,18 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
             </Link>
           );
         })}
+
+        <LogoutLink
+          className={cn(
+            "mt-5 flex items-center gap-3",
+            "rounded-lg transition text-sm sm:text-base",
+            "text-gray-700 hover:bg-gray-100"
+          )}
+        >
+          <Button variant="outline" size="sm" className="w-full px-3 py-2.5 sm:py-2">
+            Sign Out
+          </Button>
+        </LogoutLink>
       </nav>
     </aside>
   );

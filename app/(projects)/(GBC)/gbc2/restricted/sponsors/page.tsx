@@ -22,6 +22,7 @@ export default async function AdminSponsorsPage() {
             Manage conference sponsors and partners
           </p>
         </div>
+
         <AddSponsorButton />
       </div>
 

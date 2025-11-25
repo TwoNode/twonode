@@ -73,7 +73,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export const sponsorSchema = z.object({
   name: z.string().min(2, "Name is required").max(100),
   logo: z.string().url("Must be a valid URL"),
-  tier: z.enum(["PLATINUM", "GOLD", "SILVER", "BRONZE", "PARTNER"]),
+  tier: z.enum(["HEADLINE", "IMPACT", "SUPPORTING"]),
   description: z.string().optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),
@@ -113,10 +113,13 @@ export const speakerSchema = z.object({
   title: z.string().min(2, "Title is required").max(200),
   bio: z.string().min(10, "Bio must be at least 10 characters"),
   photo: z.string().url("Must be a valid URL"),
+  tier: z.enum(["KEYNOTE", "PANELIST", "FIRESIDE_CHAT"]),
+  company: z.string().optional().or(z.literal("")),
   linkedin: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   twitter: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),
+  featured: z.boolean().default(false),
 });
 
 export type SpeakerInput = z.infer<typeof speakerSchema>;
