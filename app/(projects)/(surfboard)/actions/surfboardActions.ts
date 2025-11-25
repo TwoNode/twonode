@@ -640,6 +640,23 @@ export async function createPlan(dto: SurfboardPlanDTO) {
       },
       select: { id: true, planNumber: true },
     });
+
+    // Send notification to admins about new plan
+    try {
+      const { notifyPlanUpdate } = await import("./notificationActions");
+      await notifyPlanUpdate({
+        planId: rec.id,
+        planNumber: rec.planNumber,
+        title: "New Plan Created",
+        message: `${user.firstName} ${user.lastName} created a new plan: ${rec.planNumber} - ${dto.surveyTitle}`,
+        type: "PLAN",
+        sendEmail: false, // Don't spam admins with emails for every new plan
+      });
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+      // Don't fail the plan creation if notification fails
+    }
+
     revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: { id: rec.id, planNumber: rec.planNumber } };
   } catch (error: any) {
@@ -725,6 +742,7 @@ export async function updatePlan(
     const hasCert =
       (dto.certificateFilePaths?.length ??
         existing.certificateFilePaths.length) > 0;
+    const statusChanged = !existing.certificateFilePaths.length && hasCert;
     if (hasCert) data.status = "LODGED";
 
     if (enforceLock) {
@@ -755,6 +773,42 @@ export async function updatePlan(
       where: { id: dto.id, userId: user.id },
       data,
     });
+
+    // Send notifications when certificate is added (status changes to LODGED)
+    if (statusChanged) {
+      try {
+        const { notifyPlanUpdate } = await import("./notificationActions");
+
+        // Notify the plan owner
+        await notifyPlanUpdate({
+          planId: dto.id,
+          planNumber: dto.planNumber || existing.planNumber,
+          title: "Plan Successfully Lodged",
+          message: `Your plan ${
+            dto.planNumber || existing.planNumber
+          } has been successfully lodged with certificate!`,
+          type: "SUCCESS",
+          userIds: [user.id],
+          sendEmail: true, // Send email for this important event
+        });
+
+        // Notify admins
+        await notifyPlanUpdate({
+          planId: dto.id,
+          planNumber: dto.planNumber || existing.planNumber,
+          title: "Plan Lodged",
+          message: `${user.firstName} ${user.lastName} has lodged plan ${
+            dto.planNumber || existing.planNumber
+          } with certificate.`,
+          type: "PLAN",
+          sendEmail: false,
+        });
+      } catch (notifError) {
+        console.error("Error sending notification:", notifError);
+        // Don't fail the update if notification fails
+      }
+    }
+
     revalidatePath(`/surfboard/dashboard/plans?planId=${dto.id}`);
     return { success: true, data: { id: dto.id, planNumber: dto.planNumber } };
   } catch (error: any) {
@@ -1816,10 +1870,80 @@ export async function updateSurfPlanStatus(
       };
     }
 
+    // Get the plan to check ownership and get details for notification
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        planNumber: true,
+        surveyTitle: true,
+        status: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    // Check if user is owner or admin
+    const isOwner = plan.userId === user.id;
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
+
+    if (!isOwner && !isAdmin) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const updatedPlan = await prisma.surfboardPlan.update({
-      where: { id, userId: user.id },
+      where: { id },
       data: { status },
     });
+
+    // Send notification if status changed
+    if (plan.status !== status) {
+      const { notifyPlanUpdate } = await import("./notificationActions");
+
+      const statusMessages: Record<typeof status, string> = {
+        PENDING: "Your plan has been marked as pending review.",
+        LODGED: "Your plan has been successfully lodged!",
+        QUERIED: "Your plan has been queried and requires attention.",
+        UNDER_REVIEW: "Your plan is now under review.",
+      };
+
+      const notificationTypes: Record<
+        typeof status,
+        "INFO" | "SUCCESS" | "WARNING" | "ERROR"
+      > = {
+        PENDING: "INFO",
+        LODGED: "SUCCESS",
+        QUERIED: "WARNING",
+        UNDER_REVIEW: "INFO",
+      };
+
+      // Notify plan owner if admin made the change
+      if (isAdmin && plan.userId) {
+        await notifyPlanUpdate({
+          planId: id,
+          planNumber: plan.planNumber,
+          title: `Plan Status Updated: ${status}`,
+          message: statusMessages[status],
+          type: notificationTypes[status],
+          userIds: [plan.userId],
+          sendEmail: true,
+        });
+      }
+
+      // Notify admins if user made the change
+      if (isOwner && !isAdmin) {
+        await notifyPlanUpdate({
+          planId: id,
+          planNumber: plan.planNumber,
+          title: `Plan Status Changed: ${plan.planNumber}`,
+          message: `Plan ${plan.planNumber} (${plan.surveyTitle}) status changed to ${status} by ${user.firstName} ${user.lastName}.`,
+          type: "INFO",
+          sendEmail: false, // Don't email admins for every status change
+        });
+      }
+    }
 
     revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: updatedPlan };
@@ -1948,6 +2072,11 @@ export async function addSurfUserToSharedSurfPlan(
 
     const plan = await prisma.surfboardPlan.findUnique({
       where: { id: planId },
+      select: {
+        id: true,
+        planNumber: true,
+        sharedTo: true,
+      },
     });
     if (!plan) {
       return { success: false, error: "Plan not found" };
@@ -1963,6 +2092,24 @@ export async function addSurfUserToSharedSurfPlan(
         },
       },
     });
+
+    // Send notification to the user
+    try {
+      const { notifyPlanShared } = await import("./notificationActions");
+      await notifyPlanShared({
+        planId,
+        planNumber: plan.planNumber,
+        sharedWithUserId: userId,
+        sharedByUser: {
+          firstName: authUser.firstName,
+          lastName: authUser.lastName,
+        },
+        sendEmail: true,
+      });
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+      // Don't fail the sharing if notification fails
+    }
 
     revalidatePath("/surfboard/dashboard/plans");
 
@@ -2072,7 +2219,7 @@ export async function sharePlanWithUser(
     // Verify the plan exists and belongs to the current user
     const plan = await prisma.surfboardPlan.findUnique({
       where: { id: planId, userId: user.id },
-      select: { sharedTo: true },
+      select: { sharedTo: true, planNumber: true },
     });
 
     if (!plan) {
@@ -2101,6 +2248,19 @@ export async function sharePlanWithUser(
         id: true,
         sharedTo: true,
       },
+    });
+
+    // Send notification to the user
+    const { notifyPlanShared } = await import("./notificationActions");
+    await notifyPlanShared({
+      planId,
+      planNumber: plan.planNumber,
+      sharedWithUserId: userId,
+      sharedByUser: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      sendEmail: true,
     });
 
     revalidatePath(`/surfboard/dashboard/plan/${planId}`);
