@@ -1,6 +1,6 @@
--- -- Create a new GBC admin user
--- -- Note: You'll need to update the kindeId after the user first authenticates with Kinde
--- INSERT INTO "GBCUser" (
+-- Create a new GBC admin user
+-- Note: You'll need to update the kindeId after the user first authenticates with Kinde
+-- INSERT INTO "SurfboardUser" (
 --     id,
 --     "kindeId",
 --     email,
@@ -21,12 +21,13 @@
 --     NOW()
 -- );
 
--- -- Verify the user was created
--- SELECT id, "kindeId", email, "firstName", "lastName", role, "createdAt"
--- FROM "GBCUser"
--- WHERE email = 'rojitech9@gmail.com';
-
-
-UPDATE "GBCUser"
-SET "isActive" = TRUE
+-- Verify the user was created
+SELECT id, "kindeId", email, "firstName", "lastName", role, "createdAt"
+FROM "SurfboardUser"
 WHERE email IN ('olamide.abowaba@twonodetechnologies.com', 'rojitech9@gmail.com');
+
+
+UPDATE "SurfboardUser"
+SET "role" = 'SUPERADMIN'
+WHERE email IN ('olamide.abowaba@twonodetechnologies.com', 'rojitech9@gmail.com');
+

@@ -15,6 +15,7 @@ import {
   CreditCard,
   AlertTriangle,
   Plus,
+  Bell,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -178,6 +179,12 @@ export default function SurfboardUserPanelLayout({
       icon: CreditCard,
       label: "Subscription",
       url: "/surfboard/dashboard/subscription",
+      requiresSubscription: false,
+    },
+    {
+      icon: Bell,
+      label: "Notifications",
+      url: "/surfboard/dashboard/notifications",
       requiresSubscription: false,
     },
     {

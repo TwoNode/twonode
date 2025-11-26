@@ -14,7 +14,6 @@ import {
   LogOut,
   Shield,
   Bell,
-  CreditCard,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -80,17 +79,17 @@ export default function SurfboardAdminPanelLayout({
       label: "User Management",
       url: `${dashboardUrl}/user-management`,
     },
-    // {
-    //   icon: ListChecks,
-    //   label: "Secure Plans",
-    //   url: `${dashboardUrl}/secure-plans`,
-    // },
+    {
+      icon: Bell,
+      label: "Notifications",
+      url: `${dashboardUrl}/notifications`,
+    },
     // {
     //   icon: Settings,
     //   label: "Admin Tools",
     //   url: `${dashboardUrl}/admin-tools`,
     // },
-    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
+    { icon: Settings, label: "Analytics", url: `${dashboardUrl}/analytics` },
     ...(userData?.role === "SUPERADMIN"
       ? [
           {
