@@ -151,12 +151,12 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
       <h1>🎉 Ticket Confirmed!</h1>
       <p style="margin: 10px 0 0 0; font-size: 16px;">Geospatial Builders Conference 2025</p>
     </div>
-    
+
     <div class="content">
       <p>Dear <strong>${data.name}</strong>,</p>
-      
+
       <p>Thank you for registering for <strong>GBC 2.0</strong>! We're excited to have you join us for this premier geospatial technology conference.</p>
-      
+
       <div class="ticket-info">
         <h3>📋 Ticket Details</h3>
         <div class="info-row">
@@ -184,18 +184,18 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
           <span class="info-value">${data.eventLocation}</span>
         </div>
       </div>
-      
+
       <div class="qr-section">
         <h3>🎫 Your Ticket Pass</h3>
         <p>Present this QR code at the entrance for check-in:</p>
         <img src="${data.qrCodeBase64}" alt="Ticket QR Code" class="qr-code" />
         <p style="margin-top: 15px; font-size: 12px; color: #6c757d;">Save this email or download the QR code</p>
       </div>
-      
+
       <div class="important-note">
         <strong>⚠️ Important:</strong> Please bring a valid ID and this ticket (digital or printed) to the event. Each ticket is unique and can only be used once.
       </div>
-      
+
       <h3 style="color: #667eea; margin-top: 30px;">What to Expect</h3>
       <ul style="line-height: 2;">
         <li>Networking with industry leaders and innovators</li>
