@@ -5,6 +5,7 @@ import { SidebarMobile } from "./navbar-mobile";
 import { gbcNavbarItems } from "./navbarItems";
 import { usePathname } from "next/navigation";
 import { LucideIcon } from "lucide-react";
+import Image from "next/image";
 
 interface NavbarItemProps {
   href: string;
@@ -53,7 +54,13 @@ const GBC2Navbar = () => {
           <div className="w-full h-[60px] px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
             <div className="w-full justify-between items-center inline-flex">
               <Link href={"/"} className="justify-start items-center flex">
-                <img alt="" className="" src="/logo.svg" />
+                <Image
+                  alt=""
+                  className=""
+                  width={200}
+                  height={40}
+                  src="/gbc2/gbc2DarkLogo.png"
+                />
               </Link>
 
               <div className="justify-start items-center xl:gap-[25px] gap-[15px] flex transition-all duration-300 ease-in-out">

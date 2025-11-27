@@ -9,9 +9,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Newspaper } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 interface SidebarMobileProps {
   sidebarItems: SidebarItems;
@@ -24,7 +25,13 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
     <Sheet>
       <div className="z-200 w-full overflow-y-auto flex h-[54px] justify-between items-center gap-[80px]">
         <Link href={"/"} className="justify-start items-center flex">
-          <img alt="" className="w-[202px] h-11" src="/logo.svg" />
+          <Image
+            alt=""
+            className=""
+            width={200}
+            height={40}
+            src="/gbc2/gbc2DarkLogo.png"
+          />
         </Link>
 
         <SheetTrigger asChild>
@@ -41,7 +48,13 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
       >
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 pb-6 pt-5 pr-3">
           <Link href={"/"} className="justify-start items-center flex">
-            <img alt="" className="w-[200px] h-11" src="/logo.svg" />
+            <Image
+              alt=""
+              className=""
+              width={200}
+              height={40}
+              src="/gbc2/gbc2DarkLogo.png"
+            />
           </Link>
 
           <SheetClose asChild>
