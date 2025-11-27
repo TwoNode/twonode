@@ -88,7 +88,7 @@ export default async function HomePage() {
         <div
           className="absolute inset-0 bg-cover bg-center opacity-50"
           style={{
-            backgroundImage: "url('/gbc/gbcBg.webp')",
+            backgroundImage: "url('/gbc2/gbc2Bg.webp')",
             mixBlendMode: "overlay",
           }}
         />
