@@ -10,6 +10,7 @@ import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import AdminReport from "./AdminReport";
 import { OneTimeRequestView } from "../components/OneTimeRequestView";
 import { AdminReportUpload } from "./AdminReportUpload";
+import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/PDFDownloadButton";
 
 const ViewDetailsPage = async ({
   searchParams,
@@ -56,6 +57,9 @@ const ViewDetailsPage = async ({
           <AdminMiniHeader title="One-Time Request Details" />
           <div>{JSON.stringify(transformedProperty)}</div>
 
+          <PDFDownloadButton property={transformedProperty} type="receipt" />
+          <PDFDownloadButton property={transformedProperty} type="report" />
+
           <div className="mt-6">
             <OneTimeRequestView request={transformedProperty as any} />
           </div>
@@ -88,6 +92,8 @@ const ViewDetailsPage = async ({
         <div className="container mx-auto p-4 md:p-8 max-w-6xl">
           <AdminMiniHeader title="User Request Details" />
           <div>{JSON.stringify(transformedProperty)}</div>
+
+          <PDFDownloadButton property={transformedProperty} type="report" />
 
           <div className="mt-6">
             <UserRequestDataView property={transformedProperty} />

@@ -306,7 +306,7 @@ export function AdminReportUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed z-[999] inset-0 flex justify-center items-center bg-white bg-opacity-75">
+        <div className="fixed z-999 inset-0 flex justify-center items-center bg-white bg-opacity-75">
           <svg
             className="animate-spin h-8 w-8 text-blue-500"
             xmlns="http://www.w3.org/2000/svg"
@@ -850,7 +850,7 @@ export function AdminReportUpload({
                         <span className="font-medium text-muted-foreground whitespace-nowrap">
                           {label}:
                         </span>
-                        <span className="text-right break-words text-foreground">
+                        <span className="text-right wrap-break-word text-foreground">
                           {typeof displayValue === "object" ? (
                             <span className="italic text-muted">(object)</span>
                           ) : (
@@ -933,7 +933,7 @@ export function AdminReportUpload({
                         <span className="font-medium text-muted-foreground whitespace-nowrap">
                           {label}:
                         </span>
-                        <span className="text-right break-words text-foreground">
+                        <span className="text-right wrap-break-word text-foreground">
                           {typeof displayValue === "object" ? (
                             <span className="italic text-muted">(object)</span>
                           ) : (
