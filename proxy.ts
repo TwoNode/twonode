@@ -410,6 +410,6 @@ export const config = {
     "/surfboard/dashboard/:path*",
     "/surf-restricted/dashboard/:path*",
     "/surf-restricted/superadmin/:path*",
-    "/gbc2/restricted/:path*",
+    "/gbc/restricted/:path*",
   ],
 };
