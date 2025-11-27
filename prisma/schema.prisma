@@ -539,7 +539,9 @@ model GBCTicket {
   ticketType      GBCTicketType
   price           Int
   paymentStatus   GBCPaymentStatus  @default(PENDING)
-  paymentRef      String?           @unique
+  // paymentRef is unique for non-COMPANY tickets, but COMPANY tickets can share the same reference (group purchases)
+  // Uniqueness is enforced at the application level in ticket-actions.ts
+  paymentRef      String?
   paymentDate     DateTime?
   paymentMethod   String?
   paymentDetails  Json?

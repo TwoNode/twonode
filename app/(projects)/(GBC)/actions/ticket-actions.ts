@@ -59,8 +59,8 @@ export async function createGBCTicket(formData: FormData) {
       };
     }
 
-    // Calculate price
-    const price = calculateTicketPrice(validated.ticketType);
+    // Calculate price using settings
+    const price = calculateTicketPrice(validated.ticketType, settings?.tickets);
 
     // Generate a temporary ticket number (will be replaced by database default)
     // const tempTicketNumber = `TEMP_${Date.now()}`;
@@ -100,6 +100,29 @@ export async function createGBCTicket(formData: FormData) {
       }
     );
 
+    // For COMPANY tickets created via createGBCTicket (shouldn't happen, but validate anyway)
+    if (validated.ticketType === "COMPANY") {
+      throw new Error(
+        "COMPANY tickets should be created via createGBCGroupTicket function."
+      );
+    }
+
+    console.log("\n\n\n\n\n\n\n");
+    console.log(paymentResponse);
+    console.log("\n\n\n\n\n\n\n");
+
+    // Check if payment reference already exists
+    const existingTickets = await prisma.gBCTicket.findMany({
+      where: { paymentRef: paymentResponse.data.reference },
+    });
+
+    // For non-COMPANY tickets, payment reference must be unique
+    if (existingTickets.length > 0) {
+      throw new Error(
+        "Payment reference already exists. Please try again or contact support."
+      );
+    }
+
     // Update ticket with payment reference
     await prisma.gBCTicket.update({
       where: { id: ticket.id },
@@ -137,6 +160,108 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
       };
     }
 
+    // Validate each attendee's data
+    for (let i = 0; i < attendeesData.length; i++) {
+      const attendee = attendeesData[i];
+      const attendeeNum = i + 1;
+
+      // Check required fields
+      if (!attendee.name || attendee.name.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Name is required`,
+        };
+      }
+
+      if (!attendee.email || attendee.email.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Email is required`,
+        };
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(attendee.email)) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Invalid email format`,
+        };
+      }
+
+      if (!attendee.gender || attendee.gender.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Gender is required`,
+        };
+      }
+
+      // Validate gender is one of the allowed values
+      const validGenders = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"];
+      if (!validGenders.includes(attendee.gender)) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Invalid gender value`,
+        };
+      }
+
+      if (!attendee.profession || attendee.profession.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Profession is required`,
+        };
+      }
+
+      // If profession is OTHER, validate otherProfession field
+      if (
+        attendee.profession === "OTHER" &&
+        (!attendee.otherProfession || attendee.otherProfession.trim() === "")
+      ) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Please specify profession when selecting "Other"`,
+        };
+      }
+
+      // Validate phone number format if provided
+      if (attendee.phone && attendee.phone.trim() !== "") {
+        const phoneRegex = /^[0-9]{11}$/;
+        if (!phoneRegex.test(attendee.phone.replace(/\s/g, ""))) {
+          return {
+            success: false,
+            error: `Attendee ${attendeeNum}: Phone number must be 11 digits`,
+          };
+        }
+      }
+    }
+
+    // Check for duplicate emails among attendees
+    const emails = attendeesData.map((a) => a.email.toLowerCase());
+    const uniqueEmails = new Set(emails);
+    if (uniqueEmails.size !== emails.length) {
+      return {
+        success: false,
+        error: "Each attendee must have a unique email address",
+      };
+    }
+
+    // Validate that exactly one attendee is marked as primary
+    const primaryAttendees = attendeesData.filter((a) => a.isPrimary);
+    if (primaryAttendees.length === 0) {
+      return {
+        success: false,
+        error: "Please designate one attendee as the primary contact",
+      };
+    }
+    if (primaryAttendees.length > 1) {
+      return {
+        success: false,
+        error: "Only one attendee can be designated as the primary contact",
+      };
+    }
+
+    const primaryAttendee = primaryAttendees[0];
+
     // Check ticket availability (need 5 seats)
     const soldTickets = await prisma.gBCTicket.count({
       where: { paymentStatus: "COMPLETED" },
@@ -152,7 +277,7 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
       };
     }
 
-    const maxTickets = settings ? settings.tickets.maxCapacity : 150;
+    const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
 
     if (soldTickets + 5 > maxTickets) {
       return {
@@ -163,8 +288,8 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
       };
     }
 
-    // Get the price for company tickets
-    const price = calculateTicketPrice("COMPANY");
+    // Get the price for company tickets using settings
+    const price = calculateTicketPrice("COMPANY", settings?.tickets);
 
     // Create all 5 tickets
     const ticketPromises = attendeesData.map((attendee) => {
@@ -189,21 +314,24 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
 
     const tickets = await Promise.all(ticketPromises);
 
-    // Use the first attendee's email for payment (primary contact)
-    const primaryEmail = attendeesData[0].email;
-    const ticketNumbers = tickets.map((t) => t.ticketNumber).join(", ");
+    // Use the primary attendee's email for payment (primary contact)
+    const primaryEmail = primaryAttendee.email;
+    const ticketNumbers = tickets.map((t) => t.ticketNumber);
 
     // Initialize payment for the group
+    // Use the first ticket number for payment reference generation (to avoid invalid characters)
+    // All ticket numbers are stored in metadata for reference
     const paymentResponse = await initializeTicketPayment(
       primaryEmail,
       price,
-      ticketNumbers, // Pass all ticket numbers
+      ticketNumbers[0], // Use first ticket number to generate valid payment reference
       "COMPANY",
       {
         name: `Group Ticket (${attendeesData.length} attendees)`,
         phone: attendeesData[0].phone,
         profession: "GROUP_PURCHASE",
         ticketIds: tickets.map((t) => t.id),
+        allTicketNumbers: ticketNumbers, // Store all ticket numbers in metadata
       }
     );
 
@@ -245,6 +373,19 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
  */
 export async function verifyGBCPayment(reference: string) {
   try {
+    console.log(
+      "verifyGBCPayment called with reference:",
+      reference,
+      "type:",
+      typeof reference
+    );
+
+    if (!reference) {
+      console.error("Reference is falsy in verifyGBCPayment");
+      throw new Error("Payment reference is required");
+    }
+
+    console.log("About to call verifyPayment with:", reference);
     // Verify payment with Paystack
     const verification = await verifyPayment(reference);
 
@@ -252,58 +393,95 @@ export async function verifyGBCPayment(reference: string) {
       throw new Error(verification.message || "Payment verification failed");
     }
 
-    // Get the ticket using the reference
-    const ticket = await prisma.gBCTicket.findFirst({
+    // Get all tickets using the reference (supports group purchases)
+    const tickets = await prisma.gBCTicket.findMany({
       where: { paymentRef: reference },
     });
 
-    if (!ticket) {
-      throw new Error("Ticket not found for this payment");
+    if (!tickets || tickets.length === 0) {
+      throw new Error("No tickets found for this payment");
     }
 
-    // Update ticket status to completed
-    const updatedTicket = await prisma.gBCTicket.update({
-      where: { id: ticket.id },
-      data: {
-        paymentStatus: "COMPLETED",
-        paymentDate: new Date(verification.data.paid_at),
-        paymentMethod: "paystack",
-        paymentDetails: JSON.stringify(verification.data),
-      },
-    });
+    // Validate ticket count based on ticket type
+    const firstTicketType = tickets[0].ticketType;
 
-    // Generate QR code for the ticket
-    try {
-      const qrBuffer = await generateQRCodeBuffer({
-        ticketNumber: updatedTicket.ticketNumber,
-        name: updatedTicket.name,
-        email: updatedTicket.email,
-        ticketType: updatedTicket.ticketType,
-      });
-
-      // Upload QR code to S3
-      const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
-        qrBuffer,
-        updatedTicket.ticketNumber
+    // Check if all tickets have the same type
+    const allSameType = tickets.every((t) => t.ticketType === firstTicketType);
+    if (!allSameType) {
+      throw new Error(
+        "Invalid payment: tickets with the same payment reference must have the same type"
       );
-
-      // Update ticket with QR code info
-      await prisma.gBCTicket.update({
-        where: { id: updatedTicket.id },
-        data: {
-          qrCode: qrCodeUrl,
-          qrCodeS3Key,
-        },
-      });
-    } catch (qrError) {
-      console.error("Error generating QR code:", qrError);
-      // Don't fail the whole process if QR code generation fails
     }
+
+    // Validate count for non-COMPANY tickets (should be exactly 1)
+    if (firstTicketType !== "COMPANY" && tickets.length > 1) {
+      throw new Error(
+        `Invalid payment: non-COMPANY tickets should have only 1 ticket per payment reference, found ${tickets.length}`
+      );
+    }
+
+    // Validate count for COMPANY tickets (should be exactly 5)
+    if (firstTicketType === "COMPANY" && tickets.length !== 5) {
+      throw new Error(
+        `Invalid payment: COMPANY tickets require exactly 5 tickets, found ${tickets.length}`
+      );
+    }
+
+    // Update all tickets status to completed
+    const updatedTickets = await Promise.all(
+      tickets.map((ticket) =>
+        prisma.gBCTicket.update({
+          where: { id: ticket.id },
+          data: {
+            paymentStatus: "COMPLETED",
+            paymentDate: new Date(verification.data.paid_at),
+            paymentMethod: "paystack",
+            paymentDetails: JSON.stringify(verification.data),
+          },
+        })
+      )
+    );
+
+    // Generate QR codes for all tickets
+    await Promise.all(
+      updatedTickets.map(async (ticket) => {
+        try {
+          const qrBuffer = await generateQRCodeBuffer({
+            ticketNumber: ticket.ticketNumber,
+            name: ticket.name,
+            email: ticket.email,
+            ticketType: ticket.ticketType,
+          });
+
+          // Upload QR code to S3
+          const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
+            qrBuffer,
+            ticket.ticketNumber
+          );
+
+          // Update ticket with QR code info
+          await prisma.gBCTicket.update({
+            where: { id: ticket.id },
+            data: {
+              qrCode: qrCodeUrl,
+              qrCodeS3Key,
+            },
+          });
+        } catch (qrError) {
+          console.error(
+            `Error generating QR code for ticket ${ticket.ticketNumber}:`,
+            qrError
+          );
+          // Don't fail the whole process if QR code generation fails
+        }
+      })
+    );
 
     return {
       success: true,
       data: {
-        ...updatedTicket,
+        tickets: updatedTickets,
+        count: updatedTickets.length,
         amount: koboToNaira(verification.data.amount),
       },
     };

@@ -44,15 +44,27 @@ export function generateTicketNumber(): string {
 }
 
 export function calculateTicketPrice(
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY"
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
+  ticketSettings?: {
+    earlyBirdPrice?: number;
+    regularPrice?: number;
+    companyPrice?: number;
+  }
 ): number {
+  // Default prices if settings not provided
+  const defaultPrices = {
+    earlyBirdPrice: 100000,
+    regularPrice: 120000,
+    companyPrice: 250000,
+  };
+
   switch (ticketType) {
     case "EARLY_BIRD":
-      return parseInt(process.env.NEXT_PUBLIC_EARLY_BIRD_PRICE || "100000");
+      return ticketSettings?.earlyBirdPrice ?? defaultPrices.earlyBirdPrice;
     case "REGULAR":
-      return parseInt(process.env.NEXT_PUBLIC_REGULAR_PRICE || "120000");
+      return ticketSettings?.regularPrice ?? defaultPrices.regularPrice;
     case "COMPANY":
-      return parseInt(process.env.NEXT_PUBLIC_COMPANY_PRICE || "250000");
+      return ticketSettings?.companyPrice ?? defaultPrices.companyPrice;
     default:
       throw new Error(`Unknown ticket type: ${ticketType}`);
   }

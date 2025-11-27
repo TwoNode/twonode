@@ -96,7 +96,7 @@ export function TicketCards({
         </div>
 
         <div className="text-center mb-3 sm:mb-4">
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Group</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">Company</h3>
           <div className="text-3xl sm:text-4xl font-bold text-amber-600 mb-2">
             ₦{(companyPrice / 1000).toFixed(0)}K
           </div>

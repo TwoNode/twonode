@@ -82,10 +82,32 @@ export async function verifyPayment(
   reference: string
 ): Promise<VerifyPaymentResponse> {
   try {
+    console.log(
+      "verifyPayment called with reference:",
+      reference,
+      "type:",
+      typeof reference
+    );
+
+    // Validate reference is a non-empty string
+    if (
+      !reference ||
+      typeof reference !== "string" ||
+      reference.trim() === ""
+    ) {
+      console.error("Invalid reference received:", {
+        value: reference,
+        type: typeof reference,
+        isEmpty: !reference,
+      });
+      throw new Error(`Payment reference is required. Received: ${reference}`);
+    }
+
     const paystack = await createPaystackInstance(
       process.env.NODE_ENV === "production"
     );
-    const response = await paystack.transaction.verify(reference);
+
+    const response = await paystack.transaction.verify({ reference });
 
     if (!response.status) {
       throw new Error(response.message || "Payment verification failed");
@@ -125,9 +147,18 @@ export async function verifyWebhookSignature(
 /**
  * Generate a unique payment reference
  */
-export function generatePaymentReference(ticketNumber: string): string {
+export function generatePaymentReference(
+  ticketNumber: string,
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY"
+): string {
   const timestamp = Date.now();
-  return `${ticketNumber}_${timestamp}_REF`;
+  const prefix =
+    ticketType === "COMPANY"
+      ? "CMP"
+      : ticketType === "EARLY_BIRD"
+      ? "EB"
+      : "REG";
+  return `${prefix}_${ticketNumber}_${timestamp}_REF`;
 }
 
 /**
@@ -151,10 +182,10 @@ export async function initializeTicketPayment(
   email: string,
   amount: number, // in Naira
   ticketNumber: string,
-  ticketType: string,
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
   metadata?: Record<string, any>
 ) {
-  const reference = generatePaymentReference(ticketNumber);
+  const reference = generatePaymentReference(ticketNumber, ticketType);
   const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/gbc/tickets/success?reference=${reference}`;
 
   return initializePayment({

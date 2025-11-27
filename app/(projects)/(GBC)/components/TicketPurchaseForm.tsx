@@ -29,9 +29,14 @@ interface Attendee {
   gender: string;
   profession: string;
   otherProfession?: string;
+  isPrimary?: boolean;
 }
 
-export function GBCTicketPurchaseForm() {
+export function GBCTicketPurchaseForm({
+  ticketSettings,
+}: {
+  ticketSettings: any;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +54,7 @@ export function GBCTicketPurchaseForm() {
       gender: "",
       profession: "",
       otherProfession: "",
+      isPrimary: true, // First attendee is primary by default
     },
     {
       name: "",
@@ -57,6 +63,7 @@ export function GBCTicketPurchaseForm() {
       gender: "",
       profession: "",
       otherProfession: "",
+      isPrimary: false,
     },
     {
       name: "",
@@ -65,6 +72,7 @@ export function GBCTicketPurchaseForm() {
       gender: "",
       profession: "",
       otherProfession: "",
+      isPrimary: false,
     },
     {
       name: "",
@@ -73,6 +81,7 @@ export function GBCTicketPurchaseForm() {
       gender: "",
       profession: "",
       otherProfession: "",
+      isPrimary: false,
     },
     {
       name: "",
@@ -81,8 +90,16 @@ export function GBCTicketPurchaseForm() {
       gender: "",
       profession: "",
       otherProfession: "",
+      isPrimary: false,
     },
   ]);
+
+  // Access settings from the new JSON structure
+  const earlyBirdPrice = ticketSettings?.earlyBirdPrice ?? 100000;
+  const regularPrice = ticketSettings?.regularPrice ?? 120000;
+  const companyPrice = ticketSettings?.companyPrice ?? 250000;
+  const maxEarlyBirdCapacity = ticketSettings?.maxEarlyBirdCapacity ?? 500;
+  const pauseTicketReg = ticketSettings?.pauseTicketReg ?? false;
 
   useEffect(() => {
     const loadPaystack = async () => {
@@ -121,6 +138,15 @@ export function GBCTicketPurchaseForm() {
     setAttendees(newAttendees);
   };
 
+  // Set primary attendee (ensure only one is primary)
+  const setPrimaryAttendee = (index: number) => {
+    const newAttendees = attendees.map((attendee, i) => ({
+      ...attendee,
+      isPrimary: i === index,
+    }));
+    setAttendees(newAttendees);
+  };
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -149,6 +175,17 @@ export function GBCTicketPurchaseForm() {
           throw new Error("Please fill in all 5 attendees' information");
         }
 
+        // Ensure exactly one primary attendee is selected
+        const primaryAttendees = validAttendees.filter((a) => a.isPrimary);
+        if (primaryAttendees.length === 0) {
+          throw new Error("Please select a primary contact for the group");
+        }
+        if (primaryAttendees.length > 1) {
+          throw new Error("Only one attendee can be marked as primary contact");
+        }
+
+        const primaryAttendee = primaryAttendees[0];
+
         result = await createGBCGroupTicket(validAttendees);
 
         if (!result.success || !result.data) {
@@ -157,8 +194,8 @@ export function GBCTicketPurchaseForm() {
 
         reference = result.data.reference;
         totalPrice = result.data.tickets[0].price * 5; // Total price for all 5
-        primaryEmail = validAttendees[0].email;
-        primaryName = validAttendees[0].name;
+        primaryEmail = primaryAttendee.email;
+        primaryName = primaryAttendee.name;
       } else {
         // Regular individual ticket
         result = await createGBCTicket(formData);
@@ -192,23 +229,43 @@ export function GBCTicketPurchaseForm() {
         lastName: primaryName.split(" ").slice(1).join(" ") || "Customer",
         onSuccess: async (transaction: any) => {
           toast.dismiss();
-          toast.success("Payment successful! Verifying...");
+
+          // Extract reference from transaction object or fallback to our reference variable
+          const paymentRef = transaction?.reference || reference;
+          console.log("Transaction object:", transaction);
+          console.log("Payment reference:", paymentRef);
+
+          if (!paymentRef) {
+            toast.error(
+              "Payment reference is missing. Please contact support."
+            );
+            console.error(
+              "Missing reference - transaction:",
+              transaction,
+              "reference var:",
+              reference
+            );
+            return;
+          }
+
+          toast.success("Payment successful! Verifying... " + paymentRef);
 
           try {
-            const verification = await verifyGBCPayment(reference);
+            const verification = await verifyGBCPayment(paymentRef);
             if (!verification.success) {
               throw new Error(
-                verification.error || "Payment verification failed"
+                verification.error ||
+                  "Payment verification failed " + paymentRef
               );
             }
             toast.success("Payment verified successfully!");
-            router.push(`/gbc/tickets/success?reference=${reference}`);
+            router.push(`/gbc/tickets/success?reference=${paymentRef}`);
           } catch (error) {
             console.error("Verification error:", error);
             const errorMessage =
               error instanceof Error
                 ? error.message
-                : "Payment verification failed";
+                : "Payment verification failed " + paymentRef;
             setPaymentError(errorMessage);
             toast.error(
               "Payment received but verification failed. Please contact support."
@@ -265,29 +322,42 @@ export function GBCTicketPurchaseForm() {
             <SelectItem value="EARLY_BIRD">
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Early Bird</span>
-                <span className="ml-4 font-bold">₦100,000</span>
+                <span className="ml-4 font-bold">
+                  ₦{(earlyBirdPrice / 1000).toFixed(0)}K
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="REGULAR">
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Regular</span>
-                <span className="ml-4 font-bold">₦120,000</span>
+                <span className="ml-4 font-bold">
+                  ₦{(regularPrice / 1000).toFixed(0)}K
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="COMPANY">
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
                 <span>Group (5 People)</span>
-                <span className="ml-4 font-bold">₦250,000</span>
+                <span className="ml-4 font-bold">
+                  ₦{(companyPrice / 1000).toFixed(0)}K
+                </span>
               </div>
             </SelectItem>
           </SelectContent>
         </Select>
         {isGroupTicket && (
-          <p className="text-xs sm:text-sm text-purple-600 mt-2 flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            Group ticket includes 5 attendees. Please fill in details for all 5
-            people below.
-          </p>
+          <div className="space-y-2">
+            <p className="text-xs sm:text-sm text-purple-600 flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              Group ticket includes 5 attendees. Please fill in details for all
+              5 people below.
+            </p>
+            <p className="text-xs sm:text-sm text-purple-800 bg-purple-100 p-2 rounded border border-purple-300">
+              <strong>Note:</strong> The primary contact will receive the
+              payment confirmation and be the main point of contact for this
+              group booking.
+            </p>
+          </div>
         )}
       </div>
 
@@ -298,12 +368,37 @@ export function GBCTicketPurchaseForm() {
           {attendees.map((attendee, index) => (
             <div
               key={index}
-              className="p-4 border-2 border-purple-200 rounded-lg bg-purple-50/50"
+              className={`p-4 border-2 rounded-lg ${
+                attendee.isPrimary
+                  ? "border-purple-500 bg-purple-100/50"
+                  : "border-purple-200 bg-purple-50/50"
+              }`}
             >
-              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-600" />
-                Attendee {index + 1}
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  Attendee {index + 1}
+                </h3>
+
+                {/* Primary Contact Radio Button */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id={`primary-${index}`}
+                    name="primaryContact"
+                    checked={attendee.isPrimary || false}
+                    onChange={() => setPrimaryAttendee(index)}
+                    disabled={isSubmitting}
+                    className="w-4 h-4 text-purple-600 cursor-pointer"
+                  />
+                  <Label
+                    htmlFor={`primary-${index}`}
+                    className="text-sm font-semibold text-purple-700 cursor-pointer"
+                  >
+                    Primary Contact
+                  </Label>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Name */}

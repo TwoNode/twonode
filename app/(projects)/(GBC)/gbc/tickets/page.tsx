@@ -175,13 +175,8 @@ export default async function TicketsPage() {
                   </p>
                 </div>
 
-                {/* <TicketPurchaseForm />
-
-                <hr />
-                <hr /> */}
-
                 <Suspense fallback={<div>Loading form...</div>}>
-                  <GBCTicketPurchaseForm />
+                  <GBCTicketPurchaseForm ticketSettings={settings?.tickets} />
                 </Suspense>
               </div>
             </div>

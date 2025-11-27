@@ -54,7 +54,15 @@ export default async function TicketSuccessPage({
     );
   }
 
-  const ticket = verification.data;
+  // Type guard: verification.data should exist after success check
+  if (!verification.data) {
+    redirect("/gbc/tickets");
+  }
+
+  // Extract ticket data from verification response
+  const { tickets, count, amount } = verification.data;
+  const primaryTicket = tickets[0]; // Get the first ticket (or primary ticket for groups)
+  const isGroupTicket = count > 1;
 
   // Fetch settings for event details
   const settingsResult = await getAllGBCSettings();
@@ -92,7 +100,9 @@ export default async function TicketSuccessPage({
               </h1>
             </div>
             <p className="text-purple-100">
-              Your ticket for GBC 2.0 has been confirmed
+              {isGroupTicket
+                ? `Your ${count} tickets for GBC 2.0 have been confirmed`
+                : "Your ticket for GBC 2.0 has been confirmed"}
             </p>
           </div>
 
@@ -101,10 +111,12 @@ export default async function TicketSuccessPage({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-purple-700 font-medium mb-1">
-                    Ticket Number
+                    Ticket Number{isGroupTicket ? "s" : ""}
                   </p>
                   <p className="font-mono font-bold text-purple-900">
-                    {ticket?.ticketNumber}
+                    {isGroupTicket
+                      ? tickets.map((t) => t.ticketNumber).join(", ")
+                      : primaryTicket.ticketNumber}
                   </p>
                 </div>
                 <div>
@@ -120,7 +132,7 @@ export default async function TicketSuccessPage({
                     Amount Paid
                   </p>
                   <p className="font-bold text-purple-900">
-                    ₦{ticket?.amount.toLocaleString()}
+                    ₦{amount.toLocaleString()}
                   </p>
                 </div>
                 <div>
@@ -144,12 +156,14 @@ export default async function TicketSuccessPage({
                 <div>
                   <h3 className="font-medium">Check your email</h3>
                   <p className="text-sm text-gray-500">
-                    We've sent your ticket and QR code to {ticket?.email}
+                    We've sent your ticket{isGroupTicket ? "s" : ""} and QR code
+                    {isGroupTicket ? "s" : ""} to {primaryTicket.email}
+                    {isGroupTicket && " and all other attendees"}
                   </p>
                 </div>
               </div>
 
-              {ticket?.qrCode && (
+              {primaryTicket.qrCode && (
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="mt-0.5">
                     <div className="p-2 bg-blue-100 rounded-full">
@@ -157,10 +171,12 @@ export default async function TicketSuccessPage({
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium">Download your ticket</h3>
+                    <h3 className="font-medium">
+                      Download your ticket{isGroupTicket ? "s" : ""}
+                    </h3>
                     <p className="text-sm text-gray-500">
                       <a
-                        href={ticket?.qrCode}
+                        href={primaryTicket.qrCode}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline"
