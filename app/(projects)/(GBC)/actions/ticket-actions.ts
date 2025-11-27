@@ -14,6 +14,7 @@ import { calculateTicketPrice } from "../utils";
 import { sendGBCTicketSMS } from "../utils/sms";
 import { generateQRCodeBuffer } from "../utils/qr_code";
 import { getAllGBCSettings } from "./settings-actions";
+import { sendGBCTicketConfirmation } from "../utils/email";
 
 export async function createGBCTicket(formData: FormData) {
   try {
@@ -370,14 +371,18 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
 
 /**
  * Verify GBC payment and update ticket status
+ * @param reference - Payment reference from Paystack
+ * @param sendEmail - Optional flag to force send email even if QR already exists
  */
-export async function verifyGBCPayment(reference: string) {
+export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
   try {
     console.log(
       "verifyGBCPayment called with reference:",
       reference,
       "type:",
-      typeof reference
+      typeof reference,
+      "sendEmail:",
+      sendEmail
     );
 
     if (!reference) {
@@ -442,31 +447,140 @@ export async function verifyGBCPayment(reference: string) {
       )
     );
 
-    // Generate QR codes for all tickets
+    // Get settings for event information
+    const settingsResult = await getAllGBCSettings();
+    const settings = settingsResult.success ? settingsResult.data : null;
+
+    const eventDate = settings?.event.date
+      ? new Date(settings.event.date).toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day";
+
+    const eventLocation =
+      settings?.contact.city ||
+      process.env.NEXT_PUBLIC_EVENT_LOCATION ||
+      "Lagos, Nigeria";
+
+    const eventVenue =
+      settings?.event.venue ||
+      process.env.NEXT_PUBLIC_EVENT_VENUE ||
+      "Conference Center, Lagos";
+
+    // Generate QR codes and send emails for all tickets
     await Promise.all(
       updatedTickets.map(async (ticket) => {
+        let qrJustGenerated = false;
+        let qrBuffer: Buffer | null = null;
+
         try {
-          const qrBuffer = await generateQRCodeBuffer({
-            ticketNumber: ticket.ticketNumber,
-            name: ticket.name,
-            email: ticket.email,
-            ticketType: ticket.ticketType,
-          });
+          // Check if QR code already exists
+          if (!ticket.qrCode || !ticket.qrCodeS3Key) {
+            console.log(
+              `Generating QR code for ticket ${ticket.ticketNumber} (not previously generated)`
+            );
 
-          // Upload QR code to S3
-          const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
-            qrBuffer,
-            ticket.ticketNumber
-          );
+            qrBuffer = await generateQRCodeBuffer({
+              ticketNumber: ticket.ticketNumber,
+              name: ticket.name,
+              email: ticket.email,
+              ticketType: ticket.ticketType,
+            });
 
-          // Update ticket with QR code info
-          await prisma.gBCTicket.update({
-            where: { id: ticket.id },
-            data: {
-              qrCode: qrCodeUrl,
-              qrCodeS3Key,
-            },
-          });
+            // Upload QR code to S3
+            const { url: qrCodeUrl, key: qrCodeS3Key } = await uploadQRCode(
+              qrBuffer,
+              ticket.ticketNumber
+            );
+
+            // Update ticket with QR code info
+            await prisma.gBCTicket.update({
+              where: { id: ticket.id },
+              data: {
+                qrCode: qrCodeUrl,
+                qrCodeS3Key,
+              },
+            });
+
+            qrJustGenerated = true;
+            console.log(
+              `QR code generated and uploaded for ticket ${ticket.ticketNumber}`
+            );
+          } else {
+            console.log(
+              `QR code already exists for ticket ${ticket.ticketNumber}, skipping generation`
+            );
+
+            // If sendEmail is true, we need to regenerate the QR buffer for email
+            if (sendEmail) {
+              qrBuffer = await generateQRCodeBuffer({
+                ticketNumber: ticket.ticketNumber,
+                name: ticket.name,
+                email: ticket.email,
+                ticketType: ticket.ticketType,
+              });
+            }
+          }
+
+          // Send confirmation email only if QR was just generated OR sendEmail is true
+          if (qrJustGenerated || sendEmail) {
+            try {
+              // Ensure we have a QR buffer for the email
+              if (!qrBuffer) {
+                qrBuffer = await generateQRCodeBuffer({
+                  ticketNumber: ticket.ticketNumber,
+                  name: ticket.name,
+                  email: ticket.email,
+                  ticketType: ticket.ticketType,
+                });
+              }
+
+              const qrCodeBase64 = `data:image/png;base64,${qrBuffer.toString(
+                "base64"
+              )}`;
+
+              const emailResult = await sendGBCTicketConfirmation({
+                name: ticket.name,
+                email: ticket.email,
+                phone: ticket.phone || undefined,
+                ticketNumber: ticket.ticketNumber,
+                ticketType: ticket.ticketType,
+                price: ticket.price,
+                qrCodeBase64,
+                eventDate,
+                eventLocation,
+                eventVenue,
+              });
+
+              if (emailResult.success) {
+                console.log(
+                  `Confirmation email sent to ${ticket.email} for ticket ${
+                    ticket.ticketNumber
+                  } (${
+                    qrJustGenerated ? "QR just generated" : "sendEmail=true"
+                  })`
+                );
+              } else {
+                console.error(
+                  `Failed to send email to ${ticket.email}:`,
+                  emailResult.error
+                );
+              }
+            } catch (emailError) {
+              console.error(
+                `Error sending confirmation email for ticket ${ticket.ticketNumber}:`,
+                emailError
+              );
+              // Don't fail the whole process if email sending fails
+            }
+          } else {
+            console.log(
+              `Skipping email for ticket ${ticket.ticketNumber} (QR already exists and sendEmail is not true)`
+            );
+          }
         } catch (qrError) {
           console.error(
             `Error generating QR code for ticket ${ticket.ticketNumber}:`,

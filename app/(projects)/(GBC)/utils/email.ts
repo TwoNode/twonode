@@ -204,13 +204,13 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
         <li>Investment opportunities and partnerships</li>
         <li>Insights on Land Administration and Energy transformation</li>
       </ul>
-      
+
       <div style="text-align: center; margin: 30px 0;">
         <a href="${
           process.env.NEXT_PUBLIC_APP_URL
         }" class="button">Visit Conference Website</a>
       </div>
-      
+
       <p>Looking forward to seeing you at GBC 2.0!</p>
       
       <p style="margin-top: 30px;">
