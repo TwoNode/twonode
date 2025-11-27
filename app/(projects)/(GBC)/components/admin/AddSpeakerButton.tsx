@@ -140,11 +140,11 @@ export function AddSpeakerButton() {
                   </span>
                   <input
                     id="photo"
+                    name="photo"
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
                     className="hidden"
-                    required
                   />
                 </label>
               )}
