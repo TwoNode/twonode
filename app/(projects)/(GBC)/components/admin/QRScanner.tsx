@@ -242,18 +242,29 @@ export function QRScanner() {
   async function handleQRCodeDetected(qrData: string) {
     let ticketNumber = qrData;
 
-    // Try to extract from URL
+    // Try to parse as JSON first (for QR codes with embedded ticket data)
     try {
-      const url = new URL(qrData);
-      const ticketParam =
-        url.searchParams.get("ticket") ||
-        url.searchParams.get("t") ||
-        url.searchParams.get("id");
-      if (ticketParam) {
-        ticketNumber = ticketParam;
+      const parsed = JSON.parse(qrData);
+      if (parsed.ticketNumber) {
+        ticketNumber = parsed.ticketNumber;
+        console.log("📋 Extracted ticket from JSON:", ticketNumber);
       }
     } catch {
-      // Use as-is
+      // Not JSON, try URL parsing
+      try {
+        const url = new URL(qrData);
+        const ticketParam =
+          url.searchParams.get("ticket") ||
+          url.searchParams.get("t") ||
+          url.searchParams.get("id");
+        if (ticketParam) {
+          ticketNumber = ticketParam;
+          console.log("🔗 Extracted ticket from URL:", ticketNumber);
+        }
+      } catch {
+        // Use as-is (plain ticket number)
+        console.log("📝 Using raw ticket data:", ticketNumber);
+      }
     }
 
     console.log("Processing ticket:", ticketNumber);

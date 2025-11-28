@@ -29,16 +29,16 @@ const styles = StyleSheet.create({
 
   // ============ HEADER ============
   header: {
-    marginBottom: 30,
+    marginBottom: 14,
     borderBottomWidth: 2,
     borderBottomColor: "#0A2D75",
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   logoContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 14,
   },
   logo: {
     width: 80,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   referenceSection: {
     backgroundColor: "#f8f9fa",
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 14,
     borderLeftWidth: 4,
     borderLeftColor: "#16a34a",
   },
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
 
   // ============ DETAILS SECTION ============
   detailsSection: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   sectionTitle: {
     fontSize: 14,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 8,
     paddingTop: 10,
     borderTopWidth: 2,
     borderTopColor: "#16a34a",
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 3,
     alignSelf: "flex-start",
-    marginBottom: 15,
+    marginBottom: 14,
   },
   statusText: {
     fontSize: 10,
