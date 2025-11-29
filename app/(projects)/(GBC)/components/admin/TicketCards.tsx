@@ -9,6 +9,7 @@ interface TicketCardsProps {
   regularPrice: number;
   companyPrice: number;
   maxEarlyBirdCapacity: number;
+  earlyBirdDeadline?: string;
   earlyBirdInfoList: string[];
   regularInfoList: string[];
   companyInfoList: string[];
@@ -29,6 +30,7 @@ export function TicketCards({
   regularPrice,
   companyPrice,
   maxEarlyBirdCapacity,
+  earlyBirdDeadline,
   earlyBirdInfoList,
   regularInfoList,
   companyInfoList,
@@ -43,17 +45,17 @@ export function TicketCards({
   const earlyBirdAvailability = isTicketTypeAvailable(
     "EARLY_BIRD",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
   const regularAvailability = isTicketTypeAvailable(
     "REGULAR",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
   const companyAvailability = isTicketTypeAvailable(
     "COMPANY",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
 
   const scrollToForm = (tier: string) => {

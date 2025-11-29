@@ -23,6 +23,7 @@ export default async function TicketsPage() {
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 250000;
   const maxEarlyBirdCapacity = settings?.tickets.maxEarlyBirdCapacity ?? 500;
+  const earlyBirdDeadline = settings?.tickets.earlyBirdDeadline;
   const pauseTicketReg = settings?.tickets.pauseTicketReg ?? false;
 
   const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
@@ -154,6 +155,7 @@ export default async function TicketsPage() {
                   regularPrice={regularPrice}
                   companyPrice={companyPrice}
                   maxEarlyBirdCapacity={maxEarlyBirdCapacity}
+                  earlyBirdDeadline={earlyBirdDeadline}
                   earlyBirdInfoList={earlyBirdInfoList}
                   regularInfoList={regularInfoList}
                   companyInfoList={companyInfoList}

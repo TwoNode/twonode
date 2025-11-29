@@ -75,6 +75,7 @@ export async function createGBCTicket(formData: FormData) {
       soldEarlyBirdTickets,
       {
         maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
+        earlyBirdDeadline: settings?.tickets.earlyBirdDeadline,
       }
     );
 

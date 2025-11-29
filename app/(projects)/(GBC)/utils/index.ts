@@ -74,7 +74,7 @@ export function calculateTicketPrice(
  * Check if a specific ticket type is available based on capacity and sold tickets
  * @param ticketType - The type of ticket to check
  * @param soldEarlyBirdTickets - Number of early bird tickets sold
- * @param settings - Ticket settings with capacity limits
+ * @param settings - Ticket settings with capacity limits and deadline
  * @returns Object with availability status and reason
  */
 export function isTicketTypeAvailable(
@@ -82,14 +82,41 @@ export function isTicketTypeAvailable(
   soldEarlyBirdTickets: number,
   settings?: {
     maxEarlyBirdCapacity?: number;
+    earlyBirdDeadline?: string;
+    pauseTicketReg?: boolean;
   }
 ): { available: boolean; reason?: string } {
-  const maxEarlyBirdCapacity = settings?.maxEarlyBirdCapacity ?? 1000;
+  const maxEarlyBirdCapacity = settings?.maxEarlyBirdCapacity ?? 500;
+  const earlyBirdDeadline = settings?.earlyBirdDeadline;
+  const pauseTicketReg = settings?.pauseTicketReg ?? false;
+
+  if (pauseTicketReg) {
+    return { available: false, reason: "Ticket registration is paused" };
+  }
+
+  // Check if early bird deadline has passed
+  const isEarlyBirdDeadlinePassed = earlyBirdDeadline
+    ? new Date() > new Date(earlyBirdDeadline)
+    : false;
+
+  // Check if early bird capacity is reached
+  const isEarlyBirdCapacityReached =
+    soldEarlyBirdTickets >= maxEarlyBirdCapacity;
+
+  // Early bird is over if either deadline passed OR capacity reached
+  const isEarlyBirdOver =
+    isEarlyBirdDeadlinePassed || isEarlyBirdCapacityReached;
 
   switch (ticketType) {
     case "EARLY_BIRD":
-      // Early bird is available if capacity not reached
-      if (soldEarlyBirdTickets >= maxEarlyBirdCapacity) {
+      // Early bird is available if deadline hasn't passed AND capacity not reached
+      if (isEarlyBirdDeadlinePassed) {
+        return {
+          available: false,
+          reason: "Early bird deadline has passed",
+        };
+      }
+      if (isEarlyBirdCapacityReached) {
         return {
           available: false,
           reason: "Early bird tickets are sold out",
@@ -98,12 +125,12 @@ export function isTicketTypeAvailable(
       return { available: true };
 
     case "REGULAR":
-      // Regular is only available when early bird is sold out
-      if (soldEarlyBirdTickets < maxEarlyBirdCapacity) {
+      // Regular is only available when early bird is over (deadline passed OR sold out)
+      if (!isEarlyBirdOver) {
         return {
           available: false,
           reason:
-            "Regular tickets will be available after early bird sells out",
+            "Regular tickets will be available after early bird deadline or when early bird sells out",
         };
       }
       return { available: true };

@@ -102,6 +102,7 @@ export function GBCTicketPurchaseForm({
   const regularPrice = ticketSettings?.regularPrice ?? 120000;
   const companyPrice = ticketSettings?.companyPrice ?? 250000;
   const maxEarlyBirdCapacity = ticketSettings?.maxEarlyBirdCapacity ?? 500;
+  const earlyBirdDeadline = ticketSettings?.earlyBirdDeadline;
   const pauseTicketReg = ticketSettings?.pauseTicketReg ?? false;
 
   // Get sold early bird tickets count from stats
@@ -111,17 +112,17 @@ export function GBCTicketPurchaseForm({
   const earlyBirdAvailability = isTicketTypeAvailable(
     "EARLY_BIRD",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
   const regularAvailability = isTicketTypeAvailable(
     "REGULAR",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
   const companyAvailability = isTicketTypeAvailable(
     "COMPANY",
     soldEarlyBirdTickets,
-    { maxEarlyBirdCapacity }
+    { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
 
   useEffect(() => {
