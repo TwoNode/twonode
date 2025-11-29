@@ -41,6 +41,14 @@ export async function createGBCTicket(formData: FormData) {
       where: { paymentStatus: "COMPLETED" },
     });
 
+    // Count early bird tickets sold
+    const soldEarlyBirdTickets = await prisma.gBCTicket.count({
+      where: {
+        paymentStatus: "COMPLETED",
+        ticketType: "EARLY_BIRD",
+      },
+    });
+
     const settingsResult = await getAllGBCSettings();
     const settings = settingsResult.success ? settingsResult.data : null;
 
@@ -57,6 +65,23 @@ export async function createGBCTicket(formData: FormData) {
       return {
         success: false,
         error: "Sorry, all tickets are sold out",
+      };
+    }
+
+    // Check if the selected ticket type is available
+    const { isTicketTypeAvailable } = await import("../utils");
+    const ticketAvailability = isTicketTypeAvailable(
+      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY",
+      soldEarlyBirdTickets,
+      {
+        maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
+      }
+    );
+
+    if (!ticketAvailability.available) {
+      return {
+        success: false,
+        error: ticketAvailability.reason || "This ticket type is not available",
       };
     }
 
@@ -858,16 +883,24 @@ export async function getGBCTicketStats() {
 
     // Optimize queries by combining related operations
     // Query 1: Get aggregated stats by payment status in a single query
-    const [statusStats, checkedInCount] = await Promise.all([
-      // Get ticket counts grouped by payment status AND total revenue in one query
-      prisma.gBCTicket.groupBy({
-        by: ["paymentStatus"],
-        _count: { id: true },
-        _sum: { price: true },
-      }),
-      // Query 2: Get checked-in tickets count
-      prisma.gBCTicket.count({ where: { checkedIn: true } }),
-    ]);
+    const [statusStats, checkedInCount, soldEarlyBirdTickets] =
+      await Promise.all([
+        // Get ticket counts grouped by payment status AND total revenue in one query
+        prisma.gBCTicket.groupBy({
+          by: ["paymentStatus"],
+          _count: { id: true },
+          _sum: { price: true },
+        }),
+        // Query 2: Get checked-in tickets count
+        prisma.gBCTicket.count({ where: { checkedIn: true } }),
+        // Query 3: Get early bird tickets sold
+        prisma.gBCTicket.count({
+          where: {
+            paymentStatus: "COMPLETED",
+            ticketType: "EARLY_BIRD",
+          },
+        }),
+      ]);
 
     // Process the grouped results to extract individual stats
     const totalTickets = statusStats.reduce(
@@ -903,6 +936,7 @@ export async function getGBCTicketStats() {
         availableTickets,
         totalRevenue,
         maxTickets,
+        soldEarlyBirdTickets,
       },
     };
   } catch (error) {

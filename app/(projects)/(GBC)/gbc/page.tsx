@@ -360,7 +360,20 @@ export default async function HomePage() {
             <>
               <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
-                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col">
+                <div
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${
+                    stats.soldEarlyBirdTickets >=
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                      ? "opacity-60"
+                      : ""
+                  }`}
+                >
+                  {stats.soldEarlyBirdTickets >=
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) && (
+                    <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                      SOLD OUT
+                    </div>
+                  )}
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white">Early Bird</h3>
                     <div className="text-3xl font-bold text-yellow-300 mt-2">
@@ -382,20 +395,55 @@ export default async function HomePage() {
                       </li>
                     ))}
                   </ul>
+                  {stats.soldEarlyBirdTickets <
+                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    <Link
+                      href="/gbc/tickets?tier=early_bird"
+                      className="w-full"
+                    >
+                      <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold">
+                        Select Early Bird
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      disabled
+                      className="w-full bg-gray-500 text-gray-300 cursor-not-allowed"
+                    >
+                      Sold Out
+                    </Button>
+                  )}
                 </div>
 
                 {/* Regular Card */}
-                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col">
-                  <div className="absolute top-0 right-0 bg-purple-500 text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    POPULAR
-                  </div>
+                <div
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col ${
+                    stats.soldEarlyBirdTickets <
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                      ? "opacity-60"
+                      : ""
+                  }`}
+                >
+                  {stats.soldEarlyBirdTickets <
+                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    <div className="absolute top-0 right-0 bg-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                      NOT YET AVAILABLE
+                    </div>
+                  ) : (
+                    <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                      NOW AVAILABLE
+                    </div>
+                  )}
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white">Regular</h3>
                     <div className="text-3xl font-bold text-white mt-2">
                       ₦{(regularPrice / 1000).toFixed(0)}K
                     </div>
                     <p className="text-sm text-gray-300 mt-1">
-                      Standard access
+                      {stats.soldEarlyBirdTickets <
+                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                        ? "Available after early bird sells out"
+                        : "Standard access"}
                     </p>
                   </div>
                   <ul className="space-y-2 mb-6 grow">
@@ -409,10 +457,28 @@ export default async function HomePage() {
                       </li>
                     ))}
                   </ul>
+                  {stats.soldEarlyBirdTickets >=
+                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    <Link href="/gbc/tickets?tier=regular" className="w-full">
+                      <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
+                        Select Regular
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      disabled
+                      className="w-full bg-gray-500 text-gray-300 cursor-not-allowed"
+                    >
+                      Not Yet Available
+                    </Button>
+                  )}
                 </div>
 
                 {/* Company Card */}
-                <div className="bg-linear-to-br from-amber-500/20 to-purple-600/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col">
+                <div className="bg-linear-to-br from-amber-500/20 to-purple-600/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative">
+                  <div className="absolute top-0 right-0 bg-amber-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl text-gray-900">
+                    ALWAYS AVAILABLE
+                  </div>
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white">Company</h3>
                     <div className="text-3xl font-bold text-amber-300 mt-2">
@@ -431,6 +497,11 @@ export default async function HomePage() {
                       </li>
                     ))}
                   </ul>
+                  <Link href="/gbc/tickets?tier=company" className="w-full">
+                    <Button className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold">
+                      Select Company
+                    </Button>
+                  </Link>
                 </div>
               </div>
 

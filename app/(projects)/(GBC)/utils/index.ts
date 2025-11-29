@@ -70,6 +70,53 @@ export function calculateTicketPrice(
   }
 }
 
+/**
+ * Check if a specific ticket type is available based on capacity and sold tickets
+ * @param ticketType - The type of ticket to check
+ * @param soldEarlyBirdTickets - Number of early bird tickets sold
+ * @param settings - Ticket settings with capacity limits
+ * @returns Object with availability status and reason
+ */
+export function isTicketTypeAvailable(
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
+  soldEarlyBirdTickets: number,
+  settings?: {
+    maxEarlyBirdCapacity?: number;
+  }
+): { available: boolean; reason?: string } {
+  const maxEarlyBirdCapacity = settings?.maxEarlyBirdCapacity ?? 1000;
+
+  switch (ticketType) {
+    case "EARLY_BIRD":
+      // Early bird is available if capacity not reached
+      if (soldEarlyBirdTickets >= maxEarlyBirdCapacity) {
+        return {
+          available: false,
+          reason: "Early bird tickets are sold out",
+        };
+      }
+      return { available: true };
+
+    case "REGULAR":
+      // Regular is only available when early bird is sold out
+      if (soldEarlyBirdTickets < maxEarlyBirdCapacity) {
+        return {
+          available: false,
+          reason:
+            "Regular tickets will be available after early bird sells out",
+        };
+      }
+      return { available: true };
+
+    case "COMPANY":
+      // Company tickets are always available (alongside either early bird or regular)
+      return { available: true };
+
+    default:
+      return { available: false, reason: "Invalid ticket type" };
+  }
+}
+
 export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);

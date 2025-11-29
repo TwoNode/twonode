@@ -157,6 +157,7 @@ export default async function TicketsPage() {
                   earlyBirdInfoList={earlyBirdInfoList}
                   regularInfoList={regularInfoList}
                   companyInfoList={companyInfoList}
+                  stats={stats}
                 />
               </div>
             </div>
@@ -176,7 +177,10 @@ export default async function TicketsPage() {
                 </div>
 
                 <Suspense fallback={<div>Loading form...</div>}>
-                  <GBCTicketPurchaseForm ticketSettings={settings?.tickets} />
+                  <GBCTicketPurchaseForm
+                    ticketSettings={settings?.tickets}
+                    stats={stats}
+                  />
                 </Suspense>
               </div>
             </div>

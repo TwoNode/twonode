@@ -18,7 +18,8 @@ import {
   createGBCGroupTicket,
   verifyGBCPayment,
 } from "../actions/ticket-actions";
-import { ShoppingCart, Loader2, Users } from "lucide-react";
+import { ShoppingCart, Loader2, Users, AlertCircle } from "lucide-react";
+import { isTicketTypeAvailable } from "../utils";
 
 type PaystackPop = any;
 
@@ -34,8 +35,10 @@ interface Attendee {
 
 export function GBCTicketPurchaseForm({
   ticketSettings,
+  stats,
 }: {
   ticketSettings: any;
+  stats: any;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,6 +104,26 @@ export function GBCTicketPurchaseForm({
   const maxEarlyBirdCapacity = ticketSettings?.maxEarlyBirdCapacity ?? 500;
   const pauseTicketReg = ticketSettings?.pauseTicketReg ?? false;
 
+  // Get sold early bird tickets count from stats
+  const soldEarlyBirdTickets = stats?.soldEarlyBirdTickets ?? 0;
+
+  // Check ticket availability
+  const earlyBirdAvailability = isTicketTypeAvailable(
+    "EARLY_BIRD",
+    soldEarlyBirdTickets,
+    { maxEarlyBirdCapacity }
+  );
+  const regularAvailability = isTicketTypeAvailable(
+    "REGULAR",
+    soldEarlyBirdTickets,
+    { maxEarlyBirdCapacity }
+  );
+  const companyAvailability = isTicketTypeAvailable(
+    "COMPANY",
+    soldEarlyBirdTickets,
+    { maxEarlyBirdCapacity }
+  );
+
   useEffect(() => {
     const loadPaystack = async () => {
       try {
@@ -120,12 +143,53 @@ export function GBCTicketPurchaseForm({
   }, []);
 
   // Handle URL parameters for pre-selecting ticket tier
+  // Handle URL parameters for pre-selecting ticket tier
   useEffect(() => {
     const tier = searchParams.get("tier");
     if (tier) {
-      setSelectedTicketType(tier.toUpperCase());
+      const requestedType = tier.toUpperCase();
+
+      // Check if the requested ticket type is available
+      if (requestedType === "REGULAR" && !regularAvailability.available) {
+        // If regular is requested but not available, default to early bird if available
+        if (earlyBirdAvailability.available) {
+          setSelectedTicketType("EARLY_BIRD");
+          toast.info(
+            "Regular tickets are not yet available. Early Bird ticket selected instead.",
+            { duration: 5000 }
+          );
+        } else {
+          // If early bird is also not available, try company
+          setSelectedTicketType("COMPANY");
+          toast.info(
+            "Regular and Early Bird tickets are not available. Company ticket selected.",
+            { duration: 5000 }
+          );
+        }
+      } else if (
+        requestedType === "EARLY_BIRD" &&
+        !earlyBirdAvailability.available
+      ) {
+        // If early bird is requested but sold out, default to regular if available
+        if (regularAvailability.available) {
+          setSelectedTicketType("REGULAR");
+          toast.info(
+            "Early Bird tickets are sold out. Regular ticket selected instead.",
+            { duration: 5000 }
+          );
+        } else {
+          setSelectedTicketType("COMPANY");
+          toast.info(
+            "Early Bird tickets are sold out. Company ticket selected.",
+            { duration: 5000 }
+          );
+        }
+      } else {
+        // Requested type is available, use it
+        setSelectedTicketType(requestedType);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, earlyBirdAvailability, regularAvailability]);
 
   // Update attendee field
   const updateAttendee = (
@@ -319,34 +383,96 @@ export function GBCTicketPurchaseForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="EARLY_BIRD">
+            <SelectItem
+              value="EARLY_BIRD"
+              disabled={!earlyBirdAvailability.available}
+            >
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
-                <span>Early Bird</span>
-                <span className="ml-4 font-bold">
+                <span
+                  className={
+                    !earlyBirdAvailability.available ? "text-gray-400" : ""
+                  }
+                >
+                  Early Bird
+                  {!earlyBirdAvailability.available && " (Sold Out)"}
+                </span>
+                <span
+                  className={`ml-4 font-bold ${
+                    !earlyBirdAvailability.available ? "text-gray-400" : ""
+                  }`}
+                >
                   ₦{(earlyBirdPrice / 1000).toFixed(0)}K
                 </span>
               </div>
             </SelectItem>
-            <SelectItem value="REGULAR">
+            <SelectItem
+              value="REGULAR"
+              disabled={!regularAvailability.available}
+            >
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
-                <span>Regular</span>
-                <span className="ml-4 font-bold">
+                <span
+                  className={
+                    !regularAvailability.available ? "text-gray-400" : ""
+                  }
+                >
+                  Regular
+                  {!regularAvailability.available && " (Not Yet Available)"}
+                </span>
+                <span
+                  className={`ml-4 font-bold ${
+                    !regularAvailability.available ? "text-gray-400" : ""
+                  }`}
+                >
                   ₦{(regularPrice / 1000).toFixed(0)}K
                 </span>
               </div>
             </SelectItem>
-            <SelectItem value="COMPANY">
+            <SelectItem
+              value="COMPANY"
+              disabled={!companyAvailability.available}
+            >
               <div className="flex items-center justify-between w-full text-sm sm:text-base">
-                <span>Group (5 People)</span>
-                <span className="ml-4 font-bold">
+                <span
+                  className={
+                    !companyAvailability.available ? "text-gray-400" : ""
+                  }
+                >
+                  Group (5 People)
+                </span>
+                <span
+                  className={`ml-4 font-bold ${
+                    !companyAvailability.available ? "text-gray-400" : ""
+                  }`}
+                >
                   ₦{(companyPrice / 1000).toFixed(0)}K
                 </span>
               </div>
             </SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Availability Messages */}
+        {!regularAvailability.available && (
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-xs sm:text-sm text-blue-800">
+              {regularAvailability.reason}
+            </p>
+          </div>
+        )}
+
+        {!earlyBirdAvailability.available && regularAvailability.available && (
+          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+            <p className="text-xs sm:text-sm text-green-800">
+              Early bird tickets are sold out. Regular tickets are now
+              available!
+            </p>
+          </div>
+        )}
+
         {isGroupTicket && (
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             <p className="text-xs sm:text-sm text-purple-600 flex items-center gap-1">
               <Users className="h-4 w-4" />
               Group ticket includes 5 attendees. Please fill in details for all
