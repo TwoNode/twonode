@@ -251,7 +251,7 @@ export function GBCTicketPurchaseForm({
           toast.success("Payment successful! Verifying... " + paymentRef);
 
           try {
-            const verification = await verifyGBCPayment(paymentRef);
+            const verification = await verifyGBCPayment(paymentRef, true);
             if (!verification.success) {
               throw new Error(
                 verification.error ||

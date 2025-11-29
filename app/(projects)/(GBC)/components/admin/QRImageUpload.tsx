@@ -49,17 +49,23 @@ export function QRImageUpload() {
     }
 
     setIsProcessing(true);
-    toast.loading("Scanning QR code from image...");
+    const loadingToast = toast.loading("Scanning QR code from image...");
 
     try {
       // Create an image element
       const img = new Image();
       img.src = previewUrl;
 
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error("Failed to load image"));
-      });
+      // Load image with timeout
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error("Failed to load image"));
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Image loading timeout")), 10000)
+        ),
+      ]);
 
       // Create canvas and draw image
       const canvas = document.createElement("canvas");
@@ -82,29 +88,70 @@ export function QRImageUpload() {
         inversionAttempts: "attemptBoth",
       });
 
-      toast.dismiss();
+      toast.dismiss(loadingToast);
 
       if (!code || !code.data) {
-        toast.error("No QR code found in the image. Please try another image.");
+        toast.error("No QR code found in the image");
+        setLastResult({
+          success: false,
+          error:
+            "No QR code detected. Please ensure the QR code is clear and visible.",
+        });
         setIsProcessing(false);
         return;
       }
 
-      console.log(
-        "✅ QR Code detected from image:",
-        code.data,
-        typeof code.data
-      );
+      console.log("✅ QR Code detected from image:", code.data);
 
-      // Extract ticket number
+      // Validate QR data is not empty
+      if (!code.data || code.data.trim() === "") {
+        toast.error("Empty QR code detected");
+        setLastResult({
+          success: false,
+          error: "QR code contains no data",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Extract ticket number and verify if it's a secure QR code
       let ticketNumber = code.data;
 
       // Try to parse as JSON first (for QR codes with embedded ticket data)
       try {
         const parsed = JSON.parse(code.data);
         if (parsed.ticketNumber) {
-          ticketNumber = parsed.ticketNumber;
-          console.log("📋 Extracted ticket from JSON:", ticketNumber);
+          // This is a structured QR code with hash - verify it on server
+          try {
+            const { verifyQRCodeHash } = await import(
+              "../../actions/qr-verification"
+            );
+
+            // Verify hash on server (no expiration check)
+            const verification = await verifyQRCodeHash(code.data);
+
+            if (!verification.valid) {
+              toast.error(verification.error || "Invalid QR code");
+              setLastResult({
+                success: false,
+                error: verification.error || "QR code verification failed",
+              });
+              setIsProcessing(false);
+              return;
+            }
+
+            ticketNumber = verification.data!.ticketNumber;
+            console.log("✅ QR code verified successfully:", ticketNumber);
+          } catch (verifyError: any) {
+            console.error("QR verification error:", verifyError);
+            toast.error("Failed to verify QR code security");
+            setLastResult({
+              success: false,
+              error: "QR code security verification failed",
+            });
+            setIsProcessing(false);
+            return;
+          }
         }
       } catch {
         // Not JSON, try URL parsing
@@ -119,9 +166,23 @@ export function QRImageUpload() {
             console.log("🔗 Extracted ticket from URL:", ticketNumber);
           }
         } catch {
-          // Use as-is (plain ticket number)
-          console.log("📝 Using raw ticket data:", ticketNumber);
+          // Use as-is (plain ticket number - legacy support)
+          console.log(
+            "📝 Using raw ticket data (legacy format):",
+            ticketNumber
+          );
         }
+      }
+
+      // Final validation before check-in
+      if (!ticketNumber || ticketNumber.trim() === "") {
+        toast.error("Could not extract ticket number from QR code");
+        setLastResult({
+          success: false,
+          error: "Invalid QR code format",
+        });
+        setIsProcessing(false);
+        return;
       }
 
       console.log("Processing ticket:", ticketNumber);
@@ -134,12 +195,31 @@ export function QRImageUpload() {
         setLastResult({ success: true, data: result.data });
       } else {
         toast.error(result.error || "Check-in failed");
-        setLastResult({ success: false, error: result.error });
+        setLastResult({
+          success: false,
+          error: result.error || "Check-in failed",
+        });
       }
     } catch (error: any) {
       console.error("QR processing error:", error);
-      toast.dismiss();
-      toast.error(error.message || "Failed to process QR code");
+      toast.dismiss(loadingToast);
+
+      // Provide specific error messages
+      let errorMessage = "Failed to process QR code";
+      if (error.message?.includes("timeout")) {
+        errorMessage = "Image loading timeout. Please try a smaller image";
+      } else if (error.message?.includes("load")) {
+        errorMessage = "Failed to load image. Please try another file";
+      } else if (error.message?.includes("canvas")) {
+        errorMessage =
+          "Browser error. Please try again or use a different browser";
+      }
+
+      toast.error(errorMessage);
+      setLastResult({
+        success: false,
+        error: errorMessage,
+      });
     } finally {
       setIsProcessing(false);
     }

@@ -1,4 +1,4 @@
-import { Check, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { getGBCTicketStats } from "../../actions/ticket-actions";
 import { GBCTicketPurchaseForm } from "../../components/TicketPurchaseForm";
 import { getAllGBCSettings } from "../../actions/settings-actions";

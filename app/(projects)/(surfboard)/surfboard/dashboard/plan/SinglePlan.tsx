@@ -24,7 +24,7 @@ import {
   deleteSurfPlan,
   generatePlanQRCode,
   getPlanPublicUrl,
-  updatePlan,
+  updateSurfPlan,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import type {
   PillarData,
@@ -682,7 +682,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         await deleteSurfboardFileFromS3({ url: file });
-        await updatePlan({
+        await updateSurfPlan({
           ...INITIALS(plan),
           [field]: plan?.[field].filter((f) => f !== file),
         } as any);

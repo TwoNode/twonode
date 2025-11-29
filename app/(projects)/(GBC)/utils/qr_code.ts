@@ -2,7 +2,8 @@
 import QRCode from "qrcode";
 import { createHmac } from "crypto";
 
-const QR_SECRET = process.env.QR_CODE_SECRET || "default-secret-change-this";
+const QR_SECRET =
+  process.env.QR_CODE_SECRET || "@default@-_33##_s3cr3t-ch@nge-th!s";
 
 interface TicketData {
   ticketNumber: string;
@@ -29,19 +30,18 @@ export function verifyQRHash(ticketNumber: string, hash: string): boolean {
 }
 
 /**
- * Generate QR code data string
- * Now only includes the ticket number for simplicity
+ * Generate QR code data string with security hash and timestamp
  */
 export function generateQRData(ticketData: TicketData): string {
-  // const hash = generateQRHash(ticketData.ticketNumber);
-  
+  const hash = generateQRHash(ticketData.ticketNumber);
+
   return JSON.stringify({
     ticketNumber: ticketData.ticketNumber,
-    // name: ticketData.name,
-    // email: ticketData.email,
-    // ticketType: ticketData.ticketType,
-    // hash,
-    // timestamp: Date.now(),
+    name: ticketData.name,
+    email: ticketData.email,
+    ticketType: ticketData.ticketType,
+    hash,
+    timestamp: Date.now(),
   });
 }
 
@@ -94,9 +94,14 @@ export async function generateQRCodeBuffer(
 }
 
 /**
- * Parse and verify QR code data
+ * Parse and verify QR code data with hash and optional timestamp validation
+ * @param qrDataString - JSON string from QR code
+ * @param maxAgeHours - Optional maximum age of QR code in hours. If not provided, timestamp validation is skipped
  */
-export function parseAndVerifyQRData(qrDataString: string): {
+export function parseAndVerifyQRData(
+  qrDataString: string,
+  maxAgeHours?: number
+): {
   valid: boolean;
   data?: TicketData & { hash: string; timestamp: number };
   error?: string;
@@ -113,14 +118,23 @@ export function parseAndVerifyQRData(qrDataString: string): {
     const isValid = verifyQRHash(data.ticketNumber, data.hash);
 
     if (!isValid) {
-      return { valid: false, error: "QR code verification failed" };
+      return {
+        valid: false,
+        error: "QR code verification failed - possible forgery",
+      };
     }
 
-    // Check if QR code is not too old (24 hours)
-    const ageInHours = (Date.now() - data.timestamp) / (1000 * 60 * 60);
-    if (ageInHours > 24) {
-      // Still valid but warn about age
-      console.warn(`QR code is ${ageInHours.toFixed(1)} hours old`);
+    // Check if QR code is not too old (only if maxAgeHours is provided)
+    if (maxAgeHours !== undefined && data.timestamp) {
+      const ageInHours = (Date.now() - data.timestamp) / (1000 * 60 * 60);
+      if (ageInHours > maxAgeHours) {
+        return {
+          valid: false,
+          error: `QR code expired (${ageInHours.toFixed(
+            1
+          )} hours old, max: ${maxAgeHours} hours)`,
+        };
+      }
     }
 
     return { valid: true, data };

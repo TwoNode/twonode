@@ -12,8 +12,8 @@ import {
   ApiResult,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import {
-  createPlan,
-  updatePlan,
+  createSurfPlan,
+  updateSurfPlan,
   searchReferencePlanNumbers,
   getAllFacilitatorsAndPlanNumbers,
   checkPlanNumberExists,
@@ -310,6 +310,7 @@ export type SurfboardPlanFormProps = {
   mode: Mode;
   initial?: SurfboardPlanDTO;
   isSuperAdmin?: boolean;
+  onSuccess?: () => void;
 };
 
 const VALID_CAD_EXTENSIONS = [".dwg", ".dxf"];
@@ -342,6 +343,7 @@ export default function SurfboardPlanForm({
   mode,
   initial,
   isSuperAdmin,
+  onSuccess,
 }: SurfboardPlanFormProps) {
   const router = useRouter();
 
@@ -611,7 +613,7 @@ export default function SurfboardPlanForm({
       let res: ApiResult<{ id: string; planNumber: string }>;
 
       if (mode === "create") {
-        res = await createPlan(payload);
+        res = await createSurfPlan(payload);
         if (res.success) {
           toast.success("Plan created");
           setSelectedCadFiles([]);
@@ -621,7 +623,7 @@ export default function SurfboardPlanForm({
           toast.error(res.error || "Create failed");
         }
       } else {
-        res = await updatePlan(payload);
+        res = await updateSurfPlan(payload);
         if (res.success) toast.success("Plan updated");
         else toast.error(res.error || "Update failed");
       }
@@ -629,7 +631,12 @@ export default function SurfboardPlanForm({
       console.log("res", res);
 
       if (res.success && res?.data?.id) {
-        router.push(`/surfboard/dashboard/plan?planId=${res?.data?.id}`);
+        // Call onSuccess callback if provided, otherwise navigate
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(`/surfboard/dashboard/plan?planId=${res?.data?.id}`);
+        }
       }
     } catch (e: any) {
       toast.error(e?.message || "Something went wrong");
@@ -742,7 +749,7 @@ export default function SurfboardPlanForm({
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         await deleteSurfboardFileFromS3({ url: file });
-        await updatePlan({
+        await updateSurfPlan({
           ...INITIALS(initial),
           [field]: form[field].filter((f) => f !== file),
         } as any);

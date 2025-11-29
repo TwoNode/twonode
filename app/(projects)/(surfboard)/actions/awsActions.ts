@@ -78,6 +78,29 @@ export async function uploadSurfboardFileToS3(
   }
 }
 
+/**
+ * Wrapper function that automatically gets the authenticated user
+ * before uploading a file to S3
+ */
+export async function uploadSurfboardFileWithAuth(
+  file: File,
+  fileType: "pdf" | "cad" | "certificate" | "redcopy",
+  planNumber?: string
+) {
+  const user = await getAuthenticatedSurfUserFromCookie();
+  if (!user || !user.id) {
+    throw new Error("User not authenticated");
+  }
+
+  return uploadSurfboardFileToS3(
+    file,
+    fileType,
+    user.id,
+    planNumber,
+    file.name
+  );
+}
+
 export async function uploadSameTypeSurfboardFilesToS3(
   files: { file: File }[],
   userId: string,

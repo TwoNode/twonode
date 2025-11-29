@@ -49,7 +49,8 @@ export async function initializePayment(
 ): Promise<InitializePaymentResponse> {
   try {
     const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
+      false
+      // process.env.NODE_ENV === "production"
     );
     const response = await paystack.transaction.initialize({
       ...params,
@@ -104,7 +105,8 @@ export async function verifyPayment(
     }
 
     const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
+      false
+      // process.env.NODE_ENV === "production"
     );
 
     const response = await paystack.transaction.verify({ reference });
@@ -210,7 +212,8 @@ export async function processRefund(
 ): Promise<any> {
   try {
     const paystack = await createPaystackInstance(
-      process.env.NODE_ENV === "production"
+      false
+      // process.env.NODE_ENV === "production"
     );
     const response = await paystack.refund.create({
       transaction: transactionReference,

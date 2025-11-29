@@ -580,7 +580,7 @@ export async function _updatePlan(
   return { success: true };
 }
 
-export async function createPlan(dto: SurfboardPlanDTO) {
+export async function createSurfPlan(dto: SurfboardPlanDTO) {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) throw new Error("User not authenticated");
@@ -683,7 +683,7 @@ export async function createPlan(dto: SurfboardPlanDTO) {
   }
 }
 
-export async function updatePlan(
+export async function updateSurfPlan(
   dto: SurfboardPlanDTO & { canBypassLock?: boolean }
 ) {
   try {

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import SurfboardPlanForm from "@/app/(projects)/(surfboard)/components/SurfboardPlanForm";
 import {
   getSurfPlanById,
-  updatePlan,
+  updateSurfPlan,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
@@ -43,7 +43,7 @@ export default function UpdateSurfPlanPage({
 
   const handleSubmit = async (updatedPlan: SurfboardPlanDTO) => {
     try {
-      await updatePlan(updatedPlan);
+      await updateSurfPlan(updatedPlan);
       toast.success("Plan updated successfully");
       router.push("/surf-restricted/dashboard");
     } catch (error) {

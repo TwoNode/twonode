@@ -240,60 +240,153 @@ export function QRScanner() {
   }
 
   async function handleQRCodeDetected(qrData: string) {
-    let ticketNumber = qrData;
-
-    // Try to parse as JSON first (for QR codes with embedded ticket data)
     try {
-      const parsed = JSON.parse(qrData);
-      if (parsed.ticketNumber) {
-        ticketNumber = parsed.ticketNumber;
-        console.log("📋 Extracted ticket from JSON:", ticketNumber);
+      let ticketNumber = qrData;
+
+      // Validate QR data is not empty
+      if (!qrData || qrData.trim() === "") {
+        toast.error("Empty QR code detected");
+        setLastResult({
+          success: false,
+          error: "QR code contains no data",
+        });
+        return;
       }
-    } catch {
-      // Not JSON, try URL parsing
+
+      // Try to parse as JSON first (for QR codes with embedded ticket data)
       try {
-        const url = new URL(qrData);
-        const ticketParam =
-          url.searchParams.get("ticket") ||
-          url.searchParams.get("t") ||
-          url.searchParams.get("id");
-        if (ticketParam) {
-          ticketNumber = ticketParam;
-          console.log("🔗 Extracted ticket from URL:", ticketNumber);
+        const parsed = JSON.parse(qrData);
+        if (parsed.ticketNumber) {
+          // This is a structured QR code with hash - verify it on server
+          try {
+            const { verifyQRCodeHash } = await import(
+              "../../actions/qr-verification"
+            );
+
+            // Verify hash on server (no expiration check)
+            const verification = await verifyQRCodeHash(qrData);
+
+            if (!verification.valid) {
+              toast.error(verification.error || "Invalid QR code");
+              setLastResult({
+                success: false,
+                error: verification.error || "QR code verification failed",
+              });
+              return;
+            }
+
+            ticketNumber = verification.data!.ticketNumber;
+            console.log("✅ QR code verified successfully:", ticketNumber);
+          } catch (verifyError: any) {
+            console.error("QR verification error:", verifyError);
+            toast.error("Failed to verify QR code security");
+            setLastResult({
+              success: false,
+              error: "QR code security verification failed",
+            });
+            return;
+          }
         }
       } catch {
-        // Use as-is (plain ticket number)
-        console.log("📝 Using raw ticket data:", ticketNumber);
+        // Not JSON, try URL parsing
+        try {
+          const url = new URL(qrData);
+          const ticketParam =
+            url.searchParams.get("ticket") ||
+            url.searchParams.get("t") ||
+            url.searchParams.get("id");
+          if (ticketParam) {
+            ticketNumber = ticketParam;
+            console.log("🔗 Extracted ticket from URL:", ticketNumber);
+          }
+        } catch {
+          // Use as-is (plain ticket number - legacy support)
+          console.log(
+            "📝 Using raw ticket data (legacy format):",
+            ticketNumber
+          );
+        }
       }
-    }
 
-    console.log("Processing ticket:", ticketNumber);
+      // Final validation before check-in
+      if (!ticketNumber || ticketNumber.trim() === "") {
+        toast.error("Could not extract ticket number from QR code");
+        setLastResult({
+          success: false,
+          error: "Invalid QR code format",
+        });
+        return;
+      }
 
-    const result = await checkInGBCTicket(ticketNumber.trim());
+      console.log("Processing ticket:", ticketNumber);
 
-    if (result.success) {
-      toast.success(result.message || "Check-in successful!");
-      setLastResult({ success: true, data: result.data });
-    } else {
-      toast.error(result.error || "Check-in failed");
-      setLastResult({ success: false, error: result.error });
+      // Attempt check-in
+      const result = await checkInGBCTicket(ticketNumber.trim());
+
+      if (result.success) {
+        toast.success(result.message || "Check-in successful!");
+        setLastResult({ success: true, data: result.data });
+      } else {
+        toast.error(result.error || "Check-in failed");
+        setLastResult({
+          success: false,
+          error: result.error || "Check-in failed",
+        });
+      }
+    } catch (error: any) {
+      console.error("Unexpected error in handleQRCodeDetected:", error);
+      const errorMessage = "An unexpected error occurred. Please try again";
+      toast.error(errorMessage);
+      setLastResult({
+        success: false,
+        error: errorMessage,
+      });
     }
   }
 
   async function handleManualInput() {
-    if (!manualInput.trim()) return;
+    try {
+      if (!manualInput.trim()) {
+        toast.error("Please enter a ticket number");
+        return;
+      }
 
-    const result = await checkInGBCTicket(manualInput.trim());
+      // Basic format validation
+      const ticketNumber = manualInput.trim();
+      if (ticketNumber.length < 5) {
+        toast.error("Ticket number is too short");
+        setLastResult({
+          success: false,
+          error: "Invalid ticket number format",
+        });
+        return;
+      }
 
-    if (result.success) {
-      toast.success(result.message || "Check-in successful!");
-      setLastResult({ success: true, data: result.data });
-    } else {
-      toast.error(result.error || "Check-in failed");
-      setLastResult({ success: false, error: result.error });
+      setIsProcessing(true);
+      const result = await checkInGBCTicket(ticketNumber);
+
+      if (result.success) {
+        toast.success(result.message || "Check-in successful!");
+        setLastResult({ success: true, data: result.data });
+        setManualInput(""); // Clear input on success
+      } else {
+        toast.error(result.error || "Check-in failed");
+        setLastResult({
+          success: false,
+          error: result.error || "Check-in failed",
+        });
+      }
+    } catch (error: any) {
+      console.error("Manual check-in error:", error);
+      const errorMessage = "Failed to process check-in. Please try again";
+      toast.error(errorMessage);
+      setLastResult({
+        success: false,
+        error: errorMessage,
+      });
+    } finally {
+      setIsProcessing(false);
     }
-
-    setManualInput("");
   }
 
   if (!hasCamera) {

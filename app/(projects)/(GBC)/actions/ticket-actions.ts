@@ -530,6 +530,9 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
             try {
               // Ensure we have a QR buffer for the email
               if (!qrBuffer) {
+                console.log(
+                  `Regenerating QR buffer for email to ${ticket.email}`
+                );
                 qrBuffer = await generateQRCodeBuffer({
                   ticketNumber: ticket.ticketNumber,
                   name: ticket.name,
@@ -541,6 +544,19 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
               const qrCodeBase64 = `data:image/png;base64,${qrBuffer.toString(
                 "base64"
               )}`;
+
+              console.log(`📧 Attempting to send email to ${ticket.email}...`);
+              console.log(`Email data:`, {
+                name: ticket.name,
+                email: ticket.email,
+                ticketNumber: ticket.ticketNumber,
+                ticketType: ticket.ticketType,
+                price: ticket.price,
+                eventDate,
+                eventLocation,
+                eventVenue,
+                qrCodeSize: qrCodeBase64.length,
+              });
 
               const emailResult = await sendGBCTicketConfirmation({
                 name: ticket.name,
@@ -557,28 +573,37 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
 
               if (emailResult.success) {
                 console.log(
-                  `Confirmation email sent to ${ticket.email} for ticket ${
-                    ticket.ticketNumber
-                  } (${
+                  `✅ Confirmation email sent successfully to ${
+                    ticket.email
+                  } for ticket ${ticket.ticketNumber} (MessageID: ${
+                    emailResult.messageId
+                  }) (${
                     qrJustGenerated ? "QR just generated" : "sendEmail=true"
                   })`
                 );
               } else {
                 console.error(
-                  `Failed to send email to ${ticket.email}:`,
+                  `❌ Failed to send email to ${ticket.email}:`,
                   emailResult.error
                 );
               }
-            } catch (emailError) {
+            } catch (emailError: any) {
               console.error(
-                `Error sending confirmation email for ticket ${ticket.ticketNumber}:`,
+                `❌ Error sending confirmation email for ticket ${ticket.ticketNumber}:`,
                 emailError
               );
+              console.error("Email error details:", {
+                message: emailError.message,
+                stack: emailError.stack,
+                code: emailError.code,
+              });
               // Don't fail the whole process if email sending fails
             }
           } else {
             console.log(
-              `Skipping email for ticket ${ticket.ticketNumber} (QR already exists and sendEmail is not true)`
+              `⏭️ Skipping email for ticket ${
+                ticket.ticketNumber
+              } (QR already exists: ${!!ticket.qrCode}, sendEmail: ${sendEmail})`
             );
           }
         } catch (qrError) {
@@ -707,14 +732,19 @@ export async function checkInGBCTicket(ticketNumber: string) {
       },
     });
 
-    // Send SMS confirmation if phone available
+    // Send SMS confirmation if phone available (don't fail check-in if SMS fails)
     if (ticket.phone) {
-      await sendGBCTicketSMS(
-        ticket.phone,
-        ticket.name,
-        ticket.ticketNumber,
-        process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day"
-      );
+      try {
+        await sendGBCTicketSMS(
+          ticket.phone,
+          ticket.name,
+          ticket.ticketNumber,
+          process.env.NEXT_PUBLIC_EVENT_DATE || "Event Day"
+        );
+      } catch (smsError) {
+        console.error("SMS sending failed (non-critical):", smsError);
+        // Continue - SMS failure shouldn't prevent check-in
+      }
     }
 
     revalidatePath("/gbc/restricted/check-in");
@@ -725,12 +755,67 @@ export async function checkInGBCTicket(ticketNumber: string) {
       data: updatedTicket,
       message: `Welcome ${ticket.name}!`,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Check-in error:", error);
+
+    // Handle Zod validation errors
+    if (error.name === "ZodError") {
+      return {
+        success: false,
+        error: "Invalid ticket number format",
+      };
+    }
+
+    // Handle Prisma errors
+    if (error.code) {
+      switch (error.code) {
+        case "P2002":
+          return {
+            success: false,
+            error: "Duplicate check-in detected",
+          };
+        case "P2025":
+          return {
+            success: false,
+            error: "Ticket not found in database",
+          };
+        case "P2003":
+          return {
+            success: false,
+            error: "Invalid ticket reference",
+          };
+        case "P1001":
+        case "P1002":
+        case "P1008":
+          return {
+            success: false,
+            error: "Database connection error. Please try again",
+          };
+        default:
+          // Log the actual Prisma error code for debugging
+          console.error("Unhandled Prisma error code:", error.code);
+          return {
+            success: false,
+            error: "An error occurred. Please contact support",
+          };
+      }
+    }
+
+    // Handle authentication errors
+    if (
+      error.message?.includes("Unauthorized") ||
+      error.message?.includes("admin")
+    ) {
+      return {
+        success: false,
+        error: "Admin authentication required",
+      };
+    }
+
+    // Generic fallback for unknown errors
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to check in ticket",
+      error: "Failed to check in ticket. Please try again or contact support",
     };
   }
 }

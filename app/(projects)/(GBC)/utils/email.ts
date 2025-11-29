@@ -247,6 +247,22 @@ export async function sendGBCTicketConfirmation(
   data: GBCTicketEmailData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
+    console.log('📧 sendGBCTicketConfirmation called with:', {
+      email: data.email,
+      name: data.name,
+      ticketNumber: data.ticketNumber,
+      ticketType: data.ticketType,
+    });
+
+    console.log('📧 SMTP Configuration:', {
+      host: process.env.ZOHO_SMTP_HOST,
+      port: process.env.ZOHO_SMTP_PORT,
+      user: process.env.ZOHO_SMTP_USER,
+      from: FROM_EMAIL,
+      hasPassword: !!process.env.ZOHO_SMTP_PASSWORD,
+    });
+
+    console.log('📧 Sending email via transporter...');
     const info = await transporter.sendMail({
       from: `"GBC 2.0" <${FROM_EMAIL}>`,
       to: data.email,
@@ -254,10 +270,18 @@ export async function sendGBCTicketConfirmation(
       html: generateGBCTicketEmailHTML(data),
     });
 
-    console.log("Email sent: %s", info.messageId);
+    console.log("✅ Email sent successfully! MessageID: %s", info.messageId);
+    console.log("Email info:", info);
     return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error("Failed to send ticket confirmation email:", error);
+  } catch (error: any) {
+    console.error("❌ Failed to send ticket confirmation email:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
