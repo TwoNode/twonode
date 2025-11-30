@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Plus,
   Bell,
+  Menu,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -28,9 +29,11 @@ import { getUserAndActiveSub } from "@/app/(projects)/(surfboard)/actions/subscr
 function SurfboardUserDashboardNavbar({
   user,
   showSubscriptionBadge = false,
+  sidebar,
 }: {
   user?: { picture?: string; firstName?: string; id?: string } | any;
   showSubscriptionBadge?: boolean;
+  sidebar?: any;
 }) {
   return (
     <header
@@ -39,13 +42,22 @@ function SurfboardUserDashboardNavbar({
         background: `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 60%, ${SURFBOARD_COLORS.secondary.main} 100%)`,
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
+        {/* Hamburger Menu Button */}
+        <button
+          onClick={() => sidebar?.toggleOpen()}
+          className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="w-6 h-6 text-white" />
+        </button>
+
         <img
           src="/surfboard/surf_logo.png"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
         />
-        <span className="text-xl font-bold text-white tracking-wide drop-shadow">
+        <span className="hidden lg:inline text-xl font-bold text-white tracking-wide drop-shadow">
           Surfboard
         </span>
       </div>
@@ -241,6 +253,7 @@ export default function SurfboardUserPanelLayout({
       <SurfboardUserDashboardNavbar
         user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
+        sidebar={sidebar}
       />
       <div
         className={cn(
@@ -249,6 +262,15 @@ export default function SurfboardUserPanelLayout({
         )}
         style={{ background: SURFBOARD_COLORS.background.default }}
       >
+        {/* Mobile Overlay - appears when sidebar is open */}
+        {sidebar.isOpen && (
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-199 lg:hidden transition-opacity duration-300"
+            onClick={() => sidebar?.toggleOpen()}
+            aria-label="Close sidebar"
+          />
+        )}
+
         <div className={sideBarWidthClass + "h-full max-h-full"}>
           <Sidebar
             items={menuList}

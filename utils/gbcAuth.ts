@@ -50,11 +50,6 @@ export const getAuthenticatedGBCUserFromCookie = cache(async () => {
 
     const sessionData = await getAndRefreshUserSession();
     const gbcUser = sessionData?.userData;
-    console.log(
-      "\n\n\n\n\n User Data from cookie",
-      { ...user, ...gbcUser, id: gbcUser?.userId },
-      "\n\n\n\n\n"
-    );
 
     if (!gbcUser) {
       throw new Error("User not found in GBC session");

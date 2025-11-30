@@ -50,11 +50,6 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
 
     const sessionData = await getAndRefreshUserSession();
     const surfUser = sessionData?.userData;
-    console.log(
-      "\n\n\n\n\n User Data from cookie",
-      { ...user, ...surfUser, id: surfUser?.userId },
-      "\n\n\n\n\n"
-    );
 
     if (!surfUser) {
       throw new Error("User not found in Surfboard session");

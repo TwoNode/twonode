@@ -160,11 +160,14 @@ export default function AllPlans() {
         page,
         pageSize,
         filters: {
-          ...filters,
+          status: filters.status.length > 0 ? filters.status : undefined,
+          planType: filters.planType.length > 0 ? filters.planType : undefined,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
           search: search || undefined,
         },
         sort: {
-          field: "createdAt" as any,
+          field: "dateOnSurveyPlan" as any,
           order: "desc",
         },
       });
@@ -320,65 +323,71 @@ export default function AllPlans() {
     }
   };
 
-  // Handle opening view modal
-  const handleViewPlan = async (planId: string) => {
-    try {
-      setModalLoading(true);
-      setModalError(null);
-      setViewModalOpen(true); // Open modal immediately to show loading state
-
-      // Fetch full plan details
-      const result = await getSurfPlanById(planId);
-      if (result.success && result.data) {
-        setSelectedPlan(result.data);
-        setSelectedPlanId(planId);
-      } else {
-        setModalError(result.error || "Failed to load plan details");
-        toast.error("Failed to load plan details");
-      }
-    } catch (error) {
-      console.error("Error loading plan:", error);
-      setModalError("An unexpected error occurred");
-      toast.error("Failed to load plan details");
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  // Handle opening edit modal
-  const handleEditPlan = async (planId: string) => {
-    try {
-      setModalLoading(true);
-      setModalError(null);
-      setEditModalOpen(true); // Open modal immediately to show loading state
+  // Handle opening view modal - use already loaded data
+  const handleViewPlan = (planId: string) => {
+    // Find plan in the already-loaded plans array
+    const plan = plans.find((p) => p.id === planId);
+    if (plan) {
+      setSelectedPlan(plan);
       setSelectedPlanId(planId);
+      setViewModalOpen(true);
+      setModalError(null);
+    } else {
+      toast.error("Plan not found");
+    }
+  };
 
-      // Fetch full plan details for editing
+  // Handle opening edit modal - use already loaded data
+  const handleEditPlan = (planId: string) => {
+    // Find plan in the already-loaded plans array
+    const plan = plans.find((p) => p.id === planId);
+    if (plan) {
+      setSelectedPlan(plan);
+      setSelectedPlanId(planId);
+      setEditModalOpen(true);
+      setModalError(null);
+    } else {
+      toast.error("Plan not found");
+    }
+  };
+
+  // Refresh a single plan's data after update
+  const refreshSelectedPlan = async (planId: string) => {
+    try {
+      setModalLoading(true);
       const result = await getSurfPlanById(planId);
       if (result.success && result.data) {
         setSelectedPlan(result.data);
+        // Also update the plan in the plans array
+        setPlans((prevPlans) =>
+          prevPlans.map((p) => (p.id === planId ? result.data : p))
+        );
       } else {
-        setModalError(result.error || "Failed to load plan details");
-        toast.error("Failed to load plan details");
+        toast.error(result.error || "Failed to refresh plan data");
       }
     } catch (error) {
-      console.error("Error loading plan:", error);
-      setModalError("An unexpected error occurred");
-      toast.error("Failed to load plan details");
+      console.error("Error refreshing plan:", error);
+      toast.error("Failed to refresh plan data");
     } finally {
       setModalLoading(false);
     }
   };
 
-  // Handle closing modals and refreshing data
+  // Handle closing modals
   const handleCloseModal = () => {
     setViewModalOpen(false);
     setEditModalOpen(false);
     setSelectedPlanId(null);
     setSelectedPlan(null);
     setModalError(null);
-    // Refresh the plans list
-    loadPlans(pagination.page, pagination.pageSize);
+  };
+
+  // Handle successful edit - refresh the specific plan
+  const handleEditSuccess = async () => {
+    if (selectedPlanId) {
+      await refreshSelectedPlan(selectedPlanId);
+      toast.success("Plan updated successfully");
+    }
   };
 
   // Handle QR Code generation
@@ -386,6 +395,9 @@ export default function AllPlans() {
     try {
       setIsGeneratingQr(true);
       setSelectedPlanForQr(planId);
+      setQrCodeDataUrl(null); // Reset previous QR code
+      setQrModalOpen(true); // Open modal immediately to show loading
+
       const result = await generatePlanQRCode(planId, {
         darkColor: "#3b82f6",
         lightColor: "#ffffff",
@@ -394,15 +406,17 @@ export default function AllPlans() {
         scale: 8,
         forceOpaque: false,
       });
+
       if (result.success && result.data) {
         setQrCodeDataUrl(result.data.qrCodeDataUrl);
-        setQrModalOpen(true);
       } else {
         toast.error(result.error || "Failed to generate QR code");
+        setQrModalOpen(false); // Close modal on error
       }
     } catch (error) {
       console.error("Error generating QR code:", error);
       toast.error("Failed to generate QR code");
+      setQrModalOpen(false); // Close modal on error
     } finally {
       setIsGeneratingQr(false);
     }
@@ -903,7 +917,7 @@ export default function AllPlans() {
                               </h3>
                             </div>
                           </div>
-                          
+
                           <div className="p-2 sm:p-3 lg:p-4 space-y-1 sm:space-y-1.5 lg:space-y-2 w-min">
                             <Button
                               variant="ghost"
@@ -1113,7 +1127,7 @@ export default function AllPlans() {
 
       {/* Plans Table/Grid */}
       {viewMode === "list" ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="grid grid-cols-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -1130,6 +1144,9 @@ export default function AllPlans() {
                   <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Survey Date
+                  </th>
                   <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Updated
                   </th>
@@ -1138,6 +1155,7 @@ export default function AllPlans() {
                   </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 {plans.length === 0 ? (
                   <tr>
@@ -1171,19 +1189,22 @@ export default function AllPlans() {
                             >
                               {plan.planNumber || "N/A"}
                             </Link>
+
                             <div
                               className="text-sm text-gray-600 truncate max-w-xs"
                               title={plan.surveyTitle || "Untitled"}
                             >
                               {plan.surveyTitle || "Untitled"}
                             </div>
+
                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
-                              <span>{plan.pillarsCount || 0} pillars</span>
+                              <span>{plan?.pillars?.length || 0} pillars</span>
                               <span>•</span>
                               <span>
                                 {(plan.areaSqM || 0).toLocaleString()} m²
                               </span>
                             </div>
+
                             <div className="md:hidden mt-2">
                               <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
@@ -1237,6 +1258,18 @@ export default function AllPlans() {
                           {getStatusIcon(plan.status)}
                           {plan.status?.replace("_", " ") || "N/A"}
                         </span>
+                      </td>
+                      <td className="hidden sm:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <div className="text-sm text-gray-900">
+                            {plan.dateOnSurveyPlan
+                              ? new Date(
+                                  plan.dateOnSurveyPlan
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                        </div>
                       </td>
                       <td className="hidden xl:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
@@ -1434,6 +1467,14 @@ export default function AllPlans() {
                       <span>•</span>
                       <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
                     </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span>
+                        {plan.dateOnSurveyPlan
+                          ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
+                          : "No date"}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 pt-3 border-t">
                       <Button
                         variant="outline"
@@ -1577,13 +1618,29 @@ export default function AllPlans() {
               onRetry={() => selectedPlanId && handleViewPlan(selectedPlanId)}
               onGoBack={() => setViewModalOpen(false)}
             />
-          ) : modalLoading || !selectedPlan ? (
+          ) : !selectedPlan ? (
             <PlanDetailsLoadingState />
           ) : (
-            <OptimizedSinglePlanDetails
-              planData={selectedPlan}
-              onRefresh={() => selectedPlanId && handleViewPlan(selectedPlanId)}
-            />
+            <>
+              {modalLoading && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="text-sm text-gray-600">Refreshing...</p>
+                  </div>
+                </div>
+              )}
+              <OptimizedSinglePlanDetails
+                planData={selectedPlan}
+                onEdit={() => {
+                  setViewModalOpen(false);
+                  handleEditPlan(selectedPlan.id);
+                }}
+                onRefresh={() =>
+                  selectedPlanId && refreshSelectedPlan(selectedPlanId)
+                }
+              />
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -1600,14 +1657,24 @@ export default function AllPlans() {
               onRetry={() => selectedPlanId && handleEditPlan(selectedPlanId)}
               onGoBack={() => setEditModalOpen(false)}
             />
-          ) : modalLoading || !selectedPlan ? (
+          ) : !selectedPlan ? (
             <PlanFormLoadingState />
           ) : (
-            <SurfboardPlanForm
-              mode="edit"
-              initial={selectedPlan}
-              onSuccess={handleCloseModal}
-            />
+            <>
+              {modalLoading && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="text-sm text-gray-600">Saving...</p>
+                  </div>
+                </div>
+              )}
+              <SurfboardPlanForm
+                mode="edit"
+                initial={selectedPlan}
+                onSuccess={handleEditSuccess}
+              />
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -1643,16 +1710,19 @@ export default function AllPlans() {
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             <div className="p-4 bg-white rounded-lg border">
-              {qrCodeDataUrl ? (
+              {isGeneratingQr || !qrCodeDataUrl ? (
+                <div className="w-64 h-64 flex flex-col items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Generating QR Code...
+                  </p>
+                </div>
+              ) : (
                 <img
                   src={qrCodeDataUrl}
                   alt="QR Code"
                   className="w-64 h-64 mx-auto"
                 />
-              ) : (
-                <div className="w-64 h-64 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
               )}
             </div>
             <div className="flex gap-2 w-full">

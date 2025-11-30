@@ -32,6 +32,11 @@ const statusMap: Record<string, SurfPlanStatus> = {
   "In Review": "UNDER_REVIEW",
   Approved: "LODGED", // Assuming 'LODGED' is used for approved plans
   Rejected: "QUERIED", // Assuming 'QUERIED' is used for rejected plans
+  PENDING: "PENDING",
+  LODGED: "LODGED",
+  UNDER_REVIEW: "UNDER_REVIEW",
+  QUERIED: "QUERIED",
+  APPROVED: "LODGED",
 };
 
 interface QRCodeOptions {
@@ -264,7 +269,6 @@ export async function getBaseUrl(): Promise<string> {
 
 // Type guard to check if a value is a valid GeometryInput
 function isGeometryInput(value: any): value is GeometryInput {
-  console.log("\n\n\n\nGeometry value", value, typeof value);
   if (typeof value === "string") return true;
   if (!value || typeof value !== "object") return false;
   if (value?.type === "Polygon" || value?.type === "MultiPolygon") {
@@ -546,11 +550,17 @@ export async function _updatePlan(
   if (dto.dateLodged !== undefined)
     data.dateLodged = dto.dateLodged ? new Date(dto.dateLodged) : null;
 
-  // Status flip
+  // Status flip: Set to LODGED if certificate exists, PENDING if removed
   const hasCert =
     (dto.certificateFilePaths?.length ?? existing.certificateFilePaths.length) >
     0;
-  if (hasCert) data.status = "LODGED";
+
+  // Update status based on certificate availability
+  if (hasCert) {
+    data.status = "LODGED";
+  } else {
+    data.status = "PENDING";
+  }
 
   if (enforceLock) {
     // Validate we didn't try to modify locked fields
@@ -738,12 +748,18 @@ export async function updateSurfPlan(
     if (dto.dateLodged !== undefined)
       data.dateLodged = dto.dateLodged ? new Date(dto.dateLodged) : null;
 
-    // Status flip
+    // Status flip: Set to LODGED if certificate exists, PENDING if removed
     const hasCert =
       (dto.certificateFilePaths?.length ??
         existing.certificateFilePaths.length) > 0;
     const statusChanged = !existing.certificateFilePaths.length && hasCert;
-    if (hasCert) data.status = "LODGED";
+
+    // Update status based on certificate availability
+    if (hasCert) {
+      data.status = "LODGED";
+    } else {
+      data.status = "PENDING";
+    }
 
     if (enforceLock) {
       // Validate we didn't try to modify locked fields
@@ -924,7 +940,13 @@ export interface PlanFilters {
 }
 
 export interface PlanSort {
-  field: "createdAt" | "updatedAt" | "surveyTitle" | "planNumber" | "status";
+  field:
+    | "createdAt"
+    | "updatedAt"
+    | "surveyTitle"
+    | "planNumber"
+    | "status"
+    | "dateOnSurveyPlan";
   order: "asc" | "desc";
 }
 
@@ -995,12 +1017,13 @@ export async function getPaginatedSurfPlans({
       }
 
       if (filters.dateFrom || filters.dateTo) {
-        where.createdAt = {};
-        if (filters.dateFrom) where.createdAt.gte = new Date(filters.dateFrom);
+        where.dateOnSurveyPlan = {};
+        if (filters.dateFrom)
+          where.dateOnSurveyPlan.gte = new Date(filters.dateFrom);
         if (filters.dateTo) {
           const endOfDay = new Date(filters.dateTo);
           endOfDay.setHours(23, 59, 59, 999);
-          where.createdAt.lte = endOfDay;
+          where.dateOnSurveyPlan.lte = endOfDay;
         }
       }
     }
@@ -3157,11 +3180,19 @@ export async function deletePlanAttachment(
     const currentFiles = (plan as any)[`${fileType}FilePaths`] as string[];
     const updatedFiles = currentFiles.filter((url) => url !== fileUrl);
 
+    // 4. Prepare update data
+    const updateData: any = {
+      [`${fileType}FilePaths`]: updatedFiles,
+    };
+
+    // 5. If deleting a certificate and no certificates remain, set status to PENDING
+    if (fileType === "certificate" && updatedFiles.length === 0) {
+      updateData.status = "PENDING";
+    }
+
     await prisma.surfboardPlan.update({
       where: { id: planId },
-      data: {
-        [`${fileType}FilePaths`]: updatedFiles,
-      },
+      data: updateData,
     });
 
     // 4. Revalidate the cache

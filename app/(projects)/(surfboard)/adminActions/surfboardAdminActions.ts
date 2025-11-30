@@ -250,7 +250,6 @@ export async function getBaseUrl(): Promise<string> {
 
 // Type guard to check if a value is a valid GeometryInput
 function isGeometryInput(value: any): value is GeometryInput {
-  console.log("\n\n\n\nGeometry value", value, typeof value);
   if (typeof value === "string") return true;
   if (!value || typeof value !== "object") return false;
   if (value?.type === "Polygon" || value?.type === "MultiPolygon") {

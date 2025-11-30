@@ -18,7 +18,6 @@ const requiredEnvVars = [
 // Check for missing environment variables
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
-
 if (missingEnvVars.length > 0) {
   console.error("Missing required environment variables:", missingEnvVars);
   throw new Error(
@@ -38,12 +37,6 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
 const BUCKET_REGION = process.env.REVA_AWS_REGION!;
-
-console.log("S3 Configuration:", {
-  region: BUCKET_REGION,
-  bucket: BUCKET_NAME,
-  endpoint: `https://s3.${BUCKET_REGION}.amazonaws.com`,
-});
 
 export async function uploadToS3(formData: FormData) {
   const files = formData.getAll("file") as File[];

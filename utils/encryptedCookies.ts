@@ -440,13 +440,6 @@ export async function getAndRefreshUserSession(
         ? await updateLastActivityAndSubscription(encryptedJWT)
         : await updateLastActivity(encryptedJWT);
 
-    console.log(
-      "\n\n\n\n\n\n\n getAndRefreshUserSession User Data from cookie",
-      updateSubscription,
-      userData.subscription,
-      refreshedJWT
-    );
-
     const response = NextResponse.next();
     response.cookies.set("USER_SESSION", refreshedJWT, {
       httpOnly: true,

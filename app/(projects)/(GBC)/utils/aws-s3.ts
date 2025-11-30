@@ -38,11 +38,6 @@ const s3Client = new S3Client({
 const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
 const BUCKET_REGION = process.env.REVA_AWS_REGION!;
 
-console.log("S3 Configuration:", {
-  region: process.env.REVA_AWS_REGION,
-  bucket: BUCKET_NAME,
-});
-
 interface UploadOptions {
   file: Buffer;
   fileName: string;

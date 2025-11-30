@@ -68,7 +68,6 @@ function normalizeToGeometry(input: GeometryInput): Polygon | MultiPolygon {
  * @throws Error if input is not a valid geometry
  */
 export function computeGeometryDetails(input: GeometryInput): GeometryDetails {
-  console.log("\n\n\n computeGeometryDetails input", input);
   try {
     // Normalize the input to a GeoJSON Geometry
     const geometry = normalizeToGeometry(input);
@@ -91,9 +90,6 @@ export function computeGeometryDetails(input: GeometryInput): GeometryDetails {
     // Calculate centroid point
     const center = centroid(geometry as any);
     const [lon, lat] = center.geometry.coordinates;
-
-    console.log("\nAREASQM COMPUTED", areaSqM);
-    console.log("\nCENTROID COMPUTED", center.geometry.coordinates);
 
     return {
       areaSqM,

@@ -29,9 +29,10 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "absolute inset-0 z-20 h-screen -translate-x-full lg:translate-x-0 transition-all ease-in-out duration-300",
-        "w-[105px] max-h-[944px] border-r shadow-lg backdrop-blur-sm",
-        sideBarWidthClass
+        "absolute inset-0 z-200 h-screen transition-all ease-in-out duration-300",
+        "w-[165px] lg:w-[105px] max-h-[944px] border-r shadow-lg backdrop-blur-sm",
+        sideBarWidthClass,
+        sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}
       style={{
         background: isSurfboard

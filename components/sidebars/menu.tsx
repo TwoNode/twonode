@@ -34,8 +34,8 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
 
   return (
     <ScrollArea className="bg-transparent [&>div>div[style]]:block! h-full">
-      <nav className="pt-16 h-full w-full flex flex-col justify-between overflow-y-auto box-border max-h-[85vh]">
-        <ul className="flex flex-col gap-3 items-start space-y-1 px-2 justify-center">
+      <nav className="pt-4 h-full w-full flex flex-col justify-between overflow-y-auto box-border max-h-[85vh]">
+        <ul className="flex flex-col gap-1 items-start px-2 justify-center">
           {items.map((item, index) =>
             "element" in item ? (
               <div key={index} className="w-full">
@@ -46,7 +46,7 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
                 key={index}
                 href={item.url}
                 className={cn(
-                  "p-2 group flex flex-col items-center justify-center gap-[6px] w-full h-[70px] rounded-xl transition-all duration-200 ease-in-out",
+                  "p-[5px] group flex flex-col items-center justify-center gap-[6px] w-full h-[70px] rounded-xl transition-all duration-200 ease-in-out",
                   "hover:scale-105 hover:shadow-sm"
                 )}
                 style={{
@@ -89,18 +89,18 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
                 }}
               >
                 <span
-                  className="w-max lg:mx-auto p-2 rounded-lg transition-all duration-200 border"
+                  className="w-max lg:mx-auto p-1 rounded-lg transition-all duration-200 border"
                   style={{
                     backgroundColor: isActive(item.url)
-                      ? `${colors.primary.light}CC`
-                      : `${colors.background.default}CC`,
+                      ? `${colors.primary.light}60`
+                      : `${colors.background.default}50`,
                     borderColor: isActive(item.url)
                       ? `${colors.primary.main}60`
-                      : `${colors.primary.light}60`,
+                      : `${colors.primary.light}40`,
                   }}
                 >
                   <item.icon
-                    className="w-5 h-5 transition-all duration-200"
+                    className="w-4 h-4 transition-all duration-200"
                     style={{
                       color:
                         colorPalette &&
@@ -134,12 +134,12 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
           )}
         </ul>
 
-        <div className="mt-16 pb-8 w-full">
+        <div className="mt-8 pb-6 w-full">
           <div className="relative w-full flex justify-center">
             {userImageUrl ? (
               <div className="relative group">
                 <img
-                  className="w-16 h-16 rounded-full border-2 shadow-md transition-all duration-200 group-hover:shadow-lg"
+                  className="w-16 h-16 rounded-full border-2 shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-125"
                   style={{
                     borderColor: REVA_COLORS.border.light,
                     objectFit: "cover",
