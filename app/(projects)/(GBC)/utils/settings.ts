@@ -106,7 +106,7 @@ export const defaultSettings: GBCSettingsData = {
     vipPrice: 200000,
     studentPrice: 50000,
     earlyBirdDeadline: "2026-02-28",
-    maxCapacity: 1000,
+    maxCapacity: 800,
     maxEarlyBirdCapacity: 500,
     maxCompanyCapacity: 500,
     maxStudentCapacity: 500,
