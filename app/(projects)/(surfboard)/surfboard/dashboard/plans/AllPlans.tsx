@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import {
   getPaginatedSurfPlans,
   getSurfPlanById,
+  permanentlyDeleteSurfPlan,
+  generatePlanQRCode,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +31,7 @@ import {
   MapPin,
   FileText,
   User,
+  QrCode,
   ChevronDown,
   RefreshCw,
   MoreVertical,
@@ -54,6 +57,22 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PLAN_TYPES as PLAN_TYPES_OBJ } from "../../../types/surfboardTypes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -117,6 +136,19 @@ export default function AllPlans() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Delete confirmation modal
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // QR Code modal state
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [selectedPlanForQr, setSelectedPlanForQr] = useState<string | null>(
+    null
+  );
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
 
   const loadPlans = async (
     page = pagination.page,
@@ -347,6 +379,62 @@ export default function AllPlans() {
     setModalError(null);
     // Refresh the plans list
     loadPlans(pagination.page, pagination.pageSize);
+  };
+
+  // Handle QR Code generation
+  const handleGenerateQrCode = async (planId: string) => {
+    try {
+      setIsGeneratingQr(true);
+      setSelectedPlanForQr(planId);
+      const result = await generatePlanQRCode(planId, {
+        darkColor: "#3b82f6",
+        lightColor: "#ffffff",
+        minLightAlpha: 0.3,
+        margin: 4,
+        scale: 8,
+        forceOpaque: false,
+      });
+      if (result.success && result.data) {
+        setQrCodeDataUrl(result.data.qrCodeDataUrl);
+        setQrModalOpen(true);
+      } else {
+        toast.error(result.error || "Failed to generate QR code");
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      toast.error("Failed to generate QR code");
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  // Handle delete plan
+  const handleDeleteClick = (planId: string) => {
+    setPlanToDelete(planId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!planToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await permanentlyDeleteSurfPlan(planToDelete);
+      if (result.success) {
+        toast.success("Plan deleted successfully");
+        setDeleteDialogOpen(false);
+        setPlanToDelete(null);
+        // Refresh the plans list
+        loadPlans(pagination.page, pagination.pageSize);
+      } else {
+        toast.error(result.error || "Failed to delete plan");
+      }
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      toast.error("An error occurred while deleting the plan");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const hasActiveFilters = () => {
@@ -693,74 +781,329 @@ export default function AllPlans() {
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
                     Date Range
                   </label>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                        From
-                      </label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !filters.dateFrom && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {filters.dateFrom ? (
-                              format(filters.dateFrom, "PPP")
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full h-auto transition-all duration-200",
+                          "py-2 px-3 sm:py-3 sm:px-4",
+                          "justify-between text-left font-normal",
+                          "bg-white hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
+                          "border-2 border-gray-200 hover:border-blue-300",
+                          "shadow-sm hover:shadow-md",
+                          !filters.dateFrom &&
+                            !filters.dateTo &&
+                            "text-muted-foreground"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg shrink-0">
+                            <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {filters.dateFrom || filters.dateTo ? (
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 bg-linear-to-r from-blue-500 to-blue-600 rounded-lg shadow-sm">
+                                  <CalendarIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white shrink-0" />
+                                  <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
+                                    {filters.dateFrom
+                                      ? new Date(
+                                          filters.dateFrom
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
+                                      : "Start"}
+                                  </span>
+                                </div>
+                                <svg
+                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 shrink-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                  />
+                                </svg>
+                                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 bg-linear-to-r from-purple-500 to-purple-600 rounded-lg shadow-sm">
+                                  <CalendarIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white shrink-0" />
+                                  <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
+                                    {filters.dateTo
+                                      ? new Date(
+                                          filters.dateTo
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
+                                      : "End"}
+                                  </span>
+                                </div>
+                              </div>
                             ) : (
-                              <span>Pick a date</span>
+                              <div className="flex flex-col">
+                                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                                  Select Date Range
+                                </span>
+                                <span className="text-[0.65rem] sm:text-xs text-gray-500 hidden sm:block">
+                                  Choose from presets or custom dates
+                                </span>
+                              </div>
                             )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={filters.dateFrom}
-                            onSelect={(date: any) =>
-                              handleDateChange("dateFrom", date || undefined)
-                            }
-                            initialFocus
+                          </div>
+                        </div>
+                        <svg
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
                           />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                        To
-                      </label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !filters.dateTo && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {filters.dateTo ? (
-                              format(filters.dateTo, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={filters.dateTo}
-                            onSelect={(date: any) =>
-                              handleDateChange("dateTo", date || undefined)
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
+                        </svg>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200"
+                      align="start"
+                    >
+                      <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
+                        {/* Preset Options - Enhanced Design */}
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-white">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
+                                <svg
+                                  className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                  />
+                                </svg>
+                              </div>
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                                Quick Select
+                              </h3>
+                            </div>
+                          </div>
+                          
+                          <div className="p-2 sm:p-3 lg:p-4 space-y-1 sm:space-y-1.5 lg:space-y-2 w-min">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                handleDateChange("dateFrom", today);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-500 mr-2 sm:mr-3"></span>
+                              Today
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-indigo-50 hover:to-indigo-100 hover:text-indigo-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastWeek = new Date();
+                                lastWeek.setDate(today.getDate() - 7);
+                                handleDateChange("dateFrom", lastWeek);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-indigo-500 mr-2 sm:mr-3"></span>
+                              Last 7 days
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-purple-50 hover:to-purple-100 hover:text-purple-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastMonth = new Date();
+                                lastMonth.setDate(today.getDate() - 30);
+                                handleDateChange("dateFrom", lastMonth);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-purple-500 mr-2 sm:mr-3"></span>
+                              Last 30 days
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-pink-50 hover:to-pink-100 hover:text-pink-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const firstDay = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  1
+                                );
+                                handleDateChange("dateFrom", firstDay);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-pink-500 mr-2 sm:mr-3"></span>
+                              This month
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-rose-50 hover:to-rose-100 hover:text-rose-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const firstDayLastMonth = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth() - 1,
+                                  1
+                                );
+                                const lastDayLastMonth = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  0
+                                );
+                                handleDateChange("dateFrom", firstDayLastMonth);
+                                handleDateChange("dateTo", lastDayLastMonth);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 mr-2 sm:mr-3"></span>
+                              Last month
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-orange-50 hover:to-orange-100 hover:text-orange-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastYear = new Date();
+                                lastYear.setFullYear(today.getFullYear() - 1);
+                                handleDateChange("dateFrom", lastYear);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 mr-2 sm:mr-3"></span>
+                              Last year
+                            </Button>
+                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 text-red-600 hover:bg-linear-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200 rounded-lg"
+                                onClick={() => {
+                                  handleDateChange("dateFrom", undefined);
+                                  handleDateChange("dateTo", undefined);
+                                }}
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 sm:mr-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                                Clear dates
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Calendar Pickers - Side by Side on Desktop */}
+                        <div className="bg-white flex-1">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-linear-to-r from-blue-50 to-purple-50">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-md shadow-sm">
+                                  <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <span className="text-xs sm:text-sm font-bold text-gray-900">
+                                  Custom Range
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-3 sm:p-4 lg:p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                              <div>
+                                <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
+                                  <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                    Start Date
+                                  </label>
+                                </div>
+                                <Calendar
+                                  mode="single"
+                                  selected={filters.dateFrom}
+                                  onSelect={(date: any) =>
+                                    handleDateChange(
+                                      "dateFrom",
+                                      date || undefined
+                                    )
+                                  }
+                                  initialFocus
+                                  disabled={(date) =>
+                                    filters.dateTo
+                                      ? date > filters.dateTo
+                                      : false
+                                  }
+                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                />
+                              </div>
+                              <div>
+                                <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
+                                  <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-purple-500 to-purple-600 rounded-full"></div>
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                    End Date
+                                  </label>
+                                </div>
+                                <Calendar
+                                  mode="single"
+                                  selected={filters.dateTo}
+                                  onSelect={(date: any) =>
+                                    handleDateChange(
+                                      "dateTo",
+                                      date || undefined
+                                    )
+                                  }
+                                  disabled={(date) =>
+                                    filters.dateFrom
+                                      ? date < filters.dateFrom
+                                      : false
+                                  }
+                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
@@ -782,6 +1125,9 @@ export default function AllPlans() {
                     Location
                   </th>
                   <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Facilitator
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -795,7 +1141,7 @@ export default function AllPlans() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {plans.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">No plans found</p>
                       <p className="text-sm text-gray-400 mt-1">
@@ -820,11 +1166,15 @@ export default function AllPlans() {
                           <div className="min-w-0">
                             <Link
                               href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                              className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors block"
+                              className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors block max-w-xs"
+                              title={plan.planNumber || "N/A"}
                             >
                               {plan.planNumber || "N/A"}
                             </Link>
-                            <div className="text-sm text-gray-600 truncate">
+                            <div
+                              className="text-sm text-gray-600 truncate max-w-xs"
+                              title={plan.surveyTitle || "Untitled"}
+                            >
                               {plan.surveyTitle || "Untitled"}
                             </div>
                             <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
@@ -851,14 +1201,30 @@ export default function AllPlans() {
                         <div className="flex items-start gap-2">
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                           <div className="min-w-0">
-                            <div className="text-sm text-gray-900 truncate">
-                              {plan.location || "N/A"}
-                            </div>
-                            {plan.facility && (
-                              <div className="text-xs text-gray-500 truncate">
-                                {plan.facility}
+                            {plan.ward && (
+                              <div className="text-sm text-gray-900 truncate">
+                                {plan.ward}
                               </div>
                             )}
+                            {plan.lga && (
+                              <div className="text-xs text-gray-500 truncate">
+                                {plan.lga}
+                              </div>
+                            )}
+                            {!plan.ward && !plan.lga && (
+                              <div className="text-sm text-gray-500">N/A</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <div
+                            className="text-sm text-gray-900 truncate max-w-[150px]"
+                            title={plan.facilitator || "N/A"}
+                          >
+                            {plan.facilitator || "N/A"}
                           </div>
                         </div>
                       </td>
@@ -884,27 +1250,43 @@ export default function AllPlans() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleViewPlan(plan.id)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEditPlan(plan.id)}
-                            disabled={modalLoading}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="More actions"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="More actions"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => handleViewPlan(plan.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditPlan(plan.id)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Plan
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleGenerateQrCode(plan.id)}
+                              >
+                                <QrCode className="w-4 h-4 mr-2" />
+                                QR Code
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(plan.id)}
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Plan
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </motion.tr>
@@ -1062,24 +1444,124 @@ export default function AllPlans() {
                         <Eye className="w-4 h-4 mr-2" />
                         View
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-3"
-                        onClick={() => handleEditPlan(plan.id)}
-                        disabled={modalLoading}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" className="px-3">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="px-3">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => handleViewPlan(plan.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEditPlan(plan.id)}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleGenerateQrCode(plan.id)}
+                          >
+                            <QrCode className="w-4 h-4 mr-2" />
+                            QR Code
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(plan.id)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Plan
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Pagination for Grid View */}
+      {viewMode === "grid" && plans.length > 0 && (
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.pageSize + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-medium">
+              {Math.min(
+                pagination.page * pagination.pageSize,
+                pagination.total
+              )}
+            </span>{" "}
+            of <span className="font-medium">{pagination.total}</span> plans
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={pagination.pageSize.toString()}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    Show {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={pagination.page === 1}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.totalPages)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1121,13 +1603,83 @@ export default function AllPlans() {
           ) : modalLoading || !selectedPlan ? (
             <PlanFormLoadingState />
           ) : (
-            <OptimizedSurfboardPlanForm
+            <SurfboardPlanForm
               mode="edit"
-              initialData={selectedPlan}
+              initial={selectedPlan}
               onSuccess={handleCloseModal}
-              onCancel={() => setEditModalOpen(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              plan and remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* QR Code Modal */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Plan QR Code</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-4 bg-white rounded-lg border">
+              {qrCodeDataUrl ? (
+                <img
+                  src={qrCodeDataUrl}
+                  alt="QR Code"
+                  className="w-64 h-64 mx-auto"
+                />
+              ) : (
+                <div className="w-64 h-64 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setQrModalOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = qrCodeDataUrl || "";
+                  link.download = `plan-qrcode.png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                disabled={!qrCodeDataUrl}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

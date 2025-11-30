@@ -848,6 +848,7 @@ export async function getAllSurfPlans(): Promise<ApiResult<{ plans: Plan[] }>> {
       prisma.surfboardPlan.findMany({
         where: {
           userId: user.id,
+          deleted: false, // Exclude deleted plans
         },
         select: {
           id: true,
@@ -955,7 +956,7 @@ export async function getPaginatedSurfPlans({
     const skip = noPagination ? undefined : (page - 1) * pageSize;
 
     // Build where clause
-    const where: any = { userId: user.id };
+    const where: any = { userId: user.id, deleted: false }; // Exclude deleted plans by default
 
     if (filters) {
       if (filters.search) {
@@ -1316,6 +1317,7 @@ export async function getAllSharedSurfPlans(
       sharedTo: {
         isEmpty: false,
       },
+      deleted: false, // Exclude deleted plans
     };
 
     if (filters) {
@@ -1463,6 +1465,7 @@ export async function getSharedWithMeSurfPlans(
       sharedTo: {
         has: user.id,
       },
+      deleted: false, // Exclude deleted plans
     };
 
     if (filters) {
@@ -1971,13 +1974,124 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
     const plan = await prisma.surfboardPlan.findUnique({
       where: { id, userId: user.id },
       select: {
+        deleted: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    if (plan.deleted) {
+      return { success: false, error: "Plan already deleted" };
+    }
+
+    // Soft delete: just mark as deleted
+    await prisma.surfboardPlan.update({
+      where: { id, userId: user.id },
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
+        deletedBy: user.id,
+      },
+    });
+
+    console.log(`Successfully soft-deleted plan ${id}`);
+
+    revalidatePath("/surfboard/dashboard/plans");
+    return { success: true, data: null };
+  } catch (err) {
+    console.error("deleteSurfboardPlan error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
+ * Restores a soft-deleted plan
+ */
+export async function restoreSurfPlan(id: string): Promise<ApiResult<null>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id, userId: user.id },
+      select: {
+        deleted: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    if (!plan.deleted) {
+      return { success: false, error: "Plan is not deleted" };
+    }
+
+    // Restore the plan
+    await prisma.surfboardPlan.update({
+      where: { id, userId: user.id },
+      data: {
+        deleted: false,
+        deletedAt: null,
+        deletedBy: null,
+      },
+    });
+
+    console.log(`Successfully restored plan ${id}`);
+
+    revalidatePath("/surfboard/dashboard/plans");
+    return { success: true, data: null };
+  } catch (err) {
+    console.error("restoreSurfPlan error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
+ * Permanently deletes a plan and all associated files from S3
+ * Only accessible by admins or superadmins
+ */
+export async function permanentlyDeleteSurfPlan(
+  id: string
+): Promise<ApiResult<null>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    // Check if user is admin or superadmin
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id },
+      select: {
+        userId: true,
         pdfFilePaths: true,
         cadFilePaths: true,
         certificateFilePaths: true,
       },
     });
+
     if (!plan) {
       return { success: false, error: "Plan not found" };
+    }
+
+    // Only plan owner or admin can permanently delete
+    if (plan.userId !== user.id && !isAdmin) {
+      return { success: false, error: "Unauthorized" };
     }
 
     // Get all file URLs to delete
@@ -2009,13 +2123,122 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
     }
 
     // Only proceed with database deletion if file deletion was successful
-    await prisma.surfboardPlan.delete({ where: { id, userId: user.id } });
-    console.log(`Successfully deleted plan ${id}`);
+    await prisma.surfboardPlan.delete({ where: { id } });
+    console.log(`Successfully permanently deleted plan ${id}`);
 
     revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: null };
   } catch (err) {
-    console.error("deleteSurfboardPlan error:", err);
+    console.error("permanentlyDeleteSurfPlan error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
+ * Gets all deleted plans for the current user
+ * Useful for showing a "trash" or "recycle bin" view
+ */
+export async function getDeletedSurfPlans({
+  page = 1,
+  pageSize = 10,
+}: {
+  page?: number;
+  pageSize?: number;
+} = {}): Promise<
+  ApiResult<{ plans: Plan[]; total: number; totalPages: number }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+
+    if (!user || !user.role) {
+      return {
+        success: false,
+        error: "User not authenticated or role not found",
+      };
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const [plans, total] = await Promise.all([
+      prisma.surfboardPlan.findMany({
+        where: {
+          userId: user.id,
+          deleted: true,
+        },
+        select: {
+          id: true,
+          planNumber: true,
+          surveyTitle: true,
+          planType: true,
+          referencePlanNumber: true,
+          deededArea: true,
+          facilitator: true,
+          pillarType: true,
+          geometry: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+          ward: true,
+          lcda: true,
+          lga: true,
+          state: true,
+          pillars: true,
+          status: true,
+          isLive: true,
+          dateOnSurveyPlan: true,
+          dateLodged: true,
+          reasonForWithdrawalAndResubmission: true,
+          createdAt: true,
+          updatedAt: true,
+          deleted: true,
+          deletedAt: true,
+          deletedBy: true,
+        },
+        skip,
+        take: pageSize,
+        orderBy: { deletedAt: "desc" },
+      }),
+      prisma.surfboardPlan.count({
+        where: {
+          userId: user.id,
+          deleted: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Add area and centroid to each plan
+    const plansWithGeometry = plans.map((plan) => {
+      if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+
+      try {
+        const { areaSqM, centroid: centroidCoords } = computeGeometryDetails(
+          plan.geometry
+        );
+        return {
+          ...plan,
+          areaSqM,
+          centroid: centroidCoords,
+        };
+      } catch (error) {
+        console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+        return { ...plan, areaSqM: 0, centroid: null };
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        plans: plansWithGeometry,
+        total,
+        totalPages,
+      },
+    };
+  } catch (err) {
+    console.error("getDeletedSurfPlans error:", err);
     return { success: false, error: (err as Error).message };
   }
 }

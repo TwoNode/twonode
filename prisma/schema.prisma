@@ -367,12 +367,18 @@ model SurfboardPlan {
 
   sharedTo               String[]
 
+  /// Soft delete fields
+  deleted                Boolean             @default(false)
+  deletedAt              DateTime?
+  deletedBy              String?             // User ID who deleted the plan
+
   /// Creation & update timestamps
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
   /// Index by reference number
   @@index([planNumber])
+  @@index([deleted])
 }
 
 enum SurfboardNotificationType {
