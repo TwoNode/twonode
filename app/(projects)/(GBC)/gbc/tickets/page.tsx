@@ -7,6 +7,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import GBC2Navbar from "../../components/Navbar";
 
+// Force dynamic rendering - prevents static generation and caching
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function TicketsPage() {
   const statsResult = await getGBCTicketStats();
   const stats = statsResult.success ? statsResult.data : null;

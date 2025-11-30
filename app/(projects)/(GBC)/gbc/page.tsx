@@ -20,6 +20,10 @@ import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
 import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
 import GBC2Navbar from "../components/Navbar";
 
+// Force dynamic rendering - prevents static generation and caching
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function HomePage() {
   const statsResult = await getGBCTicketStats();
   const sponsorsResult = await getSponsors();
