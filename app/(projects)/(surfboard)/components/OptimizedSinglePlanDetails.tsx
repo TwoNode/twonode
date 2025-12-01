@@ -552,7 +552,7 @@ export default function OptimizedSinglePlanDetails({
                   <div className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-green-600" />
                     <span className="text-2xl font-bold text-gray-900">
-                      {planData.pillarsCount || planData.pillars?.length || 0}
+                      {planData?.pillars?.length || 0}
                     </span>
                   </div>
                 </div>

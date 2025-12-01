@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { LucideIcon } from "lucide-react";
 import { LucideUser } from "lucide-react";
 import { REVA_COLORS } from "@/reva-colors";
+import { useStore } from "@/hooks/use-store";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 interface LinkItem {
   icon: LucideIcon;
@@ -29,6 +31,7 @@ export interface MenuProps {
 export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
   const colors = colorPalette || require("@/reva-colors").REVA_COLORS;
   const pathname = usePathname();
+  const sidebar = useStore(useSidebar, (x) => x);
 
   const isActive = (url: string) => pathname === url;
 
@@ -45,6 +48,9 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
               <Link
                 key={index}
                 href={item.url}
+                onClick={() => {
+                  sidebar?.toggleOpen();
+                }}
                 className={cn(
                   "p-[5px] group flex flex-col items-center justify-center gap-[6px] w-full h-[70px] rounded-xl transition-all duration-200 ease-in-out",
                   "hover:scale-105 hover:shadow-sm"

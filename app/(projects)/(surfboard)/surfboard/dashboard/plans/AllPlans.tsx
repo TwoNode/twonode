@@ -1,7 +1,7 @@
 // In AllPlans.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -32,14 +32,12 @@ import {
   FileText,
   User,
   QrCode,
-  ChevronDown,
   RefreshCw,
   MoreVertical,
   Grid3x3,
   List,
   Plus,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -86,10 +84,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import SinglePlanDetails from "../plan/SinglePlan";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
-import OptimizedSurfboardPlanForm from "../../../components/OptimizedSurfboardPlanForm";
 import {
   PlanDetailsLoadingState,
   PlanFormLoadingState,
@@ -280,7 +276,7 @@ export default function AllPlans() {
         plan.status?.replace("_", " ") || "N/A",
         plan.location || "N/A",
         plan.facility || "N/A",
-        plan.pillarsCount || 0,
+        plan.pillars?.length || 0,
         plan.areaSqM || 0,
         plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : "N/A",
         plan.updatedAt ? new Date(plan.updatedAt).toLocaleDateString() : "N/A",
@@ -382,11 +378,13 @@ export default function AllPlans() {
     setModalError(null);
   };
 
-  // Handle successful edit - refresh the specific plan
+  // Handle successful edit - refresh the specific plan and close modal
   const handleEditSuccess = async () => {
     if (selectedPlanId) {
       await refreshSelectedPlan(selectedPlanId);
       toast.success("Plan updated successfully");
+      // Close the edit modal after successful save
+      setEditModalOpen(false);
     }
   };
 
@@ -1456,25 +1454,69 @@ export default function AllPlans() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {/* Location with LGA/Ward hierarchy like list view */}
                     <div className="flex items-start gap-2 text-sm">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                      <span className="text-gray-600 truncate">
-                        {plan.location || "N/A"}
+                      <div className="min-w-0 flex-1">
+                        {plan.ward && (
+                          <div className="text-sm text-gray-900 truncate">
+                            {plan.ward}
+                          </div>
+                        )}
+                        {plan.lga && (
+                          <div className="text-xs text-gray-500 truncate">
+                            {plan.lga}
+                          </div>
+                        )}
+                        {!plan.ward && !plan.lga && (
+                          <span className="text-gray-600">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Facilitator */}
+                    <div className="flex items-start gap-2 text-sm">
+                      <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <span
+                        className="text-gray-600 truncate"
+                        title={plan.facilitator || "N/A"}
+                      >
+                        {plan.facilitator || "N/A"}
                       </span>
                     </div>
+
+                    {/* Pillars and Area */}
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{plan.pillarsCount || 0} pillars</span>
+                      <span>{plan.pillars?.length || 0} pillars</span>
                       <span>•</span>
                       <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+
+                    {/* Survey Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
                       <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600">Survey:</span>
                       <span>
                         {plan.dateOnSurveyPlan
                           ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
                           : "No date"}
                       </span>
                     </div>
+
+                    {/* Updated Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600">
+                        Updated:
+                      </span>
+                      <span>
+                        {plan.updatedAt
+                          ? new Date(plan.updatedAt).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
                     <div className="flex items-center gap-2 pt-3 border-t">
                       <Button
                         variant="outline"
@@ -1608,74 +1650,109 @@ export default function AllPlans() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="z-301 max-w-[90%] md:max-w-[75%] 2xl:max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col justify-between gap-2">
           <DialogHeader>
             <DialogTitle>View Plan Details</DialogTitle>
           </DialogHeader>
-          {modalError ? (
-            <PlanDetailsErrorState
-              message={modalError}
-              onRetry={() => selectedPlanId && handleViewPlan(selectedPlanId)}
-              onGoBack={() => setViewModalOpen(false)}
-            />
-          ) : !selectedPlan ? (
-            <PlanDetailsLoadingState />
-          ) : (
-            <>
-              {modalLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <p className="text-sm text-gray-600">Refreshing...</p>
-                  </div>
-                </div>
-              )}
-              <OptimizedSinglePlanDetails
-                planData={selectedPlan}
-                onEdit={() => {
-                  setViewModalOpen(false);
-                  handleEditPlan(selectedPlan.id);
-                }}
-                onRefresh={() =>
-                  selectedPlanId && refreshSelectedPlan(selectedPlanId)
-                }
+
+          <div className="flex flex-col gap-2 max-h-[85%] overflow-y-auto">
+            {modalError ? (
+              <PlanDetailsErrorState
+                message={modalError}
+                onRetry={() => selectedPlanId && handleViewPlan(selectedPlanId)}
+                onGoBack={() => setViewModalOpen(false)}
               />
-            </>
-          )}
+            ) : !selectedPlan ? (
+              <PlanDetailsLoadingState />
+            ) : (
+              <>
+                {modalLoading && (
+                  <Dialog open={modalLoading}>
+                    <DialogContent className="sm:max-w-md" hideCloseButton>
+                      <div className="flex flex-col items-center gap-4 py-6">
+                        <div className="relative">
+                          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <RefreshCw className="w-6 h-6 text-blue-600 animate-pulse" />
+                          </div>
+                        </div>
+
+                        <div className="text-center space-y-1">
+                          <p className="text-base font-semibold text-gray-900">
+                            Refreshing Plan Data
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Please wait while we update the information...
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                <OptimizedSinglePlanDetails
+                  planData={selectedPlan}
+                  onEdit={() => {
+                    setViewModalOpen(false);
+                    handleEditPlan(selectedPlan.id);
+                  }}
+                  onRefresh={() =>
+                    selectedPlanId && refreshSelectedPlan(selectedPlanId)
+                  }
+                />
+              </>
+            )}{" "}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Modal */}
       <Dialog open={editModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="z-301 max-w-[90%] md:max-w-[75%] 2xl:max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col justify-between gap-2">
           <DialogHeader>
             <DialogTitle>Edit Plan</DialogTitle>
           </DialogHeader>
-          {modalError ? (
-            <PlanFormErrorState
-              message={modalError}
-              onRetry={() => selectedPlanId && handleEditPlan(selectedPlanId)}
-              onGoBack={() => setEditModalOpen(false)}
-            />
-          ) : !selectedPlan ? (
-            <PlanFormLoadingState />
-          ) : (
-            <>
-              {modalLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <p className="text-sm text-gray-600">Saving...</p>
-                  </div>
-                </div>
-              )}
-              <SurfboardPlanForm
-                mode="edit"
-                initial={selectedPlan}
-                onSuccess={handleEditSuccess}
+
+          <div className="flex flex-col gap-2 max-h-[85%] overflow-y-auto">
+            {modalError ? (
+              <PlanFormErrorState
+                message={modalError}
+                onRetry={() => selectedPlanId && handleEditPlan(selectedPlanId)}
+                onGoBack={() => setEditModalOpen(false)}
               />
-            </>
-          )}
+            ) : !selectedPlan ? (
+              <PlanFormLoadingState />
+            ) : (
+              <>
+                {modalLoading && (
+                  <Dialog open={modalLoading}>
+                    <DialogContent className="sm:max-w-md" hideCloseButton>
+                      <div className="flex flex-col items-center gap-4 py-6">
+                        <div className="relative">
+                          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-100 border-t-green-600"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <CheckCircle className="w-6 h-6 text-green-600 animate-pulse" />
+                          </div>
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-base font-semibold text-gray-900">
+                            Saving Changes
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Please wait while we save your updates...
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                <SurfboardPlanForm
+                  mode="edit"
+                  initial={selectedPlan}
+                  onSuccess={handleEditSuccess}
+                />
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1725,6 +1802,7 @@ export default function AllPlans() {
                 />
               )}
             </div>
+
             <div className="flex gap-2 w-full">
               <Button
                 variant="outline"

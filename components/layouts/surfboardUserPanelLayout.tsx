@@ -265,7 +265,7 @@ export default function SurfboardUserPanelLayout({
         {/* Mobile Overlay - appears when sidebar is open */}
         {sidebar.isOpen && (
           <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-199 lg:hidden transition-opacity duration-300"
+            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
             onClick={() => sidebar?.toggleOpen()}
             aria-label="Close sidebar"
           />

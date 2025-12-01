@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,20 +23,15 @@ import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
 import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
 import GBC2Navbar from "../components/Navbar";
 
-// Force dynamic rendering - prevents static generation and caching
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Loading skeleton component
+const TextSkeleton = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-white/20 rounded ${className}`} />
+);
 
-export default async function HomePage() {
-  const statsResult = await getGBCTicketStats();
-  const sponsorsResult = await getSponsors();
-  const settingsResult = await getAllGBCSettings();
-
-  const stats = statsResult.success ? statsResult.data : null;
-  const sponsors = sponsorsResult.success
-    ? sponsorsResult.data?.slice(0, 6)
-    : [];
-  const settings = settingsResult.success ? settingsResult.data : null;
+export default function HomePage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
 
   // Get settings with fallbacks
   const eventName =
@@ -80,6 +78,31 @@ export default async function HomePage() {
     day: "numeric",
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [statsResult, settingsResult] = await Promise.all([
+          getGBCTicketStats(),
+          getAllGBCSettings(),
+        ]);
+
+        if (statsResult.success) {
+          setStats(statsResult.data);
+        }
+        if (settingsResult.success) {
+          setSettings(settingsResult.data);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Navbar */}
@@ -99,28 +122,50 @@ export default async function HomePage() {
 
         <div className="relative z-10 container flex flex-col items-center justify-center mx-auto px-4 pb-16 sm:px-6 lg:px-8 text-center text-white">
           <div className="animate-fade-in">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
-              {eventName}
-            </h1>
+            {isLoading ? (
+              <TextSkeleton className="h-12 sm:h-16 md:h-20 lg:h-24 w-3/4 mx-auto mb-4 sm:mb-6" />
+            ) : (
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
+                {eventName}
+              </h1>
+            )}
 
-            <p className="text-base sm:text-xl md:text-2xl lg:text-3xl mb-3 sm:mb-4 font-semibold px-2">
-              {eventTheme}
-            </p>
+            {isLoading ? (
+              <TextSkeleton className="h-8 sm:h-10 md:h-12 w-5/6 mx-auto mb-3 sm:mb-4" />
+            ) : (
+              <p className="text-base sm:text-xl md:text-2xl lg:text-3xl mb-3 sm:mb-4 font-semibold px-2">
+                {eventTheme}
+              </p>
+            )}
 
-            <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-gray-200 px-2">
-              {eventSubTheme}
-            </p>
+            {isLoading ? (
+              <TextSkeleton className="h-6 sm:h-8 md:h-10 w-4/5 mx-auto mb-6 sm:mb-8" />
+            ) : (
+              <p className="text-sm sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-gray-200 px-2">
+                {eventSubTheme}
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <div className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5" />
-                <span>{formattedDate}</span>
-              </div>
-              <div className="hidden sm:block text-gray-300">|</div>
-              <div className="flex items-center gap-2 text-lg">
-                <MapPin className="h-5 w-5" />
-                <span>{eventVenue}</span>
-              </div>
+              {isLoading ? (
+                <>
+                  <TextSkeleton className="h-6 w-48" />
+                  <div className="hidden sm:block text-gray-300">|</div>
+                  <TextSkeleton className="h-6 w-40" />
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-lg">
+                    <Calendar className="h-5 w-5" />
+                    <span>{formattedDate}</span>
+                  </div>
+                  <div className="hidden sm:block text-gray-300">|</div>
+                  <div className="flex items-center gap-2 text-lg">
+                    <MapPin className="h-5 w-5" />
+                    <span>{eventVenue}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -144,7 +189,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {stats && stats.availableTickets > 0 && (
+            {!isLoading && stats && stats.availableTickets > 0 && (
               <p className="mt-8 text-lg text-yellow-300 animate-pulse">
                 ⚡ Only {stats.availableTickets} tickets remaining!
               </p>
@@ -161,46 +206,80 @@ export default async function HomePage() {
       </section>
 
       {/* Stats Section */}
-      {stats && (
-        <section className="py-12 sm:py-16 bg-gray-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
-                  {stats.completedTickets}
-                </div>
-                <div className="text-sm sm:text-base text-gray-600">
-                  Tickets Sold
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
-                  {stats.maxTickets}
-                </div>
-                <div className="text-sm sm:text-base text-gray-600">
-                  Total Capacity
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
-                  50+
-                </div>
-                <div className="text-sm sm:text-base text-gray-600">
-                  Speakers
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
-                  100+
-                </div>
-                <div className="text-sm sm:text-base text-gray-600">
-                  Companies
-                </div>
-              </div>
+      <section className="py-12 sm:py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+            <div className="text-center">
+              {isLoading ? (
+                <>
+                  <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
+                  <TextSkeleton className="h-4 sm:h-5 w-32 mx-auto bg-gray-200" />
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                    {stats?.completedTickets ?? 0}
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-600">
+                    Tickets Sold
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="text-center">
+              {isLoading ? (
+                <>
+                  <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
+                  <TextSkeleton className="h-4 sm:h-5 w-32 mx-auto bg-gray-200" />
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                    {stats?.maxTickets ?? 0}
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-600">
+                    Total Capacity
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="text-center">
+              {isLoading ? (
+                <>
+                  <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
+                  <TextSkeleton className="h-4 sm:h-5 w-20 mx-auto bg-gray-200" />
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                    50+
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-600">
+                    Speakers
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="text-center">
+              {isLoading ? (
+                <>
+                  <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
+                  <TextSkeleton className="h-4 sm:h-5 w-24 mx-auto bg-gray-200" />
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                    100+
+                  </div>
+                  <div className="text-sm sm:text-base text-gray-600">
+                    Companies
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* What is GBC Section */}
       <section className="py-16 sm:py-20 md:py-24 bg-white">
@@ -294,7 +373,7 @@ export default async function HomePage() {
       </section>
 
       {/* Important Notices */}
-      {importantNotices.length > 0 && (
+      {!isLoading && importantNotices.length > 0 && (
         <section className="py-8 sm:py-12 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
@@ -360,7 +439,26 @@ export default async function HomePage() {
             geospatial technology conference
           </p>
 
-          {stats && stats.availableTickets > 0 ? (
+          {isLoading ? (
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6"
+                >
+                  <TextSkeleton className="h-6 w-32 mb-4" />
+                  <TextSkeleton className="h-10 w-24 mb-2" />
+                  <TextSkeleton className="h-4 w-40 mb-6" />
+                  <div className="space-y-2 mb-6">
+                    {[1, 2, 3, 4, 5].map((j) => (
+                      <TextSkeleton key={j} className="h-4 w-full" />
+                    ))}
+                  </div>
+                  <TextSkeleton className="h-11 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : stats && stats.availableTickets > 0 ? (
             <>
               <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
@@ -518,14 +616,18 @@ export default async function HomePage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <p className="mt-4 text-yellow-300 font-medium animate-pulse">
-                Only {stats.availableTickets} tickets left!
-              </p>
+              {!isLoading && (
+                <p className="mt-4 text-yellow-300 font-medium animate-pulse">
+                  Only {stats.availableTickets} tickets left!
+                </p>
+              )}
             </>
           ) : (
-            <p className="text-2xl font-bold text-yellow-300">
-              Sold Out! Stay tuned for next year's edition.
-            </p>
+            !isLoading && (
+              <p className="text-2xl font-bold text-yellow-300">
+                Sold Out! Stay tuned for next year's edition.
+              </p>
+            )
           )}
         </div>
       </section>
