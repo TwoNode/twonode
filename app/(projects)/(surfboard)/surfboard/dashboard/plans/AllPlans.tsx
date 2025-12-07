@@ -1410,6 +1410,31 @@ export default function AllPlans() {
                                 Edit Plan
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                onClick={() => {
+                                  // Check if plan is eligible for certificate submission
+                                  const eligibilityMessage =
+                                    getPlanEligibilityMessage(plan);
+
+                                  if (eligibilityMessage) {
+                                    toast.error(eligibilityMessage);
+                                    return;
+                                  }
+
+                                  // Select this plan
+                                  setSelectedPlans([plan.id]);
+
+                                  // Check if record copy is uploaded
+                                  if (!plan.redCopyFileUrl) {
+                                    setUploadModalOpen(true);
+                                  } else {
+                                    setBatchModalOpen(true);
+                                  }
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Submit for Certificate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 onClick={() => handleGenerateQrCode(plan.id)}
                               >
                                 <QrCode className="w-4 h-4 mr-2" />
@@ -1683,6 +1708,31 @@ export default function AllPlans() {
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              // Check if plan is eligible for certificate submission
+                              const eligibilityMessage =
+                                getPlanEligibilityMessage(plan);
+
+                              if (eligibilityMessage) {
+                                toast.error(eligibilityMessage);
+                                return;
+                              }
+
+                              // Select this plan
+                              setSelectedPlans([plan.id]);
+
+                              // Check if record copy is uploaded
+                              if (!plan.redCopyFileUrl) {
+                                setUploadModalOpen(true);
+                              } else {
+                                setBatchModalOpen(true);
+                              }
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Submit for Certificate
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleGenerateQrCode(plan.id)}
@@ -1991,6 +2041,10 @@ export default function AllPlans() {
         onUploadComplete={handleUploadComplete}
         onRemovePlan={(planId) => {
           setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+
+          if (selectedPlans.length === 0) {
+            setUploadModalOpen(false);
+          }
         }}
       />
 
@@ -2002,6 +2056,10 @@ export default function AllPlans() {
         onSuccess={handleBatchSuccess}
         onRemovePlan={(planId) => {
           setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+
+          if (selectedPlans.length === 0) {
+            setBatchModalOpen(false);
+          }
         }}
       />
     </div>

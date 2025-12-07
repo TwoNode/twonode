@@ -62,6 +62,12 @@ export function RecordCopyUploadModal({
     let uploadedUrl: string | undefined;
     let uploadedKey: string | undefined;
 
+    if (selectedPlans.length === 0) {
+      toast.error("Please select at least one plan");
+      onClose();
+      return;
+    }
+
     try {
       setUploadStatus((prev) => ({
         ...prev,

@@ -50,6 +50,12 @@ export function BatchSubmissionModal({
 
   const handleSubmit = async () => {
     try {
+      if (selectedPlans.length === 0) {
+        toast.error("Please select at least one plan");
+        onClose();
+        return;
+      }
+
       setIsSubmitting(true);
 
       const result = await submitRedCopyBatch(selectedPlans.map((p) => p.id));
