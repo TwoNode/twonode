@@ -37,6 +37,7 @@ import {
   Grid3x3,
   List,
   Plus,
+  Loader2,
 } from "lucide-react";
 import {
   Select,
@@ -84,6 +85,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  BatchSelectionBar,
+  BatchSubmissionModal,
+  isPlanEligibleForCertificate,
+  getPlanEligibilityMessage,
+} from "../../../components/CertificateBatchSelection";
+import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
 import {
@@ -145,6 +154,11 @@ export default function AllPlans() {
     null
   );
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+
+  // Batch Selection State
+  const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const loadPlans = async (
     page = pagination.page,
@@ -430,6 +444,7 @@ export default function AllPlans() {
     if (!planToDelete) return;
 
     setIsDeleting(true);
+    toast.loading("Deleting plan...", { duration: Infinity });
     try {
       const result = await permanentlyDeleteSurfPlan(planToDelete);
       if (result.success) {
@@ -446,7 +461,61 @@ export default function AllPlans() {
       toast.error("An error occurred while deleting the plan");
     } finally {
       setIsDeleting(false);
+      toast.dismiss();
     }
+  };
+
+  // Selection Handlers
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlans((prev) =>
+      prev.includes(planId)
+        ? prev.filter((id) => id !== planId)
+        : [...prev, planId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    // Only select eligible plans if needed, or just all visible plans
+    // For now, let's select all visible plans
+    if (selectedPlans.length === plans.length && plans.length > 0) {
+      setSelectedPlans([]);
+    } else {
+      setSelectedPlans(plans.map((p) => p.id));
+    }
+  };
+
+  const handleBatchSubmit = () => {
+    // Get the selected plan objects
+    const selectedPlanObjects = plans.filter((p) =>
+      selectedPlans.includes(p.id)
+    );
+
+    // Check if any selected plan is missing a record copy
+    const plansMissingRecordCopy = selectedPlanObjects.filter(
+      (p) => !p.redCopyFileUrl
+    );
+
+    if (plansMissingRecordCopy.length > 0) {
+      // Open upload modal first
+      setUploadModalOpen(true);
+    } else {
+      // All plans have record copies, proceed to batch submission
+      setBatchModalOpen(true);
+    }
+  };
+
+  const handleUploadComplete = () => {
+    // Refresh plans to get updated record copy URLs
+    loadPlans(pagination.page, pagination.pageSize).then(() => {
+      // Close upload modal and open batch submission modal
+      setUploadModalOpen(false);
+      setBatchModalOpen(true);
+    });
+  };
+
+  const handleBatchSuccess = () => {
+    setSelectedPlans([]);
+    loadPlans(pagination.page, pagination.pageSize);
   };
 
   const hasActiveFilters = () => {
@@ -1130,6 +1199,16 @@ export default function AllPlans() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left">
+                    <Checkbox
+                      checked={
+                        plans.length > 0 &&
+                        selectedPlans.length === plans.length
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Plan Details
                   </th>
@@ -1175,6 +1254,13 @@ export default function AllPlans() {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
+                        <Checkbox
+                          checked={selectedPlans.includes(plan.id)}
+                          onCheckedChange={() => handleSelectPlan(plan.id)}
+                          aria-label={`Select plan ${plan.planNumber}`}
+                        />
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-blue-50 rounded-lg shrink-0">
                             <FileText className="w-5 h-5 text-blue-600" />
@@ -1201,6 +1287,26 @@ export default function AllPlans() {
                               <span>
                                 {(plan.areaSqM || 0).toLocaleString()} m²
                               </span>
+                              <span>•</span>
+                              {plan.redCopyFileUrl ? (
+                                <span
+                                  className="inline-flex items-center gap-1 text-green-600"
+                                  title="Record copy uploaded"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="text-xs">Record Copy</span>
+                                </span>
+                              ) : (
+                                <span
+                                  className="inline-flex items-center gap-1 text-amber-600"
+                                  title="Record copy not uploaded"
+                                >
+                                  <Clock className="w-3 h-3" />
+                                  <span className="text-xs">
+                                    No Record Copy
+                                  </span>
+                                </span>
+                              )}
                             </div>
 
                             <div className="md:hidden mt-2">
@@ -1311,10 +1417,19 @@ export default function AllPlans() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDeleteClick(plan.id)}
+                                disabled={
+                                  isDeleting && planToDelete === plan.id
+                                }
                                 className="text-red-600 focus:text-red-600 focus:bg-red-50"
                               >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete Plan
+                                {isDeleting && planToDelete === plan.id ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                )}
+                                {isDeleting && planToDelete === plan.id
+                                  ? "Deleting..."
+                                  : "Delete Plan"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1424,7 +1539,15 @@ export default function AllPlans() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
               >
-                <Card className="hover:shadow-lg transition-shadow">
+                <Card className="hover:shadow-lg transition-shadow relative">
+                  {/* Selection Checkbox for Grid */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <Checkbox
+                      checked={selectedPlans.includes(plan.id)}
+                      onCheckedChange={() => handleSelectPlan(plan.id)}
+                      className="bg-white/80 backdrop-blur-xs border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                  </div>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -1492,6 +1615,21 @@ export default function AllPlans() {
                       <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
                     </div>
 
+                    {/* Record Copy Status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {plan.redCopyFileUrl ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Record Copy Uploaded</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                          <Clock className="w-3 h-3" />
+                          <span>No Record Copy</span>
+                        </span>
+                      )}
+                    </div>
+
                     {/* Survey Date */}
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <CalendarIcon className="w-3 h-3" />
@@ -1554,10 +1692,17 @@ export default function AllPlans() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteClick(plan.id)}
+                            disabled={isDeleting && planToDelete === plan.id}
                             className="text-red-600 focus:text-red-600 focus:bg-red-50"
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Plan
+                            {isDeleting && planToDelete === plan.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 mr-2" />
+                            )}
+                            {isDeleting && planToDelete === plan.id
+                              ? "Deleting..."
+                              : "Delete Plan"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1830,6 +1975,35 @@ export default function AllPlans() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Batch Selection Bar */}
+      <BatchSelectionBar
+        selectedCount={selectedPlans.length}
+        onSubmit={handleBatchSubmit}
+        onClear={() => setSelectedPlans([])}
+      />
+
+      {/* Record Copy Upload Modal */}
+      <RecordCopyUploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        selectedPlans={plans.filter((p) => selectedPlans.includes(p.id))}
+        onUploadComplete={handleUploadComplete}
+        onRemovePlan={(planId) => {
+          setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+        }}
+      />
+
+      {/* Batch Submission Modal */}
+      <BatchSubmissionModal
+        isOpen={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        selectedPlans={plans.filter((p) => selectedPlans.includes(p.id))}
+        onSuccess={handleBatchSuccess}
+        onRemovePlan={(planId) => {
+          setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+        }}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -187,20 +188,25 @@ enum SurfboardRole {
   USER
   ADMIN
   SUPERADMIN
+  RECORDS_I // MDA Role: Verifies record copies
+  RECORDS_II // MDA Role: Verifies physical copies and submits to OSSG
+  ACCOUNTS // MDA Role: Approves LASG payment receipts
+  CHARTING // MDA Role: Edits/confirms charting remarks
+  SURCON // MDA Role: Confirms pillar numbers
 }
 
 model SurfboardUser {
-  id                  String         @id @default(uuid())
-  kindeId             String         @unique
-  email               String         @unique
-  firstName           String
-  lastName            String
-  role                SurfboardRole  @default(USER)
-  emailVerified       Boolean        @default(false)
-  emailVerificationToken String?
+  id                       String        @id @default(uuid())
+  kindeId                  String        @unique
+  email                    String        @unique
+  firstName                String
+  lastName                 String
+  role                     SurfboardRole @default(USER)
+  emailVerified            Boolean       @default(false)
+  emailVerificationToken   String?
   emailVerificationExpires DateTime?
 
-  isActive            Boolean        @default(true)
+  isActive                 Boolean       @default(true)
 
   // New fields
   logo                String?                 // URL to the user's logo
@@ -218,6 +224,8 @@ model SurfboardUser {
   plans               SurfboardPlan[]
   subscription        Subscription[]
   subscriptionHistory SubscriptionHistory[]
+  batches             CertificateOfDepositBatch[]
+  settingsUpdates     SurfboardSettings[]
 
   // Timestamps
   createdAt           DateTime       @default(now())
@@ -240,12 +248,14 @@ enum SurfboardRedCopyStatus {
   SUBMITTED
   COMPLETED
   FAILED
+  APPROVED // Certificate of Deposit approved
+  QUERIED // Queried by any MDA role
 }
 
 model Subscription {
-  id                  String                  @id @default(uuid())
-  userId              String                  @unique
-  user                SurfboardUser           @relation(fields: [userId], references: [id])
+  id     String        @id @default(uuid())
+  userId String        @unique
+  user   SurfboardUser @relation(fields: [userId], references: [id])
 
   provider            String                  @default("paystack")
   email               String?
@@ -340,6 +350,54 @@ model SurfboardPlan {
   redCopyFileUrl         String?             // URL to the uploaded Red Copy file
   redCopyError           String?             // Error message if Red Copy submission failed
 
+  // Certificate of Deposit fields
+  locality                String?            // New field for locality
+  possibleChartingRemarks String?            // Populated from LASG_charting_interpretation
+  chartingRemarks         String?            // Final charting remarks (edited by Charting Admin)
+  batchId                 String?            // Reference to batch submission
+  batch                   CertificateOfDepositBatch? @relation(fields: [batchId], references: [id])
+
+  // Approval tracking
+  accountsApprovedBy      String?
+  accountsApprovedAt      DateTime?
+  accountsStatus          ApprovalStatus? @default(PENDING)
+  accountsComment         String?
+  accountsLockedBy        String?            // User ID who locked this plan for accounts review
+  accountsLockedAt        DateTime?          // When the lock was acquired
+  accountsLockExpiresAt   DateTime?          // When the lock expires (30 min from lock time)
+
+  chartingApprovedBy      String?
+  chartingApprovedAt      DateTime?
+  chartingStatus          ApprovalStatus? @default(PENDING)
+  chartingComment         String?
+  chartingLockedBy        String?            // User ID who locked this plan for charting review
+  chartingLockedAt        DateTime?          // When the lock was acquired
+  chartingLockExpiresAt   DateTime?          // When the lock expires
+
+  surconApprovedBy        String?
+  surconApprovedAt        DateTime?
+  surconStatus            ApprovalStatus? @default(PENDING)
+  surconComment           String?
+  surconLockedBy          String?            // User ID who locked this plan for SURCON review
+  surconLockedAt          DateTime?          // When the lock was acquired
+  surconLockExpiresAt     DateTime?          // When the lock expires
+
+  recordsIApprovedBy      String?
+  recordsIApprovedAt      DateTime?
+  recordsIStatus          ApprovalStatus? @default(PENDING)
+  recordsIComment         String?
+  recordsILockedBy        String?            // User ID who locked this plan for Records I review
+  recordsILockedAt        DateTime?          // When the lock was acquired
+  recordsILockExpiresAt   DateTime?          // When the lock expires
+
+  recordsIIApprovedBy     String?
+  recordsIIApprovedAt     DateTime?
+  recordsIIStatus         ApprovalStatus? @default(PENDING)
+  recordsIIComment        String?
+  recordsIILockedBy       String?            // User ID who locked this plan for Records II review
+  recordsIILockedAt       DateTime?          // When the lock was acquired
+  recordsIILockExpiresAt  DateTime?          // When the lock expires
+
   // Location fields
   ward                   String?
   lcda                   String?
@@ -416,6 +474,114 @@ model SurfboardNotification {
   @@index([audience])
 }
 
+// --------------------------------------------------------------------------------
+// Certificate of Deposit System
+// --------------------------------------------------------------------------------
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  QUERIED
+}
+
+enum BatchPaymentStatus {
+  PENDING_USER_PAYMENT
+  USER_PAID
+  PENDING_LASG_PAYMENT
+  LASG_PAID
+  ACCOUNTS_APPROVED
+  ACCOUNTS_DISAPPROVED
+  COMPLETED
+}
+
+/// LGA Fee Configuration - Editable by Super Admin
+model LGAFeeConfig {
+  id                  String   @id @default(uuid())
+  lgaName             String   @unique
+  ratePerSqM          Float // Rate per square meter in Naira
+  systemChargePercent Float    @default(10) // System charge percentage
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([lgaName])
+}
+
+/// Certificate of Deposit Batch Submission
+model CertificateOfDepositBatch {
+  id        String @id @default(uuid())
+  batchCode String @unique @default(dbgenerated("concat('COD_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
+
+  // Submitter
+  submittedBy String
+  submitter   SurfboardUser @relation(fields: [submittedBy], references: [id])
+
+  // Plans in this batch
+  plans     SurfboardPlan[]
+  planCount Int             @default(0)
+
+  // Fee Calculation
+  totalFees     Float // Sum of all plan fees
+  systemCharges Float // 10% of total fees
+  totalAmount   Float // totalFees + systemCharges
+
+  // Payment Status
+  paymentStatus BatchPaymentStatus @default(PENDING_USER_PAYMENT)
+
+  // User Payment (Fold 1)
+  userPaymentRef    String? // Paystack reference
+  userPaymentDate   DateTime?
+  userPaymentAmount Float?
+
+  // LASG Payment (Fold 2)
+  lasgReceiptUrl        String? // Uploaded receipt
+  lasgReceiptS3Key      String?
+  lasgPaymentDate       DateTime?
+  lasgReceiptUploadedBy String?
+  lasgReceiptUploadedAt DateTime?
+
+  // Accounts Approval
+  accountsApprovedBy  String?
+  accountsApprovedAt  DateTime?
+  accountsDisapproved Boolean   @default(false)
+  accountsComment     String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchCode])
+  @@index([submittedBy])
+  @@index([paymentStatus])
+}
+
+/// LASG Charting Interpretation - PostGIS Dataset
+model LASG_charting_interpretation {
+  id             Int                      @id @default(autoincrement())
+  geom           Unsupported("geometry")? // PostGIS geometry
+  interpretation String? // Charting interpretation text
+
+  @@index([geom], map: "sidx_lasg_charting_interpretation_geom", type: Gist)
+}
+
+/// Surfboard Application Settings
+model SurfboardSettings {
+  id        String   @id @default(cuid())
+  /// Stores the entire application configuration as a JSON object.
+  /// Structure: {
+  ///   lgaFees: { "Eti-Osa": 10, "Ikeja": 8, ... }, // Rate per square meter in Naira
+  ///   systemChargePercent: 10,
+  ///   ... other settings
+  /// }
+  settings  Json     @default("{}")
+  previousSettings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  updatedById String?
+  updatedBy   SurfboardUser? @relation(fields: [updatedById], references: [id])
+
+  @@map("surfboard_settings")
+}
 
 // --------------------------------------------------------------------------------
 // Prisma schema for the Surfboard mapping application.
@@ -515,7 +681,6 @@ enum GBCPaymentStatus {
   CANCELLED
 }
 
-
 model GBCUser {
   id              String      @id @default(cuid())
   kindeId         String      @unique
@@ -558,7 +723,7 @@ model GBCTicket {
   checkedInBy     String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  
+
   @@index([email])
   @@index([phone])
   @@index([ticketNumber])
@@ -566,7 +731,6 @@ model GBCTicket {
   @@index([paymentStatus])
   @@map("gbc_tickets")
 }
-
 
 model GBCSponsor {
   id          String         @id @default(cuid())
@@ -580,7 +744,7 @@ model GBCSponsor {
   visible     Boolean        @default(true)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  
+
   @@map("gbc_sponsors")
 }
 
@@ -601,7 +765,7 @@ model GBCPartner {
   visible     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@map("gbc_partners")
 }
 
@@ -619,7 +783,7 @@ model GBCGallery {
   visible     Boolean      @default(true)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  
+
   @@index([year])
   @@map("gbc_gallery")
 }
@@ -651,7 +815,7 @@ model GBCSpeaker {
   featured    Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  
+
   @@map("gbc_speakers")
 }
 
@@ -663,7 +827,7 @@ model GBCPage {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("gbc_pages")
 }
 
@@ -681,7 +845,7 @@ model GBCSettings {
   previousSettings Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  
+
   @@map("gbc_settings")
 }
 
@@ -697,7 +861,7 @@ model GBCContactInquiry {
   notes     String?          @db.Text
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
-  
+
   @@index([status])
   @@index([type])
   @@map("gbc_contact_inquiries")
@@ -722,7 +886,7 @@ model GBCEventStats {
   smsSent         Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([date])
   @@map("gbc_event_stats")
 }
@@ -738,7 +902,7 @@ model GBCNotification {
   error       String?              @db.Text
   metadata    String?              @db.Text
   createdAt   DateTime             @default(now())
-  
+
   @@index([status])
   @@index([type])
   @@map("gbc_notifications")
@@ -767,7 +931,7 @@ model GBCAuditLog {
   ipAddress   String?
   userAgent   String?
   createdAt   DateTime @default(now())
-  
+
   @@index([userId])
   @@index([entity])
   @@index([createdAt])

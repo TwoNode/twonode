@@ -1,19 +1,33 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
 import { getSpeakers } from "../actions/speaker-actions";
 import { Speaker } from "../types/speaker";
 
-export const metadata = {
-  title: "Home Speakers Section",
-};
+export default function HomeSpeakers() {
+  const [allSpeakers, setAllSpeakers] = useState<Speaker[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function HomeSpeakers() {
-  const speakersResult = await getSpeakers();
-  const allSpeakers: Speaker[] = speakersResult.success
-    ? speakersResult.data || []
-    : [];
+  useEffect(() => {
+    const fetchSpeakers = async () => {
+      setIsLoading(true);
+      try {
+        const speakersResult = await getSpeakers();
+        if (speakersResult.success) {
+          setAllSpeakers(speakersResult.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching speakers:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Group speakers by tier (optional, but we will just show all)
+    fetchSpeakers();
+  }, []);
+
   return (
     <section className="py-16 sm:py-20 md:py-24 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">

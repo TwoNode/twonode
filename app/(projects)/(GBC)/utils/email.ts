@@ -1,18 +1,16 @@
 // src/lib/email.ts
 import nodemailer from "nodemailer";
 
-// Create Zoho SMTP transporter
+// Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
-  host: process.env.ZOHO_SMTP_HOST || "smtp.zoho.com",
-  port: parseInt(process.env.ZOHO_SMTP_PORT || "465"),
-  secure: true, // use SSL
+  service: "Zoho",
   auth: {
-    user: process.env.ZOHO_SMTP_USER!,
-    pass: process.env.ZOHO_SMTP_PASSWORD!,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "info@twonodetechnologies.com";
+const FROM_EMAIL = process.env.EMAIL_USER || "info@twonodetechnologies.com";
 
 interface GBCTicketEmailData {
   name: string;
@@ -247,22 +245,21 @@ export async function sendGBCTicketConfirmation(
   data: GBCTicketEmailData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    console.log('📧 sendGBCTicketConfirmation called with:', {
+    console.log("📧 sendGBCTicketConfirmation called with:", {
       email: data.email,
       name: data.name,
       ticketNumber: data.ticketNumber,
       ticketType: data.ticketType,
     });
 
-    console.log('📧 SMTP Configuration:', {
-      host: process.env.ZOHO_SMTP_HOST,
-      port: process.env.ZOHO_SMTP_PORT,
-      user: process.env.ZOHO_SMTP_USER,
+    console.log("📧 SMTP Configuration:", {
+      service: "Zoho",
+      user: process.env.EMAIL_USER,
       from: FROM_EMAIL,
-      hasPassword: !!process.env.ZOHO_SMTP_PASSWORD,
+      hasPassword: !!process.env.EMAIL_PASS,
     });
 
-    console.log('📧 Sending email via transporter...');
+    console.log("📧 Sending email via transporter...");
     const info = await transporter.sendMail({
       from: `"GBC 2.0" <${FROM_EMAIL}>`,
       to: data.email,

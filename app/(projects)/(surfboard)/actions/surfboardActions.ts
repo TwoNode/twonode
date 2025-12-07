@@ -19,6 +19,7 @@ import {
 } from "./awsActions";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
+import { handlePrismaError } from "../utils/prismaErrorHandler";
 
 import QRCode from "qrcode";
 import { headers } from "next/headers";
@@ -170,10 +171,18 @@ export async function generatePlanQRCode(
       };
     }
 
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id: planId, userId: user.id }, // if this is not a composite unique, switch to findFirst
-      select: { id: true, planNumber: true },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId, userId: user.id },
+        select: { id: true, planNumber: true },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "generatePlanQRCode"),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found or access denied" };
@@ -314,12 +323,24 @@ export async function _createSurfPlan(
     }
 
     // 2) Ensure unique planNumber
-    if (
-      await prisma.surfboardPlan.findUnique({
+    try {
+      const existingPlan = await prisma.surfboardPlan.findUnique({
         where: { planNumber: data.planNumber },
-      })
-    ) {
-      throw new Error("Plan number already exists");
+      });
+      if (existingPlan) {
+        throw new Error("Plan number already exists");
+      }
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "Plan number already exists"
+      ) {
+        throw error;
+      }
+      return {
+        success: false,
+        error: handlePrismaError(error, "_createSurfPlan - uniqueness check"),
+      };
     }
 
     // 3) Upload files to S3
@@ -347,12 +368,6 @@ export async function _createSurfPlan(
           )
         ).url;
       }
-
-      console.log("\n\n\n\nPDF file path", pdfFilePaths);
-      console.log("\n\n\n\nCAD file path", cadFilePaths);
-      console.log("\n\n\n\nCertificate file path", certificateFilePaths);
-      console.log("\n\n\n\nGeometry", data.geometry);
-      console.log("\n\n\n\nPillars", data.pillars);
     } catch (uploadErr) {
       // rollback any partial uploads
       await deleteMultipleSurfboardFilesFromS3(
@@ -366,28 +381,42 @@ export async function _createSurfPlan(
     }
 
     // 4) Insert the plan record
-    const plan = await prisma.surfboardPlan.create({
-      data: {
-        userId: user.id,
-        planNumber: data.planNumber,
-        surveyTitle: data.surveyTitle,
-        planType: data.planType,
-        referencePlanNumber: data.referencePlanNumber,
-        deededArea: data.deededArea,
-        facilitator: data.facilitator,
-        pillarType: data.pillarType,
-        ward: data.ward,
-        lcda: data.lcda,
-        lga: data.lga,
-        geometry: data.geometry, // JSONB
-        pillars: data.pillars, // JSONB
-        pdfFilePaths: pdfFilePaths ? [pdfFilePaths] : undefined,
-        cadFilePaths: cadFilePaths ? [cadFilePaths] : undefined,
-        certificateFilePaths: certificateFilePaths
-          ? [certificateFilePaths]
-          : undefined,
-      },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.create({
+        data: {
+          userId: user.id,
+          planNumber: data.planNumber,
+          surveyTitle: data.surveyTitle,
+          planType: data.planType,
+          referencePlanNumber: data.referencePlanNumber,
+          deededArea: data.deededArea,
+          facilitator: data.facilitator,
+          pillarType: data.pillarType,
+          ward: data.ward,
+          lcda: data.lcda,
+          lga: data.lga,
+          geometry: data.geometry, // JSONB
+          pillars: data.pillars, // JSONB
+          pdfFilePaths: pdfFilePaths ? [pdfFilePaths] : undefined,
+          cadFilePaths: cadFilePaths ? [cadFilePaths] : undefined,
+          certificateFilePaths: certificateFilePaths
+            ? [certificateFilePaths]
+            : undefined,
+        },
+      });
+    } catch (error) {
+      // Rollback uploaded files if plan creation fails
+      await deleteMultipleSurfboardFilesFromS3(
+        [pdfFilePaths, cadFilePaths, certificateFilePaths]
+          .filter((u): u is string => !!u)
+          .map((url) => ({ url }))
+      );
+      return {
+        success: false,
+        error: handlePrismaError(error, "_createSurfPlan - plan creation"),
+      };
+    }
 
     // 5) Revalidate cache and return
     revalidatePath("/surfboard/dashboard/plans");
@@ -671,24 +700,9 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
     return { success: true, data: { id: rec.id, planNumber: rec.planNumber } };
   } catch (error: any) {
     console.error("Error creating plan:", error);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return {
-          success: false,
-          error: "Plan number already exists",
-        };
-      } else if (error.code === "P2003") {
-        return {
-          success: false,
-          error: "Plan not found",
-        };
-      }
-    }
-
     return {
       success: false,
-      error: "Something went wrong. Please try again later.",
+      error: handlePrismaError(error, "createSurfPlan"),
     };
   }
 }
@@ -701,9 +715,19 @@ export async function updateSurfPlan(
     if (!user) throw new Error("User not authenticated");
 
     if (!dto.id) throw new Error("Missing id");
-    const existing = await prisma.surfboardPlan.findUnique({
-      where: { id: dto.id },
-    });
+
+    let existing;
+    try {
+      existing = await prisma.surfboardPlan.findUnique({
+        where: { id: dto.id },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "updateSurfPlan - find plan"),
+      };
+    }
+
     if (!existing) throw new Error("Plan not found");
 
     const now = Date.now();
@@ -785,10 +809,17 @@ export async function updateSurfPlan(
         throw new Error("Locked after 24h; only certificate updates allowed");
     }
 
-    await prisma.surfboardPlan.update({
-      where: { id: dto.id, userId: user.id },
-      data,
-    });
+    try {
+      await prisma.surfboardPlan.update({
+        where: { id: dto.id, userId: user.id },
+        data,
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "updateSurfPlan - update plan"),
+      };
+    }
 
     // Send notifications when certificate is added (status changes to LODGED)
     if (statusChanged) {
@@ -828,7 +859,10 @@ export async function updateSurfPlan(
     revalidatePath(`/surfboard/dashboard/plans?planId=${dto.id}`);
     return { success: true, data: { id: dto.id, planNumber: dto.planNumber } };
   } catch (error: any) {
-    return { success: false, error: error?.message || "Something went wrong" };
+    return {
+      success: false,
+      error: handlePrismaError(error, "updateSurfPlan"),
+    };
   }
 }
 
@@ -860,41 +894,49 @@ export async function getAllSurfPlans(): Promise<ApiResult<{ plans: Plan[] }>> {
       };
     }
 
-    const [plans] = await Promise.all([
-      prisma.surfboardPlan.findMany({
-        where: {
-          userId: user.id,
-          deleted: false, // Exclude deleted plans
-        },
-        select: {
-          id: true,
-          planNumber: true,
-          surveyTitle: true,
-          planType: true,
-          referencePlanNumber: true,
-          deededArea: true,
-          facilitator: true,
-          pillarType: true,
-          geometry: true,
-          pdfFilePaths: true,
-          cadFilePaths: true,
-          certificateFilePaths: true,
-          ward: true,
-          lcda: true,
-          lga: true,
-          state: true,
-          pillars: true,
-          status: true,
-          isLive: true,
-          dateOnSurveyPlan: true,
-          dateLodged: true,
-          reasonForWithdrawalAndResubmission: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
+    let plans;
+    try {
+      [plans] = await Promise.all([
+        prisma.surfboardPlan.findMany({
+          where: {
+            userId: user.id,
+            deleted: false, // Exclude deleted plans
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            deededArea: true,
+            facilitator: true,
+            pillarType: true,
+            geometry: true,
+            pdfFilePaths: true,
+            cadFilePaths: true,
+            certificateFilePaths: true,
+            ward: true,
+            lcda: true,
+            lga: true,
+            state: true,
+            pillars: true,
+            status: true,
+            isLive: true,
+            dateOnSurveyPlan: true,
+            dateLodged: true,
+            reasonForWithdrawalAndResubmission: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "getAllSurfPlans"),
+      };
+    }
 
     // Add area and centroid to each plan
     const plansWithGeometry = plans.map((plan) => {
@@ -925,7 +967,7 @@ export async function getAllSurfPlans(): Promise<ApiResult<{ plans: Plan[] }>> {
     };
   } catch (err) {
     console.error("getAllSurfPlans error:", err);
-    return { success: false, error: (err as Error).message };
+    return { success: false, error: handlePrismaError(err, "getAllSurfPlans") };
   }
 }
 
@@ -1063,6 +1105,8 @@ export async function getPaginatedSurfPlans({
           reasonForWithdrawalAndResubmission: true,
           createdAt: true,
           updatedAt: true,
+          redCopyStatus: true,
+          redCopyFileUrl: true,
         },
         skip,
         take: noPagination ? undefined : pageSize,
@@ -1646,22 +1690,30 @@ export async function getSurfPlanById(
       !options?.forEdit ? { sharedTo: { has: user.id } } : {}, // Shared with user
     ].filter(Boolean);
 
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: {
-        id,
-        OR: ORArray,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: {
+          id,
+          OR: ORArray,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "getSurfPlanById"),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found or access denied" };
@@ -1897,15 +1949,23 @@ export async function updateSurfPlanStatus(
     }
 
     // Get the plan to check ownership and get details for notification
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id },
-      select: {
-        userId: true,
-        planNumber: true,
-        surveyTitle: true,
-        status: true,
-      },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: { id },
+        select: {
+          userId: true,
+          planNumber: true,
+          surveyTitle: true,
+          status: true,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "updateSurfPlanStatus - find plan"),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
@@ -1919,10 +1979,18 @@ export async function updateSurfPlanStatus(
       return { success: false, error: "Unauthorized" };
     }
 
-    const updatedPlan = await prisma.surfboardPlan.update({
-      where: { id },
-      data: { status },
-    });
+    let updatedPlan;
+    try {
+      updatedPlan = await prisma.surfboardPlan.update({
+        where: { id },
+        data: { status },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "updateSurfPlanStatus - update"),
+      };
+    }
 
     // Send notification if status changed
     if (plan.status !== status) {
@@ -1994,12 +2062,20 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
       };
     }
 
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id, userId: user.id },
-      select: {
-        deleted: true,
-      },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: { id, userId: user.id },
+        select: {
+          deleted: true,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "deleteSurfPlan - find plan"),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
@@ -2010,14 +2086,21 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
     }
 
     // Soft delete: just mark as deleted
-    await prisma.surfboardPlan.update({
-      where: { id, userId: user.id },
-      data: {
-        deleted: true,
-        deletedAt: new Date(),
-        deletedBy: user.id,
-      },
-    });
+    try {
+      await prisma.surfboardPlan.update({
+        where: { id, userId: user.id },
+        data: {
+          deleted: true,
+          deletedAt: new Date(),
+          deletedBy: user.id,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "deleteSurfPlan - update"),
+      };
+    }
 
     console.log(`Successfully soft-deleted plan ${id}`);
 
@@ -2025,7 +2108,7 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
     return { success: true, data: null };
   } catch (err) {
     console.error("deleteSurfboardPlan error:", err);
-    return { success: false, error: (err as Error).message };
+    return { success: false, error: handlePrismaError(err, "deleteSurfPlan") };
   }
 }
 
@@ -2043,12 +2126,20 @@ export async function restoreSurfPlan(id: string): Promise<ApiResult<null>> {
       };
     }
 
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id, userId: user.id },
-      select: {
-        deleted: true,
-      },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: { id, userId: user.id },
+        select: {
+          deleted: true,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "restoreSurfPlan - find plan"),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
@@ -2059,14 +2150,21 @@ export async function restoreSurfPlan(id: string): Promise<ApiResult<null>> {
     }
 
     // Restore the plan
-    await prisma.surfboardPlan.update({
-      where: { id, userId: user.id },
-      data: {
-        deleted: false,
-        deletedAt: null,
-        deletedBy: null,
-      },
-    });
+    try {
+      await prisma.surfboardPlan.update({
+        where: { id, userId: user.id },
+        data: {
+          deleted: false,
+          deletedAt: null,
+          deletedBy: null,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "restoreSurfPlan - update"),
+      };
+    }
 
     console.log(`Successfully restored plan ${id}`);
 
@@ -2074,7 +2172,7 @@ export async function restoreSurfPlan(id: string): Promise<ApiResult<null>> {
     return { success: true, data: null };
   } catch (err) {
     console.error("restoreSurfPlan error:", err);
-    return { success: false, error: (err as Error).message };
+    return { success: false, error: handlePrismaError(err, "restoreSurfPlan") };
   }
 }
 
@@ -2098,15 +2196,26 @@ export async function permanentlyDeleteSurfPlan(
     // Check if user is admin or superadmin
     const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id },
-      select: {
-        userId: true,
-        pdfFilePaths: true,
-        cadFilePaths: true,
-        certificateFilePaths: true,
-      },
-    });
+    let plan;
+    try {
+      plan = await prisma.surfboardPlan.findUnique({
+        where: { id },
+        select: {
+          userId: true,
+          pdfFilePaths: true,
+          cadFilePaths: true,
+          certificateFilePaths: true,
+        },
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(
+          error,
+          "permanentlyDeleteSurfPlan - find plan"
+        ),
+      };
+    }
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
@@ -2146,14 +2255,24 @@ export async function permanentlyDeleteSurfPlan(
     }
 
     // Only proceed with database deletion if file deletion was successful
-    await prisma.surfboardPlan.delete({ where: { id } });
+    try {
+      await prisma.surfboardPlan.delete({ where: { id } });
+    } catch (error) {
+      return {
+        success: false,
+        error: handlePrismaError(error, "permanentlyDeleteSurfPlan - delete"),
+      };
+    }
     console.log(`Successfully permanently deleted plan ${id}`);
 
     revalidatePath("/surfboard/dashboard/plans");
     return { success: true, data: null };
   } catch (err) {
     console.error("permanentlyDeleteSurfPlan error:", err);
-    return { success: false, error: (err as Error).message };
+    return {
+      success: false,
+      error: handlePrismaError(err, "permanentlyDeleteSurfPlan"),
+    };
   }
 }
 
@@ -3282,6 +3401,55 @@ export async function _deletePlanAttachment(
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete attachment",
+    };
+  }
+}
+
+/**
+ * Updates the record copy URL for a surfboard plan
+ * @param planId - The ID of the plan
+ * @param redCopyFileUrl - The URL of the uploaded record copy file
+ */
+export async function updatePlanRecordCopy(
+  planId: string,
+  redCopyFileUrl: string
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user?.id) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // Verify the plan exists and belongs to the user
+    const plan = await prisma.surfboardPlan.findFirst({
+      where: {
+        id: planId,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // Update the plan with the record copy URL
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: { redCopyFileUrl },
+    });
+
+    revalidatePath("/surfboard/dashboard/plans");
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error updating record copy:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to update record copy",
     };
   }
 }

@@ -20,6 +20,12 @@ export enum SurfboardRole {
   USER = "USER",
   ADMIN = "ADMIN",
   SUPERADMIN = "SUPERADMIN",
+
+  CHARTING = "CHARTING",
+  ACCOUNTS = "ACCOUNTS",
+  SURCON = "SURCON",
+  RECORDS_I = "RECORDS_I",
+  RECORDS_II = "RECORDS_II",
 }
 
 export enum GBCRole {

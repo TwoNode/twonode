@@ -1,18 +1,16 @@
 // src/lib/sms.ts
 import nodemailer from "nodemailer";
 
-// Create Zoho SMTP transporter
+// Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
-  host: process.env.ZOHO_SMTP_HOST || "smtp.zoho.com",
-  port: parseInt(process.env.ZOHO_SMTP_PORT || "465"),
-  secure: true,
+  service: "Zoho",
   auth: {
-    user: process.env.ZOHO_SMTP_USER!,
-    pass: process.env.ZOHO_SMTP_PASSWORD!,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "info@twonodetechnologies.com";
+const FROM_EMAIL = process.env.EMAIL_USER || "info@twonodetechnologies.com";
 const SMS_ENABLED =
   process.env.ENABLE_SMS_NOTIFICATIONS === "true" ||
   process.env.ENABLE_SMS_NOTIFICATIONS === "1";

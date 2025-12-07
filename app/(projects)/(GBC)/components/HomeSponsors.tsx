@@ -1,13 +1,32 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { getSponsors } from "../actions/sponsor-actions";
 
-export default async function HomeSponsors() {
-  const sponsorsResult = await getSponsors();
-  const sponsors = sponsorsResult.success
-    ? sponsorsResult.data?.slice(0, 6) ?? []
-    : [];
+export default function HomeSponsors() {
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSponsors = async () => {
+      setIsLoading(true);
+      try {
+        const sponsorsResult = await getSponsors();
+        if (sponsorsResult.success) {
+          setSponsors(sponsorsResult.data?.slice(0, 6) ?? []);
+        }
+      } catch (error) {
+        console.error("Error fetching sponsors:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSponsors();
+  }, []);
 
   return (
     <section className="py-16 sm:py-20 md:py-24 bg-white">

@@ -1,12 +1,31 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Play, Image as ImageIcon } from "lucide-react";
 import { getGalleryItems } from "../actions/gallery-actions";
 
-export default async function HomeGallery() {
-  const galleryResult = await getGalleryItems();
-  const items = galleryResult.success
-    ? galleryResult.data?.slice(0, 6) ?? []
-    : [];
+export default function HomeGallery() {
+  const [items, setItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGalleryItems = async () => {
+      setIsLoading(true);
+      try {
+        const galleryResult = await getGalleryItems();
+        if (galleryResult.success) {
+          setItems(galleryResult.data?.slice(0, 6) ?? []);
+        }
+      } catch (error) {
+        console.error("Error fetching gallery items:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGalleryItems();
+  }, []);
 
   return (
     <section className="py-12 sm:py-16 bg-gray-50">
