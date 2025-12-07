@@ -509,7 +509,7 @@ model LGAFeeConfig {
 /// Certificate of Deposit Batch Submission
 model CertificateOfDepositBatch {
   id        String @id @default(uuid())
-  batchCode String @unique @default(dbgenerated("concat('COD_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
+  batchCode String @unique @default(dbgenerated("concat('SurfCoD_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
 
   // Submitter
   submittedBy String
