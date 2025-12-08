@@ -251,6 +251,16 @@ export default function UserManagementPage() {
         return "bg-blue-100 text-blue-800";
       case "USER":
         return "bg-green-100 text-green-800";
+      case "RECORDS_I":
+        return "bg-orange-100 text-orange-800";
+      case "RECORDS_II":
+        return "bg-orange-100 text-orange-800";
+      case "ACCOUNTS":
+        return "bg-yellow-100 text-yellow-800";
+      case "CHARTING":
+        return "bg-teal-100 text-teal-800";
+      case "SURCON":
+        return "bg-cyan-100 text-cyan-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -415,6 +425,7 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
+
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">
                       Active Subscriptions
@@ -472,6 +483,11 @@ export default function UserManagementPage() {
                   <option value="SUPERADMIN">SuperAdmin</option>
                   <option value="ADMIN">Admin</option>
                   <option value="USER">User</option>
+                  <option value="RECORDS_I">Records I</option>
+                  <option value="RECORDS_II">Records II</option>
+                  <option value="ACCOUNTS">Accounts</option>
+                  <option value="CHARTING">Charting</option>
+                  <option value="SURCON">SURCON</option>
                 </select>
               </div>
             </div>
@@ -553,6 +569,11 @@ export default function UserManagementPage() {
                           <option value="USER">USER</option>
                           <option value="ADMIN">ADMIN</option>
                           <option value="SUPERADMIN">SUPERADMIN</option>
+                          <option value="RECORDS_I">RECORDS_I</option>
+                          <option value="RECORDS_II">RECORDS_II</option>
+                          <option value="ACCOUNTS">ACCOUNTS</option>
+                          <option value="CHARTING">CHARTING</option>
+                          <option value="SURCON">SURCON</option>
                         </select>
                       </td>
                       <td className="px-6 py-4">
@@ -1058,6 +1079,11 @@ export default function UserManagementPage() {
                       >
                         <option value="ADMIN">Admin</option>
                         <option value="SUPERADMIN">Super Admin</option>
+                        <option value="RECORDS_I">Records I</option>
+                        <option value="RECORDS_II">Records II</option>
+                        <option value="ACCOUNTS">Accounts</option>
+                        <option value="CHARTING">Charting</option>
+                        <option value="SURCON">SURCON</option>
                       </select>
                     </div>
 
@@ -1086,3 +1112,4 @@ export default function UserManagementPage() {
     </div>
   );
 }
+div

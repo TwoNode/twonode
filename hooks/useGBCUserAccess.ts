@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { canAccessGBCUserPanel } from "@/permissions";
 import { Platform } from "@/utils/platform";
+import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
 
 interface UserData {
   platform: Platform;
@@ -52,10 +53,12 @@ export function useGBCUserAccess() {
       }
 
       try {
-        const response = await fetch("/api/auth/user-data");
-        if (!response.ok) throw new Error("Failed to fetch user data");
+        const result = await getUserData();
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to fetch user data");
+        }
 
-        const fetchedUserData: UserData = await response.json();
+        const fetchedUserData: UserData = result.data;
         if (!isMounted) return;
         setUserData(fetchedUserData);
 

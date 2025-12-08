@@ -2,8 +2,11 @@
 
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import prisma from "@/lib/prisma";
-import { SurfboardRole } from "@prisma/client";
+import { Prisma, SurfboardRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { ApiResult } from "../types/surfboardTypes";
+import { handlePrismaError } from "../utils/prismaErrorHandler";
 
 // Type definitions
 interface UpdateUserRoleInput {
@@ -586,6 +589,90 @@ export async function createAdmin(input: CreateAdminInput) {
     return {
       success: false,
       error: error.message || "Failed to create admin user",
+    };
+  }
+}
+
+/**
+ * Fetches all surf plans for admin map viewing
+ * Requires ADMIN or SUPERADMIN role
+ * Returns minimal plan data with geometry for map rendering
+ */
+export async function getAllSurfPlansForAdmin(): Promise<
+  ApiResult<{
+    plans: Array<{
+      id: string;
+      planNumber: string;
+      surveyTitle: string;
+      location: string | null;
+      status: string;
+      geometry: any;
+      ward: string | null;
+      lga: string | null;
+      owner: {
+        firstName: string;
+        lastName: string;
+        email: string;
+      } | null;
+    }>;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        deleted: false,
+        geometry: {
+          not: Prisma.DbNull,
+        },
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        ward: true,
+        lga: true,
+        status: true,
+        geometry: true,
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Map to include location and rename user to owner
+    const mappedPlans = plans.map((plan) => ({
+      id: plan.id,
+      planNumber: plan.planNumber,
+      surveyTitle: plan.surveyTitle,
+      location:
+        plan.ward && plan.lga
+          ? `${plan.ward}, ${plan.lga}`
+          : plan.ward || plan.lga,
+      status: plan.status,
+      geometry: plan.geometry,
+      ward: plan.ward,
+      lga: plan.lga,
+      owner: plan.user,
+    }));
+
+    return { success: true, data: { plans: mappedPlans } };
+  } catch (error) {
+    console.error("Error fetching admin plans:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAllSurfPlansForAdmin"),
     };
   }
 }

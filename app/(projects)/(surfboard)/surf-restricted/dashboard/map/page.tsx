@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
 import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
+import { getAllSurfPlansForAdmin } from "@/app/(projects)/(surfboard)/actions/adminActions";
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 text-center p-6">
@@ -41,146 +42,16 @@ export default function AdminMapViewerPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // In a real scenario, admins would fetch ALL plans from all users
-      // For now, we'll use a mock data fetch or the same endpoint
-      const response = await fetch("/api/surfboard/plans/all-admin");
+      const result = await getAllSurfPlansForAdmin();
 
-      if (!response.ok) {
-        // Fallback to mock data for demonstration
-        const mockPlans = [
-          {
-            id: "1",
-            planNumber: "SP-2024-001",
-            surveyTitle: "Commercial Development Site A",
-            location: "Cape Town, Western Cape",
-            status: "APPROVED",
-            polygon: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [18.4241, -33.9249],
-                  [18.4251, -33.9249],
-                  [18.4251, -33.9259],
-                  [18.4241, -33.9259],
-                  [18.4241, -33.9249],
-                ],
-              ],
-            },
-            owner: { name: "John Doe", email: "john@example.com" },
-          },
-          {
-            id: "2",
-            planNumber: "SP-2024-002",
-            surveyTitle: "Residential Plot Survey",
-            location: "Durban, KwaZulu-Natal",
-            status: "PENDING",
-            polygon: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [31.0218, -29.8587],
-                  [31.0228, -29.8587],
-                  [31.0228, -29.8597],
-                  [31.0218, -29.8597],
-                  [31.0218, -29.8587],
-                ],
-              ],
-            },
-            owner: { name: "Jane Smith", email: "jane@example.com" },
-          },
-          {
-            id: "3",
-            planNumber: "SP-2024-003",
-            surveyTitle: "Industrial Park Boundary",
-            location: "Pretoria, Gauteng",
-            status: "UNDER_REVIEW",
-            polygon: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [28.2293, -25.7479],
-                  [28.2303, -25.7479],
-                  [28.2303, -25.7489],
-                  [28.2293, -25.7489],
-                  [28.2293, -25.7479],
-                ],
-              ],
-            },
-            owner: { name: "Mike Wilson", email: "mike@example.com" },
-          },
-        ];
-        setAllPlans(mockPlans);
+      if (result.success && result.data) {
+        setAllPlans(result.data.plans || []);
       } else {
-        const data = await response.json();
-        setAllPlans(data.plans || []);
+        setError(result.error || "Failed to fetch plans");
       }
     } catch (err) {
       console.error("Error fetching admin plans:", err);
-
-      // Fallback to mock data for demonstration
-      const mockPlans = [
-        {
-          id: "1",
-          planNumber: "SP-2024-001",
-          surveyTitle: "Commercial Development Site A",
-          location: "Cape Town, Western Cape",
-          status: "APPROVED",
-          polygon: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [18.4241, -33.9249],
-                [18.4251, -33.9249],
-                [18.4251, -33.9259],
-                [18.4241, -33.9259],
-                [18.4241, -33.9249],
-              ],
-            ],
-          },
-          owner: { name: "John Doe", email: "john@example.com" },
-        },
-        {
-          id: "2",
-          planNumber: "SP-2024-002",
-          surveyTitle: "Residential Plot Survey",
-          location: "Durban, KwaZulu-Natal",
-          status: "PENDING",
-          polygon: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [31.0218, -29.8587],
-                [31.0228, -29.8587],
-                [31.0228, -29.8597],
-                [31.0218, -29.8597],
-                [31.0218, -29.8587],
-              ],
-            ],
-          },
-          owner: { name: "Jane Smith", email: "jane@example.com" },
-        },
-        {
-          id: "3",
-          planNumber: "SP-2024-003",
-          surveyTitle: "Industrial Park Boundary",
-          location: "Pretoria, Gauteng",
-          status: "UNDER_REVIEW",
-          polygon: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [28.2293, -25.7479],
-                [28.2303, -25.7479],
-                [28.2303, -25.7489],
-                [28.2293, -25.7489],
-                [28.2293, -25.7479],
-              ],
-            ],
-          },
-          owner: { name: "Mike Wilson", email: "mike@example.com" },
-        },
-      ];
-      setAllPlans(mockPlans);
+      setError("An error occurred while fetching plans");
     } finally {
       setIsLoading(false);
     }

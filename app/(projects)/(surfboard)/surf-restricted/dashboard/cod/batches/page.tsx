@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { uploadLASGReceipt } from "../../../../actions/codActions";
 import { uploadSurfboardFileWithAuth } from "../../../../actions/awsActions";
+import { getBatchesByStatus } from "../../../../actions/codActions";
 
 interface Batch {
   id: string;
@@ -69,12 +70,11 @@ export default function BatchManagementPage() {
     try {
       setLoading(true);
       // Fetch batches that have user payment but no LASG receipt
-      const response = await fetch("/api/surfboard/batches?status=USER_PAID");
-      if (response.ok) {
-        const data = await response.json();
-        setBatches(data.batches || []);
+      const result = await getBatchesByStatus("USER_PAID");
+      if (result.success && result.data) {
+        setBatches(result.data.batches || []);
       } else {
-        toast.error("Failed to fetch batches");
+        toast.error(result.error || "Failed to fetch batches");
       }
     } catch (error) {
       console.error("Error fetching batches:", error);

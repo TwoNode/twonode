@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
+import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
 
 interface UserData {
   platform: string;
@@ -62,17 +63,17 @@ export function useRevaAdminAccess() {
       // 5. Fetch User Data
       try {
         console.log("🔍 Checking admin access & fetching user data...");
-        const response = await fetch("/api/auth/user-data");
+        const result = await getUserData();
 
-        if (!response.ok) {
+        if (!result.success || !result.data) {
           console.log(
             "❌ Failed to get user data, redirecting to login",
-            response
+            result.error
           );
-          throw new Error("Failed to fetch user data");
+          throw new Error(result.error || "Failed to fetch user data");
         }
 
-        const fetchedUserData: UserData = await response.json();
+        const fetchedUserData: UserData = result.data;
         console.log("👤 User data:", fetchedUserData);
 
         if (!isMounted) return; // Component unmounted during async operation

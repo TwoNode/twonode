@@ -13,6 +13,84 @@ const LOCK_DURATION_MINUTES = 30;
 type MDARole = "ACCOUNTS" | "CHARTING" | "SURCON" | "RECORDS_I" | "RECORDS_II";
 
 /**
+ * Fetches certificate batches filtered by payment status
+ * Requires ADMIN or SUPERADMIN role
+ * @param status - Optional payment status filter (e.g., "USER_PAID")
+ */
+export async function getBatchesByStatus(status?: string): Promise<
+  ApiResult<{
+    batches: Array<{
+      id: string;
+      batchCode: string;
+      submittedBy: string;
+      planCount: number;
+      totalFees: number;
+      systemCharges: number;
+      totalAmount: number;
+      paymentStatus: string;
+      userPaymentRef: string | null;
+      userPaymentDate: Date | null;
+      lasgReceiptUrl: string | null;
+      createdAt: Date;
+      submitter: {
+        firstName: string;
+        lastName: string;
+        email: string;
+      } | null;
+    }>;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const whereClause: any = {};
+
+    if (status) {
+      whereClause.paymentStatus = status;
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: whereClause,
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            plans: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Map to include planCount
+    const mappedBatches = batches.map((batch) => ({
+      ...batch,
+      planCount: batch._count.plans,
+      _count: undefined,
+    }));
+
+    return { success: true, data: { batches: mappedBatches } };
+  } catch (error) {
+    console.error("Error fetching batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getBatchesByStatus"),
+    };
+  }
+}
+
+/**
  * Acquire lock on a plan for a specific role
  */
 export async function acquirePlanLock(
@@ -428,7 +506,9 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 
       if (userDetails?.email) {
         const reference = `COD_${batch.batchCode}_${Date.now()}`;
-        const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/surfboard/dashboard/payment/callback?reference=${reference}`;
+        const callbackUrl = `${
+          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+        }/surfboard/dashboard/payment/callback?reference=${reference}`;
 
         const paymentInit = await paystack.transactions.initialize(getEnv(), {
           email: userDetails.email,
@@ -856,6 +936,106 @@ export async function getAccountsBatches() {
 }
 
 /**
+ * Get pending counts for all MDA roles
+ */
+export async function getPendingCountByRole(): Promise<
+  ApiResult<{
+    accounts: number;
+    charting: number;
+    surcon: number;
+    recordsI: number;
+    recordsII: number;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      ![
+        "ADMIN",
+        "SUPERADMIN",
+        "ACCOUNTS",
+        "CHARTING",
+        "SURCON",
+        "RECORDS_I",
+        "RECORDS_II",
+      ].includes(user.role)
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const [
+      accountsCount,
+      chartingCount,
+      surconCount,
+      recordsICount,
+      recordsIICount,
+    ] = await Promise.all([
+      // Accounts: Count batches with LASG_PAID status and no accounts approval
+      prisma.certificateOfDepositBatch.count({
+        where: {
+          paymentStatus: "LASG_PAID",
+          accountsApprovedBy: null,
+        },
+      }),
+      // Charting: Count plans with PENDING charting status
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "SUBMITTED",
+          chartingStatus: "PENDING",
+          deleted: false,
+        },
+      }),
+      // SURCON: Count plans with PENDING surcon status
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "SUBMITTED",
+          surconStatus: "PENDING",
+          deleted: false,
+        },
+      }),
+      // Records I: Count plans with PENDING records I status
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "SUBMITTED",
+          recordsIStatus: "PENDING",
+          deleted: false,
+        },
+      }),
+      // Records II: Count plans with all other approvals complete
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "SUBMITTED",
+          recordsIIStatus: "PENDING",
+          accountsStatus: "APPROVED",
+          chartingStatus: "APPROVED",
+          surconStatus: "APPROVED",
+          recordsIStatus: "APPROVED",
+          deleted: false,
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        accounts: accountsCount,
+        charting: chartingCount,
+        surcon: surconCount,
+        recordsI: recordsICount,
+        recordsII: recordsIICount,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching pending counts:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getPendingCountByRole"),
+    };
+  }
+}
+
+/**
  * Get plans for Charting Admin view
  */
 export async function getChartingPlans() {
@@ -865,6 +1045,7 @@ export async function getChartingPlans() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const now = new Date();
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
@@ -886,10 +1067,20 @@ export async function getChartingPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "desc" },
+      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
     });
 
-    return { success: true, data: plans };
+    // Add lock status information
+    const plansWithLockStatus = plans.map((plan) => ({
+      ...plan,
+      isLocked:
+        plan.chartingLockedBy &&
+        plan.chartingLockExpiresAt &&
+        new Date(plan.chartingLockExpiresAt) > now,
+      lockExpiresAt: plan.chartingLockExpiresAt,
+    }));
+
+    return { success: true, data: plansWithLockStatus };
   } catch (error) {
     console.error("Error fetching charting plans:", error);
     return {
@@ -909,6 +1100,7 @@ export async function getSurconPlans() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const now = new Date();
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
@@ -930,10 +1122,20 @@ export async function getSurconPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "desc" },
+      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
     });
 
-    return { success: true, data: plans };
+    // Add lock status information
+    const plansWithLockStatus = plans.map((plan) => ({
+      ...plan,
+      isLocked:
+        plan.surconLockedBy &&
+        plan.surconLockExpiresAt &&
+        new Date(plan.surconLockExpiresAt) > now,
+      lockExpiresAt: plan.surconLockExpiresAt,
+    }));
+
+    return { success: true, data: plansWithLockStatus };
   } catch (error) {
     console.error("Error fetching SURCON plans:", error);
     return {
@@ -953,6 +1155,7 @@ export async function getRecordsIPlans() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const now = new Date();
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
@@ -974,10 +1177,20 @@ export async function getRecordsIPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "desc" },
+      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
     });
 
-    return { success: true, data: plans };
+    // Add lock status information
+    const plansWithLockStatus = plans.map((plan) => ({
+      ...plan,
+      isLocked:
+        plan.recordsILockedBy &&
+        plan.recordsILockExpiresAt &&
+        new Date(plan.recordsILockExpiresAt) > now,
+      lockExpiresAt: plan.recordsILockExpiresAt,
+    }));
+
+    return { success: true, data: plansWithLockStatus };
   } catch (error) {
     console.error("Error fetching Records I plans:", error);
     return {
@@ -997,6 +1210,7 @@ export async function getRecordsIIPlans() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const now = new Date();
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
@@ -1012,6 +1226,7 @@ export async function getRecordsIIPlans() {
           select: {
             batchCode: true,
             paymentStatus: true,
+            planCount: true,
           },
         },
         user: {
@@ -1022,10 +1237,20 @@ export async function getRecordsIIPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "desc" },
+      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
     });
 
-    return { success: true, data: plans };
+    // Add lock status information
+    const plansWithLockStatus = plans.map((plan) => ({
+      ...plan,
+      isLocked:
+        plan.recordsIILockedBy &&
+        plan.recordsIILockExpiresAt &&
+        new Date(plan.recordsIILockExpiresAt) > now,
+      lockExpiresAt: plan.recordsIILockExpiresAt,
+    }));
+
+    return { success: true, data: plansWithLockStatus };
   } catch (error) {
     console.error("Error fetching Records II plans:", error);
     return {

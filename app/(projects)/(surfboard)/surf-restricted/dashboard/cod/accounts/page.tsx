@@ -38,6 +38,7 @@ import {
 import {
   getAccountsBatches,
   updateAccountsApproval,
+  getPendingCountByRole,
 } from "../../../../actions/codActions";
 
 interface Batch {
@@ -69,10 +70,23 @@ export default function AccountsAdminPage() {
   >("approve");
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number>(0);
 
   useEffect(() => {
     fetchBatches();
+    fetchPendingCount();
   }, []);
+
+  const fetchPendingCount = async () => {
+    try {
+      const result = await getPendingCountByRole();
+      if (result.success && result.data) {
+        setPendingCount(result.data.accounts);
+      }
+    } catch (error) {
+      console.error("Error fetching pending count:", error);
+    }
+  };
 
   const fetchBatches = async () => {
     try {
@@ -89,6 +103,8 @@ export default function AccountsAdminPage() {
     } finally {
       setLoading(false);
     }
+    // Refresh pending count after fetching batches
+    fetchPendingCount();
   };
 
   const handleApprovalClick = (
@@ -144,12 +160,18 @@ export default function AccountsAdminPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Accounts Admin</h1>
-        <p className="text-gray-600 mt-1">
-          Review and approve LASG payment receipts for Certificate of Deposit
-          batches
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Accounts Admin</h1>
+          <p className="text-gray-600 mt-1">
+            Review and approve LASG payment receipts for Certificate of Deposit
+            batches
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-bold text-blue-600">{pendingCount}</p>
+          <p className="text-sm text-gray-500">Pending Batches</p>
+        </div>
       </div>
 
       {batches.length === 0 ? (
