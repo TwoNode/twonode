@@ -33,7 +33,7 @@ import {
 import {
   getRecordsIIPlans,
   updateRecordsIIStatus,
-} from "../../../../actions/codActions";
+} from "../../../actions/codActions";
 
 interface Plan {
   id: string;

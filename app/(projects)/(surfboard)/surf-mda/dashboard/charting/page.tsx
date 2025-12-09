@@ -24,7 +24,7 @@ import { CheckCircle, FileText, Loader2, Copy, MapPin } from "lucide-react";
 import {
   getChartingPlans,
   updateChartingStatus,
-} from "../../../../actions/codActions";
+} from "../../../actions/codActions";
 
 interface Plan {
   id: string;

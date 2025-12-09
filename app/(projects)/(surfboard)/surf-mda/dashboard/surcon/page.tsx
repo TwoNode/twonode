@@ -31,7 +31,7 @@ import {
 import {
   getSurconPlans,
   updateSurconStatus,
-} from "../../../../actions/codActions";
+} from "../../../actions/codActions";
 
 interface Plan {
   id: string;

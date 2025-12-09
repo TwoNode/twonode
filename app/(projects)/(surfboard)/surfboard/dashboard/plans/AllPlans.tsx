@@ -548,15 +548,30 @@ export default function AllPlans() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "LODGED":
+      case "APPROVED":
         return <CheckCircle className="w-4 h-4" />;
       case "QUERIED":
         return <XCircle className="w-4 h-4" />;
       case "PENDING":
       case "UNDER_REVIEW":
+      case "SUBMITTED":
         return <Clock className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
+  };
+
+  // Helper to get the display status (redCopyStatus if not NOT_SUBMITTED, else status)
+  const getDisplayStatus = (plan: any) => {
+    if (plan.status === "LODGED") {
+      return "LODGED";
+    }
+
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return plan.redCopyStatus;
+    }
+
+    return plan.status;
   };
 
   const statsData = [
@@ -1323,11 +1338,12 @@ export default function AllPlans() {
                             <div className="md:hidden mt-2">
                               <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                  plan.status
+                                  getDisplayStatus(plan)
                                 )}`}
                               >
-                                {getStatusIcon(plan.status)}
-                                {plan.status?.replace("_", " ") || "N/A"}
+                                {getStatusIcon(getDisplayStatus(plan))}
+                                {getDisplayStatus(plan)?.replace("_", " ") ||
+                                  "N/A"}
                               </span>
                             </div>
                           </div>
@@ -1367,11 +1383,11 @@ export default function AllPlans() {
                       <td className="hidden md:table-cell px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            plan.status
+                            getDisplayStatus(plan)
                           )}`}
                         >
-                          {getStatusIcon(plan.status)}
-                          {plan.status?.replace("_", " ") || "N/A"}
+                          {getStatusIcon(getDisplayStatus(plan))}
+                          {getDisplayStatus(plan)?.replace("_", " ") || "N/A"}
                         </span>
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4">
@@ -1614,10 +1630,10 @@ export default function AllPlans() {
                       </div>
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border shrink-0 ${getStatusColor(
-                          plan.status
+                          getDisplayStatus(plan)
                         )}`}
                       >
-                        {getStatusIcon(plan.status)}
+                        {getStatusIcon(getDisplayStatus(plan))}
                       </span>
                     </div>
                   </CardHeader>

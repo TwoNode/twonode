@@ -39,7 +39,7 @@ import {
   getAccountsBatches,
   updateAccountsApproval,
   getPendingCountByRole,
-} from "../../../../actions/codActions";
+} from "../../../actions/codActions";
 
 interface Batch {
   id: string;
