@@ -528,7 +528,8 @@ model CertificateOfDepositBatch {
   paymentStatus BatchPaymentStatus @default(PENDING_USER_PAYMENT)
 
   // User Payment (Fold 1)
-  userPaymentRef    String? // Paystack reference
+  userPaymentRef String? @unique @default(dbgenerated("concat('SurfCoDRef_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
+
   userPaymentDate   DateTime?
   userPaymentAmount Float?
 

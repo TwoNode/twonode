@@ -93,6 +93,7 @@ import {
   getPlanEligibilityMessage,
 } from "../../../components/CertificateBatchSelection";
 import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal";
+import { SubmittedBatchesModal } from "../../../components/SubmittedBatchesModal";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
 import {
@@ -159,6 +160,7 @@ export default function AllPlans() {
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [showBatchesModal, setShowBatchesModal] = useState(false);
 
   const loadPlans = async (
     page = pagination.page,
@@ -617,6 +619,15 @@ export default function AllPlans() {
               />
               <span className="hidden sm:inline">Refresh</span>
             </button>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchesModal(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">My Batches</span>
+              <span className="sm:hidden">Batches</span>
+            </Button>
             <Button
               onClick={() =>
                 (window.location.href = "/surfboard/dashboard/newplan")
@@ -1415,8 +1426,17 @@ export default function AllPlans() {
                                   const eligibilityMessage =
                                     getPlanEligibilityMessage(plan);
 
+                                  if (
+                                    eligibilityMessage?.code == "no_record_copy"
+                                  ) {
+                                    // Select this plan
+                                    setSelectedPlans([plan.id]);
+                                    setUploadModalOpen(true);
+                                    return;
+                                  }
+
                                   if (eligibilityMessage) {
-                                    toast.error(eligibilityMessage);
+                                    toast.error(eligibilityMessage.message);
                                     return;
                                   }
 
@@ -1715,8 +1735,20 @@ export default function AllPlans() {
                               const eligibilityMessage =
                                 getPlanEligibilityMessage(plan);
 
+                              if (
+                                eligibilityMessage?.code == "no_record_copy"
+                              ) {
+                                // Select this plan
+                                setSelectedPlans([plan.id]);
+                                setUploadModalOpen(true);
+                                return;
+                              }
+
                               if (eligibilityMessage) {
-                                toast.error(eligibilityMessage);
+                                toast.error(
+                                  eligibilityMessage?.message ||
+                                    "Something went wrong"
+                                );
                                 return;
                               }
 
@@ -2060,6 +2092,16 @@ export default function AllPlans() {
           if (selectedPlans.length === 0) {
             setBatchModalOpen(false);
           }
+        }}
+      />
+
+      {/* Submitted Batches Modal */}
+      <SubmittedBatchesModal
+        isOpen={showBatchesModal}
+        onClose={() => setShowBatchesModal(false)}
+        onSuccess={() => {
+          // Refresh plans after successful payment
+          loadPlans(pagination.page, pagination.pageSize);
         }}
       />
     </div>

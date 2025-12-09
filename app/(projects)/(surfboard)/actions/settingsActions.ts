@@ -15,6 +15,32 @@ interface SurfboardSettingsData {
   systemChargePercent: number;
 }
 
+const DEFAULT_SETTINGS: SurfboardSettingsData = {
+  lgaFees: {
+    Agege: 90,
+    "Ajeromi-Ifelodun": 60,
+    Alimosho: 60,
+    "Amuwo-Odofin": 60,
+    Apapa: 60,
+    Badagry: 70,
+    Epe: 60,
+    "Eti-Osa": 50,
+    "Ibeju-Lekki": 60,
+    "Ifako-Ijaiye": 90,
+    Ikeja: 30,
+    Ikorodu: 20,
+    Kosofe: 60,
+    "Lagos Island": 60,
+    "Lagos Mainland": 60,
+    Mushin: 20,
+    Ojo: 60,
+    "Oshodi-Isolo": 60,
+    Shomolu: 30,
+    Surulere: 60,
+  },
+  systemChargePercent: 10,
+};
+
 /**
  * Get current settings
  */
@@ -23,7 +49,7 @@ export async function getCurrentSettings(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -32,11 +58,41 @@ export async function getCurrentSettings(): Promise<
     });
 
     if (!settings || !settings.settings) {
-      // Return default settings
+      // Return default settings with Lagos LGA rates BY SAVING DEFAULT SETTINGS
+      await prisma.surfboardSettings.create({
+        data: {
+          settings: DEFAULT_SETTINGS as any,
+          previousSettings: {},
+          updatedById: user.id,
+        },
+      });
+
+      revalidatePath("/surf-restricted/dashboard/cod-settings");
       return {
         success: true,
         data: {
-          lgaFees: {},
+          lgaFees: {
+            Agege: 90,
+            "Ajeromi-Ifelodun": 60,
+            Alimosho: 60,
+            "Amuwo-Odofin": 60,
+            Apapa: 60,
+            Badagry: 70,
+            Epe: 60,
+            "Eti-Osa": 50,
+            "Ibeju-Lekki": 60,
+            "Ifako-Ijaiye": 90,
+            Ikeja: 30,
+            Ikorodu: 20,
+            Kosofe: 60,
+            "Lagos Island": 60,
+            "Lagos Mainland": 60,
+            Mushin: 20,
+            Ojo: 60,
+            "Oshodi-Isolo": 60,
+            Shomolu: 30,
+            Surulere: 60,
+          },
           systemChargePercent: 10,
         },
       };
@@ -67,7 +123,7 @@ export async function updateSettings(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -113,7 +169,7 @@ export async function getSettingsHistory(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -158,7 +214,7 @@ export async function revertToPreviousSettings(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 

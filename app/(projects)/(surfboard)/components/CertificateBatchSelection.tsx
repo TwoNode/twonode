@@ -3,7 +3,7 @@
  * Allows users to select multiple plans and submit them for Certificate of Deposit
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle, AlertCircle, Loader2, X } from "lucide-react";
-import { submitRedCopyBatch } from "../actions/codActions";
+import { submitRedCopyBatch, verifyBatchPayment } from "../actions/codActions";
 import { useRouter } from "next/navigation";
+import PaystackPop from "@paystack/inline-js";
 
 interface Plan {
   id: string;
@@ -38,6 +39,16 @@ interface BatchSubmissionModalProps {
   onRemovePlan?: (planId: string) => void;
 }
 
+type TransactionObject = {
+  reference: string;
+  trans: string;
+  status: string;
+  message: string;
+  transaction: string;
+  trxref: string;
+  redirecturl: string;
+};
+
 export function BatchSubmissionModal({
   isOpen,
   onClose,
@@ -48,11 +59,23 @@ export function BatchSubmissionModal({
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const publicKey = useMemo(
+    () => process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+    []
+  );
+
   const handleSubmit = async () => {
+    let error: any = "";
+
     try {
       if (selectedPlans.length === 0) {
         toast.error("Please select at least one plan");
         onClose();
+        return;
+      }
+
+      if (!publicKey) {
+        toast.error("Server Error: Misconfigured Payment setup");
         return;
       }
 
@@ -61,31 +84,113 @@ export function BatchSubmissionModal({
       const result = await submitRedCopyBatch(selectedPlans.map((p) => p.id));
 
       if (result.success && result.data) {
-        toast.success(
-          `Batch ${
-            result.data.batchCode
-          } created successfully! Total: ₦${result.data.totalAmount?.toLocaleString()}`
-        );
-        onClose();
-        if (onSuccess) onSuccess();
+        const { batchCode, totalAmount, paymentUrl, reference } = result.data;
 
-        // Redirect to payment page if URL is provided
-        if (result.data.paymentUrl) {
-          // Use window.location for external Paystack URL
-          window.location.href = result.data.paymentUrl;
-        } else {
-          // If no payment URL, show info message
-          toast.info(
-            "Batch created! Please check your email for payment instructions."
-          );
+        toast.success(
+          `Batch ${batchCode} created successfully! Total: ₦${totalAmount?.toLocaleString()}`
+        );
+
+        // Check if we have a payment reference
+        if (!reference) {
+          toast.error("Payment reference not found");
+          setIsSubmitting(false);
+          return;
         }
+
+        // Get user email from the batch submission
+        const userEmail = result.data.email || "";
+
+        if (!userEmail) {
+          // Fallback to redirect if email not available
+          return;
+        }
+
+        // Initialize Paystack popup
+        const paystack = new PaystackPop();
+        paystack.newTransaction({
+          key: publicKey,
+          reference,
+          email: userEmail,
+          // Convert from NAIRA (server response) to KOBO (Paystack requires kobo: 1 naira = 100 kobo)
+          amount: Math.round(totalAmount * 100), // Convert to kobo
+          currency: "NGN",
+          metadata: {
+            custom_fields: [
+              {
+                display_name: "Batch ID",
+                variable_name: "batch_id",
+                value: result.data.batchId,
+              },
+              {
+                display_name: "Batch Code",
+                variable_name: "batch_code",
+                value: batchCode,
+              },
+              {
+                display_name: "Plan Count",
+                variable_name: "plan_count",
+                value: selectedPlans.length,
+              },
+              {
+                display_name: "Type",
+                variable_name: "type",
+                value: "certificate_of_deposit",
+              },
+              {
+                display_name: "Platform",
+                variable_name: "platform",
+                value: "surfboard",
+              },
+            ],
+          },
+          onSuccess: async (transaction: TransactionObject) => {
+            try {
+              console.log("Payment successful:", transaction);
+              toast.loading("Verifying payment...", { id: "verify-payment" });
+
+              const verification = await verifyBatchPayment(reference);
+
+              toast.dismiss("verify-payment");
+
+              if (verification?.success) {
+                toast.success("Payment verified successfully!");
+                onClose();
+                if (onSuccess) onSuccess();
+
+                // Refresh the page to show updated status
+                router.refresh();
+              } else {
+                throw new Error(verification?.error || "Verification failed");
+              }
+            } catch (error: any) {
+              console.error("Verification error:", error);
+              toast.error(error.message || "Failed to verify payment");
+            } finally {
+              setIsSubmitting(false);
+            }
+          },
+          onCancel: () => {
+            toast.info("Payment cancelled");
+            setIsSubmitting(false);
+          },
+          onError: (error: { message: string }) => {
+            console.error("Payment error:", error);
+            toast.error(error.message || "Payment failed");
+            setIsSubmitting(false);
+          },
+        });
       } else {
+        error = result.error || "Failed to submit batch";
         toast.error(result.error || "Failed to submit batch");
+        setIsSubmitting(false);
+
+        // onClose();
+        // if (onSuccess) onSuccess();
+        // setIsSubmitting(false);
       }
     } catch (error) {
       console.error("Error submitting batch:", error);
       toast.error("An error occurred while submitting the batch");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -271,15 +376,28 @@ export function isPlanEligibleForCertificate(plan: Plan): boolean {
 /**
  * Get eligibility message for a plan
  */
-export function getPlanEligibilityMessage(plan: Plan): string | null {
+export function getPlanEligibilityMessage(plan: Plan): {
+  code: string;
+  message: string;
+} | null {
   if (plan.status !== "PENDING") {
-    return `Plan status must be PENDING (current: ${plan.status})`;
+    return {
+      code: "not_pending_plan",
+      message: `Plan status must be PENDING (current: ${plan.status})`,
+    };
   }
   if (!plan.redCopyFileUrl) {
-    return "Record copy must be uploaded";
+    return {
+      code: "no_record_copy",
+      message: "Record copy must be uploaded",
+    };
   }
+
   if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
-    return `Plan already submitted (status: ${plan.redCopyStatus})`;
+    return {
+      code: "record_copy_submitted",
+      message: `Plan already submitted (status: ${plan.redCopyStatus})`,
+    };
   }
   return null;
 }

@@ -360,27 +360,82 @@ export async function getSystemChargePercent(): Promise<number> {
 }
 
 /**
- * Calculate fee for a single plan based on LGA and area
+ * Calculate fee for a single plan based on LGA and geometry
  */
 export async function calculatePlanFee(
   lga: string | null,
-  deededArea: string
+  geometry: any,
+  lgaFees: Record<string, number>,
+  systemChargePercent: number
 ): Promise<{ fee: number; systemCharge: number; total: number }> {
-  const lgaFees = await getLGAFees();
-  const systemChargePercent = await getSystemChargePercent();
+  const { computeGeometryDetails } = await import("../utils/dbUtils");
 
-  // Parse area (assuming it's in square meters)
-  const areaMatch = deededArea.match(/[\d,]+\.?\d*/);
-  const area = areaMatch ? parseFloat(areaMatch[0].replace(/,/g, "")) : 0;
+  // Compute area from geometry
+  let area = 0;
+  try {
+    const { areaSqM } = computeGeometryDetails(geometry);
+    area = areaSqM;
+  } catch (error) {
+    console.error("Error computing area from geometry:", error);
+  }
 
-  // Get rate per sqm for the LGA
-  const ratePerSqm = lga && lgaFees[lga] ? lgaFees[lga] : 0;
+  // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
+  const normalizeLga = (str: string) => str.toUpperCase().replace(/[\s-]/g, "");
+  const normalizedLga = lga ? normalizeLga(lga) : null;
+  const lgaFeeKey = normalizedLga
+    ? Object.keys(lgaFees).find((key) => normalizeLga(key) === normalizedLga)
+    : null;
+  const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
 
   const fee = ratePerSqm * area;
   const systemCharge = fee * (systemChargePercent / 100);
   const total = fee + systemCharge;
 
   return { fee, systemCharge, total };
+}
+
+/**
+ * Calculate fee for multiple plans based on LGA and area
+ */
+export async function calculateMultiplePlanFee(
+  plans: Array<{ lga: string | null; geometry: any }>
+): Promise<{ fee: number; systemCharge: number; total: number }> {
+  const lgaFees = await getLGAFees();
+  const systemChargePercent = await getSystemChargePercent();
+
+  const { computeGeometryDetails } = await import("../utils/dbUtils");
+
+  let totalFee = 0;
+
+  // Calculate fee for each plan
+  for (const plan of plans) {
+    try {
+      // Compute area from geometry
+      const { areaSqM } = computeGeometryDetails(plan.geometry);
+
+      // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
+      const normalizeLga = (str: string) =>
+        str.toUpperCase().replace(/[\s-]/g, "");
+      const normalizedLga = plan.lga ? normalizeLga(plan.lga) : null;
+      const lgaFeeKey = normalizedLga
+        ? Object.keys(lgaFees).find(
+            (key) => normalizeLga(key) === normalizedLga
+          )
+        : null;
+      const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
+
+      // Calculate plan fee
+      totalFee += ratePerSqm * areaSqM;
+    } catch (error) {
+      console.error("Error calculating fee for plan:", error);
+      // Continue with other plans
+    }
+  }
+
+  const systemCharge = totalFee * (systemChargePercent / 100);
+  const total = totalFee + systemCharge;
+
+  return { fee: totalFee, systemCharge, total };
 }
 
 /**
@@ -396,7 +451,9 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     batchId: string;
     batchCode: string;
     totalAmount: number;
+    reference: string | null;
     paymentUrl?: string;
+    email?: string;
   }>
 > {
   try {
@@ -446,29 +503,49 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     let totalFees = 0;
     const planFees: Record<string, number> = {};
 
+    const lgaFees = await getLGAFees();
+    const systemChargePercent = await getSystemChargePercent();
+
     for (const plan of plans) {
-      const { total } = await calculatePlanFee(plan.lga, plan.deededArea);
-      planFees[plan.id] = total;
-      totalFees += total;
+      const { fee } = await calculatePlanFee(
+        plan.lga,
+        plan.geometry,
+        lgaFees,
+        systemChargePercent
+      );
+      planFees[plan.id] = fee;
+      totalFees += fee;
     }
 
-    const systemChargePercent = await getSystemChargePercent();
+    // Round to 2 decimal places for currency precision
     const systemCharges = totalFees * (systemChargePercent / 100);
-    const totalAmount = totalFees + systemCharges;
+    // NOTE: All amounts are stored in NAIRA in the database
+    // Paystack requires amounts in KOBO (1 naira = 100 kobo)
+    const totalAmount = Math.trunc((totalFees + systemCharges) * 100) / 100; // Amount in NAIRA (stored in DB)
+
+    // Validate amount before creating batch
+    if (totalAmount <= 0) {
+      return {
+        success: false,
+        error:
+          "Unable to calculate fees. Please ensure LGA fees are configured and plan area is valid.",
+      };
+    }
 
     // Create batch
     const batch = await prisma.certificateOfDepositBatch.create({
       data: {
         submittedBy: user.id,
         planCount: plans.length,
-        totalFees,
-        systemCharges,
-        totalAmount,
+        totalFees: Math.trunc(totalFees * 100) / 100, // Amount in NAIRA (2 decimal places)
+        systemCharges: Math.trunc(systemCharges * 100) / 100, // Amount in NAIRA (2 decimal places)
+        totalAmount, // Amount in NAIRA - will be converted to kobo (*100) for Paystack
         paymentStatus: "PENDING_USER_PAYMENT",
       },
       select: {
         id: true,
         batchCode: true,
+        userPaymentRef: true,
       },
     });
 
@@ -497,22 +574,39 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 
     // Initialize Paystack payment
     let paymentUrl: string | undefined;
+    let userDetails: {
+      email: string;
+      firstName: string;
+      lastName: string;
+    } | null = null;
+
     try {
       // Get user details for payment
-      const userDetails = await prisma.surfboardUser.findUnique({
+      userDetails = await prisma.surfboardUser.findUnique({
         where: { id: user.id },
         select: { email: true, firstName: true, lastName: true },
       });
 
       if (userDetails?.email) {
-        const reference = `COD_${batch.batchCode}_${Date.now()}`;
+        const reference = batch.userPaymentRef;
         const callbackUrl = `${
           process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
         }/surfboard/dashboard/payment/callback?reference=${reference}`;
 
+        // Convert from NAIRA (DB storage) to KOBO (Paystack API)
+        // Paystack expects amount in kobo: 1 naira = 100 kobo
+        // Round to 2 decimal places first to avoid floating point errors
+        const amountInKobo = Math.trunc(
+          (Math.trunc(totalAmount * 100) / 100) * 100
+        );
+
+        if (amountInKobo <= 0) {
+          throw new Error("Invalid payment amount calculated");
+        }
+
         const paymentInit = await paystack.transactions.initialize(getEnv(), {
           email: userDetails.email,
-          amount: Math.round(totalAmount * 100), // Paystack expects amount in kobo
+          amount: amountInKobo, // Paystack expects amount in kobo (integer, no decimals)
           reference,
           callback_url: callbackUrl,
           metadata: {
@@ -521,17 +615,12 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
             planCount: plans.length,
             userId: user.id,
             type: "certificate_of_deposit",
+            platform: "surfboard",
           },
         });
 
         if (paymentInit?.data?.authorization_url) {
           paymentUrl = paymentInit.data.authorization_url;
-
-          // Update batch with payment reference
-          await prisma.certificateOfDepositBatch.update({
-            where: { id: batch.id },
-            data: { userPaymentRef: reference },
-          });
         }
       }
     } catch (paymentError) {
@@ -540,14 +629,17 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     }
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard/dashboard/plans");
 
     return {
       success: true,
       data: {
         batchId: batch.id,
         batchCode: batch.batchCode,
-        totalAmount,
+        totalAmount, // Amount in NAIRA - frontend converts to kobo (*100) for Paystack
         paymentUrl,
+        reference: batch.userPaymentRef,
+        email: userDetails?.email,
       },
     };
   } catch (error) {
@@ -596,6 +688,7 @@ export async function verifyBatchPayment(
     // await notifyAdmins({ ... });
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard/dashboard/plans");
 
     return {
       success: true,
@@ -606,6 +699,165 @@ export async function verifyBatchPayment(
     return {
       success: false,
       error: handlePrismaError(error, "verifyBatchPayment"),
+    };
+  }
+}
+
+/**
+ * Get all batches submitted by the current user
+ */
+export async function getUserBatches(): Promise<
+  ApiResult<{
+    batches: Array<{
+      id: string;
+      batchCode: string;
+      planCount: number;
+      totalFees: number;
+      systemCharges: number;
+      totalAmount: number;
+      paymentStatus: string;
+      userPaymentRef: string | null;
+      userPaymentDate: Date | null;
+      createdAt: Date;
+    }>;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        submittedBy: user.id,
+      },
+      select: {
+        id: true,
+        batchCode: true,
+        planCount: true,
+        totalFees: true,
+        systemCharges: true,
+        totalAmount: true,
+        paymentStatus: true,
+        userPaymentRef: true,
+        userPaymentDate: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data: { batches },
+    };
+  } catch (error) {
+    console.error("Error fetching user batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getUserBatches"),
+    };
+  }
+}
+
+/**
+ * Retry payment for a batch with pending/failed payment
+ */
+export async function retryBatchPayment(batchId: string): Promise<
+  ApiResult<{
+    reference: string;
+    email: string;
+    amount: number;
+    batchCode: string;
+    batchId: string;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // Find batch and verify ownership
+    const batch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        id: batchId,
+        submittedBy: user.id,
+      },
+      select: {
+        id: true,
+        batchCode: true,
+        totalAmount: true,
+        paymentStatus: true,
+        userPaymentRef: true,
+      },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    // Check if already paid
+    if (
+      batch.paymentStatus === "USER_PAID" ||
+      batch.paymentStatus === "LASG_PAID"
+    ) {
+      return { success: false, error: "Batch payment already completed" };
+    }
+
+    // Get user email
+    const userDetails = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { email: true },
+    });
+
+    if (!userDetails?.email) {
+      return { success: false, error: "User email not found" };
+    }
+
+    // Validate amount
+    if (!batch.totalAmount || batch.totalAmount <= 0) {
+      console.error("Invalid batch amount:", {
+        batchId: batch.id,
+        batchCode: batch.batchCode,
+        totalAmount: batch.totalAmount,
+      });
+      return {
+        success: false,
+        error: "Invalid batch amount. Please contact support.",
+      };
+    }
+
+    // Generate or reuse payment reference
+    const reference =
+      batch.userPaymentRef || `SurfCoD_${batch.batchCode}_${Date.now()}`;
+
+    // Update batch with payment reference if new
+    if (!batch.userPaymentRef) {
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batch.id },
+        data: { userPaymentRef: reference },
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        reference,
+        email: userDetails.email,
+        // NOTE: amount is in NAIRA (from DB). Frontend must convert to kobo (*100) for Paystack
+        amount: batch.totalAmount,
+        batchCode: batch.batchCode,
+        batchId: batch.id,
+      },
+    };
+  } catch (error) {
+    console.error("Error retrying batch payment:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "retryBatchPayment"),
     };
   }
 }
@@ -681,7 +933,7 @@ export async function updateAccountsApproval(
       // await notifyAdmins({ ... });
     }
 
-    revalidatePath("/surf-restricted/dashboard/cod/accounts");
+    revalidatePath("/surf-mda/dashboard/accounts");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -716,7 +968,7 @@ export async function updateChartingStatus(
       },
     });
 
-    revalidatePath("/surf-restricted/dashboard/cod/charting");
+    revalidatePath("/surf-mda/dashboard/charting");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -758,7 +1010,7 @@ export async function updateSurconStatus(
       // await notifyUser({ ... });
     }
 
-    revalidatePath("/surf-restricted/dashboard/cod/surcon");
+    revalidatePath("/surf-mda/dashboard/surcon");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -800,7 +1052,7 @@ export async function updateRecordsIStatus(
       // await notifyUser({ ... });
     }
 
-    revalidatePath("/surf-restricted/dashboard/cod/records-i");
+    revalidatePath("/surf-mda/dashboard/records-i");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -878,7 +1130,7 @@ export async function updateRecordsIIStatus(
       // await notifyUser({ ... });
     }
 
-    revalidatePath("/surf-restricted/dashboard/cod/records-ii");
+    revalidatePath("/surf-mda/dashboard/records-ii");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1256,6 +1508,95 @@ export async function getRecordsIIPlans() {
     return {
       success: false,
       error: handlePrismaError(error, "getRecordsIIPlans"),
+    };
+  }
+}
+
+/**
+ * DEVELOPMENT ONLY: Delete all certificate of deposit batches
+ * This will also reset all related plan fields
+ * @returns Result indicating success or failure
+ */
+export async function deleteAllBatches(): Promise<
+  ApiResult<{ deletedCount: number }>
+> {
+  try {
+    // Only allow in development
+    if (process.env.NODE_ENV === "production") {
+      return {
+        success: false,
+        error: "This action is not available in production",
+      };
+    }
+
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // First, reset all plans that have a batchId
+    await prisma.surfboardPlan.updateMany({
+      where: {
+        batchId: { not: null },
+      },
+      data: {
+        batchId: null,
+        redCopyStatus: "NOT_SUBMITTED",
+        redCopySubmittedAt: null,
+        possibleChartingRemarks: null,
+        accountsStatus: "PENDING",
+        chartingStatus: "PENDING",
+        surconStatus: "PENDING",
+        recordsIStatus: "PENDING",
+        recordsIIStatus: "PENDING",
+        // Reset all approval fields
+        chartingRemarks: null,
+        chartingApprovedBy: null,
+        chartingApprovedAt: null,
+        surconApprovedBy: null,
+        surconApprovedAt: null,
+        surconComment: null,
+        recordsIApprovedBy: null,
+        recordsIApprovedAt: null,
+        recordsIComment: null,
+        recordsIIApprovedBy: null,
+        recordsIIApprovedAt: null,
+        recordsIIComment: null,
+        // Reset lock fields for all roles
+        accountsLockedBy: null,
+        accountsLockedAt: null,
+        accountsLockExpiresAt: null,
+        chartingLockedBy: null,
+        chartingLockedAt: null,
+        chartingLockExpiresAt: null,
+        surconLockedBy: null,
+        surconLockedAt: null,
+        surconLockExpiresAt: null,
+        recordsILockedBy: null,
+        recordsILockedAt: null,
+        recordsILockExpiresAt: null,
+        recordsIILockedBy: null,
+        recordsIILockedAt: null,
+        recordsIILockExpiresAt: null,
+      },
+    });
+
+    // Delete all batches
+    const result = await prisma.certificateOfDepositBatch.deleteMany({});
+
+    revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surf-restricted/dashboard/cod");
+    revalidatePath("/surfboard/dashboard/plans");
+
+    return {
+      success: true,
+      data: { deletedCount: result.count },
+    };
+  } catch (error) {
+    console.error("Error deleting all batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "deleteAllBatches"),
     };
   }
 }

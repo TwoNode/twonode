@@ -30,8 +30,9 @@ const protectedRoutes = [
   "/surfboard/dashboard",
   "/surf-restricted/dashboard",
   "/surf-restricted/superadmin",
+  "/surf-mda/dashboard",
   "/gbc/restricted",
-]; // Added Surfboard and GBC routes
+]; // Added Surfboard, surf-mda, and GBC routes
 
 // Define public routes that bypass authentication
 const publicRoutes = [
@@ -93,6 +94,7 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         return "/reva-restricted/login";
       if (pathname.startsWith("/reva")) return "/reva/login";
+      if (pathname.startsWith("/surf-mda")) return "/surf-mda/login";
       if (pathname.startsWith("/surf-restricted"))
         return "/surf-restricted/login";
       if (pathname.startsWith("/surfboard")) return "/surfboard/login";
@@ -129,6 +131,8 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+        else if (pathname.startsWith("/surf-mda"))
+          redirectPath = "/surf-mda/login";
         else if (pathname.startsWith("/surf-restricted"))
           redirectPath = "/surf-restricted/login";
         else if (pathname.startsWith("/surfboard"))
@@ -160,6 +164,8 @@ const proxyWithLogic = withDynamicAuth(
           if (pathname.startsWith("/reva-restricted"))
             redirectPath = "/reva-restricted/login";
           else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-mda"))
+            redirectPath = "/surf-mda/login";
           else if (pathname.startsWith("/surf-restricted"))
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
@@ -194,7 +200,8 @@ const proxyWithLogic = withDynamicAuth(
           platformCheck = isPlatformUser(userData, Platform.REVA);
         } else if (
           pathname.startsWith("/surfboard") ||
-          pathname.startsWith("/surf-restricted")
+          pathname.startsWith("/surf-restricted") ||
+          pathname.startsWith("/surf-mda")
         ) {
           platformCheck = isPlatformUser(userData, Platform.SURFBOARD);
         } else if (pathname.startsWith("/gbc")) {
@@ -206,6 +213,8 @@ const proxyWithLogic = withDynamicAuth(
           if (pathname.startsWith("/reva-restricted"))
             redirectPath = "/reva-restricted/login";
           else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-mda"))
+            redirectPath = "/surf-mda/login";
           else if (pathname.startsWith("/surf-restricted"))
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
@@ -315,6 +324,49 @@ const proxyWithLogic = withDynamicAuth(
           // Surfboard superadmin dashboard - only SUPERADMIN can access
           console.log("🛡️ Proxy - Checking Surfboard superadmin access");
           hasAccess = canAccessSurfSuperAdminPanel(userData.role);
+        } else if (pathname.startsWith("/surf-mda/dashboard")) {
+          // MDA dashboards - role-specific access
+          console.log("🛡️ Proxy - Checking MDA dashboard access");
+
+          // Check if user has an MDA role
+          const mdaRoles = [
+            "ACCOUNTS",
+            "CHARTING",
+            "SURCON",
+            "RECORDS_I",
+            "RECORDS_II",
+          ];
+          hasAccess = mdaRoles.includes(userData.role);
+
+          if (hasAccess) {
+            // Further check: ensure user is accessing their own dashboard
+            if (
+              pathname.includes("/accounts") &&
+              userData.role !== "ACCOUNTS"
+            ) {
+              hasAccess = false;
+            } else if (
+              pathname.includes("/charting") &&
+              userData.role !== "CHARTING"
+            ) {
+              hasAccess = false;
+            } else if (
+              pathname.includes("/surcon") &&
+              userData.role !== "SURCON"
+            ) {
+              hasAccess = false;
+            } else if (
+              pathname.includes("/records-i") &&
+              userData.role !== "RECORDS_I"
+            ) {
+              hasAccess = false;
+            } else if (
+              pathname.includes("/records-ii") &&
+              userData.role !== "RECORDS_II"
+            ) {
+              hasAccess = false;
+            }
+          }
         } else if (pathname.startsWith("/gbc/restricted")) {
           // GBC admin dashboard - only ADMIN and SUPERADMIN can access
           console.log("🛡️ Proxy - Checking GBC admin dashboard access");
@@ -337,6 +389,8 @@ const proxyWithLogic = withDynamicAuth(
           if (pathname.startsWith("/reva-restricted"))
             redirectPath = "/reva-restricted/login";
           else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+          else if (pathname.startsWith("/surf-mda"))
+            redirectPath = "/surf-mda/login";
           else if (pathname.startsWith("/surf-restricted"))
             redirectPath = "/surf-restricted/login";
           else if (pathname.startsWith("/surfboard"))
@@ -383,6 +437,8 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
+        else if (pathname.startsWith("/surf-mda"))
+          redirectPath = "/surf-mda/login";
         else if (pathname.startsWith("/surf-restricted"))
           redirectPath = "/surf-restricted/login";
         else if (pathname.startsWith("/surfboard"))
@@ -410,6 +466,7 @@ export const config = {
     "/surfboard/dashboard/:path*",
     "/surf-restricted/dashboard/:path*",
     "/surf-restricted/superadmin/:path*",
+    "/surf-mda/dashboard/:path*",
     "/gbc/restricted/:path*",
   ],
 };
