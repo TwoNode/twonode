@@ -1,10 +1,7 @@
 import React from "react";
-import {
-  LoginLink,
-  RegisterLink,
-} from "@kinde-oss/kinde-auth-nextjs/components";
+import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 
-const postLoginRedirectURL = "/api/auth/success/surf-restricted";
+const postLoginRedirectURL = "/api/auth/success/surf-mda";
 
 export default function SurfMDALoginPage() {
   return (
@@ -25,18 +22,10 @@ export default function SurfMDALoginPage() {
           Ministry, Department & Agency Access
         </p>
         <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
-          <button className="w-full px-6 py-3 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition mb-4 text-lg shadow">
+          <button className="w-full px-6 py-3 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition text-lg shadow">
             Sign in to MDA Portal
           </button>
         </LoginLink>
-        <div className="text-purple-700 mt-4">
-          Don&apos;t have an account?{" "}
-          <RegisterLink postLoginRedirectURL={postLoginRedirectURL}>
-            <span className="underline cursor-pointer hover:text-purple-900 font-semibold">
-              Register here
-            </span>
-          </RegisterLink>
-        </div>
       </div>
     </div>
   );
