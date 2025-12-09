@@ -15,6 +15,8 @@ import {
   Shield,
   Bell,
   FileCheck,
+  Users,
+  Award,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -85,57 +87,11 @@ export default function SurfboardAdminPanelLayout({
       label: "Notifications",
       url: `${dashboardUrl}/notifications`,
     },
-    // Certificate of Deposit - Role-based menu items
-    ...(userData?.role === "ACCOUNTS"
-      ? [
-          {
-            icon: FileCheck,
-            label: "CoD - Accounts",
-            url: `${dashboardUrl}/cod/accounts`,
-          },
-        ]
-      : []),
-    ...(userData?.role === "CHARTING"
-      ? [
-          {
-            icon: FileCheck,
-            label: "CoD - Charting",
-            url: `${dashboardUrl}/cod/charting`,
-          },
-        ]
-      : []),
-    ...(userData?.role === "SURCON"
-      ? [
-          {
-            icon: FileCheck,
-            label: "CoD - SURCON",
-            url: `${dashboardUrl}/cod/surcon`,
-          },
-        ]
-      : []),
-    ...(userData?.role === "RECORDS_I"
-      ? [
-          {
-            icon: FileCheck,
-            label: "CoD - Records I",
-            url: `${dashboardUrl}/cod/records-i`,
-          },
-        ]
-      : []),
-    ...(userData?.role === "RECORDS_II"
-      ? [
-          {
-            icon: FileCheck,
-            label: "CoD - Records II",
-            url: `${dashboardUrl}/cod/records-ii`,
-          },
-        ]
-      : []),
-    // {
-    //   icon: Settings,
-    //   label: "Admin Tools",
-    //   url: `${dashboardUrl}/admin-tools`,
-    // },
+    {
+      icon: Award,
+      label: "Certificates",
+      url: `${dashboardUrl}/certificates`,
+    },
     { icon: Settings, label: "Analytics", url: `${dashboardUrl}/analytics` },
     ...(userData?.role === "SUPERADMIN"
       ? [
@@ -145,14 +101,14 @@ export default function SurfboardAdminPanelLayout({
             url: `${dashboardUrl}/superadmin`,
           },
           {
+            icon: Users,
+            label: "MDA Users",
+            url: `${dashboardUrl}/mda-users`,
+          },
+          {
             icon: Settings,
             label: "CoD Settings",
             url: `${dashboardUrl}/cod-settings`,
-          },
-          {
-            icon: Bell,
-            label: "Analytics",
-            url: `${dashboardUrl}/analytics`,
           },
         ]
       : []),
