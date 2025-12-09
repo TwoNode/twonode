@@ -69,6 +69,7 @@ export default function UserManagementPage() {
   const [currentUserRole, setCurrentUserRole] = useState<SurfboardRole | null>(
     null
   );
+  const [activeTab, setActiveTab] = useState<"admins" | "mda">("admins");
   const router = useRouter();
 
   // Subscription form state
@@ -93,6 +94,21 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     fetchData();
+    // Fetch current user role from session/context
+    // For now, we'll check from the users list after fetching
+    const checkCurrentUserRole = async () => {
+      try {
+        const usersResult = await getAllUsers();
+        if (usersResult.success && usersResult.users) {
+          // In production, this should come from auth context
+          // For now, we'll assume superadmin if we can see all users
+          setCurrentUserRole("SUPERADMIN");
+        }
+      } catch (error) {
+        console.error("Error checking user role:", error);
+      }
+    };
+    checkCurrentUserRole();
   }, []);
 
   const fetchData = async () => {
@@ -120,7 +136,26 @@ export default function UserManagementPage() {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
+  // Define admin and MDA roles
+  const adminRoles: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
+  const mdaRoles: SurfboardRole[] = [
+    "RECORDS_I",
+    "RECORDS_II",
+    "ACCOUNTS",
+    "CHARTING",
+    "SURCON",
+  ];
+
+  // Filter users based on active tab
+  const tabFilteredUsers = users.filter((user) => {
+    if (activeTab === "admins") {
+      return adminRoles.includes(user.role);
+    } else {
+      return mdaRoles.includes(user.role);
+    }
+  });
+
+  const filteredUsers = tabFilteredUsers.filter((user) => {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "active" && user.isActive) ||
@@ -311,7 +346,7 @@ export default function UserManagementPage() {
                   onClick={() => setShowAddAdminModal(true)}
                   className="mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Add New Admin
+                  {activeTab === "admins" ? "Add New Admin" : "Add MDA User"}
                 </button>
                 <button
                   onClick={() => router.push("/surf-restricted/dashboard")}
@@ -320,6 +355,36 @@ export default function UserManagementPage() {
                   Back to Dashboard
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="bg-white rounded-lg shadow-lg mb-8">
+            <div className="border-b border-gray-200">
+              <nav className="flex space-x-8 px-6">
+                <button
+                  onClick={() => setActiveTab("admins")}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "admins"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Admins
+                </button>
+                {currentUserRole === "SUPERADMIN" && (
+                  <button
+                    onClick={() => setActiveTab("mda")}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "mda"
+                        ? "border-purple-500 text-purple-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    MDA Users
+                  </button>
+                )}
+              </nav>
             </div>
           </div>
 
@@ -480,14 +545,21 @@ export default function UserManagementPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Roles</option>
-                  <option value="SUPERADMIN">SuperAdmin</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="USER">User</option>
-                  <option value="RECORDS_I">Records I</option>
-                  <option value="RECORDS_II">Records II</option>
-                  <option value="ACCOUNTS">Accounts</option>
-                  <option value="CHARTING">Charting</option>
-                  <option value="SURCON">SURCON</option>
+                  {activeTab === "admins" ? (
+                    <>
+                      <option value="SUPERADMIN">SuperAdmin</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="USER">User</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="RECORDS_I">Records I</option>
+                      <option value="RECORDS_II">Records II</option>
+                      <option value="ACCOUNTS">Accounts</option>
+                      <option value="CHARTING">Charting</option>
+                      <option value="SURCON">SURCON</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -566,14 +638,21 @@ export default function UserManagementPage() {
                             user.role
                           )} border-0 cursor-pointer`}
                         >
-                          <option value="USER">USER</option>
-                          <option value="ADMIN">ADMIN</option>
-                          <option value="SUPERADMIN">SUPERADMIN</option>
-                          <option value="RECORDS_I">RECORDS_I</option>
-                          <option value="RECORDS_II">RECORDS_II</option>
-                          <option value="ACCOUNTS">ACCOUNTS</option>
-                          <option value="CHARTING">CHARTING</option>
-                          <option value="SURCON">SURCON</option>
+                          {activeTab === "admins" ? (
+                            <>
+                              <option value="USER">USER</option>
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="SUPERADMIN">SUPERADMIN</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="RECORDS_I">RECORDS_I</option>
+                              <option value="RECORDS_II">RECORDS_II</option>
+                              <option value="ACCOUNTS">ACCOUNTS</option>
+                              <option value="CHARTING">CHARTING</option>
+                              <option value="SURCON">SURCON</option>
+                            </>
+                          )}
                         </select>
                       </td>
                       <td className="px-6 py-4">
@@ -1065,7 +1144,7 @@ export default function UserManagementPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Role
+                        {activeTab === "admins" ? "Role" : "Department"}
                       </label>
                       <select
                         value={newAdminForm.role}
@@ -1077,13 +1156,20 @@ export default function UserManagementPage() {
                         }
                         className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="ADMIN">Admin</option>
-                        <option value="SUPERADMIN">Super Admin</option>
-                        <option value="RECORDS_I">Records I</option>
-                        <option value="RECORDS_II">Records II</option>
-                        <option value="ACCOUNTS">Accounts</option>
-                        <option value="CHARTING">Charting</option>
-                        <option value="SURCON">SURCON</option>
+                        {activeTab === "admins" ? (
+                          <>
+                            <option value="ADMIN">Admin</option>
+                            <option value="SUPERADMIN">Super Admin</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="RECORDS_I">Records I</option>
+                            <option value="RECORDS_II">Records II</option>
+                            <option value="ACCOUNTS">Accounts</option>
+                            <option value="CHARTING">Charting</option>
+                            <option value="SURCON">SURCON</option>
+                          </>
+                        )}
                       </select>
                     </div>
 

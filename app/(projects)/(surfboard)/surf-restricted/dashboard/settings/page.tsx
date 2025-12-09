@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import {
   getCurrentSettings,
   updateSettings,
-  // getSettingsHistory,
-  // revertToPreviousSettings,
+  getSettingsHistory,
+  revertToPreviousSettings,
 } from "../../../actions/settingsActions";
 
 interface AdminProfile {
@@ -57,6 +57,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const router = useRouter();
 
   // LGA Settings state
@@ -78,6 +79,10 @@ export default function SettingsPage() {
   const [csvPreviewData, setCSVPreviewData] = useState<LGAFees>({});
   const [csvErrors, setCSVErrors] = useState<string[]>([]);
   const [showCSVFormatHelp, setShowCSVFormatHelp] = useState(false);
+
+  // Settings History state
+  const [showSettingsHistory, setShowSettingsHistory] = useState(false);
+  const [settingsHistory, setSettingsHistory] = useState<any[]>([]);
 
   useEffect(() => {
     // Simulate fetching admin profile data
@@ -156,6 +161,10 @@ export default function SettingsPage() {
     };
 
     fetchSettings();
+
+    // Fetch current user role - in production this should come from auth context
+    // For now, assuming SUPERADMIN for testing
+    setCurrentUserRole("SUPERADMIN");
   }, []);
 
   const handleProfileUpdate = async () => {
@@ -385,6 +394,44 @@ export default function SettingsPage() {
     }
   };
 
+  // Fetch settings history
+  const fetchSettingsHistory = async () => {
+    try {
+      const result = await getSettingsHistory();
+      if (result.success && result.data) {
+        setSettingsHistory(result.data);
+        setShowSettingsHistory(true);
+      } else {
+        toast.error(result.error || "Failed to fetch history");
+      }
+    } catch (error) {
+      console.error("Error fetching history:", error);
+      toast.error("An error occurred while fetching history");
+    }
+  };
+
+  // Revert to previous settings
+  const handleRevertSettings = async (settingsId: string) => {
+    try {
+      const result = await revertToPreviousSettings(settingsId);
+      if (result.success) {
+        toast.success("Settings reverted successfully");
+        setShowSettingsHistory(false);
+        // Refresh settings
+        const settingsResult = await getCurrentSettings();
+        if (settingsResult.success && settingsResult.data) {
+          setSettings(settingsResult.data);
+          setOriginalSettings(settingsResult.data);
+        }
+      } else {
+        toast.error(result.error || "Failed to revert settings");
+      }
+    } catch (error) {
+      console.error("Error reverting settings:", error);
+      toast.error("An error occurred while reverting settings");
+    }
+  };
+
   const handlePreferenceChange = (
     category: string,
     setting: string,
@@ -541,16 +588,18 @@ export default function SettingsPage() {
                 >
                   Notifications
                 </button>
-                <button
-                  onClick={() => setActiveTab("lga")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === "lga"
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  LGA Amounts
-                </button>
+                {currentUserRole === "SUPERADMIN" && (
+                  <button
+                    onClick={() => setActiveTab("lga")}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "lga"
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    MDA Settings
+                  </button>
+                )}
               </nav>
             </div>
 
@@ -1095,6 +1144,59 @@ export default function SettingsPage() {
 
                   {/* LGA Fees Table */}
                   <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          MDA Fee Settings
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Configure LGA fees and system charges
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={fetchSettingsHistory}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          View History
+                        </button>
+                        <button
+                          onClick={handleSaveSettings}
+                          disabled={settingsSaving || !hasSettingsChanged()}
+                          className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                            hasSettingsChanged() ? "animate-pulse" : ""
+                          }`}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                            />
+                          </svg>
+                          {settingsSaving ? "Saving..." : "Save Settings"}
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
@@ -1198,7 +1300,7 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+                      <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-100">
                             <tr>
@@ -1506,6 +1608,142 @@ export default function SettingsPage() {
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Apply {Object.keys(csvPreviewData).length} Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings History Modal */}
+      {showSettingsHistory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Settings History
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    View and revert to previous settings configurations
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSettingsHistory(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {settingsHistory.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg
+                    className="w-12 h-12 text-gray-300 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-gray-500">No settings history available</p>
+                </div>
+              ) : (
+                settingsHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {new Date(item.updatedAt).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {item.updatedBy
+                            ? `Updated by ${item.updatedBy.firstName} ${item.updatedBy.lastName}`
+                            : "System update"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleRevertSettings(item.id)}
+                        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                          />
+                        </svg>
+                        Revert
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-700">
+                          System Charge: {item.settings.systemChargePercent}%
+                        </p>
+                        <p className="font-medium text-gray-700 mt-2">
+                          LGA Fees ({Object.keys(item.settings.lgaFees).length}
+                          ):
+                        </p>
+                        <div className="max-h-32 overflow-y-auto text-xs text-gray-600 mt-1 space-y-1">
+                          {Object.entries(item.settings.lgaFees)
+                            .sort((a: any, b: any) => a[0].localeCompare(b[0]))
+                            .slice(0, 10)
+                            .map(([lga, rate]: any) => (
+                              <div key={lga} className="flex justify-between">
+                                <span>{lga}:</span>
+                                <span>₦{rate}/m²</span>
+                              </div>
+                            ))}
+                          {Object.keys(item.settings.lgaFees).length > 10 && (
+                            <p className="text-gray-500 italic">
+                              ... and{" "}
+                              {Object.keys(item.settings.lgaFees).length - 10}{" "}
+                              more
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowSettingsHistory(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

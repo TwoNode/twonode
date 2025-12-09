@@ -39,6 +39,9 @@ const publicRoutes = [
   "/surfboardplan/", // This will match /surfboardplan/[id]
 ];
 
+// Define superadmin-only pages for Surfboard (surf-restricted)
+const surfboardSuperadminPages = ["/surf-restricted/dashboard/superadmin"];
+
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
   isReturnToCurrentPage?: boolean | ((req: NextRequest) => boolean);
@@ -311,13 +314,27 @@ const proxyWithLogic = withDynamicAuth(
           // Surfboard admin dashboard - only ADMIN and SUPERADMIN can access
           console.log("🛡️ Proxy - Checking Surfboard admin dashboard access");
 
-          // Special check for superadmin routes within dashboard
-          if (pathname.startsWith("/surf-restricted/dashboard/superadmin")) {
+          // Check if this is a superadmin-only page
+          const isSuperadminPage = surfboardSuperadminPages.some((page) =>
+            pathname.startsWith(page)
+          );
+
+          if (isSuperadminPage) {
+            // Only SUPERADMIN can access these pages
+            console.log(
+              "🛡️ Proxy - Superadmin-only page detected, checking SUPERADMIN role"
+            );
+            hasAccess = canAccessSurfSuperAdminPanel(userData.role);
+          } else if (
+            pathname.startsWith("/surf-restricted/dashboard/superadmin")
+          ) {
+            // Legacy superadmin route check (keeping for backward compatibility)
             console.log(
               "🛡️ Proxy - Checking Surfboard superadmin access within dashboard"
             );
             hasAccess = canAccessSurfSuperAdminPanel(userData.role);
           } else {
+            // Regular admin pages - both ADMIN and SUPERADMIN can access
             hasAccess = canAccessSurfAdminPanel(userData.role);
           }
         } else if (pathname.startsWith("/surf-restricted/superadmin")) {
@@ -328,43 +345,51 @@ const proxyWithLogic = withDynamicAuth(
           // MDA dashboards - role-specific access
           console.log("🛡️ Proxy - Checking MDA dashboard access");
 
-          // Check if user has an MDA role
-          const mdaRoles = [
-            "ACCOUNTS",
-            "CHARTING",
-            "SURCON",
-            "RECORDS_I",
-            "RECORDS_II",
-          ];
-          hasAccess = mdaRoles.includes(userData.role);
+          // SUPERADMIN can access all MDA dashboards
+          if (canAccessSurfSuperAdminPanel(userData.role)) {
+            console.log(
+              "🛡️ Proxy - SUPERADMIN detected, granting full MDA access"
+            );
+            hasAccess = true;
+          } else {
+            // Check if user has an MDA role
+            const mdaRoles = [
+              "ACCOUNTS",
+              "CHARTING",
+              "SURCON",
+              "RECORDS_I",
+              "RECORDS_II",
+            ];
+            hasAccess = mdaRoles.includes(userData.role);
 
-          if (hasAccess) {
-            // Further check: ensure user is accessing their own dashboard
-            if (
-              pathname.includes("/accounts") &&
-              userData.role !== "ACCOUNTS"
-            ) {
-              hasAccess = false;
-            } else if (
-              pathname.includes("/charting") &&
-              userData.role !== "CHARTING"
-            ) {
-              hasAccess = false;
-            } else if (
-              pathname.includes("/surcon") &&
-              userData.role !== "SURCON"
-            ) {
-              hasAccess = false;
-            } else if (
-              pathname.includes("/records-i") &&
-              userData.role !== "RECORDS_I"
-            ) {
-              hasAccess = false;
-            } else if (
-              pathname.includes("/records-ii") &&
-              userData.role !== "RECORDS_II"
-            ) {
-              hasAccess = false;
+            if (hasAccess) {
+              // Further check: ensure user is accessing their own dashboard
+              if (
+                pathname.includes("/accounts") &&
+                userData.role !== "ACCOUNTS"
+              ) {
+                hasAccess = false;
+              } else if (
+                pathname.includes("/charting") &&
+                userData.role !== "CHARTING"
+              ) {
+                hasAccess = false;
+              } else if (
+                pathname.includes("/surcon") &&
+                userData.role !== "SURCON"
+              ) {
+                hasAccess = false;
+              } else if (
+                pathname.includes("/records-i") &&
+                userData.role !== "RECORDS_I"
+              ) {
+                hasAccess = false;
+              } else if (
+                pathname.includes("/records-ii") &&
+                userData.role !== "RECORDS_II"
+              ) {
+                hasAccess = false;
+              }
             }
           }
         } else if (pathname.startsWith("/gbc/restricted")) {

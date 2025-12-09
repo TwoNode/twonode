@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Receipt,
@@ -28,6 +29,7 @@ import {
   Clock,
   Users,
   DollarSign,
+  ExternalLink,
 } from "lucide-react";
 import { uploadLASGReceipt } from "../../../../actions/codActions";
 import { uploadSurfboardFileWithAuth } from "../../../../actions/awsActions";
@@ -54,12 +56,14 @@ interface Batch {
 }
 
 export default function BatchManagementPage() {
-  const [batches, setBatches] = useState<Batch[]>([]);
+  const [pendingBatches, setPendingBatches] = useState<Batch[]>([]);
+  const [completedBatches, setCompletedBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("pending");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -69,12 +73,24 @@ export default function BatchManagementPage() {
   const fetchBatches = async () => {
     try {
       setLoading(true);
-      // Fetch batches that have user payment but no LASG receipt
-      const result = await getBatchesByStatus("USER_PAID");
-      if (result.success && result.data) {
-        setBatches(result.data.batches || []);
+      // Fetch both pending and completed batches
+      const [pendingResult, completedResult] = await Promise.all([
+        getBatchesByStatus("USER_PAID"),
+        getBatchesByStatus("LASG_PAID"),
+      ]);
+
+      if (pendingResult.success && pendingResult.data) {
+        setPendingBatches(pendingResult.data.batches || []);
       } else {
-        toast.error(result.error || "Failed to fetch batches");
+        toast.error(pendingResult.error || "Failed to fetch pending batches");
+      }
+
+      if (completedResult.success && completedResult.data) {
+        setCompletedBatches(completedResult.data.batches || []);
+      } else {
+        toast.error(
+          completedResult.error || "Failed to fetch completed batches"
+        );
       }
     } catch (error) {
       console.error("Error fetching batches:", error);
@@ -209,160 +225,351 @@ export default function BatchManagementPage() {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 bg-amber-100 rounded-lg">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{batches.length}</p>
-              <p className="text-sm text-gray-500">Awaiting LASG Receipt</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {batches.reduce((sum, b) => sum + b.planCount, 0)}
-              </p>
-              <p className="text-sm text-gray-500">Total Plans</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 pt-6">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {formatCurrency(
-                  batches.reduce((sum, b) => sum + b.totalAmount, 0)
-                )}
-              </p>
-              <p className="text-sm text-gray-500">Total Amount</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="pending">
+            Awaiting Upload ({pendingBatches.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            Completed ({completedBatches.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {batches.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Receipt className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg">
-              No batches awaiting LASG receipt
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              Batches with user payment complete will appear here
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {batches.map((batch) => (
-            <Card key={batch.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <CardTitle className="text-xl">
-                        {batch.batchCode}
-                      </CardTitle>
-                      {getStatusBadge(batch.paymentStatus)}
-                    </div>
-                    <CardDescription className="mt-1">
-                      Submitted on{" "}
-                      {new Date(batch.createdAt).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatCurrency(batch.totalAmount)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Total (inc. {formatCurrency(batch.systemCharges)} system
-                      charges)
-                    </p>
-                  </div>
+        {/* Pending Batches Tab */}
+        <TabsContent value="pending" className="space-y-6">
+          {/* Pending Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-amber-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-amber-600" />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Batch Info */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-500">Plans in Batch</p>
-                    <p className="text-lg font-semibold">{batch.planCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Base Fees</p>
-                    <p className="text-sm font-medium">
-                      {formatCurrency(batch.totalFees)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">System Charges</p>
-                    <p className="text-sm font-medium">
-                      {formatCurrency(batch.systemCharges)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">User Payment Ref</p>
-                    <p className="text-sm font-mono">
-                      {batch.userPaymentRef || "N/A"}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingBatches.length}</p>
+                  <p className="text-sm text-gray-500">Awaiting LASG Receipt</p>
                 </div>
-
-                {/* Submitter Info */}
-                {batch.submitter && (
-                  <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
-                    <Users className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium">
-                        {batch.submitter.firstName} {batch.submitter.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {batch.submitter.email}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* User Payment Info */}
-                {batch.userPaymentDate && (
-                  <div className="flex items-center gap-3 bg-green-50 p-3 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium text-green-800">
-                        User Payment Received
-                      </p>
-                      <p className="text-xs text-green-600">
-                        {new Date(batch.userPaymentDate).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Button */}
-                <Button
-                  onClick={() => handleUploadClick(batch)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload LASG Receipt
-                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {pendingBatches.reduce((sum, b) => sum + b.planCount, 0)}
+                  </p>
+                  <p className="text-sm text-gray-500">Total Plans</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(
+                      pendingBatches.reduce((sum, b) => sum + b.totalAmount, 0)
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-500">Total Amount</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {pendingBatches.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Receipt className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  No batches awaiting LASG receipt
+                </p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Batches with user payment complete will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {pendingBatches.map((batch) => (
+                <Card key={batch.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-xl">
+                            {batch.batchCode}
+                          </CardTitle>
+                          {getStatusBadge(batch.paymentStatus)}
+                        </div>
+                        <CardDescription className="mt-1">
+                          Submitted on{" "}
+                          {new Date(batch.createdAt).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatCurrency(batch.totalAmount)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Total (inc. {formatCurrency(batch.systemCharges)}{" "}
+                          system charges)
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Batch Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <p className="text-xs text-gray-500">Plans in Batch</p>
+                        <p className="text-lg font-semibold">
+                          {batch.planCount}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Base Fees</p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(batch.totalFees)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">System Charges</p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(batch.systemCharges)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          User Payment Ref
+                        </p>
+                        <p className="text-sm font-mono">
+                          {batch.userPaymentRef || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Submitter Info */}
+                    {batch.submitter && (
+                      <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
+                        <Users className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {batch.submitter.firstName}{" "}
+                            {batch.submitter.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {batch.submitter.email}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* User Payment Info */}
+                    {batch.userPaymentDate && (
+                      <div className="flex items-center gap-3 bg-green-50 p-3 rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium text-green-800">
+                            User Payment Received
+                          </p>
+                          <p className="text-xs text-green-600">
+                            {new Date(batch.userPaymentDate).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    <Button
+                      onClick={() => handleUploadClick(batch)}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload LASG Receipt
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Completed Batches Tab */}
+        <TabsContent value="completed" className="space-y-6">
+          {/* Completed Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {completedBatches.length}
+                  </p>
+                  <p className="text-sm text-gray-500">Completed Batches</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {completedBatches.reduce((sum, b) => sum + b.planCount, 0)}
+                  </p>
+                  <p className="text-sm text-gray-500">Total Plans</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(
+                      completedBatches.reduce(
+                        (sum, b) => sum + b.totalAmount,
+                        0
+                      )
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-500">Total Amount</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {completedBatches.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CheckCircle className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  No completed batches yet
+                </p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Batches with uploaded LASG receipts will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {completedBatches.map((batch) => (
+                <Card key={batch.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-xl">
+                            {batch.batchCode}
+                          </CardTitle>
+                          {getStatusBadge(batch.paymentStatus)}
+                        </div>
+                        <CardDescription className="mt-1">
+                          Submitted on{" "}
+                          {new Date(batch.createdAt).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatCurrency(batch.totalAmount)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Total (inc. {formatCurrency(batch.systemCharges)}{" "}
+                          system charges)
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Batch Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <p className="text-xs text-gray-500">Plans in Batch</p>
+                        <p className="text-lg font-semibold">
+                          {batch.planCount}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Base Fees</p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(batch.totalFees)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">System Charges</p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(batch.systemCharges)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          User Payment Ref
+                        </p>
+                        <p className="text-sm font-mono">
+                          {batch.userPaymentRef || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Submitter Info */}
+                    {batch.submitter && (
+                      <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
+                        <Users className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {batch.submitter.firstName}{" "}
+                            {batch.submitter.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {batch.submitter.email}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LASG Receipt */}
+                    {batch.lasgReceiptUrl && (
+                      <div className="flex items-center gap-3 bg-green-50 p-3 rounded-lg">
+                        <Receipt className="w-5 h-5 text-green-600" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-green-800">
+                            LASG Receipt Uploaded
+                          </p>
+                          <p className="text-xs text-green-600">
+                            Receipt is available for viewing
+                          </p>
+                        </div>
+                        <a
+                          href={batch.lasgReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View Receipt
+                          </Button>
+                        </a>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>

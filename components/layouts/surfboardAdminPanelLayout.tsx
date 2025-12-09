@@ -106,16 +106,6 @@ export default function SurfboardAdminPanelLayout({
             label: "Superadmin",
             url: `${dashboardUrl}/superadmin`,
           },
-          {
-            icon: Users,
-            label: "MDA Users",
-            url: `${dashboardUrl}/mda-users`,
-          },
-          {
-            icon: Settings,
-            label: "CoD Settings",
-            url: `${dashboardUrl}/cod-settings`,
-          },
         ]
       : []),
     {
