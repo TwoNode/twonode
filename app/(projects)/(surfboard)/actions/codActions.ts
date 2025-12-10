@@ -1246,31 +1246,61 @@ export async function getPendingCountByRole(): Promise<
           accountsApprovedBy: null,
         },
       }),
-      // Charting: Count plans with PENDING charting status
+      // Charting: Count plans with PENDING charting status (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
           chartingStatus: "PENDING",
           deleted: false,
+          batch: {
+            paymentStatus: {
+              in: [
+                "LASG_PAID",
+                "ACCOUNTS_APPROVED",
+                "ACCOUNTS_DISAPPROVED",
+                "COMPLETED",
+              ],
+            },
+          },
         },
       }),
-      // SURCON: Count plans with PENDING surcon status
+      // SURCON: Count plans with PENDING surcon status (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
           surconStatus: "PENDING",
           deleted: false,
+          batch: {
+            paymentStatus: {
+              in: [
+                "LASG_PAID",
+                "ACCOUNTS_APPROVED",
+                "ACCOUNTS_DISAPPROVED",
+                "COMPLETED",
+              ],
+            },
+          },
         },
       }),
-      // Records I: Count plans with PENDING records I status
+      // Records I: Count plans with PENDING records I status (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
           recordsIStatus: "PENDING",
           deleted: false,
+          batch: {
+            paymentStatus: {
+              in: [
+                "LASG_PAID",
+                "ACCOUNTS_APPROVED",
+                "ACCOUNTS_DISAPPROVED",
+                "COMPLETED",
+              ],
+            },
+          },
         },
       }),
-      // Records II: Count plans with all other approvals complete
+      // Records II: Count plans with all other approvals complete (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
@@ -1280,6 +1310,16 @@ export async function getPendingCountByRole(): Promise<
           surconStatus: "APPROVED",
           recordsIStatus: "APPROVED",
           deleted: false,
+          batch: {
+            paymentStatus: {
+              in: [
+                "LASG_PAID",
+                "ACCOUNTS_APPROVED",
+                "ACCOUNTS_DISAPPROVED",
+                "COMPLETED",
+              ],
+            },
+          },
         },
       }),
     ]);

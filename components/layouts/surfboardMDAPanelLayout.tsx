@@ -68,7 +68,7 @@ export default function SurfboardMDAPanelLayout({
     { icon: Home, label: "Home", url: dashboardUrl },
 
     // Role-specific menu items for MDA departments
-    ...(userData?.role === "ACCOUNTS"
+    ...(userData?.role === "ACCOUNTS" || userData?.role === "SUPERADMIN"
       ? [
           {
             icon: FileCheck,
@@ -77,7 +77,7 @@ export default function SurfboardMDAPanelLayout({
           },
         ]
       : []),
-    ...(userData?.role === "CHARTING"
+    ...(userData?.role === "CHARTING" || userData?.role === "SUPERADMIN"
       ? [
           {
             icon: Map,
@@ -86,7 +86,7 @@ export default function SurfboardMDAPanelLayout({
           },
         ]
       : []),
-    ...(userData?.role === "SURCON"
+    ...(userData?.role === "SURCON" || userData?.role === "SUPERADMIN"
       ? [
           {
             icon: BarChart3,
@@ -95,7 +95,7 @@ export default function SurfboardMDAPanelLayout({
           },
         ]
       : []),
-    ...(userData?.role === "RECORDS_I"
+    ...(userData?.role === "RECORDS_I" || userData?.role === "SUPERADMIN"
       ? [
           {
             icon: FileText,
@@ -104,7 +104,7 @@ export default function SurfboardMDAPanelLayout({
           },
         ]
       : []),
-    ...(userData?.role === "RECORDS_II"
+    ...(userData?.role === "RECORDS_II" || userData?.role === "SUPERADMIN"
       ? [
           {
             icon: FileText,
