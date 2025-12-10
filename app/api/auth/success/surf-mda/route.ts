@@ -13,12 +13,19 @@ export async function GET(request: NextRequest) {
     if (!user || user == null || !user.id)
       throw new Error("Auth User is " + user);
 
-    // Try to find MDA user by kindeId OR email with MDA roles
+    // Try to find MDA user by kindeId OR email with MDA roles (including SUPERADMIN)
     let dbUser = await prisma.surfboardUser.findFirst({
       where: {
         OR: [{ kindeId: user.id }, { email: user.email ?? "" }],
         role: {
-          in: ["RECORDS_I", "RECORDS_II", "ACCOUNTS", "CHARTING", "SURCON"],
+          in: [
+            "RECORDS_I",
+            "RECORDS_II",
+            "ACCOUNTS",
+            "CHARTING",
+            "SURCON",
+            "SUPERADMIN",
+          ],
         },
       },
     });

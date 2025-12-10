@@ -317,7 +317,12 @@ async function handleSurfboard(
       await onInvoiceInformational(event, data as InvoiceData);
       break;
     case "charge.success":
-      await onSubscriptionChargeSuccess(data as ChargeSuccessData);
+      // Check if this is a certificate payment or subscription renewal
+      if (isCertificatePayment(data as ChargeSuccessData)) {
+        await onCertificatePaymentSuccess(data as ChargeSuccessData);
+      } else {
+        await onSubscriptionChargeSuccess(data as ChargeSuccessData);
+      }
       break;
     default:
       await onUnhandled(event, data as any);
@@ -719,6 +724,91 @@ async function handleReva(event: string, data: ChargeSuccessData) {
   console.log(`✅ reva charge.success: ${ref}`);
 }
 
+// ─────────────────────────── Certificate of Deposit (one-time) ───────────────────────────
+async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
+  if (!prisma) return;
+
+  const reference = extractBatchReference(data);
+  if (!reference) {
+    console.warn("⚠️ certificate charge.success: missing reference");
+    return;
+  }
+
+  try {
+    // Find batch by payment reference (userPaymentRef field)
+    const batch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        userPaymentRef: reference,
+      },
+      select: {
+        id: true,
+        batchCode: true,
+        totalAmount: true,
+        paymentStatus: true,
+      },
+    });
+
+    if (!batch) {
+      console.warn(
+        `⚠️ certificate charge.success: batch not found for ref ${reference}`
+      );
+      return;
+    }
+
+    // Check if already processed (idempotency)
+    if (
+      batch.paymentStatus === "USER_PAID" ||
+      batch.paymentStatus === "LASG_PAID"
+    ) {
+      console.log(
+        `ℹ️ certificate charge.success: batch ${batch.batchCode} already marked as paid (idempotent)`
+      );
+      return;
+    }
+
+    // Verify payment amount matches (with tolerance for rounding)
+    // Database stores amount in NAIRA, Paystack sends in KOBO
+    const expectedAmountKobo = Math.trunc(batch.totalAmount * 100);
+    const paidAmountKobo = data.amount ?? 0;
+    const amountDiff = Math.abs(expectedAmountKobo - paidAmountKobo);
+
+    if (amountDiff > 1) {
+      // Allow 1 kobo difference for rounding
+      console.error("⚠️ Certificate payment amount mismatch:", {
+        reference,
+        batchCode: batch.batchCode,
+        expectedKobo: expectedAmountKobo,
+        paidKobo: paidAmountKobo,
+        differenceKobo: amountDiff,
+      });
+      // Log but don't fail - we still want to mark as paid for manual review
+    }
+
+    // Update batch status
+    const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+    await prisma.certificateOfDepositBatch.update({
+      where: { id: batch.id },
+      data: {
+        paymentStatus: "USER_PAID",
+        userPaymentDate: paidAt,
+      },
+    });
+
+    console.log(
+      `✅ certificate charge.success: ${reference} for batch ${
+        batch.batchCode
+      } (₦${(paidAmountKobo / 100).toFixed(2)})`
+    );
+  } catch (error) {
+    console.error(
+      `❌ Error processing certificate payment for ${reference}:`,
+      error
+    );
+    // Don't throw - let the webhook complete successfully even if update fails
+    // The payment was successful, we just couldn't update the database
+  }
+}
+
 // ─────────────────────────── Utils ───────────────────────────
 function normalizeMetadata(input: unknown): Record<string, any> {
   if (!input || input === 0) return {};
@@ -756,6 +846,39 @@ function getField(
     customFields.find((f) => f.display_name?.toLowerCase() === lower);
   const val = match?.value;
   return typeof val === "string" ? val : val != null ? String(val) : undefined;
+}
+
+// ─────────────────────────── Certificate Payment Helpers ───────────────────────────
+/**
+ * Checks if a charge.success event is for a Certificate of Deposit payment
+ */
+function isCertificatePayment(data: ChargeSuccessData): boolean {
+  const meta = data.metadata ?? {};
+
+  // Primary check: metadata type
+  if (meta.type === "certificate_of_deposit" && meta.platform === "surfboard") {
+    return true;
+  }
+
+  // Fallback: reference pattern (backwards compatibility)
+  const ref = data.reference ?? "";
+  if (ref.startsWith("SurfCoD_")) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Extracts batch payment reference from charge data
+ */
+function extractBatchReference(data: ChargeSuccessData): string | null {
+  // Try metadata first
+  const metaRef = data.metadata?.reference;
+  if (metaRef && typeof metaRef === "string") return metaRef;
+
+  // Fallback to payment reference
+  return data.reference ?? null;
 }
 
 // —— DIFF helpers ——

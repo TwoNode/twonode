@@ -125,9 +125,27 @@ export default function ChartingAdminPage() {
       const pillarsArray = Array.isArray(pillars)
         ? pillars
         : JSON.parse(pillars);
-      return pillarsArray
-        .map((p: any) => `${p.name || p.id}: (${p.lat}, ${p.lng})`)
-        .join("\n");
+      // Format: pillarNumber on first line, then easting,northing for each pillar
+      // Example output:
+      // PL
+      // 537708.906,787922.724
+      // 537708.612,787954.347
+      const lines: string[] = [];
+      for (const p of pillarsArray) {
+        const pillarNum = p.pillarNumber || p.name || p.id || "";
+        const easting = p.easting ?? p.lng ?? "";
+        const northing = p.northing ?? p.lat ?? "";
+        if (easting && northing) {
+          lines.push(`${easting},${northing}`);
+        }
+      }
+      // Add pillar type header if available (from first pillar)
+      if (pillarsArray.length > 0) {
+        const firstPillar = pillarsArray[0];
+        const pillarType = firstPillar.pillarNumber?.substring(0, 2) || "PL";
+        return `${pillarType}\n${lines.join("\n")}`;
+      }
+      return lines.join("\n");
     } catch {
       return "";
     }

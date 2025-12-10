@@ -611,6 +611,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
           callback_url: callbackUrl,
           metadata: {
             batchId: batch.id,
+            reference,
             batchCode: batch.batchCode,
             planCount: plans.length,
             userId: user.id,
@@ -913,10 +914,11 @@ export async function updateAccountsApproval(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "ACCOUNTS") {
+    if (!user || (user.role !== "ACCOUNTS" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
+    // Update the batch status
     await prisma.certificateOfDepositBatch.update({
       where: { id: batchId },
       data: {
@@ -928,12 +930,26 @@ export async function updateAccountsApproval(
       },
     });
 
+    // Also update accountsStatus on all plans in the batch
+    await prisma.surfboardPlan.updateMany({
+      where: { batchId: batchId },
+      data: {
+        accountsStatus: approved ? "APPROVED" : "QUERIED",
+        accountsApprovedBy: user.id,
+        accountsApprovedAt: new Date(),
+        accountsComment: comment,
+      },
+    });
+
     if (!approved) {
       // TODO: Send notification to Surfboard Admins only
       // await notifyAdmins({ ... });
     }
 
     revalidatePath("/surf-mda/dashboard/accounts");
+    revalidatePath("/surf-mda/dashboard/charting");
+    revalidatePath("/surf-mda/dashboard/surcon");
+    revalidatePath("/surf-mda/dashboard/records-i");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -954,7 +970,7 @@ export async function updateChartingStatus(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "CHARTING") {
+    if (!user || (user.role !== "CHARTING" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -990,7 +1006,7 @@ export async function updateSurconStatus(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SURCON") {
+    if (!user || (user.role !== "SURCON" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1032,7 +1048,7 @@ export async function updateRecordsIStatus(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "RECORDS_I") {
+    if (!user || (user.role !== "RECORDS_I" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1074,7 +1090,7 @@ export async function updateRecordsIIStatus(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "RECORDS_II") {
+    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1148,7 +1164,7 @@ export async function updateRecordsIIStatus(
 export async function getAccountsBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "ACCOUNTS") {
+    if (!user || (user.role !== "ACCOUNTS" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1293,7 +1309,7 @@ export async function getPendingCountByRole(): Promise<
 export async function getChartingPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "CHARTING") {
+    if (!user || (user.role !== "CHARTING" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1303,6 +1319,17 @@ export async function getChartingPlans() {
         redCopyStatus: "SUBMITTED",
         chartingStatus: "PENDING",
         deleted: false,
+        // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
+        batch: {
+          paymentStatus: {
+            in: [
+              "LASG_PAID",
+              "ACCOUNTS_APPROVED",
+              "ACCOUNTS_DISAPPROVED",
+              "COMPLETED",
+            ],
+          },
+        },
       },
       include: {
         batch: {
@@ -1348,7 +1375,7 @@ export async function getChartingPlans() {
 export async function getSurconPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SURCON") {
+    if (!user || (user.role !== "SURCON" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1358,6 +1385,17 @@ export async function getSurconPlans() {
         redCopyStatus: "SUBMITTED",
         surconStatus: "PENDING",
         deleted: false,
+        // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
+        batch: {
+          paymentStatus: {
+            in: [
+              "LASG_PAID",
+              "ACCOUNTS_APPROVED",
+              "ACCOUNTS_DISAPPROVED",
+              "COMPLETED",
+            ],
+          },
+        },
       },
       include: {
         batch: {
@@ -1403,7 +1441,7 @@ export async function getSurconPlans() {
 export async function getRecordsIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "RECORDS_I") {
+    if (!user || (user.role !== "RECORDS_I" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1413,6 +1451,17 @@ export async function getRecordsIPlans() {
         redCopyStatus: "SUBMITTED",
         recordsIStatus: "PENDING",
         deleted: false,
+        // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
+        batch: {
+          paymentStatus: {
+            in: [
+              "LASG_PAID",
+              "ACCOUNTS_APPROVED",
+              "ACCOUNTS_DISAPPROVED",
+              "COMPLETED",
+            ],
+          },
+        },
       },
       include: {
         batch: {
@@ -1458,7 +1507,7 @@ export async function getRecordsIPlans() {
 export async function getRecordsIIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "RECORDS_II") {
+    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1472,6 +1521,17 @@ export async function getRecordsIIPlans() {
         surconStatus: "APPROVED",
         recordsIStatus: "APPROVED",
         deleted: false,
+        // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
+        batch: {
+          paymentStatus: {
+            in: [
+              "LASG_PAID",
+              "ACCOUNTS_APPROVED",
+              "ACCOUNTS_DISAPPROVED",
+              "COMPLETED",
+            ],
+          },
+        },
       },
       include: {
         batch: {

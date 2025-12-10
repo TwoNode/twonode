@@ -122,6 +122,11 @@ export function BatchSubmissionModal({
                 value: result.data.batchId,
               },
               {
+                display_name: "Batch Reference",
+                variable_name: "reference",
+                value: reference,
+              },
+              {
                 display_name: "Batch Code",
                 variable_name: "batch_code",
                 value: batchCode,

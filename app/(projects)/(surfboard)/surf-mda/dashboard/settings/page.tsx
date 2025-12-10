@@ -246,7 +246,7 @@ export default function SettingsPage() {
                 >
                   Preferences
                 </button>
-                <button
+                {/* <button
                   onClick={() => setActiveTab("security")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "security"
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                   }`}
                 >
                   Notifications
-                </button>
+                </button> */}
               </nav>
             </div>
 

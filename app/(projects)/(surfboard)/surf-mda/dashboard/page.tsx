@@ -17,192 +17,308 @@ import {
   Map,
   BarChart3,
   User,
-  Settings,
+  Loader2,
+  Shield,
+  Calculator,
+  Compass,
+  Archive,
+  FolderCheck,
 } from "lucide-react";
+import { getUserData } from "../../actions/authActions";
+import { getPendingCountByRole } from "../../actions/codActions";
 
-// Simple counter animation hook
-function useCountUp(end: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
+type MDARole =
+  | "ACCOUNTS"
+  | "CHARTING"
+  | "SURCON"
+  | "RECORDS_I"
+  | "RECORDS_II"
+  | "SUPERADMIN";
+
+interface RoleConfig {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  href: string;
+  color: string;
+  iconBg: string;
+  iconColor: string;
+  heroGradient: string;
+}
+
+const roleConfigs: Record<MDARole, RoleConfig> = {
+  ACCOUNTS: {
+    title: "Accounts Admin",
+    description:
+      "Review and approve LASG payment receipts for Certificate of Deposit batches",
+    icon: Calculator,
+    href: "/surf-mda/dashboard/accounts",
+    color: "from-purple-500 to-violet-500",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+    heroGradient: "from-purple-600 via-purple-700 to-violet-800",
+  },
+  CHARTING: {
+    title: "Charting Admin",
+    description:
+      "Review and confirm charting remarks for submitted survey plans",
+    icon: Map,
+    href: "/surf-mda/dashboard/charting",
+    color: "from-blue-500 to-cyan-500",
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+    heroGradient: "from-blue-600 via-blue-700 to-cyan-800",
+  },
+  SURCON: {
+    title: "SURCON Admin",
+    description: "Verify pillar numbers and coordinates against the database",
+    icon: Compass,
+    href: "/surf-mda/dashboard/surcon",
+    color: "from-emerald-500 to-teal-500",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+    heroGradient: "from-emerald-600 via-emerald-700 to-teal-800",
+  },
+  RECORDS_I: {
+    title: "Records I Admin",
+    description: "Review uploaded record copies for quality and completeness",
+    icon: Archive,
+    href: "/surf-mda/dashboard/records-i",
+    color: "from-indigo-500 to-purple-500",
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+    heroGradient: "from-indigo-600 via-indigo-700 to-purple-800",
+  },
+  RECORDS_II: {
+    title: "Records II Admin",
+    description:
+      "Final approval and submission to OSSG - verify physical copies",
+    icon: FolderCheck,
+    href: "/surf-mda/dashboard/records-ii",
+    color: "from-pink-500 to-rose-500",
+    iconBg: "bg-pink-100",
+    iconColor: "text-pink-600",
+    heroGradient: "from-pink-600 via-pink-700 to-rose-800",
+  },
+  SUPERADMIN: {
+    title: "Super Admin",
+    description:
+      "Full access to all MDA departments and administrative functions",
+    icon: Shield,
+    href: "/surf-mda/dashboard",
+    color: "from-amber-500 to-orange-500",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
+    heroGradient: "from-slate-700 via-slate-800 to-gray-900",
+  },
+};
+
+const allQuickActions = [
+  {
+    role: "ACCOUNTS" as MDARole,
+    title: "Accounts",
+    description: "Review LASG payment receipts and approve batches",
+    icon: Calculator,
+    href: "/surf-mda/dashboard/accounts",
+    color: "from-purple-500 to-violet-500",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
+  },
+  {
+    role: "CHARTING" as MDARole,
+    title: "Charting",
+    description: "Edit and confirm charting remarks for survey plans",
+    icon: Map,
+    href: "/surf-mda/dashboard/charting",
+    color: "from-blue-500 to-cyan-500",
+    iconBg: "bg-blue-100",
+    iconColor: "text-blue-600",
+  },
+  {
+    role: "SURCON" as MDARole,
+    title: "SURCON",
+    description: "Verify pillar numbers and coordinates",
+    icon: Compass,
+    href: "/surf-mda/dashboard/surcon",
+    color: "from-emerald-500 to-teal-500",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+  },
+  {
+    role: "RECORDS_I" as MDARole,
+    title: "Records I",
+    description: "Review uploaded record copies for quality",
+    icon: Archive,
+    href: "/surf-mda/dashboard/records-i",
+    color: "from-indigo-500 to-purple-500",
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+  },
+  {
+    role: "RECORDS_II" as MDARole,
+    title: "Records II",
+    description: "Final approval and lodge with OSSG",
+    icon: FolderCheck,
+    href: "/surf-mda/dashboard/records-ii",
+    color: "from-pink-500 to-rose-500",
+    iconBg: "bg-pink-100",
+    iconColor: "text-pink-600",
+  },
+];
+
+export default function MDADashboardHome() {
+  const [userRole, setUserRole] = useState<MDARole | null>(null);
+  const [userName, setUserName] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [pendingCounts, setPendingCounts] = useState({
+    accounts: 0,
+    charting: 0,
+    surcon: 0,
+    recordsI: 0,
+    recordsII: 0,
+  });
 
   useEffect(() => {
-    let startTime: number;
-    let animationFrame: number;
+    const fetchData = async () => {
+      try {
+        // Get user data
+        const userResult = await getUserData();
+        if (userResult.success && userResult.data) {
+          setUserRole(userResult.data.role as MDARole);
+          setUserName(
+            `${userResult.data.firstName} ${userResult.data.lastName}`
+          );
+        }
 
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-
-      setCount(Math.floor(progress * end));
-
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
+        // Get pending counts
+        const countsResult = await getPendingCountByRole();
+        if (countsResult.success && countsResult.data) {
+          setPendingCounts(countsResult.data);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [end, duration]);
+    fetchData();
+  }, []);
 
-  return count;
-}
+  if (loading) {
+    return (
+      <div className="min-h-full flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-export default function MDADashboardHome() {
-  // Mock statistics - replace with real data from your API
-  const totalDocuments = useCountUp(847);
-  const pendingReviews = useCountUp(23);
-  const completedToday = useCountUp(56);
-  const activeUsers = useCountUp(18);
+  const currentRole = userRole || "ACCOUNTS";
+  const roleConfig = roleConfigs[currentRole];
+  const isSuperAdmin = currentRole === "SUPERADMIN";
 
-  const stats = [
-    {
-      title: "Total Documents",
-      value: totalDocuments,
-      change: "+8.2%",
-      trend: "up",
-      icon: FileText,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50",
-      textColor: "text-purple-600",
-    },
-    {
-      title: "Pending Reviews",
-      value: pendingReviews,
-      change: "-5.1%",
-      trend: "down",
-      icon: Clock,
-      color: "from-amber-500 to-amber-600",
-      bgColor: "bg-amber-50",
-      textColor: "text-amber-600",
-    },
-    {
-      title: "Completed Today",
-      value: completedToday,
-      change: "+12.3%",
-      trend: "up",
-      icon: CheckCircle2,
-      color: "from-emerald-500 to-emerald-600",
-      bgColor: "bg-emerald-50",
-      textColor: "text-emerald-600",
-    },
-    {
-      title: "Active Users",
-      value: activeUsers,
-      change: "+2.4%",
-      trend: "up",
-      icon: Users,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-600",
-    },
-  ];
+  // For specific roles, show their section prominently
+  // For SUPERADMIN, show all sections
+  const quickActions = isSuperAdmin
+    ? allQuickActions
+    : [
+        allQuickActions.find((a) => a.role === currentRole)!,
+        ...allQuickActions.filter((a) => a.role !== currentRole),
+      ];
 
-  const quickActions = [
-    {
-      title: "Accounts",
-      description: "Manage financial records and accounting documents",
-      icon: FileCheck,
-      href: "/surf-mda/dashboard/accounts",
-      color: "from-purple-500 to-violet-500",
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-    },
-    {
-      title: "Charting",
-      description: "Access survey charting and mapping tools",
-      icon: Map,
-      href: "/surf-mda/dashboard/charting",
-      color: "from-blue-500 to-cyan-500",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "SURCON",
-      description: "Survey control and coordination dashboard",
-      icon: BarChart3,
-      href: "/surf-mda/dashboard/surcon",
-      color: "from-emerald-500 to-teal-500",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
-    },
-    {
-      title: "Records I",
-      description: "Primary records management and documentation",
-      icon: FileText,
-      href: "/surf-mda/dashboard/records-i",
-      color: "from-indigo-500 to-purple-500",
-      iconBg: "bg-indigo-100",
-      iconColor: "text-indigo-600",
-    },
-    {
-      title: "Records II",
-      description: "Secondary records and archival management",
-      icon: FileText,
-      href: "/surf-mda/dashboard/records-ii",
-      color: "from-pink-500 to-rose-500",
-      iconBg: "bg-pink-100",
-      iconColor: "text-pink-600",
-    },
-    {
-      title: "Profile Settings",
-      description: "Manage your account and preferences",
-      icon: User,
-      href: "/surf-mda/dashboard/profile",
-      color: "from-slate-500 to-gray-600",
-      iconBg: "bg-slate-100",
-      iconColor: "text-slate-600",
-    },
-  ];
+  // Build stats based on role
+  const getStats = () => {
+    if (isSuperAdmin) {
+      return [
+        {
+          title: "Accounts Pending",
+          value: pendingCounts.accounts,
+          icon: Calculator,
+          color: "from-purple-500 to-purple-600",
+          bgColor: "bg-purple-50",
+          textColor: "text-purple-600",
+          href: "/surf-mda/dashboard/accounts",
+        },
+        {
+          title: "Charting Pending",
+          value: pendingCounts.charting,
+          icon: Map,
+          color: "from-blue-500 to-blue-600",
+          bgColor: "bg-blue-50",
+          textColor: "text-blue-600",
+          href: "/surf-mda/dashboard/charting",
+        },
+        {
+          title: "SURCON Pending",
+          value: pendingCounts.surcon,
+          icon: Compass,
+          color: "from-emerald-500 to-emerald-600",
+          bgColor: "bg-emerald-50",
+          textColor: "text-emerald-600",
+          href: "/surf-mda/dashboard/surcon",
+        },
+        {
+          title: "Records I Pending",
+          value: pendingCounts.recordsI,
+          icon: Archive,
+          color: "from-indigo-500 to-indigo-600",
+          bgColor: "bg-indigo-50",
+          textColor: "text-indigo-600",
+          href: "/surf-mda/dashboard/records-i",
+        },
+        {
+          title: "Records II Pending",
+          value: pendingCounts.recordsII,
+          icon: FolderCheck,
+          color: "from-pink-500 to-pink-600",
+          bgColor: "bg-pink-50",
+          textColor: "text-pink-600",
+          href: "/surf-mda/dashboard/records-ii",
+        },
+      ];
+    }
 
-  const recentActivity = [
-    {
-      type: "success",
-      icon: CheckCircle2,
-      message: "Document SP-2024-MDA-1243 approved",
-      time: "5 minutes ago",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-    },
-    {
-      type: "warning",
-      icon: AlertTriangle,
-      message: "3 documents pending your review",
-      time: "20 minutes ago",
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-    },
-    {
-      type: "info",
-      icon: FileText,
-      message: "New document uploaded: Financial Report Q4",
-      time: "1 hour ago",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-    },
-    {
-      type: "success",
-      icon: CheckCircle2,
-      message: "Charting task completed successfully",
-      time: "2 hours ago",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-    },
-    {
-      type: "info",
-      icon: Users,
-      message: "5 team members are currently online",
-      time: "3 hours ago",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-    },
-  ];
+    // For specific roles, show their pending count prominently
+    const roleStatMap: Record<
+      string,
+      { key: keyof typeof pendingCounts; title: string }
+    > = {
+      ACCOUNTS: { key: "accounts", title: "Batches Pending Review" },
+      CHARTING: { key: "charting", title: "Plans Pending Charting" },
+      SURCON: { key: "surcon", title: "Plans Pending SURCON" },
+      RECORDS_I: { key: "recordsI", title: "Plans Pending Records I" },
+      RECORDS_II: { key: "recordsII", title: "Plans Ready for Final Approval" },
+    };
+
+    const roleStat = roleStatMap[currentRole];
+    return [
+      {
+        title: roleStat.title,
+        value: pendingCounts[roleStat.key],
+        icon: roleConfig.icon,
+        color: roleConfig.color,
+        bgColor: roleConfig.iconBg,
+        textColor: roleConfig.iconColor,
+        href: roleConfig.href,
+        isPrimary: true,
+      },
+    ];
+  };
+
+  const stats = getStats();
 
   return (
     <div className="min-h-full">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-purple-600 via-purple-700 to-indigo-800 p-8 mb-8 shadow-xl">
+      <div
+        className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${roleConfig.heroGradient} p-8 mb-8 shadow-xl`}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-purple-400 rounded-full blur-3xl opacity-20" />
-        <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-indigo-400 rounded-full blur-3xl opacity-20" />
+        <div className="absolute -right-10 -top-10 w-64 h-64 bg-white rounded-full blur-3xl opacity-10" />
+        <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-white rounded-full blur-3xl opacity-10" />
 
         <div className="relative z-10">
           <motion.div
@@ -210,23 +326,49 @@ export default function MDADashboardHome() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Activity className="w-8 h-8 text-purple-300" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
-                MDA Dashboard
-              </h1>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <roleConfig.icon className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white">
+                  {roleConfig.title}
+                </h1>
+                {userName && (
+                  <p className="text-white/70 text-sm mt-1">
+                    Welcome back, {userName}
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="text-purple-100 text-lg max-w-2xl">
-              Welcome to the Ministry, Department & Agency portal. Access your
-              departmental tools, manage documents, and collaborate with your
-              team.
+            <p className="text-white/90 text-lg max-w-2xl mt-4">
+              {roleConfig.description}
             </p>
+
+            {!isSuperAdmin && (
+              <Link href={roleConfig.href}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-6 px-6 py-3 bg-white text-gray-900 rounded-xl font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  Go to {roleConfig.title.split(" ")[0]} Dashboard
+                  <ArrowUpRight className="w-5 h-5" />
+                </motion.button>
+              </Link>
+            )}
           </motion.div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div
+        className={`grid gap-6 mb-8 ${
+          isSuperAdmin
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+            : "grid-cols-1"
+        }`}
+      >
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -237,52 +379,64 @@ export default function MDADashboardHome() {
               transition={{ duration: 0.4, delay: index * 0.1 }}
               className="group"
             >
-              <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                    <Icon className={`w-6 h-6 ${stat.textColor}`} />
+              <Link href={stat.href}>
+                <div
+                  className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer ${
+                    (stat as any).isPrimary
+                      ? "ring-2 ring-offset-2 ring-purple-500"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                      <Icon className={`w-6 h-6 ${stat.textColor}`} />
+                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                  </div>
+                  <div>
+                    <div
+                      className={`font-bold text-gray-900 mb-1 ${
+                        (stat as any).isPrimary ? "text-5xl" : "text-3xl"
+                      }`}
+                    >
+                      {stat.value.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-500 font-medium">
+                      {stat.title}
+                    </div>
                   </div>
                   <div
-                    className={`flex items-center gap-1 text-sm font-medium ${
-                      stat.trend === "up" ? "text-emerald-600" : "text-rose-600"
-                    }`}
-                  >
-                    <TrendingUp
-                      className={`w-4 h-4 ${
-                        stat.trend === "down" ? "rotate-180" : ""
-                      }`}
-                    />
-                    <span>{stat.change}</span>
-                  </div>
+                    className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`}
+                  />
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {stat.value.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-500 font-medium">
-                    {stat.title}
-                  </div>
-                </div>
-                <div
-                  className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${stat.color}`}
-                />
-              </div>
+              </Link>
             </motion.div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* Quick Actions */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Quick Access</h2>
-            <Layers className="w-6 h-6 text-gray-400" />
-          </div>
+      {/* Quick Actions - Show all for SUPERADMIN, or other sections for specific roles */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isSuperAdmin ? "All Departments" : "Other Departments"}
+          </h2>
+          <Layers className="w-6 h-6 text-gray-400" />
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quickActions.map((action, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {(isSuperAdmin ? quickActions : quickActions.slice(1)).map(
+            (action, index) => {
               const Icon = action.icon;
+              const pendingCount =
+                pendingCounts[
+                  action.role === "RECORDS_I"
+                    ? "recordsI"
+                    : action.role === "RECORDS_II"
+                    ? "recordsII"
+                    : (action.role.toLowerCase() as keyof typeof pendingCounts)
+                ];
+
               return (
                 <motion.div
                   key={action.title}
@@ -299,11 +453,18 @@ export default function MDADashboardHome() {
                           <Icon className={`w-6 h-6 ${action.iconColor}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center justify-between mb-2">
                             <h3 className="text-base font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
                               {action.title}
                             </h3>
-                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                            <div className="flex items-center gap-2">
+                              {pendingCount > 0 && (
+                                <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+                                  {pendingCount} pending
+                                </span>
+                              )}
+                              <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500 line-clamp-2">
                             {action.description}
@@ -311,71 +472,73 @@ export default function MDADashboardHome() {
                         </div>
                       </div>
                       <div
-                        className={`absolute inset-0 bg-linear-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                        className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                       />
                     </div>
                   </Link>
                 </motion.div>
               );
-            })}
-          </div>
-        </div>
+            }
+          )}
 
-        {/* Recent Activity */}
-        <div className="lg:col-span-1">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Recent Activity
-            </h2>
-            <Activity className="w-6 h-6 text-gray-400" />
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-            <div className="divide-y divide-gray-100">
-              <AnimatePresence>
-                {recentActivity.map((activity, index) => {
-                  const Icon = activity.icon;
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="p-4 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <div className="flex gap-3">
-                        <div
-                          className={`p-2 rounded-lg ${activity.bgColor} shrink-0`}
-                        >
-                          <Icon className={`w-4 h-4 ${activity.color}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 mb-1 leading-relaxed">
-                            {activity.message}
-                          </p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {activity.time}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <Link
-                href="/surf-mda/dashboard/settings"
-                className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
-              >
-                View all activity
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
-              </Link>
-            </div>
-          </div>
+          {/* Profile Settings Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: quickActions.length * 0.05 }}
+          >
+            <Link href="/surf-mda/dashboard/profile">
+              <div className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-slate-100 group-hover:scale-110 transition-transform duration-300">
+                    <User className="w-6 h-6 text-slate-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-base font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                        Profile & Settings
+                      </h3>
+                      <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                    </div>
+                    <p className="text-sm text-gray-500 line-clamp-2">
+                      Manage your account and preferences
+                    </p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-500 to-gray-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+              </div>
+            </Link>
+          </motion.div>
         </div>
       </div>
+
+      {/* Role-specific guidance */}
+      {!isSuperAdmin && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Activity className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">
+                Your Role: {roleConfig.title}
+              </h3>
+              <p className="text-blue-700 text-sm">
+                {currentRole === "ACCOUNTS" &&
+                  "Review LASG payment receipts and approve or disapprove batches. After approval, plans become available to other MDA roles."}
+                {currentRole === "CHARTING" &&
+                  "Review and edit charting remarks from the LASG dataset. Copy or type the final charting remarks for each plan."}
+                {currentRole === "SURCON" &&
+                  "Verify that pillar numbers and coordinates match the SURCON database. Approve or query plans as needed."}
+                {currentRole === "RECORDS_I" &&
+                  "Review the uploaded record copies for quality and completeness. Approve or query plans based on document quality."}
+                {currentRole === "RECORDS_II" &&
+                  "Verify physical record copies match uploaded versions. This is the final step before lodging with OSSG."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
