@@ -144,6 +144,7 @@ export default function UserManagementPage() {
     "ACCOUNTS",
     "CHARTING",
     "SURCON",
+    "MDA_SUPERADMIN",
   ];
 
   // Filter users based on active tab
@@ -296,6 +297,8 @@ export default function UserManagementPage() {
         return "bg-teal-100 text-teal-800";
       case "SURCON":
         return "bg-cyan-100 text-cyan-800";
+      case "MDA_SUPERADMIN":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -550,6 +553,13 @@ export default function UserManagementPage() {
                       <option value="SUPERADMIN">SuperAdmin</option>
                       <option value="ADMIN">Admin</option>
                       <option value="USER">User</option>
+
+                      <option value="RECORDS_I">Records I</option>
+                      <option value="RECORDS_II">Records II</option>
+                      <option value="ACCOUNTS">Accounts</option>
+                      <option value="CHARTING">Charting</option>
+                      <option value="SURCON">SURCON</option>
+                      <option value="MDA_SUPERADMIN">MDA Super Admin</option>
                     </>
                   ) : (
                     <>
@@ -558,6 +568,7 @@ export default function UserManagementPage() {
                       <option value="ACCOUNTS">Accounts</option>
                       <option value="CHARTING">Charting</option>
                       <option value="SURCON">SURCON</option>
+                      <option value="MDA_SUPERADMIN">MDA Super Admin</option>
                     </>
                   )}
                 </select>
@@ -651,6 +662,9 @@ export default function UserManagementPage() {
                               <option value="ACCOUNTS">ACCOUNTS</option>
                               <option value="CHARTING">CHARTING</option>
                               <option value="SURCON">SURCON</option>
+                              <option value="MDA_SUPERADMIN">
+                                MDA_SUPERADMIN
+                              </option>
                             </>
                           )}
                         </select>

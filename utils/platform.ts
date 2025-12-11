@@ -26,6 +26,7 @@ export enum SurfboardRole {
   SURCON = "SURCON",
   RECORDS_I = "RECORDS_I",
   RECORDS_II = "RECORDS_II",
+  MDA_SUPERADMIN = "MDA_SUPERADMIN",
 }
 
 export enum GBCRole {

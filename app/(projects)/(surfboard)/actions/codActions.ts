@@ -6,11 +6,24 @@ import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { paystack, getEnv } from "../utils/paystack";
+import {
+  notifyPaymentReceived,
+  notifyLASGReceiptUploaded,
+  notifyAccountsDisapproval,
+  notifyPlanQueried,
+  notifyPlanApproved,
+} from "./notificationActions";
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 30;
 
-type MDARole = "ACCOUNTS" | "CHARTING" | "SURCON" | "RECORDS_I" | "RECORDS_II";
+type MDARole =
+  | "ACCOUNTS"
+  | "CHARTING"
+  | "SURCON"
+  | "RECORDS_I"
+  | "RECORDS_II"
+  | "MDA_SUPERADMIN";
 
 /**
  * Fetches certificate batches filtered by payment status
@@ -685,8 +698,21 @@ export async function verifyBatchPayment(
       },
     });
 
-    // TODO: Send notification to all Surfboard Admins
-    // await notifyAdmins({ ... });
+    // Send notification to all Surfboard Admins
+    const submitter = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (submitter) {
+      await notifyPaymentReceived({
+        batchId: batch.id,
+        batchCode: batch.batchCode,
+        amount: batch.totalAmount,
+        paidBy: submitter,
+        sendEmail: true,
+      });
+    }
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
@@ -908,8 +934,20 @@ export async function uploadLASGReceipt(
       },
     });
 
-    // TODO: Send notification to Records I, Records II, Accounts, Charting, SURCON
-    // await notifyMDARoles({ ... });
+    // Send notification to Records I, Records II, Accounts, Charting, SURCON
+    const batchWithPlans = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+      select: { batchCode: true, planCount: true },
+    });
+
+    if (batchWithPlans) {
+      await notifyLASGReceiptUploaded({
+        batchId,
+        batchCode: batchWithPlans.batchCode,
+        planCount: batchWithPlans.planCount,
+        sendEmail: true,
+      });
+    }
 
     revalidatePath("/surf-restricted/dashboard/cod");
 
@@ -961,8 +999,20 @@ export async function updateAccountsApproval(
     });
 
     if (!approved) {
-      // TODO: Send notification to Surfboard Admins only
-      // await notifyAdmins({ ... });
+      // Send notification to Surfboard Admins only
+      const batchInfo = await prisma.certificateOfDepositBatch.findUnique({
+        where: { id: batchId },
+        select: { batchCode: true },
+      });
+
+      if (batchInfo) {
+        await notifyAccountsDisapproval({
+          batchId,
+          batchCode: batchInfo.batchCode,
+          comment,
+          sendEmail: true,
+        });
+      }
     }
 
     revalidatePath("/surf-mda/dashboard/accounts");
@@ -1041,8 +1091,22 @@ export async function updateSurconStatus(
     });
 
     if (!approved) {
-      // TODO: Send notification to user
-      // await notifyUser({ ... });
+      // Send notification to user
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { userId: true, planNumber: true },
+      });
+
+      if (plan?.userId) {
+        await notifyPlanQueried({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          queriedBy: "SURCON",
+          comment,
+          sendEmail: true,
+        });
+      }
     }
 
     revalidatePath("/surf-mda/dashboard/surcon");
@@ -1083,8 +1147,22 @@ export async function updateRecordsIStatus(
     });
 
     if (!approved) {
-      // TODO: Send notification to user
-      // await notifyUser({ ... });
+      // Send notification to user
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { userId: true, planNumber: true },
+      });
+
+      if (plan?.userId) {
+        await notifyPlanQueried({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          queriedBy: "Records I",
+          comment,
+          sendEmail: true,
+        });
+      }
     }
 
     revalidatePath("/surf-mda/dashboard/records-i");
@@ -1160,9 +1238,44 @@ export async function updateRecordsIIStatus(
 
     if (approved) {
       // TODO: Send data to OSSG API
-      // TODO: Send notification to user with batch details
       // await sendToOSSG({ ... });
-      // await notifyUser({ ... });
+
+      // Send notification to user with batch details
+      const planDetails = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: {
+          userId: true,
+          planNumber: true,
+          batch: { select: { batchCode: true } },
+        },
+      });
+
+      if (planDetails?.userId) {
+        await notifyPlanApproved({
+          userId: planDetails.userId,
+          planId,
+          planNumber: planDetails.planNumber,
+          batchCode: planDetails.batch?.batchCode,
+          sendEmail: true,
+        });
+      }
+    } else {
+      // Send notification to user about query
+      const planDetails = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { userId: true, planNumber: true },
+      });
+
+      if (planDetails?.userId) {
+        await notifyPlanQueried({
+          userId: planDetails.userId,
+          planId,
+          planNumber: planDetails.planNumber,
+          queriedBy: "Records II",
+          comment,
+          sendEmail: true,
+        });
+      }
     }
 
     revalidatePath("/surf-mda/dashboard/records-ii");
@@ -1246,6 +1359,7 @@ export async function getPendingCountByRole(): Promise<
         "SURCON",
         "RECORDS_I",
         "RECORDS_II",
+        "MDA_SUPERADMIN",
       ].includes(user.role)
     ) {
       return { success: false, error: "Unauthorized" };

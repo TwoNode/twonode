@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
             "CHARTING",
             "SURCON",
             "SUPERADMIN",
+            "MDA_SUPERADMIN",
           ],
         },
       },

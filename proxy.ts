@@ -359,36 +359,42 @@ const proxyWithLogic = withDynamicAuth(
               "SURCON",
               "RECORDS_I",
               "RECORDS_II",
+              "MDA_SUPERADMIN",
             ];
             hasAccess = mdaRoles.includes(userData.role);
 
             if (hasAccess) {
-              // Further check: ensure user is accessing their own dashboard
-              if (
-                pathname.includes("/accounts") &&
-                userData.role !== "ACCOUNTS"
-              ) {
-                hasAccess = false;
-              } else if (
-                pathname.includes("/charting") &&
-                userData.role !== "CHARTING"
-              ) {
-                hasAccess = false;
-              } else if (
-                pathname.includes("/surcon") &&
-                userData.role !== "SURCON"
-              ) {
-                hasAccess = false;
-              } else if (
-                pathname.includes("/records-i") &&
-                userData.role !== "RECORDS_I"
-              ) {
-                hasAccess = false;
-              } else if (
-                pathname.includes("/records-ii") &&
-                userData.role !== "RECORDS_II"
-              ) {
-                hasAccess = false;
+              // MDA_SUPERADMIN can access all MDA dashboards
+              if (userData.role === "MDA_SUPERADMIN") {
+                hasAccess = true;
+              } else {
+                // Further check: ensure user is accessing their own dashboard
+                if (
+                  pathname.includes("/accounts") &&
+                  userData.role !== "ACCOUNTS"
+                ) {
+                  hasAccess = false;
+                } else if (
+                  pathname.includes("/charting") &&
+                  userData.role !== "CHARTING"
+                ) {
+                  hasAccess = false;
+                } else if (
+                  pathname.includes("/surcon") &&
+                  userData.role !== "SURCON"
+                ) {
+                  hasAccess = false;
+                } else if (
+                  pathname.includes("/records-i") &&
+                  userData.role !== "RECORDS_I"
+                ) {
+                  hasAccess = false;
+                } else if (
+                  pathname.includes("/records-ii") &&
+                  userData.role !== "RECORDS_II"
+                ) {
+                  hasAccess = false;
+                }
               }
             }
           }

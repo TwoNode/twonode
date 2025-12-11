@@ -33,7 +33,8 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
-  | "SUPERADMIN";
+  | "SUPERADMIN"
+  | "MDA_SUPERADMIN";
 
 interface RoleConfig {
   title: string;
@@ -110,6 +111,17 @@ const roleConfigs: Record<MDARole, RoleConfig> = {
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
     heroGradient: "from-slate-700 via-slate-800 to-gray-900",
+  },
+  MDA_SUPERADMIN: {
+    title: "MDA Super Admin",
+    description:
+      "Oversight access to view all activities across all MDA departments",
+    icon: Shield,
+    href: "/surf-mda/dashboard",
+    color: "from-orange-500 to-red-500",
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-600",
+    heroGradient: "from-orange-600 via-red-700 to-rose-800",
   },
 };
 
@@ -218,10 +230,11 @@ export default function MDADashboardHome() {
 
   const currentRole = userRole || "ACCOUNTS";
   const roleConfig = roleConfigs[currentRole];
-  const isSuperAdmin = currentRole === "SUPERADMIN";
+  const isSuperAdmin =
+    currentRole === "SUPERADMIN" || currentRole === "MDA_SUPERADMIN";
 
   // For specific roles, show their section prominently
-  // For SUPERADMIN, show all sections
+  // For SUPERADMIN or MDA_SUPERADMIN, show all sections
   const quickActions = isSuperAdmin
     ? allQuickActions
     : [

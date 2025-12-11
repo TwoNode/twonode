@@ -193,6 +193,7 @@ enum SurfboardRole {
   ACCOUNTS // MDA Role: Approves LASG payment receipts
   CHARTING // MDA Role: Edits/confirms charting remarks
   SURCON // MDA Role: Confirms pillar numbers
+  MDA_SUPERADMIN // MDA Role: Can view all activities of all MDA users
 }
 
 model SurfboardUser {
