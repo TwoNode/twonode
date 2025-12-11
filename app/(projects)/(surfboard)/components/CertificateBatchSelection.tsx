@@ -148,6 +148,9 @@ export function BatchSubmissionModal({
               },
             ],
           },
+          onLoad: () => {
+            onClose();
+          },
           onSuccess: async (transaction: TransactionObject) => {
             try {
               console.log("Payment successful:", transaction);
