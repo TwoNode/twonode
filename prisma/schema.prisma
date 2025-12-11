@@ -940,3 +940,20 @@ model GBCAuditLog {
   @@map("gbc_audit_logs")
 }
 
+model SurfboardAuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  // User who performed the action
+  action      String   // Action performed (e.g., "CREATE_PLAN", "APPROVE_BATCH")
+  entity      String   // Entity affected (e.g., "SurfboardPlan", "CertificateOfDepositBatch")
+  entityId    String?  // ID of the entity affected
+  changes     String?  @db.Text // JSON string of changes made
+  ipAddress   String?  // IP address of the user
+  userAgent   String?  // Browser user agent
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("surfboard_audit_logs")
+}
+

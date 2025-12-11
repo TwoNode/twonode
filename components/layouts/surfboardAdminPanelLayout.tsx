@@ -18,6 +18,7 @@ import {
   Users,
   Award,
   Receipt,
+  FileText,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -105,6 +106,11 @@ export default function SurfboardAdminPanelLayout({
             icon: Shield,
             label: "Superadmin",
             url: `${dashboardUrl}/superadmin`,
+          },
+          {
+            icon: FileText,
+            label: "Audit Logs",
+            url: `${dashboardUrl}/audit-logs`,
           },
         ]
       : []),

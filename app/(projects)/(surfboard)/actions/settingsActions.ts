@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
+import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 
 interface LGAFees {
   [lga: string]: number;
@@ -133,12 +134,24 @@ export async function updateSettings(
     });
 
     // Create new settings record
-    await prisma.surfboardSettings.create({
+    const newSettingsRecord = await prisma.surfboardSettings.create({
       data: {
         settings: newSettings as any,
         previousSettings: currentSettings?.settings || {},
         updatedById: user.id,
       },
+    });
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "UPDATE_SETTINGS",
+      entity: "SurfboardSettings",
+      entityId: newSettingsRecord.id,
+      changes: createChangeLog({
+        lgaFees: newSettings.lgaFees,
+        systemChargePercent: newSettings.systemChargePercent,
+      }),
     });
 
     revalidatePath("/surf-restricted/dashboard/cod-settings");
@@ -227,12 +240,24 @@ export async function revertToPreviousSettings(
     }
 
     // Create new settings record with previous settings
-    await prisma.surfboardSettings.create({
+    const revertedSettings = await prisma.surfboardSettings.create({
       data: {
         settings: targetSettings.previousSettings ?? {},
         previousSettings: targetSettings.settings ?? {},
         updatedById: user.id,
       },
+    });
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "REVERT_SETTINGS",
+      entity: "SurfboardSettings",
+      entityId: revertedSettings.id,
+      changes: createChangeLog({
+        revertedFrom: settingsId,
+        revertedTo: (targetSettings.previousSettings as any) || {},
+      }),
     });
 
     revalidatePath("/surf-restricted/dashboard/cod-settings");

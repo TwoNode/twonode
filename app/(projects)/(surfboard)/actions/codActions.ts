@@ -13,6 +13,7 @@ import {
   notifyPlanQueried,
   notifyPlanApproved,
 } from "./notificationActions";
+import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 30;
@@ -642,6 +643,22 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       // Don't fail the batch creation, user can pay later
     }
 
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "SUBMIT_BATCH",
+      entity: "CertificateOfDepositBatch",
+      entityId: batch.id,
+      changes: createChangeLog({
+        batchCode: batch.batchCode,
+        planCount: plans.length,
+        planIds: planIds,
+        totalAmount,
+        totalFees,
+        systemCharges,
+      }),
+    });
+
     revalidatePath("/surf-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
 
@@ -713,6 +730,20 @@ export async function verifyBatchPayment(
         sendEmail: true,
       });
     }
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "VERIFY_PAYMENT",
+      entity: "CertificateOfDepositBatch",
+      entityId: batch.id,
+      changes: createChangeLog({
+        batchCode: batch.batchCode,
+        reference,
+        amount: batch.totalAmount,
+        paymentStatus: "USER_PAID",
+      }),
+    });
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
@@ -949,7 +980,21 @@ export async function uploadLASGReceipt(
       });
     }
 
-    revalidatePath("/surf-restricted/dashboard/cod");
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "UPLOAD_LASG_RECEIPT",
+      entity: "CertificateOfDepositBatch",
+      entityId: batchId,
+      changes: createChangeLog({
+        batchCode: batchWithPlans?.batchCode,
+        receiptUrl,
+        receiptS3Key,
+        paymentStatus: "LASG_PAID",
+      }),
+    });
+
+    revalidatePath("/surf-restricted/dashboard/surf-plans");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -998,13 +1043,14 @@ export async function updateAccountsApproval(
       },
     });
 
+    // Get batch info for notifications and audit log
+    const batchInfo = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+      select: { batchCode: true },
+    });
+
     if (!approved) {
       // Send notification to Surfboard Admins only
-      const batchInfo = await prisma.certificateOfDepositBatch.findUnique({
-        where: { id: batchId },
-        select: { batchCode: true },
-      });
-
       if (batchInfo) {
         await notifyAccountsDisapproval({
           batchId,
@@ -1019,6 +1065,22 @@ export async function updateAccountsApproval(
     revalidatePath("/surf-mda/dashboard/charting");
     revalidatePath("/surf-mda/dashboard/surcon");
     revalidatePath("/surf-mda/dashboard/records-i");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_ACCOUNTS" : "DISAPPROVE_ACCOUNTS",
+      entity: "CertificateOfDepositBatch",
+      entityId: batchId,
+      changes: createChangeLog({
+        batchCode: batchInfo?.batchCode,
+        approved,
+        comment: comment || null,
+        paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
+      }),
+    });
+
+    revalidatePath("/surf-restricted/dashboard/surf-plans");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1043,7 +1105,7 @@ export async function updateChartingStatus(
       return { success: false, error: "Unauthorized" };
     }
 
-    await prisma.surfboardPlan.update({
+    const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
         chartingRemarks,
@@ -1051,9 +1113,23 @@ export async function updateChartingStatus(
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
       },
+      select: { planNumber: true },
     });
 
     revalidatePath("/surf-mda/dashboard/charting");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "APPROVE_CHARTING",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        chartingRemarks,
+        chartingStatus: "APPROVED",
+      }),
+    });
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1079,7 +1155,7 @@ export async function updateSurconStatus(
       return { success: false, error: "Unauthorized" };
     }
 
-    await prisma.surfboardPlan.update({
+    const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
         surconStatus: approved ? "APPROVED" : "QUERIED",
@@ -1088,16 +1164,12 @@ export async function updateSurconStatus(
         surconComment: comment,
         ...(approved ? {} : { redCopyStatus: "QUERIED" }),
       },
+      select: { userId: true, planNumber: true },
     });
 
     if (!approved) {
       // Send notification to user
-      const plan = await prisma.surfboardPlan.findUnique({
-        where: { id: planId },
-        select: { userId: true, planNumber: true },
-      });
-
-      if (plan?.userId) {
+      if (plan.userId) {
         await notifyPlanQueried({
           userId: plan.userId,
           planId,
@@ -1110,6 +1182,20 @@ export async function updateSurconStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/surcon");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_SURCON" : "QUERY_SURCON",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        approved,
+        comment: comment || null,
+        surconStatus: approved ? "APPROVED" : "QUERIED",
+      }),
+    });
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1135,7 +1221,7 @@ export async function updateRecordsIStatus(
       return { success: false, error: "Unauthorized" };
     }
 
-    await prisma.surfboardPlan.update({
+    const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
         recordsIStatus: approved ? "APPROVED" : "QUERIED",
@@ -1144,16 +1230,12 @@ export async function updateRecordsIStatus(
         recordsIComment: comment,
         ...(approved ? {} : { redCopyStatus: "QUERIED" }),
       },
+      select: { userId: true, planNumber: true },
     });
 
     if (!approved) {
       // Send notification to user
-      const plan = await prisma.surfboardPlan.findUnique({
-        where: { id: planId },
-        select: { userId: true, planNumber: true },
-      });
-
-      if (plan?.userId) {
+      if (plan.userId) {
         await notifyPlanQueried({
           userId: plan.userId,
           planId,
@@ -1166,6 +1248,20 @@ export async function updateRecordsIStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/records-i");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_RECORDS_I" : "QUERY_RECORDS_I",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        approved,
+        comment: comment || null,
+        recordsIStatus: approved ? "APPROVED" : "QUERIED",
+      }),
+    });
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1192,7 +1288,7 @@ export async function updateRecordsIIStatus(
     }
 
     // Check if all other approvals are done
-    const plan = await prisma.surfboardPlan.findUnique({
+    const planCheck = await prisma.surfboardPlan.findUnique({
       where: { id: planId },
       select: {
         accountsStatus: true,
@@ -1203,15 +1299,15 @@ export async function updateRecordsIIStatus(
       },
     });
 
-    if (!plan) {
+    if (!planCheck) {
       return { success: false, error: "Plan not found" };
     }
 
     if (
-      plan.accountsStatus !== "APPROVED" ||
-      plan.chartingStatus !== "APPROVED" ||
-      plan.surconStatus !== "APPROVED" ||
-      plan.recordsIStatus !== "APPROVED"
+      planCheck.accountsStatus !== "APPROVED" ||
+      planCheck.chartingStatus !== "APPROVED" ||
+      planCheck.surconStatus !== "APPROVED" ||
+      planCheck.recordsIStatus !== "APPROVED"
     ) {
       return {
         success: false,
@@ -1219,7 +1315,7 @@ export async function updateRecordsIIStatus(
       };
     }
 
-    await prisma.surfboardPlan.update({
+    const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
         recordsIIStatus: approved ? "APPROVED" : "QUERIED",
@@ -1234,6 +1330,11 @@ export async function updateRecordsIIStatus(
             }
           : { redCopyStatus: "QUERIED" }),
       },
+      select: {
+        userId: true,
+        planNumber: true,
+        batch: { select: { batchCode: true } },
+      },
     });
 
     if (approved) {
@@ -1241,36 +1342,22 @@ export async function updateRecordsIIStatus(
       // await sendToOSSG({ ... });
 
       // Send notification to user with batch details
-      const planDetails = await prisma.surfboardPlan.findUnique({
-        where: { id: planId },
-        select: {
-          userId: true,
-          planNumber: true,
-          batch: { select: { batchCode: true } },
-        },
-      });
-
-      if (planDetails?.userId) {
+      if (plan.userId) {
         await notifyPlanApproved({
-          userId: planDetails.userId,
+          userId: plan.userId,
           planId,
-          planNumber: planDetails.planNumber,
-          batchCode: planDetails.batch?.batchCode,
+          planNumber: plan.planNumber,
+          batchCode: plan.batch?.batchCode,
           sendEmail: true,
         });
       }
     } else {
       // Send notification to user about query
-      const planDetails = await prisma.surfboardPlan.findUnique({
-        where: { id: planId },
-        select: { userId: true, planNumber: true },
-      });
-
-      if (planDetails?.userId) {
+      if (plan.userId) {
         await notifyPlanQueried({
-          userId: planDetails.userId,
+          userId: plan.userId,
           planId,
-          planNumber: planDetails.planNumber,
+          planNumber: plan.planNumber,
           queriedBy: "Records II",
           comment,
           sendEmail: true,
@@ -1279,6 +1366,20 @@ export async function updateRecordsIIStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/records-ii");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_RECORDS_II" : "QUERY_RECORDS_II",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        approved,
+        comment: comment || null,
+        recordsIIStatus: approved ? "APPROVED" : "QUERIED",
+      }),
+    });
 
     return { success: true, data: { success: true } };
   } catch (error) {
