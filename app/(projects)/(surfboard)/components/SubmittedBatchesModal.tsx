@@ -18,6 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   FileText,
   Loader2,
   CreditCard,
@@ -27,6 +33,7 @@ import {
   Calendar,
   Package,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import {
   getUserBatches,
@@ -49,6 +56,13 @@ interface Batch {
   userPaymentRef: string | null;
   userPaymentDate: Date | null;
   createdAt: Date;
+  plans: Array<{
+    id: string;
+    planNumber: string;
+    surveyTitle: string;
+    status: string;
+    redCopyStatus: string;
+  }>;
 }
 
 interface SubmittedBatchesModalProps {
@@ -305,17 +319,21 @@ export function SubmittedBatchesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="space-y-3 pb-4 border-b">
           <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                My Submitted Batches
-              </DialogTitle>
-              <DialogDescription>
-                View all your submitted red copy batches and manage payments
-              </DialogDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  My Submitted Batches
+                </DialogTitle>
+                <DialogDescription className="text-sm mt-1">
+                  View all your submitted red copy batches and manage payments
+                </DialogDescription>
+              </div>
             </div>
             {process.env.NODE_ENV !== "production" && batches.length > 0 && (
               <Button
@@ -323,7 +341,7 @@ export function SubmittedBatchesModal({
                 size="sm"
                 onClick={handleDeleteAll}
                 disabled={isDeleting || isLoading}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-md transition-all duration-200 hover:shadow-lg"
               >
                 {isDeleting ? (
                   <>
@@ -341,96 +359,178 @@ export function SubmittedBatchesModal({
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="flex-1 overflow-y-auto py-4 px-1">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
+                <Loader2 className="w-16 h-16 animate-spin text-blue-600 absolute top-0 left-0" />
+              </div>
+              <p className="text-gray-500 mt-4 font-medium">
+                Loading batches...
+              </p>
             </div>
           ) : batches.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg font-medium">
+            <div className="text-center py-16">
+              <div className="inline-flex p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full mb-6">
+                <FileText className="w-20 h-20 text-gray-300" />
+              </div>
+              <p className="text-gray-700 text-xl font-semibold mb-2">
                 No batches submitted yet
               </p>
-              <p className="text-gray-400 text-sm mt-2">
-                Submit plans for Certificate of Deposit to see them here
+              <p className="text-gray-500 text-sm max-w-md mx-auto">
+                Submit plans for Certificate of Deposit to see them displayed
+                here with full details
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {batches.map((batch) => (
-                <div
+            <Accordion type="single" collapsible className="space-y-4">
+              {batches.map((batch, index) => (
+                <AccordionItem
                   key={batch.id}
-                  className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                  value={batch.id}
+                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {batch.batchCode}
-                        </h3>
-                        {getStatusBadge(batch.paymentStatus)}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Package className="w-4 h-4" />
-                          <span>
-                            {batch.planCount} plan
-                            {batch.planCount !== 1 ? "s" : ""}
-                          </span>
+                  <div className="p-5 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-3">
+                          <AccordionTrigger className="hover:no-underline p-0 flex-1 group/trigger">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
+                                <Package className="w-4 h-4 text-blue-700" />
+                              </div>
+                              <h3 className="text-lg font-bold text-gray-900 group-hover/trigger:text-blue-700 transition-colors duration-200">
+                                {batch.batchCode}
+                              </h3>
+                            </div>
+                          </AccordionTrigger>
+                          {getStatusBadge(batch.paymentStatus)}
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Calendar className="w-4 h-4" />
-                          <span>
-                            {format(new Date(batch.createdAt), "MMM d, yyyy")}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-gray-900 font-semibold">
-                          <CreditCard className="w-4 h-4" />
-                          <span>₦{batch.totalAmount.toLocaleString()}</span>
-                        </div>
-
-                        {batch.userPaymentDate && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span>
-                              Paid{" "}
-                              {format(new Date(batch.userPaymentDate), "MMM d")}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white rounded">
+                              <Package className="w-3.5 h-3.5 text-blue-600" />
+                            </div>
+                            <span className="font-medium">
+                              {batch.planCount} plan
+                              {batch.planCount !== 1 ? "s" : ""}
                             </span>
                           </div>
+
+                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white rounded">
+                              <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                            </div>
+                            <span className="font-medium">
+                              {format(new Date(batch.createdAt), "MMM d, yyyy")}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 text-gray-900 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
+                            <div className="p-1 bg-white rounded shadow-sm">
+                              <CreditCard className="w-3.5 h-3.5 text-green-700" />
+                            </div>
+                            <span className="font-bold text-green-900">
+                              ₦{batch.totalAmount.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {batch.userPaymentDate && (
+                            <div className="flex items-center gap-2.5 text-green-700 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200">
+                              <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                              <span className="font-medium text-sm">
+                                Paid{" "}
+                                {format(
+                                  new Date(batch.userPaymentDate),
+                                  "MMM d"
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0">
+                        {canPayBatch(batch.paymentStatus) && (
+                          <Button
+                            size="sm"
+                            onClick={() => handlePayNow(batch.id)}
+                            disabled={payingBatchId === batch.id}
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                          >
+                            {payingBatchId === batch.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <CreditCard className="w-4 h-4 mr-2" />
+                                Pay Now
+                              </>
+                            )}
+                          </Button>
                         )}
                       </div>
                     </div>
 
-                    <div className="ml-4">
-                      {canPayBatch(batch.paymentStatus) && (
-                        <Button
-                          size="sm"
-                          onClick={() => handlePayNow(batch.id)}
-                          disabled={payingBatchId === batch.id}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          {payingBatchId === batch.id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="w-4 h-4 mr-2" />
-                              Pay Now
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                    <AccordionContent className="pt-1">
+                      <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-1 w-1 bg-blue-500 rounded-full"></div>
+                          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                            Survey Plans in this Batch
+                          </h4>
+                          <div className="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent"></div>
+                        </div>
+                        <div className="space-y-2.5">
+                          {batch.plans.map((plan, planIndex) => (
+                            <div
+                              key={plan.id}
+                              className="group/plan bg-white border-2 border-gray-100 rounded-lg p-4 flex items-start justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:translate-x-1"
+                              style={{ animationDelay: `${planIndex * 30}ms` }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2.5 mb-2">
+                                  <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
+                                    <FileText className="w-4 h-4 text-blue-700" />
+                                  </div>
+                                  <span className="font-bold text-sm text-gray-900 group-hover/plan:text-blue-700 transition-colors duration-200">
+                                    {plan.planNumber}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 ml-8 line-clamp-1">
+                                  {plan.surveyTitle}
+                                </p>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-semibold bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
+                                >
+                                  {plan.status}
+                                </Badge>
+                                {plan.redCopyStatus !== "NOT_SUBMITTED" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs font-semibold bg-gradient-to-br from-blue-50 to-blue-100 text-blue-800 border-blue-300 hover:from-blue-100 hover:to-blue-200 transition-all duration-200"
+                                  >
+                                    {plan.redCopyStatus}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </AccordionContent>
                   </div>
-                </div>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           )}
         </div>
       </DialogContent>

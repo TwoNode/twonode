@@ -720,6 +720,13 @@ export async function getUserBatches(): Promise<
       userPaymentRef: string | null;
       userPaymentDate: Date | null;
       createdAt: Date;
+      plans: Array<{
+        id: string;
+        planNumber: string;
+        surveyTitle: string;
+        status: string;
+        redCopyStatus: string;
+      }>;
     }>;
   }>
 > {
@@ -744,6 +751,18 @@ export async function getUserBatches(): Promise<
         userPaymentRef: true,
         userPaymentDate: true,
         createdAt: true,
+        plans: {
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            status: true,
+            redCopyStatus: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
