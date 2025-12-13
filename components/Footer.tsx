@@ -240,7 +240,7 @@ export const Footer: React.FC = () => {
                   Have a question?
                 </div>
                 <div className="text-stone-950 text-sm font-semibold leading-7">
-                  <a href="tel:+2349160002740">+234-916-0002-740</a>
+                  <Link href="tel:+2349160002740">+234-916-0002-740</Link>
                 </div>
               </div>
             </div>
@@ -267,15 +267,15 @@ export const Footer: React.FC = () => {
                   Email us at:
                 </div>
                 <div className="text-stone-950 text-sm font-semibold leading-7">
-                  <a href="mailto:info@twonodetechnologies.com">
+                  <Link href="mailto:info@twonodetechnologies.com">
                     info@twonodetechnologies.com
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
           </div>
           <div className="text-center text-stone-950 text-base font-normal leading-normal">
-            Copyright © 2024 TwoNode Technologies | All Rights Reserved
+            Copyright © 2025 TwoNode Technologies | All Rights Reserved
           </div>
         </div>
       </div>

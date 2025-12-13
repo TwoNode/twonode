@@ -35,3 +35,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+
+.vscode
+.prisma/
+prisma/generated/
+test.js
+.cursor-settings.json
+public/sitemap-0.xml
+node_modules

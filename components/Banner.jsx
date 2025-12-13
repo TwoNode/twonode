@@ -54,7 +54,7 @@ const Banner = () => {
               </div>
               <div className="max-w-[856px] text-white text-lg font-normal leading-[30px] ">
                 Discover specific local industry based Geographic
-                Informfontation System solutions for your businesses. Unleash
+                Information System solutions for your businesses. Unleash
                 the power of geospatial intelligence for your industry.
               </div>
             </div>

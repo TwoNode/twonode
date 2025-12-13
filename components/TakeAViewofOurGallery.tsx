@@ -1,13 +1,23 @@
 const TakeAViewofOurGallery = () => {
   const Images = [
-    "/gal1.png",
-    "/signing.jpg",
-    "/gal3.png",
-    "/gal4.png",
-    "/gal5.png",
-    "/gal6.png",
-    "/gal7.png",
-    "/gal8.png",
+    "/gbc/website/img_1.jpg",
+    "/gbc/website/img_3.jpg",
+    "/gbc/website/img_4.jpg",
+    "/gbc/website/img_5.jpg",
+    "/gbc/technical/img_2.jpg",
+    "/gbc/technical/img_3.jpg",
+    "/gbc/website/img_6.jpg",
+    "/gbc/website/img_7.jpg",
+    "/gbc/homePage/img_1.jpg",
+    "/gbc/homePage/img_2.jpg",
+    // "/gal1.png",
+    // "/signing.jpg",
+    // "/gal3.png",
+    // "/gal4.png",
+    // "/gal5.png",
+    // "/gal6.png",
+    // "/gal7.png",
+    // "/gal8.png",
   ];
 
   return (
@@ -27,8 +37,13 @@ const TakeAViewofOurGallery = () => {
           </div>
         </div>
       </div>
-      <div className="w-full self-stretch min-h-[1780px] gap-[30px] grid lg:grid-cols-2 grid-cols-1 justify-items-center">
-        {Images.map((imgUrl, index) =>
+      <div className="w-full self-stretch min-h-max gap-[30px] grid lg:grid-cols-2 grid-cols-1 justify-items-center">
+        {Images.map((imgUrl, index) => (
+          <div key={index} className="w-full p-3 flex justify-center">
+            <img className="w-full" src={imgUrl} />
+          </div>
+        ))}
+        {/* {Images.map((imgUrl, index) =>
           index == 1 ? (
             <div key={index} className="w-full p-3 flex justify-center">
               <img
@@ -44,7 +59,7 @@ const TakeAViewofOurGallery = () => {
               />
             </div>
           )
-        )}
+        )} */}
       </div>
     </div>
   );

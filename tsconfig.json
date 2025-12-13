@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "target": "es2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -10,7 +11,8 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "incremental": true,
     "plugins": [
       {
@@ -22,6 +24,21 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/Footer.jsx", "app/(main)/services/SVGs.js", "components/SurveyTrustFirms.jsx", "components/Banner.jsx", "app/(main)/contact/OurMap.jsx", "app/(main)/gbc/page.jsx"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "components/Footer.jsx",
+    "app/(main)/services/SVGs.js",
+    "components/SurveyTrustFirms.jsx",
+    "components/Banner.jsx",
+    "app/(main)/contact/OurMap.jsx",
+    "app/(main)/gbc/page.jsx",
+    "app/(main)/page.jsx",
+    ".next/dev/types/**/*.ts",
+    "app/(projects)/(GBC)/gbc/tickets_",
+    "app/(projects)/(GBC)/gbc/tickets/success"
+  ],
   "exclude": ["node_modules"]
 }

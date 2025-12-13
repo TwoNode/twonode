@@ -6,6 +6,7 @@ const ExampleWithIframe = () => {
         width="100%"
         height="1000px"
         title="Embedded HTML"
+        className="max-w-4xl mx-auto rounded-xl"
       />
     </div>
   );

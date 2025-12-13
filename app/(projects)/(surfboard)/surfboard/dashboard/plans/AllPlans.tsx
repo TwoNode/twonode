@@ -1,0 +1,2127 @@
+// In AllPlans.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import {
+  getPaginatedSurfPlans,
+  getSurfPlanById,
+  permanentlyDeleteSurfPlan,
+  generatePlanQRCode,
+} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Filter,
+  X,
+  Calendar as CalendarIcon,
+  Search,
+  Download,
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MapPin,
+  FileText,
+  User,
+  QrCode,
+  RefreshCw,
+  MoreVertical,
+  Grid3x3,
+  List,
+  Plus,
+  Loader2,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { PLAN_TYPES as PLAN_TYPES_OBJ } from "../../../types/surfboardTypes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  BatchSelectionBar,
+  BatchSubmissionModal,
+  isPlanEligibleForCertificate,
+  getPlanEligibilityMessage,
+} from "../../../components/CertificateBatchSelection";
+import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal";
+import { SubmittedBatchesModal } from "../../../components/SubmittedBatchesModal";
+import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
+import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
+import {
+  PlanDetailsLoadingState,
+  PlanFormLoadingState,
+} from "../../../components/LoadingStates";
+import {
+  PlanDetailsErrorState,
+  PlanFormErrorState,
+} from "../../../components/ErrorStates";
+
+interface PlanFilters {
+  search?: string;
+  status: string[];
+  planType: string[];
+  facilitator?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+const PLAN_STATUSES = ["PENDING", "UNDER_REVIEW", "LODGED", "QUERIED"];
+const PLAN_TYPES = Array.from(Object.values(PLAN_TYPES_OBJ));
+
+export default function AllPlans() {
+  const [search, setSearch] = useState("");
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [filters, setFilters] = useState<PlanFilters>({
+    status: [],
+    planType: [],
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 1,
+  });
+
+  // Modal states
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  // Delete confirmation modal
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // QR Code modal state
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [selectedPlanForQr, setSelectedPlanForQr] = useState<string | null>(
+    null
+  );
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+
+  // Batch Selection State
+  const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [showBatchesModal, setShowBatchesModal] = useState(false);
+
+  const loadPlans = async (
+    page = pagination.page,
+    pageSize = pagination.pageSize
+  ) => {
+    try {
+      setLoading(true);
+      const result = await getPaginatedSurfPlans({
+        page,
+        pageSize,
+        filters: {
+          status: filters.status.length > 0 ? filters.status : undefined,
+          planType: filters.planType.length > 0 ? filters.planType : undefined,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          search: search || undefined,
+        },
+        sort: {
+          field: "dateOnSurveyPlan" as any,
+          order: "desc",
+        },
+      });
+
+      if (result?.success && result?.data) {
+        setPlans(result.data.plans || []);
+        setPagination((prev) => ({
+          ...prev,
+          page,
+          pageSize,
+          total: result?.data?.total || 0,
+          totalPages: result?.data?.totalPages || 1,
+        }));
+      } else {
+        console.warn(result);
+        toast.error("Error loading plans");
+      }
+    } catch (error) {
+      console.error("Error loading plans:", error);
+      toast.error("Error loading plans");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPlans(1, pagination.pageSize);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadPlans(1, pagination.pageSize);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [filters, search]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadPlans(pagination.page, pagination.pageSize);
+    setRefreshing(false);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      loadPlans(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    const newSize = parseInt(value, 10);
+    setPagination((prev) => ({ ...prev, pageSize: newSize, page: 1 }));
+    loadPlans(1, newSize);
+  };
+
+  const handleStatusChange = (status: string) => {
+    setFilters((prev) => {
+      const newStatuses = prev.status.includes(status)
+        ? prev.status.filter((s) => s !== status)
+        : [...prev.status, status];
+      return { ...prev, status: newStatuses };
+    });
+  };
+
+  const handlePlanTypeChange = (type: string) => {
+    setFilters((prev) => {
+      const newTypes = prev.planType.includes(type)
+        ? prev.planType.filter((t) => t !== type)
+        : [...prev.planType, type];
+      return { ...prev, planType: newTypes };
+    });
+  };
+
+  const handleDateChange = (
+    field: "dateFrom" | "dateTo",
+    date: Date | undefined
+  ) => {
+    setFilters((prev) => ({ ...prev, [field]: date }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: [],
+      planType: [],
+      dateFrom: undefined,
+      dateTo: undefined,
+      facilitator: undefined,
+    });
+    setSearch("");
+  };
+
+  const handleExport = () => {
+    try {
+      // Prepare CSV headers
+      const headers = [
+        "Plan Number",
+        "Survey Title",
+        "Status",
+        "Location",
+        "Facilitator",
+        "Facility",
+        "Pillars Count",
+        "Area (m²)",
+        "Created At",
+        "Updated At",
+      ];
+
+      // Prepare CSV rows
+      const rows = plans.map((plan) => [
+        plan.planNumber || "N/A",
+        plan.surveyTitle || "Untitled",
+        plan.status?.replace("_", " ") || "N/A",
+        plan.location || "N/A",
+        plan.facilitator || "N/A",
+        plan.facility || "N/A",
+        plan.pillars?.length || 0,
+        plan.areaSqM || 0,
+        plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : "N/A",
+        plan.updatedAt ? new Date(plan.updatedAt).toLocaleDateString() : "N/A",
+      ]);
+
+      // Convert to CSV format
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) =>
+          row
+            .map((cell) =>
+              typeof cell === "string" && cell.includes(",")
+                ? `"${cell}"`
+                : cell
+            )
+            .join(",")
+        ),
+      ].join("\n");
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `survey-plans-${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Exported ${plans.length} plans successfully`);
+    } catch (error) {
+      console.error("Error exporting plans:", error);
+      toast.error("Failed to export plans");
+    }
+  };
+
+  // Handle opening view modal - use already loaded data
+  const handleViewPlan = (planId: string) => {
+    // Find plan in the already-loaded plans array
+    const plan = plans.find((p) => p.id === planId);
+    if (plan) {
+      setSelectedPlan(plan);
+      setSelectedPlanId(planId);
+      setViewModalOpen(true);
+      setModalError(null);
+    } else {
+      toast.error("Plan not found");
+    }
+  };
+
+  // Handle opening edit modal - use already loaded data
+  const handleEditPlan = (planId: string) => {
+    // Find plan in the already-loaded plans array
+    const plan = plans.find((p) => p.id === planId);
+    if (plan) {
+      setSelectedPlan(plan);
+      setSelectedPlanId(planId);
+      setEditModalOpen(true);
+      setModalError(null);
+    } else {
+      toast.error("Plan not found");
+    }
+  };
+
+  // Refresh a single plan's data after update
+  const refreshSelectedPlan = async (planId: string) => {
+    try {
+      setModalLoading(true);
+      const result = await getSurfPlanById(planId);
+      if (result.success && result.data) {
+        setSelectedPlan(result.data);
+        // Also update the plan in the plans array
+        setPlans((prevPlans) =>
+          prevPlans.map((p) => (p.id === planId ? result.data : p))
+        );
+      } else {
+        toast.error(result.error || "Failed to refresh plan data");
+      }
+    } catch (error) {
+      console.error("Error refreshing plan:", error);
+      toast.error("Failed to refresh plan data");
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Handle closing modals
+  const handleCloseModal = () => {
+    setViewModalOpen(false);
+    setEditModalOpen(false);
+    setSelectedPlanId(null);
+    setSelectedPlan(null);
+    setModalError(null);
+  };
+
+  // Handle successful edit - refresh the specific plan and close modal
+  const handleEditSuccess = async () => {
+    if (selectedPlanId) {
+      await refreshSelectedPlan(selectedPlanId);
+      toast.success("Plan updated successfully");
+      // Close the edit modal after successful save
+      setEditModalOpen(false);
+    }
+  };
+
+  // Handle QR Code generation
+  const handleGenerateQrCode = async (planId: string) => {
+    try {
+      setIsGeneratingQr(true);
+      setSelectedPlanForQr(planId);
+      setQrCodeDataUrl(null); // Reset previous QR code
+      setQrModalOpen(true); // Open modal immediately to show loading
+
+      const result = await generatePlanQRCode(planId, {
+        darkColor: "#3b82f6",
+        lightColor: "#ffffff",
+        minLightAlpha: 0.3,
+        margin: 4,
+        scale: 8,
+        forceOpaque: false,
+      });
+
+      if (result.success && result.data) {
+        setQrCodeDataUrl(result.data.qrCodeDataUrl);
+      } else {
+        toast.error(result.error || "Failed to generate QR code");
+        setQrModalOpen(false); // Close modal on error
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      toast.error("Failed to generate QR code");
+      setQrModalOpen(false); // Close modal on error
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  // Handle delete plan
+  const handleDeleteClick = (planId: string) => {
+    setPlanToDelete(planId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!planToDelete) return;
+
+    setIsDeleting(true);
+    toast.loading("Deleting plan...", { duration: Infinity });
+    try {
+      const result = await permanentlyDeleteSurfPlan(planToDelete);
+      if (result.success) {
+        toast.success("Plan deleted successfully");
+        setDeleteDialogOpen(false);
+        setPlanToDelete(null);
+        // Refresh the plans list
+        loadPlans(pagination.page, pagination.pageSize);
+      } else {
+        toast.error(result.error || "Failed to delete plan");
+      }
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      toast.error("An error occurred while deleting the plan");
+    } finally {
+      setIsDeleting(false);
+      toast.dismiss();
+    }
+  };
+
+  // Selection Handlers
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlans((prev) =>
+      prev.includes(planId)
+        ? prev.filter((id) => id !== planId)
+        : [...prev, planId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    // Only select eligible plans if needed, or just all visible plans
+    // For now, let's select all visible plans
+    if (selectedPlans.length === plans.length && plans.length > 0) {
+      setSelectedPlans([]);
+    } else {
+      setSelectedPlans(plans.map((p) => p.id));
+    }
+  };
+
+  const handleBatchSubmit = () => {
+    // Get the selected plan objects
+    const selectedPlanObjects = plans.filter((p) =>
+      selectedPlans.includes(p.id)
+    );
+
+    // Check if any selected plan is missing a record copy
+    const plansMissingRecordCopy = selectedPlanObjects.filter(
+      (p) => !p.redCopyFileUrl
+    );
+
+    if (plansMissingRecordCopy.length > 0) {
+      // Open upload modal first
+      setUploadModalOpen(true);
+    } else {
+      // All plans have record copies, proceed to batch submission
+      setBatchModalOpen(true);
+    }
+  };
+
+  const handleUploadComplete = () => {
+    // Refresh plans to get updated record copy URLs
+    loadPlans(pagination.page, pagination.pageSize).then(() => {
+      // Close upload modal and open batch submission modal
+      setUploadModalOpen(false);
+      setBatchModalOpen(true);
+    });
+  };
+
+  const handleBatchSuccess = () => {
+    setSelectedPlans([]);
+    loadPlans(pagination.page, pagination.pageSize);
+  };
+
+  const hasActiveFilters = () => {
+    return (
+      filters.status.length > 0 ||
+      filters.planType.length > 0 ||
+      filters.dateFrom ||
+      filters.dateTo ||
+      search
+    );
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "LODGED":
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "PENDING":
+        return "bg-amber-100 text-amber-700 border-amber-200";
+      case "QUERIED":
+        return "bg-rose-100 text-rose-700 border-rose-200";
+      case "UNDER_REVIEW":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "LODGED":
+      case "APPROVED":
+        return <CheckCircle className="w-4 h-4" />;
+      case "QUERIED":
+        return <XCircle className="w-4 h-4" />;
+      case "PENDING":
+      case "UNDER_REVIEW":
+      case "SUBMITTED":
+        return <Clock className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  // Helper to get the display status (redCopyStatus if not NOT_SUBMITTED, else status)
+  const getDisplayStatus = (plan: any) => {
+    if (plan.status === "LODGED") {
+      return "LODGED";
+    }
+
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return plan.redCopyStatus;
+    }
+
+    return plan.status;
+  };
+
+  const statsData = [
+    {
+      label: "Total Plans",
+      value: pagination.total,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      label: "Pending",
+      value: plans.filter((p) => p.status === "PENDING").length,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+    },
+    {
+      label: "Lodged",
+      value: plans.filter((p) => p.status === "LODGED").length,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
+    },
+    {
+      label: "Under Review",
+      value: plans.filter((p) => p.status === "UNDER_REVIEW").length,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+  ];
+
+  if (loading && plans.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading survey plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full w-full max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Survey Plans</h1>
+            <p className="text-gray-600 mt-1">
+              Manage and review all survey plan submissions
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchesModal(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">My Batches</span>
+              <span className="sm:hidden">Batches</span>
+            </Button>
+            <Button
+              onClick={() =>
+                (window.location.href = "/surfboard/dashboard/newplan")
+              }
+              className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Plan
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {statsData.map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 shadow-sm`}
+            >
+              <div className={`text-2xl font-bold ${stat.color} mb-1`}>
+                {stat.value}
+              </div>
+              <div className="text-sm text-gray-600">{stat.label}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by plan number, title, or location..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filters</span>
+              {hasActiveFilters() && (
+                <Badge className="ml-1 bg-white text-blue-600 hover:bg-white">
+                  {filters.status.length +
+                    filters.planType.length +
+                    (filters.dateFrom ? 1 : 0) +
+                    (filters.dateTo ? 1 : 0)}
+                </Badge>
+              )}
+            </Button>
+
+            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "px-3 py-2 transition-colors",
+                  viewMode === "list"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                )}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "px-3 py-2 transition-colors border-l border-gray-300",
+                  viewMode === "grid"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                )}
+                title="Grid view"
+              >
+                <Grid3x3 className="w-4 h-4" />
+              </button>
+            </div>
+
+            <button
+              onClick={handleExport}
+              disabled={plans.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Filters */}
+      <AnimatePresence>
+        {hasActiveFilters() && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden"
+          >
+            <div className="flex flex-wrap gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              {filters.status.map((status) => (
+                <Badge
+                  key={status}
+                  variant="secondary"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                >
+                  <span className="text-xs font-medium">Status: {status}</span>
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-red-600"
+                    onClick={() => handleStatusChange(status)}
+                  />
+                </Badge>
+              ))}
+              {filters.planType.map((type) => (
+                <Badge
+                  key={type}
+                  variant="secondary"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                >
+                  <span className="text-xs font-medium">Type: {type}</span>
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-red-600"
+                    onClick={() => handlePlanTypeChange(type)}
+                  />
+                </Badge>
+              ))}
+              {filters.dateFrom && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                >
+                  <span className="text-xs font-medium">
+                    From: {format(filters.dateFrom, "MMM d, yyyy")}
+                  </span>
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-red-600"
+                    onClick={() => handleDateChange("dateFrom", undefined)}
+                  />
+                </Badge>
+              )}
+              {filters.dateTo && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                >
+                  <span className="text-xs font-medium">
+                    To: {format(filters.dateTo, "MMM d, yyyy")}
+                  </span>
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-red-600"
+                    onClick={() => handleDateChange("dateTo", undefined)}
+                  />
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 text-xs font-medium h-auto py-1.5"
+                onClick={clearFilters}
+              >
+                Clear all
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Status
+                  </label>
+                  <div className="space-y-2.5">
+                    {PLAN_STATUSES.map((status) => (
+                      <label
+                        key={status}
+                        className="flex items-center group cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filters.status.includes(status)}
+                          onChange={() => handleStatusChange(status)}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                          {status.replace("_", " ")}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Plan Type Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Plan Type
+                  </label>
+                  <div className="space-y-2.5 max-h-48 overflow-y-auto pr-2">
+                    {PLAN_TYPES.map((type) => (
+                      <label
+                        key={type}
+                        className="flex items-center group cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filters.planType.includes(type)}
+                          onChange={() => handlePlanTypeChange(type)}
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                          {type}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date Range Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Date Range
+                  </label>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full h-auto transition-all duration-200",
+                          "py-2 px-3 sm:py-3 sm:px-4",
+                          "justify-between text-left font-normal",
+                          "bg-white hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
+                          "border-2 border-gray-200 hover:border-blue-300",
+                          "shadow-sm hover:shadow-md",
+                          !filters.dateFrom &&
+                            !filters.dateTo &&
+                            "text-muted-foreground"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg shrink-0">
+                            <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {filters.dateFrom || filters.dateTo ? (
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 bg-linear-to-r from-blue-500 to-blue-600 rounded-lg shadow-sm">
+                                  <CalendarIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white shrink-0" />
+                                  <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
+                                    {filters.dateFrom
+                                      ? new Date(
+                                          filters.dateFrom
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
+                                      : "Start"}
+                                  </span>
+                                </div>
+                                <svg
+                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 shrink-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                  />
+                                </svg>
+                                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 bg-linear-to-r from-purple-500 to-purple-600 rounded-lg shadow-sm">
+                                  <CalendarIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white shrink-0" />
+                                  <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
+                                    {filters.dateTo
+                                      ? new Date(
+                                          filters.dateTo
+                                        ).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
+                                      : "End"}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col">
+                                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                                  Select Date Range
+                                </span>
+                                <span className="text-[0.65rem] sm:text-xs text-gray-500 hidden sm:block">
+                                  Choose from presets or custom dates
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <svg
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200"
+                      align="start"
+                    >
+                      <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
+                        {/* Preset Options - Enhanced Design */}
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-white">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
+                                <svg
+                                  className="w-4 h-4 sm:w-5 sm:h-5 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                  />
+                                </svg>
+                              </div>
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                                Quick Select
+                              </h3>
+                            </div>
+                          </div>
+
+                          <div className="p-2 sm:p-3 lg:p-4 space-y-1 sm:space-y-1.5 lg:space-y-2 w-min">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                handleDateChange("dateFrom", today);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-500 mr-2 sm:mr-3"></span>
+                              Today
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-indigo-50 hover:to-indigo-100 hover:text-indigo-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastWeek = new Date();
+                                lastWeek.setDate(today.getDate() - 7);
+                                handleDateChange("dateFrom", lastWeek);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-indigo-500 mr-2 sm:mr-3"></span>
+                              Last 7 days
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-purple-50 hover:to-purple-100 hover:text-purple-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastMonth = new Date();
+                                lastMonth.setDate(today.getDate() - 30);
+                                handleDateChange("dateFrom", lastMonth);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-purple-500 mr-2 sm:mr-3"></span>
+                              Last 30 days
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-pink-50 hover:to-pink-100 hover:text-pink-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const firstDay = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  1
+                                );
+                                handleDateChange("dateFrom", firstDay);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-pink-500 mr-2 sm:mr-3"></span>
+                              This month
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-rose-50 hover:to-rose-100 hover:text-rose-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const firstDayLastMonth = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth() - 1,
+                                  1
+                                );
+                                const lastDayLastMonth = new Date(
+                                  today.getFullYear(),
+                                  today.getMonth(),
+                                  0
+                                );
+                                handleDateChange("dateFrom", firstDayLastMonth);
+                                handleDateChange("dateTo", lastDayLastMonth);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 mr-2 sm:mr-3"></span>
+                              Last month
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 hover:bg-linear-to-r hover:from-orange-50 hover:to-orange-100 hover:text-orange-700 transition-all duration-200 rounded-lg"
+                              onClick={() => {
+                                const today = new Date();
+                                const lastYear = new Date();
+                                lastYear.setFullYear(today.getFullYear() - 1);
+                                handleDateChange("dateFrom", lastYear);
+                                handleDateChange("dateTo", today);
+                              }}
+                            >
+                              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 mr-2 sm:mr-3"></span>
+                              Last year
+                            </Button>
+                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs sm:text-sm font-medium py-2 sm:py-2.5 lg:py-3 text-red-600 hover:bg-linear-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200 rounded-lg"
+                                onClick={() => {
+                                  handleDateChange("dateFrom", undefined);
+                                  handleDateChange("dateTo", undefined);
+                                }}
+                              >
+                                <svg
+                                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 sm:mr-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                                Clear dates
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Calendar Pickers - Side by Side on Desktop */}
+                        <div className="bg-white flex-1">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-linear-to-r from-blue-50 to-purple-50">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-md shadow-sm">
+                                  <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                                </div>
+                                <span className="text-xs sm:text-sm font-bold text-gray-900">
+                                  Custom Range
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-3 sm:p-4 lg:p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                              <div>
+                                <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
+                                  <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                    Start Date
+                                  </label>
+                                </div>
+                                <Calendar
+                                  mode="single"
+                                  selected={filters.dateFrom}
+                                  onSelect={(date: any) =>
+                                    handleDateChange(
+                                      "dateFrom",
+                                      date || undefined
+                                    )
+                                  }
+                                  initialFocus
+                                  disabled={(date) =>
+                                    filters.dateTo
+                                      ? date > filters.dateTo
+                                      : false
+                                  }
+                                  className="rounded-xl border-2 border-blue-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                />
+                              </div>
+                              <div>
+                                <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
+                                  <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-purple-500 to-purple-600 rounded-full"></div>
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                    End Date
+                                  </label>
+                                </div>
+                                <Calendar
+                                  mode="single"
+                                  selected={filters.dateTo}
+                                  onSelect={(date: any) =>
+                                    handleDateChange(
+                                      "dateTo",
+                                      date || undefined
+                                    )
+                                  }
+                                  disabled={(date) =>
+                                    filters.dateFrom
+                                      ? date < filters.dateFrom
+                                      : false
+                                  }
+                                  className="rounded-xl border-2 border-purple-100 p-1.5 sm:p-2 lg:p-3 w-full min-w-[200px] max-w-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Plans Table/Grid */}
+      {viewMode === "list" ? (
+        <div className="grid grid-cols-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left">
+                    <Checkbox
+                      checked={
+                        plans.length > 0 &&
+                        selectedPlans.length === plans.length
+                      }
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Plan Details
+                  </th>
+                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Facilitator
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Survey Date
+                  </th>
+                  <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Updated
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="bg-white divide-y divide-gray-200">
+                {plans.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No plans found</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Try adjusting your search or filters
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  plans.map((plan, index) => (
+                    <motion.tr
+                      key={plan.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <Checkbox
+                          checked={selectedPlans.includes(plan.id)}
+                          onCheckedChange={() => handleSelectPlan(plan.id)}
+                          aria-label={`Select plan ${plan.planNumber}`}
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 bg-blue-50 rounded-lg shrink-0">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/surfboard/dashboard/plan?planId=${plan.id}`}
+                              className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors block max-w-xs"
+                              title={plan.planNumber || "N/A"}
+                            >
+                              {plan.planNumber || "N/A"}
+                            </Link>
+
+                            <div
+                              className="text-sm text-gray-600 truncate max-w-xs"
+                              title={plan.surveyTitle || "Untitled"}
+                            >
+                              {plan.surveyTitle || "Untitled"}
+                            </div>
+
+                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                              <span>{plan?.pillars?.length || 0} pillars</span>
+                              <span>•</span>
+                              <span>
+                                {(plan.areaSqM || 0).toLocaleString()} m²
+                              </span>
+                              <span>•</span>
+                              {plan.redCopyFileUrl ? (
+                                <span
+                                  className="inline-flex items-center gap-1 text-green-600"
+                                  title="Record copy uploaded"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span className="text-xs">Record Copy</span>
+                                </span>
+                              ) : (
+                                <span
+                                  className="inline-flex items-center gap-1 text-amber-600"
+                                  title="Record copy not uploaded"
+                                >
+                                  <Clock className="w-3 h-3" />
+                                  <span className="text-xs">
+                                    No Record Copy
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="md:hidden mt-2">
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                  getDisplayStatus(plan)
+                                )}`}
+                              >
+                                {getStatusIcon(getDisplayStatus(plan))}
+                                {getDisplayStatus(plan)?.replace("_", " ") ||
+                                  "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden lg:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            {plan.ward && (
+                              <div className="text-sm text-gray-900 truncate">
+                                {plan.ward}
+                              </div>
+                            )}
+                            {plan.lga && (
+                              <div className="text-xs text-gray-500 truncate">
+                                {plan.lga}
+                              </div>
+                            )}
+                            {!plan.ward && !plan.lga && (
+                              <div className="text-sm text-gray-500">N/A</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <div
+                            className="text-sm text-gray-900 truncate max-w-[150px]"
+                            title={plan.facilitator || "N/A"}
+                          >
+                            {plan.facilitator || "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden md:table-cell px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            getDisplayStatus(plan)
+                          )}`}
+                        >
+                          {getStatusIcon(getDisplayStatus(plan))}
+                          {getDisplayStatus(plan)?.replace("_", " ") || "N/A"}
+                        </span>
+                      </td>
+                      <td className="hidden sm:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <div className="text-sm text-gray-900">
+                            {plan.dateOnSurveyPlan
+                              ? new Date(
+                                  plan.dateOnSurveyPlan
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden xl:table-cell px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <div className="text-sm text-gray-900">
+                            {plan.updatedAt
+                              ? new Date(plan.updatedAt).toLocaleDateString()
+                              : "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="More actions"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem
+                                onClick={() => handleViewPlan(plan.id)}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditPlan(plan.id)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Plan
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  // Check if plan is eligible for certificate submission
+                                  const eligibilityMessage =
+                                    getPlanEligibilityMessage(plan);
+
+                                  if (
+                                    eligibilityMessage?.code == "no_record_copy"
+                                  ) {
+                                    // Select this plan
+                                    setSelectedPlans([plan.id]);
+                                    setUploadModalOpen(true);
+                                    return;
+                                  }
+
+                                  if (eligibilityMessage) {
+                                    toast.error(eligibilityMessage.message);
+                                    return;
+                                  }
+
+                                  // Select this plan
+                                  setSelectedPlans([plan.id]);
+
+                                  // Check if record copy is uploaded
+                                  if (!plan.redCopyFileUrl) {
+                                    setUploadModalOpen(true);
+                                  } else {
+                                    setBatchModalOpen(true);
+                                  }
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Submit for Certificate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleGenerateQrCode(plan.id)}
+                              >
+                                <QrCode className="w-4 h-4 mr-2" />
+                                QR Code
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(plan.id)}
+                                disabled={
+                                  isDeleting && planToDelete === plan.id
+                                }
+                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              >
+                                {isDeleting && planToDelete === plan.id ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                )}
+                                {isDeleting && planToDelete === plan.id
+                                  ? "Deleting..."
+                                  : "Delete Plan"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {plans.length > 0 && (
+            <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
+              <div className="text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-medium">
+                  {(pagination.page - 1) * pagination.pageSize + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(
+                    pagination.page * pagination.pageSize,
+                    pagination.total
+                  )}
+                </span>{" "}
+                of <span className="font-medium">{pagination.total}</span> plans
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={pagination.pageSize.toString()}
+                  onValueChange={handlePageSizeChange}
+                >
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 20, 50].map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        Show {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(1)}
+                    disabled={pagination.page === 1}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.totalPages)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Grid View */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-12">
+              <FileText className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="text-gray-500">No plans found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            plans.map((plan, index) => (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
+                <Card className="hover:shadow-lg transition-shadow relative">
+                  {/* Selection Checkbox for Grid */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <Checkbox
+                      checked={selectedPlans.includes(plan.id)}
+                      onCheckedChange={() => handleSelectPlan(plan.id)}
+                      className="bg-white/80 backdrop-blur-xs border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                  </div>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="p-2 bg-blue-50 rounded-lg shrink-0">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            href={`/surfboard/dashboard/plan?planId=${plan.id}`}
+                          >
+                            <CardTitle className="text-base truncate hover:text-blue-600 transition-colors cursor-pointer">
+                              {plan.planNumber || "N/A"}
+                            </CardTitle>
+                          </Link>
+                          <CardDescription className="text-sm truncate">
+                            {plan.surveyTitle || "Untitled"}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border shrink-0 ${getStatusColor(
+                          getDisplayStatus(plan)
+                        )}`}
+                      >
+                        {getStatusIcon(getDisplayStatus(plan))}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Location with LGA/Ward hierarchy like list view */}
+                    <div className="flex items-start gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        {plan.ward && (
+                          <div className="text-sm text-gray-900 truncate">
+                            {plan.ward}
+                          </div>
+                        )}
+                        {plan.lga && (
+                          <div className="text-xs text-gray-500 truncate">
+                            {plan.lga}
+                          </div>
+                        )}
+                        {!plan.ward && !plan.lga && (
+                          <span className="text-gray-600">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Facilitator */}
+                    <div className="flex items-start gap-2 text-sm">
+                      <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <span
+                        className="text-gray-600 truncate"
+                        title={plan.facilitator || "N/A"}
+                      >
+                        {plan.facilitator || "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Pillars and Area */}
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>{plan.pillars?.length || 0} pillars</span>
+                      <span>•</span>
+                      <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
+                    </div>
+
+                    {/* Record Copy Status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {plan.redCopyFileUrl ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Record Copy Uploaded</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                          <Clock className="w-3 h-3" />
+                          <span>No Record Copy</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Survey Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600">Survey:</span>
+                      <span>
+                        {plan.dateOnSurveyPlan
+                          ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
+                          : "No date"}
+                      </span>
+                    </div>
+
+                    {/* Updated Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600">
+                        Updated:
+                      </span>
+                      <span>
+                        {plan.updatedAt
+                          ? new Date(plan.updatedAt).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleViewPlan(plan.id)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="px-3">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => handleViewPlan(plan.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEditPlan(plan.id)}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              // Check if plan is eligible for certificate submission
+                              const eligibilityMessage =
+                                getPlanEligibilityMessage(plan);
+
+                              if (
+                                eligibilityMessage?.code == "no_record_copy"
+                              ) {
+                                // Select this plan
+                                setSelectedPlans([plan.id]);
+                                setUploadModalOpen(true);
+                                return;
+                              }
+
+                              if (eligibilityMessage) {
+                                toast.error(
+                                  eligibilityMessage?.message ||
+                                    "Something went wrong"
+                                );
+                                return;
+                              }
+
+                              // Select this plan
+                              setSelectedPlans([plan.id]);
+
+                              // Check if record copy is uploaded
+                              if (!plan.redCopyFileUrl) {
+                                setUploadModalOpen(true);
+                              } else {
+                                setBatchModalOpen(true);
+                              }
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Submit for Certificate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleGenerateQrCode(plan.id)}
+                          >
+                            <QrCode className="w-4 h-4 mr-2" />
+                            QR Code
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(plan.id)}
+                            disabled={isDeleting && planToDelete === plan.id}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          >
+                            {isDeleting && planToDelete === plan.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 mr-2" />
+                            )}
+                            {isDeleting && planToDelete === plan.id
+                              ? "Deleting..."
+                              : "Delete Plan"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Pagination for Grid View */}
+      {viewMode === "grid" && plans.length > 0 && (
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600">
+            Showing{" "}
+            <span className="font-medium">
+              {(pagination.page - 1) * pagination.pageSize + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-medium">
+              {Math.min(
+                pagination.page * pagination.pageSize,
+                pagination.total
+              )}
+            </span>{" "}
+            of <span className="font-medium">{pagination.total}</span> plans
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={pagination.pageSize.toString()}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    Show {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={pagination.page === 1}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.totalPages)}
+                disabled={pagination.page >= pagination.totalPages}
+                className="h-9 w-9 p-0"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="z-301 max-w-[90%] md:max-w-[75%] 2xl:max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col justify-between gap-2">
+          <DialogHeader>
+            <DialogTitle>View Plan Details</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2 max-h-[85%] overflow-y-auto">
+            {modalError ? (
+              <PlanDetailsErrorState
+                message={modalError}
+                onRetry={() => selectedPlanId && handleViewPlan(selectedPlanId)}
+                onGoBack={() => setViewModalOpen(false)}
+              />
+            ) : !selectedPlan ? (
+              <PlanDetailsLoadingState />
+            ) : (
+              <>
+                {modalLoading && (
+                  <Dialog open={modalLoading}>
+                    <DialogContent className="sm:max-w-md" hideCloseButton>
+                      <div className="flex flex-col items-center gap-4 py-6">
+                        <div className="relative">
+                          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <RefreshCw className="w-6 h-6 text-blue-600 animate-pulse" />
+                          </div>
+                        </div>
+
+                        <div className="text-center space-y-1">
+                          <p className="text-base font-semibold text-gray-900">
+                            Refreshing Plan Data
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Please wait while we update the information...
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                <OptimizedSinglePlanDetails
+                  planData={selectedPlan}
+                  onEdit={() => {
+                    setViewModalOpen(false);
+                    handleEditPlan(selectedPlan.id);
+                  }}
+                  onRefresh={() =>
+                    selectedPlanId && refreshSelectedPlan(selectedPlanId)
+                  }
+                />
+              </>
+            )}{" "}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={editModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="z-301 max-w-[90%] md:max-w-[75%] 2xl:max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col justify-between gap-2">
+          <DialogHeader>
+            <DialogTitle>Edit Plan</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2 max-h-[85%] overflow-y-auto">
+            {modalError ? (
+              <PlanFormErrorState
+                message={modalError}
+                onRetry={() => selectedPlanId && handleEditPlan(selectedPlanId)}
+                onGoBack={() => setEditModalOpen(false)}
+              />
+            ) : !selectedPlan ? (
+              <PlanFormLoadingState />
+            ) : (
+              <>
+                {modalLoading && (
+                  <Dialog open={modalLoading}>
+                    <DialogContent className="sm:max-w-md" hideCloseButton>
+                      <div className="flex flex-col items-center gap-4 py-6">
+                        <div className="relative">
+                          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-100 border-t-green-600"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <CheckCircle className="w-6 h-6 text-green-600 animate-pulse" />
+                          </div>
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-base font-semibold text-gray-900">
+                            Saving Changes
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Please wait while we save your updates...
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                <SurfboardPlanForm
+                  mode="edit"
+                  initial={selectedPlan}
+                  onSuccess={handleEditSuccess}
+                />
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              plan and remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* QR Code Modal */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Plan QR Code</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-4 bg-white rounded-lg border">
+              {isGeneratingQr || !qrCodeDataUrl ? (
+                <div className="w-64 h-64 flex flex-col items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Generating QR Code...
+                  </p>
+                </div>
+              ) : (
+                <img
+                  src={qrCodeDataUrl}
+                  alt="QR Code"
+                  className="w-64 h-64 mx-auto"
+                />
+              )}
+            </div>
+
+            <div className="flex gap-2 w-full">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setQrModalOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = qrCodeDataUrl || "";
+                  link.download = `plan-qrcode.png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                disabled={!qrCodeDataUrl}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Selection Bar */}
+      <BatchSelectionBar
+        selectedCount={selectedPlans.length}
+        onSubmit={handleBatchSubmit}
+        onClear={() => setSelectedPlans([])}
+      />
+
+      {/* Record Copy Upload Modal */}
+      <RecordCopyUploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        selectedPlans={plans.filter((p) => selectedPlans.includes(p.id))}
+        onUploadComplete={handleUploadComplete}
+        onRemovePlan={(planId) => {
+          setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+
+          if (selectedPlans.length === 0) {
+            setUploadModalOpen(false);
+          }
+        }}
+      />
+
+      {/* Batch Submission Modal */}
+      <BatchSubmissionModal
+        isOpen={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        selectedPlans={plans.filter((p) => selectedPlans.includes(p.id))}
+        onSuccess={handleBatchSuccess}
+        onRemovePlan={(planId) => {
+          setSelectedPlans((prev) => prev.filter((id) => id !== planId));
+
+          if (selectedPlans.length === 0) {
+            setBatchModalOpen(false);
+          }
+        }}
+      />
+
+      {/* Submitted Batches Modal */}
+      <SubmittedBatchesModal
+        isOpen={showBatchesModal}
+        onClose={() => setShowBatchesModal(false)}
+        onSuccess={() => {
+          // Refresh plans after successful payment
+          loadPlans(pagination.page, pagination.pageSize);
+        }}
+      />
+    </div>
+  );
+}
