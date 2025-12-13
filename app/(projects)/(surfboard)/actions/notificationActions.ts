@@ -539,3 +539,242 @@ export async function notifyPlanShared(params: {
     console.error("Error sending sharing notification:", error);
   }
 }
+
+/**
+ * Helper function to notify admins when a batch is submitted
+ */
+export async function notifyBatchSubmitted(params: {
+  batchId: string;
+  batchCode: string;
+  planCount: number;
+  submittedBy: { firstName: string; lastName: string };
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SYSTEM",
+      title: "New Batch Submitted",
+      message: `${params.submittedBy.firstName} ${params.submittedBy.lastName} submitted batch ${params.batchCode} with ${params.planCount} plan(s).`,
+      audience: "GENERAL_ADMINS",
+      link: `/surf-restricted/dashboard/cod`,
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        planCount: params.planCount,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending batch submission notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify admins when payment is received
+ */
+export async function notifyPaymentReceived(params: {
+  batchId: string;
+  batchCode: string;
+  amount: number;
+  paidBy: { firstName: string; lastName: string };
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SYSTEM",
+      title: "Payment Received",
+      message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${
+        params.batchCode
+      } from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
+      audience: "GENERAL_ADMINS",
+      link: `/surf-restricted/dashboard/cod`,
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        amount: params.amount,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending payment notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify MDA roles when LASG receipt is uploaded
+ */
+export async function notifyLASGReceiptUploaded(params: {
+  batchId: string;
+  batchCode: string;
+  planCount: number;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    // Get all MDA role users
+    const mdaUsers = await prisma.surfboardUser.findMany({
+      where: {
+        role: {
+          in: ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II"],
+        },
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (mdaUsers.length > 0) {
+      await createNotification({
+        type: "SYSTEM",
+        title: "LASG Receipt Uploaded",
+        message: `LASG payment receipt uploaded for batch ${params.batchCode} with ${params.planCount} plan(s). Ready for review.`,
+        audience: "SPECIFIC_USERS",
+        userIds: mdaUsers.map((u) => u.id),
+        link: `/surf-mda/dashboard`,
+        metadata: {
+          batchId: params.batchId,
+          batchCode: params.batchCode,
+          planCount: params.planCount,
+        },
+        sendEmail: params.sendEmail ?? true,
+      });
+    }
+  } catch (error) {
+    console.error("Error sending LASG receipt notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify admins when accounts disapproves a batch
+ */
+export async function notifyAccountsDisapproval(params: {
+  batchId: string;
+  batchCode: string;
+  comment?: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "WARNING",
+      title: "Batch Disapproved by Accounts",
+      message: `Batch ${params.batchCode} was disapproved by Accounts. ${
+        params.comment ? `Reason: ${params.comment}` : ""
+      }`,
+      audience: "GENERAL_ADMINS",
+      link: `/surf-restricted/dashboard/cod`,
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        comment: params.comment,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending accounts disapproval notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their plan is queried
+ */
+export async function notifyPlanQueried(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  queriedBy: string; // Role name (e.g., "SURCON", "Records I")
+  comment?: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "WARNING",
+      title: "Plan Queried",
+      message: `Your plan ${params.planNumber} was queried by ${
+        params.queriedBy
+      }. ${
+        params.comment
+          ? `Comment: ${params.comment}`
+          : "Please review and resubmit."
+      }`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plans`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queriedBy: params.queriedBy,
+        comment: params.comment,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending plan query notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their plan is approved/lodged
+ */
+export async function notifyPlanApproved(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  batchCode?: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SUCCESS",
+      title: "Plan Successfully Lodged",
+      message: `Congratulations! Your plan ${
+        params.planNumber
+      } has been successfully lodged. ${
+        params.batchCode ? `Batch: ${params.batchCode}` : ""
+      }`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plans`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        batchCode: params.batchCode,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending plan approval notification:", error);
+  }
+}
+
+/**
+ * Helper function for generic MDA approval notifications
+ */
+export async function notifyMDAApproval(params: {
+  planId: string;
+  planNumber: string;
+  role: string;
+  approved: boolean;
+  comment?: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    // This can be used to notify admins about MDA approvals
+    await createNotification({
+      type: params.approved ? "SUCCESS" : "WARNING",
+      title: `${params.role} ${params.approved ? "Approved" : "Queried"} Plan`,
+      message: `Plan ${params.planNumber} was ${
+        params.approved ? "approved" : "queried"
+      } by ${params.role}. ${params.comment || ""}`,
+      audience: "GENERAL_ADMINS",
+      link: `/surf-restricted/dashboard/cod`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        role: params.role,
+        approved: params.approved,
+        comment: params.comment,
+      },
+      sendEmail: params.sendEmail ?? false, // Don't spam admins with every approval
+    });
+  } catch (error) {
+    console.error("Error sending MDA approval notification:", error);
+  }
+}

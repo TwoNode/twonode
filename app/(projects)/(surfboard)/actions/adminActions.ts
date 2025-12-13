@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
+import {
+  logAuditAction,
+  createChangeLog,
+  formatChanges,
+} from "../utils/auditLogger";
 
 // Type definitions
 interface UpdateUserRoleInput {
@@ -225,6 +230,15 @@ export async function updateUserRole({ userId, newRole }: UpdateUserRoleInput) {
       },
     });
 
+    // Log audit action
+    await logAuditAction({
+      userId,
+      action: "UPDATE_USER_ROLE",
+      entity: "SurfboardUser",
+      entityId: userId,
+      changes: formatChanges({ role: targetUser.role }, { role: newRole }),
+    });
+
     revalidatePath("/surf-restricted/dashboard/user-management");
 
     return {
@@ -280,6 +294,18 @@ export async function updateUserStatus({
         lastName: true,
         isActive: true,
       },
+    });
+
+    // Log audit action
+    await logAuditAction({
+      userId,
+      action: isActive ? "ACTIVATE_USER" : "DEACTIVATE_USER",
+      entity: "SurfboardUser",
+      entityId: userId,
+      changes: createChangeLog({
+        isActive,
+        userEmail: targetUser.email,
+      }),
     });
 
     revalidatePath("/surf-restricted/dashboard/user-management");
@@ -528,6 +554,18 @@ export async function deleteUser(userId: string) {
       data: { isActive: false },
     });
 
+    // Log audit action
+    await logAuditAction({
+      userId,
+      action: "DELETE_USER",
+      entity: "SurfboardUser",
+      entityId: userId,
+      changes: createChangeLog({
+        userRole: user.role,
+        deleted: true,
+      }),
+    });
+
     revalidatePath("/surf-restricted/dashboard/user-management");
 
     return {
@@ -575,6 +613,20 @@ export async function createAdmin(input: CreateAdminInput) {
         isActive: true,
         emailVerified: false,
       },
+    });
+
+    // Log audit action
+    await logAuditAction({
+      userId: newUser.id,
+      action: "CREATE_ADMIN",
+      entity: "SurfboardUser",
+      entityId: newUser.id,
+      changes: createChangeLog({
+        email,
+        firstName,
+        lastName,
+        role,
+      }),
     });
 
     revalidatePath("/surf-restricted/dashboard/user-management");

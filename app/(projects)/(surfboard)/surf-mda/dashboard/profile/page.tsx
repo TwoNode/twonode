@@ -26,6 +26,7 @@ const roleNames: Record<string, string> = {
   RECORDS_I: "Records I Admin",
   RECORDS_II: "Records II Admin",
   SUPERADMIN: "Super Administrator",
+  MDA_SUPERADMIN: "MDA Super Administrator",
 };
 
 const roleDescriptions: Record<string, string> = {
@@ -41,6 +42,8 @@ const roleDescriptions: Record<string, string> = {
     "Responsible for final approval and submission to OSSG - verifying physical copies.",
   SUPERADMIN:
     "Full administrative access to all MDA departments and system functions.",
+  MDA_SUPERADMIN:
+    "Oversight access to view all activities across all MDA departments for monitoring and reporting purposes.",
 };
 
 export default function ProfilePage() {

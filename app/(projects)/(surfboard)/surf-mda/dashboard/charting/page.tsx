@@ -255,8 +255,8 @@ export default function ChartingAdminPage() {
                 )}
 
                 {/* Pillars */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
                     <p className="text-sm font-medium text-gray-700">
                       Pillar Coordinates
                     </p>
@@ -269,8 +269,20 @@ export default function ChartingAdminPage() {
                       Copy
                     </Button>
                   </div>
-                  <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
-                    {getPillarsText(plan.pillars) || "No pillars data"}
+                  {/* PL Header */}
+                  <div className="px-4 py-2 bg-blue-50 border-b border-gray-200">
+                    <span className="text-lg font-bold text-blue-800">PL</span>
+                  </div>
+                  <pre className="text-xs bg-white p-3 overflow-x-auto">
+                    {(() => {
+                      const text = getPillarsText(plan.pillars);
+                      // Remove the PL prefix from text since we display it separately
+                      const lines = text.split("\n");
+                      if (lines[0] === "PL" || lines[0]?.length === 2) {
+                        return lines.slice(1).join("\n") || "No pillars data";
+                      }
+                      return text || "No pillars data";
+                    })()}
                   </pre>
                 </div>
 
