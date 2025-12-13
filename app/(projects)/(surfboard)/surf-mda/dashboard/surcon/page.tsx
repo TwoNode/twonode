@@ -365,8 +365,14 @@ export default function SurconAdminPage() {
                     }
                     return (
                       <div className="overflow-x-auto">
+                        {/* PL Header */}
+                        <div className="px-4 py-2 bg-blue-100 border-b border-blue-200">
+                          <span className="text-lg font-bold text-blue-800">
+                            PL
+                          </span>
+                        </div>
                         <table className="min-w-full divide-y divide-blue-200">
-                          <thead className="bg-blue-100">
+                          <thead className="bg-blue-50">
                             <tr>
                               <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
                                 Pillar #
