@@ -27,6 +27,10 @@ import {
   Copy,
   AlertCircle,
   XCircle,
+  User,
+  Briefcase,
+  Hash,
+  Mail,
 } from "lucide-react";
 import {
   getSurconPlans,
@@ -54,6 +58,9 @@ interface Plan {
     firstName: string;
     lastName: string;
     email: string;
+    surconRegNumber: string | null;
+    companyName: string | null;
+    surconRegName: string | null;
   } | null;
 }
 
@@ -168,6 +175,18 @@ export default function SurconAdminPage() {
     toast.success("Pillar coordinates copied to clipboard");
   };
 
+  const getPillarsArray = (pillars: any): any[] => {
+    if (!pillars) return [];
+    try {
+      const pillarsArray = Array.isArray(pillars)
+        ? pillars
+        : JSON.parse(pillars);
+      return pillarsArray;
+    } catch {
+      return [];
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "APPROVED":
@@ -263,9 +282,63 @@ export default function SurconAdminPage() {
                   </div>
                 </div>
 
+                {/* Surveyor Information */}
+                {plan.user && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="w-5 h-5 text-emerald-600" />
+                      <h4 className="text-sm font-semibold text-emerald-800">
+                        Surveyor Information
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-start gap-3">
+                        <User className="w-4 h-4 text-emerald-500 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-emerald-600">
+                            Submitted By
+                          </p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {plan.user.firstName} {plan.user.lastName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-emerald-600">
+                            SURCON Number
+                          </p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {plan.user.surconRegNumber || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-emerald-600">Company</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {plan.user.companyName || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-emerald-600">Email</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {plan.user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Pillars - Key verification area for SURCON */}
-                <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="border-2 border-blue-200 rounded-lg overflow-hidden bg-blue-50">
+                  <div className="flex items-center justify-between p-4 border-b border-blue-200">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="w-5 h-5 text-blue-600" />
                       <p className="text-sm font-medium text-blue-800">
@@ -281,9 +354,55 @@ export default function SurconAdminPage() {
                       Copy
                     </Button>
                   </div>
-                  <pre className="text-xs bg-white p-3 rounded overflow-x-auto border">
-                    {getPillarsText(plan.pillars) || "No pillars data"}
-                  </pre>
+                  {(() => {
+                    const pillarsArray = getPillarsArray(plan.pillars);
+                    if (!pillarsArray || pillarsArray.length === 0) {
+                      return (
+                        <div className="p-4 text-center text-gray-500 text-sm">
+                          No pillars data available
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-blue-200">
+                          <thead className="bg-blue-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Pillar #
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Easting
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Northing
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-blue-100">
+                            {pillarsArray.map((pillar: any, index: number) => (
+                              <tr key={index} className="hover:bg-blue-50">
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {pillar.pillarNumber ||
+                                    pillar.name ||
+                                    `P${index + 1}`}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.easting ?? pillar.lng)?.toFixed(3) ||
+                                    "N/A"}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.northing ?? pillar.lat)?.toFixed(
+                                    3
+                                  ) || "N/A"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Record Copy */}

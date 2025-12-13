@@ -1065,6 +1065,8 @@ export async function updateAccountsApproval(
     revalidatePath("/surf-mda/dashboard/charting");
     revalidatePath("/surf-mda/dashboard/surcon");
     revalidatePath("/surf-mda/dashboard/records-i");
+    revalidatePath("/surf-mda/dashboard/records-ii");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -1117,6 +1119,7 @@ export async function updateChartingStatus(
     });
 
     revalidatePath("/surf-mda/dashboard/charting");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -1182,6 +1185,7 @@ export async function updateSurconStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/surcon");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -1248,6 +1252,7 @@ export async function updateRecordsIStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/records-i");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -1366,6 +1371,7 @@ export async function updateRecordsIIStatus(
     }
 
     revalidatePath("/surf-mda/dashboard/records-ii");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -1683,6 +1689,9 @@ export async function getSurconPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            surconRegNumber: true,
+            companyName: true,
+            surconRegName: true,
           },
         },
       },
