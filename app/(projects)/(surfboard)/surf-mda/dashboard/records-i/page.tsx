@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CheckCircle,
   FileText,
@@ -27,10 +28,13 @@ import {
   XCircle,
   ExternalLink,
   Image as ImageIcon,
+  Clock,
+  History,
 } from "lucide-react";
 import {
   getRecordsIPlans,
   updateRecordsIStatus,
+  getRecordsIHistory,
 } from "../../../actions/codActions";
 
 interface Plan {
@@ -46,6 +50,13 @@ interface Plan {
   accountsStatus: string;
   chartingStatus: string;
   surconStatus: string;
+  recordsIStatus?: string;
+  recordsIComment?: string | null;
+  recordsIApprovedAt?: Date;
+  recordsIApprovedByUser?: {
+    firstName: string;
+    lastName: string;
+  } | null;
   batch: {
     batchCode: string;
     paymentStatus: string;
@@ -59,7 +70,10 @@ interface Plan {
 
 export default function RecordsIAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [historyPlans, setHistoryPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [actionType, setActionType] = useState<"approve" | "query">("approve");
@@ -70,6 +84,12 @@ export default function RecordsIAdminPage() {
   useEffect(() => {
     fetchPlans();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "history" && historyPlans.length === 0) {
+      fetchHistory();
+    }
+  }, [activeTab]);
 
   const fetchPlans = async () => {
     try {
@@ -88,6 +108,23 @@ export default function RecordsIAdminPage() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const result = await getRecordsIHistory();
+      if (result.success && result.data) {
+        setHistoryPlans(result.data as any);
+      } else {
+        toast.error(result.error || "Failed to fetch history");
+      }
+    } catch (error) {
+      console.error("Error fetching history:", error);
+      toast.error("An error occurred while fetching history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const handleActionClick = (plan: Plan, action: "approve" | "query") => {
     setSelectedPlan(plan);
     setActionType(action);
@@ -98,7 +135,6 @@ export default function RecordsIAdminPage() {
   const handleSubmit = async () => {
     if (!selectedPlan) return;
 
-    // Query action requires a comment
     if (actionType === "query" && !comment.trim()) {
       toast.error("Please provide a reason for the query");
       return;
@@ -119,7 +155,10 @@ export default function RecordsIAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchPlans(); // Refresh the list
+        fetchPlans();
+        if (activeTab === "history") {
+          fetchHistory();
+        }
       } else {
         toast.error(result.error || "Failed to update status");
       }
@@ -148,6 +187,13 @@ export default function RecordsIAdminPage() {
     return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
 
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleString("en-NG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -159,6 +205,177 @@ export default function RecordsIAdminPage() {
     );
   }
 
+  const renderPlanCard = (plan: Plan, isHistory: boolean = false) => (
+    <Card
+      key={plan.id}
+      className={
+        isHistory
+          ? plan.recordsIStatus === "QUERIED"
+            ? "border-l-4 border-l-red-400"
+            : "border-l-4 border-l-green-400"
+          : ""
+      }
+    >
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl">{plan.planNumber}</CardTitle>
+              {isHistory && getStatusBadge(plan.recordsIStatus || "PENDING")}
+            </div>
+            <CardDescription>{plan.surveyTitle}</CardDescription>
+            {plan.batch && (
+              <div className="mt-2">
+                <Badge variant="outline">Batch: {plan.batch.batchCode}</Badge>
+              </div>
+            )}
+          </div>
+          {!isHistory && (
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex gap-2 items-center">
+                <span className="text-xs text-gray-500">Accounts:</span>
+                {getStatusBadge(plan.accountsStatus)}
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-xs text-gray-500">Charting:</span>
+                {getStatusBadge(plan.chartingStatus)}
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="text-xs text-gray-500">SURCON:</span>
+                {getStatusBadge(plan.surconStatus)}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Location Info */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+          <div>
+            <p className="text-xs text-gray-500">LGA</p>
+            <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Ward</p>
+            <p className="text-sm font-medium">{plan.ward || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">LCDA</p>
+            <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Deeded Area</p>
+            <p className="text-sm font-medium">{plan.deededArea}</p>
+          </div>
+        </div>
+
+        {/* Review Info (for history) */}
+        {isHistory && plan.recordsIApprovedAt && (
+          <div className="bg-gray-50 p-3 rounded-lg text-sm">
+            <p className="text-gray-600">
+              <span className="font-medium">Reviewed by:</span>{" "}
+              {plan.recordsIApprovedByUser
+                ? `${plan.recordsIApprovedByUser.firstName} ${plan.recordsIApprovedByUser.lastName}`
+                : "Unknown"}
+            </p>
+            <p className="text-gray-600">
+              <span className="font-medium">Date:</span>{" "}
+              {formatDate(plan.recordsIApprovedAt)}
+            </p>
+            {plan.recordsIStatus === "QUERIED" && plan.recordsIComment && (
+              <p className="text-red-600 mt-2">
+                <span className="font-medium">Query Reason:</span>{" "}
+                {plan.recordsIComment}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Record Copy */}
+        <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <p className="text-sm font-medium text-blue-800">
+                Record Copy {!isHistory && "(Verify Quality & Completeness)"}
+              </p>
+            </div>
+          </div>
+
+          {plan.redCopyFileUrl ? (
+            <div className="space-y-3">
+              {isImageUrl(plan.redCopyFileUrl) && (
+                <div
+                  className="cursor-pointer"
+                  onClick={() => setViewingImage(plan.redCopyFileUrl)}
+                >
+                  <img
+                    src={plan.redCopyFileUrl}
+                    alt="Record Copy Preview"
+                    className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Click to view full size
+                  </p>
+                </div>
+              )}
+
+              <a
+                href={plan.redCopyFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                {isImageUrl(plan.redCopyFileUrl) ? (
+                  <ImageIcon className="w-4 h-4" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Open Record Copy
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          ) : (
+            <p className="text-sm text-red-600">No record copy uploaded!</p>
+          )}
+        </div>
+
+        {/* Submitter Info */}
+        {plan.user && (
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">Submitted by</p>
+            <p className="text-sm font-medium">
+              {plan.user.firstName} {plan.user.lastName}
+            </p>
+            <p className="text-xs text-gray-500">{plan.user.email}</p>
+          </div>
+        )}
+
+        {/* Action Buttons (for pending only) */}
+        {!isHistory && (
+          <div className="flex gap-3 pt-2">
+            <Button
+              onClick={() => handleActionClick(plan, "approve")}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={!plan.redCopyFileUrl}
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Approve
+            </Button>
+            <Button
+              onClick={() => handleActionClick(plan, "query")}
+              variant="outline"
+              className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Query
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
@@ -168,160 +385,60 @@ export default function RecordsIAdminPage() {
         </p>
       </div>
 
-      {plans.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg">
-              No plans awaiting Records I review
-            </p>
-            <p className="text-gray-400 text-sm mt-2">
-              Submitted plans will appear here
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {plans.map((plan) => (
-            <Card key={plan.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl">{plan.planNumber}</CardTitle>
-                    <CardDescription>{plan.surveyTitle}</CardDescription>
-                    {plan.batch && (
-                      <div className="mt-2">
-                        <Badge variant="outline">
-                          Batch: {plan.batch.batchCode}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xs text-gray-500">Accounts:</span>
-                      {getStatusBadge(plan.accountsStatus)}
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xs text-gray-500">Charting:</span>
-                      {getStatusBadge(plan.chartingStatus)}
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <span className="text-xs text-gray-500">SURCON:</span>
-                      {getStatusBadge(plan.surconStatus)}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Location Info */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-500">LGA</p>
-                    <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Ward</p>
-                    <p className="text-sm font-medium">{plan.ward || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">LCDA</p>
-                    <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Deeded Area</p>
-                    <p className="text-sm font-medium">{plan.deededArea}</p>
-                  </div>
-                </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Pending ({plans.length})
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            History
+          </TabsTrigger>
+        </TabsList>
 
-                {/* Record Copy - Key verification area for Records I */}
-                <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                      <p className="text-sm font-medium text-blue-800">
-                        Record Copy (Verify Quality & Completeness)
-                      </p>
-                    </div>
-                  </div>
-
-                  {plan.redCopyFileUrl ? (
-                    <div className="space-y-3">
-                      {/* Preview if image */}
-                      {isImageUrl(plan.redCopyFileUrl) && (
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => setViewingImage(plan.redCopyFileUrl)}
-                        >
-                          <img
-                            src={plan.redCopyFileUrl}
-                            alt="Record Copy Preview"
-                            className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Click to view full size
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Link to file */}
-                      <a
-                        href={plan.redCopyFileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
-                      >
-                        {isImageUrl(plan.redCopyFileUrl) ? (
-                          <ImageIcon className="w-4 h-4" />
-                        ) : (
-                          <FileText className="w-4 h-4" />
-                        )}
-                        Open Record Copy
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-red-600">
-                      No record copy uploaded!
-                    </p>
-                  )}
-                </div>
-
-                {/* Submitter Info */}
-                {plan.user && (
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Submitted by</p>
-                    <p className="text-sm font-medium">
-                      {plan.user.firstName} {plan.user.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500">{plan.user.email}</p>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    onClick={() => handleActionClick(plan, "approve")}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={!plan.redCopyFileUrl}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleActionClick(plan, "query")}
-                    variant="outline"
-                    className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Query
-                  </Button>
-                </div>
+        <TabsContent value="pending" className="mt-6">
+          {plans.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  No plans awaiting Records I review
+                </p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Submitted plans will appear here
+                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid gap-4">
+              {plans.map((plan) => renderPlanCard(plan, false))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          {historyLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          ) : historyPlans.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <History className="w-16 h-16 text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">No history yet</p>
+                <p className="text-gray-400 text-sm mt-2">
+                  Approved and queried plans will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {historyPlans.map((plan) => renderPlanCard(plan, true))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Action Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
