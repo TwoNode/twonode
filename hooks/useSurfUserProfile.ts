@@ -23,6 +23,10 @@ export function useSurfUserProfile() {
     residenceState: "",
     logo: "",
     signature: "",
+    phoneNumber: "",
+    address: "",
+    payerID: null,
+    payerIDType: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +57,10 @@ export function useSurfUserProfile() {
             residenceState: data.residenceState || "",
             logo: data.logo || "",
             signature: data.signature || "",
+            phoneNumber: data.phoneNumber || "",
+            address: data.address || "",
+            payerID: data.payerID ?? null,
+            payerIDType: data.payerIDType || "",
           });
         }
       } catch (error) {
@@ -130,13 +138,13 @@ export function useSurfUserProfile() {
 
       // Basic validation
       if (!userData.firstName || !userData.lastName) {
-        toast.error('First name and last name are required');
+        toast.error("First name and last name are required");
         return false;
       }
 
       // Validate email format if it's being updated
       if (userData.email && !/\S+@\S+\.\S+/.test(userData.email)) {
-        toast.error('Please enter a valid email address');
+        toast.error("Please enter a valid email address");
         return false;
       }
 
@@ -144,37 +152,47 @@ export function useSurfUserProfile() {
 
       // Add text fields with proper type checking
       const textFields = [
-        'firstName',
-        'lastName',
-        'prefix',
-        'suffix',
-        'companyName',
-        'surconRegNumber',
-        'surconRegName',
-        'residenceState',
+        "firstName",
+        "lastName",
+        "prefix",
+        "suffix",
+        "companyName",
+        "surconRegNumber",
+        "surconRegName",
+        "residenceState",
+        "phoneNumber",
+        "address",
+        "payerIDType",
       ] as const;
 
       textFields.forEach((field) => {
-        const value = userData[field] || '';
+        const value = userData[field] || "";
         formData.append(field, value);
       });
+
+      // Handle payerID (integer)
+      if (userData.payerID !== null && userData.payerID !== undefined) {
+        formData.append("payerID", String(userData.payerID));
+      } else {
+        formData.append("payerID", "");
+      }
 
       // Add files if they exist with better error handling
       try {
         if (logoFile) {
-          formData.append('logo', logoFile);
-        } else if (userData.logo === '') {
-          formData.append('remove-logo', 'true');
+          formData.append("logo", logoFile);
+        } else if (userData.logo === "") {
+          formData.append("remove-logo", "true");
         }
 
         if (signatureFile) {
-          formData.append('signature', signatureFile);
-        } else if (userData.signature === '') {
-          formData.append('remove-signature', 'true');
+          formData.append("signature", signatureFile);
+        } else if (userData.signature === "") {
+          formData.append("remove-signature", "true");
         }
       } catch (error) {
-        console.error('Error preparing files for upload:', error);
-        toast.error('Error preparing files for upload');
+        console.error("Error preparing files for upload:", error);
+        toast.error("Error preparing files for upload");
         return false;
       }
 
@@ -188,17 +206,21 @@ export function useSurfUserProfile() {
       if (data) {
         const updatedData = {
           ...data,
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
           email: data.email || userData.email, // Preserve existing email if not in response
-          prefix: data.prefix || '',
-          suffix: data.suffix || '',
-          companyName: data.companyName || '',
-          surconRegNumber: data.surconRegNumber || '',
-          surconRegName: data.surconRegName || '',
-          residenceState: data.residenceState || '',
-          logo: data.logo || '',
-          signature: data.signature || '',
+          prefix: data.prefix || "",
+          suffix: data.suffix || "",
+          companyName: data.companyName || "",
+          surconRegNumber: data.surconRegNumber || "",
+          surconRegName: data.surconRegName || "",
+          residenceState: data.residenceState || "",
+          logo: data.logo || "",
+          signature: data.signature || "",
+          phoneNumber: data.phoneNumber || "",
+          address: data.address || "",
+          payerID: data.payerID ?? null,
+          payerIDType: data.payerIDType || "",
         };
 
         setUserData(updatedData);
@@ -207,17 +229,17 @@ export function useSurfUserProfile() {
         if (logoFile) setLogoFile(null);
         if (signatureFile) setSignatureFile(null);
 
-        toast.success('Profile updated successfully');
+        toast.success("Profile updated successfully");
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       toast.error(
-        error instanceof Error 
+        error instanceof Error
           ? `Failed to update profile: ${error.message}`
-          : 'An unexpected error occurred while updating your profile'
+          : "An unexpected error occurred while updating your profile"
       );
       return false;
     } finally {

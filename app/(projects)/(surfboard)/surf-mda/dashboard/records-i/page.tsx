@@ -30,6 +30,11 @@ import {
   Image as ImageIcon,
   Clock,
   History,
+  User,
+  Hash,
+  Briefcase,
+  Mail,
+  Phone,
 } from "lucide-react";
 import {
   getRecordsIPlans,
@@ -65,6 +70,9 @@ interface Plan {
     firstName: string;
     lastName: string;
     email: string;
+    phoneNumber: string | null;
+    surconRegNumber: string | null;
+    companyName: string | null;
   } | null;
 }
 
@@ -340,14 +348,68 @@ export default function RecordsIAdminPage() {
           )}
         </div>
 
-        {/* Submitter Info */}
+        {/* Surveyor Information */}
         {plan.user && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500 mb-1">Submitted by</p>
-            <p className="text-sm font-medium">
-              {plan.user.firstName} {plan.user.lastName}
-            </p>
-            <p className="text-xs text-gray-500">{plan.user.email}</p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="w-5 h-5 text-emerald-600" />
+              <h4 className="text-sm font-semibold text-emerald-800">
+                Surveyor Information
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <User className="w-4 h-4 text-emerald-500 mt-0.5" />
+                <div>
+                  <p className="text-xs text-emerald-600">Submitted By</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {plan.user.firstName} {plan.user.lastName}
+                  </p>
+                </div>
+              </div>
+              {plan.user.surconRegNumber && (
+                <div className="flex items-start gap-3">
+                  <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">SURCON Number</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.surconRegNumber}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {plan.user.companyName && (
+                <div className="flex items-start gap-3">
+                  <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Company</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.companyName}
+                    </p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
+                <div>
+                  <p className="text-xs text-emerald-600">Email</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {plan.user.email}
+                  </p>
+                </div>
+              </div>
+              {plan.user.phoneNumber && (
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Phone</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -24,16 +24,19 @@ import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { getUserAndActiveSub } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
+import { getUnreadNotificationCount } from "@/app/(projects)/(surfboard)/actions/notificationActions";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
   user,
   showSubscriptionBadge = false,
   sidebar,
+  unreadCount = 0,
 }: {
   user?: { picture?: string; firstName?: string; id?: string } | any;
   showSubscriptionBadge?: boolean;
   sidebar?: any;
+  unreadCount?: number;
 }) {
   return (
     <header
@@ -62,6 +65,7 @@ function SurfboardUserDashboardNavbar({
         </span>
       </div>
       <div className="flex-1" />
+
       {showSubscriptionBadge ? (
         <Link href="/surfboard/dashboard/subscription" className="pointer">
           <div className="flex items-center mr-4 bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -90,6 +94,19 @@ function SurfboardUserDashboardNavbar({
           </span>
         ))} */}
 
+      {/* Notification Bell */}
+      <Link
+        href="/surfboard/dashboard/notifications"
+        className="relative p-2 mr-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+      >
+        <Bell className="w-6 h-6 text-white" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1 shadow-lg">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Link>
+
       {!user?.picture ? (
         <img
           src={user?.picture || "#"}
@@ -115,6 +132,7 @@ export default function SurfboardUserPanelLayout({
   const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const sidebar = useStore(useSidebar, (x) => x);
   const dashboardUrl = "/surfboard/dashboard";
 
@@ -154,6 +172,25 @@ export default function SurfboardUserPanelLayout({
     };
 
     checkSubscription();
+  }, []);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const result = await getUnreadNotificationCount();
+        if (result.success && result.data) {
+          setUnreadCount(result.data.count);
+        }
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const menuList = [
@@ -248,6 +285,7 @@ export default function SurfboardUserPanelLayout({
         user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
         sidebar={sidebar}
+        unreadCount={unreadCount}
       />
       <div
         className={cn(

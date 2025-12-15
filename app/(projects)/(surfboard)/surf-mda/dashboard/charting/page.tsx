@@ -28,6 +28,11 @@ import {
   Copy,
   Clock,
   History,
+  User,
+  Hash,
+  Briefcase,
+  Mail,
+  Phone,
 } from "lucide-react";
 import {
   getChartingPlans,
@@ -63,6 +68,7 @@ interface Plan {
     firstName: string;
     lastName: string;
     email: string;
+    phoneNumber: string | null;
   } | null;
 }
 
@@ -348,6 +354,49 @@ export default function ChartingAdminPage() {
               <FileText className="w-4 h-4" />
               View Record Copy
             </a>
+          </div>
+        )}
+
+        {/* Surveyor Information */}
+        {plan.user && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <User className="w-5 h-5 text-emerald-600" />
+              <h4 className="text-sm font-semibold text-emerald-800">
+                Surveyor Information
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <User className="w-4 h-4 text-emerald-500 mt-0.5" />
+                <div>
+                  <p className="text-xs text-emerald-600">Submitted By</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {plan.user.firstName} {plan.user.lastName}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
+                <div>
+                  <p className="text-xs text-emerald-600">Email</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {plan.user.email}
+                  </p>
+                </div>
+              </div>
+              {plan.user.phoneNumber && (
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Phone</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

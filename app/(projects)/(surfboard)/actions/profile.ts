@@ -19,6 +19,10 @@ export type ProfileData = {
   residenceState: string | null;
   logo: string | null;
   signature: string | null;
+  phoneNumber: string | null;
+  address: string | null;
+  payerID: number | null;
+  payerIDType: string | null;
 };
 
 export async function getProfile(): Promise<{
@@ -47,6 +51,10 @@ export async function getProfile(): Promise<{
         residenceState: true,
         logo: true,
         signature: true,
+        phoneNumber: true,
+        address: true,
+        payerID: true,
+        payerIDType: true,
       },
     });
 
@@ -83,6 +91,9 @@ export async function updateProfile(
       "surconRegNumber",
       "surconRegName",
       "residenceState",
+      "phoneNumber",
+      "address",
+      "payerIDType",
     ] as const;
 
     textFields.forEach((field) => {
@@ -91,6 +102,13 @@ export async function updateProfile(
         updates[field] = value === "" ? null : value;
       }
     });
+
+    // Handle payerID (integer)
+    const payerIDValue = formData.get("payerID");
+    if (payerIDValue !== null) {
+      updates.payerID =
+        payerIDValue === "" ? null : parseInt(payerIDValue as string, 10);
+    }
 
     // Handle file uploads
     const fileFields = ["logo", "signature"] as const;
@@ -130,6 +148,10 @@ export async function updateProfile(
         residenceState: true,
         logo: true,
         signature: true,
+        phoneNumber: true,
+        address: true,
+        payerID: true,
+        payerIDType: true,
       },
     });
 

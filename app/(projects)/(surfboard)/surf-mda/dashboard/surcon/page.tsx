@@ -32,6 +32,7 @@ import {
   Briefcase,
   Hash,
   Mail,
+  Phone,
   Clock,
   History,
 } from "lucide-react";
@@ -72,6 +73,7 @@ interface Plan {
     surconRegNumber: string | null;
     companyName: string | null;
     surconRegName: string | null;
+    phoneNumber: string | null;
   } | null;
 }
 
@@ -370,6 +372,17 @@ export default function SurconAdminPage() {
                   </p>
                 </div>
               </div>
+              {plan.user.phoneNumber && (
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Phone</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

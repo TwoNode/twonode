@@ -183,6 +183,11 @@ enum SurfboardRole {
   MDA_SUPERADMIN // MDA Role: Can view all activities of all MDA users
 }
 
+enum PayerIDType {
+  Individual
+  Commercial
+}
+
 model SurfboardUser {
   id                       String        @id @default(uuid())
   kindeId                  String        @unique
@@ -207,6 +212,10 @@ model SurfboardUser {
   suffix          String? // Name suffix (e.g., Jr., Sr., III)
   residenceState  String? // Residence state in Nigeria
   postalCode      String? // User's postal code
+  phoneNumber     String? // User's phone number
+  address         String? // User's address
+  payerID         Int?    // Payer ID
+  payerIDType     PayerIDType? // Type of payer: Individual or Commercial
 
   // Relations
   plans               SurfboardPlan[]             @relation("PlanOwner")

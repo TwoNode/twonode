@@ -730,6 +730,15 @@ export async function updateSurfPlan(
 
     if (!existing) throw new Error("Plan not found");
 
+    // Prevent editing if plan has been submitted for certificate processing
+    if (existing.redCopyStatus && existing.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be edited. Please contact support if you need to make changes.",
+      };
+    }
+
     const now = Date.now();
     const locked = now > cutoffMs(existing.createdAt);
     // const enforceLock = locked && !dto?.canBypassLock;
@@ -1107,6 +1116,13 @@ export async function getPaginatedSurfPlans({
           updatedAt: true,
           redCopyStatus: true,
           redCopyFileUrl: true,
+          // MDA status fields for showing queried indicator
+          surconStatus: true,
+          surconComment: true,
+          recordsIStatus: true,
+          recordsIComment: true,
+          recordsIIStatus: true,
+          recordsIIComment: true,
         },
         skip,
         take: noPagination ? undefined : pageSize,
@@ -2068,6 +2084,7 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
         where: { id, userId: user.id },
         select: {
           deleted: true,
+          redCopyStatus: true,
         },
       });
     } catch (error) {
@@ -2083,6 +2100,15 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
 
     if (plan.deleted) {
       return { success: false, error: "Plan already deleted" };
+    }
+
+    // Prevent deletion if plan has been submitted for certificate processing
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes.",
+      };
     }
 
     // Soft delete: just mark as deleted

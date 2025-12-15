@@ -22,6 +22,7 @@ interface QueriedPlan {
   lga: string | null;
   ward: string | null;
   lcda: string | null;
+  state: string | null;
   deededArea: string;
   pillars: any;
   redCopyFileUrl: string | null;

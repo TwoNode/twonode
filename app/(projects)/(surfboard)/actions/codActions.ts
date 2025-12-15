@@ -1621,6 +1621,7 @@ export async function getChartingPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
           },
         },
       },
@@ -1690,6 +1691,7 @@ export async function getSurconPlans() {
             surconRegNumber: true,
             companyName: true,
             surconRegName: true,
+            phoneNumber: true,
           },
         },
       },
@@ -1730,7 +1732,7 @@ export async function getRecordsIPlans() {
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
-        recordsIStatus: { in: ["PENDING", "QUERIED"] },
+        recordsIStatus: { in: ["PENDING"] },
         deleted: false,
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
@@ -1756,6 +1758,9 @@ export async function getRecordsIPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -1827,6 +1832,9 @@ export async function getRecordsIIPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -2031,7 +2039,8 @@ export async function getQueriedPlansForUser(): Promise<
 export async function resubmitQueriedPlan(
   planId: string,
   pillars?: any,
-  recordCopyUrl?: string
+  recordCopyUrl?: string,
+  location?: { lga?: string; lcda?: string; ward?: string; state?: string }
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -2073,6 +2082,10 @@ export async function resubmitQueriedPlan(
       // Update fields if provided
       ...(pillars && { pillars }),
       ...(recordCopyUrl && { redCopyFileUrl: recordCopyUrl }),
+      ...(location?.lga && { lga: location.lga }),
+      ...(location?.lcda && { lcda: location.lcda }),
+      ...(location?.ward && { ward: location.ward }),
+      ...(location?.state && { state: location.state }),
     };
 
     // Reset only the querying role's status to PENDING
@@ -2215,6 +2228,9 @@ export async function getSurconHistory() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -2272,6 +2288,9 @@ export async function getRecordsIHistory() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -2329,6 +2348,9 @@ export async function getRecordsIIHistory() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },

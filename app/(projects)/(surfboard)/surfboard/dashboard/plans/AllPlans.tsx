@@ -38,6 +38,7 @@ import {
   List,
   Plus,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Select,
@@ -575,6 +576,34 @@ export default function AllPlans() {
     }
 
     return plan.status;
+  };
+
+  // Helper to check if a plan is locked (submitted and cannot be edited/deleted)
+  const isPlanLocked = (plan: any) => {
+    return plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED";
+  };
+
+  // Helper to check if a plan has been queried by any MDA role
+  const isQueried = (plan: any) => {
+    return (
+      plan.surconStatus === "QUERIED" ||
+      plan.recordsIStatus === "QUERIED" ||
+      plan.recordsIIStatus === "QUERIED"
+    );
+  };
+
+  // Get query info for a plan
+  const getQueryInfo = (plan: any) => {
+    const queriers: string[] = [];
+    if (plan.surconStatus === "QUERIED") queriers.push("SURCON");
+    if (plan.recordsIStatus === "QUERIED") queriers.push("Records I");
+    if (plan.recordsIIStatus === "QUERIED") queriers.push("Records II");
+    return {
+      isQueried: queriers.length > 0,
+      queriedBy: queriers.join(", "),
+      comment:
+        plan.surconComment || plan.recordsIComment || plan.recordsIIComment,
+    };
   };
 
   const statsData = [
@@ -1570,6 +1599,24 @@ export default function AllPlans() {
                           {getStatusIcon(getDisplayStatus(plan))}
                           {getDisplayStatus(plan)?.replace("_", " ") || "N/A"}
                         </span>
+                        {/* Queried Indicator */}
+                        {isQueried(plan) && (
+                          <div className="mt-1">
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                              title={`Queried by ${
+                                getQueryInfo(plan).queriedBy
+                              }${
+                                getQueryInfo(plan).comment
+                                  ? `: ${getQueryInfo(plan).comment}`
+                                  : ""
+                              }`}
+                            >
+                              <AlertTriangle className="w-3 h-3" />
+                              Queried
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
@@ -1613,9 +1660,17 @@ export default function AllPlans() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleEditPlan(plan.id)}
+                                disabled={isPlanLocked(plan)}
+                                className={
+                                  isPlanLocked(plan)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }
                               >
                                 <Edit className="w-4 h-4 mr-2" />
-                                Edit Plan
+                                {isPlanLocked(plan)
+                                  ? "Edit Plan (Locked)"
+                                  : "Edit Plan"}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
@@ -1660,9 +1715,14 @@ export default function AllPlans() {
                               <DropdownMenuItem
                                 onClick={() => handleDeleteClick(plan.id)}
                                 disabled={
-                                  isDeleting && planToDelete === plan.id
+                                  (isDeleting && planToDelete === plan.id) ||
+                                  isPlanLocked(plan)
                                 }
-                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
+                                  isPlanLocked(plan)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
                               >
                                 {isDeleting && planToDelete === plan.id ? (
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1671,6 +1731,8 @@ export default function AllPlans() {
                                 )}
                                 {isDeleting && planToDelete === plan.id
                                   ? "Deleting..."
+                                  : isPlanLocked(plan)
+                                  ? "Delete (Locked)"
                                   : "Delete Plan"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -1809,13 +1871,29 @@ export default function AllPlans() {
                           </CardDescription>
                         </div>
                       </div>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border shrink-0 ${getStatusColor(
-                          getDisplayStatus(plan)
-                        )}`}
-                      >
-                        {getStatusIcon(getDisplayStatus(plan))}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            getDisplayStatus(plan)
+                          )}`}
+                        >
+                          {getStatusIcon(getDisplayStatus(plan))}
+                        </span>
+                        {/* Queried Indicator */}
+                        {isQueried(plan) && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                            title={`Queried by ${getQueryInfo(plan).queriedBy}${
+                              getQueryInfo(plan).comment
+                                ? `: ${getQueryInfo(plan).comment}`
+                                : ""
+                            }`}
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            Queried
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -1922,9 +2000,17 @@ export default function AllPlans() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleEditPlan(plan.id)}
+                            disabled={isPlanLocked(plan)}
+                            className={
+                              isPlanLocked(plan)
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }
                           >
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit Plan
+                            {isPlanLocked(plan)
+                              ? "Edit Plan (Locked)"
+                              : "Edit Plan"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -1971,8 +2057,15 @@ export default function AllPlans() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteClick(plan.id)}
-                            disabled={isDeleting && planToDelete === plan.id}
-                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                            disabled={
+                              (isDeleting && planToDelete === plan.id) ||
+                              isPlanLocked(plan)
+                            }
+                            className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
+                              isPlanLocked(plan)
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
                           >
                             {isDeleting && planToDelete === plan.id ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1981,6 +2074,8 @@ export default function AllPlans() {
                             )}
                             {isDeleting && planToDelete === plan.id
                               ? "Deleting..."
+                              : isPlanLocked(plan)
+                              ? "Delete (Locked)"
                               : "Delete Plan"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>

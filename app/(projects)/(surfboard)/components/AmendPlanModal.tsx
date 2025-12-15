@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +11,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText, Loader2, Edit3 } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  Loader2,
+  Edit3,
+  Plus,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  FileSpreadsheet,
+  MapPin,
+} from "lucide-react";
 import { resubmitQueriedPlan } from "../actions/codActions";
 import { uploadSurfboardFileToS3 } from "../actions/awsActions";
+import { parseCSVContent, PillarData } from "../utils/surfboardUtils";
+import MaplibreMap from "./maps/MaplibreMap";
 
 interface Plan {
   id: string;
@@ -23,6 +36,10 @@ interface Plan {
   surveyTitle: string;
   pillars: any;
   redCopyFileUrl: string | null;
+  lga: string | null;
+  lcda: string | null;
+  ward: string | null;
+  state: string | null;
 }
 
 interface AmendPlanModalProps {
@@ -32,21 +49,150 @@ interface AmendPlanModalProps {
   onSuccess: () => void;
 }
 
+// Convert various pillar formats to consistent array
+function normalizePillars(pillars: any): PillarData[] {
+  if (!pillars) return [];
+  try {
+    const arr = Array.isArray(pillars) ? pillars : JSON.parse(pillars);
+    return arr.map((p: any, idx: number) => ({
+      pillarNumber: p.pillarNumber || p.name || `P${idx + 1}`,
+      easting: Number(p.easting ?? p.lng ?? 0),
+      northing: Number(p.northing ?? p.lat ?? 0),
+      pointIndex: p.pointIndex ?? idx,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export function AmendPlanModal({
   open,
   onOpenChange,
   plan,
   onSuccess,
 }: AmendPlanModalProps) {
-  const [pillarsJson, setPillarsJson] = useState<string>(
-    JSON.stringify(plan.pillars, null, 2)
+  const [pillars, setPillars] = useState<PillarData[]>(() =>
+    normalizePillars(plan.pillars)
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePillarsChange = (value: string) => {
-    setPillarsJson(value);
+  // Location fields state
+  const [lga, setLga] = useState(plan.lga || "");
+  const [lcda, setLcda] = useState(plan.lcda || "");
+  const [ward, setWard] = useState(plan.ward || "");
+  const [state, setState] = useState(plan.state || "");
+
+  // Reset state when plan changes
+  useEffect(() => {
+    setPillars(normalizePillars(plan.pillars));
+    setLga(plan.lga || "");
+    setLcda(plan.lcda || "");
+    setWard(plan.ward || "");
+    setState(plan.state || "");
+  }, [plan]);
+
+  const originalPillarsJson = JSON.stringify(normalizePillars(plan.pillars));
+  const pillarsChanged = JSON.stringify(pillars) !== originalPillarsJson;
+  const locationChanged =
+    lga !== (plan.lga || "") ||
+    lcda !== (plan.lcda || "") ||
+    ward !== (plan.ward || "") ||
+    state !== (plan.state || "");
+
+  // Handle CSV file upload
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = parseCSVContent(text);
+        setPillars(parsed);
+        toast.success(`Loaded ${parsed.length} pillars from CSV`);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to parse CSV"
+        );
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset input so same file can be re-uploaded
+    if (csvInputRef.current) {
+      csvInputRef.current.value = "";
+    }
+  };
+
+  // Handle pillar field change
+  const handlePillarChange = (
+    index: number,
+    field: keyof PillarData,
+    value: string | number
+  ) => {
+    setPillars((prev) =>
+      prev.map((p, i) =>
+        i === index
+          ? {
+              ...p,
+              [field]:
+                field === "pillarNumber"
+                  ? value
+                  : parseFloat(value as string) || 0,
+            }
+          : p
+      )
+    );
+  };
+
+  // Move row up
+  const moveRowUp = (index: number) => {
+    if (index === 0) return;
+    setPillars((prev) => {
+      const newArr = [...prev];
+      [newArr[index - 1], newArr[index]] = [newArr[index], newArr[index - 1]];
+      return newArr.map((p, i) => ({ ...p, pointIndex: i }));
+    });
+  };
+
+  // Move row down
+  const moveRowDown = (index: number) => {
+    if (index >= pillars.length - 1) return;
+    setPillars((prev) => {
+      const newArr = [...prev];
+      [newArr[index], newArr[index + 1]] = [newArr[index + 1], newArr[index]];
+      return newArr.map((p, i) => ({ ...p, pointIndex: i }));
+    });
+  };
+
+  // Add new row
+  const addRow = () => {
+    setPillars((prev) => [
+      ...prev,
+      {
+        pillarNumber: `P${prev.length + 1}`,
+        easting: 0,
+        northing: 0,
+        pointIndex: prev.length,
+      },
+    ]);
+  };
+
+  // Remove row
+  const removeRow = (index: number) => {
+    if (pillars.length <= 3) {
+      toast.error("Minimum 3 pillars required");
+      return;
+    }
+    setPillars((prev) =>
+      prev
+        .filter((_, i) => i !== index)
+        .map((p, i) => ({ ...p, pointIndex: i }))
+    );
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,26 +202,15 @@ export function AmendPlanModal({
     }
   };
 
-  const validatePillarsJson = (): boolean => {
-    try {
-      JSON.parse(pillarsJson);
-      return true;
-    } catch {
-      toast.error("Invalid pillars JSON format");
-      return false;
-    }
-  };
-
   const handleSubmit = async () => {
-    // Validate pillars JSON if changed
-    const pillarsChanged =
-      pillarsJson !== JSON.stringify(plan.pillars, null, 2);
-    if (pillarsChanged && !validatePillarsJson()) {
+    // Validate minimum pillars
+    if (pillars.length < 3) {
+      toast.error("At least 3 pillars are required");
       return;
     }
 
     // Check if anything was changed
-    if (!pillarsChanged && !selectedFile) {
+    if (!pillarsChanged && !selectedFile && !locationChanged) {
       toast.error("Please make at least one change before resubmitting");
       return;
     }
@@ -102,13 +237,22 @@ export function AmendPlanModal({
         setUploading(false);
       }
 
-      // Parse and submit amendments
-      const pillarsData = pillarsChanged ? JSON.parse(pillarsJson) : undefined;
+      // Submit amendments
+      const pillarsData = pillarsChanged ? pillars : undefined;
+      const locationData = locationChanged
+        ? {
+            lga: lga || undefined,
+            lcda: lcda || undefined,
+            ward: ward || undefined,
+            state: state || undefined,
+          }
+        : undefined;
 
       const result = await resubmitQueriedPlan(
         plan.id,
         pillarsData,
-        recordCopyUrl
+        recordCopyUrl,
+        locationData
       );
 
       if (result.success) {
@@ -132,96 +276,347 @@ export function AmendPlanModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit3 className="w-5 h-5 text-amber-600" />
             Amend Plan - {plan.planNumber}
           </DialogTitle>
           <DialogDescription>
-            Make corrections to the pillars and/or upload a new record copy,
-            then resubmit for review
+            Make corrections to the pillars, location, and/or upload a new
+            record copy, then resubmit for review
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Pillars Section */}
-          <div className="space-y-3">
-            <Label htmlFor="pillars" className="text-base font-semibold">
-              Pillars (JSON Format)
-            </Label>
-            <p className="text-sm text-gray-600">
-              Edit the pillar coordinates below. The data must be valid JSON.
-            </p>
-            <Textarea
-              id="pillars"
-              value={pillarsJson}
-              onChange={(e) => handlePillarsChange(e.target.value)}
-              className="font-mono text-sm min-h-[300px]"
-              placeholder="Enter pillars JSON..."
-            />
-          </div>
-
-          {/* Record Copy Section */}
-          <div className="space-y-3">
-            <Label htmlFor="record-copy" className="text-base font-semibold">
-              Record Copy
-            </Label>
-            {plan.redCopyFileUrl && (
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                <p className="text-sm text-blue-800 mb-2">Current file:</p>
-                <a
-                  href={plan.redCopyFileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                >
-                  <FileText className="w-4 h-4" />
-                  View current record copy
-                </a>
-              </div>
-            )}
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                Upload a new record copy (PDF or image) to replace the existing
-                one
-              </p>
-              <div className="flex items-center gap-3">
-                <input
-                  id="record-copy"
-                  type="file"
-                  accept=".pdf,image/*"
-                  onChange={handleFileSelect}
-                  disabled={uploading}
-                  className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
-                />
-                {selectedFile && (
-                  <span className="text-sm text-green-600 flex items-center gap-1">
-                    <FileText className="w-4 h-4" />
-                    {selectedFile.name}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Form Fields */}
+          <div className="space-y-6">
+            {/* Pillars Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">
+                  Pillar Coordinates
+                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={csvInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCSVUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => csvInputRef.current?.click()}
+                    className="bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Upload CSV
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addRow}
+                    className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Row
+                  </Button>
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {pillars.length} pillars
                   </span>
+                </div>
+              </div>
+
+              {/* Pillars Table */}
+              <div className="border-2 border-blue-200 rounded-xl overflow-hidden bg-gradient-to-b from-blue-50 to-white shadow-sm">
+                <div className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 border-b border-blue-200">
+                  <span className="text-lg font-bold text-white">PL</span>
+                </div>
+                <div className="overflow-x-auto max-h-[280px]">
+                  <table className="min-w-full divide-y divide-blue-100">
+                    <thead className="bg-blue-50/80 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider w-10">
+                          #
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                          Pillar No.
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                          Easting
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                          Northing
+                        </th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-blue-700 uppercase tracking-wider w-24">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-blue-50">
+                      {pillars.map((pillar, index) => (
+                        <tr
+                          key={index}
+                          className="hover:bg-blue-50/50 transition-colors group"
+                        >
+                          <td className="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-500">
+                            {index + 1}
+                          </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">
+                            <Input
+                              value={pillar.pillarNumber}
+                              onChange={(e) =>
+                                handlePillarChange(
+                                  index,
+                                  "pillarNumber",
+                                  e.target.value
+                                )
+                              }
+                              className="h-7 text-sm font-medium border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              placeholder="P1"
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={pillar.easting}
+                              onChange={(e) =>
+                                handlePillarChange(
+                                  index,
+                                  "easting",
+                                  e.target.value
+                                )
+                              }
+                              className="h-7 text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              placeholder="0.000"
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">
+                            <Input
+                              type="number"
+                              step="any"
+                              value={pillar.northing}
+                              onChange={(e) =>
+                                handlePillarChange(
+                                  index,
+                                  "northing",
+                                  e.target.value
+                                )
+                              }
+                              className="h-7 text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              placeholder="0.000"
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveRowUp(index)}
+                                disabled={index === 0}
+                                className="h-6 w-6 p-0 hover:bg-blue-100 disabled:opacity-30"
+                                title="Move up"
+                              >
+                                <ChevronUp className="w-3.5 h-3.5 text-blue-600" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveRowDown(index)}
+                                disabled={index === pillars.length - 1}
+                                className="h-6 w-6 p-0 hover:bg-blue-100 disabled:opacity-30"
+                                title="Move down"
+                              >
+                                <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeRow(index)}
+                                className="h-6 w-6 p-0 hover:bg-red-100 text-red-500 hover:text-red-600"
+                                title="Remove row"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {pillars.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-6 text-center text-gray-500"
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <FileSpreadsheet className="w-6 h-6 text-gray-300" />
+                              <p className="text-sm">
+                                No pillars yet. Upload a CSV or add rows
+                                manually.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {pillars.length > 0 && pillars.length < 3 && (
+                  <div className="px-4 py-2 bg-amber-50 border-t border-amber-200">
+                    <p className="text-sm text-amber-700">
+                      ⚠️ At least 3 pillars required
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
+
+            {/* Location Fields Section */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600" />
+                Location Details
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    LGA
+                  </label>
+                  <Input
+                    value={lga}
+                    onChange={(e) => setLga(e.target.value)}
+                    placeholder="Local Government Area"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    LCDA
+                  </label>
+                  <Input
+                    value={lcda}
+                    onChange={(e) => setLcda(e.target.value)}
+                    placeholder="LCDA"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ward
+                  </label>
+                  <Input
+                    value={ward}
+                    onChange={(e) => setWard(e.target.value)}
+                    placeholder="Ward"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State
+                  </label>
+                  <Input
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="State"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Record Copy Section */}
+            <div className="space-y-3">
+              <Label htmlFor="record-copy" className="text-base font-semibold">
+                Record Copy
+              </Label>
+              {plan.redCopyFileUrl && (
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800 mb-2">Current file:</p>
+                  <a
+                    href={plan.redCopyFileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <FileText className="w-4 h-4" />
+                    View current record copy
+                  </a>
+                </div>
+              )}
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Upload a new record copy (PDF or image)
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="record-copy"
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={handleFileSelect}
+                    disabled={uploading}
+                    className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                  />
+                  {selectedFile && (
+                    <span className="text-sm text-green-600 flex items-center gap-1">
+                      <FileText className="w-4 h-4" />
+                      {selectedFile.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Info Banner */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-amber-900 mb-2">
+                What happens after resubmission?
+              </p>
+              <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
+                <li>Plan sent for re-review by querying MDA role</li>
+                <li>You'll be notified once reviewed</li>
+                <li>Other approved roles remain approved</li>
+              </ul>
+            </div>
           </div>
 
-          {/* Info Banner */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-amber-900 mb-2">
-              What happens after resubmission?
-            </p>
-            <ul className="text-sm text-amber-800 space-y-1 list-disc list-inside">
-              <li>
-                Your plan will be sent back for re-review by the MDA role that
-                queried it
-              </li>
-              <li>You'll receive a notification once it's reviewed</li>
-              <li>Other approved roles (if any) will remain approved</li>
-            </ul>
+          {/* Right Column - Map Preview */}
+          <div className="space-y-4">
+            <Label className="text-base font-semibold">Map Preview</Label>
+            <div
+              className={`rounded-xl overflow-hidden border-2 ${
+                pillars.length > 0 ? "border-blue-300" : "border-gray-200"
+              }`}
+              style={{ height: "500px" }}
+            >
+              {pillars.length > 0 ? (
+                <MaplibreMap processedPillars={pillars} />
+              ) : (
+                <div className="h-full flex items-center justify-center bg-gray-50">
+                  <div className="text-center text-gray-400">
+                    <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Add pillars to see map preview</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {pillars.length > 0 && (
+              <p className="text-xs text-gray-500 text-center">
+                Map shows the polygon formed by pillar coordinates
+              </p>
+            )}
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-6">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
