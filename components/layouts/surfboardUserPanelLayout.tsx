@@ -17,7 +17,6 @@ import {
   Plus,
   Bell,
   Menu,
-  FileQuestion,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -166,20 +165,8 @@ export default function SurfboardUserPanelLayout({
     },
     {
       icon: ListChecks,
-      label: "All Plans",
+      label: "Plans",
       url: `${dashboardUrl}/plans`,
-      requiresSubscription: true,
-    },
-    {
-      icon: FileQuestion,
-      label: "Queried Plans",
-      url: `${dashboardUrl}/queried-plans`,
-      requiresSubscription: true,
-    },
-    {
-      icon: ListChecks,
-      label: "Shared Plans",
-      url: `${dashboardUrl}/shared`,
       requiresSubscription: true,
     },
     {

@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PLAN_TYPES as PLAN_TYPES_OBJ } from "../../../types/surfboardTypes";
 import {
   DropdownMenu,
@@ -596,20 +597,198 @@ export default function AllPlans() {
       bgColor: "bg-emerald-50",
     },
     {
-      label: "Under Review",
-      value: plans.filter((p) => p.status === "UNDER_REVIEW").length,
+      label: "Red Copy",
+      value: plans.filter((p) => p.redCopyStatus === "APPROVED").length,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
   ];
 
+  // Skeleton loading components
+  const StatsSkeleton = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm"
+        >
+          <Skeleton className="h-8 w-16 mb-2" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const TableRowSkeleton = () => (
+    <tr className="border-b border-gray-200">
+      <td className="px-6 py-4">
+        <Skeleton className="h-4 w-4" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="flex items-start gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+        </div>
+      </td>
+      <td className="hidden lg:table-cell px-6 py-4">
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </td>
+      <td className="hidden md:table-cell px-6 py-4">
+        <Skeleton className="h-4 w-28" />
+      </td>
+      <td className="hidden md:table-cell px-6 py-4">
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </td>
+      <td className="hidden sm:table-cell px-6 py-4">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="hidden xl:table-cell px-6 py-4">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-6 py-4">
+        <Skeleton className="h-8 w-8 rounded-lg ml-auto" />
+      </td>
+    </tr>
+  );
+
+  const GridCardSkeleton = () => (
+    <Card className="relative">
+      <div className="absolute top-3 right-3">
+        <Skeleton className="h-4 w-4" />
+      </div>
+      <CardHeader className="pb-3">
+        <div className="flex items-start gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-6 w-6 rounded-full shrink-0" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-start gap-2">
+          <Skeleton className="h-4 w-4 mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <Skeleton className="h-4 w-4 mt-0.5" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <Skeleton className="h-6 w-36 rounded-full" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-3" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-3 w-3" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <div className="flex items-center gap-2 pt-3 border-t">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 w-10" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const PlansListSkeleton = () => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left">
+                <Skeleton className="h-4 w-4" />
+              </th>
+              <th className="px-6 py-3 text-left">
+                <Skeleton className="h-4 w-24" />
+              </th>
+              <th className="hidden lg:table-cell px-6 py-3 text-left">
+                <Skeleton className="h-4 w-16" />
+              </th>
+              <th className="hidden md:table-cell px-6 py-3 text-left">
+                <Skeleton className="h-4 w-20" />
+              </th>
+              <th className="hidden md:table-cell px-6 py-3 text-left">
+                <Skeleton className="h-4 w-14" />
+              </th>
+              <th className="hidden sm:table-cell px-6 py-3 text-left">
+                <Skeleton className="h-4 w-20" />
+              </th>
+              <th className="hidden xl:table-cell px-6 py-3 text-left">
+                <Skeleton className="h-4 w-16" />
+              </th>
+              <th className="px-6 py-3 text-right">
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...Array(5)].map((_, i) => (
+              <TableRowSkeleton key={i} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const PlansGridSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(6)].map((_, i) => (
+        <GridCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+
   if (loading && plans.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading survey plans...</p>
+      <div className="min-h-full w-full max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Header Skeleton */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-5 w-72" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-28" />
+            </div>
+          </div>
+          <StatsSkeleton />
         </div>
+
+        {/* Filters Skeleton */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <Skeleton className="flex-1 h-10" />
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+        </div>
+
+        {/* Plans Skeleton - show based on viewMode */}
+        {viewMode === "list" ? <PlansListSkeleton /> : <PlansGridSkeleton />}
       </div>
     );
   }

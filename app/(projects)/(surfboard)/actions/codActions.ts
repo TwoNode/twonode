@@ -1661,7 +1661,7 @@ export async function getSurconPlans() {
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
-        surconStatus: { in: ["PENDING", "QUERIED"] },
+        surconStatus: { in: ["PENDING"] },
         deleted: false,
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {

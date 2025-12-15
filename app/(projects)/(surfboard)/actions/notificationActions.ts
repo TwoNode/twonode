@@ -1,5 +1,6 @@
 "use server";
 
+import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { sendMail } from "@/utils/email";
@@ -177,6 +178,8 @@ function generateNotificationEmailHtml(
 
   const color = typeColors[notification.type] || "#3b82f6";
 
+  const withBaseUrl = addBaseUrl(notification.link || "");
+
   return `
     <!DOCTYPE html>
     <html>
@@ -220,7 +223,7 @@ function generateNotificationEmailHtml(
                     <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
                       <tr>
                         <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
-                          <a href="${notification.link}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+                          <a href="${withBaseUrl}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
                             View Details
                           </a>
                         </td>
