@@ -419,16 +419,7 @@ export async function getUnreadNotificationCount(): Promise<
 
     const where: any = {
       OR: [{ audience: "ALL_USERS" }, { userIds: { has: user.id } }],
-      readBy: {
-        not: {
-          has: user.id,
-        },
-      },
-      dismissedBy: {
-        not: {
-          has: user.id,
-        },
-      },
+      NOT: [{ readBy: { has: user.id } }, { dismissedBy: { has: user.id } }],
     };
 
     // Add role-based filters
