@@ -18,6 +18,7 @@ import {
   MapPinIcon,
   AlertTriangle,
   File,
+  Lock,
 } from "lucide-react";
 import {
   getSurfPlanById,
@@ -59,7 +60,14 @@ interface PlanWithPillars extends Omit<Plan, "pillars"> {
   userId?: string | null;
   isOwner?: boolean;
   centroid?: [number, number] | null;
+  redCopyStatus?: string | null;
 }
+
+// Helper to check if plan is locked (submitted for certificate processing)
+const isPlanLocked = (plan: PlanWithPillars | null): boolean => {
+  if (!plan) return false;
+  return !!plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED";
+};
 
 export interface User {
   id: string;
@@ -768,6 +776,12 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
                       {plan.pillarType}
                     </span>
+                    {isPlanLocked(plan) && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Locked
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -811,19 +825,45 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                       <button
                         onClick={handleEdit}
-                        className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                        disabled={isDeleting}
+                        className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
+                          isPlanLocked(plan)
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-amber-500 text-white hover:bg-amber-600"
+                        }`}
+                        disabled={isDeleting || isPlanLocked(plan)}
+                        title={
+                          isPlanLocked(plan)
+                            ? "This plan has been submitted and cannot be edited"
+                            : "Edit plan"
+                        }
                       >
-                        <Edit className="w-4 h-4 mr-2" />
+                        {isPlanLocked(plan) ? (
+                          <Lock className="w-4 h-4 mr-2" />
+                        ) : (
+                          <Edit className="w-4 h-4 mr-2" />
+                        )}
                         <span>Edit</span>
                       </button>
 
                       <button
                         onClick={handleDelete}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                        disabled={isDeleting}
+                        className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
+                          isPlanLocked(plan)
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-red-500 text-white hover:bg-red-600"
+                        }`}
+                        disabled={isDeleting || isPlanLocked(plan)}
+                        title={
+                          isPlanLocked(plan)
+                            ? "This plan has been submitted and cannot be deleted"
+                            : "Delete plan"
+                        }
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        {isPlanLocked(plan) ? (
+                          <Lock className="w-4 h-4 mr-2" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-2" />
+                        )}
                         <span>{isDeleting ? "Deleting..." : "Delete"}</span>
                       </button>
                     </>

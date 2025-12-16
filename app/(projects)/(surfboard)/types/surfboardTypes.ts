@@ -99,6 +99,7 @@ export interface Plan {
   userId?: string | null;
   user?: Prisma.SurfboardUserCreateInput | any;
   isOwner?: boolean;
+  redCopyStatus?: string | null;
 }
 
 /** Standard envelope for API results */

@@ -12,6 +12,7 @@ import {
   notifyAccountsDisapproval,
   notifyPlanQueried,
   notifyPlanApproved,
+  notifyReadyForPhysicalSubmission,
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 
@@ -1346,8 +1347,8 @@ export async function updateAccountsApproval(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Update the batch status
-    await prisma.certificateOfDepositBatch.update({
+    // Update the batch status and get batchCode in the same query
+    const batch = await prisma.certificateOfDepositBatch.update({
       where: { id: batchId },
       data: {
         accountsApprovedBy: user.id,
@@ -1356,9 +1357,25 @@ export async function updateAccountsApproval(
         accountsComment: comment,
         paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
       },
+      select: { batchCode: true },
     });
 
-    // Also update accountsStatus on all plans in the batch
+    // Fetch plans with their status fields BEFORE updating (other statuses don't change)
+    // This allows us to reuse the data for notification check later
+    const batchPlans = await prisma.surfboardPlan.findMany({
+      where: { batchId: batchId },
+      select: {
+        id: true,
+        userId: true,
+        planNumber: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
+    });
+
+    // Update accountsStatus on all plans in the batch
     await prisma.surfboardPlan.updateMany({
       where: { batchId: batchId },
       data: {
@@ -1369,22 +1386,14 @@ export async function updateAccountsApproval(
       },
     });
 
-    // Get batch info for notifications and audit log
-    const batchInfo = await prisma.certificateOfDepositBatch.findUnique({
-      where: { id: batchId },
-      select: { batchCode: true },
-    });
-
     if (!approved) {
       // Send notification to Surfboard Admins only
-      if (batchInfo) {
-        await notifyAccountsDisapproval({
-          batchId,
-          batchCode: batchInfo.batchCode,
-          comment,
-          sendEmail: true,
-        });
-      }
+      await notifyAccountsDisapproval({
+        batchId,
+        batchCode: batch.batchCode,
+        comment,
+        sendEmail: true,
+      });
     }
 
     revalidatePath("/surf-mda/dashboard/accounts");
@@ -1401,7 +1410,7 @@ export async function updateAccountsApproval(
       entity: "CertificateOfDepositBatch",
       entityId: batchId,
       changes: createChangeLog({
-        batchCode: batchInfo?.batchCode,
+        batchCode: batch.batchCode,
         approved,
         comment: comment || null,
         paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
@@ -1409,6 +1418,27 @@ export async function updateAccountsApproval(
     });
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
+
+    // Check if all four MDA approvals are complete for each plan
+    // Accounts is now APPROVED, check the other three using already-fetched data
+    if (approved) {
+      for (const plan of batchPlans) {
+        const allFourApproved =
+          plan.chartingStatus === "APPROVED" &&
+          plan.surconStatus === "APPROVED" &&
+          plan.recordsIStatus === "APPROVED" &&
+          plan.recordsIIStatus === "PENDING";
+
+        if (allFourApproved && plan.userId) {
+          await notifyReadyForPhysicalSubmission({
+            userId: plan.userId,
+            planId: plan.id,
+            planNumber: plan.planNumber,
+            sendEmail: true,
+          });
+        }
+      }
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1441,7 +1471,14 @@ export async function updateChartingStatus(
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
       },
-      select: { planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     revalidatePath("/surf-mda/dashboard/charting");
@@ -1459,6 +1496,23 @@ export async function updateChartingStatus(
         chartingStatus: "APPROVED",
       }),
     });
+
+    // Check if all four MDA approvals are complete and notify user
+    // Charting is now APPROVED, check the other three
+    const allFourApproved =
+      plan.accountsStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED" &&
+      plan.recordsIIStatus === "PENDING";
+
+    if (allFourApproved && plan.userId) {
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1492,7 +1546,14 @@ export async function updateSurconStatus(
         surconApprovedAt: new Date(),
         surconComment: comment,
       },
-      select: { userId: true, planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        chartingStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     if (!approved) {
@@ -1526,6 +1587,25 @@ export async function updateSurconStatus(
       }),
     });
 
+    // Check if all four MDA approvals are complete and notify user
+    // SURCON is now APPROVED, check the other three
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
+
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
+    }
+
     return { success: true, data: { success: true } };
   } catch (error) {
     console.error("Error updating SURCON status:", error);
@@ -1558,7 +1638,14 @@ export async function updateRecordsIStatus(
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
       },
-      select: { userId: true, planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     if (!approved) {
@@ -1591,6 +1678,25 @@ export async function updateRecordsIStatus(
         recordsIStatus: approved ? "APPROVED" : "QUERIED",
       }),
     });
+
+    // Check if all four MDA approvals are complete and notify user
+    // Records I is now APPROVED, check the other three
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
+
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {

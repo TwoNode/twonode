@@ -2255,6 +2255,7 @@ export async function permanentlyDeleteSurfPlan(
           pdfFilePaths: true,
           cadFilePaths: true,
           certificateFilePaths: true,
+          redCopyStatus: true,
         },
       });
     } catch (error) {
@@ -2269,6 +2270,15 @@ export async function permanentlyDeleteSurfPlan(
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
+    }
+
+    // Prevent permanent deletion if plan has been submitted for certificate processing
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes.",
+      };
     }
 
     // Only plan owner or admin can permanently delete
