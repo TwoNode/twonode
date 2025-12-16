@@ -772,3 +772,126 @@ export async function notifyMDAApproval(params: {
     console.error("Error sending MDA approval notification:", error);
   }
 }
+
+/**
+ * Helper function to notify user when their plan is created
+ */
+export async function notifyPlanCreated(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  surveyTitle: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SUCCESS",
+      title: "Plan Created Successfully",
+      message: `Your plan ${params.planNumber} - ${params.surveyTitle} has been created successfully.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        surveyTitle: params.surveyTitle,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending plan created notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their plan is updated
+ */
+export async function notifyPlanUpdated(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "INFO",
+      title: "Plan Updated",
+      message: `Your plan ${params.planNumber} has been updated successfully.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+      },
+      sendEmail: params.sendEmail ?? false, // Don't email for every update
+    });
+  } catch (error) {
+    console.error("Error sending plan updated notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their record copy batch is submitted
+ */
+export async function notifyRecordCopySubmitted(params: {
+  userId: string;
+  batchId: string;
+  batchCode: string;
+  planCount: number;
+  totalAmount: number;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "INFO",
+      title: "Record Copy Batch Submitted",
+      message: `Your batch ${params.batchCode} with ${
+        params.planCount
+      } plan(s) has been submitted for processing. Total amount: ₦${params.totalAmount.toLocaleString()}.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plans`,
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        planCount: params.planCount,
+        totalAmount: params.totalAmount,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending record copy submitted notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when all MDA roles have approved and plan is ready for physical submission
+ */
+export async function notifyReadyForPhysicalSubmission(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SUCCESS",
+      title: "Ready for Physical Submission",
+      message: `Great news! Your plan ${params.planNumber} has been approved by all reviewing departments. You can now submit the physical record copy to the Office of the State Surveyor General.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+      },
+      sendEmail: params.sendEmail ?? true, // Always send email for this important notification
+    });
+  } catch (error) {
+    console.error(
+      "Error sending ready for physical submission notification:",
+      error
+    );
+  }
+}

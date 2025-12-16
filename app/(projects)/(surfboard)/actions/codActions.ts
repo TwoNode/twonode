@@ -659,6 +659,24 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       }),
     });
 
+    // Notify user about their batch submission
+    try {
+      const { notifyRecordCopySubmitted } = await import(
+        "./notificationActions"
+      );
+      await notifyRecordCopySubmitted({
+        userId: user.id,
+        batchId: batch.id,
+        batchCode: batch.batchCode,
+        planCount: plans.length,
+        totalAmount,
+        sendEmail: true,
+      });
+    } catch (notifError) {
+      console.error("Error sending batch submission notification:", notifError);
+      // Don't fail the batch submission if notification fails
+    }
+
     revalidatePath("/surf-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
 

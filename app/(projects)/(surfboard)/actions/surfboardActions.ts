@@ -680,9 +680,22 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
       select: { id: true, planNumber: true },
     });
 
-    // Send notification to admins about new plan
+    // Send notification to user about new plan creation
     try {
-      const { notifyPlanUpdate } = await import("./notificationActions");
+      const { notifyPlanCreated, notifyPlanUpdate } = await import(
+        "./notificationActions"
+      );
+
+      // Notify the user who created the plan
+      await notifyPlanCreated({
+        userId: user.id,
+        planId: rec.id,
+        planNumber: rec.planNumber,
+        surveyTitle: dto.surveyTitle,
+        sendEmail: true,
+      });
+
+      // Notify admins about new plan (no email)
       await notifyPlanUpdate({
         planId: rec.id,
         planNumber: rec.planNumber,
@@ -830,12 +843,23 @@ export async function updateSurfPlan(
       };
     }
 
-    // Send notifications when certificate is added (status changes to LODGED)
-    if (statusChanged) {
-      try {
-        const { notifyPlanUpdate } = await import("./notificationActions");
+    // Send notifications
+    try {
+      const { notifyPlanUpdate, notifyPlanUpdated } = await import(
+        "./notificationActions"
+      );
 
-        // Notify the plan owner
+      // Always notify user that their plan was updated (no email for regular updates)
+      await notifyPlanUpdated({
+        userId: user.id,
+        planId: dto.id,
+        planNumber: dto.planNumber || existing.planNumber,
+        sendEmail: false, // Don't email for every update
+      });
+
+      // Send additional notifications when certificate is added (status changes to LODGED)
+      if (statusChanged) {
+        // Notify the plan owner about lodging
         await notifyPlanUpdate({
           planId: dto.id,
           planNumber: dto.planNumber || existing.planNumber,
@@ -859,10 +883,10 @@ export async function updateSurfPlan(
           type: "PLAN",
           sendEmail: false,
         });
-      } catch (notifError) {
-        console.error("Error sending notification:", notifError);
-        // Don't fail the update if notification fails
       }
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+      // Don't fail the update if notification fails
     }
 
     revalidatePath(`/surfboard/dashboard/plans?planId=${dto.id}`);
