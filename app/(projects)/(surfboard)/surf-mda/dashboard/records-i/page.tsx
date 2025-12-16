@@ -35,12 +35,19 @@ import {
   Briefcase,
   Mail,
   Phone,
+  Lock,
 } from "lucide-react";
 import {
   getRecordsIPlans,
   updateRecordsIStatus,
   getRecordsIHistory,
 } from "../../../actions/codActions";
+import { usePlanLock } from "../../../hooks/usePlanLock";
+import {
+  PlanLockIndicator,
+  LockedPlanBadge,
+} from "../../../components/PlanLockIndicator";
+import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 
 interface Plan {
   id: string;
@@ -88,6 +95,40 @@ export default function RecordsIAdminPage() {
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "RECORDS_I",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
+
+  const handleUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      await releaseLock();
+      await fetchPlans();
+      // await acquireLock();
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlans();
@@ -213,396 +254,452 @@ export default function RecordsIAdminPage() {
     );
   }
 
-  const renderPlanCard = (plan: Plan, isHistory: boolean = false) => (
-    <Card
-      key={plan.id}
-      className={
-        isHistory
-          ? plan.recordsIStatus === "QUERIED"
-            ? "border-l-4 border-l-red-400"
-            : "border-l-4 border-l-green-400"
-          : ""
-      }
-    >
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-xl">{plan.planNumber}</CardTitle>
-              {isHistory && getStatusBadge(plan.recordsIStatus || "PENDING")}
-            </div>
-            <CardDescription>{plan.surveyTitle}</CardDescription>
-            {plan.batch && (
-              <div className="mt-2">
-                <Badge variant="outline">Batch: {plan.batch.batchCode}</Badge>
-              </div>
-            )}
-          </div>
-          {!isHistory && (
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-500">Accounts:</span>
-                {getStatusBadge(plan.accountsStatus)}
-              </div>
-              <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-500">Charting:</span>
-                {getStatusBadge(plan.chartingStatus)}
-              </div>
-              <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-500">SURCON:</span>
-                {getStatusBadge(plan.surconStatus)}
-              </div>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Location Info */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
-          <div>
-            <p className="text-xs text-gray-500">LGA</p>
-            <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Ward</p>
-            <p className="text-sm font-medium">{plan.ward || "N/A"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">LCDA</p>
-            <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Deeded Area</p>
-            <p className="text-sm font-medium">{plan.deededArea}</p>
-          </div>
-        </div>
+  const renderPlanCard = (plan: Plan, isHistory: boolean = false) => {
+    const isPlanLockedByMe = isLockedByMe(plan.id);
+    const isDisabled = !isHistory && !isPlanLockedByMe;
 
-        {/* Review Info (for history) */}
-        {isHistory && plan.recordsIApprovedAt && (
-          <div className="bg-gray-50 p-3 rounded-lg text-sm">
-            <p className="text-gray-600">
-              <span className="font-medium">Reviewed by:</span>{" "}
-              {plan.recordsIApprovedByUser
-                ? `${plan.recordsIApprovedByUser.firstName} ${plan.recordsIApprovedByUser.lastName}`
-                : "Unknown"}
-            </p>
-            <p className="text-gray-600">
-              <span className="font-medium">Date:</span>{" "}
-              {formatDate(plan.recordsIApprovedAt)}
-            </p>
-            {plan.recordsIStatus === "QUERIED" && plan.recordsIComment && (
-              <p className="text-red-600 mt-2">
-                <span className="font-medium">Query Reason:</span>{" "}
-                {plan.recordsIComment}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Record Copy */}
-        <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <p className="text-sm font-medium text-blue-800">
-                Record Copy {!isHistory && "(Verify Quality & Completeness)"}
-              </p>
-            </div>
-          </div>
-
-          {plan.redCopyFileUrl ? (
-            <div className="space-y-3">
-              {isImageUrl(plan.redCopyFileUrl) && (
-                <div
-                  className="cursor-pointer"
-                  onClick={() => setViewingImage(plan.redCopyFileUrl)}
-                >
-                  <img
-                    src={plan.redCopyFileUrl}
-                    alt="Record Copy Preview"
-                    className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
+    return (
+      <Card
+        key={plan.id}
+        className={`transition-all duration-200 ${
+          isHistory
+            ? plan.recordsIStatus === "QUERIED"
+              ? "border-l-4 border-l-red-400"
+              : "border-l-4 border-l-green-400"
+            : isPlanLockedByMe
+            ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
+            : "opacity-60 grayscale-[30%]"
+        }`}
+      >
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-xl">{plan.planNumber}</CardTitle>
+                {isHistory && getStatusBadge(plan.recordsIStatus || "PENDING")}
+                {!isHistory && (
+                  <LockedPlanBadge
+                    isLockedByMe={isPlanLockedByMe}
+                    isLockedByOther={!isPlanLockedByMe && !!lockedPlanId}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Click to view full size
-                  </p>
-                </div>
-              )}
-
-              <a
-                href={plan.redCopyFileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                {isImageUrl(plan.redCopyFileUrl) ? (
-                  <ImageIcon className="w-4 h-4" />
-                ) : (
-                  <FileText className="w-4 h-4" />
                 )}
-                Open Record Copy
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              </div>
+              <CardDescription>{plan.surveyTitle}</CardDescription>
+              {plan.batch && (
+                <div className="mt-2">
+                  <Badge variant="outline">Batch: {plan.batch.batchCode}</Badge>
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-sm text-red-600">No record copy uploaded!</p>
-          )}
-        </div>
-
-        {/* Surveyor Information */}
-        {plan.user && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <User className="w-5 h-5 text-emerald-600" />
-              <h4 className="text-sm font-semibold text-emerald-800">
-                Surveyor Information
-              </h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <User className="w-4 h-4 text-emerald-500 mt-0.5" />
-                <div>
-                  <p className="text-xs text-emerald-600">Submitted By</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {plan.user.firstName} {plan.user.lastName}
-                  </p>
+            {!isHistory && (
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-gray-500">Accounts:</span>
+                  {getStatusBadge(plan.accountsStatus)}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-gray-500">Charting:</span>
+                  {getStatusBadge(plan.chartingStatus)}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-gray-500">SURCON:</span>
+                  {getStatusBadge(plan.surconStatus)}
                 </div>
               </div>
-              {plan.user.surconRegNumber && (
-                <div className="flex items-start gap-3">
-                  <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-emerald-600">SURCON Number</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {plan.user.surconRegNumber}
-                    </p>
-                  </div>
-                </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Location Info */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div>
+              <p className="text-xs text-gray-500">LGA</p>
+              <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Ward</p>
+              <p className="text-sm font-medium">{plan.ward || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">LCDA</p>
+              <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Deeded Area</p>
+              <p className="text-sm font-medium">{plan.deededArea}</p>
+            </div>
+          </div>
+
+          {/* Review Info (for history) */}
+          {isHistory && plan.recordsIApprovedAt && (
+            <div className="bg-gray-50 p-3 rounded-lg text-sm">
+              <p className="text-gray-600">
+                <span className="font-medium">Reviewed by:</span>{" "}
+                {plan.recordsIApprovedByUser
+                  ? `${plan.recordsIApprovedByUser.firstName} ${plan.recordsIApprovedByUser.lastName}`
+                  : "Unknown"}
+              </p>
+              <p className="text-gray-600">
+                <span className="font-medium">Date:</span>{" "}
+                {formatDate(plan.recordsIApprovedAt)}
+              </p>
+              {plan.recordsIStatus === "QUERIED" && plan.recordsIComment && (
+                <p className="text-red-600 mt-2">
+                  <span className="font-medium">Query Reason:</span>{" "}
+                  {plan.recordsIComment}
+                </p>
               )}
-              {plan.user.companyName && (
-                <div className="flex items-start gap-3">
-                  <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-emerald-600">Company</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {plan.user.companyName}
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
-                <div>
-                  <p className="text-xs text-emerald-600">Email</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {plan.user.email}
-                  </p>
-                </div>
+            </div>
+          )}
+
+          {/* Record Copy */}
+          <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                <p className="text-sm font-medium text-blue-800">
+                  Record Copy {!isHistory && "(Verify Quality & Completeness)"}
+                </p>
               </div>
-              {plan.user.phoneNumber && (
-                <div className="flex items-start gap-3">
-                  <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-emerald-600">Phone</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {plan.user.phoneNumber}
+            </div>
+
+            {plan.redCopyFileUrl ? (
+              <div className="space-y-3">
+                {isImageUrl(plan.redCopyFileUrl) && (
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => setViewingImage(plan.redCopyFileUrl)}
+                  >
+                    <img
+                      src={plan.redCopyFileUrl}
+                      alt="Record Copy Preview"
+                      className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Click to view full size
                     </p>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                )}
 
-        {/* Action Buttons (for pending only) */}
-        {!isHistory && (
-          <div className="flex gap-3 pt-2">
-            <Button
-              onClick={() => handleActionClick(plan, "approve")}
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              disabled={!plan.redCopyFileUrl}
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approve
-            </Button>
-            <Button
-              onClick={() => handleActionClick(plan, "query")}
-              variant="outline"
-              className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
-            >
-              <XCircle className="w-4 h-4 mr-2" />
-              Query
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Records I Admin</h1>
-        <p className="text-gray-600 mt-1">
-          Review uploaded record copies for quality and completeness
-        </p>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Pending ({plans.length})
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="w-4 h-4" />
-            History
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pending" className="mt-6">
-          {plans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
-                  No plans awaiting Records I review
-                </p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Submitted plans will appear here
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {plans.map((plan) => renderPlanCard(plan, false))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-6">
-          {historyLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-          ) : historyPlans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <History className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No history yet</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Approved and queried plans will appear here
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {historyPlans.map((plan) => renderPlanCard(plan, true))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Action Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "approve" ? "Approve Plan" : "Query Plan"}
-            </DialogTitle>
-            <DialogDescription>
-              {actionType === "approve"
-                ? `Confirm that the record copy for ${selectedPlan?.planNumber} is complete and of acceptable quality`
-                : `Provide a reason for querying ${selectedPlan?.planNumber}`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {actionType === "approve" ? (
-              <div className="bg-green-50 p-4 rounded-lg">
-                <p className="text-sm text-green-800">
-                  By approving, you confirm that:
-                </p>
-                <ul className="text-sm text-green-700 list-disc list-inside mt-2">
-                  <li>The record copy document is legible</li>
-                  <li>All required information is visible</li>
-                  <li>The document quality is acceptable</li>
-                </ul>
+                <a
+                  href={plan.redCopyFileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  {isImageUrl(plan.redCopyFileUrl) ? (
+                    <ImageIcon className="w-4 h-4" />
+                  ) : (
+                    <FileText className="w-4 h-4" />
+                  )}
+                  Open Record Copy
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
             ) : (
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Query Reason *
-                </label>
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Explain why this plan is being queried (e.g., illegible document, missing pages, poor quality)..."
-                  className="mt-1"
-                  rows={4}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  The surveyor will be notified and can upload a new record copy
-                </p>
-              </div>
+              <p className="text-sm text-red-600">No record copy uploaded!</p>
             )}
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDialog(false)}
-              disabled={processing}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                processing || (actionType === "query" && !comment.trim())
-              }
-              className={
-                actionType === "approve"
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-red-600 hover:bg-red-700"
-              }
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  {actionType === "approve" ? (
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                  ) : (
-                    <XCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {actionType === "approve" ? "Approve" : "Query"}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Viewer Dialog */}
-      <Dialog open={!!viewingImage} onOpenChange={() => setViewingImage(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Record Copy Preview</DialogTitle>
-          </DialogHeader>
-          {viewingImage && (
-            <div className="flex justify-center">
-              <img
-                src={viewingImage}
-                alt="Record Copy"
-                className="max-h-[70vh] rounded-lg"
-              />
+          {/* Surveyor Information */}
+          {plan.user && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <User className="w-5 h-5 text-emerald-600" />
+                <h4 className="text-sm font-semibold text-emerald-800">
+                  Surveyor Information
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <User className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Submitted By</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.firstName} {plan.user.lastName}
+                    </p>
+                  </div>
+                </div>
+                {plan.user.surconRegNumber && (
+                  <div className="flex items-start gap-3">
+                    <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-emerald-600">SURCON Number</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {plan.user.surconRegNumber}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {plan.user.companyName && (
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-emerald-600">Company</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {plan.user.companyName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
+                  <div>
+                    <p className="text-xs text-emerald-600">Email</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {plan.user.email}
+                    </p>
+                  </div>
+                </div>
+                {plan.user.phoneNumber && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-emerald-600">Phone</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {plan.user.phoneNumber}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </div>
+
+          {/* Action Buttons (for pending only) */}
+          {!isHistory && (
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => handleActionClick(plan, "approve")}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={!plan.redCopyFileUrl || isDisabled}
+              >
+                {isDisabled ? (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    View Only
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Approve
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => handleActionClick(plan, "query")}
+                variant="outline"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                disabled={isDisabled}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Query
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <>
+      {/* Leave Warning Dialog */}
+      <PlanLockWarningDialog
+        isOpen={showLeaveWarning}
+        planNumber={lockedPlanNumber}
+        onConfirmLeave={confirmLeave}
+        onCancel={cancelLeave}
+      />
+
+      <div className="container mx-auto p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Records I Admin</h1>
+          <p className="text-gray-600 mt-1">
+            Review uploaded record copies for quality and completeness
+          </p>
+        </div>
+
+        {/* Lock Status Indicator */}
+        {lockedPlanNumber && (
+          <PlanLockIndicator
+            planNumber={lockedPlanNumber}
+            lockExpiresAt={lockExpiresAt}
+            onUnlock={handleUnlock}
+            isUnlocking={isUnlocking}
+          />
+        )}
+
+        {isLocking && (
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <span className="text-sm text-gray-600">
+              Acquiring plan lock...
+            </span>
+          </div>
+        )}
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Pending ({plans.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending" className="mt-6">
+            {plans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    No plans awaiting Records I review
+                  </p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Submitted plans will appear here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {plans.map((plan) => renderPlanCard(plan, false))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            {historyLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : historyPlans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <History className="w-16 h-16 text-gray-300 mb-4" />
+                  <p className="text-gray-500 text-lg">No history yet</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Approved and queried plans will appear here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {historyPlans.map((plan) => renderPlanCard(plan, true))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Action Dialog */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {actionType === "approve" ? "Approve Plan" : "Query Plan"}
+              </DialogTitle>
+              <DialogDescription>
+                {actionType === "approve"
+                  ? `Confirm that the record copy for ${selectedPlan?.planNumber} is complete and of acceptable quality`
+                  : `Provide a reason for querying ${selectedPlan?.planNumber}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {actionType === "approve" ? (
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    By approving, you confirm that:
+                  </p>
+                  <ul className="text-sm text-green-700 list-disc list-inside mt-2">
+                    <li>The record copy document is legible</li>
+                    <li>All required information is visible</li>
+                    <li>The document quality is acceptable</li>
+                  </ul>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Query Reason *
+                  </label>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Explain why this plan is being queried (e.g., illegible document, missing pages, poor quality)..."
+                    className="mt-1"
+                    rows={4}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The surveyor will be notified and can upload a new record
+                    copy
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDialog(false)}
+                disabled={processing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  processing || (actionType === "query" && !comment.trim())
+                }
+                className={
+                  actionType === "approve"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {actionType === "approve" ? (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-2" />
+                    )}
+                    {actionType === "approve" ? "Approve" : "Query"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Image Viewer Dialog */}
+        <Dialog
+          open={!!viewingImage}
+          onOpenChange={() => setViewingImage(null)}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Record Copy Preview</DialogTitle>
+            </DialogHeader>
+            {viewingImage && (
+              <div className="flex justify-center">
+                <img
+                  src={viewingImage}
+                  alt="Record Copy"
+                  className="max-h-[70vh] rounded-lg"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }

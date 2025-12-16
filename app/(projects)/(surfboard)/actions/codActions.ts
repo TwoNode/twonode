@@ -26,6 +26,20 @@ type MDARole =
   | "RECORDS_II"
   | "MDA_SUPERADMIN";
 
+// Properly map role names to camelCase field prefixes
+// This is needed because RECORDS_I -> recordsI and RECORDS_II -> recordsII (not recordsi/recordsii)
+function getRoleFieldPrefix(role: MDARole): string {
+  const mapping: Record<MDARole, string> = {
+    ACCOUNTS: "accounts",
+    CHARTING: "charting",
+    SURCON: "surcon",
+    RECORDS_I: "recordsI",
+    RECORDS_II: "recordsII",
+    MDA_SUPERADMIN: "mdaSuperadmin",
+  };
+  return mapping[role];
+}
+
 /**
  * Fetches certificate batches filtered by payment status
  * Requires ADMIN or SUPERADMIN role
@@ -116,7 +130,7 @@ export async function acquirePlanLock(
     const now = new Date();
     const lockExpiry = new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000);
 
-    const rolePrefix = role.toLowerCase().replace("_", "");
+    const rolePrefix = getRoleFieldPrefix(role);
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
@@ -180,7 +194,7 @@ export async function releasePlanLock(
   userId: string
 ): Promise<ApiResult<{ released: boolean }>> {
   try {
-    const rolePrefix = role.toLowerCase().replace("_", "");
+    const rolePrefix = getRoleFieldPrefix(role);
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
@@ -209,6 +223,303 @@ export async function releasePlanLock(
 }
 
 /**
+ * Get and lock the oldest available plan for a specific MDA role
+ * This atomically finds and locks the oldest pending plan that is not locked by another user
+ */
+export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
+  ApiResult<{
+    planId: string | null;
+    planNumber: string | null;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const lockExpiry = new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000);
+
+    const rolePrefix = getRoleFieldPrefix(role);
+    const statusField = `${rolePrefix}Status` as any;
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockedAtField = `${rolePrefix}LockedAt` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    // First, check if user already has a plan locked for this role
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        [lockedByField]: user.id,
+        [lockExpiresAtField]: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        [lockExpiresAtField]: true,
+      },
+    });
+
+    if (existingLock) {
+      // User already has a lock, return it
+      return {
+        success: true,
+        data: {
+          planId: existingLock.id,
+          planNumber: existingLock.planNumber,
+          locked: true,
+          lockExpiresAt: (existingLock as any)[lockExpiresAtField],
+        },
+      };
+    }
+
+    // Build role-specific where clause to match what's displayed on each role's page
+    const getRoleSpecificCriteria = (): any => {
+      switch (role) {
+        case "RECORDS_II":
+          // Records II: All 4 other approvals must be complete
+          return {
+            accountsStatus: "APPROVED" as const,
+            chartingStatus: "APPROVED" as const,
+            surconStatus: "APPROVED" as const,
+            recordsIStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "RECORDS_I":
+          // Records I: First 3 approvals must be complete
+          return {
+            accountsStatus: "APPROVED" as const,
+            chartingStatus: "APPROVED" as const,
+            surconStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "SURCON":
+          // SURCON: First 2 approvals must be complete
+          return {
+            // accountsStatus: "APPROVED" as const,
+            // chartingStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "CHARTING":
+          // Charting: Accounts must be approved
+          return {
+            // accountsStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        default:
+          return {};
+      }
+    };
+
+    // Find the oldest available plan that is not locked by another user
+    const availablePlan = await prisma.surfboardPlan.findFirst({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        [statusField]: "PENDING",
+        deleted: false,
+        ...getRoleSpecificCriteria(),
+        OR: [
+          { [lockedByField]: null },
+          { [lockExpiresAtField]: { lt: now } }, // Lock expired
+        ],
+      },
+      select: {
+        id: true,
+        planNumber: true,
+      },
+      orderBy: { redCopySubmittedAt: "asc" },
+    });
+
+    if (!availablePlan) {
+      return {
+        success: true,
+        data: {
+          planId: null,
+          planNumber: null,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Try to acquire the lock atomically (using updateMany with conditions)
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: availablePlan.id,
+        OR: [
+          { [lockedByField]: null },
+          { [lockedByField]: user.id },
+          { [lockExpiresAtField]: { lt: now } },
+        ],
+      },
+      data: {
+        [lockedByField]: user.id,
+        [lockedAtField]: now,
+        [lockExpiresAtField]: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Another user grabbed the lock, try to find the next available plan
+      return getAndLockOldestAvailablePlan(role);
+    }
+
+    return {
+      success: true,
+      data: {
+        planId: availablePlan.id,
+        planNumber: availablePlan.planNumber,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting and locking plan:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockOldestAvailablePlan"),
+    };
+  }
+}
+
+/**
+ * Release all locks held by the current user for a specific role
+ * Called when leaving the MDA admin page
+ */
+export async function releaseAllLocksForUser(
+  role: MDARole
+): Promise<ApiResult<{ releasedCount: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const rolePrefix = getRoleFieldPrefix(role);
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockedAtField = `${rolePrefix}LockedAt` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: {
+        [lockedByField]: user.id,
+      },
+      data: {
+        [lockedByField]: null,
+        [lockedAtField]: null,
+        [lockExpiresAtField]: null,
+      },
+    });
+
+    return { success: true, data: { releasedCount: result.count } };
+  } catch (error) {
+    console.error("Error releasing all locks:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseAllLocksForUser"),
+    };
+  }
+}
+
+/**
+ * Get the current lock status for a plan and role
+ */
+export async function getPlanLockStatus(
+  planId: string,
+  role: MDARole
+): Promise<
+  ApiResult<{
+    isLocked: boolean;
+    lockedByMe: boolean;
+    lockedBy: string | null;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const rolePrefix = getRoleFieldPrefix(role);
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        [lockedByField]: true,
+        [lockExpiresAtField]: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    const lockedBy = (plan as any)[lockedByField];
+    const lockExpiresAt = (plan as any)[lockExpiresAtField];
+    const isLockValid = lockExpiresAt && new Date(lockExpiresAt) > now;
+
+    return {
+      success: true,
+      data: {
+        isLocked: Boolean(lockedBy && isLockValid),
+        lockedByMe: lockedBy === user.id && isLockValid,
+        lockedBy: isLockValid ? lockedBy : null,
+        lockExpiresAt: isLockValid ? lockExpiresAt : null,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting plan lock status:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getPlanLockStatus"),
+    };
+  }
+}
+
+/**
  * Check if user can work on this plan (chronological enforcement)
  * Returns the oldest available plan if this one is not allowed
  */
@@ -226,13 +537,10 @@ export async function canWorkOnPlan(
   }>
 > {
   try {
-    const statusField = `${role.toLowerCase().replace("_", "")}Status` as any;
-    const lockedByField = `${role
-      .toLowerCase()
-      .replace("_", "")}LockedBy` as any;
-    const lockExpiresAtField = `${role
-      .toLowerCase()
-      .replace("_", "")}LockExpiresAt` as any;
+    const rolePrefix = getRoleFieldPrefix(role);
+    const statusField = `${rolePrefix}Status` as any;
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
     // Get the target plan
     const targetPlan = await prisma.surfboardPlan.findUnique({
@@ -1447,6 +1755,8 @@ export async function getAccountsBatches() {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log("\n\n\n\n\n\n\n\n Accounts batches:", batches);
 
     return { success: true, data: batches };
   } catch (error) {

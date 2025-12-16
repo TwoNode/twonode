@@ -37,12 +37,19 @@ import {
   Briefcase,
   Mail,
   Phone,
+  Lock,
 } from "lucide-react";
 import {
   getRecordsIIPlans,
   updateRecordsIIStatus,
   getRecordsIIHistory,
 } from "../../../actions/codActions";
+import { usePlanLock } from "../../../hooks/usePlanLock";
+import {
+  PlanLockIndicator,
+  LockedPlanBadge,
+} from "../../../components/PlanLockIndicator";
+import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 
 interface Plan {
   id: string;
@@ -92,6 +99,40 @@ export default function RecordsIIAdminPage() {
   const [actionType, setActionType] = useState<"approve" | "query">("approve");
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "RECORDS_II",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
+
+  const handleUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      await releaseLock();
+      await fetchPlans();
+      // await acquireLock();
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlans();
@@ -235,17 +276,21 @@ export default function RecordsIIAdminPage() {
   const renderPlanCard = (plan: Plan, isHistory: boolean = false) => {
     const batchProgress =
       plan.batch && !isHistory ? getBatchProgress(plan.batch.batchCode) : null;
+    const isPlanLockedByMe = isLockedByMe(plan.id);
+    const isDisabled = !isHistory && !isPlanLockedByMe;
 
     return (
       <Card
         key={plan.id}
-        className={
+        className={`transition-all duration-200 ${
           isHistory
             ? plan.recordsIIStatus === "QUERIED"
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
-            : "border-2 border-green-200"
-        }
+            : isPlanLockedByMe
+            ? "border-2 border-green-200 ring-2 ring-blue-200"
+            : "border-2 border-green-200 opacity-60 grayscale-[30%]"
+        }`}
       >
         <CardHeader className={isHistory ? "" : "bg-green-50"}>
           <div className="flex items-start justify-between">
@@ -257,6 +302,12 @@ export default function RecordsIIAdminPage() {
                 <CardTitle className="text-xl">{plan.planNumber}</CardTitle>
                 {isHistory &&
                   getStatusBadgeFull(plan.recordsIIStatus || "PENDING")}
+                {!isHistory && (
+                  <LockedPlanBadge
+                    isLockedByMe={isPlanLockedByMe}
+                    isLockedByOther={!isPlanLockedByMe && !!lockedPlanId}
+                  />
+                )}
               </div>
               <CardDescription className="mt-1">
                 {plan.surveyTitle}
@@ -466,14 +517,25 @@ export default function RecordsIIAdminPage() {
               <Button
                 onClick={() => handleActionClick(plan, "approve")}
                 className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={isDisabled}
               >
-                <Award className="w-4 h-4 mr-2" />
-                Final Approval & Lodge
+                {isDisabled ? (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    View Only
+                  </>
+                ) : (
+                  <>
+                    <Award className="w-4 h-4 mr-2" />
+                    Final Approval & Lodge
+                  </>
+                )}
               </Button>
               <Button
                 onClick={() => handleActionClick(plan, "query")}
                 variant="outline"
                 className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                disabled={isDisabled}
               >
                 <XCircle className="w-4 h-4 mr-2" />
                 Query
@@ -486,184 +548,213 @@ export default function RecordsIIAdminPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Records II Admin</h1>
-        <p className="text-gray-600 mt-1">
-          Final approval before submission to OSSG - verify physical copy
-          matches uploaded copy
-        </p>
-      </div>
+    <>
+      {/* Leave Warning Dialog */}
+      <PlanLockWarningDialog
+        isOpen={showLeaveWarning}
+        planNumber={lockedPlanNumber}
+        onConfirmLeave={confirmLeave}
+        onCancel={cancelLeave}
+      />
 
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-        <Award className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+      <div className="container mx-auto p-6 space-y-6">
         <div>
-          <p className="text-sm font-medium text-blue-800">
-            This is the final approval step
-          </p>
-          <p className="text-sm text-blue-700 mt-1">
-            Only plans where all 4 other approvals (Accounts, Charting, SURCON,
-            Records I) are complete will appear here. Upon approval, the plan
-            will be submitted to OSSG and marked as LODGED.
+          <h1 className="text-3xl font-bold text-gray-900">Records II Admin</h1>
+          <p className="text-gray-600 mt-1">
+            Final approval before submission to OSSG - verify physical copy
+            matches uploaded copy
           </p>
         </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Pending ({plans.length})
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="w-4 h-4" />
-            History
-          </TabsTrigger>
-        </TabsList>
+        {/* Lock Status Indicator */}
+        {lockedPlanNumber && (
+          <PlanLockIndicator
+            planNumber={lockedPlanNumber}
+            lockExpiresAt={lockExpiresAt}
+            onUnlock={handleUnlock}
+            isUnlocking={isUnlocking}
+          />
+        )}
 
-        <TabsContent value="pending" className="mt-6">
-          {plans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
-                  No plans awaiting Records II review
-                </p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Plans with all other approvals complete will appear here
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {plans.map((plan) => renderPlanCard(plan, false))}
-            </div>
-          )}
-        </TabsContent>
+        {isLocking && (
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <span className="text-sm text-gray-600">
+              Acquiring plan lock...
+            </span>
+          </div>
+        )}
 
-        <TabsContent value="history" className="mt-6">
-          {historyLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-          ) : historyPlans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <History className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No history yet</p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Lodged and queried plans will appear here
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {historyPlans.map((plan) => renderPlanCard(plan, true))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <Award className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">
+              This is the final approval step
+            </p>
+            <p className="text-sm text-blue-700 mt-1">
+              Only plans where all 4 other approvals (Accounts, Charting,
+              SURCON, Records I) are complete will appear here. Upon approval,
+              the plan will be submitted to OSSG and marked as LODGED.
+            </p>
+          </div>
+        </div>
 
-      {/* Action Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "approve"
-                ? "Final Approval & Lodge"
-                : "Query Plan"}
-            </DialogTitle>
-            <DialogDescription>
-              {actionType === "approve"
-                ? `This will lodge ${selectedPlan?.planNumber} with OSSG and mark it as complete`
-                : `Provide a reason for querying ${selectedPlan?.planNumber}`}
-            </DialogDescription>
-          </DialogHeader>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="pending" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Pending ({plans.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              History
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-4">
-            {actionType === "approve" ? (
-              <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium">
-                    By giving final approval, you confirm that:
+          <TabsContent value="pending" className="mt-6">
+            {plans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    No plans awaiting Records II review
                   </p>
-                  <ul className="text-sm text-green-700 list-disc list-inside mt-2">
-                    <li>Physical record copy matches the uploaded version</li>
-                    <li>All information has been verified</li>
-                    <li>Plan is ready to be submitted to OSSG</li>
-                  </ul>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-800 font-medium">
-                    What happens next:
+                  <p className="text-gray-400 text-sm mt-2">
+                    Plans with all other approvals complete will appear here
                   </p>
-                  <ul className="text-sm text-blue-700 list-disc list-inside mt-2">
-                    <li>Plan status will change to LODGED</li>
-                    <li>Data will be submitted to OSSG API</li>
-                    <li>Surveyor will receive a confirmation email</li>
-                    <li>Certificate will be generated by OSSG</li>
-                  </ul>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Query Reason *
-                </label>
-                <Textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Explain why this plan is being queried (e.g., physical copy doesn't match, missing signature)..."
-                  className="mt-1"
-                  rows={4}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  The surveyor will be notified and can make corrections
-                </p>
+              <div className="grid gap-4">
+                {plans.map((plan) => renderPlanCard(plan, false))}
               </div>
             )}
-          </div>
+          </TabsContent>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDialog(false)}
-              disabled={processing}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                processing || (actionType === "query" && !comment.trim())
-              }
-              className={
-                actionType === "approve"
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-red-600 hover:bg-red-700"
-              }
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
+          <TabsContent value="history" className="mt-6">
+            {historyLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : historyPlans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <History className="w-16 h-16 text-gray-300 mb-4" />
+                  <p className="text-gray-500 text-lg">No history yet</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Lodged and queried plans will appear here
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {historyPlans.map((plan) => renderPlanCard(plan, true))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Action Dialog */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {actionType === "approve"
+                  ? "Final Approval & Lodge"
+                  : "Query Plan"}
+              </DialogTitle>
+              <DialogDescription>
+                {actionType === "approve"
+                  ? `This will lodge ${selectedPlan?.planNumber} with OSSG and mark it as complete`
+                  : `Provide a reason for querying ${selectedPlan?.planNumber}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {actionType === "approve" ? (
+                <div className="space-y-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium">
+                      By giving final approval, you confirm that:
+                    </p>
+                    <ul className="text-sm text-green-700 list-disc list-inside mt-2">
+                      <li>Physical record copy matches the uploaded version</li>
+                      <li>All information has been verified</li>
+                      <li>Plan is ready to be submitted to OSSG</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 font-medium">
+                      What happens next:
+                    </p>
+                    <ul className="text-sm text-blue-700 list-disc list-inside mt-2">
+                      <li>Plan status will change to LODGED</li>
+                      <li>Data will be submitted to OSSG API</li>
+                      <li>Surveyor will receive a confirmation email</li>
+                      <li>Certificate will be generated by OSSG</li>
+                    </ul>
+                  </div>
+                </div>
               ) : (
-                <>
-                  {actionType === "approve" ? (
-                    <Award className="w-4 h-4 mr-2" />
-                  ) : (
-                    <XCircle className="w-4 h-4 mr-2" />
-                  )}
-                  {actionType === "approve" ? "Lodge Plan" : "Query"}
-                </>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Query Reason *
+                  </label>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Explain why this plan is being queried (e.g., physical copy doesn't match, missing signature)..."
+                    className="mt-1"
+                    rows={4}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The surveyor will be notified and can make corrections
+                  </p>
+                </div>
               )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDialog(false)}
+                disabled={processing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  processing || (actionType === "query" && !comment.trim())
+                }
+                className={
+                  actionType === "approve"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {actionType === "approve" ? (
+                      <Award className="w-4 h-4 mr-2" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-2" />
+                    )}
+                    {actionType === "approve" ? "Lodge Plan" : "Query"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }
