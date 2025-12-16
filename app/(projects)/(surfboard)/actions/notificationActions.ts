@@ -690,7 +690,7 @@ export async function notifyPlanQueried(params: {
       }`,
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
-      link: `/surfboard/dashboard/plans`,
+      link: `/surfboard/dashboard/plans?tab=queried`,
       metadata: {
         planId: params.planId,
         planNumber: params.planNumber,
