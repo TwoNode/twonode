@@ -3,7 +3,7 @@
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
-import { sendMail } from "@/utils/email";
+import { sendNotificationMail } from "@/utils/email";
 import { revalidatePath } from "next/cache";
 import {
   SurfboardNotificationType,
@@ -103,7 +103,7 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 
     // Send emails to all recipients
     const emailPromises = recipients.map((recipient) =>
-      sendMail({
+      sendNotificationMail({
         to: recipient.email,
         subject: notification.title,
         text: notification.message,
