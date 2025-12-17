@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   CheckCircle,
   XCircle,
@@ -38,6 +38,7 @@ import {
   ExternalLink,
   History,
   Clock,
+  Search,
 } from "lucide-react";
 import {
   getAccountsBatches,
@@ -89,6 +90,56 @@ export default function AccountsAdminPage() {
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter batches based on search query
+  const filteredBatches = useMemo(() => {
+    if (!searchQuery.trim()) return batches;
+    const query = searchQuery.toLowerCase();
+    return batches.filter((batch) => {
+      const matchesBatchCode = batch.batchCode.toLowerCase().includes(query);
+      const matchesSubmitter =
+        `${batch.submitter.firstName} ${batch.submitter.lastName}`
+          .toLowerCase()
+          .includes(query);
+      const matchesEmail = batch.submitter.email.toLowerCase().includes(query);
+      const matchesPlanNumbers = batch.plans.some(
+        (plan) =>
+          plan.planNumber.toLowerCase().includes(query) ||
+          (plan.lga && plan.lga.toLowerCase().includes(query))
+      );
+      return (
+        matchesBatchCode ||
+        matchesSubmitter ||
+        matchesEmail ||
+        matchesPlanNumbers
+      );
+    });
+  }, [batches, searchQuery]);
+
+  const filteredHistoryBatches = useMemo(() => {
+    if (!searchQuery.trim()) return historyBatches;
+    const query = searchQuery.toLowerCase();
+    return historyBatches.filter((batch) => {
+      const matchesBatchCode = batch.batchCode.toLowerCase().includes(query);
+      const matchesSubmitter =
+        `${batch.submitter.firstName} ${batch.submitter.lastName}`
+          .toLowerCase()
+          .includes(query);
+      const matchesEmail = batch.submitter.email.toLowerCase().includes(query);
+      const matchesPlanNumbers = batch.plans.some(
+        (plan) =>
+          plan.planNumber.toLowerCase().includes(query) ||
+          (plan.lga && plan.lga.toLowerCase().includes(query))
+      );
+      return (
+        matchesBatchCode ||
+        matchesSubmitter ||
+        matchesEmail ||
+        matchesPlanNumbers
+      );
+    });
+  }, [historyBatches, searchQuery]);
 
   useEffect(() => {
     fetchBatches();
@@ -226,11 +277,23 @@ export default function AccountsAdminPage() {
         </div>
       </div>
 
+      {/* Search Input */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          type="text"
+          placeholder="Search by batch code, plan number, submitter..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Pending ({batches.length})
+            Pending ({filteredBatches.length})
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="w-4 h-4" />
@@ -239,21 +302,25 @@ export default function AccountsAdminPage() {
         </TabsList>
 
         <TabsContent value="pending" className="mt-6">
-          {batches.length === 0 ? (
+          {filteredBatches.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="w-16 h-16 text-gray-300 mb-4" />
                 <p className="text-gray-500 text-lg">
-                  No batches awaiting approval
+                  {searchQuery
+                    ? "No matching batches found"
+                    : "No batches awaiting approval"}
                 </p>
                 <p className="text-gray-400 text-sm mt-2">
-                  Batches with LASG receipts will appear here
+                  {searchQuery
+                    ? "Try adjusting your search"
+                    : "Batches with LASG receipts will appear here"}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {batches.map((batch) => (
+              {filteredBatches.map((batch) => (
                 <Card key={batch.id}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -351,19 +418,23 @@ export default function AccountsAdminPage() {
             <div className="flex items-center justify-center h-48">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
-          ) : historyBatches.length === 0 ? (
+          ) : filteredHistoryBatches.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <History className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No history yet</p>
+                <p className="text-gray-500 text-lg">
+                  {searchQuery ? "No matching batches found" : "No history yet"}
+                </p>
                 <p className="text-gray-400 text-sm mt-2">
-                  Approved and disapproved batches will appear here
+                  {searchQuery
+                    ? "Try adjusting your search"
+                    : "Approved and disapproved batches will appear here"}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {historyBatches.map((batch) => (
+              {filteredHistoryBatches.map((batch) => (
                 <Card key={batch.id} className="border-l-4 border-l-gray-300">
                   <CardHeader>
                     <div className="flex items-center justify-between">

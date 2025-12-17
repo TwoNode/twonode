@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   CheckCircle,
   FileText,
@@ -38,6 +39,7 @@ import {
   Mail,
   Phone,
   Lock,
+  Search,
 } from "lucide-react";
 import {
   getRecordsIIPlans,
@@ -100,6 +102,66 @@ export default function RecordsIIAdminPage() {
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter plans based on search query
+  const filteredPlans = useMemo(() => {
+    if (!searchQuery.trim()) return plans;
+    const query = searchQuery.toLowerCase();
+    return plans.filter((plan) => {
+      const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
+      const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+      const matchesLga = plan.lga?.toLowerCase().includes(query);
+      const matchesWard = plan.ward?.toLowerCase().includes(query);
+      const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+      const matchesUser =
+        plan.user &&
+        `${plan.user.firstName} ${plan.user.lastName}`
+          .toLowerCase()
+          .includes(query);
+      const matchesSurconNumber = plan.user?.surconRegNumber
+        ?.toLowerCase()
+        .includes(query);
+      return (
+        matchesPlanNumber ||
+        matchesSurveyTitle ||
+        matchesLga ||
+        matchesWard ||
+        matchesBatch ||
+        matchesUser ||
+        matchesSurconNumber
+      );
+    });
+  }, [plans, searchQuery]);
+
+  const filteredHistoryPlans = useMemo(() => {
+    if (!searchQuery.trim()) return historyPlans;
+    const query = searchQuery.toLowerCase();
+    return historyPlans.filter((plan) => {
+      const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
+      const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+      const matchesLga = plan.lga?.toLowerCase().includes(query);
+      const matchesWard = plan.ward?.toLowerCase().includes(query);
+      const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+      const matchesUser =
+        plan.user &&
+        `${plan.user.firstName} ${plan.user.lastName}`
+          .toLowerCase()
+          .includes(query);
+      const matchesSurconNumber = plan.user?.surconRegNumber
+        ?.toLowerCase()
+        .includes(query);
+      return (
+        matchesPlanNumber ||
+        matchesSurveyTitle ||
+        matchesLga ||
+        matchesWard ||
+        matchesBatch ||
+        matchesUser ||
+        matchesSurconNumber
+      );
+    });
+  }, [historyPlans, searchQuery]);
 
   // Plan lock management
   const {
@@ -600,11 +662,23 @@ export default function RecordsIIAdminPage() {
           </div>
         </div>
 
+        {/* Search Input */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search by plan number, title, LGA, surveyor, SURCON #..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="pending" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              Pending ({plans.length})
+              Pending ({filteredPlans.length})
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <History className="w-4 h-4" />
@@ -613,21 +687,25 @@ export default function RecordsIIAdminPage() {
           </TabsList>
 
           <TabsContent value="pending" className="mt-6">
-            {plans.length === 0 ? (
+            {filteredPlans.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FileText className="w-16 h-16 text-gray-300 mb-4" />
                   <p className="text-gray-500 text-lg">
-                    No plans awaiting Records II review
+                    {searchQuery
+                      ? "No matching plans found"
+                      : "No plans awaiting Records II review"}
                   </p>
                   <p className="text-gray-400 text-sm mt-2">
-                    Plans with all other approvals complete will appear here
+                    {searchQuery
+                      ? "Try adjusting your search"
+                      : "Plans with all other approvals complete will appear here"}
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4">
-                {plans.map((plan) => renderPlanCard(plan, false))}
+                {filteredPlans.map((plan) => renderPlanCard(plan, false))}
               </div>
             )}
           </TabsContent>
@@ -637,19 +715,23 @@ export default function RecordsIIAdminPage() {
               <div className="flex items-center justify-center h-48">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
-            ) : historyPlans.length === 0 ? (
+            ) : filteredHistoryPlans.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <History className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">No history yet</p>
+                  <p className="text-gray-500 text-lg">
+                    {searchQuery ? "No matching plans found" : "No history yet"}
+                  </p>
                   <p className="text-gray-400 text-sm mt-2">
-                    Lodged and queried plans will appear here
+                    {searchQuery
+                      ? "Try adjusting your search"
+                      : "Lodged and queried plans will appear here"}
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4">
-                {historyPlans.map((plan) => renderPlanCard(plan, true))}
+                {filteredHistoryPlans.map((plan) => renderPlanCard(plan, true))}
               </div>
             )}
           </TabsContent>
