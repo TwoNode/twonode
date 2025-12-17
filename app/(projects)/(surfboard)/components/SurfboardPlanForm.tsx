@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { toast } from "sonner";
 import {
   PillarData,
@@ -37,6 +43,7 @@ import {
   FileText,
   FileCheck,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -48,6 +55,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  AIAutofillButtonCompact,
+  type AIExtractedData,
+} from "./AIAutofillButton";
 
 // Confirmation Modal Component using shadcn AlertDialog
 interface ConfirmationModalProps {
@@ -433,6 +444,66 @@ export default function SurfboardPlanForm({
   const [selectedPdfFiles, setSelectedPdfFiles] = useState<File[]>([]);
   const [selectedCertFiles, setSelectedCertFiles] = useState<File[]>([]);
 
+  // AI Extraction handler
+  const handleAIExtractedData = useCallback(
+    (data: AIExtractedData) => {
+      // Only autofill empty fields to avoid overwriting user input
+      setForm((prev) => ({
+        ...prev,
+        // Only set if field is empty
+        ...(!prev.planNumber &&
+          data.planNumber && { planNumber: data.planNumber }),
+        ...(!prev.surveyTitle &&
+          data.surveyTitle && { surveyTitle: data.surveyTitle }),
+        ...(!prev.deededArea && data.area && { deededArea: data.area }),
+        ...(!prev.dateOnSurveyPlan &&
+          data.date && { dateOnSurveyPlan: data.date }),
+      }));
+
+      // Show what was extracted and applied
+      const appliedFields: string[] = [];
+      if (data.planNumber && !form.planNumber)
+        appliedFields.push("Plan Number");
+      if (data.surveyTitle && !form.surveyTitle)
+        appliedFields.push("Survey Title");
+      if (data.area && !form.deededArea) appliedFields.push("Deeded Area");
+      if (data.date && !form.dateOnSurveyPlan) appliedFields.push("Date");
+
+      if (appliedFields.length > 0) {
+        toast.success(`Autofilled: ${appliedFields.join(", ")}`);
+      }
+
+      // Log what could have been extracted but wasn't applied (fields already filled)
+      const skippedFields: string[] = [];
+      if (data.planNumber && form.planNumber)
+        skippedFields.push("Plan Number (already filled)");
+      if (data.surveyTitle && form.surveyTitle)
+        skippedFields.push("Survey Title (already filled)");
+      if (data.area && form.deededArea)
+        skippedFields.push("Area (already filled)");
+      if (data.date && form.dateOnSurveyPlan)
+        skippedFields.push("Date (already filled)");
+
+      if (skippedFields.length > 0) {
+        toast.info(`Skipped: ${skippedFields.join(", ")}`);
+      }
+
+      // Log coordinates if extracted (for future use with pillar data)
+      if (data.coordinates && data.coordinates.length > 0) {
+        console.log("AI extracted coordinates:", data.coordinates);
+        toast.info(
+          `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`
+        );
+      }
+
+      // Log locality if extracted (could be used for address info)
+      if (data.locality) {
+        console.log("AI extracted locality:", data.locality);
+      }
+    },
+    [form.planNumber, form.surveyTitle, form.deededArea, form.dateOnSurveyPlan]
+  );
+
   function setField<K extends keyof SurfboardPlanDTO>(
     key: K,
     val: SurfboardPlanDTO[K]
@@ -803,9 +874,214 @@ export default function SurfboardPlanForm({
         <div className="grid grid-cols-1 xl:grid-cols-[5fr_5fr] gap-8">
           {/* Left — Form */}
           <div className="space-y-6">
+            {/* File Uploads Section - FIRST for AI Autofill workflow */}
+            <Section
+              id="files"
+              step={1}
+              title="File Uploads & AI Autofill"
+              subtitle="Upload PDF files first, then click 'AI Autofill' to extract form data automatically."
+              accent="amber"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* CAD */}
+                <div>
+                  <label className={labelCls} htmlFor="cadFiles">
+                    CAD Files {reqBadge}
+                  </label>
+
+                  <input
+                    id="cadFiles"
+                    type="file"
+                    multiple
+                    accept=".dwg,.dxf"
+                    disabled={lockNonCert && mode === "edit"}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      const invalidFiles = files.filter(
+                        (file) =>
+                          !VALID_CAD_EXTENSIONS.some((ext) =>
+                            file.name.toLowerCase().endsWith(ext)
+                          )
+                      );
+
+                      if (invalidFiles.length > 0) {
+                        toast.error(
+                          `Invalid file type. Only ${VALID_CAD_EXTENSIONS.join(
+                            ", "
+                          )} files are allowed.`
+                        );
+                        // Clear the input
+                        e.target.value = "";
+                        return;
+                      }
+                      setSelectedCadFiles(files);
+                    }}
+                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                  />
+                  {errors.cad && <p className={errorCls}>{errors.cad}</p>}
+                  <p className={helpCls}>
+                    Allowed formats: {VALID_CAD_EXTENSIONS.join(", ")}
+                  </p>
+                  <FileList
+                    files={[...(form.cadFilePaths || []), ...selectedCadFiles]}
+                    onDelete={async (index) => {
+                      const allFiles = [
+                        ...(form.cadFilePaths || []),
+                        ...selectedCadFiles,
+                      ];
+                      const fileToDelete = allFiles[index];
+                      if (typeof fileToDelete === "string") {
+                        const deleteSuccess = await handleDeleteFile(
+                          fileToDelete,
+                          "cad"
+                        );
+                        if (!deleteSuccess) return;
+                        setForm((prev) => ({
+                          ...prev,
+                          cadFilePaths: prev.cadFilePaths?.filter(
+                            (f) => f !== fileToDelete
+                          ),
+                        }));
+                      } else {
+                        const selectedIndex =
+                          index - (form.cadFilePaths?.length || 0);
+                        setSelectedCadFiles((prev) =>
+                          prev.filter((_, i) => i !== selectedIndex)
+                        );
+                      }
+                    }}
+                    type="cad"
+                  />
+                </div>
+
+                {/* PDF */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls} htmlFor="pdfFiles">
+                      PDF Files {reqBadge}
+                    </label>
+                    {/* AI Autofill Button */}
+                    {mode === "create" && selectedPdfFiles.length > 0 && (
+                      <AIAutofillButtonCompact
+                        pdfFiles={selectedPdfFiles}
+                        onExtractedData={handleAIExtractedData}
+                        disabled={false}
+                      />
+                    )}
+                  </div>
+                  <input
+                    id="pdfFiles"
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    disabled={lockNonCert && mode === "edit"}
+                    onChange={(e) =>
+                      setSelectedPdfFiles(Array.from(e.target.files || []))
+                    }
+                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                  />
+                  {errors.pdf && <p className={errorCls}>{errors.pdf}</p>}
+
+                  {/* AI Autofill hint when files are selected but in create mode */}
+                  {mode === "create" && selectedPdfFiles.length > 0 && (
+                    <p className="mt-1 text-xs text-purple-600 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Click "AI Autofill" to extract Plan Number, Title, Area &
+                      Date
+                    </p>
+                  )}
+
+                  <FileList
+                    files={[...(form.pdfFilePaths || []), ...selectedPdfFiles]}
+                    onDelete={async (index) => {
+                      const allFiles = [
+                        ...(form.pdfFilePaths || []),
+                        ...selectedPdfFiles,
+                      ];
+                      const fileToDelete = allFiles[index];
+                      if (typeof fileToDelete === "string") {
+                        const deleteSuccess = await handleDeleteFile(
+                          fileToDelete,
+                          "pdf"
+                        );
+                        if (!deleteSuccess) return;
+                        setForm((prev) => ({
+                          ...prev,
+                          pdfFilePaths: prev.pdfFilePaths?.filter(
+                            (f) => f !== fileToDelete
+                          ),
+                        }));
+                      } else {
+                        const selectedIndex =
+                          index - (form.pdfFilePaths?.length || 0);
+                        setSelectedPdfFiles((prev) =>
+                          prev.filter((_, i) => i !== selectedIndex)
+                        );
+                      }
+                    }}
+                    type="pdf"
+                  />
+                </div>
+
+                {/* Certificate Files */}
+                {certificateReady && (
+                  <div className="md:col-span-2">
+                    <label className={labelCls} htmlFor="certFiles">
+                      Certificate Files {reqBadge}
+                    </label>
+                    <input
+                      id="certFiles"
+                      type="file"
+                      multiple
+                      onChange={(e) =>
+                        setSelectedCertFiles(Array.from(e.target.files || []))
+                      }
+                      className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
+                    />
+                    {errors.cert && <p className={errorCls}>{errors.cert}</p>}
+                    <FileList
+                      files={[
+                        ...(form.certificateFilePaths || []),
+                        ...selectedCertFiles,
+                      ]}
+                      onDelete={async (index) => {
+                        const allFiles = [
+                          ...(form.certificateFilePaths || []),
+                          ...selectedCertFiles,
+                        ];
+                        const fileToDelete = allFiles[index];
+                        if (typeof fileToDelete === "string") {
+                          const deleteSuccess = await handleDeleteFile(
+                            fileToDelete,
+                            "certificate"
+                          );
+                          if (!deleteSuccess) return;
+                          setForm((prev) => ({
+                            ...prev,
+                            certificateFilePaths:
+                              prev.certificateFilePaths?.filter(
+                                (f) => f !== fileToDelete
+                              ),
+                          }));
+                        } else {
+                          const selectedIndex =
+                            index - (form.certificateFilePaths?.length || 0);
+                          setSelectedCertFiles((prev) =>
+                            prev.filter((_, i) => i !== selectedIndex)
+                          );
+                        }
+                      }}
+                      type="cert"
+                    />
+                  </div>
+                )}
+              </div>
+              {errors.files && <p className={errorCls}>{errors.files}</p>}
+            </Section>
+
             <Section
               id="plan-info"
-              step={1}
+              step={2}
               title="Plan Information"
               subtitle="Core identifiers and classification."
               accent="indigo"
@@ -905,7 +1181,7 @@ export default function SurfboardPlanForm({
             {showReferenceField && (
               <Section
                 id="reference-plan"
-                step={2}
+                step={3}
                 title="Reference Plan Number"
                 subtitle="Link to an existing plan when required."
                 accent="violet"
@@ -973,7 +1249,7 @@ export default function SurfboardPlanForm({
 
             <Section
               id="core-details"
-              step={showReferenceField ? 3 : 2}
+              step={showReferenceField ? 4 : 3}
               title="Core Details"
               subtitle="Project metadata and survey timing."
               accent="sky"
@@ -1105,7 +1381,7 @@ export default function SurfboardPlanForm({
 
             <Section
               id="certificate"
-              step={showReferenceField ? 4 : 3}
+              step={showReferenceField ? 5 : 4}
               title="Certificate"
               subtitle="Specify if available and attach when ready."
               accent="emerald"
@@ -1175,191 +1451,8 @@ export default function SurfboardPlanForm({
             </Section>
 
             <Section
-              id="files"
-              step={showReferenceField ? 5 : 4}
-              title="File Uploads"
-              subtitle="Files upload on submit. Max 50MB per file."
-              accent="amber"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* CAD */}
-                <div>
-                  <label className={labelCls} htmlFor="cadFiles">
-                    CAD Files {reqBadge}
-                  </label>
-
-                  <input
-                    id="cadFiles"
-                    type="file"
-                    multiple
-                    accept=".dwg,.dxf"
-                    disabled={lockNonCert && mode === "edit"}
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || []);
-                      const invalidFiles = files.filter(
-                        (file) =>
-                          !VALID_CAD_EXTENSIONS.some((ext) =>
-                            file.name.toLowerCase().endsWith(ext)
-                          )
-                      );
-
-                      if (invalidFiles.length > 0) {
-                        toast.error(
-                          `Invalid file type. Only ${VALID_CAD_EXTENSIONS.join(
-                            ", "
-                          )} files are allowed.`
-                        );
-                        // Clear the input
-                        e.target.value = "";
-                        return;
-                      }
-                      setSelectedCadFiles(files);
-                    }}
-                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                  />
-                  {errors.cad && <p className={errorCls}>{errors.cad}</p>}
-                  <p className={helpCls}>
-                    Allowed formats: {VALID_CAD_EXTENSIONS.join(", ")}
-                  </p>
-                  <FileList
-                    files={[...(form.cadFilePaths || []), ...selectedCadFiles]}
-                    onDelete={async (index) => {
-                      const allFiles = [
-                        ...(form.cadFilePaths || []),
-                        ...selectedCadFiles,
-                      ];
-                      const fileToDelete = allFiles[index];
-                      if (typeof fileToDelete === "string") {
-                        const deleteSuccess = await handleDeleteFile(
-                          fileToDelete,
-                          "cad"
-                        );
-                        if (!deleteSuccess) return;
-                        setForm((prev) => ({
-                          ...prev,
-                          cadFilePaths: prev.cadFilePaths?.filter(
-                            (f) => f !== fileToDelete
-                          ),
-                        }));
-                      } else {
-                        const selectedIndex =
-                          index - (form.cadFilePaths?.length || 0);
-                        setSelectedCadFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex)
-                        );
-                      }
-                    }}
-                    type="cad"
-                  />
-                </div>
-
-                {/* PDF */}
-                <div>
-                  <label className={labelCls} htmlFor="pdfFiles">
-                    PDF Files {reqBadge}
-                  </label>
-                  <input
-                    id="pdfFiles"
-                    type="file"
-                    multiple
-                    disabled={lockNonCert && mode === "edit"}
-                    onChange={(e) =>
-                      setSelectedPdfFiles(Array.from(e.target.files || []))
-                    }
-                    className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                  />
-                  {errors.pdf && <p className={errorCls}>{errors.pdf}</p>}
-                  <FileList
-                    files={[...(form.pdfFilePaths || []), ...selectedPdfFiles]}
-                    onDelete={async (index) => {
-                      const allFiles = [
-                        ...(form.pdfFilePaths || []),
-                        ...selectedPdfFiles,
-                      ];
-                      const fileToDelete = allFiles[index];
-                      if (typeof fileToDelete === "string") {
-                        const deleteSuccess = await handleDeleteFile(
-                          fileToDelete,
-                          "pdf"
-                        );
-                        if (!deleteSuccess) return;
-                        setForm((prev) => ({
-                          ...prev,
-                          pdfFilePaths: prev.pdfFilePaths?.filter(
-                            (f) => f !== fileToDelete
-                          ),
-                        }));
-                      } else {
-                        const selectedIndex =
-                          index - (form.pdfFilePaths?.length || 0);
-                        setSelectedPdfFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex)
-                        );
-                      }
-                    }}
-                    type="pdf"
-                  />
-                </div>
-
-                {/* Certificate Files */}
-                {certificateReady && (
-                  <div className="md:col-span-2">
-                    <label className={labelCls} htmlFor="certFiles">
-                      Certificate Files {reqBadge}
-                    </label>
-                    <input
-                      id="certFiles"
-                      type="file"
-                      multiple
-                      onChange={(e) =>
-                        setSelectedCertFiles(Array.from(e.target.files || []))
-                      }
-                      className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                    />
-                    {errors.cert && <p className={errorCls}>{errors.cert}</p>}
-                    <FileList
-                      files={[
-                        ...(form.certificateFilePaths || []),
-                        ...selectedCertFiles,
-                      ]}
-                      onDelete={async (index) => {
-                        const allFiles = [
-                          ...(form.certificateFilePaths || []),
-                          ...selectedCertFiles,
-                        ];
-                        const fileToDelete = allFiles[index];
-                        if (typeof fileToDelete === "string") {
-                          const deleteSuccess = await handleDeleteFile(
-                            fileToDelete,
-                            "certificate"
-                          );
-                          if (!deleteSuccess) return;
-                          setForm((prev) => ({
-                            ...prev,
-                            certificateFilePaths:
-                              prev.certificateFilePaths?.filter(
-                                (f) => f !== fileToDelete
-                              ),
-                          }));
-                        } else {
-                          const selectedIndex =
-                            index - (form.certificateFilePaths?.length || 0);
-                          setSelectedCertFiles((prev) =>
-                            prev.filter((_, i) => i !== selectedIndex)
-                          );
-                        }
-                      }}
-                      type="cert"
-                    />
-                  </div>
-                )}
-              </div>
-              {errors.files && <p className={errorCls}>{errors.files}</p>}
-            </Section>
-
-            <Section
               id="admin"
-              step={showReferenceField ? 6 : 5}
+              step={showReferenceField ? 7 : 6}
               title="Administrative Information"
               subtitle="Upload a CSV file with pillar data (required). Fields will be auto-populated."
               accent="rose"
@@ -1456,7 +1549,7 @@ export default function SurfboardPlanForm({
             {/* Actions */}
             <Section
               id="actions"
-              step={showReferenceField ? 7 : 6}
+              step={showReferenceField ? 8 : 7}
               title="Save"
               subtitle="Validate and persist your changes."
               accent="blue"
