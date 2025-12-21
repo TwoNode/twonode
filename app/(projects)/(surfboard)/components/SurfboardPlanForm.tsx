@@ -344,6 +344,7 @@ const INITIALS = (initial: any) => ({
   certificateFilePaths: initial?.certificateFilePaths ?? [],
   dateOnSurveyPlan: initial?.dateOnSurveyPlan ?? "",
   dateLodged: initial?.dateLodged ?? null,
+  locality: initial?.locality ?? "",
   ward: initial?.ward ?? null,
   lcda: initial?.lcda ?? null,
   lga: initial?.lga ?? null,
@@ -458,6 +459,7 @@ export default function SurfboardPlanForm({
         ...(!prev.deededArea && data.area && { deededArea: data.area }),
         ...(!prev.dateOnSurveyPlan &&
           data.date && { dateOnSurveyPlan: data.date }),
+        ...(!prev.locality && data.locality && { locality: data.locality }),
       }));
 
       // Show what was extracted and applied
@@ -468,6 +470,7 @@ export default function SurfboardPlanForm({
         appliedFields.push("Survey Title");
       if (data.area && !form.deededArea) appliedFields.push("Deeded Area");
       if (data.date && !form.dateOnSurveyPlan) appliedFields.push("Date");
+      if (data.locality && !form.locality) appliedFields.push("Locality");
 
       if (appliedFields.length > 0) {
         toast.success(`Autofilled: ${appliedFields.join(", ")}`);
@@ -483,6 +486,8 @@ export default function SurfboardPlanForm({
         skippedFields.push("Area (already filled)");
       if (data.date && form.dateOnSurveyPlan)
         skippedFields.push("Date (already filled)");
+      if (data.locality && form.locality)
+        skippedFields.push("Locality (already filled)");
 
       if (skippedFields.length > 0) {
         toast.info(`Skipped: ${skippedFields.join(", ")}`);
@@ -495,13 +500,14 @@ export default function SurfboardPlanForm({
           `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`
         );
       }
-
-      // Log locality if extracted (could be used for address info)
-      if (data.locality) {
-        console.log("AI extracted locality:", data.locality);
-      }
     },
-    [form.planNumber, form.surveyTitle, form.deededArea, form.dateOnSurveyPlan]
+    [
+      form.planNumber,
+      form.surveyTitle,
+      form.deededArea,
+      form.dateOnSurveyPlan,
+      form.locality,
+    ]
   );
 
   function setField<K extends keyof SurfboardPlanDTO>(
@@ -1376,6 +1382,26 @@ export default function SurfboardPlanForm({
                     <p className={errorCls}>{errors.dateOnSurveyPlan}</p>
                   )}
                 </div>
+              </div>
+
+              {/* Locality - Full width field */}
+              <div>
+                <label className={labelCls} htmlFor="locality">
+                  Locality
+                </label>
+                <input
+                  id="locality"
+                  type="text"
+                  value={form.locality || ""}
+                  onChange={(e) => setField("locality", e.target.value)}
+                  className={cn(inputBase, inputBorder)}
+                  disabled={lockNonCert && mode === "edit"}
+                  placeholder="e.g., UNIT 2, BUSH STREET, OFF SUNMOLA STREET, KOSOFE L.G.A."
+                />
+                <p className={helpCls}>
+                  Property address/location (auto-filled from AI extraction if
+                  available)
+                </p>
               </div>
             </Section>
 

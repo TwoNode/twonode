@@ -1,15 +1,12 @@
 "use server";
 
 // app/(projects)/(surfboard)/actions/aiExtractionActions.ts
-// Server-side AI extraction using OpenAI API
+// Server-side AI extraction - receives pre-extracted text from client
 
 import type { ApiResult } from "../types/surfboardTypes";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-/**
- * Result structure from AI extraction
- */
 export interface AIExtractedData {
   planNumber: string;
   surveyTitle: string;
@@ -23,96 +20,167 @@ export interface AIExtractedData {
 }
 
 /**
- * System prompt for survey plan extraction
- * This is a detailed prompt that guides the AI to extract Nigerian cadastral survey plan data
+ * ENHANCED System prompt based on analysis of 5 real Nigerian cadastral survey plan samples
+ * Updated to handle various document formats, plan number styles, and coordinate patterns
  */
-const SYSTEM_PROMPT = `
-You are an advanced AI specialized in interpreting Nigerian cadastral SURVEY PLANS.
-You MUST perform TWO STAGES:
-1) INTERNAL REASONING (do not output reasoning): read the entire text, identify ALL candidate tokens for plan number, survey title, locality, area, date, and coordinates; classify candidates (is this a name, address, date, plan id?); pick the best candidate for each field; normalize and clean them (remove dashes, fix spacing, uppercase plan number, convert date to YYYY-MM-DD for HTML date input, etc.); pair coordinates; resolve ambiguities using domain logic (dates are not plan numbers; titles are people or entities; localities are addresses).
-2) FINAL OUTPUT: return STRICT JSON ONLY with the exact fields: planNumber, surveyTitle, locality, area, date, coordinates.
+const SYSTEM_PROMPT = `You are an expert AI specialized in extracting data from Nigerian cadastral survey plans (Lagos State format).
 
-Important details:
-- Plan Number rules:
-  * Must begin with 2-5 letters and contain multiple '/' segments.
-  * Must NOT be a date. Prefer tokens with alphanumeric segments (not 1-2 digit date segments).
-  * Output in UPPERCASE.
+DOCUMENT STRUCTURE (Top to Bottom):
+1. Header: "PLAN SHEWING PROPERTY" (sometimes with dashes)
+2. "SAID TO BELONG TO" line
+3. OWNER NAME(S) - This is the SURVEY TITLE
+4. LOCALITY (property address)
+5. LOCAL GOVERNMENT AREA info
+6. STATE (always "LAGOS STATE")
+7. SCALE information
+8. ORIGIN (usually "U.T.M. ZONE 31")
+9. AREA measurement
+10. Map/diagram with pillars and coordinates
+11. Surveyor company info (bottom left)
+12. PLAN NO. (bottom)
+13. Surveyor signature and DATE (bottom right)
 
-- SURVEY TITLE (CRITICAL LOGIC — PERSON OR LAND OWNER ENTITY, NOT SURVEYOR)
-The Survey Title is the FIRST non-empty line immediately after any variation of:
-- "SAID TO BELONG TO"
-- "-SAID TO BELONG TO-"
-- "SAID TO BELONG TO:"
+=== EXTRACTION RULES ===
 
-This title MUST represent the OWNER of the land, not the surveyor.
+1. PLAN NUMBER (Critical - at BOTTOM of document):
+   FORMATS ENCOUNTERED:
+   - Standard: "AMA/5579/57/2025/LA"
+   - With letters in segment: "QED/1236/27A&B/2025/LA"
+   - Extended: "AAA/LA/1886/2024/D004"
+   - Three letter prefix: "BYA/5599/013/2024/LA"
+   
+   LOOK FOR:
+   - "PLAN NO:" or "PLAN NO.:" or "PLAN    NO.:" (may have extra spaces)
+   - Usually in a box/table at bottom
+   - Contains "/" separators
+   - Ends with "/LA" or "/L.A" or "/D00X" pattern
+   - May have spaces in the text that should be removed
+   
+   OUTPUT: UPPERCASE, no spaces (e.g., "AMA/5579/57/2025/LA")
 
-VALID survey title examples:
-- An individual (e.g. "MR. LAFO OLATERU OLAGBEGI")
-- A company or organization (e.g. "FINETRUST MULTIPURPOSE COOPERATIVE")
-- A church or estate (e.g. "GLORYLAND ESTATE LTD.")
+2. SURVEY TITLE (Owner Name - NOT the surveyor):
+   APPEARS AFTER: "SAID TO BELONG TO" (with optional dashes/colons)
+   
+   EXAMPLES FROM REAL DOCUMENTS:
+   - "MR. BABATUNDE TAJUDEEN SHONUBI"
+   - "MR. RAHEEM LUKMAN OLABAMIJI"
+   - "MR. OLUWAFEMI TAIWO ABIODUN AND MRS OGALA TURMAC NDIDI" (multiple owners)
+   - "MRS. BOLANLE OLUTAYO OMOTAYO"
+   - "- RAUF ABIODUN SAMSONDEEN -" (may have dashes around it)
+   
+   RULES:
+   - Remove leading/trailing dashes "-" and whitespace
+   - Keep name exactly as shown (with titles like MR., MRS., DR.)
+   - If multiple owners, include "AND" between names
+   - EXCLUDE: Company info at bottom (surveyor details)
 
-DO NOT accept lines that belong to the surveyor or their company.
+3. LOCALITY (Property Address):
+   APPEARS: Immediately after owner name, before "LOCAL GOVT"
+   
+   REAL EXAMPLES:
+   - "UNIT 2, BUSH STREET, OFF SUNMOLA STREET"
+   - "WITHIN TOLL SYSTEM DEVELOPMENT COMPANY LIMITED LANDED PROPERTY, LAKOWE"
+   - "BEING NO.5 OLAADESHILE STREET OFF OREDOLA STREET, AJAO ESTATE"
+   - "AT NO 26, FREEDOM CLOSE, OFF GBEMISOLA STREET, ADAMO, IKORODU"
+   - "-ALONG-" + "OLALERE OLADUNJOYE STREET, VIA LIASU ROAD, IDIMU AREA"
+   
+   STARTING KEYWORDS: AT, NO., ALONG, BEING, WITHIN, UNIT, OFF, VIA, PLOT
+   ENDING PATTERNS: Stop at "LOCAL GOVT", "LOCAL GOVERNMENT", "L.G.A"
+   
+   OUTPUT: Full address, remove surrounding dashes, include estate/area names
 
-The following MUST BE EXCLUDED as survey titles:
-- Any line near email, phone numbers, office address
-- Any line containing professional terms:
-  "SURVEYOR", "SURVEY CONSULT", "ENGINEERING", "CONSULT LTD", "SERVICES", "FIRM", "CONSULTANCY"
-- Any block that includes:
-  - Street address (e.g., "NO 58, KUDIRAT ABIOLA WAY…")
-  - Phone numbers ("+234…")
-  - Email addresses
-  - Website URLs
-  - Company tagline
-- Any block associated with footer/contact info of the surveyor.
+4. AREA (Land Measurement):
+   LOOK FOR: "AREA:-" or "AREA :-" or "-AREA :-" or "AREA:"
+   
+   REAL EXAMPLES:
+   - "AREA:- 177.464 SQ. MTS"
+   - "AREA:- 421.657 SQ. MTS."
+   - "AREA:- 827.470 SQ. MTS."
+   - "AREA:- 558.078 SQ. MTS"
+   - "-AREA : - 311.633 SQ.MTS.-"
+   
+   OUTPUT FORMAT: "XXX.XXX SQ. MTS" (normalize spacing, remove dashes)
 
-RULE:
-Extract ONLY the first non-empty line AFTER the "SAID TO BELONG TO" phrase that is NOT part of the surveyor/company block and DOES resemble a land-owning entity.
+5. DATE (Survey Date - at BOTTOM near surveyor signature):
+   LOOK FOR: "DATE:-" or "DATE:" or text containing date near bottom right
+   
+   REAL FORMATS ENCOUNTERED:
+   - "DATE:- 10-07-2025" → "2025-07-10"
+   - "on the 4th of September, 2024" → "2024-09-04"
+   - "21ST AUGUST, 2025" → "2025-08-21"
+   - "2ND SEPT, 2024" → "2024-09-02"
+   - "Certified True Copy of Original Plan made by me on the 4th of September, 2024"
+   
+   OUTPUT: ALWAYS YYYY-MM-DD format
 
-  * Must be the FIRST non-empty line immediately after any line containing 'SAID TO BELONG TO' (case-insensitive).
-  * It may be a PERSON name OR a COMPANY/ORGANIZATION/CHURCH/ESTATE. Classify it as an owner entity (not an address).
-  * Strip leading/trailing dashes and whitespace.
+6. COORDINATES (Reference Points on Map):
+   FORMATS - Numbers may have SPACES within them:
+   - "725725.662mN" and "540793.433mE" (no spaces)
+   - "713 006.465mN" (space in number: 713006.465)
+   - "586 222.000mE" (space in number: 586222.000)
+   - "737 016.246mN" (space in number: 737016.246)
+   - "724 868.273 mN" (spaces in number AND before unit)
+   - "531 431.898 mE"
+   
+   LOCATION: Usually at edges/corners of the map diagram
+   
+   RULES:
+   - Remove ALL spaces from within the numbers
+   - Remove "mN" and "mE" suffixes
+   - Return as {northing: "XXXXXX.XXX", easting: "XXXXXX.XXX"}
+   - Extract ALL coordinate pairs visible
 
-- Locality:
-  * Extract the FIRST valid locality line after the survey title (Option A).
-  * Valid locality lines commonly start with or contain: 'AT', 'NO.', 'ALONG', 'BEING', 'SITUATED AT', 'LOCATED AT', or contain 'NO.'.
-  * Stop before metadata such as 'LOCAL GOVT AREA', 'STATE', 'SCALE', 'ORIGIN', 'AREA'.
+7. PILLAR/BEACON MARKERS (Reference for coordinates):
+   FORMATS SEEN:
+   - "SC/LA EA5411CAL" (SC/LA prefix + code)
+   - "DU 3522" (DU prefix + number)
+   - "PT 01" through "PT 06" (PT prefix + number)
+   - "SC/LA DP2663AYA" 
+   - "SC/LA DPS200LEAJ"
+   
+   Note: These are reference markers, not directly needed for extraction but help locate coordinates
 
-- Area:
-  * Extract numeric area and unit (e.g., '917.830 SQ. MTS', '645.576 SQ.MTS', '0.045 HA').
-  * Normalize spacing and punctuation.
-  * Format as a clean number with unit, suitable for display.
+=== DOCUMENT VARIATIONS ===
 
-- Date:
-  * Recognize numeric formats (e.g., '24 - 04 - 2025', '24/04/2025', '5/5/95') and written formats ('3RD JULY, 2025').
-  * Convert and return a final date in YYYY-MM-DD format (ISO format for HTML date input).
-  * If a 2-digit year is found: if >=50 => 19xx, otherwise 20xx.
+- Some documents use dashes "-" extensively around text
+- Some have QR codes near plan number
+- Surveyor info at bottom left includes: Company name, address, phone, email
+- "Certified True Copy" text often contains the date
 
-- Coordinates (IMPORTANT - Extract ALL coordinate pairs):
-  * Look for coordinate tables or lists with Northing (mN) and Easting (mE) values.
-  * Accept patterns like '722 861.953mN' or '722861.953 mN' or '722861.953m N'.
-  * Remove internal spaces so examples become '722861.953mN'.
-  * Normalize suffix to 'mN' or 'mE'.
-  * Extract the raw numeric values WITHOUT the mN/mE suffix for the output.
-  * Pair northing (mN) and easting (mE) in reading order.
-  * Include ALL coordinate pairs found, maintaining their order (they define the polygon vertices).
-  * If coordinates appear to be in a table with pillar numbers, maintain that sequence.
+=== CRITICAL DISTINCTIONS ===
 
-General rules:
-- DO NOT hallucinate. If unsure, set field to an empty string or empty array.
-- Remove stray dashes and extra spaces.
-- If multiple candidates exist, choose the most complete/standard-looking one.
-- Return STRICT JSON ONLY (no explanation, no markdown, no extra text).
-`;
+- OWNER (top, after "SAID TO BELONG TO") ≠ SURVEYOR (bottom, with company info)
+- Plan number is ALWAYS at the bottom
+- Coordinates often have spaces WITHIN the number - REMOVE THEM ALL
+- Date near bottom right, may be in certification text
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON (no markdown, no code fences, no explanation):
+{
+  "planNumber": "AAA/LA/1886/2024/D004",
+  "surveyTitle": "MRS. BOLANLE OLUTAYO OMOTAYO",
+  "locality": "AT NO 26, FREEDOM CLOSE, OFF GBEMISOLA STREET, ADAMO, IKORODU",
+  "area": "558.078 SQ. MTS",
+  "date": "2024-09-02",
+  "coordinates": [
+    {"northing": "737016.246", "easting": "566136.216"}
+  ]
+}
+
+If a field cannot be found with certainty, use empty string "" or empty array [].
+DO NOT guess or hallucinate values. Only extract what is clearly present in the document.`;
 
 /**
- * Extract JSON from AI response
+ * Extract JSON from AI response with better error handling
  */
 function extractJsonFromResponse(text: string): string | null {
   if (!text || typeof text !== "string") return null;
 
-  // Remove code fences if present
-  let cleaned = text.replace(/```json|```/g, "").trim();
+  // Remove markdown code fences
+  let cleaned = text.replace(/```json\n?|```\n?/g, "").trim();
 
+  // Find JSON object boundaries
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
 
@@ -122,6 +190,7 @@ function extractJsonFromResponse(text: string): string | null {
 
   const candidate = cleaned.slice(firstBrace, lastBrace + 1);
 
+  // Validate it's actually JSON
   try {
     JSON.parse(candidate);
     return candidate;
@@ -131,82 +200,172 @@ function extractJsonFromResponse(text: string): string | null {
 }
 
 /**
- * Parse and validate the AI response
+ * Enhanced parsing with better validation and normalization
  */
 function parseAIResponse(text: string): AIExtractedData {
   const jsonText = extractJsonFromResponse(text);
 
   if (!jsonText) {
-    throw new Error("Could not locate JSON in model response.");
+    throw new Error("Could not extract valid JSON from AI response.");
   }
 
   const obj = JSON.parse(jsonText);
 
-  // Normalize and validate the response
+  // Normalize and validate with defaults
   const result: AIExtractedData = {
     planNumber: obj.planNumber
-      ? String(obj.planNumber).toUpperCase().trim()
+      ? normalizePlanNumber(String(obj.planNumber))
       : "",
-    surveyTitle: obj.surveyTitle ? String(obj.surveyTitle).trim() : "",
-    locality: obj.locality ? String(obj.locality).trim() : "",
-    area: obj.area ? String(obj.area).trim() : "",
+    surveyTitle: obj.surveyTitle
+      ? normalizeSurveyTitle(String(obj.surveyTitle))
+      : "",
+    locality: obj.locality 
+      ? normalizeLocality(String(obj.locality)) 
+      : "",
+    area: obj.area ? normalizeArea(String(obj.area).trim()) : "",
     date: obj.date ? normalizeDate(String(obj.date).trim()) : "",
     coordinates: [],
   };
 
-  // Normalize coordinates array
+  // Process coordinates array
   if (Array.isArray(obj.coordinates)) {
     result.coordinates = obj.coordinates
-      .map((c: any) => ({
-        northing: c.northing
+      .map((c: any) => {
+        if (!c || typeof c !== "object") return null;
+
+        const northing = c.northing
           ? String(c.northing).replace(/\s+/g, "").replace(/mN$/i, "")
-          : "",
-        easting: c.easting
+          : "";
+        const easting = c.easting
           ? String(c.easting).replace(/\s+/g, "").replace(/mE$/i, "")
-          : "",
-      }))
-      .filter((c: any) => c.northing || c.easting); // Remove empty entries
+          : "";
+
+        // Only include if both coordinates are present and valid
+        if (northing && easting && /^\d+\.?\d*$/.test(northing) && /^\d+\.?\d*$/.test(easting)) {
+          return { northing, easting };
+        }
+        return null;
+      })
+      .filter(
+        (c: any): c is { northing: string; easting: string } => c !== null
+      );
   }
 
   return result;
 }
 
 /**
- * Normalize date to YYYY-MM-DD format for HTML date input
+ * Normalize plan number - uppercase, no spaces
+ */
+function normalizePlanNumber(planNumber: string): string {
+  if (!planNumber) return "";
+  return planNumber
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, "")
+    // Remove any X placeholder patterns (like XXXXXXXXX)
+    .replace(/^X+$/, "");
+}
+
+/**
+ * Normalize survey title - clean up dashes and extra whitespace
+ */
+function normalizeSurveyTitle(title: string): string {
+  if (!title) return "";
+  return title
+    .trim()
+    // Remove leading/trailing dashes with optional spaces
+    .replace(/^[-\s]+|[-\s]+$/g, "")
+    // Collapse multiple spaces
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Normalize locality - clean up address formatting
+ */
+function normalizeLocality(locality: string): string {
+  if (!locality) return "";
+  
+  let cleaned = locality
+    .trim()
+    // Remove leading/trailing dashes with optional spaces
+    .replace(/^[-\s]+|[-\s]+$/g, "")
+    // Remove "-ALONG-" style prefixes but keep the word ALONG
+    .replace(/^-?(ALONG|AT|BEING|WITHIN|UNIT|PLOT)-?/i, "$1")
+    // Collapse multiple spaces
+    .replace(/\s+/g, " ")
+    // Fix comma spacing
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+  
+  // Ensure it doesn't end with LOCAL GOVT info (should stop before that)
+  const lgaIndex = cleaned.search(/,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i);
+  if (lgaIndex > 0) {
+    cleaned = cleaned.substring(0, lgaIndex).trim();
+    // Remove trailing comma if present
+    cleaned = cleaned.replace(/,\s*$/, "");
+  }
+  
+  return cleaned;
+}
+
+/**
+ * Normalize area format - handle various SQ. MTS patterns
+ */
+function normalizeArea(area: string): string {
+  if (!area) return "";
+
+  // Remove surrounding dashes
+  area = area.replace(/^[-\s]+|[-\s]+$/g, "");
+  
+  // Extract just the numeric value and unit
+  const match = area.match(/(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i);
+  if (match) {
+    // Clean up the number (remove commas and internal spaces)
+    const num = match[1].replace(/[,\s]/g, "");
+    const unit = match[2].toUpperCase()
+      .replace(/\s+/g, "")
+      .replace(/SQ\.?M(?:TS?|ETRES?)?\.?/i, "SQ. MTS")
+      .replace(/HA\.?/i, "HA");
+    
+    return `${num} ${unit}`;
+  }
+
+  // Fallback: basic cleanup
+  return area
+    .replace(/(\d)(SQ\.?\s*MTS?\.?)/gi, "$1 SQ. MTS")
+    .replace(/(\d)(HA\.?)/gi, "$1 HA")
+    .trim();
+}
+
+/**
+ * Enhanced date normalization to YYYY-MM-DD
  */
 function normalizeDate(dateStr: string): string {
   if (!dateStr) return "";
 
-  // If already in YYYY-MM-DD format
+  // Already in ISO format
   const isoMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (isoMatch) {
     const [, year, month, day] = isoMatch;
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
 
-  // MM/DD/YYYY format
-  const usMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (usMatch) {
-    let [, month, day, year] = usMatch;
-    if (year.length === 2) {
-      year = parseInt(year) >= 50 ? `19${year}` : `20${year}`;
-    }
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-  }
-
-  // DD-MM-YYYY or DD/MM/YYYY variants
+  // DD-MM-YYYY or DD/MM/YYYY or DD - MM - YYYY
   const dmyMatch = dateStr.match(
     /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/
   );
   if (dmyMatch) {
     let [, day, month, year] = dmyMatch;
     if (year.length === 2) {
-      year = parseInt(year) >= 50 ? `19${year}` : `20${year}`;
+      const yearNum = parseInt(year);
+      year = yearNum >= 50 ? `19${year}` : `20${year}`;
     }
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
 
-  // Written formats: "3RD JULY, 2025" or "3 JULY 2025"
+  // Written formats: "21ST AUGUST, 2025" or "22ND SEPTEMBER, 2025"
   const writtenMatch = dateStr.match(
     /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i
   );
@@ -221,12 +380,12 @@ function normalizeDate(dateStr: string): string {
     }
   }
 
-  // Written reversed: "JULY 3, 2025"
-  const writtenReversed = dateStr.match(
+  // Reversed: "AUGUST 21, 2025"
+  const reversedMatch = dateStr.match(
     /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i
   );
-  if (writtenReversed) {
-    const [, monthName, day, year] = writtenReversed;
+  if (reversedMatch) {
+    const [, monthName, day, year] = reversedMatch;
     const month = monthNameToNumber(monthName);
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
@@ -236,123 +395,141 @@ function normalizeDate(dateStr: string): string {
     }
   }
 
-  return ""; // Could not normalize
+  return "";
 }
 
 function monthNameToNumber(name: string): number | null {
   if (!name) return null;
-  const month = name.trim().toLowerCase().slice(0, 3);
-  const map: Record<string, number> = {
+  const monthMap: Record<string, number> = {
     jan: 1,
+    january: 1,
     feb: 2,
+    february: 2,
     mar: 3,
+    march: 3,
     apr: 4,
+    april: 4,
     may: 5,
     jun: 6,
+    june: 6,
     jul: 7,
+    july: 7,
     aug: 8,
+    august: 8,
     sep: 9,
+    sept: 9,
+    september: 9,
     oct: 10,
+    october: 10,
     nov: 11,
+    november: 11,
     dec: 12,
+    december: 12,
   };
-  return map[month] || null;
+  const normalized = name.trim().toLowerCase();
+  return monthMap[normalized] || null;
 }
 
 /**
- * Extract text from PDF using pdf-parse (server-side)
+ * Preprocess extracted PDF text to improve AI extraction
  */
-async function extractTextFromPdfServer(
-  pdfBuffer: ArrayBuffer
-): Promise<string> {
-  // Dynamic import for pdf-parse - using require for CommonJS compatibility
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse");
-
-  const buffer = Buffer.from(pdfBuffer);
-  const data = await pdfParse(buffer);
-
-  // Clean up the text
-  let text = data.text
+function preprocessExtractedText(text: string): string {
+  if (!text) return "";
+  
+  let processed = text
+    // Normalize line endings
+    .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
-    .replace(/\n[ \t]+\n/g, "\n\n")
-    .replace(/[ \t]{2,}/g, " ");
-
-  return text.trim();
+    // Remove excessive whitespace while preserving structure
+    .replace(/[ \t]{3,}/g, "  ")
+    // Join coordinates that might be split across lines
+    // e.g., "725 725" followed by ".662" on next line
+    .replace(/(\d{3})\s*(\d{3})\s*\.\s*(\d{3})/g, "$1$2.$3")
+    // Join "mN" and "mE" that might be separated
+    .replace(/(\d)\s+(mN|mE)/gi, "$1$2")
+    // Normalize common OCR errors in survey plans
+    .replace(/SHEWING/g, "SHEWING") // Keep as-is, it's correct historical spelling
+    .replace(/PLAN\s+NO\s*\.?\s*:?\s*/gi, "PLAN NO.: ")
+    .replace(/SAID\s+TO\s+BELONG\s+TO/gi, "SAID TO BELONG TO")
+    .replace(/LOCAL\s+GOVT\.?\s*AREA/gi, "LOCAL GOVERNMENT AREA")
+    .replace(/LOCAL\s+GOVERNMENT\s+AREA/gi, "LOCAL GOVERNMENT AREA")
+    .replace(/SQ\s*\.?\s*M(TS|ETRES?)\.?/gi, "SQ. MTS")
+    .replace(/AREA\s*:\s*-?\s*/gi, "AREA:- ")
+    .replace(/DATE\s*:\s*-?\s*/gi, "DATE:- ")
+    // Remove excessive dashes while keeping structural ones
+    .replace(/-{4,}/g, "---")
+    // Collapse multiple newlines
+    .replace(/\n{4,}/g, "\n\n\n");
+  
+  return processed.trim();
 }
 
 /**
- * Main server action to extract survey plan data from PDF using AI
- * Now accepts FormData with the PDF file for full server-side processing
- * @param formData - FormData containing the PDF file
+ * Main server action - receives extracted text from client
+ * @param extractedText - Text extracted from PDF on the client side
  * @returns Promise<ApiResult<AIExtractedData>>
  */
-export async function extractSurveyPlanDataFromPdf(
-  formData: FormData
+export async function extractSurveyPlanDataFromText(
+  extractedText: string
 ): Promise<ApiResult<AIExtractedData>> {
   try {
+    // Validate API key
     if (!OPENAI_API_KEY) {
       return {
         success: false,
         error:
-          "OpenAI API key is not configured. Please contact the administrator.",
+          "OpenAI API key is not configured. Please add OPENAI_API_KEY to your environment variables.",
       };
     }
 
-    // Get the PDF file from FormData
-    const pdfFile = formData.get("pdf") as File | null;
-
-    if (!pdfFile) {
-      return {
-        success: false,
-        error: "No PDF file provided.",
-      };
-    }
-
-    // Extract text from PDF on server
-    const pdfBuffer = await pdfFile.arrayBuffer();
-    let pdfText: string;
-
-    try {
-      pdfText = await extractTextFromPdfServer(pdfBuffer);
-    } catch (parseError) {
-      console.error("PDF parsing error:", parseError);
+    // Validate input text
+    if (!extractedText || extractedText.trim().length < 50) {
       return {
         success: false,
         error:
-          "Failed to read PDF. Please ensure it's a valid, searchable PDF file.",
+          "Insufficient text provided. The PDF may be empty or contain very little text.",
       };
     }
 
-    if (!pdfText || pdfText.trim().length < 50) {
-      return {
-        success: false,
-        error:
-          "The PDF appears to be empty or contains too little text. Please ensure it's a searchable PDF (not a scanned image).",
-      };
-    }
-
-    // Truncate text if too long to avoid token limits
-    const MAX_CHARS = 20000;
-    let payloadText = pdfText;
+    // Preprocess the extracted text
+    let payloadText = preprocessExtractedText(extractedText);
+    
+    // Truncate if needed while preserving important parts
+    const MAX_CHARS = 25000;
     if (payloadText.length > MAX_CHARS) {
+      // Keep more from the beginning (header info) and end (plan number, date)
       payloadText =
-        payloadText.slice(0, 13000) +
-        "\n\n...TRUNCATED...\n\n" +
-        payloadText.slice(-7000);
+        payloadText.slice(0, 15000) +
+        "\n\n[...CONTENT TRUNCATED...]\n\n" +
+        payloadText.slice(-10000);
     }
 
-    const userPrompt = `
-Raw extracted text below:
---------------------------
-${payloadText}
---------------------------
-Return the JSON object with keys: planNumber, surveyTitle, locality, area, date, coordinates.
-Date must be in YYYY-MM-DD format. 
-Coordinates must be an array of objects with keys "northing" and "easting" containing the numeric values (without mN/mE suffix).
-Extract ALL coordinate pairs found in the document to define the complete polygon boundary.
-`;
 
+    // Prepare API request with detailed extraction instructions
+    const userPrompt = `Extract survey plan data from this Nigerian cadastral survey plan (Lagos State).
+
+=== EXTRACTED TEXT FROM PDF ===
+${payloadText}
+=== END OF EXTRACTED TEXT ===
+
+EXTRACTION TASK:
+1. PLAN NUMBER: Find "PLAN NO:" or "PLAN NO.:" at BOTTOM of document. Format: XXX/XXXX/XX/XXXX/LA or similar.
+2. SURVEY TITLE: Find owner name after "SAID TO BELONG TO". This is the PROPERTY OWNER, NOT the surveyor company at bottom.
+3. LOCALITY: Find property address AFTER the owner name, BEFORE "LOCAL GOVT" or "LOCAL GOVERNMENT".
+4. AREA: Find "AREA:-" followed by a number and "SQ. MTS" or similar.
+5. DATE: Find date near bottom (look for "DATE:-" or dates in certification text). Convert to YYYY-MM-DD.
+6. COORDINATES: Find mN (northing) and mE (easting) values. REMOVE ALL SPACES from within numbers.
+
+CRITICAL REMINDERS:
+- Owner name is at TOP (after "SAID TO BELONG TO") 
+- Surveyor company is at BOTTOM (has phone numbers, email, address) - DO NOT use this as survey title
+- Plan number is at BOTTOM in a box/table
+- Coordinates may have spaces like "737 016.246mN" - remove spaces to get "737016.246"
+- If "SAID TO BELONG TO" is followed by dashes, the name is after the dashes
+
+Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, locality, area, date, coordinates`;
+
+    // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -360,22 +537,38 @@ Extract ALL coordinate pairs found in the document to define the complete polygo
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Cost-effective and fast
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 2000, // Increased for coordinate extraction
-        temperature: 0.0, // Deterministic output for consistency
+        temperature: 0.1,
+        max_tokens: 2500,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API error:", response.status, errorText);
+
+      if (response.status === 401) {
+        return {
+          success: false,
+          error:
+            "Invalid OpenAI API key. Please check your environment configuration.",
+        };
+      }
+
+      if (response.status === 429) {
+        return {
+          success: false,
+          error: "API rate limit exceeded. Please try again in a moment.",
+        };
+      }
+
       return {
         success: false,
-        error: `AI service error (${response.status}). Please try again later.`,
+        error: `AI service error (${response.status}). Please try again.`,
       };
     }
 
@@ -389,7 +582,23 @@ Extract ALL coordinate pairs found in the document to define the complete polygo
       };
     }
 
+    // Parse the AI response
     const extractedData = parseAIResponse(content);
+
+    // Validate that we got at least some data
+    const hasData =
+      extractedData.planNumber ||
+      extractedData.surveyTitle ||
+      extractedData.locality ||
+      extractedData.area;
+
+    if (!hasData) {
+      return {
+        success: false,
+        error:
+          "Could not extract any data from the PDF. Please ensure it's a Nigerian cadastral survey plan.",
+      };
+    }
 
     return {
       success: true,
@@ -397,6 +606,15 @@ Extract ALL coordinate pairs found in the document to define the complete polygo
     };
   } catch (error) {
     console.error("Error in AI extraction:", error);
+
+    // Provide more specific error messages
+    if (error instanceof SyntaxError) {
+      return {
+        success: false,
+        error: "Failed to parse AI response. Please try again.",
+      };
+    }
+
     return {
       success: false,
       error:
@@ -406,3 +624,18 @@ Extract ALL coordinate pairs found in the document to define the complete polygo
     };
   }
 }
+
+// Keep the old function for backward compatibility but mark as deprecated
+/**
+ * @deprecated Use extractSurveyPlanDataFromText instead
+ */
+export async function extractSurveyPlanDataFromPdf(
+  formData: FormData
+): Promise<ApiResult<AIExtractedData>> {
+  return {
+    success: false,
+    error:
+      "This function is deprecated. Please use the client-side PDF extraction approach.",
+  };
+}
+

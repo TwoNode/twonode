@@ -331,6 +331,7 @@ export interface SurfboardPlanDTO {
   certificateFilePaths: string[];
   dateOnSurveyPlan: string; // ISO date string
   dateLodged?: string | null;
+  locality?: string | null;
   ward?: string | null;
   lcda?: string | null;
   lga?: string | null;
