@@ -1833,7 +1833,12 @@ export async function updateRecordsIIStatus(
 export async function getAccountsBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "ACCOUNTS" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "ACCOUNTS" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2021,7 +2026,12 @@ export async function getPendingCountByRole(): Promise<
 export async function getChartingPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "CHARTING" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "CHARTING" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2088,7 +2098,12 @@ export async function getChartingPlans() {
 export async function getSurconPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "SURCON" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "SURCON" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2158,7 +2173,12 @@ export async function getSurconPlans() {
 export async function getRecordsIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_I" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_I" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2227,7 +2247,12 @@ export async function getRecordsIPlans() {
 export async function getRecordsIIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2313,7 +2338,7 @@ export async function deleteAllBatches(): Promise<
     }
 
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2584,7 +2609,12 @@ export async function resubmitQueriedPlan(
 export async function getChartingHistory() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "CHARTING" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "CHARTING" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2630,7 +2660,12 @@ export async function getChartingHistory() {
 export async function getSurconHistory() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "SURCON" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "SURCON" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2690,7 +2725,12 @@ export async function getSurconHistory() {
 export async function getRecordsIHistory() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_I" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_I" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2750,7 +2790,12 @@ export async function getRecordsIHistory() {
 export async function getRecordsIIHistory() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2810,7 +2855,12 @@ export async function getRecordsIIHistory() {
 export async function getAccountsHistory() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "ACCOUNTS" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "ACCOUNTS" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
