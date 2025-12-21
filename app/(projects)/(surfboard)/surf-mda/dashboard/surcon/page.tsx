@@ -361,7 +361,7 @@ export default function SurconAdminPage() {
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
             ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
-            : "opacity-60 grayscale-[30%]"
+            : "opacity-60 grayscale-30"
         }`}
       >
         <CardHeader>

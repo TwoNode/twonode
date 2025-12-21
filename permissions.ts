@@ -100,6 +100,43 @@ export const isSurfRegularUser = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.user;
 };
 
+// MDA (Ministry, Department & Agency) permission helpers
+// These roles are used in the surf-mda portal
+const MDA_ROLES = {
+  accounts: "ACCOUNTS",
+  charting: "CHARTING",
+  surcon: "SURCON",
+  records_i: "RECORDS_I",
+  records_ii: "RECORDS_II",
+  mda_superadmin: "MDA_SUPERADMIN",
+};
+
+export const MDA_ROLE_LIST = [
+  MDA_ROLES.accounts,
+  MDA_ROLES.charting,
+  MDA_ROLES.surcon,
+  MDA_ROLES.records_i,
+  MDA_ROLES.records_ii,
+  MDA_ROLES.mda_superadmin,
+];
+
+export const isMDARole = (role: string | null = "") => {
+  return MDA_ROLE_LIST.includes(role ?? "");
+};
+
+export const canAccessMDAPanel = (role: string | null = "") => {
+  // MDA users can access the MDA panel, as can SUPERADMIN
+  return (
+    MDA_ROLE_LIST.includes(role ?? "") || role === SURFBOARD_ROLES.super_admin
+  );
+};
+
+export const isMDASuperAdmin = (role: string | null = "") => {
+  return (
+    role === MDA_ROLES.mda_superadmin || role === SURFBOARD_ROLES.super_admin
+  );
+};
+
 // GBC permission helpers
 const GBC_USER_ROLE = "USER";
 const GBC_ADMIN_ROLE = "ADMIN";
