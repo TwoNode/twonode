@@ -387,11 +387,11 @@ const proxyWithLogic = withDynamicAuth(
                 } else if (pathname.includes("/records-i")) {
                   if (
                     pathname.includes("/records-ii") &&
-                    userData.role === "RECORDS_II"
+                    userData.role !== "RECORDS_II"
                   ) {
                     // Check records-ii BEFORE records-i (records-ii contains records-i as substring)
-                    hasAccess = true;
-                  } else {
+                    hasAccess = false;
+                  } else if (userData.role !== "RECORDS_I") {
                     hasAccess = false;
                   }
                 }
