@@ -16,14 +16,14 @@ export const USER_PERMS = {
   scram_super_admin: SCRAM_SUPER_ADMIN,
 };
 
-const REVA_USER_ROLE = "USER";
-const REVA_ADMIN_ROLE = "ADMIN";
-const REVA_SUPERADMIN_ROLE = "SUPERADMIN";
+const USER_ROLE = "USER";
+const ADMIN_ROLE = "ADMIN";
+const SUPERADMIN_ROLE = "SUPERADMIN";
 
 export const REVA_ROLES = {
-  user: REVA_USER_ROLE,
-  admin: REVA_ADMIN_ROLE,
-  super_admin: REVA_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isRevaAdmin = (role: string | null = "") => {
@@ -58,14 +58,10 @@ export const is_admin = isRevaAdmin;
 
 // Surfboard permission helpers
 // Surfboard permission helpers
-const SURFBOARD_USER_ROLE = "USER";
-const SURFBOARD_ADMIN_ROLE = "ADMIN";
-const SURFBOARD_SUPERADMIN_ROLE = "SUPERADMIN";
-
 export const SURFBOARD_ROLES = {
-  user: SURFBOARD_USER_ROLE,
-  admin: SURFBOARD_ADMIN_ROLE,
-  super_admin: SURFBOARD_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isSurfAdmin = (role: string | null = "") => {
@@ -138,14 +134,10 @@ export const isMDASuperAdmin = (role: string | null = "") => {
 };
 
 // GBC permission helpers
-const GBC_USER_ROLE = "USER";
-const GBC_ADMIN_ROLE = "ADMIN";
-const GBC_SUPERADMIN_ROLE = "SUPERADMIN";
-
 export const GBC_ROLES = {
-  user: GBC_USER_ROLE,
-  admin: GBC_ADMIN_ROLE,
-  super_admin: GBC_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isGBCAdmin = (role: string | null = "") => {

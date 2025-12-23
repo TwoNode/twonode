@@ -17,20 +17,16 @@ export async function GET(request: NextRequest) {
     let dbUser = await prisma.surfboardUser.findUnique({
       where: { kindeId: user.id },
       include: {
-        subscription: {
-          where: {
-            status: { in: ["active", "past_due"] },
-            currentEnd: { gte: new Date() },
-          },
-          orderBy: { currentEnd: "desc" },
-          take: 1,
-        },
+        subscription: true,
       },
     });
 
     if (!dbUser) {
       const existingUser = await prisma.surfboardUser.findUnique({
         where: { email: user.email ?? "" },
+        include: {
+          subscription: true,
+        },
       });
 
       if (existingUser) {
@@ -38,14 +34,7 @@ export async function GET(request: NextRequest) {
           where: { id: existingUser.id },
           data: { kindeId: user.id },
           include: {
-            subscription: {
-              where: {
-                status: { in: ["active", "past_due"] },
-                currentEnd: { gte: new Date() },
-              },
-              orderBy: { currentEnd: "desc" },
-              take: 1,
-            },
+            subscription: true,
           },
         });
       } else {

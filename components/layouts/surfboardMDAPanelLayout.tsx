@@ -14,13 +14,20 @@ import {
   User,
   FileText,
   BarChart3,
+  Menu,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 
 // MDA Portal navbar with logo and username
-function SurfboardMDADashboardNavbar({ username }: { username?: string }) {
+function SurfboardMDADashboardNavbar({
+  username,
+  sidebar,
+}: {
+  username?: string;
+  sidebar?: any;
+}) {
   return (
     <header
       className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-purple-100"
@@ -28,13 +35,22 @@ function SurfboardMDADashboardNavbar({ username }: { username?: string }) {
         background: "linear-gradient(135deg, #6B21A8 0%, #7C3AED 100%)",
       }}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
+        {/* Hamburger Menu Button */}
+        <button
+          onClick={() => sidebar?.toggleOpen()}
+          className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="w-6 h-6 text-white" />
+        </button>
+
         <img
           src="/surfboard/surf_logo.png"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-purple-100 bg-white object-contain"
         />
-        <span className="text-xl font-bold text-white tracking-wide drop-shadow">
+        <span className="hidden lg:inline text-xl font-bold text-white tracking-wide drop-shadow">
           MDA Portal
         </span>
       </div>
@@ -174,7 +190,10 @@ export default function SurfboardMDAPanelLayout({
 
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
-      <SurfboardMDADashboardNavbar username={user?.name || userData?.name} />
+      <SurfboardMDADashboardNavbar
+        username={user?.name || userData?.name}
+        sidebar={sidebar}
+      />
 
       <div
         className={cn(
@@ -183,6 +202,15 @@ export default function SurfboardMDAPanelLayout({
         )}
         style={{ background: "#F9FAFB" }}
       >
+        {/* Mobile Overlay - appears when sidebar is open */}
+        {sidebar.isOpen && (
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+            onClick={() => sidebar?.toggleOpen()}
+            aria-label="Close sidebar"
+          />
+        )}
+
         <div className={sideBarWidthClass + " h-full max-h-full"}>
           <Sidebar
             items={sidebarItems}
