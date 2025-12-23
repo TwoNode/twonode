@@ -327,7 +327,7 @@ export default function MDADashboardHome() {
     <div className="min-h-full">
       {/* Hero Section */}
       <div
-        className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${roleConfig.heroGradient} p-8 mb-8 shadow-xl`}
+        className={`relative overflow-hidden rounded-2xl bg-linear-to-br ${roleConfig.heroGradient} p-8 mb-8 shadow-xl`}
       >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute -right-10 -top-10 w-64 h-64 bg-white rounded-full blur-3xl opacity-10" />
@@ -419,7 +419,7 @@ export default function MDADashboardHome() {
                     </div>
                   </div>
                   <div
-                    className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`}
+                    className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${stat.color}`}
                   />
                 </div>
               </Link>
@@ -485,7 +485,7 @@ export default function MDADashboardHome() {
                         </div>
                       </div>
                       <div
-                        className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                        className={`absolute inset-0 bg-linear-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                       />
                     </div>
                   </Link>
@@ -518,7 +518,7 @@ export default function MDADashboardHome() {
                     </p>
                   </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-500 to-gray-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-linear-to-br from-slate-500 to-gray-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
               </div>
             </Link>
           </motion.div>
