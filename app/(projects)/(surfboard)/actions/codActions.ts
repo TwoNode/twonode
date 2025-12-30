@@ -17,7 +17,7 @@ import {
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 
 // Lock duration in minutes
-const LOCK_DURATION_MINUTES = 10;
+const LOCK_DURATION_MINUTES = 6;
 
 type MDARole =
   | "ACCOUNTS"
