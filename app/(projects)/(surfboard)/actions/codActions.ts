@@ -301,9 +301,9 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
         case "RECORDS_I":
           // Records I: First 3 approvals must be complete
           return {
-            accountsStatus: "APPROVED" as const,
-            chartingStatus: "APPROVED" as const,
-            surconStatus: "APPROVED" as const,
+            // accountsStatus: "APPROVED" as const,
+            // chartingStatus: "APPROVED" as const,
+            // surconStatus: "APPROVED" as const,
             batch: {
               paymentStatus: {
                 in: [
@@ -2188,6 +2188,10 @@ export async function getRecordsIPlans() {
         redCopyStatus: "SUBMITTED",
         recordsIStatus: { in: ["PENDING"] },
         deleted: false,
+        // // Records I requires all 3 prior approvals to be complete
+        // accountsStatus: "APPROVED",
+        // chartingStatus: "APPROVED",
+        // surconStatus: "APPROVED",
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
           paymentStatus: {

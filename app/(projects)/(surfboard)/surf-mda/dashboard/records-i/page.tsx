@@ -67,6 +67,9 @@ interface Plan {
   recordsIStatus?: string;
   recordsIComment?: string | null;
   recordsIApprovedAt?: Date;
+  recordsILockedBy?: string | null;
+  isLocked?: boolean;
+  lockExpiresAt?: Date | null;
   recordsIApprovedByUser?: {
     firstName: string;
     lastName: string;
@@ -104,6 +107,7 @@ export default function RecordsIAdminPage() {
   const filteredPlans = useMemo(() => {
     if (!searchQuery.trim()) return plans;
     const query = searchQuery.toLowerCase();
+
     return plans.filter((plan) => {
       const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
       const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
@@ -118,6 +122,7 @@ export default function RecordsIAdminPage() {
       const matchesSurconNumber = plan.user?.surconRegNumber
         ?.toLowerCase()
         .includes(query);
+
       return (
         matchesPlanNumber ||
         matchesSurveyTitle ||
@@ -133,6 +138,7 @@ export default function RecordsIAdminPage() {
   const filteredHistoryPlans = useMemo(() => {
     if (!searchQuery.trim()) return historyPlans;
     const query = searchQuery.toLowerCase();
+
     return historyPlans.filter((plan) => {
       const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
       const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
@@ -147,6 +153,7 @@ export default function RecordsIAdminPage() {
       const matchesSurconNumber = plan.user?.surconRegNumber
         ?.toLowerCase()
         .includes(query);
+
       return (
         matchesPlanNumber ||
         matchesSurveyTitle ||
@@ -330,7 +337,7 @@ export default function RecordsIAdminPage() {
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
             ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
-            : "opacity-60 grayscale-[30%]"
+            : "border-l-4 border-l-gray-300 opacity-60 grayscale-30"
         }`}
       >
         <CardHeader>
