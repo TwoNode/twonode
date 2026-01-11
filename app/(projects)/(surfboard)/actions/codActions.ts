@@ -1147,12 +1147,14 @@ export async function verifyBatchPayment(
     const remitaStatus = await checkPaymentStatus(reference);
 
     if (remitaStatus.status === "paid") {
-      // Update batch payment status
+      // Update batch payment status directly to LASG_PAID
+      // This triggers MDA workflow since payment goes directly to MDA Remita account
       await prisma.certificateOfDepositBatch.update({
         where: { id: batch.id },
         data: {
-          paymentStatus: "USER_PAID",
+          paymentStatus: "LASG_PAID",
           userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
         },
       });
 
@@ -1172,6 +1174,14 @@ export async function verifyBatchPayment(
         });
       }
 
+      // Notify MDA roles that batch is ready for review
+      await notifyLASGReceiptUploaded({
+        batchId: batch.id,
+        batchCode: batch.batchCode,
+        planCount: batch.planCount,
+        sendEmail: true,
+      });
+
       // Log audit action
       await logAuditAction({
         userId: user.id,
@@ -1182,16 +1192,18 @@ export async function verifyBatchPayment(
           batchCode: batch.batchCode,
           reference,
           amount: batch.totalAmount,
-          paymentStatus: "USER_PAID",
+          paymentStatus: "LASG_PAID",
+          note: "Direct MDA Remita payment verified",
         }),
       });
 
       revalidatePath("/surf-restricted/dashboard/surf-plans");
       revalidatePath("/surfboard/dashboard/plans");
+      revalidatePath("/surf-mda/dashboard");
 
       return {
         success: true,
-        data: { batchId: batch.id, status: "USER_PAID" },
+        data: { batchId: batch.id, status: "LASG_PAID" },
       };
     } else if (remitaStatus.status === "pending") {
       return {

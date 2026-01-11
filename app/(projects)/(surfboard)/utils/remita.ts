@@ -1,10 +1,14 @@
 import axios, { AxiosError } from "axios";
 import crypto from "crypto";
 
+/**
+ * Remita Biller API Configuration
+ * Used for direct MDA payments (users pay directly into MDA Remita account)
+ */
 export interface RemitaEnv {
-  merchantId: string;
-  apiKey: string;
-  serviceTypeId: string;
+  publicKey: string;
+  secretKey: string;
+  billerProductId: string;
   baseUrl: string; // demo: https://remitademo.net, live: https://login.remita.net
 }
 
@@ -30,40 +34,52 @@ interface PaymentStatusResponse {
 }
 
 /**
- * Get Remita environment configuration from environment variables
+ * Get Remita Biller API environment configuration from environment variables
  */
 export function getRemitaEnv(): RemitaEnv {
-  const merchantId = process.env.REMITA_MERCHANT_ID || "";
-  const apiKey = process.env.REMITA_API_KEY || "";
-  const serviceTypeId = process.env.REMITA_SERVICE_TYPE_ID || "";
+  const publicKey = process.env.REMITA_PUBLIC_KEY || "";
+  const secretKey = process.env.REMITA_SECRET_KEY || "";
+  const billerProductId = process.env.REMITA_BILLER_PRODUCT_ID || "";
   const baseUrl = process.env.REMITA_BASE_URL || "https://remitademo.net";
 
-  if (!merchantId) throw new Error("Missing REMITA_MERCHANT_ID");
-  if (!apiKey) throw new Error("Missing REMITA_API_KEY");
-  if (!serviceTypeId) throw new Error("Missing REMITA_SERVICE_TYPE_ID");
+  if (!publicKey) throw new Error("Missing REMITA_PUBLIC_KEY");
+  if (!secretKey) throw new Error("Missing REMITA_SECRET_KEY");
+  if (!billerProductId) throw new Error("Missing REMITA_BILLER_PRODUCT_ID");
 
-  return { merchantId, apiKey, serviceTypeId, baseUrl };
+  return { publicKey, secretKey, billerProductId, baseUrl };
 }
 
 /**
- * Generate API hash for Remita authentication
- * Hash = SHA512(merchantId + serviceTypeId + orderId + amount + apiKey)
+ * Generate API hash for Remita Biller API authentication
+ * Hash = SHA512(publicKey + requestId + secretKey)
  */
-function generateApiHash(
+function generateBillerApiHash(
   env: RemitaEnv,
-  orderId: string,
+  requestId: string
+): string {
+  const hashString = `${env.publicKey}${requestId}${env.secretKey}`;
+  return crypto.createHash("sha512").update(hashString).digest("hex");
+}
+
+/**
+ * Generate API hash for RRR generation
+ * Hash = SHA512(billerProductId + requestId + amount + secretKey)
+ */
+function generateRRRHash(
+  env: RemitaEnv,
+  requestId: string,
   amount: number
 ): string {
-  const hashString = `${env.merchantId}${env.serviceTypeId}${orderId}${amount}${env.apiKey}`;
+  const hashString = `${env.billerProductId}${requestId}${amount}${env.secretKey}`;
   return crypto.createHash("sha512").update(hashString).digest("hex");
 }
 
 /**
  * Generate API hash for status check
- * Hash = SHA512(orderId + apiKey + merchantId)
+ * Hash = SHA512(rrr + secretKey + publicKey)
  */
 function generateStatusHash(env: RemitaEnv, rrr: string): string {
-  const hashString = `${rrr}${env.apiKey}${env.merchantId}`;
+  const hashString = `${rrr}${env.secretKey}${env.publicKey}`;
   return crypto.createHash("sha512").update(hashString).digest("hex");
 }
 
@@ -84,7 +100,8 @@ function normalizeAxiosError(err: unknown, operation: string): never {
 }
 
 /**
- * Generate a Remita Retrieval Reference (RRR) for payment
+ * Generate a Remita Retrieval Reference (RRR) for payment into MDA account
+ * Uses the Biller API for direct MDA payments
  *
  * @param params - Payment parameters including orderId, amount, payer details
  * @returns Promise with RRR and transaction ID
@@ -93,12 +110,13 @@ export async function generateRRR(
   params: RRRGenerationParams
 ): Promise<RRRResponse> {
   const env = getRemitaEnv();
-  const apiHash = generateApiHash(env, params.orderId, params.amount);
+  const requestId = params.orderId;
+  const apiHash = generateRRRHash(env, requestId, params.amount);
 
   const requestBody = {
-    serviceTypeId: env.serviceTypeId,
+    serviceTypeId: env.billerProductId,
     amount: params.amount,
-    orderId: params.orderId,
+    orderId: requestId,
     payerName: params.payerName,
     payerEmail: params.payerEmail,
     payerPhone: params.payerPhone || "",
@@ -112,7 +130,7 @@ export async function generateRRR(
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `remitaConsumerKey=${env.merchantId},remitaConsumerToken=${apiHash}`,
+          Authorization: `remitaConsumerKey=${env.publicKey},remitaConsumerToken=${apiHash}`,
         },
         timeout: 30000,
       }
@@ -133,7 +151,7 @@ export async function generateRRR(
       // Success: RRR generated
       return {
         rrr: data.RRR,
-        transactionId: data.transactionId || params.orderId,
+        transactionId: data.transactionId || requestId,
       };
     } else {
       throw new Error(
@@ -152,6 +170,7 @@ export async function generateRRR(
 
 /**
  * Check payment status for a given RRR
+ * Verifies payment with Remita Biller API
  *
  * @param rrr - The Remita Retrieval Reference to check
  * @returns Promise with payment status details
@@ -164,11 +183,11 @@ export async function checkPaymentStatus(
 
   try {
     const response = await axios.get(
-      `${env.baseUrl}/remita/exapp/api/v1/send/api/echannelsvc/${env.merchantId}/${rrr}/${apiHash}/status.reg`,
+      `${env.baseUrl}/remita/exapp/api/v1/send/api/echannelsvc/${env.publicKey}/${rrr}/${apiHash}/status.reg`,
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `remitaConsumerKey=${env.merchantId},remitaConsumerToken=${apiHash}`,
+          Authorization: `remitaConsumerKey=${env.publicKey},remitaConsumerToken=${apiHash}`,
         },
         timeout: 15000,
       }
@@ -224,7 +243,7 @@ export async function checkPaymentStatus(
 
 /**
  * Get Remita payment page URL for inline/redirect payment
- * This can be used as an alternative to direct bank transfer
+ * This redirects users to Remita's payment portal to complete payment
  */
 export function getRemitaPaymentUrl(rrr: string): string {
   const env = getRemitaEnv();

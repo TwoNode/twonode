@@ -123,8 +123,8 @@ export function BatchSubmissionModal({
       const result = await verifyBatchPayment(rrrData.rrr);
 
       if (result.success && result.data) {
-        if (result.data.status === "USER_PAID") {
-          toast.success("Payment verified successfully!");
+        if (result.data.status === "LASG_PAID") {
+          toast.success("Payment verified! Your plans are now with MDA for review.");
           setRrrData(null);
           onClose();
           if (onSuccess) onSuccess();
