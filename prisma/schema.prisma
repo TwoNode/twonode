@@ -27,6 +27,16 @@ model nigeria_ward_admin_boundaries {
   @@index([geom], map: "sidx_nigeria_ward_admin_boundaries_geom", type: Gist)
 }
 
+/// Lagos Zonal Fee Structure - Used for spatial intersection to determine CoD fees
+model Scale_of_fees {
+  id   Int                      @id @default(autoincrement())
+  geom Unsupported("geometry")? // PostGIS geometry for zone boundaries
+  Name String?                  @db.VarChar(254)
+  Zone String?                  @db.VarChar(50) // e.g., "lagosZoneA", "lagosZoneB", etc.
+
+  @@index([geom], map: "sidx_scale_of_fees_geom", type: Gist)
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model spatial_ref_sys {
   srid      Int     @id
@@ -418,6 +428,12 @@ model SurfboardPlan {
   lga   String?
   state String?
 
+  // Zone-based fee calculation fields
+  zone        String?  // Detected zone from Scale_of_fees (e.g., "lagosZoneA", "lagosZoneB")
+  codFee      Float?   // Calculated CoD fee for this plan
+  isDoubleFee Boolean  @default(false) // True if corporate or >2 names in survey title
+  ethnicity   String?  // "hausa", "igbo", "yoruba" or "corporate" - used for double fee detection
+
   /// Array of pillar objects
   pillars Json
 
@@ -432,6 +448,10 @@ model SurfboardPlan {
 
   /// Draft vs. published
   isLive Boolean @default(false)
+
+  /// Person Count Validation
+  personCount         Int     @default(1)
+  personCountVerified Boolean @default(false)
 
   /// Reference to the user who created this plan
   userId String?
@@ -584,7 +604,7 @@ model SurfboardSettings {
   id               String   @id @default(cuid())
   /// Stores the entire application configuration as a JSON object.
   /// Structure: {
-  ///   lgaFees: { "Eti-Osa": 10, "Ikeja": 8, ... }, // Rate per square meter in Naira
+  ///   zoneFees: [{range, start, end, lagosZoneA, lagosZoneB, lagosZoneC, lagosZoneD}, ...],
   ///   systemChargePercent: 10,
   ///   ... other settings
   /// }

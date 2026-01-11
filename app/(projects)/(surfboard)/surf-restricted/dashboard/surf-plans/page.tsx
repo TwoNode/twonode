@@ -20,7 +20,28 @@ import {
   ChevronDown,
   RefreshCw,
   MoreVertical,
+  Users,
+  AlertTriangle,
+  Pencil,
+  Save,
+  X,
+  CheckCircle2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import {
+  verifyPersonCount,
+  queryPlan,
+} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 
 interface SurveyPlan {
   id: string;
@@ -46,6 +67,17 @@ export default function SurfPlansPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "all" | "person-count" | "queries"
+  >("all");
+
+  // Edit Modal State
+  const [editingPlan, setEditingPlan] = useState<SurveyPlan | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Action State
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Mock data - replace with actual API call
   useEffect(() => {
@@ -130,18 +162,113 @@ export default function SurfPlansPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    // In real app: re-fetch data
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setRefreshing(false);
   };
 
+  const handleEditClick = (plan: SurveyPlan) => {
+    setEditingPlan(plan);
+    setEditTitle(plan.surveyTitle);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!editingPlan) return;
+    setIsSaving(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // Update local state
+    setPlans((prev) =>
+      prev.map((p) =>
+        p.id === editingPlan.id ? { ...p, surveyTitle: editTitle } : p
+      )
+    );
+
+    setEditingPlan(null);
+    setIsSaving(false);
+  };
+
+  const getPersonCount = (title: string) => {
+    if (!title) return 0;
+    return title.split("\n").filter((l) => l.trim()).length;
+  };
+
+  const hasPotentialMismatch = (title: string) => {
+    const lines = getPersonCount(title);
+    // If it has ' AND ' or '&' but is only 1 line, might be a mismatch
+    if (lines === 1 && (title.includes(" AND ") || title.includes("&"))) {
+      return true;
+    }
+    return false;
+  };
+
+  // Actions using real server actions imported above
+
+  const handleVerify = async (plan: SurveyPlan) => {
+    if (!confirm("Verify this count?")) return;
+    setProcessingId(plan.id);
+    const count = getPersonCount(plan.surveyTitle);
+
+    try {
+      const res = await verifyPersonCount(plan.id, count);
+      if (res.success) {
+        toast.success("Person count verified");
+        setPlans((prev) =>
+          prev.map((p) =>
+            p.id === plan.id
+              ? { ...p, personCount: count, personCountVerified: true }
+              : p
+          )
+        );
+      } else {
+        toast.error(res.error || "Failed to verify");
+      }
+    } catch (e) {
+      toast.error("Error verifying");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleQuery = async (plan: SurveyPlan) => {
+    if (!confirm("Are you sure you want to query this plan?")) return;
+    setProcessingId(plan.id);
+
+    try {
+      const res = await queryPlan(plan.id);
+      if (res.success) {
+        toast.success("Plan queried");
+        setPlans((prev) =>
+          prev.map((p) => (p.id === plan.id ? { ...p, status: "QUERIED" } : p))
+        );
+      } else {
+        toast.error(res.error || "Failed to query");
+      }
+    } catch (e) {
+      toast.error("Error querying plan");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const filteredPlans = plans.filter((plan) => {
+    // Tab filtering
+    if (activeTab === "queries") {
+      if (plan.status !== "QUERIED") return false;
+    }
+
     const matchesSearch =
-      plan.planNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.surveyTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.location.toLowerCase().includes(searchTerm.toLowerCase());
+      plan.planNumber.toLowerCase().includes(searchQuery.toLowerCase()) || // Changed searchTerm to searchQuery
+      plan.surveyTitle.toLowerCase().includes(searchQuery.toLowerCase()) || // Changed searchTerm to searchQuery
+      plan.location.toLowerCase().includes(searchQuery.toLowerCase()); // Changed searchTerm to searchQuery
 
     const matchesStatus =
       statusFilter === "ALL" || plan.status === statusFilter;
+
+    // For person-count tab, maybe only show non-verified ones? Or all?
+    // Let's show all for now, but sort verified to bottom maybe?
 
     return matchesSearch && matchesStatus;
   });
@@ -158,6 +285,8 @@ export default function SurfPlansPage() {
         return "bg-blue-100 text-blue-700 border-blue-200";
       case "LODGED":
         return "bg-violet-100 text-violet-700 border-violet-200";
+      case "QUERIED": // Added QUERIED status color
+        return "bg-red-100 text-red-700 border-red-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -173,6 +302,8 @@ export default function SurfPlansPage() {
       case "UNDER_REVIEW":
       case "LODGED":
         return <Clock className="w-4 h-4" />;
+      case "QUERIED": // Added QUERIED status icon
+        return <AlertTriangle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -203,6 +334,12 @@ export default function SurfPlansPage() {
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
+    {
+      label: "Queried Plans", // Added Queried Plans stat
+      value: plans.filter((p) => p.status === "QUERIED").length,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+    },
   ];
 
   if (loading) {
@@ -217,7 +354,57 @@ export default function SurfPlansPage() {
   }
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full space-y-6">
+      {/* Edit Modal (Dialog) */}
+      <Dialog
+        open={!!editingPlan}
+        onOpenChange={(o) => !o && setEditingPlan(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Survey Title</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium text-gray-500 mb-1 block">
+                Survey Title
+              </label>
+              <Textarea
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                rows={5}
+                className="resize-y font-mono text-sm"
+              />
+              <div className="flex justify-between mt-2 text-xs text-gray-500">
+                <span>Separate multiple owners with new lines.</span>
+                <span
+                  className={
+                    getPersonCount(editTitle) > 1
+                      ? "text-green-600 font-medium"
+                      : ""
+                  }
+                >
+                  Count: {getPersonCount(editTitle)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingPlan(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTitle} disabled={isSaving}>
+              {isSaving ? (
+                <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -248,7 +435,9 @@ export default function SurfPlansPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {" "}
+          {/* Changed grid-cols-4 to grid-cols-5 */}
           {statsData.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -266,6 +455,54 @@ export default function SurfPlansPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`
+              whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+              ${
+                activeTab === "all"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }
+            `}
+          >
+            <FileText className="w-4 h-4" />
+            All Plans
+          </button>
+          <button
+            onClick={() => setActiveTab("person-count")}
+            className={`
+              whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+              ${
+                activeTab === "person-count"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }
+            `}
+          >
+            <Users className="w-4 h-4" />
+            Person Count Monitor
+          </button>
+          <button
+            onClick={() => setActiveTab("queries")}
+            className={`
+              whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+              ${
+                activeTab === "queries"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }
+            `}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Queries
+          </button>
+        </nav>
+      </div>
+
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -274,8 +511,8 @@ export default function SurfPlansPage() {
             <input
               type="text"
               placeholder="Search by plan number, title, or location..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchQuery} // Changed searchTerm to searchQuery
+              onChange={(e) => setSearchQuery(e.target.value)} // Changed setSearchTerm to setSearchQuery
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -293,6 +530,8 @@ export default function SurfPlansPage() {
                 <option value="APPROVED">Approved</option>
                 <option value="REJECTED">Rejected</option>
                 <option value="LODGED">Lodged</option>
+                <option value="QUERIED">Queried</option>{" "}
+                {/* Added Queried option */}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
             </div>
@@ -322,18 +561,31 @@ export default function SurfPlansPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Plan Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Owner
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Updated
-                </th>
+                {activeTab === "person-count" ? (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Survey Title Analysis
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Count
+                    </th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Owner
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Updated
+                    </th>
+                  </>
+                )}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -342,7 +594,10 @@ export default function SurfPlansPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredPlans.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td
+                    colSpan={activeTab === "person-count" ? 4 : 6}
+                    className="px-6 py-12 text-center"
+                  >
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">No plans found</p>
                     <p className="text-sm text-gray-400 mt-1">
@@ -368,72 +623,134 @@ export default function SurfPlansPage() {
                           <div className="font-semibold text-gray-900">
                             {plan.planNumber}
                           </div>
-                          <div className="text-sm text-gray-600">
-                            {plan.surveyTitle}
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
-                            <span>{plan.pillarsCount} pillars</span>
-                            <span>•</span>
-                            <span>{plan.area.toLocaleString()} m²</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <div className="text-sm text-gray-900">
-                            {plan.location}
-                          </div>
-                          {plan.facility && (
-                            <div className="text-xs text-gray-500">
-                              {plan.facility}
+                          {activeTab !== "person-count" && (
+                            <div className="text-sm text-gray-600 truncate max-w-xs">
+                              {plan.surveyTitle}
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <div className="text-sm text-gray-900">
-                            {plan.owner.name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {plan.owner.email}
+                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                            <span>{plan.status}</span>
+                            <span>•</span>
+                            <span>
+                              {new Date(plan.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          plan.status
-                        )}`}
-                      >
-                        {getStatusIcon(plan.status)}
-                        {plan.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-2">
-                        <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div className="text-sm text-gray-900">
-                          {new Date(plan.updatedAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </td>
+
+                    {activeTab === "person-count" ? (
+                      <>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-800 font-mono bg-gray-50 p-2 rounded border border-gray-100 whitespace-pre-wrap max-w-md">
+                            {plan.surveyTitle}
+                          </div>
+                          {hasPotentialMismatch(plan.surveyTitle) && (
+                            <div className="flex items-center gap-1 text-amber-600 text-xs mt-1 font-medium">
+                              <AlertTriangle className="w-3 h-3" /> Mismatch
+                              detected
+                            </div>
+                          )}
+                          {plan.personCountVerified && (
+                            <div className="flex items-center gap-1 text-green-600 text-xs mt-1 font-medium">
+                              <CheckCircle2 className="w-3 h-3" /> Verified
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                              plan.personCountVerified
+                                ? "bg-green-100 text-green-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {getPersonCount(plan.surveyTitle)}
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <div className="text-sm text-gray-900">
+                                {plan.location}
+                              </div>
+                              {plan.facility && (
+                                <div className="text-xs text-gray-500">
+                                  {plan.facility}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-2">
+                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <div className="text-sm text-gray-900">
+                                {plan.owner.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {plan.owner.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                              plan.status
+                            )}`}
+                          >
+                            {getStatusIcon(plan.status)}
+                            {plan.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div className="text-sm text-gray-900">
+                              {new Date(plan.updatedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </td>
+                      </>
+                    )}
+
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
+                        {activeTab === "person-count" && (
+                          <>
+                            {!plan.personCountVerified && (
+                              <button
+                                onClick={() => handleVerify(plan)}
+                                disabled={!!processingId}
+                                className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition-colors"
+                              >
+                                Verify
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleQuery(plan)}
+                              disabled={
+                                !!processingId || plan.status === "QUERIED"
+                              }
+                              className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors"
+                            >
+                              Query
+                            </button>
+                            <button
+                              onClick={() => handleEditClick(plan)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                              title="Edit Title"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                         <Link
                           href={`/surf-restricted/dashboard/surf-plans/update/${plan.id}`}
                           className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

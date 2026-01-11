@@ -100,6 +100,8 @@ export interface Plan {
   user?: Prisma.SurfboardUserCreateInput | any;
   isOwner?: boolean;
   redCopyStatus?: string | null;
+  personCount?: number;
+  personCountVerified?: boolean;
 }
 
 /** Standard envelope for API results */
@@ -340,6 +342,8 @@ export interface SurfboardPlanDTO {
   isLive?: boolean;
   createdAt?: string | Date;
   pillars?: PillarData[] | any;
+  personCount?: number;
+  personCountVerified?: boolean;
 }
 
 export const MAX_FILE_MB = 50;
