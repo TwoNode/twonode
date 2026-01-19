@@ -1,8 +1,9 @@
 "use server";
 
+import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
-import { sendMail } from "@/utils/email";
+import { sendNotificationMail } from "@/utils/email";
 import { revalidatePath } from "next/cache";
 import {
   SurfboardNotificationType,
@@ -102,7 +103,7 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 
     // Send emails to all recipients
     const emailPromises = recipients.map((recipient) =>
-      sendMail({
+      sendNotificationMail({
         to: recipient.email,
         subject: notification.title,
         text: notification.message,
@@ -177,6 +178,8 @@ function generateNotificationEmailHtml(
 
   const color = typeColors[notification.type] || "#3b82f6";
 
+  const withBaseUrl = addBaseUrl(notification.link || "");
+
   return `
     <!DOCTYPE html>
     <html>
@@ -220,7 +223,7 @@ function generateNotificationEmailHtml(
                     <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
                       <tr>
                         <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
-                          <a href="${notification.link}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
+                          <a href="${withBaseUrl}" style="color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">
                             View Details
                           </a>
                         </td>
@@ -416,16 +419,7 @@ export async function getUnreadNotificationCount(): Promise<
 
     const where: any = {
       OR: [{ audience: "ALL_USERS" }, { userIds: { has: user.id } }],
-      readBy: {
-        not: {
-          has: user.id,
-        },
-      },
-      dismissedBy: {
-        not: {
-          has: user.id,
-        },
-      },
+      NOT: [{ readBy: { has: user.id } }, { dismissedBy: { has: user.id } }],
     };
 
     // Add role-based filters
@@ -696,7 +690,7 @@ export async function notifyPlanQueried(params: {
       }`,
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
-      link: `/surfboard/dashboard/plans`,
+      link: `/surfboard/dashboard/plans?tab=queried`,
       metadata: {
         planId: params.planId,
         planNumber: params.planNumber,
@@ -776,5 +770,128 @@ export async function notifyMDAApproval(params: {
     });
   } catch (error) {
     console.error("Error sending MDA approval notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their plan is created
+ */
+export async function notifyPlanCreated(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  surveyTitle: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SUCCESS",
+      title: "Plan Created Successfully",
+      message: `Your plan ${params.planNumber} - ${params.surveyTitle} has been created successfully.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        surveyTitle: params.surveyTitle,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending plan created notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their plan is updated
+ */
+export async function notifyPlanUpdated(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "INFO",
+      title: "Plan Updated",
+      message: `Your plan ${params.planNumber} has been updated successfully.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+      },
+      sendEmail: params.sendEmail ?? false, // Don't email for every update
+    });
+  } catch (error) {
+    console.error("Error sending plan updated notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when their record copy batch is submitted
+ */
+export async function notifyRecordCopySubmitted(params: {
+  userId: string;
+  batchId: string;
+  batchCode: string;
+  planCount: number;
+  totalAmount: number;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "INFO",
+      title: "Record Copy Batch Submitted",
+      message: `Your batch ${params.batchCode} with ${
+        params.planCount
+      } plan(s) has been submitted for processing. Total amount: ₦${params.totalAmount.toLocaleString()}.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plans`,
+      metadata: {
+        batchId: params.batchId,
+        batchCode: params.batchCode,
+        planCount: params.planCount,
+        totalAmount: params.totalAmount,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending record copy submitted notification:", error);
+  }
+}
+
+/**
+ * Helper function to notify user when all MDA roles have approved and plan is ready for physical submission
+ */
+export async function notifyReadyForPhysicalSubmission(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    await createNotification({
+      type: "SUCCESS",
+      title: "Ready for Physical Submission",
+      message: `Great news! Your plan ${params.planNumber} has been approved by all reviewing departments. You can now submit the physical record copy to the Office of the State Surveyor General.`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plan?planId=${params.planId}`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+      },
+      sendEmail: params.sendEmail ?? true, // Always send email for this important notification
+    });
+  } catch (error) {
+    console.error(
+      "Error sending ready for physical submission notification:",
+      error
+    );
   }
 }

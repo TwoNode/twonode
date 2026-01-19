@@ -99,6 +99,9 @@ export interface Plan {
   userId?: string | null;
   user?: Prisma.SurfboardUserCreateInput | any;
   isOwner?: boolean;
+  redCopyStatus?: string | null;
+  personCount?: number;
+  personCountVerified?: boolean;
 }
 
 /** Standard envelope for API results */
@@ -329,7 +332,8 @@ export interface SurfboardPlanDTO {
   cadFilePaths: string[];
   certificateFilePaths: string[];
   dateOnSurveyPlan: string; // ISO date string
-  dateLodged?: string | null;
+  dateLodged?: string | Date | null;
+  locality?: string | null;
   ward?: string | null;
   lcda?: string | null;
   lga?: string | null;
@@ -338,6 +342,8 @@ export interface SurfboardPlanDTO {
   isLive?: boolean;
   createdAt?: string | Date;
   pillars?: PillarData[] | any;
+  personCount?: number;
+  personCountVerified?: boolean;
 }
 
 export const MAX_FILE_MB = 50;

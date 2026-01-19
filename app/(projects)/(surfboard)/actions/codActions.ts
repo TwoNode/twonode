@@ -5,18 +5,21 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
-import { paystack, getEnv } from "../utils/paystack";
 import {
-  notifyPaymentReceived,
+  checkPaymentStatus,
+} from "../utils/remita";
+import {
   notifyLASGReceiptUploaded,
+  notifyPaymentReceived,
   notifyAccountsDisapproval,
   notifyPlanQueried,
   notifyPlanApproved,
+  notifyReadyForPhysicalSubmission,
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 
 // Lock duration in minutes
-const LOCK_DURATION_MINUTES = 30;
+const LOCK_DURATION_MINUTES = 6;
 
 type MDARole =
   | "ACCOUNTS"
@@ -25,6 +28,20 @@ type MDARole =
   | "RECORDS_I"
   | "RECORDS_II"
   | "MDA_SUPERADMIN";
+
+// Properly map role names to camelCase field prefixes
+// This is needed because RECORDS_I -> recordsI and RECORDS_II -> recordsII (not recordsi/recordsii)
+function getRoleFieldPrefix(role: MDARole): string {
+  const mapping: Record<MDARole, string> = {
+    ACCOUNTS: "accounts",
+    CHARTING: "charting",
+    SURCON: "surcon",
+    RECORDS_I: "recordsI",
+    RECORDS_II: "recordsII",
+    MDA_SUPERADMIN: "mdaSuperadmin",
+  };
+  return mapping[role];
+}
 
 /**
  * Fetches certificate batches filtered by payment status
@@ -116,7 +133,7 @@ export async function acquirePlanLock(
     const now = new Date();
     const lockExpiry = new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000);
 
-    const rolePrefix = role.toLowerCase().replace("_", "");
+    const rolePrefix = getRoleFieldPrefix(role);
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
@@ -180,7 +197,7 @@ export async function releasePlanLock(
   userId: string
 ): Promise<ApiResult<{ released: boolean }>> {
   try {
-    const rolePrefix = role.toLowerCase().replace("_", "");
+    const rolePrefix = getRoleFieldPrefix(role);
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
@@ -209,6 +226,303 @@ export async function releasePlanLock(
 }
 
 /**
+ * Get and lock the oldest available plan for a specific MDA role
+ * This atomically finds and locks the oldest pending plan that is not locked by another user
+ */
+export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
+  ApiResult<{
+    planId: string | null;
+    planNumber: string | null;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const lockExpiry = new Date(now.getTime() + LOCK_DURATION_MINUTES * 60000);
+
+    const rolePrefix = getRoleFieldPrefix(role);
+    const statusField = `${rolePrefix}Status` as any;
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockedAtField = `${rolePrefix}LockedAt` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    // First, check if user already has a plan locked for this role
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        [lockedByField]: user.id,
+        [lockExpiresAtField]: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        [lockExpiresAtField]: true,
+      },
+    });
+
+    if (existingLock) {
+      // User already has a lock, return it
+      return {
+        success: true,
+        data: {
+          planId: existingLock.id,
+          planNumber: existingLock.planNumber,
+          locked: true,
+          lockExpiresAt: (existingLock as any)[lockExpiresAtField],
+        },
+      };
+    }
+
+    // Build role-specific where clause to match what's displayed on each role's page
+    const getRoleSpecificCriteria = (): any => {
+      switch (role) {
+        case "RECORDS_II":
+          // Records II: All 4 other approvals must be complete
+          return {
+            accountsStatus: "APPROVED" as const,
+            chartingStatus: "APPROVED" as const,
+            surconStatus: "APPROVED" as const,
+            recordsIStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "RECORDS_I":
+          // Records I: First 3 approvals must be complete
+          return {
+            // accountsStatus: "APPROVED" as const,
+            // chartingStatus: "APPROVED" as const,
+            // surconStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "SURCON":
+          // SURCON: First 2 approvals must be complete
+          return {
+            // accountsStatus: "APPROVED" as const,
+            // chartingStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        case "CHARTING":
+          // Charting: Accounts must be approved
+          return {
+            // accountsStatus: "APPROVED" as const,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
+        default:
+          return {};
+      }
+    };
+
+    // Find the oldest available plan that is not locked by another user
+    const availablePlan = await prisma.surfboardPlan.findFirst({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        [statusField]: "PENDING",
+        deleted: false,
+        ...getRoleSpecificCriteria(),
+        OR: [
+          { [lockedByField]: null },
+          { [lockExpiresAtField]: { lt: now } }, // Lock expired
+        ],
+      },
+      select: {
+        id: true,
+        planNumber: true,
+      },
+      orderBy: { redCopySubmittedAt: "asc" },
+    });
+
+    if (!availablePlan) {
+      return {
+        success: true,
+        data: {
+          planId: null,
+          planNumber: null,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Try to acquire the lock atomically (using updateMany with conditions)
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: availablePlan.id,
+        OR: [
+          { [lockedByField]: null },
+          { [lockedByField]: user.id },
+          { [lockExpiresAtField]: { lt: now } },
+        ],
+      },
+      data: {
+        [lockedByField]: user.id,
+        [lockedAtField]: now,
+        [lockExpiresAtField]: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Another user grabbed the lock, try to find the next available plan
+      return getAndLockOldestAvailablePlan(role);
+    }
+
+    return {
+      success: true,
+      data: {
+        planId: availablePlan.id,
+        planNumber: availablePlan.planNumber,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting and locking plan:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockOldestAvailablePlan"),
+    };
+  }
+}
+
+/**
+ * Release all locks held by the current user for a specific role
+ * Called when leaving the MDA admin page
+ */
+export async function releaseAllLocksForUser(
+  role: MDARole
+): Promise<ApiResult<{ releasedCount: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const rolePrefix = getRoleFieldPrefix(role);
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockedAtField = `${rolePrefix}LockedAt` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: {
+        [lockedByField]: user.id,
+      },
+      data: {
+        [lockedByField]: null,
+        [lockedAtField]: null,
+        [lockExpiresAtField]: null,
+      },
+    });
+
+    return { success: true, data: { releasedCount: result.count } };
+  } catch (error) {
+    console.error("Error releasing all locks:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseAllLocksForUser"),
+    };
+  }
+}
+
+/**
+ * Get the current lock status for a plan and role
+ */
+export async function getPlanLockStatus(
+  planId: string,
+  role: MDARole
+): Promise<
+  ApiResult<{
+    isLocked: boolean;
+    lockedByMe: boolean;
+    lockedBy: string | null;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const rolePrefix = getRoleFieldPrefix(role);
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        [lockedByField]: true,
+        [lockExpiresAtField]: true,
+      },
+    });
+
+    if (!plan) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    const lockedBy = (plan as any)[lockedByField];
+    const lockExpiresAt = (plan as any)[lockExpiresAtField];
+    const isLockValid = lockExpiresAt && new Date(lockExpiresAt) > now;
+
+    return {
+      success: true,
+      data: {
+        isLocked: Boolean(lockedBy && isLockValid),
+        lockedByMe: lockedBy === user.id && isLockValid,
+        lockedBy: isLockValid ? lockedBy : null,
+        lockExpiresAt: isLockValid ? lockExpiresAt : null,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting plan lock status:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getPlanLockStatus"),
+    };
+  }
+}
+
+/**
  * Check if user can work on this plan (chronological enforcement)
  * Returns the oldest available plan if this one is not allowed
  */
@@ -226,13 +540,10 @@ export async function canWorkOnPlan(
   }>
 > {
   try {
-    const statusField = `${role.toLowerCase().replace("_", "")}Status` as any;
-    const lockedByField = `${role
-      .toLowerCase()
-      .replace("_", "")}LockedBy` as any;
-    const lockExpiresAtField = `${role
-      .toLowerCase()
-      .replace("_", "")}LockExpiresAt` as any;
+    const rolePrefix = getRoleFieldPrefix(role);
+    const statusField = `${rolePrefix}Status` as any;
+    const lockedByField = `${rolePrefix}LockedBy` as any;
+    const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
     // Get the target plan
     const targetPlan = await prisma.surfboardPlan.findUnique({
@@ -332,124 +643,167 @@ export async function getChartingInterpretation(
 }
 
 /**
- * Get LGA fees from settings
+ * Get zone from geometry by intersecting with Scale_of_fees dataset
+ * Returns the zone (e.g., "lagosZoneA", "lagosZoneB", etc.) or null if not found
  */
-export async function getLGAFees(): Promise<Record<string, number>> {
+export async function getZoneFromGeometry(
+  geometry: any
+): Promise<string | null> {
   try {
-    const settings = await prisma.surfboardSettings.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
+    const geometryString =
+      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
 
-    if (!settings || !settings.settings) {
-      return {};
+    const result = await prisma.$queryRaw<Array<{ Zone: string }>>`
+      SELECT "Zone"
+      FROM "Scale_of_fees"
+      WHERE ST_Intersects(
+        geom,
+        ST_SetSRID(ST_GeomFromGeoJSON(${geometryString}), 4326)
+      )
+      LIMIT 1;
+    `;
+
+    if (result?.length && result[0].Zone) {
+      return result[0].Zone;
     }
-
-    const settingsData = settings.settings as any;
-    return settingsData.lgaFees || {};
+    return null;
   } catch (err) {
-    console.error("Error fetching LGA fees:", err);
-    return {};
+    console.error("Zone intersection error:", err);
+    return null;
   }
 }
 
 /**
- * Get system charge percentage from settings
+ * Check if survey title should be charged double fee
+ * Returns true if:
+ * - More than 2 names detected (names separated by newlines or AI detection)
+ * - Ethnicity is "corporate"
  */
-export async function getSystemChargePercent(): Promise<number> {
-  try {
-    const settings = await prisma.surfboardSettings.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
-
-    if (!settings || !settings.settings) {
-      return 10; // Default 10%
-    }
-
-    const settingsData = settings.settings as any;
-    return settingsData.systemChargePercent || 10;
-  } catch (err) {
-    console.error("Error fetching system charge:", err);
-    return 10;
-  }
-}
-
-/**
- * Calculate fee for a single plan based on LGA and geometry
- */
-export async function calculatePlanFee(
-  lga: string | null,
-  geometry: any,
-  lgaFees: Record<string, number>,
-  systemChargePercent: number
-): Promise<{ fee: number; systemCharge: number; total: number }> {
-  const { computeGeometryDetails } = await import("../utils/dbUtils");
-
-  // Compute area from geometry
-  let area = 0;
-  try {
-    const { areaSqM } = computeGeometryDetails(geometry);
-    area = areaSqM;
-  } catch (error) {
-    console.error("Error computing area from geometry:", error);
+function shouldChargeDoubleFee(
+  surveyTitle: string,
+  ethnicity?: string | null
+): boolean {
+  // Check if ethnicity indicates corporate ownership
+  if (ethnicity?.toLowerCase() === "corporate") {
+    return true;
   }
 
-  // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
-  const normalizeLga = (str: string) => str.toUpperCase().replace(/[\s-]/g, "");
-  const normalizedLga = lga ? normalizeLga(lga) : null;
-  const lgaFeeKey = normalizedLga
-    ? Object.keys(lgaFees).find((key) => normalizeLga(key) === normalizedLga)
-    : null;
-  const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
+  // Count names by splitting on newlines
+  const names = surveyTitle
+    .split("\n")
+    .map((n) => n.trim())
+    .filter((n) => n.length > 0);
 
-  const fee = ratePerSqm * area;
-  const systemCharge = fee * (systemChargePercent / 100);
-  const total = fee + systemCharge;
+  if (names.length > 2) {
+    return true;
+  }
 
-  return { fee, systemCharge, total };
-}
+  // Additional heuristics for corporate detection
+  const corporateKeywords = [
+    "limited",
+    "ltd",
+    "corporation",
+    "inc",
+    "plc",
+    "company",
+    "co.",
+    "enterprises",
+    "ventures",
+    "holdings",
+    "group",
+    "associates",
+  ];
 
-/**
- * Calculate fee for multiple plans based on LGA and area
- */
-export async function calculateMultiplePlanFee(
-  plans: Array<{ lga: string | null; geometry: any }>
-): Promise<{ fee: number; systemCharge: number; total: number }> {
-  const lgaFees = await getLGAFees();
-  const systemChargePercent = await getSystemChargePercent();
-
-  const { computeGeometryDetails } = await import("../utils/dbUtils");
-
-  let totalFee = 0;
-
-  // Calculate fee for each plan
-  for (const plan of plans) {
-    try {
-      // Compute area from geometry
-      const { areaSqM } = computeGeometryDetails(plan.geometry);
-
-      // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
-      const normalizeLga = (str: string) =>
-        str.toUpperCase().replace(/[\s-]/g, "");
-      const normalizedLga = plan.lga ? normalizeLga(plan.lga) : null;
-      const lgaFeeKey = normalizedLga
-        ? Object.keys(lgaFees).find(
-            (key) => normalizeLga(key) === normalizedLga
-          )
-        : null;
-      const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
-
-      // Calculate plan fee
-      totalFee += ratePerSqm * areaSqM;
-    } catch (error) {
-      console.error("Error calculating fee for plan:", error);
-      // Continue with other plans
+  const lowerTitle = surveyTitle.toLowerCase();
+  for (const keyword of corporateKeywords) {
+    if (lowerTitle.includes(keyword)) {
+      return true;
     }
   }
 
-  const systemCharge = totalFee * (systemChargePercent / 100);
-  const total = totalFee + systemCharge;
+  // Check for multiple names using "and", "&" separators
+  const andSeparators = surveyTitle
+    .split(/\s+and\s+|\s*&\s*/i)
+    .filter((n) => n.trim().length > 0);
+  if (andSeparators.length > 2) {
+    return true;
+  }
 
-  return { fee: totalFee, systemCharge, total };
+  return false;
+}
+
+/**
+ * Calculate fee for a single plan based on zone and area
+ */
+export async function calculatePlanFeeByZone(
+  zone: string,
+  areaSqM: number,
+  surveyTitle: string,
+  zoneFees: Array<{
+    range: string;
+    start: number;
+    end: number;
+    lagosZoneA: number;
+    lagosZoneB: number;
+    lagosZoneC: number;
+    lagosZoneD: number;
+  }>,
+  ethnicity?: string | null
+): Promise<{ fee: number; isDoubleFee: boolean }> {
+  // Find the fee row that matches the area range
+  const feeRow = zoneFees.find(
+    (row) => areaSqM >= row.start && areaSqM <= row.end
+  );
+
+  if (!feeRow) {
+    // If area is larger than max range, use the last row
+    const lastRow = zoneFees[zoneFees.length - 1];
+    if (areaSqM > lastRow.end) {
+      return calculateFeeFromRow(lastRow, zone, surveyTitle, ethnicity);
+    }
+    console.error(`No fee range found for area: ${areaSqM} sqm`);
+    return { fee: 0, isDoubleFee: false };
+  }
+
+  return calculateFeeFromRow(feeRow, zone, surveyTitle, ethnicity);
+}
+
+function calculateFeeFromRow(
+  feeRow: {
+    lagosZoneA: number;
+    lagosZoneB: number;
+    lagosZoneC: number;
+    lagosZoneD: number;
+  },
+  zone: string,
+  surveyTitle: string,
+  ethnicity?: string | null
+): { fee: number; isDoubleFee: boolean } {
+  // Map zone to fee amount
+  let baseFee = 0;
+  switch (zone) {
+    case "lagosZoneA":
+      baseFee = feeRow.lagosZoneA;
+      break;
+    case "lagosZoneB":
+      baseFee = feeRow.lagosZoneB;
+      break;
+    case "lagosZoneC":
+      baseFee = feeRow.lagosZoneC;
+      break;
+    case "lagosZoneD":
+      baseFee = feeRow.lagosZoneD;
+      break;
+    default:
+      console.error(`Unknown zone: ${zone}`);
+      return { fee: 0, isDoubleFee: false };
+  }
+
+  // Check for double fee
+  const isDoubleFee = shouldChargeDoubleFee(surveyTitle, ethnicity);
+  const fee = isDoubleFee ? baseFee * 2 : baseFee;
+
+  return { fee, isDoubleFee };
 }
 
 /**
@@ -466,7 +820,6 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     batchCode: string;
     totalAmount: number;
     reference: string | null;
-    paymentUrl?: string;
     email?: string;
   }>
 > {
@@ -489,6 +842,8 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
         id: true,
         planNumber: true,
         geometry: true,
+        surveyTitle: true,
+        ethnicity: true,
         lga: true,
         deededArea: true,
         redCopyFileUrl: true,
@@ -513,22 +868,63 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       };
     }
 
-    // Calculate fees for all plans
-    let totalFees = 0;
-    const planFees: Record<string, number> = {};
+    // Import needed utilities
+    const { computeGeometryDetails } = await import("../utils/dbUtils");
+    const { getZoneFees, getSystemChargePercent } = await import(
+      "./settingsActions"
+    );
 
-    const lgaFees = await getLGAFees();
+    // Get zone fees and system charge
+    const zoneFees = await getZoneFees();
     const systemChargePercent = await getSystemChargePercent();
 
+    // Calculate fees for all plans using zone-based approach
+    let totalFees = 0;
+    const planFeeData: Map<
+      string,
+      { fee: number; zone: string; isDoubleFee: boolean }
+    > = new Map();
+    const plansWithNoZone: string[] = [];
+
     for (const plan of plans) {
-      const { fee } = await calculatePlanFee(
-        plan.lga,
-        plan.geometry,
-        lgaFees,
-        systemChargePercent
+      // Get zone from geometry via spatial intersection
+      const zone = await getZoneFromGeometry(plan.geometry);
+
+      if (!zone) {
+        plansWithNoZone.push(plan.planNumber);
+        continue;
+      }
+
+      // Compute area from geometry
+      let areaSqM = 0;
+      try {
+        const details = computeGeometryDetails(plan.geometry as any);
+        areaSqM = details.areaSqM;
+      } catch (error) {
+        console.error("Error computing area for plan:", plan.planNumber, error);
+      }
+
+      // Calculate fee using zone and area
+      const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+        zone,
+        areaSqM,
+        plan.surveyTitle,
+        zoneFees,
+        plan.ethnicity
       );
-      planFees[plan.id] = fee;
+
+      planFeeData.set(plan.id, { fee, zone, isDoubleFee });
       totalFees += fee;
+    }
+
+    // Block submission if any plan has no zone
+    if (plansWithNoZone.length > 0) {
+      return {
+        success: false,
+        error: `The following plans are outside Lagos fee zones and cannot be submitted: ${plansWithNoZone.join(
+          ", "
+        )}. Please ensure the survey geometry falls within Lagos State.`,
+      };
     }
 
     // Round to 2 decimal places for currency precision
@@ -542,7 +938,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       return {
         success: false,
         error:
-          "Unable to calculate fees. Please ensure LGA fees are configured and plan area is valid.",
+          "Unable to calculate fees. Please ensure zone fees are configured and plan area is valid.",
       };
     }
 
@@ -563,12 +959,15 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       },
     });
 
-    // Update plans with batch ID and perform spatial intersection
+    // Update plans with batch ID, zone data, and perform spatial intersection
     for (const plan of plans) {
       // Get charting interpretation
       const chartingInterpretation = await getChartingInterpretation(
         plan.geometry
       );
+
+      // Get fee data for this plan
+      const feeData = planFeeData.get(plan.id);
 
       await prisma.surfboardPlan.update({
         where: { id: plan.id },
@@ -582,65 +981,35 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
           surconStatus: "PENDING",
           recordsIStatus: "PENDING",
           recordsIIStatus: "PENDING",
+          // Store zone-based fee data
+          zone: feeData?.zone,
+          codFee: feeData?.fee,
+          isDoubleFee: feeData?.isDoubleFee ?? false,
         },
       });
     }
 
-    // Initialize Paystack payment
-    let paymentUrl: string | undefined;
+    // RRR generation removed - User will generate manually via Iframe
     let userDetails: {
       email: string;
       firstName: string;
       lastName: string;
+      phoneNumber: string | null;
     } | null = null;
 
     try {
-      // Get user details for payment
+      // Get user details just for email return
       userDetails = await prisma.surfboardUser.findUnique({
         where: { id: user.id },
-        select: { email: true, firstName: true, lastName: true },
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+          phoneNumber: true,
+        },
       });
-
-      if (userDetails?.email) {
-        const reference = batch.userPaymentRef;
-        const callbackUrl = `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/surfboard/dashboard/payment/callback?reference=${reference}`;
-
-        // Convert from NAIRA (DB storage) to KOBO (Paystack API)
-        // Paystack expects amount in kobo: 1 naira = 100 kobo
-        // Round to 2 decimal places first to avoid floating point errors
-        const amountInKobo = Math.trunc(
-          (Math.trunc(totalAmount * 100) / 100) * 100
-        );
-
-        if (amountInKobo <= 0) {
-          throw new Error("Invalid payment amount calculated");
-        }
-
-        const paymentInit = await paystack.transactions.initialize(getEnv(), {
-          email: userDetails.email,
-          amount: amountInKobo, // Paystack expects amount in kobo (integer, no decimals)
-          reference,
-          callback_url: callbackUrl,
-          metadata: {
-            batchId: batch.id,
-            reference,
-            batchCode: batch.batchCode,
-            planCount: plans.length,
-            userId: user.id,
-            type: "certificate_of_deposit",
-            platform: "surfboard",
-          },
-        });
-
-        if (paymentInit?.data?.authorization_url) {
-          paymentUrl = paymentInit.data.authorization_url;
-        }
-      }
-    } catch (paymentError) {
-      console.error("Payment initialization error:", paymentError);
-      // Don't fail the batch creation, user can pay later
+    } catch (err) {
+      console.error("Error fetching user details:", err);
     }
 
     // Log audit action
@@ -659,6 +1028,24 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       }),
     });
 
+    // Notify user about their batch submission
+    try {
+      const { notifyRecordCopySubmitted } = await import(
+        "./notificationActions"
+      );
+      await notifyRecordCopySubmitted({
+        userId: user.id,
+        batchId: batch.id,
+        batchCode: batch.batchCode,
+        planCount: plans.length,
+        totalAmount,
+        sendEmail: true,
+      });
+    } catch (notifError) {
+      console.error("Error sending batch submission notification:", notifError);
+      // Don't fail the batch submission if notification fails
+    }
+
     revalidatePath("/surf-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
 
@@ -667,8 +1054,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       data: {
         batchId: batch.id,
         batchCode: batch.batchCode,
-        totalAmount, // Amount in NAIRA - frontend converts to kobo (*100) for Paystack
-        paymentUrl,
+        totalAmount, // Amount in NAIRA
         reference: batch.userPaymentRef,
         email: userDetails?.email,
       },
@@ -683,18 +1069,19 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 }
 
 /**
- * Verify Paystack payment and update batch status
+ * Verify Remita payment status and update batch
+ * Checks with Remita API to confirm payment before updating status
  */
 export async function verifyBatchPayment(
   reference: string
-): Promise<ApiResult<{ batchId: string }>> {
+): Promise<ApiResult<{ batchId: string; status: string }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
 
-    // Find batch by payment reference
+    // Find batch by payment reference (RRR)
     const batch = await prisma.certificateOfDepositBatch.findFirst({
       where: {
         userPaymentRef: reference,
@@ -706,57 +1093,224 @@ export async function verifyBatchPayment(
       return { success: false, error: "Batch not found" };
     }
 
-    // Update batch payment status
-    await prisma.certificateOfDepositBatch.update({
-      where: { id: batch.id },
-      data: {
-        paymentStatus: "USER_PAID",
-        userPaymentDate: new Date(),
-      },
-    });
-
-    // Send notification to all Surfboard Admins
-    const submitter = await prisma.surfboardUser.findUnique({
-      where: { id: user.id },
-      select: { firstName: true, lastName: true },
-    });
-
-    if (submitter) {
-      await notifyPaymentReceived({
-        batchId: batch.id,
-        batchCode: batch.batchCode,
-        amount: batch.totalAmount,
-        paidBy: submitter,
-        sendEmail: true,
-      });
+    // Check if already paid
+    if (
+      batch.paymentStatus === "USER_PAID" ||
+      batch.paymentStatus === "LASG_PAID"
+    ) {
+      return {
+        success: true,
+        data: { batchId: batch.id, status: batch.paymentStatus },
+      };
     }
 
-    // Log audit action
-    await logAuditAction({
-      userId: user.id,
-      action: "VERIFY_PAYMENT",
-      entity: "CertificateOfDepositBatch",
-      entityId: batch.id,
-      changes: createChangeLog({
+    // Verify payment with Remita
+    const remitaStatus = await checkPaymentStatus(reference);
+
+    if (remitaStatus.status === "paid") {
+      // Update batch payment status directly to LASG_PAID
+      // This triggers MDA workflow since payment goes directly to MDA Remita account
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batch.id },
+        data: {
+          paymentStatus: "LASG_PAID",
+          userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+        },
+      });
+
+      // Send notification to all Surfboard Admins
+      const submitter = await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (submitter) {
+        await notifyPaymentReceived({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          amount: batch.totalAmount,
+          paidBy: submitter,
+          sendEmail: true,
+        });
+      }
+
+      // Notify MDA roles that batch is ready for review
+      await notifyLASGReceiptUploaded({
+        batchId: batch.id,
         batchCode: batch.batchCode,
-        reference,
-        amount: batch.totalAmount,
-        paymentStatus: "USER_PAID",
-      }),
-    });
+        planCount: batch.planCount,
+        sendEmail: true,
+      });
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
-    revalidatePath("/surfboard/dashboard/plans");
+      // Log audit action
+      await logAuditAction({
+        userId: user.id,
+        action: "VERIFY_PAYMENT",
+        entity: "CertificateOfDepositBatch",
+        entityId: batch.id,
+        changes: createChangeLog({
+          batchCode: batch.batchCode,
+          reference,
+          amount: batch.totalAmount,
+          paymentStatus: "LASG_PAID",
+          note: "Direct MDA Remita payment verified",
+        }),
+      });
 
-    return {
-      success: true,
-      data: { batchId: batch.id },
-    };
+      revalidatePath("/surf-restricted/dashboard/surf-plans");
+      revalidatePath("/surfboard/dashboard/plans");
+      revalidatePath("/surf-mda/dashboard");
+
+      return {
+        success: true,
+        data: { batchId: batch.id, status: "LASG_PAID" },
+      };
+    } else if (remitaStatus.status === "pending") {
+      return {
+        success: true,
+        data: { batchId: batch.id, status: "PENDING" },
+      };
+    } else {
+      return {
+        success: false,
+        error: remitaStatus.message || "Payment verification failed",
+      };
+    }
   } catch (error) {
     console.error("Error verifying payment:", error);
     return {
       success: false,
       error: handlePrismaError(error, "verifyBatchPayment"),
+    };
+  }
+}
+
+/**
+ * Pay with Remita RRR - Verifies a manually entered RRR and updates the batch
+ */
+export async function payWithRemitaRRR(
+  batchId: string,
+  rrr: string
+): Promise<ApiResult<{ success: boolean; status: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // 1. Find the batch
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized to pay for this batch" };
+    }
+
+    // 2. Check current status
+    if (
+      batch.paymentStatus === "LASG_PAID" ||
+      batch.paymentStatus === "USER_PAID"
+    ) {
+      return {
+        success: true,
+        data: { success: true, status: batch.paymentStatus },
+      };
+    }
+
+    // 3. Verify RRR with Remita
+    const remitaStatus = await checkPaymentStatus(rrr);
+
+    console.log("Remita Verification Result:", remitaStatus);
+
+    if (remitaStatus.status === "failed") {
+      return {
+        success: false,
+        error: `RRR Verification Failed: ${remitaStatus.message}`,
+      };
+    }
+
+    // 4. Validate Amount (Approximate check mainly - ensure it's not significantly less)
+    if (remitaStatus.amount) {
+      // Allow for small differences? Ideally should be exact.
+      const tolerance = 1.0; // 1 Naira tolerance
+      if (Math.abs(remitaStatus.amount - batch.totalAmount) > tolerance) {
+        return {
+          success: false,
+          error: `Payment amount mismatch. Paid: ₦${remitaStatus.amount}, Expected: ₦${batch.totalAmount}`,
+        };
+      }
+    }
+
+    // 5. Update Batch
+    // If PAID
+    if (remitaStatus.status === "paid" || remitaStatus.message?.toLowerCase().includes("approved")) {
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "LASG_PAID", // Direct to LASG
+          userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+        },
+      });
+
+      // Send notifications
+      const submitter = await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (submitter) {
+        try {
+          await notifyPaymentReceived({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            amount: batch.totalAmount,
+            paidBy: submitter,
+            sendEmail: true,
+          });
+
+          await notifyLASGReceiptUploaded({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            planCount: batch.planCount,
+            sendEmail: true,
+          });
+        } catch (e) {
+          console.error("Notification error", e);
+        }
+      }
+
+      return { success: true, data: { success: true, status: "LASG_PAID" } };
+    }
+
+    // IF PENDING
+    else if (remitaStatus.status === "pending") {
+      // Just update the Ref so we know what they are trying to pay with
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "PENDING_USER_PAYMENT"
+        },
+      });
+
+      return { success: true, data: { success: true, status: "PENDING" } };
+    }
+
+    return { success: false, error: "Payment status unknown or not successful" };
+
+  } catch (error) {
+    console.error("payWithRemitaRRR error:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "payWithRemitaRRR"),
     };
   }
 }
@@ -1020,8 +1574,8 @@ export async function updateAccountsApproval(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Update the batch status
-    await prisma.certificateOfDepositBatch.update({
+    // Update the batch status and get batchCode in the same query
+    const batch = await prisma.certificateOfDepositBatch.update({
       where: { id: batchId },
       data: {
         accountsApprovedBy: user.id,
@@ -1030,9 +1584,25 @@ export async function updateAccountsApproval(
         accountsComment: comment,
         paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
       },
+      select: { batchCode: true },
     });
 
-    // Also update accountsStatus on all plans in the batch
+    // Fetch plans with their status fields BEFORE updating (other statuses don't change)
+    // This allows us to reuse the data for notification check later
+    const batchPlans = await prisma.surfboardPlan.findMany({
+      where: { batchId: batchId },
+      select: {
+        id: true,
+        userId: true,
+        planNumber: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
+    });
+
+    // Update accountsStatus on all plans in the batch
     await prisma.surfboardPlan.updateMany({
       where: { batchId: batchId },
       data: {
@@ -1043,22 +1613,14 @@ export async function updateAccountsApproval(
       },
     });
 
-    // Get batch info for notifications and audit log
-    const batchInfo = await prisma.certificateOfDepositBatch.findUnique({
-      where: { id: batchId },
-      select: { batchCode: true },
-    });
-
     if (!approved) {
       // Send notification to Surfboard Admins only
-      if (batchInfo) {
-        await notifyAccountsDisapproval({
-          batchId,
-          batchCode: batchInfo.batchCode,
-          comment,
-          sendEmail: true,
-        });
-      }
+      await notifyAccountsDisapproval({
+        batchId,
+        batchCode: batch.batchCode,
+        comment,
+        sendEmail: true,
+      });
     }
 
     revalidatePath("/surf-mda/dashboard/accounts");
@@ -1075,7 +1637,7 @@ export async function updateAccountsApproval(
       entity: "CertificateOfDepositBatch",
       entityId: batchId,
       changes: createChangeLog({
-        batchCode: batchInfo?.batchCode,
+        batchCode: batch.batchCode,
         approved,
         comment: comment || null,
         paymentStatus: approved ? "ACCOUNTS_APPROVED" : "ACCOUNTS_DISAPPROVED",
@@ -1083,6 +1645,27 @@ export async function updateAccountsApproval(
     });
 
     revalidatePath("/surf-restricted/dashboard/surf-plans");
+
+    // Check if all four MDA approvals are complete for each plan
+    // Accounts is now APPROVED, check the other three using already-fetched data
+    if (approved) {
+      for (const plan of batchPlans) {
+        const allFourApproved =
+          plan.chartingStatus === "APPROVED" &&
+          plan.surconStatus === "APPROVED" &&
+          plan.recordsIStatus === "APPROVED" &&
+          plan.recordsIIStatus === "PENDING";
+
+        if (allFourApproved && plan.userId) {
+          await notifyReadyForPhysicalSubmission({
+            userId: plan.userId,
+            planId: plan.id,
+            planNumber: plan.planNumber,
+            sendEmail: true,
+          });
+        }
+      }
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1115,7 +1698,14 @@ export async function updateChartingStatus(
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
       },
-      select: { planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     revalidatePath("/surf-mda/dashboard/charting");
@@ -1133,6 +1723,23 @@ export async function updateChartingStatus(
         chartingStatus: "APPROVED",
       }),
     });
+
+    // Check if all four MDA approvals are complete and notify user
+    // Charting is now APPROVED, check the other three
+    const allFourApproved =
+      plan.accountsStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED" &&
+      plan.recordsIIStatus === "PENDING";
+
+    if (allFourApproved && plan.userId) {
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1165,9 +1772,15 @@ export async function updateSurconStatus(
         surconApprovedBy: user.id,
         surconApprovedAt: new Date(),
         surconComment: comment,
-        ...(approved ? {} : { redCopyStatus: "QUERIED" }),
       },
-      select: { userId: true, planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        chartingStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     if (!approved) {
@@ -1201,6 +1814,25 @@ export async function updateSurconStatus(
       }),
     });
 
+    // Check if all four MDA approvals are complete and notify user
+    // SURCON is now APPROVED, check the other three
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
+
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
+    }
+
     return { success: true, data: { success: true } };
   } catch (error) {
     console.error("Error updating SURCON status:", error);
@@ -1232,9 +1864,15 @@ export async function updateRecordsIStatus(
         recordsIApprovedBy: user.id,
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
-        ...(approved ? {} : { redCopyStatus: "QUERIED" }),
       },
-      select: { userId: true, planNumber: true },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIIStatus: true,
+      },
     });
 
     if (!approved) {
@@ -1267,6 +1905,25 @@ export async function updateRecordsIStatus(
         recordsIStatus: approved ? "APPROVED" : "QUERIED",
       }),
     });
+
+    // Check if all four MDA approvals are complete and notify user
+    // Records I is now APPROVED, check the other three
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
+
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
+    }
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1329,11 +1986,11 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-              status: "LODGED",
-              redCopyStatus: "APPROVED",
-              dateLodged: new Date(),
-            }
-          : { redCopyStatus: "QUERIED" }),
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
+          : {}),
       },
       select: {
         userId: true,
@@ -1403,7 +2060,12 @@ export async function updateRecordsIIStatus(
 export async function getAccountsBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "ACCOUNTS" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "ACCOUNTS" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1431,6 +2093,8 @@ export async function getAccountsBatches() {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log("\n\n\n\n\n\n\n\n Accounts batches:", batches);
 
     return { success: true, data: batches };
   } catch (error) {
@@ -1504,11 +2168,11 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
-      // SURCON: Count plans with PENDING surcon status (only from batches with LASG receipt)
+      // SURCON: Count plans with PENDING or QUERIED surcon status (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
-          surconStatus: "PENDING",
+          surconStatus: { in: ["PENDING", "QUERIED"] },
           deleted: false,
           batch: {
             paymentStatus: {
@@ -1522,11 +2186,11 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
-      // Records I: Count plans with PENDING records I status (only from batches with LASG receipt)
+      // Records I: Count plans with PENDING or QUERIED records I status (only from batches with LASG receipt)
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
-          recordsIStatus: "PENDING",
+          recordsIStatus: { in: ["PENDING", "QUERIED"] },
           deleted: false,
           batch: {
             paymentStatus: {
@@ -1589,7 +2253,12 @@ export async function getPendingCountByRole(): Promise<
 export async function getChartingPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "CHARTING" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "CHARTING" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1623,6 +2292,7 @@ export async function getChartingPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
           },
         },
       },
@@ -1655,7 +2325,12 @@ export async function getChartingPlans() {
 export async function getSurconPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "SURCON" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "SURCON" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1663,7 +2338,7 @@ export async function getSurconPlans() {
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
-        surconStatus: "PENDING",
+        surconStatus: { in: ["PENDING"] },
         deleted: false,
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
@@ -1692,6 +2367,7 @@ export async function getSurconPlans() {
             surconRegNumber: true,
             companyName: true,
             surconRegName: true,
+            phoneNumber: true,
           },
         },
       },
@@ -1724,7 +2400,12 @@ export async function getSurconPlans() {
 export async function getRecordsIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_I" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_I" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1732,8 +2413,12 @@ export async function getRecordsIPlans() {
     const plans = await prisma.surfboardPlan.findMany({
       where: {
         redCopyStatus: "SUBMITTED",
-        recordsIStatus: "PENDING",
+        recordsIStatus: { in: ["PENDING"] },
         deleted: false,
+        // // Records I requires all 3 prior approvals to be complete
+        // accountsStatus: "APPROVED",
+        // chartingStatus: "APPROVED",
+        // surconStatus: "APPROVED",
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
           paymentStatus: {
@@ -1758,6 +2443,9 @@ export async function getRecordsIPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -1790,7 +2478,12 @@ export async function getRecordsIPlans() {
 export async function getRecordsIIPlans() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1829,6 +2522,9 @@ export async function getRecordsIIPlans() {
             firstName: true,
             lastName: true,
             email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
           },
         },
       },
@@ -1873,7 +2569,7 @@ export async function deleteAllBatches(): Promise<
     }
 
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1940,6 +2636,506 @@ export async function deleteAllBatches(): Promise<
     return {
       success: false,
       error: handlePrismaError(error, "deleteAllBatches"),
+    };
+  }
+}
+
+/**
+ * Get queried plans for the current user
+ */
+export async function getQueriedPlansForUser(): Promise<
+  ApiResult<{
+    plans: Array<{
+      id: string;
+      planNumber: string;
+      surveyTitle: string;
+      lga: string | null;
+      ward: string | null;
+      lcda: string | null;
+      deededArea: string;
+      pillars: any;
+      redCopyFileUrl: string | null;
+      redCopyStatus: string | null;
+      surconStatus: string | null;
+      surconComment: string | null;
+      recordsIStatus: string | null;
+      recordsIComment: string | null;
+      recordsIIStatus: string | null;
+      recordsIIComment: string | null;
+      batch: {
+        batchCode: string;
+      } | null;
+    }>;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        userId: user.id,
+        deleted: false,
+        // Check if any role has queried the plan
+        OR: [
+          { surconStatus: "QUERIED" },
+          { recordsIStatus: "QUERIED" },
+          { recordsIIStatus: "QUERIED" },
+        ],
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        lga: true,
+        ward: true,
+        lcda: true,
+        deededArea: true,
+        pillars: true,
+        redCopyFileUrl: true,
+        redCopyStatus: true,
+        surconStatus: true,
+        surconComment: true,
+        recordsIStatus: true,
+        recordsIComment: true,
+        recordsIIStatus: true,
+        recordsIIComment: true,
+        batch: {
+          select: {
+            batchCode: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return { success: true, data: { plans } };
+  } catch (error) {
+    console.error("Error fetching queried plans:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getQueriedPlansForUser"),
+    };
+  }
+}
+
+/**
+ * Resubmit a queried plan with amendments
+ */
+export async function resubmitQueriedPlan(
+  planId: string,
+  pillars?: any,
+  recordCopyUrl?: string,
+  location?: { lga?: string; lcda?: string; ward?: string; state?: string }
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // Get the plan and verify ownership - check if any role has queried it
+    const plan = await prisma.surfboardPlan.findFirst({
+      where: {
+        id: planId,
+        userId: user.id,
+        // Check if any role has queried the plan
+        OR: [
+          { surconStatus: "QUERIED" },
+          { recordsIStatus: "QUERIED" },
+          { recordsIIStatus: "QUERIED" },
+        ],
+      },
+      select: {
+        id: true,
+        planNumber: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        recordsIIStatus: true,
+      },
+    });
+
+    if (!plan) {
+      return {
+        success: false,
+        error: "Plan not found or no pending queries to respond to",
+      };
+    }
+
+    // Determine which role queried the plan
+    let queriedBy: string | null = null;
+    const updates: any = {
+      // Update fields if provided
+      ...(pillars && { pillars }),
+      ...(recordCopyUrl && { redCopyFileUrl: recordCopyUrl }),
+      ...(location?.lga && { lga: location.lga }),
+      ...(location?.lcda && { lcda: location.lcda }),
+      ...(location?.ward && { ward: location.ward }),
+      ...(location?.state && { state: location.state }),
+    };
+
+    // Reset only the querying role's status to PENDING
+    if (plan.surconStatus === "QUERIED") {
+      updates.surconStatus = "PENDING";
+      updates.surconComment = null;
+      queriedBy = "SURCON";
+    }
+    if (plan.recordsIStatus === "QUERIED") {
+      updates.recordsIStatus = "PENDING";
+      updates.recordsIComment = null;
+      queriedBy = queriedBy ? `${queriedBy}, Records I` : "Records I";
+    }
+    if (plan.recordsIIStatus === "QUERIED") {
+      updates.recordsIIStatus = "PENDING";
+      updates.recordsIIComment = null;
+      queriedBy = queriedBy ? `${queriedBy}, Records II` : "Records II";
+    }
+
+    // Update the plan
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: updates,
+    });
+
+    // Revalidate relevant paths
+    revalidatePath("/surfboard/dashboard/queried-plans");
+    revalidatePath("/surfboard/dashboard/plans");
+    revalidatePath("/surf-mda/dashboard/surcon");
+    revalidatePath("/surf-mda/dashboard/records-i");
+    revalidatePath("/surf-mda/dashboard/records-ii");
+    revalidatePath("/surf-mda/dashboard");
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: "RESUBMIT_QUERIED_PLAN",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        redCopyStatus: "SUBMITTED",
+        queriedBy,
+        pillarsUpdated: !!pillars,
+        recordCopyUpdated: !!recordCopyUrl,
+      }),
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error resubmitting queried plan:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "resubmitQueriedPlan"),
+    };
+  }
+}
+
+/**
+ * Get history for Charting Admin
+ */
+export async function getChartingHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "CHARTING" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        chartingStatus: "APPROVED",
+        deleted: false,
+      },
+      include: {
+        batch: {
+          select: {
+            batchCode: true,
+            paymentStatus: true,
+          },
+        },
+        chartingApprovedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        chartingApprovedAt: "desc",
+      },
+      take: 100, // Limit to last 100 for performance
+    });
+
+    return { success: true, data: plans };
+  } catch (error) {
+    console.error("Error fetching charting history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getChartingHistory"),
+    };
+  }
+}
+
+/**
+ * Get history for SURCON Admin
+ */
+export async function getSurconHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "SURCON" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        surconStatus: {
+          in: ["APPROVED", "QUERIED"],
+        },
+        surconApprovedAt: {
+          not: null,
+        },
+        deleted: false,
+      },
+      include: {
+        batch: {
+          select: {
+            batchCode: true,
+            paymentStatus: true,
+          },
+        },
+        surconApprovedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+      },
+      orderBy: {
+        surconApprovedAt: "desc",
+      },
+      take: 100,
+    });
+
+    return { success: true, data: plans };
+  } catch (error) {
+    console.error("Error fetching SURCON history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getSurconHistory"),
+    };
+  }
+}
+
+/**
+ * Get history for Records I Admin
+ */
+export async function getRecordsIHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_I" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        recordsIStatus: {
+          in: ["APPROVED", "QUERIED"],
+        },
+        recordsIApprovedAt: {
+          not: null,
+        },
+        deleted: false,
+      },
+      include: {
+        batch: {
+          select: {
+            batchCode: true,
+            paymentStatus: true,
+          },
+        },
+        recordsIApprovedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+      },
+      orderBy: {
+        recordsIApprovedAt: "desc",
+      },
+      take: 100,
+    });
+
+    return { success: true, data: plans };
+  } catch (error) {
+    console.error("Error fetching Records I history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIHistory"),
+    };
+  }
+}
+
+/**
+ * Get history for Records II Admin
+ */
+export async function getRecordsIIHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        recordsIIStatus: {
+          in: ["APPROVED", "QUERIED"],
+        },
+        recordsIIApprovedAt: {
+          not: null,
+        },
+        deleted: false,
+      },
+      include: {
+        batch: {
+          select: {
+            batchCode: true,
+            paymentStatus: true,
+          },
+        },
+        recordsIIApprovedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+      },
+      orderBy: {
+        recordsIIApprovedAt: "desc",
+      },
+      take: 100,
+    });
+
+    return { success: true, data: plans };
+  } catch (error) {
+    console.error("Error fetching Records II history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIIHistory"),
+    };
+  }
+}
+
+/**
+ * Get history for Accounts Admin
+ */
+export async function getAccountsHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "ACCOUNTS" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        accountsApprovedBy: {
+          not: null,
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        accountsApprovedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+        plans: {
+          select: {
+            id: true,
+            planNumber: true,
+            lga: true,
+            deededArea: true,
+          },
+        },
+      },
+      orderBy: {
+        accountsApprovedAt: "desc",
+      },
+      take: 100,
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching Accounts history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAccountsHistory"),
     };
   }
 }

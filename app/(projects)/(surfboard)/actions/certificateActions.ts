@@ -372,6 +372,9 @@ export async function approveAccountsPayment(dto: AccountsApprovalDTO) {
           accountsApprovedAt: new Date(),
         },
       });
+
+      // Check if all MDA approvals are complete for each plan and notify users
+      await checkAndNotifyMDACompletion(dto.batchId);
     }
 
     revalidatePath("/surf-restricted/dashboard");
@@ -422,6 +425,9 @@ export async function approveCharting(dto: ChartingApprovalDTO) {
           dto.comment
         );
       }
+    } else if (dto.status === "APPROVED") {
+      // Check if all MDA approvals are complete and notify user
+      await checkAndNotifyMDACompletionForPlan(dto.planId);
     }
 
     revalidatePath("/surf-restricted/dashboard");
@@ -466,6 +472,9 @@ export async function approveSURCON(dto: ApprovalDTO) {
           dto.comment
         );
       }
+    } else if (dto.status === "APPROVED") {
+      // Check if all MDA approvals are complete and notify user
+      await checkAndNotifyMDACompletionForPlan(dto.planId);
     }
 
     revalidatePath("/surf-restricted/dashboard");
@@ -509,6 +518,9 @@ export async function approveRecordsI(dto: ApprovalDTO) {
           dto.comment
         );
       }
+    } else if (dto.status === "APPROVED") {
+      // Check if all MDA approvals are complete and notify user
+      await checkAndNotifyMDACompletionForPlan(dto.planId);
     }
 
     revalidatePath("/surf-restricted/dashboard");
@@ -696,6 +708,78 @@ async function notifyUser(
   console.log(
     `Notifying user ${userId} about ${event} for plan ${planNumber}: ${message}`
   );
+}
+
+/**
+ * Check if all MDA approvals are complete for plans in a batch and notify users
+ */
+async function checkAndNotifyMDACompletion(batchId: string) {
+  try {
+    // Get all plans in the batch that have all 4 MDA approvals complete
+    const approvedPlans = await prisma.surfboardPlan.findMany({
+      where: {
+        batchId,
+        accountsStatus: "APPROVED",
+        chartingStatus: "APPROVED",
+        surconStatus: "APPROVED",
+        recordsIStatus: "APPROVED",
+      },
+      include: { user: true },
+    });
+
+    // Notify each user whose plan is now ready for physical submission
+    const { notifyReadyForPhysicalSubmission } = await import(
+      "./notificationActions"
+    );
+
+    for (const plan of approvedPlans) {
+      if (plan.user) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.user.id,
+          planId: plan.id,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error checking MDA completion:", error);
+  }
+}
+
+/**
+ * Check if all MDA approvals are complete for a single plan and notify user
+ */
+async function checkAndNotifyMDACompletionForPlan(planId: string) {
+  try {
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      include: { user: true },
+    });
+
+    if (!plan || !plan.user) return;
+
+    // Check if all 4 MDA roles have approved
+    if (
+      plan.accountsStatus === "APPROVED" &&
+      plan.chartingStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED"
+    ) {
+      const { notifyReadyForPhysicalSubmission } = await import(
+        "./notificationActions"
+      );
+
+      await notifyReadyForPhysicalSubmission({
+        userId: plan.user.id,
+        planId: plan.id,
+        planNumber: plan.planNumber,
+        sendEmail: true,
+      });
+    }
+  } catch (error) {
+    console.error("Error checking MDA completion for plan:", error);
+  }
 }
 
 // ============================================================================

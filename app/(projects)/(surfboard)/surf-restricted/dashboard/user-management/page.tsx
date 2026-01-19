@@ -553,13 +553,6 @@ export default function UserManagementPage() {
                       <option value="SUPERADMIN">SuperAdmin</option>
                       <option value="ADMIN">Admin</option>
                       <option value="USER">User</option>
-
-                      <option value="RECORDS_I">Records I</option>
-                      <option value="RECORDS_II">Records II</option>
-                      <option value="ACCOUNTS">Accounts</option>
-                      <option value="CHARTING">Charting</option>
-                      <option value="SURCON">SURCON</option>
-                      <option value="MDA_SUPERADMIN">MDA Super Admin</option>
                     </>
                   ) : (
                     <>
@@ -654,6 +647,15 @@ export default function UserManagementPage() {
                               <option value="USER">USER</option>
                               <option value="ADMIN">ADMIN</option>
                               <option value="SUPERADMIN">SUPERADMIN</option>
+
+                              <option value="RECORDS_I">Records I</option>
+                              <option value="RECORDS_II">Records II</option>
+                              <option value="ACCOUNTS">Accounts</option>
+                              <option value="CHARTING">Charting</option>
+                              <option value="SURCON">SURCON</option>
+                              <option value="MDA_SUPERADMIN">
+                                MDA Super Admin
+                              </option>
                             </>
                           ) : (
                             <>

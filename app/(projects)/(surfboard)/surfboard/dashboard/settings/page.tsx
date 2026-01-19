@@ -335,6 +335,94 @@ export default function SettingsPage() {
                           ))}
                         </select>
                       </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="phoneNumber"
+                          className="text-sm font-semibold"
+                        >
+                          Phone Number
+                        </Label>
+                        <Input
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          type="tel"
+                          value={userData.phoneNumber || ""}
+                          onChange={handleInputChange}
+                          placeholder="e.g. +234 800 000 0000"
+                          disabled={isSaving}
+                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label
+                          htmlFor="address"
+                          className="text-sm font-semibold"
+                        >
+                          Address
+                        </Label>
+                        <Input
+                          id="address"
+                          name="address"
+                          value={userData.address || ""}
+                          onChange={handleInputChange}
+                          placeholder="Enter your address"
+                          disabled={isSaving}
+                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="payerID"
+                          className="text-sm font-semibold"
+                        >
+                          Payer ID
+                        </Label>
+                        <Input
+                          id="payerID"
+                          name="payerID"
+                          type="number"
+                          value={userData.payerID ?? ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            handleInputChange({
+                              ...e,
+                              target: {
+                                ...e.target,
+                                name: "payerID",
+                                value:
+                                  value === "" ? null : parseInt(value, 10),
+                              },
+                            } as any);
+                          }}
+                          placeholder="Enter payer ID"
+                          disabled={isSaving}
+                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="payerIDType"
+                          className="text-sm font-semibold"
+                        >
+                          Payer ID Type
+                        </Label>
+                        <select
+                          id="payerIDType"
+                          name="payerIDType"
+                          value={userData.payerIDType || ""}
+                          onChange={handleInputChange}
+                          className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          disabled={isSaving}
+                        >
+                          <option value="">Select type</option>
+                          <option value="Individual">Individual</option>
+                          <option value="Commercial">Commercial</option>
+                        </select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -41,12 +41,11 @@ interface AdminProfile {
   };
 }
 
-interface LGAFees {
-  [lga: string]: number;
-}
+import { ZoneFeeRow } from "../../../utils/CoDFees";
+import { COD_FEES } from "../../../utils/CoDFees";
 
 interface SettingsData {
-  lgaFees: LGAFees;
+  zoneFees: ZoneFeeRow[];
   systemChargePercent: number;
 }
 
@@ -59,24 +58,24 @@ export default function SettingsPage() {
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // LGA Settings state
+  // Zone Fee Settings state
   const [settings, setSettings] = useState<SettingsData>({
-    lgaFees: {},
+    zoneFees: COD_FEES,
     systemChargePercent: 10,
   });
   const [originalSettings, setOriginalSettings] = useState<SettingsData>({
-    lgaFees: {},
+    zoneFees: COD_FEES,
     systemChargePercent: 10,
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
-  const [showAddLGA, setShowAddLGA] = useState(false);
-  const [newLGA, setNewLGA] = useState({ name: "", rate: "" });
+  const [editingFeeIndex, setEditingFeeIndex] = useState<number | null>(null);
 
   // CSV Upload state
   const [showCSVPreview, setShowCSVPreview] = useState(false);
-  const [csvPreviewData, setCSVPreviewData] = useState<LGAFees>({});
+  const [csvPreviewData, setCSVPreviewData] = useState<ZoneFeeRow[]>([]);
   const [csvErrors, setCSVErrors] = useState<string[]>([]);
   const [showCSVFormatHelp, setShowCSVFormatHelp] = useState(false);
 
@@ -175,13 +174,13 @@ export default function SettingsPage() {
     alert("Profile updated successfully!");
   };
 
-  // LGA Settings handlers
+  // Zone Fee Settings handlers
   const handleSaveSettings = async () => {
     try {
       setSettingsSaving(true);
       const result = await updateSettings(settings);
       if (result.success) {
-        toast.success("LGA settings updated successfully");
+        toast.success("Zone fee settings updated successfully");
         setOriginalSettings(settings);
       } else {
         toast.error(result.error || "Failed to update settings");
@@ -194,52 +193,46 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAddLGA = () => {
-    if (!newLGA.name || !newLGA.rate) {
-      toast.error("Please enter both LGA name and rate");
-      return;
-    }
-
-    const rate = parseFloat(newLGA.rate);
-    if (isNaN(rate) || rate <= 0) {
-      toast.error("Please enter a valid rate");
-      return;
-    }
-
+  const handleUpdateZoneFee = (
+    index: number,
+    field: keyof ZoneFeeRow,
+    value: number
+  ) => {
+    const updatedFees = [...settings.zoneFees];
+    updatedFees[index] = {
+      ...updatedFees[index],
+      [field]: value,
+    };
     setSettings({
       ...settings,
-      lgaFees: {
-        ...settings.lgaFees,
-        [newLGA.name]: rate,
-      },
+      zoneFees: updatedFees,
     });
-
-    setNewLGA({ name: "", rate: "" });
-    setShowAddLGA(false);
-    toast.success(`Added ${newLGA.name}`);
   };
 
-  const handleRemoveLGA = (lga: string) => {
-    const newFees = { ...settings.lgaFees };
-    delete newFees[lga];
-    setSettings({
-      ...settings,
-      lgaFees: newFees,
-    });
-    toast.success(`Removed ${lga}`);
-  };
+  // Check if settings have changed
+  const hasSettingsChanged = () => {
+    if (settings.systemChargePercent !== originalSettings.systemChargePercent) {
+      return true;
+    }
 
-  const handleUpdateLGARate = (lga: string, rate: string) => {
-    const parsedRate = parseFloat(rate);
-    if (isNaN(parsedRate) || parsedRate < 0) return;
+    if (settings.zoneFees.length !== originalSettings.zoneFees.length) {
+      return true;
+    }
 
-    setSettings({
-      ...settings,
-      lgaFees: {
-        ...settings.lgaFees,
-        [lga]: parsedRate,
-      },
-    });
+    for (let i = 0; i < settings.zoneFees.length; i++) {
+      const current = settings.zoneFees[i];
+      const original = originalSettings.zoneFees[i];
+      if (
+        current.lagosZoneA !== original.lagosZoneA ||
+        current.lagosZoneB !== original.lagosZoneB ||
+        current.lagosZoneC !== original.lagosZoneC ||
+        current.lagosZoneD !== original.lagosZoneD
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   };
 
   // CSV Upload handler
@@ -263,46 +256,84 @@ export default function SettingsPage() {
           return;
         }
 
-        // Parse CSV
-        const headers = lines[0].split(",").map((h) => h.trim());
-        const nameIndex = headers.findIndex(
-          (h) =>
-            h.toLowerCase().includes("lga") || h.toLowerCase().includes("name")
-        );
-        const rateIndex = headers.findIndex(
-          (h) =>
-            h.toLowerCase().includes("rate") ||
-            h.toLowerCase().includes("amount")
-        );
+        // Parse CSV Headers
+        const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
 
-        if (nameIndex === -1 || rateIndex === -1) {
-          toast.error("CSV must have 'LGA Name' and 'Rate' columns");
+        // Map headers to fields
+        const rangeIdx = headers.findIndex((h) => h === "range");
+        const startIdx = headers.findIndex((h) => h === "start");
+        const endIdx = headers.findIndex((h) => h === "end");
+
+        // Headers for zones might vary slightly e.g., "Zone A" or "Lagos Zone A"
+        const zoneAIdx = headers.findIndex((h) => h.includes("zone a"));
+        const zoneBIdx = headers.findIndex((h) => h.includes("zone b"));
+        const zoneCIdx = headers.findIndex((h) => h.includes("zone c"));
+        const zoneDIdx = headers.findIndex((h) => h.includes("zone d"));
+
+        if (
+          rangeIdx === -1 ||
+          startIdx === -1 ||
+          endIdx === -1 ||
+          zoneAIdx === -1 ||
+          zoneBIdx === -1 ||
+          zoneCIdx === -1 ||
+          zoneDIdx === -1
+        ) {
+          toast.error("CSV missing required columns. Please check format.");
           return;
         }
 
-        const parsedData: LGAFees = {};
+        const parsedData: ZoneFeeRow[] = [];
         const errors: string[] = [];
 
         // Parse data rows
         for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(",").map((v) => v.trim());
-          const lgaName = values[nameIndex];
-          const rateValue = values[rateIndex];
+          // Handle potential commas within quotes if complex CSV needs support,
+          // but for now simple split is usually sufficient for numbers/simple strings.
+          // Better regex for CSV split: .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+          const values = lines[i]
+            .split(",")
+            .map((v) => v.trim().replace(/^"|"$/g, ""));
 
-          if (!lgaName) {
-            errors.push(`Row ${i + 1}: Missing LGA name`);
+          if (values.length < headers.length) {
+            // skip empty or malformed lines
             continue;
           }
 
-          const rate = parseFloat(rateValue);
-          if (isNaN(rate) || rate < 0) {
-            errors.push(
-              `Row ${i + 1}: Invalid rate '${rateValue}' for ${lgaName}`
-            );
+          const range = values[rangeIdx];
+          const start = parseFloat(values[startIdx]);
+          const end = parseFloat(values[endIdx]);
+          const zoneA = parseFloat(values[zoneAIdx]);
+          const zoneB = parseFloat(values[zoneBIdx]);
+          const zoneC = parseFloat(values[zoneCIdx]);
+          const zoneD = parseFloat(values[zoneDIdx]);
+
+          if (!range) {
+            errors.push(`Row ${i + 1}: Missing Range`);
+            continue;
+          }
+          if (isNaN(start) || start < 0) {
+            errors.push(`Row ${i + 1}: Invalid Start area`);
+            continue;
+          }
+          if (isNaN(end) || end < start) {
+            errors.push(`Row ${i + 1}: Invalid End area`);
+            continue;
+          }
+          if (isNaN(zoneA) || isNaN(zoneB) || isNaN(zoneC) || isNaN(zoneD)) {
+            errors.push(`Row ${i + 1}: Invalid fee amounts`);
             continue;
           }
 
-          parsedData[lgaName] = rate;
+          parsedData.push({
+            range,
+            start,
+            end,
+            lagosZoneA: zoneA,
+            lagosZoneB: zoneB,
+            lagosZoneC: zoneC,
+            lagosZoneD: zoneD,
+          });
         }
 
         setCSVPreviewData(parsedData);
@@ -322,54 +353,26 @@ export default function SettingsPage() {
   const handleApplyCSV = () => {
     setSettings({
       ...settings,
-      lgaFees: {
-        ...settings.lgaFees,
-        ...csvPreviewData,
-      },
+      zoneFees: csvPreviewData,
     });
 
     setShowCSVPreview(false);
-    setCSVPreviewData({});
+    setCSVPreviewData([]);
     setCSVErrors([]);
 
-    toast.success(
-      `Updated ${Object.keys(csvPreviewData).length} LGA fees from CSV`
-    );
-  };
-
-  // Check if settings have changed
-  const hasSettingsChanged = () => {
-    if (settings.systemChargePercent !== originalSettings.systemChargePercent) {
-      return true;
-    }
-
-    const currentLGAs = Object.keys(settings.lgaFees).sort();
-    const originalLGAs = Object.keys(originalSettings.lgaFees).sort();
-
-    if (currentLGAs.length !== originalLGAs.length) {
-      return true;
-    }
-
-    for (const lga of currentLGAs) {
-      if (settings.lgaFees[lga] !== originalSettings.lgaFees[lga]) {
-        return true;
-      }
-    }
-
-    return false;
+    toast.success(`Updated ${csvPreviewData.length} zone fee tiers from CSV`);
   };
 
   // Export settings as CSV
   const handleExportSettings = () => {
     try {
       // Create CSV content
-      let csvContent = "LGA Name,Rate\n";
+      let csvContent =
+        "Range,Start,End,Lagos Zone A,Lagos Zone B,Lagos Zone C,Lagos Zone D\n";
 
-      Object.entries(settings.lgaFees)
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .forEach(([lga, rate]) => {
-          csvContent += `${lga},${rate}\n`;
-        });
+      settings.zoneFees.forEach((fee) => {
+        csvContent += `"${fee.range}",${fee.start},${fee.end},${fee.lagosZoneA},${fee.lagosZoneB},${fee.lagosZoneC},${fee.lagosZoneD}\n`;
+      });
 
       // Create blob and download
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -379,7 +382,7 @@ export default function SettingsPage() {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `lga-fees-${new Date().toISOString().split("T")[0]}.csv`
+        `zone-fees-${new Date().toISOString().split("T")[0]}.csv`
       );
       link.style.visibility = "hidden";
 
@@ -1054,17 +1057,63 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* LGA Amounts Tab */}
+              {/* Zone Fees Tab */}
               {activeTab === "lga" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-900">
-                      RedCopy LGA Fee Settings
+                      Lagos Zone Fee Settings
                     </h2>
                     <div className="flex gap-3">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleCSVUpload}
+                        className="hidden"
+                        accept=".csv"
+                      />
+                      <button
+                        onClick={() => setShowCSVFormatHelp(true)}
+                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                        title="CSV Format Help"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Format
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                          />
+                        </svg>
+                        Upload CSV
+                      </button>
                       <button
                         onClick={handleExportSettings}
-                        disabled={Object.keys(settings.lgaFees).length === 0}
+                        disabled={settings.zoneFees.length === 0}
                         className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         <svg
@@ -1154,15 +1203,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* LGA Fees Table */}
+                  {/* Zone Fees Table */}
                   <div className="bg-gray-50 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          MDA Fee Settings
+                          Zone Fee Rates by Area
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
-                          Configure LGA fees and system charges
+                          Fixed fees based on area range and Lagos zone
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -1185,202 +1234,125 @@ export default function SettingsPage() {
                           </svg>
                           View History
                         </button>
-                        <button
-                          onClick={handleSaveSettings}
-                          disabled={settingsSaving || !hasSettingsChanged()}
-                          className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-                            hasSettingsChanged() ? "animate-pulse" : ""
-                          }`}
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                            />
-                          </svg>
-                          {settingsSaving ? "Saving..." : "Save Settings"}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">
-                          LGA Fee Rates
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Rate per square meter for each Local Government Area
-                          (₦/m²)
-                        </p>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setShowCSVFormatHelp(true)}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                          title="View CSV format"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          CSV Format
-                        </button>
-                        <label
-                          htmlFor="csv-upload"
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                          Upload CSV
-                        </label>
-
-                        <input
-                          id="csv-upload"
-                          type="file"
-                          accept=".csv"
-                          onChange={handleCSVUpload}
-                          className="hidden"
-                        />
-
-                        <button
-                          onClick={() => setShowAddLGA(true)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4v16m8-8H4"
-                            />
-                          </svg>
-                          Add LGA
-                        </button>
                       </div>
                     </div>
 
-                    {Object.keys(settings.lgaFees).length === 0 ? (
-                      <div className="text-center py-12">
-                        <svg
-                          className="w-12 h-12 text-gray-300 mx-auto mb-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                          />
-                        </svg>
-                        <p className="text-gray-500">No LGA fees configured</p>
-                        <p className="text-sm text-gray-400 mt-1">
-                          Click "Add LGA" or "Upload CSV" to get started
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                S/N
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                LGA Name
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Rate (₦/m²)
-                              </th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
+                    <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-100 sticky top-0">
+                          <tr>
+                            <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              S/N
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Area Range
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Zone A (₦)
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Zone B (₦)
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Zone C (₦)
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Zone D (₦)
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {settings.zoneFees.map((fee, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-2 py-3 text-center whitespace-nowrap text-sm text-gray-500">
+                                {index + 1}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {fee.range}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={fee.lagosZoneA}
+                                  onChange={(e) =>
+                                    handleUpdateZoneFee(
+                                      index,
+                                      "lagosZoneA",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  disabled={settingsLoading}
+                                />
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={fee.lagosZoneB}
+                                  onChange={(e) =>
+                                    handleUpdateZoneFee(
+                                      index,
+                                      "lagosZoneB",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  disabled={settingsLoading}
+                                />
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={fee.lagosZoneC}
+                                  onChange={(e) =>
+                                    handleUpdateZoneFee(
+                                      index,
+                                      "lagosZoneC",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  disabled={settingsLoading}
+                                />
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={fee.lagosZoneD}
+                                  onChange={(e) =>
+                                    handleUpdateZoneFee(
+                                      index,
+                                      "lagosZoneD",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  disabled={settingsLoading}
+                                />
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {Object.entries(settings.lgaFees)
-                              .sort((a, b) => a[0].localeCompare(b[0]))
-                              .map(([lga, rate], index) => (
-                                <tr key={lga}>
-                                  <td className="px-2 py-4 text-center whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {index + 1}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {lga}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={rate}
-                                      onChange={(e) =>
-                                        handleUpdateLGARate(lga, e.target.value)
-                                      }
-                                      className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                      disabled={settingsLoading}
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                    <button
-                                      onClick={() => handleRemoveLGA(lga)}
-                                      className="text-red-600 hover:text-red-900"
-                                      disabled={settingsLoading}
-                                    >
-                                      <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                        />
-                                      </svg>
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        <strong>Note:</strong> Fees are determined by
+                        intersecting the survey plan geometry with the
+                        Scale_of_fees spatial dataset to determine the zone (A,
+                        B, C, or D). Corporate titles or titles with more than 2
+                        names are charged double.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1388,243 +1360,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-
-      {/* CSV Format Help Modal */}
-      {showCSVFormatHelp && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                CSV File Format
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Your CSV file must follow this format to upload LGA fees
-              </p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Required Headers */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  Required Headers
-                </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-900 mb-2">
-                    Your CSV must include these columns (case-insensitive):
-                  </p>
-                  <ul className="text-sm text-blue-900 space-y-1 ml-4">
-                    <li>
-                      • <strong>LGA Name</strong> or <strong>Name</strong> - The
-                      name of the Local Government Area
-                    </li>
-                    <li>
-                      • <strong>Rate</strong> or <strong>Amount</strong> - The
-                      fee per square meter (₦/m²)
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Example Format */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  Example CSV Format
-                </h3>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm">
-                  <div className="text-gray-600">LGA Name,Rate</div>
-                  <div className="text-gray-800">Eti-Osa,15.50</div>
-                  <div className="text-gray-800">Ikeja,12.75</div>
-                  <div className="text-gray-800">Victoria Island,20.00</div>
-                  <div className="text-gray-800">Lekki,18.25</div>
-                </div>
-              </div>
-
-              {/* Tips */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-green-900 mb-2">
-                  💡 Tips
-                </h3>
-                <ul className="text-sm text-green-800 space-y-1 ml-4">
-                  <li>
-                    • Column names are flexible (e.g., "LGA" or "Name" works)
-                  </li>
-                  <li>• Rates must be positive numbers</li>
-                  <li>• Uploading existing LGAs will update their rates</li>
-                  <li>• You'll see a preview before changes are applied</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-end">
-              <button
-                onClick={() => setShowCSVFormatHelp(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add LGA Modal */}
-      {showAddLGA && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Add New LGA
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Enter the LGA name and rate per square meter
-              </p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  LGA Name
-                </label>
-                <input
-                  type="text"
-                  value={newLGA.name}
-                  onChange={(e) =>
-                    setNewLGA({ ...newLGA, name: e.target.value })
-                  }
-                  placeholder="e.g., Eti-Osa"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rate (₦/m²)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={newLGA.rate}
-                  onChange={(e) =>
-                    setNewLGA({ ...newLGA, rate: e.target.value })
-                  }
-                  placeholder="e.g., 10"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
-              <button
-                onClick={() => setShowAddLGA(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddLGA}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add LGA
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CSV Preview Modal */}
-      {showCSVPreview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                CSV Upload Preview
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Review the LGA fees from your CSV file before applying
-              </p>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1">
-              {/* Errors Section */}
-              {csvErrors.length > 0 && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-red-900 mb-2">
-                    Errors Found ({csvErrors.length})
-                  </h3>
-                  <ul className="text-sm text-red-700 space-y-1">
-                    {csvErrors.map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Preview Table */}
-              {Object.keys(csvPreviewData).length > 0 ? (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                    Valid Entries ({Object.keys(csvPreviewData).length})
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            LGA Name
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Rate (₦/m²)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {Object.entries(csvPreviewData)
-                          .sort((a, b) => a[0].localeCompare(b[0]))
-                          .map(([lga, rate]) => (
-                            <tr key={lga}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {lga}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                ₦
-                                {rate.toLocaleString(undefined, {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No valid data found in CSV</p>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex justify-between">
-              <button
-                onClick={() => {
-                  setShowCSVPreview(false);
-                  setCSVPreviewData({});
-                  setCSVErrors([]);
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApplyCSV}
-                disabled={Object.keys(csvPreviewData).length === 0}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply {Object.keys(csvPreviewData).length} Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Settings History Modal */}
       {showSettingsHistory && (
@@ -1722,27 +1457,9 @@ export default function SettingsPage() {
                           System Charge: {item.settings.systemChargePercent}%
                         </p>
                         <p className="font-medium text-gray-700 mt-2">
-                          LGA Fees ({Object.keys(item.settings.lgaFees).length}
-                          ):
+                          Zone Fees: {item.settings.zoneFees?.length || 0}{" "}
+                          ranges
                         </p>
-                        <div className="max-h-32 overflow-y-auto text-xs text-gray-600 mt-1 space-y-1">
-                          {Object.entries(item.settings.lgaFees)
-                            .sort((a: any, b: any) => a[0].localeCompare(b[0]))
-                            .slice(0, 10)
-                            .map(([lga, rate]: any) => (
-                              <div key={lga} className="flex justify-between">
-                                <span>{lga}:</span>
-                                <span>₦{rate}/m²</span>
-                              </div>
-                            ))}
-                          {Object.keys(item.settings.lgaFees).length > 10 && (
-                            <p className="text-gray-500 italic">
-                              ... and{" "}
-                              {Object.keys(item.settings.lgaFees).length - 10}{" "}
-                              more
-                            </p>
-                          )}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1814,6 +1531,172 @@ export default function SettingsPage() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                   {saving ? "Changing..." : "Change Password"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Format Help Modal */}
+      {showCSVFormatHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-lg w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                CSV Format Guide
+              </h2>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Your CSV file must include the following headers
+                (case-insensitive):
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700 mb-4">
+                <li>
+                  <strong>Range</strong> (e.g., "0 - 1000")
+                </li>
+                <li>
+                  <strong>Start</strong> (Start area in sqm)
+                </li>
+                <li>
+                  <strong>End</strong> (End area in sqm)
+                </li>
+                <li>
+                  <strong>Zone A</strong> (Fee for Zone A)
+                </li>
+                <li>
+                  <strong>Zone B</strong> (Fee for Zone B)
+                </li>
+                <li>
+                  <strong>Zone C</strong> (Fee for Zone C)
+                </li>
+                <li>
+                  <strong>Zone D</strong> (Fee for Zone D)
+                </li>
+              </ul>
+              <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-4 overflow-x-auto">
+                Range,Start,End,Zone A,Zone B,Zone C,Zone D<br />
+                "0 - 1000",0,1000,5000,4000,3000,2000
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowCSVFormatHelp(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Preview Modal */}
+      {showCSVPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Preview CSV Data
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Review the data before applying. This will replace all current
+                zone fees.
+              </p>
+            </div>
+            <div className="p-6">
+              {csvErrors.length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+                  <h4 className="font-medium mb-2">Errors found:</h4>
+                  <ul className="list-disc list-inside text-sm">
+                    {csvErrors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-sm font-medium">
+                    Please fix these errors in your CSV file and try again.
+                  </p>
+                </div>
+              )}
+
+              {csvPreviewData.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Range
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Start
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          End
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Zone A
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Zone B
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Zone C
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Zone D
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {csvPreviewData.slice(0, 10).map((row, i) => (
+                        <tr key={i}>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {row.range}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {row.start}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {row.end}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                            ₦{row.lagosZoneA.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                            ₦{row.lagosZoneB.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                            ₦{row.lagosZoneC.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                            ₦{row.lagosZoneD.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {csvPreviewData.length > 10 && (
+                    <p className="text-center text-sm text-gray-500 mt-2">
+                      ...and {csvPreviewData.length - 10} more rows
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-4 mt-6">
+                <button
+                  onClick={() => setShowCSVPreview(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleApplyCSV}
+                  disabled={csvErrors.length > 0}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply Changes
                 </button>
               </div>
             </div>

@@ -384,16 +384,16 @@ const proxyWithLogic = withDynamicAuth(
                   userData.role !== "SURCON"
                 ) {
                   hasAccess = false;
-                } else if (
-                  pathname.includes("/records-i") &&
-                  userData.role !== "RECORDS_I"
-                ) {
-                  hasAccess = false;
-                } else if (
-                  pathname.includes("/records-ii") &&
-                  userData.role !== "RECORDS_II"
-                ) {
-                  hasAccess = false;
+                } else if (pathname.includes("/records-i")) {
+                  if (
+                    pathname.includes("/records-ii") &&
+                    userData.role !== "RECORDS_II"
+                  ) {
+                    // Check records-ii BEFORE records-i (records-ii contains records-i as substring)
+                    hasAccess = false;
+                  } else if (userData.role !== "RECORDS_I") {
+                    hasAccess = false;
+                  }
                 }
               }
             }
@@ -413,7 +413,14 @@ const proxyWithLogic = withDynamicAuth(
           }
         }
 
-        console.log("🛡️ Proxy - Access granted:", hasAccess);
+        console.log(
+          "🛡️ Proxy - Access granted:",
+          hasAccess,
+          "--",
+          userData.role,
+          "in pathname:",
+          pathname
+        );
 
         if (!hasAccess) {
           let redirectPath = "/reva/login";

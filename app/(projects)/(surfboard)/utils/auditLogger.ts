@@ -1,4 +1,4 @@
-"use server";
+// Audit logging utility - no "use server" needed since this is called from server actions
 
 import prisma from "@/lib/prisma";
 import { headers } from "next/headers";

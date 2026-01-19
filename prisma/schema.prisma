@@ -14,7 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model nigeria_ward_admin_boundaries {
   id         Int                      @id @default(autoincrement())
   geom       Unsupported("geometry")?
@@ -28,6 +27,15 @@ model nigeria_ward_admin_boundaries {
   @@index([geom], map: "sidx_nigeria_ward_admin_boundaries_geom", type: Gist)
 }
 
+/// Lagos Zonal Fee Structure - Used for spatial intersection to determine CoD fees
+model Scale_of_fees {
+  id   Int                      @id @default(autoincrement())
+  geom Unsupported("geometry")? // PostGIS geometry for zone boundaries
+  Name String?                  @db.VarChar(254)
+  Zone String?                  @db.VarChar(50) // e.g., "lagosZoneA", "lagosZoneB", etc.
+
+  @@index([geom], map: "sidx_scale_of_fees_geom", type: Gist)
+}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model spatial_ref_sys {
@@ -38,77 +46,75 @@ model spatial_ref_sys {
   proj4text String? @db.VarChar(2048)
 }
 
-
 model Property {
-  id                     String   @id @default(uuid())
-  reference              String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
-  references             String[] // Other references for a transaction
-  title                  String?  // Nullable
-  description            String?  // Nullable
+  id          String   @id @default(uuid())
+  reference   String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
+  references  String[] // Other references for a transaction
+  title       String? // Nullable
+  description String? // Nullable
 
-  status                 String?
-  paymentStatus          String?
+  status        String?
+  paymentStatus String?
 
-  paymentLink            String?  // Nullable
+  paymentLink String? // Nullable
 
-  statusMessage          String?  // Nullable
-  error                  String?  // Nullable
+  statusMessage String? // Nullable
+  error         String? // Nullable
 
-  userId                 String
-  user                   RevaUser @relation(fields: [userId], references: [id])
+  userId String
+  user   RevaUser @relation(fields: [userId], references: [id])
 
-  address                String
-  lat                    Float?
-  lng                    Float?
-  lga                    String
-  parcelId               String?  // Optional
+  address  String
+  lat      Float?
+  lng      Float?
+  lga      String
+  parcelId String? // Optional
 
-  totalCost              Float
-  documentsUrls          String[] // Array of URLs
-  site_images            String[] // Array of site image URLs
-  comments               String?  // Optional
-  deleted                Boolean   @default(false) // Optional field to indicate if the property is deleted
-  isLive                 Boolean   @default(false) // Track if this is a live or test transaction
+  totalCost     Float
+  documentsUrls String[] // Array of URLs
+  site_images   String[] // Array of site image URLs
+  comments      String? // Optional
+  deleted       Boolean  @default(false) // Optional field to indicate if the property is deleted
+  isLive        Boolean  @default(false) // Track if this is a live or test transaction
 
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  report                 Json?    // report from reva
+  report Json? // report from reva
 }
 
 model OneTimeUserProperty {
-  id                     String   @id @default(uuid())
-  reference              String   @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
-  requester              String?  // Nullable (default "")
-  description            String?  // Nullable
+  id          String  @id @default(uuid())
+  reference   String  @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
+  requester   String? // Nullable (default "")
+  description String? // Nullable
 
-  status                 String?
-  paymentStatus          String?
+  status        String?
+  paymentStatus String?
 
-  statusMessage          String?  // Nullable
-  error                  String?  // Nullable
+  statusMessage String? // Nullable
+  error         String? // Nullable
 
-  email                  String
-  userPhoneNumber        String?  // Optional
+  email           String
+  userPhoneNumber String? // Optional
 
-  address                String
-  lat                    Float?
-  lng                    Float?
-  lga                    String
-  parcelId               String?  // Optional
+  address  String
+  lat      Float?
+  lng      Float?
+  lga      String
+  parcelId String? // Optional
 
-  totalCost              Float
-  documentsUrls          String[] // Array of URLs
-  site_images            String[] // Array of site image URLs
-  comments               String?  // Optional
-  isLive                 Boolean   @default(false) // Track if this is a live or test transaction
+  totalCost     Float
+  documentsUrls String[] // Array of URLs
+  site_images   String[] // Array of site image URLs
+  comments      String? // Optional
+  isLive        Boolean  @default(false) // Track if this is a live or test transaction
 
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  report                 Json?    // report from reva
+  report Json? // report from reva
 }
-
 
 enum Role {
   USER
@@ -116,24 +122,22 @@ enum Role {
   SUPERADMIN
 }
 
-
 // Placeholder User model for relation
 model RevaUser {
-  id                 String              @id @default(uuid()) // Unique identifier
-  kindeId            String              @unique
-  email              String              @unique
+  id      String @id @default(uuid()) // Unique identifier
+  kindeId String @unique
+  email   String @unique
 
-  firstName          String
-  lastName           String
+  firstName String
+  lastName  String
 
-  role               Role                @default(USER)
-  emailVerified      Boolean             @default(false)
-  is_active          Boolean             @default(true)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  properties         Property[]
+  role          Role       @default(USER)
+  emailVerified Boolean    @default(false)
+  is_active     Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  properties    Property[]
 }
-
 
 enum NotificationType {
   INFO
@@ -146,43 +150,36 @@ enum NotificationType {
 }
 
 enum NotificationAudience {
-  SPECIFIC_USERS   // Targeted to specific userIds
-  GENERAL_USERS    // General notification for regular users
-  GENERAL_ADMINS   // General notification for admins
-  SUPERADMIN       // General notification for superadmins
-  ALL_USERS        // Everyone (users + admins + superadmins)
+  SPECIFIC_USERS // Targeted to specific userIds
+  GENERAL_USERS // General notification for regular users
+  GENERAL_ADMINS // General notification for admins
+  SUPERADMIN // General notification for superadmins
+  ALL_USERS // Everyone (users + admins + superadmins)
 }
 
-
 model Notification {
-  id              String           @id @default(cuid())
-  type            NotificationType
-  title           String
-  message         String
-  readBy          String[]         @default([]) // List of userIds who read it
-  dismissedBy     String[]         @default([]) // List of userIds who dismissed it
-  userIds         String[]         @default([]) // If null/empty => general
-  audience        NotificationAudience @default(SPECIFIC_USERS)
-  link            String?
-  metadata        Json?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id          String               @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  readBy      String[]             @default([]) // List of userIds who read it
+  dismissedBy String[]             @default([]) // List of userIds who dismissed it
+  userIds     String[]             @default([]) // If null/empty => general
+  audience    NotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   @@index([createdAt])
   @@index([audience])
 }
-
-
-
-
-
 
 // --------------------------------------------------------------------------------
 // Prisma schema for the Surfboard mapping application.
 // Defines the PostGIS‐enabled Postgres schema for storing survey plans,
 // with pillars stored as JSONB, and a simple status/isLive workflow.
 // --------------------------------------------------------------------------------
-
 
 enum SurfboardRole {
   USER
@@ -196,6 +193,11 @@ enum SurfboardRole {
   MDA_SUPERADMIN // MDA Role: Can view all activities of all MDA users
 }
 
+enum PayerIDType {
+  Individual
+  Commercial
+}
+
 model SurfboardUser {
   id                       String        @id @default(uuid())
   kindeId                  String        @unique
@@ -207,39 +209,51 @@ model SurfboardUser {
   emailVerificationToken   String?
   emailVerificationExpires DateTime?
 
-  isActive                 Boolean       @default(true)
+  isActive Boolean @default(true)
 
   // New fields
-  logo                String?                 // URL to the user's logo
-  companyName         String?                 // User's company name
-  companyAddress      String?                 // User's company address
-  surconRegNumber     String?        @unique  @default(dbgenerated("concat('SURCON_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 5))"))
-  surconRegName       String?                 // Name as registered with SURCON
-  signature           String?                 // URL to the user's signature image
-  prefix              String?                 // Name prefix (e.g., Mr., Mrs., Dr.)
-  suffix              String?                 // Name suffix (e.g., Jr., Sr., III)
-  residenceState      String?                 // Residence state in Nigeria
-  postalCode          String?                 // User's postal code
+  logo            String? // URL to the user's logo
+  companyName     String? // User's company name
+  companyAddress  String? // User's company address
+  surconRegNumber String? @unique @default(dbgenerated("concat('SURCON_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 5))"))
+  surconRegName   String? // Name as registered with SURCON
+  signature       String? // URL to the user's signature image
+  prefix          String? // Name prefix (e.g., Mr., Mrs., Dr.)
+  suffix          String? // Name suffix (e.g., Jr., Sr., III)
+  residenceState  String? // Residence state in Nigeria
+  postalCode      String? // User's postal code
+  phoneNumber     String? // User's phone number
+  address         String? // User's address
+  payerID         Int?    // Payer ID
+  payerIDType     PayerIDType? // Type of payer: Individual or Commercial
 
   // Relations
-  plans               SurfboardPlan[]
+  plans               SurfboardPlan[]             @relation("PlanOwner")
   subscription        Subscription[]
   subscriptionHistory SubscriptionHistory[]
   batches             CertificateOfDepositBatch[]
   settingsUpdates     SurfboardSettings[]
 
-  // Timestamps
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  // MDA Approval Relations (reverse)
+  plansApprovedAsAccounts   SurfboardPlan[]             @relation("AccountsApprover")
+  plansApprovedAsCharting   SurfboardPlan[]             @relation("ChartingApprover")
+  plansApprovedAsSurcon     SurfboardPlan[]             @relation("SurconApprover")
+  plansApprovedAsRecordsI   SurfboardPlan[]             @relation("RecordsIApprover")
+  plansApprovedAsRecordsII  SurfboardPlan[]             @relation("RecordsIIApprover")
+  batchesApprovedAsAccounts CertificateOfDepositBatch[] @relation("BatchAccountsApprover")
 
-  metadata            Json?          @default("{}")
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  metadata Json? @default("{}")
 
   @@map("SurfboardUser")
 }
 
 enum SurfboardPlanStatus {
   PENDING
-  LODGED    // APPROVED
+  LODGED // APPROVED
   QUERIED
   UNDER_REVIEW
 }
@@ -258,50 +272,50 @@ model Subscription {
   userId String        @unique
   user   SurfboardUser @relation(fields: [userId], references: [id])
 
-  provider            String                  @default("paystack")
-  email               String?
-  customerCode        String?
-  customerId          String?
-  emailToken          String?                 // required to enable/disable
-  authorization       String?
-  subCode             String?                 // Paystack subscription ID
-  planCode            String
-  planName            String
-  interval            String                  @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
-  amount              Int
-  currency            String                  @default("NGN")
-  currentStart        DateTime?
-  currentEnd          DateTime?
-  cancelledAt         DateTime?
-  nextPaymentDate     DateTime?
-  status              String                  // active, canceled, expired, etc.
-  platform            String                  @default("surfboard")  // surfboard or twonodes or reva or scram
+  provider        String    @default("paystack")
+  email           String?
+  customerCode    String?
+  customerId      String?
+  emailToken      String? // required to enable/disable
+  authorization   String?
+  subCode         String? // Paystack subscription ID
+  planCode        String
+  planName        String
+  interval        String    @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
+  amount          Int
+  currency        String    @default("NGN")
+  currentStart    DateTime?
+  currentEnd      DateTime?
+  cancelledAt     DateTime?
+  nextPaymentDate DateTime?
+  status          String // active, canceled, expired, etc.
+  platform        String    @default("surfboard") // surfboard or twonodes or reva or scram
 
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("Subscription")
 }
 
 model SubscriptionHistory {
-  id                  String                  @id @default(uuid())
-  reference           String
+  id        String @id @default(uuid())
+  reference String
 
-  userId              String
-  user                SurfboardUser           @relation(fields: [userId], references: [id])
+  userId String
+  user   SurfboardUser @relation(fields: [userId], references: [id])
 
-  planCode            String
-  planName            String
-  amount              Int                     // Amount in kobo
-  interval            String                  @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
-  lastPaymentDate     DateTime?
-  startDate           DateTime?
-  endDate             DateTime?
-  status              String                  // 'active' | 'past_due' | 'canceled'
-  eventType           String                  // "subscription.create", "subscription.disable", "invoice.success", etc.
+  planCode        String
+  planName        String
+  amount          Int // Amount in kobo
+  interval        String    @default("monthly") // 'monthly' | 'quarterly' | 'yearly'
+  lastPaymentDate DateTime?
+  startDate       DateTime?
+  endDate         DateTime?
+  status          String // 'active' | 'past_due' | 'canceled'
+  eventType       String // "subscription.create", "subscription.disable", "invoice.success", etc.
 
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([reference])
   @@map("SubscriptionHistory")
@@ -311,129 +325,148 @@ model SubscriptionHistory {
 /// Geometry is stored as raw GeoJSON in JSONB; pillars are in JSONB.
 model SurfboardPlan {
   /// PK: auto-generated UUID
-  id                     String               @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
 
   /// User-entered reference number
-  planNumber             String               @unique
+  planNumber String @unique
 
   /// Descriptive title
-  surveyTitle            String
+  surveyTitle String
 
   /// Category (e.g. APPROVED LAYOUT, DEED)
-  planType               String
+  planType String
 
   /// Optional link to a previous plan
-  referencePlanNumber    String?
+  referencePlanNumber String?
 
   /// Recorded deeded area (free-text)
-  deededArea             String
+  deededArea String
 
   /// Surveyor/facilitator name
-  facilitator            String
+  facilitator String
 
   /// Type of survey pillar
-  pillarType             String
+  pillarType String
 
   /// Raw GeoJSON polygon stored as JSONB
-  geometry               Json
+  geometry Json
 
   /// S3 URLs for uploaded files
-  pdfFilePaths           String[]          @default([])
-  cadFilePaths           String[]          @default([])
-  certificateFilePaths   String[]          @default([])
+  pdfFilePaths         String[] @default([])
+  cadFilePaths         String[] @default([])
+  certificateFilePaths String[] @default([])
 
   /// Date when the plan was lodged
-  dateLodged             DateTime?
+  dateLodged DateTime?
 
   /// Red Copy submission status
-  redCopyStatus          SurfboardRedCopyStatus @default(NOT_SUBMITTED) // NOT_SUBMITTED, SUBMITTED, COMPLETED, FAILED
-  redCopySubmittedAt     DateTime?           // When the Red Copy was submitted
-  redCopyFileUrl         String?             // URL to the uploaded Red Copy file
-  redCopyError           String?             // Error message if Red Copy submission failed
+  redCopyStatus      SurfboardRedCopyStatus @default(NOT_SUBMITTED) // NOT_SUBMITTED, SUBMITTED, COMPLETED, FAILED
+  redCopySubmittedAt DateTime? // When the Red Copy was submitted
+  redCopyFileUrl     String? // URL to the uploaded Red Copy file
+  redCopyError       String? // Error message if Red Copy submission failed
 
   // Certificate of Deposit fields
-  locality                String?            // New field for locality
-  possibleChartingRemarks String?            // Populated from LASG_charting_interpretation
-  chartingRemarks         String?            // Final charting remarks (edited by Charting Admin)
-  batchId                 String?            // Reference to batch submission
+  locality                String? // New field for locality
+  possibleChartingRemarks String? // Populated from LASG_charting_interpretation
+  chartingRemarks         String? // Final charting remarks (edited by Charting Admin)
+  batchId                 String? // Reference to batch submission
   batch                   CertificateOfDepositBatch? @relation(fields: [batchId], references: [id])
 
-  // Approval tracking
-  accountsApprovedBy      String?
-  accountsApprovedAt      DateTime?
-  accountsStatus          ApprovalStatus? @default(PENDING)
-  accountsComment         String?
-  accountsLockedBy        String?            // User ID who locked this plan for accounts review
-  accountsLockedAt        DateTime?          // When the lock was acquired
-  accountsLockExpiresAt   DateTime?          // When the lock expires (30 min from lock time)
+  // Approval tracking - Accounts
+  accountsApprovedBy     String?
+  accountsApprovedByUser SurfboardUser?  @relation("AccountsApprover", fields: [accountsApprovedBy], references: [id])
+  accountsApprovedAt     DateTime?
+  accountsStatus         ApprovalStatus? @default(PENDING)
+  accountsComment        String?
+  accountsLockedBy       String? // User ID who locked this plan for accounts review
+  accountsLockedAt       DateTime? // When the lock was acquired
+  accountsLockExpiresAt  DateTime? // When the lock expires (30 min from lock time)
 
-  chartingApprovedBy      String?
-  chartingApprovedAt      DateTime?
-  chartingStatus          ApprovalStatus? @default(PENDING)
-  chartingComment         String?
-  chartingLockedBy        String?            // User ID who locked this plan for charting review
-  chartingLockedAt        DateTime?          // When the lock was acquired
-  chartingLockExpiresAt   DateTime?          // When the lock expires
+  // Approval tracking - Charting
+  chartingApprovedBy     String?
+  chartingApprovedByUser SurfboardUser?  @relation("ChartingApprover", fields: [chartingApprovedBy], references: [id])
+  chartingApprovedAt     DateTime?
+  chartingStatus         ApprovalStatus? @default(PENDING)
+  chartingComment        String?
+  chartingLockedBy       String? // User ID who locked this plan for charting review
+  chartingLockedAt       DateTime? // When the lock was acquired
+  chartingLockExpiresAt  DateTime? // When the lock expires
 
-  surconApprovedBy        String?
-  surconApprovedAt        DateTime?
-  surconStatus            ApprovalStatus? @default(PENDING)
-  surconComment           String?
-  surconLockedBy          String?            // User ID who locked this plan for SURCON review
-  surconLockedAt          DateTime?          // When the lock was acquired
-  surconLockExpiresAt     DateTime?          // When the lock expires
+  // Approval tracking - SURCON
+  surconApprovedBy     String?
+  surconApprovedByUser SurfboardUser?  @relation("SurconApprover", fields: [surconApprovedBy], references: [id])
+  surconApprovedAt     DateTime?
+  surconStatus         ApprovalStatus? @default(PENDING)
+  surconComment        String?
+  surconLockedBy       String? // User ID who locked this plan for SURCON review
+  surconLockedAt       DateTime? // When the lock was acquired
+  surconLockExpiresAt  DateTime? // When the lock expires
 
-  recordsIApprovedBy      String?
-  recordsIApprovedAt      DateTime?
-  recordsIStatus          ApprovalStatus? @default(PENDING)
-  recordsIComment         String?
-  recordsILockedBy        String?            // User ID who locked this plan for Records I review
-  recordsILockedAt        DateTime?          // When the lock was acquired
-  recordsILockExpiresAt   DateTime?          // When the lock expires
+  // Approval tracking - Records I
+  recordsIApprovedBy     String?
+  recordsIApprovedByUser SurfboardUser?  @relation("RecordsIApprover", fields: [recordsIApprovedBy], references: [id])
+  recordsIApprovedAt     DateTime?
+  recordsIStatus         ApprovalStatus? @default(PENDING)
+  recordsIComment        String?
+  recordsILockedBy       String? // User ID who locked this plan for Records I review
+  recordsILockedAt       DateTime? // When the lock was acquired
+  recordsILockExpiresAt  DateTime? // When the lock expires
 
+  // Approval tracking - Records II
   recordsIIApprovedBy     String?
+  recordsIIApprovedByUser SurfboardUser?  @relation("RecordsIIApprover", fields: [recordsIIApprovedBy], references: [id])
   recordsIIApprovedAt     DateTime?
   recordsIIStatus         ApprovalStatus? @default(PENDING)
   recordsIIComment        String?
-  recordsIILockedBy       String?            // User ID who locked this plan for Records II review
-  recordsIILockedAt       DateTime?          // When the lock was acquired
-  recordsIILockExpiresAt  DateTime?          // When the lock expires
+  recordsIILockedBy       String? // User ID who locked this plan for Records II review
+  recordsIILockedAt       DateTime? // When the lock was acquired
+  recordsIILockExpiresAt  DateTime? // When the lock expires
 
   // Location fields
-  ward                   String?
-  lcda                   String?
-  lga                    String?
-  state                  String?
+  ward  String?
+  lcda  String?
+  lga   String?
+  state String?
+
+  // Zone-based fee calculation fields
+  zone        String?  // Detected zone from Scale_of_fees (e.g., "lagosZoneA", "lagosZoneB")
+  codFee      Float?   // Calculated CoD fee for this plan
+  isDoubleFee Boolean  @default(false) // True if corporate or >2 names in survey title
+  ethnicity   String?  // "hausa", "igbo", "yoruba" or "corporate" - used for double fee detection
 
   /// Array of pillar objects
-  pillars                Json
+  pillars Json
 
   /// Date on the survey plan document
-  dateOnSurveyPlan       DateTime?
+  dateOnSurveyPlan DateTime?
 
   /// Reason required when planType is "Withdrawal and Resubmission"
   reasonForWithdrawalAndResubmission String?
 
   /// Workflow status (default PENDING)
-  status                 SurfboardPlanStatus @default(PENDING)
+  status SurfboardPlanStatus @default(PENDING)
 
   /// Draft vs. published
-  isLive                 Boolean             @default(false)
+  isLive Boolean @default(false)
+
+  /// Person Count Validation
+  personCount         Int     @default(1)
+  personCountVerified Boolean @default(false)
 
   /// Reference to the user who created this plan
-  userId                 String?
-  user                   SurfboardUser?       @relation(fields: [userId], references: [id])
+  userId String?
+  user   SurfboardUser? @relation("PlanOwner", fields: [userId], references: [id])
 
-  sharedTo               String[]
+  sharedTo String[]
 
   /// Soft delete fields
-  deleted                Boolean             @default(false)
-  deletedAt              DateTime?
-  deletedBy              String?             // User ID who deleted the plan
+  deleted   Boolean   @default(false)
+  deletedAt DateTime?
+  deletedBy String? // User ID who deleted the plan
 
   /// Creation & update timestamps
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   /// Index by reference number
   @@index([planNumber])
@@ -542,10 +575,11 @@ model CertificateOfDepositBatch {
   lasgReceiptUploadedAt DateTime?
 
   // Accounts Approval
-  accountsApprovedBy  String?
-  accountsApprovedAt  DateTime?
-  accountsDisapproved Boolean   @default(false)
-  accountsComment     String?
+  accountsApprovedBy     String?
+  accountsApprovedByUser SurfboardUser? @relation("BatchAccountsApprover", fields: [accountsApprovedBy], references: [id])
+  accountsApprovedAt     DateTime?
+  accountsDisapproved    Boolean        @default(false)
+  accountsComment        String?
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -567,17 +601,17 @@ model LASG_charting_interpretation {
 
 /// Surfboard Application Settings
 model SurfboardSettings {
-  id        String   @id @default(cuid())
+  id               String   @id @default(cuid())
   /// Stores the entire application configuration as a JSON object.
   /// Structure: {
-  ///   lgaFees: { "Eti-Osa": 10, "Ikeja": 8, ... }, // Rate per square meter in Naira
+  ///   zoneFees: [{range, start, end, lagosZoneA, lagosZoneB, lagosZoneC, lagosZoneD}, ...],
   ///   systemChargePercent: 10,
   ///   ... other settings
   /// }
-  settings  Json     @default("{}")
-  previousSettings  Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  settings         Json     @default("{}")
+  previousSettings Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   updatedById String?
   updatedBy   SurfboardUser? @relation(fields: [updatedById], references: [id])
@@ -592,15 +626,15 @@ model SurfboardSettings {
 // --------------------------------------------------------------------------------
 
 model WebhookEvent {
-  id          String   @id @default(cuid())
-  signature   String   @unique // x-paystack-signature; uniquely identifies a delivery payload
+  id          String    @id @default(cuid())
+  signature   String    @unique // x-paystack-signature; uniquely identifies a delivery payload
   event       String
   platform    String
-  entityKey   String?  // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
+  entityKey   String? // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
   payload     Json
-  receivedAt  DateTime @default(now())
+  receivedAt  DateTime  @default(now())
   processedAt DateTime?
-  status      String    // "pending" | "ok" | "error"
+  status      String // "pending" | "ok" | "error"
   error       String?
 
   @@index([event, platform])
@@ -627,13 +661,11 @@ model WebhookEvent {
 //   @@schema("public")
 // }
 
-
 // --------------------------------------------------------------------------------
 // Prisma schema for the GBC mapping application.
 // Defines the PostGIS‐enabled Postgres schema for storing survey plans,
 // with pillars stored as JSONB, and a simple status/isLive workflow.
 // --------------------------------------------------------------------------------
-
 
 enum GBCProfession {
   SURVEYOR
@@ -684,47 +716,46 @@ enum GBCPaymentStatus {
 }
 
 model GBCUser {
-  id              String      @id @default(cuid())
-  kindeId         String      @unique
-  email           String      @unique
-  firstName       String?
-  lastName        String?
-  phone           String?
-  role            GBCRole     @default(USER)
-  isActive        Boolean     @default(true)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id        String   @id @default(cuid())
+  kindeId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  role      GBCRole  @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([kindeId])
   @@index([email])
   @@index([isActive])
 }
 
-
 model GBCTicket {
-  id              String            @id @default(cuid())
-  ticketNumber    String            @unique @default(dbgenerated("concat('GBC2_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 6))"))
-  name            String
-  email           String
-  phone           String?
-  gender          GBCGender
-  profession      String            @default("")
-  ticketType      GBCTicketType
-  price           Int
-  paymentStatus   GBCPaymentStatus  @default(PENDING)
+  id             String           @id @default(cuid())
+  ticketNumber   String           @unique @default(dbgenerated("concat('GBC2_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 6))"))
+  name           String
+  email          String
+  phone          String?
+  gender         GBCGender
+  profession     String           @default("")
+  ticketType     GBCTicketType
+  price          Int
+  paymentStatus  GBCPaymentStatus @default(PENDING)
   // paymentRef is unique for non-COMPANY tickets, but COMPANY tickets can share the same reference (group purchases)
   // Uniqueness is enforced at the application level in ticket-actions.ts
-  paymentRef      String?
-  paymentDate     DateTime?
-  paymentMethod   String?
-  paymentDetails  Json?
-  qrCode          String?
-  qrCodeS3Key     String?
-  checkedIn       Boolean           @default(false)
-  checkedInAt     DateTime?
-  checkedInBy     String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  paymentRef     String?
+  paymentDate    DateTime?
+  paymentMethod  String?
+  paymentDetails Json?
+  qrCode         String?
+  qrCodeS3Key    String?
+  checkedIn      Boolean          @default(false)
+  checkedInAt    DateTime?
+  checkedInBy    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([email])
   @@index([phone])
@@ -772,19 +803,19 @@ model GBCPartner {
 }
 
 model GBCGallery {
-  id          String       @id @default(cuid())
-  title       String
-  description String?      @db.Text
-  mediaType   GBCMediaType
-  mediaUrl    String
-  mediaS3Key  String?
-  thumbnailUrl String?
+  id             String       @id @default(cuid())
+  title          String
+  description    String?      @db.Text
+  mediaType      GBCMediaType
+  mediaUrl       String
+  mediaS3Key     String?
+  thumbnailUrl   String?
   thumbnailS3Key String?
-  year        Int
-  order       Int          @default(0)
-  visible     Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  year           Int
+  order          Int          @default(0)
+  visible        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([year])
   @@map("gbc_gallery")
@@ -802,21 +833,21 @@ enum GBCSpeakerTier {
 }
 
 model GBCSpeaker {
-  id          String          @id @default(cuid())
-  name        String
-  title       String
-  bio         String          @db.Text
-  photo       String
-  photoS3Key  String?
-  tier        GBCSpeakerTier
-  company     String?
-  linkedin    String?
-  twitter     String?
-  order       Int             @default(0)
-  visible     Boolean         @default(true)
-  featured    Boolean         @default(false)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id         String         @id @default(cuid())
+  name       String
+  title      String
+  bio        String         @db.Text
+  photo      String
+  photoS3Key String?
+  tier       GBCSpeakerTier
+  company    String?
+  linkedin   String?
+  twitter    String?
+  order      Int            @default(0)
+  visible    Boolean        @default(true)
+  featured   Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   @@map("gbc_speakers")
 }
@@ -877,33 +908,33 @@ enum GBCInquiryStatus {
 }
 
 model GBCEventStats {
-  id              String   @id @default(cuid())
-  date            DateTime @unique @default(now())
-  ticketsSold     Int      @default(0)
-  revenue         Int      @default(0)
-  checkedIn       Int      @default(0)
-  newInquiries    Int      @default(0)
-  websiteVisits   Int      @default(0)
-  emailsSent      Int      @default(0)
-  smsSent         Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  date          DateTime @unique @default(now())
+  ticketsSold   Int      @default(0)
+  revenue       Int      @default(0)
+  checkedIn     Int      @default(0)
+  newInquiries  Int      @default(0)
+  websiteVisits Int      @default(0)
+  emailsSent    Int      @default(0)
+  smsSent       Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([date])
   @@map("gbc_event_stats")
 }
 
 model GBCNotification {
-  id          String               @id @default(cuid())
-  type        GBCNotificationType
-  recipient   String
-  subject     String?
-  message     String               @db.Text
-  status      GBCNotificationStatus @default(PENDING)
-  sentAt      DateTime?
-  error       String?              @db.Text
-  metadata    String?              @db.Text
-  createdAt   DateTime             @default(now())
+  id        String                @id @default(cuid())
+  type      GBCNotificationType
+  recipient String
+  subject   String?
+  message   String                @db.Text
+  status    GBCNotificationStatus @default(PENDING)
+  sentAt    DateTime?
+  error     String?               @db.Text
+  metadata  String?               @db.Text
+  createdAt DateTime              @default(now())
 
   @@index([status])
   @@index([type])
@@ -924,15 +955,15 @@ enum GBCNotificationStatus {
 }
 
 model GBCAuditLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  action      String
-  entity      String
-  entityId    String?
-  changes     String?  @db.Text
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   String?  @db.Text
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([entity])
@@ -941,19 +972,18 @@ model GBCAuditLog {
 }
 
 model SurfboardAuditLog {
-  id          String   @id @default(cuid())
-  userId      String?  // User who performed the action
-  action      String   // Action performed (e.g., "CREATE_PLAN", "APPROVE_BATCH")
-  entity      String   // Entity affected (e.g., "SurfboardPlan", "CertificateOfDepositBatch")
-  entityId    String?  // ID of the entity affected
-  changes     String?  @db.Text // JSON string of changes made
-  ipAddress   String?  // IP address of the user
-  userAgent   String?  // Browser user agent
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String? // User who performed the action
+  action    String // Action performed (e.g., "CREATE_PLAN", "APPROVE_BATCH")
+  entity    String // Entity affected (e.g., "SurfboardPlan", "CertificateOfDepositBatch")
+  entityId  String? // ID of the entity affected
+  changes   String?  @db.Text // JSON string of changes made
+  ipAddress String? // IP address of the user
+  userAgent String? // Browser user agent
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([entity])
   @@index([createdAt])
   @@map("surfboard_audit_logs")
 }
-

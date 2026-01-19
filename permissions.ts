@@ -16,14 +16,14 @@ export const USER_PERMS = {
   scram_super_admin: SCRAM_SUPER_ADMIN,
 };
 
-const REVA_USER_ROLE = "USER";
-const REVA_ADMIN_ROLE = "ADMIN";
-const REVA_SUPERADMIN_ROLE = "SUPERADMIN";
+const USER_ROLE = "USER";
+const ADMIN_ROLE = "ADMIN";
+const SUPERADMIN_ROLE = "SUPERADMIN";
 
 export const REVA_ROLES = {
-  user: REVA_USER_ROLE,
-  admin: REVA_ADMIN_ROLE,
-  super_admin: REVA_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isRevaAdmin = (role: string | null = "") => {
@@ -58,14 +58,10 @@ export const is_admin = isRevaAdmin;
 
 // Surfboard permission helpers
 // Surfboard permission helpers
-const SURFBOARD_USER_ROLE = "USER";
-const SURFBOARD_ADMIN_ROLE = "ADMIN";
-const SURFBOARD_SUPERADMIN_ROLE = "SUPERADMIN";
-
 export const SURFBOARD_ROLES = {
-  user: SURFBOARD_USER_ROLE,
-  admin: SURFBOARD_ADMIN_ROLE,
-  super_admin: SURFBOARD_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isSurfAdmin = (role: string | null = "") => {
@@ -100,15 +96,48 @@ export const isSurfRegularUser = (role: string | null = "") => {
   return role === SURFBOARD_ROLES.user;
 };
 
-// GBC permission helpers
-const GBC_USER_ROLE = "USER";
-const GBC_ADMIN_ROLE = "ADMIN";
-const GBC_SUPERADMIN_ROLE = "SUPERADMIN";
+// MDA (Ministry, Department & Agency) permission helpers
+// These roles are used in the surf-mda portal
+const MDA_ROLES = {
+  accounts: "ACCOUNTS",
+  charting: "CHARTING",
+  surcon: "SURCON",
+  records_i: "RECORDS_I",
+  records_ii: "RECORDS_II",
+  mda_superadmin: "MDA_SUPERADMIN",
+};
 
+export const MDA_ROLE_LIST = [
+  MDA_ROLES.accounts,
+  MDA_ROLES.charting,
+  MDA_ROLES.surcon,
+  MDA_ROLES.records_i,
+  MDA_ROLES.records_ii,
+  MDA_ROLES.mda_superadmin,
+];
+
+export const isMDARole = (role: string | null = "") => {
+  return MDA_ROLE_LIST.includes(role ?? "");
+};
+
+export const canAccessMDAPanel = (role: string | null = "") => {
+  // MDA users can access the MDA panel, as can SUPERADMIN
+  return (
+    MDA_ROLE_LIST.includes(role ?? "") || role === SURFBOARD_ROLES.super_admin
+  );
+};
+
+export const isMDASuperAdmin = (role: string | null = "") => {
+  return (
+    role === MDA_ROLES.mda_superadmin || role === SURFBOARD_ROLES.super_admin
+  );
+};
+
+// GBC permission helpers
 export const GBC_ROLES = {
-  user: GBC_USER_ROLE,
-  admin: GBC_ADMIN_ROLE,
-  super_admin: GBC_SUPERADMIN_ROLE,
+  user: USER_ROLE,
+  admin: ADMIN_ROLE,
+  super_admin: SUPERADMIN_ROLE,
 };
 
 export const isGBCAdmin = (role: string | null = "") => {

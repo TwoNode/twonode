@@ -10,6 +10,7 @@ import {
   canAccessSurfAdminPanel,
   canAccessSurfSuperAdminPanel,
   canAccessGBCAdminPanel,
+  isMDARole,
 } from "@/permissions";
 
 export async function GET() {
@@ -36,6 +37,9 @@ export async function GET() {
           redirectUrl = "/surf-restricted/login";
         } else if (canAccessSurfAdminPanel(userData.role)) {
           redirectUrl = "/surf-restricted/login";
+        } else if (isMDARole(userData.role)) {
+          // MDA users (ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, MDA_SUPERADMIN)
+          redirectUrl = "/surf-mda/login";
         } else {
           redirectUrl = "/surfboard/login";
         }

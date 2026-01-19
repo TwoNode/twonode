@@ -13,6 +13,31 @@ export async function getUserActiveSubscription() {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) return null;
 
+    // Check if user object already has an active subscription from the session
+    const userSub = user.subscription;
+    if (userSub) {
+      const isActive =
+        userSub.status === "active" || userSub.status === "past_due";
+      const isCancelledButValid =
+        userSub.status === "cancelled" &&
+        userSub.expiresAt &&
+        new Date(userSub.expiresAt) >= new Date();
+
+      if (isActive || isCancelledButValid) {
+        // Return subscription from session, no need for DB call
+        return {
+          status: userSub.status,
+          interval: userSub.interval,
+          currentEnd: userSub.expiresAt ? new Date(userSub.expiresAt) : null,
+          subCode: userSub.subCode,
+          planCode: userSub.planCode,
+          emailToken: userSub.emailToken,
+          user,
+        };
+      }
+    }
+
+    // Fallback to database call if no valid subscription in session
     const sub = await prisma.subscription.findUnique({
       where: {
         userId: user.id,
@@ -26,6 +51,7 @@ export async function getUserActiveSubscription() {
       },
     });
 
+    // Refresh session with updated subscription data from DB
     await getAndRefreshUserSession(undefined, true);
 
     return { ...sub, user };
@@ -40,6 +66,33 @@ export async function getUserAndActiveSub() {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) return null;
 
+    // Check if user object already has an active subscription from the session
+    const userSub = user.subscription;
+    if (userSub) {
+      const isActive =
+        userSub.status === "active" || userSub.status === "past_due";
+      const isCancelledButValid =
+        userSub.status === "cancelled" &&
+        userSub.expiresAt &&
+        new Date(userSub.expiresAt) >= new Date();
+
+      if (isActive || isCancelledButValid) {
+        // Return subscription from session, no need for DB call
+        return {
+          subscription: {
+            status: userSub.status,
+            interval: userSub.interval,
+            currentEnd: userSub.expiresAt ? new Date(userSub.expiresAt) : null,
+            subCode: userSub.subCode,
+            planCode: userSub.planCode,
+            emailToken: userSub.emailToken,
+          },
+          user,
+        };
+      }
+    }
+
+    // Fallback to database call if no valid subscription in session
     try {
       const sub = await prisma.subscription.findUnique({
         where: {
@@ -57,6 +110,7 @@ export async function getUserAndActiveSub() {
         },
       });
 
+      // Refresh session with updated subscription data from DB
       await getAndRefreshUserSession(undefined, true);
 
       return { subscription: sub, user };

@@ -108,29 +108,172 @@ body {
   box-sizing: border-box;
 }
 
-/* Track */
+/* ===================================
+   Custom Scrollbar Styling
+   Premium, modern scrollbar design
+   =================================== */
+
+/* Scrollbar Variables */
+:root {
+  --scrollbar-track: rgba(0, 31, 63, 0.1);
+  --scrollbar-track-hover: rgba(0, 31, 63, 0.15);
+  --scrollbar-thumb: linear-gradient(
+    180deg,
+    #0ea5e9 0%,
+    #0284c7 50%,
+    #0369a1 100%
+  );
+  --scrollbar-thumb-hover: linear-gradient(
+    180deg,
+    #38bdf8 0%,
+    #0ea5e9 50%,
+    #0284c7 100%
+  );
+  --scrollbar-thumb-active: linear-gradient(
+    180deg,
+    #7dd3fc 0%,
+    #38bdf8 50%,
+    #0ea5e9 100%
+  );
+  --scrollbar-width: 8px;
+  --scrollbar-width-thin: 6px;
+  --scrollbar-radius: 10px;
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #0ea5e9 rgba(0, 31, 63, 0.1);
+}
+
+/* Webkit Scrollbar - Base styles for all elements */
+*::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+/* Scrollbar Track - Vertical & Horizontal */
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+  margin: 4px;
+}
+
+*::-webkit-scrollbar-track:hover {
+  background: var(--scrollbar-track-hover);
+}
+
+/* Scrollbar Thumb - The draggable handle */
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  border-radius: var(--scrollbar-radius);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+  border-radius: var(--scrollbar-radius);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Scrollbar Corner - Where vertical and horizontal meet */
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+  border-radius: var(--scrollbar-radius);
+}
+
+/* Body specific scrollbar - Slightly wider for main page */
 body::-webkit-scrollbar {
-  background: #001f3f;
-  width: 10px;
-  /* width of the scrollbar */
+  width: 12px;
+  height: 12px;
 }
 
-body::-webkit-scrollbar:hover {
-  background: #00bfff;
-  width: 8px;
-  /* width of the scrollbar */
+body::-webkit-scrollbar-track {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 31, 63, 0.05) 0%,
+    rgba(0, 31, 63, 0.1) 100%
+  );
+  border-radius: 0;
 }
 
-/* Handle */
 body::-webkit-scrollbar-thumb {
-  /* color of the scrollbar handle */
-  background: #00bfff;
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+  border-radius: 6px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  background-clip: padding-box;
 }
 
-/* Handle on hover */
 body::-webkit-scrollbar-thumb:hover {
-  background: #001f3f;
-  /* color of the scrollbar handle on hover */
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background-clip: padding-box;
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+}
+
+body::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 50%, #0ea5e9 100%);
+  border: 2px solid rgba(255, 255, 255, 1);
+  background-clip: padding-box;
+}
+
+/* Thin scrollbar variant for smaller containers */
+.scrollbar-thin::-webkit-scrollbar {
+  width: var(--scrollbar-width-thin);
+  height: var(--scrollbar-width-thin);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-width: 1px;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+/* Auto-hide scrollbar - shows on hover */
+.scrollbar-auto-hide::-webkit-scrollbar-thumb {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.scrollbar-auto-hide:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+/* Dark theme scrollbar variant */
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #64748b 0%, #475569 50%, #334155 100%);
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 50%, #475569 100%);
+}
+
+/* Smooth scroll for all scrollable elements */
+.scroll-smooth {
+  scroll-behavior: smooth;
 }
 
 .heroImg {

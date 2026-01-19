@@ -676,13 +676,28 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         isLive: dto.isLive ?? false,
         status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
         userId: user.id,
+        personCount: dto.personCount || 1,
+        personCountVerified: false,
       },
       select: { id: true, planNumber: true },
     });
 
-    // Send notification to admins about new plan
+    // Send notification to user about new plan creation
     try {
-      const { notifyPlanUpdate } = await import("./notificationActions");
+      const { notifyPlanCreated, notifyPlanUpdate } = await import(
+        "./notificationActions"
+      );
+
+      // Notify the user who created the plan
+      await notifyPlanCreated({
+        userId: user.id,
+        planId: rec.id,
+        planNumber: rec.planNumber,
+        surveyTitle: dto.surveyTitle,
+        sendEmail: true,
+      });
+
+      // Notify admins about new plan (no email)
       await notifyPlanUpdate({
         planId: rec.id,
         planNumber: rec.planNumber,
@@ -730,6 +745,15 @@ export async function updateSurfPlan(
 
     if (!existing) throw new Error("Plan not found");
 
+    // Prevent editing if plan has been submitted for certificate processing
+    if (existing.redCopyStatus && existing.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be edited. Please contact support if you need to make changes.",
+      };
+    }
+
     const now = Date.now();
     const locked = now > cutoffMs(existing.createdAt);
     // const enforceLock = locked && !dto?.canBypassLock;
@@ -763,6 +787,15 @@ export async function updateSurfPlan(
       data.lga = dto.lga ?? null;
       if (dto.dateOnSurveyPlan)
         data.dateOnSurveyPlan = new Date(dto.dateOnSurveyPlan);
+
+      // Update person count if provided
+      if (dto.personCount !== undefined) {
+        data.personCount = dto.personCount;
+        // Reset verified status if count changes
+        if (existing.personCount !== dto.personCount) {
+          data.personCountVerified = false;
+        }
+      }
     }
     // cert-related always allowed
     if (dto.pdfFilePaths) data.pdfFilePaths = dto.pdfFilePaths;
@@ -821,12 +854,23 @@ export async function updateSurfPlan(
       };
     }
 
-    // Send notifications when certificate is added (status changes to LODGED)
-    if (statusChanged) {
-      try {
-        const { notifyPlanUpdate } = await import("./notificationActions");
+    // Send notifications
+    try {
+      const { notifyPlanUpdate, notifyPlanUpdated } = await import(
+        "./notificationActions"
+      );
 
-        // Notify the plan owner
+      // Always notify user that their plan was updated (no email for regular updates)
+      await notifyPlanUpdated({
+        userId: user.id,
+        planId: dto.id,
+        planNumber: dto.planNumber || existing.planNumber,
+        sendEmail: false, // Don't email for every update
+      });
+
+      // Send additional notifications when certificate is added (status changes to LODGED)
+      if (statusChanged) {
+        // Notify the plan owner about lodging
         await notifyPlanUpdate({
           planId: dto.id,
           planNumber: dto.planNumber || existing.planNumber,
@@ -850,10 +894,10 @@ export async function updateSurfPlan(
           type: "PLAN",
           sendEmail: false,
         });
-      } catch (notifError) {
-        console.error("Error sending notification:", notifError);
-        // Don't fail the update if notification fails
       }
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+      // Don't fail the update if notification fails
     }
 
     revalidatePath(`/surfboard/dashboard/plans?planId=${dto.id}`);
@@ -1107,6 +1151,13 @@ export async function getPaginatedSurfPlans({
           updatedAt: true,
           redCopyStatus: true,
           redCopyFileUrl: true,
+          // MDA status fields for showing queried indicator
+          surconStatus: true,
+          surconComment: true,
+          recordsIStatus: true,
+          recordsIComment: true,
+          recordsIIStatus: true,
+          recordsIIComment: true,
         },
         skip,
         take: noPagination ? undefined : pageSize,
@@ -2068,6 +2119,7 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
         where: { id, userId: user.id },
         select: {
           deleted: true,
+          redCopyStatus: true,
         },
       });
     } catch (error) {
@@ -2083,6 +2135,15 @@ export async function deleteSurfPlan(id: string): Promise<ApiResult<null>> {
 
     if (plan.deleted) {
       return { success: false, error: "Plan already deleted" };
+    }
+
+    // Prevent deletion if plan has been submitted for certificate processing
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes.",
+      };
     }
 
     // Soft delete: just mark as deleted
@@ -2205,6 +2266,7 @@ export async function permanentlyDeleteSurfPlan(
           pdfFilePaths: true,
           cadFilePaths: true,
           certificateFilePaths: true,
+          redCopyStatus: true,
         },
       });
     } catch (error) {
@@ -2219,6 +2281,15 @@ export async function permanentlyDeleteSurfPlan(
 
     if (!plan) {
       return { success: false, error: "Plan not found" };
+    }
+
+    // Prevent permanent deletion if plan has been submitted for certificate processing
+    if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+      return {
+        success: false,
+        error:
+          "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes.",
+      };
     }
 
     // Only plan owner or admin can permanently delete
@@ -3451,5 +3522,51 @@ export async function updatePlanRecordCopy(
       error:
         error instanceof Error ? error.message : "Failed to update record copy",
     };
+  }
+}
+
+// Action to verify person count
+export async function verifyPersonCount(planId: string, count: number) {
+  try {
+     const user = await getAuthenticatedSurfUserFromCookie();
+     // Only Admins using this
+     if (!user || user.role === 'USER') { // Check permissions adequately
+        return { success: false, error: "Unauthorized" };
+     }
+
+     await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: {
+           personCount: count,
+           personCountVerified: true
+        }
+     });
+
+     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+     return { success: true };
+  } catch (error) {
+     return { success: false, error: handlePrismaError(error, "verifyPersonCount") };
+  }
+}
+
+// Action to query a plan
+export async function queryPlan(planId: string) {
+  try {
+     const user = await getAuthenticatedSurfUserFromCookie();
+     if (!user || user.role === 'USER') { 
+        return { success: false, error: "Unauthorized" };
+     }
+
+     await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: {
+           status: "QUERIED"
+        }
+     });
+
+     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+     return { success: true };
+  } catch (error) {
+     return { success: false, error: handlePrismaError(error, "queryPlan") };
   }
 }
