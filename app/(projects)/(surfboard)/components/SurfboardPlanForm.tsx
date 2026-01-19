@@ -372,8 +372,8 @@ export default function SurfboardPlanForm({
     initial?.certificateFilePaths?.length
       ? true
       : mode === "edit"
-      ? false
-      : undefined
+        ? false
+        : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -664,8 +664,7 @@ export default function SurfboardPlanForm({
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error(
-        `Failed to upload ${kind} files: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to upload ${kind} files: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -710,12 +709,13 @@ export default function SurfboardPlanForm({
         ward: form.ward,
         lcda: form.lcda || undefined,
         lga: form.lga,
+        state: form.state,
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         dateLodged:
           form.dateLodged ||
           (selectedCertFiles.length > 0 ||
-          (form.certificateFilePaths?.length || 0) > 0
+            (form.certificateFilePaths?.length || 0) > 0
             ? new Date()
             : undefined),
         pillars: form.pillars,
@@ -727,7 +727,7 @@ export default function SurfboardPlanForm({
         ],
         status:
           mode === "edit" &&
-          (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
+            (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
             ? "LODGED"
             : form.status,
       };
@@ -1498,10 +1498,10 @@ export default function SurfboardPlanForm({
                     type="date"
                     value={
                       form.dateOnSurveyPlan &&
-                      typeof form.dateOnSurveyPlan == "object"
+                        typeof form.dateOnSurveyPlan == "object"
                         ? new Date(form.dateOnSurveyPlan)
-                            ?.toISOString()
-                            .split("T")[0]
+                          ?.toISOString()
+                          .split("T")[0]
                         : form.dateOnSurveyPlan
                     }
                     onChange={(e) =>
@@ -1558,8 +1558,8 @@ export default function SurfboardPlanForm({
                       certificateReady === undefined
                         ? ""
                         : certificateReady
-                        ? "yes"
-                        : "no"
+                          ? "yes"
+                          : "no"
                     }
                     onChange={(e) => {
                       if (e.target.value === "") setCertificateReady(undefined);
@@ -1590,11 +1590,11 @@ export default function SurfboardPlanForm({
                       id="dateLodged"
                       type="date"
                       value={
-                        form?.dateLodged && typeof form.dateLodged == "object"
-                          ? new Date(form.dateLodged)
-                              ?.toISOString()
-                              .split("T")[0]
-                          : form?.dateLodged ?? ""
+                        form?.dateLodged instanceof Date
+                          ? form.dateLodged.toISOString().split("T")[0]
+                          : typeof form?.dateLodged === "string"
+                            ? form.dateLodged
+                            : ""
                       }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
@@ -1730,8 +1730,8 @@ export default function SurfboardPlanForm({
                   {busy
                     ? "Saving..."
                     : mode === "create"
-                    ? "Create Plan"
-                    : "Save Changes"}
+                      ? "Create Plan"
+                      : "Save Changes"}
                 </button>
               </div>
             </Section>
@@ -1790,7 +1790,7 @@ export default function SurfboardPlanForm({
                                   className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
                                 >
                                   {handleGeometryDisplay()?.coordinates &&
-                                  handleGeometryDisplay()?.coordinates?.length >
+                                    handleGeometryDisplay()?.coordinates?.length >
                                     1 ? (
                                     <span>
                                       Polygon {i + 1} (

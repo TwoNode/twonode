@@ -166,9 +166,7 @@ const RevaDueDiligenceForm: React.FC = () => {
 
   const fetchLGA = async (lat: number, lng: number) => {
     try {
-      // const url = `https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/1/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=LGA,Price&returnGeometry=true&f=json`;
       const url = `https://services7.arcgis.com/TAQqukrwbbGDP0ax/arcgis/rest/services/LGA_Minna/FeatureServer/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=LGA,Price&returnGeometry=true&f=json`;
-
       const response = await fetch(url);
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -221,7 +219,6 @@ const RevaDueDiligenceForm: React.FC = () => {
   const fetchParcel = async (lat: number, lng: number) => {
     try {
       const url = `https://services5.arcgis.com/DQqY3pyPVyNe3HvS/arcgis/rest/services/Parcels2009_gdb/FeatureServer/0/query?where=1=1&geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=*&returnGeometry=true&f=json`;
-
       const response = await fetch(url);
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -797,7 +794,7 @@ const RevaDueDiligenceForm: React.FC = () => {
 
       {isLoading && (
         <>
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-999">
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-[999]">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
           </div>
         </>

@@ -92,6 +92,8 @@ function normalizeAxiosError(err: unknown, operation: string): never {
     const status = ax.response?.status ?? "ERR";
     const message = ax.response?.data?.message || ax.message;
     const details = ax.response?.data ? JSON.stringify(ax.response.data) : "";
+
+    console.log("\n\n\n\n\n\n\n Remita error:", ax.response?.data);
     throw new Error(
       `Remita ${operation} failed: ${status} ${message} ${details}`
     );
@@ -123,9 +125,16 @@ export async function generateRRR(
     description: params.description,
   };
 
+  console.log("\n\n\n\n\n\n Remita request body:", requestBody, env, "\n\n\n\n\n\n");
+
   try {
+    // Use the correct Remita Biller API endpoint
+    const url = `${env.baseUrl}/remita/exapp/api/v1/send/api/echannelsvc/merchant/api/paymentinit`;
+
+    console.log("Remita API URL:", url);
+
     const response = await axios.post(
-      `${env.baseUrl}/remita/exapp/api/v1/send/api/echannelsvc/merchant/api/paymentinit`,
+      url,
       requestBody,
       {
         headers: {
@@ -133,6 +142,9 @@ export async function generateRRR(
           Authorization: `remitaConsumerKey=${env.publicKey},remitaConsumerToken=${apiHash}`,
         },
         timeout: 30000,
+        // Prevent redirects from changing POST to GET
+        maxRedirects: 0,
+        validateStatus: (status) => status < 400 || status === 303,
       }
     );
 
@@ -155,8 +167,7 @@ export async function generateRRR(
       };
     } else {
       throw new Error(
-        `RRR generation failed: ${
-          data.statusMessage || data.status || "Unknown error"
+        `RRR generation failed: ${data.statusMessage || data.status || "Unknown error"
         }`
       );
     }
@@ -182,7 +193,7 @@ export async function checkPaymentStatus(
   const apiHash = generateStatusHash(env, rrr);
 
   try {
-    const response = await axios.get(
+    const response = await axios.post(
       `${env.baseUrl}/remita/exapp/api/v1/send/api/echannelsvc/${env.publicKey}/${rrr}/${apiHash}/status.reg`,
       {
         headers: {

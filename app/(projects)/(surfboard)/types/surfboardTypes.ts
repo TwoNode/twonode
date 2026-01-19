@@ -332,7 +332,7 @@ export interface SurfboardPlanDTO {
   cadFilePaths: string[];
   certificateFilePaths: string[];
   dateOnSurveyPlan: string; // ISO date string
-  dateLodged?: string | null;
+  dateLodged?: string | Date | null;
   locality?: string | null;
   ward?: string | null;
   lcda?: string | null;

@@ -26,8 +26,9 @@ import {
   Copy,
   ExternalLink,
   RefreshCcw,
+  CreditCard,
 } from "lucide-react";
-import { submitRedCopyBatch, verifyBatchPayment } from "../actions/codActions";
+import { submitRedCopyBatch, verifyBatchPayment, payWithRemitaRRR } from "../actions/codActions";
 import { useRouter } from "next/navigation";
 
 interface Plan {
@@ -59,13 +60,16 @@ export function BatchSubmissionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // RRR state - when set, shows RRR display instead of plan list
-  const [rrrData, setRrrData] = useState<{
-    rrr: string;
+  // State for the new flow
+  const [batchData, setBatchData] = useState<{
+    id: string;
     batchCode: string;
     totalAmount: number;
-    paymentUrl?: string;
   } | null>(null);
+
+  const [manualRRR, setManualRRR] = useState("");
+  const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
+  const [showPaymentView, setShowPaymentView] = useState(false);
 
   const handleSubmit = async () => {
     try {
@@ -80,23 +84,19 @@ export function BatchSubmissionModal({
       const result = await submitRedCopyBatch(selectedPlans.map((p) => p.id));
 
       if (result.success && result.data) {
-        const { batchCode, totalAmount, rrr, paymentUrl } = result.data;
+        const { batchId, batchCode, totalAmount } = result.data;
 
-        if (rrr) {
-          // Show RRR display
-          setRrrData({
-            rrr,
-            batchCode,
-            totalAmount,
-            paymentUrl,
-          });
+        setBatchData({
+          id: batchId,
+          batchCode,
+          totalAmount,
+        });
 
-          toast.success(
-            `Batch ${batchCode} created! Use the RRR below to make payment.`
-          );
-        } else {
-          toast.error("Failed to generate payment reference (RRR)");
-        }
+        setShowPaymentView(true);
+
+        toast.success(
+          `Batch ${batchCode} created! Please make payment via the Remita portal below.`
+        );
       } else {
         toast.error(result.error || "Failed to submit batch");
       }
@@ -108,158 +108,128 @@ export function BatchSubmissionModal({
     }
   };
 
-  const handleCopyRRR = () => {
-    if (rrrData?.rrr) {
-      navigator.clipboard.writeText(rrrData.rrr);
-      toast.success("RRR copied to clipboard!");
+  const handleVerifyRRR = async () => {
+    if (!manualRRR || manualRRR.length < 5) {
+      toast.error("Please enter a valid Remita RRR");
+      return;
     }
-  };
 
-  const handleCheckPayment = async () => {
-    if (!rrrData?.rrr) return;
+    if (!batchData) return;
 
     try {
-      setIsVerifying(true);
-      const result = await verifyBatchPayment(rrrData.rrr);
+      setIsVerifyingRRR(true);
+      const result = await payWithRemitaRRR(batchData.id, manualRRR);
 
       if (result.success && result.data) {
         if (result.data.status === "LASG_PAID") {
           toast.success("Payment verified! Your plans are now with MDA for review.");
-          setRrrData(null);
+          setShowPaymentView(false);
+          setBatchData(null);
           onClose();
           if (onSuccess) onSuccess();
           router.refresh();
         } else if (result.data.status === "PENDING") {
           toast.info(
-            "Payment is still pending. Please complete your payment using the RRR."
+            "Payment is still pending on Remita. Please ensure you have completed the payment."
           );
-        } else {
-          toast.warning(`Payment status: ${result.data.status}`);
         }
       } else {
-        toast.error(result.error || "Failed to verify payment");
+        toast.error(result.error || "Failed to verify RRR");
       }
     } catch (error) {
-      console.error("Payment verification error:", error);
-      toast.error("Failed to check payment status");
+      console.error("RRR Verification error:", error);
+      toast.error("Failed to verify RRR");
     } finally {
-      setIsVerifying(false);
+      setIsVerifyingRRR(false);
     }
   };
 
   const handleClose = () => {
-    setRrrData(null);
-    onClose();
-    if (rrrData) {
-      // If we had RRR data, refresh to show updated batch
-      if (onSuccess) onSuccess();
+    if (showPaymentView && !confirm("You have an active batch submission. Are you sure you want to close? You will need to provide the RRR later to verify payment.")) {
+      return;
     }
+    setShowPaymentView(false);
+    setBatchData(null);
+    setManualRRR("");
+    onClose();
   };
 
-  // RRR Display View
-  if (rrrData) {
+  // Payment & Verification View
+  if (showPaymentView && batchData) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              Batch Submitted Successfully!
-            </DialogTitle>
-            <DialogDescription>
-              Use the Remita Retrieval Reference (RRR) below to complete your
-              payment
-            </DialogDescription>
+        <DialogContent className="max-w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2 border-b">
+            <div className="flex justify-between items-start">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  Complete Payment for Batch {batchData.batchCode}
+                </DialogTitle>
+                <DialogDescription>
+                  Generate your RRR in the window below, pay, then paste the RRR to verify.
+                </DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
+                <p className="text-2xl font-bold text-green-700">₦{batchData.totalAmount.toLocaleString()}</p>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* RRR Display */}
-            <div className="bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 text-center">
-              <p className="text-sm text-gray-600 mb-2">Your RRR Number</p>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl font-bold text-blue-700 tracking-wider font-mono">
-                  {rrrData.rrr}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyRRR}
-                  className="flex items-center gap-1"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copy
-                </Button>
-              </div>
-            </div>
-
-            {/* Payment Details */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Batch Code:</span>
-                <span className="font-medium">{rrrData.batchCode}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Amount to Pay:</span>
-                <span className="font-bold text-lg text-green-700">
-                  ₦{rrrData.totalAmount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Payment Instructions */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          {/* Verification Bar - "On top of iframe" */}
+          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
+            <div className="flex-1 w-full">
+              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                Enter your generated RRR here to verify payment
+              </label>
               <div className="flex gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-900">
-                    How to Pay
-                  </p>
-                  <ul className="text-xs text-amber-800 space-y-1 list-disc list-inside">
-                    <li>Visit any bank branch and quote the RRR above</li>
-                    <li>Pay via internet/mobile banking using Remita</li>
-                    <li>Use Remita payment points or agents</li>
-                    <li>Click the payment link below to pay online</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-3">
-              {rrrData.paymentUrl && (
+                <input
+                  id="manual-rrr"
+                  type="text"
+                  placeholder="e.g. 1234-5678-9012"
+                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
+                  value={manualRRR}
+                  onChange={(e) => setManualRRR(e.target.value)}
+                />
                 <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={() => window.open(rrrData.paymentUrl, "_blank")}
+                  onClick={handleVerifyRRR}
+                  disabled={isVerifyingRRR || !manualRRR}
+                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Pay Online via Remita
+                  {isVerifyingRRR ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Verify & Submit
+                    </>
+                  )}
                 </Button>
-              )}
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleCheckPayment}
-                disabled={isVerifying}
-              >
-                {isVerifying ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking Payment...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCcw className="w-4 h-4 mr-2" />
-                    I've Paid - Check Status
-                  </>
-                )}
-              </Button>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="ghost" onClick={handleClose}>
-              Close
+          {/* Remita Iframe Area */}
+          <div className="flex-1 bg-gray-100 relative p-4">
+            <iframe
+              src="https://login.remita.net/remita/lirs/internal/pay.reg"
+              className="w-full h-full border-none"
+              title="Remita Payment Portal"
+            />
+            <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
+              <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
+                <strong>Tip:</strong> Search for "Lagos State Surveyor General" or use the relevant service type to generate your RRR.
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-4 border-t bg-gray-50">
+            <Button variant="ghost" onClick={handleClose} className="text-gray-500">
+              Close & Pay Later
             </Button>
           </DialogFooter>
         </DialogContent>

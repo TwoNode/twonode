@@ -49,7 +49,7 @@ interface SurveyPlan {
   surveyTitle: string;
   facility: string | null;
   location: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW" | "LODGED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW" | "LODGED" | "QUERIED";
   createdAt: string;
   updatedAt: string;
   owner: {
@@ -58,6 +58,8 @@ interface SurveyPlan {
   };
   pillarsCount: number;
   area: number;
+  personCount?: number;
+  personCountVerified?: boolean;
 }
 
 export default function SurfPlansPage() {
@@ -260,9 +262,9 @@ export default function SurfPlansPage() {
     }
 
     const matchesSearch =
-      plan.planNumber.toLowerCase().includes(searchQuery.toLowerCase()) || // Changed searchTerm to searchQuery
-      plan.surveyTitle.toLowerCase().includes(searchQuery.toLowerCase()) || // Changed searchTerm to searchQuery
-      plan.location.toLowerCase().includes(searchQuery.toLowerCase()); // Changed searchTerm to searchQuery
+      plan.planNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      plan.surveyTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      plan.location.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "ALL" || plan.status === statusFilter;
@@ -462,10 +464,9 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("all")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${
-                activeTab === "all"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ${activeTab === "all"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -476,10 +477,9 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("person-count")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${
-                activeTab === "person-count"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ${activeTab === "person-count"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -490,10 +490,9 @@ export default function SurfPlansPage() {
             onClick={() => setActiveTab("queries")}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
-              ${
-                activeTab === "queries"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              ${activeTab === "queries"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -511,8 +510,8 @@ export default function SurfPlansPage() {
             <input
               type="text"
               placeholder="Search by plan number, title, or location..."
-              value={searchQuery} // Changed searchTerm to searchQuery
-              onChange={(e) => setSearchQuery(e.target.value)} // Changed setSearchTerm to setSearchQuery
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -659,11 +658,10 @@ export default function SurfPlansPage() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                              plan.personCountVerified
-                                ? "bg-green-100 text-green-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${plan.personCountVerified
+                              ? "bg-green-100 text-green-700"
+                              : "bg-blue-100 text-blue-700"
+                              }`}
                           >
                             {getPersonCount(plan.surveyTitle)}
                           </div>

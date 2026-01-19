@@ -6,13 +6,11 @@ import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import {
-  generateRRR,
-  getRemitaPaymentUrl,
   checkPaymentStatus,
 } from "../utils/remita";
 import {
-  notifyPaymentReceived,
   notifyLASGReceiptUploaded,
+  notifyPaymentReceived,
   notifyAccountsDisapproval,
   notifyPlanQueried,
   notifyPlanApproved,
@@ -822,8 +820,6 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     batchCode: string;
     totalAmount: number;
     reference: string | null;
-    rrr?: string; // Remita Retrieval Reference
-    paymentUrl?: string;
     email?: string;
   }>
 > {
@@ -993,9 +989,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       });
     }
 
-    // Initialize Remita RRR generation
-    let remitaRRR: string | undefined;
-    let remitaPaymentUrl: string | undefined;
+    // RRR generation removed - User will generate manually via Iframe
     let userDetails: {
       email: string;
       firstName: string;
@@ -1004,7 +998,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     } | null = null;
 
     try {
-      // Get user details for payment
+      // Get user details just for email return
       userDetails = await prisma.surfboardUser.findUnique({
         where: { id: user.id },
         select: {
@@ -1014,39 +1008,8 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
           phoneNumber: true,
         },
       });
-
-      if (userDetails?.email) {
-        const orderId =
-          batch.userPaymentRef || `COD_${batch.batchCode}_${Date.now()}`;
-
-        if (totalAmount <= 0) {
-          throw new Error("Invalid payment amount calculated");
-        }
-
-        // Generate Remita RRR
-        const rrrResult = await generateRRR({
-          orderId,
-          amount: totalAmount, // Amount in Naira
-          payerName: `${userDetails.firstName} ${userDetails.lastName}`,
-          payerEmail: userDetails.email,
-          payerPhone: userDetails.phoneNumber || undefined,
-          description: `Certificate of Deposit - Batch ${batch.batchCode} (${plans.length} plans)`,
-        });
-
-        remitaRRR = rrrResult.rrr;
-        remitaPaymentUrl = getRemitaPaymentUrl(rrrResult.rrr);
-
-        // Update batch with RRR
-        await prisma.certificateOfDepositBatch.update({
-          where: { id: batch.id },
-          data: {
-            userPaymentRef: remitaRRR, // Store RRR as reference
-          },
-        });
-      }
-    } catch (paymentError) {
-      console.error("Remita RRR generation error:", paymentError);
-      // Don't fail the batch creation, user can generate RRR later
+    } catch (err) {
+      console.error("Error fetching user details:", err);
     }
 
     // Log audit action
@@ -1092,9 +1055,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
         batchId: batch.id,
         batchCode: batch.batchCode,
         totalAmount, // Amount in NAIRA
-        rrr: remitaRRR, // Remita Retrieval Reference
-        paymentUrl: remitaPaymentUrl, // Remita payment page URL
-        reference: remitaRRR || batch.userPaymentRef,
+        reference: batch.userPaymentRef,
         email: userDetails?.email,
       },
     };
@@ -1221,6 +1182,135 @@ export async function verifyBatchPayment(
     return {
       success: false,
       error: handlePrismaError(error, "verifyBatchPayment"),
+    };
+  }
+}
+
+/**
+ * Pay with Remita RRR - Verifies a manually entered RRR and updates the batch
+ */
+export async function payWithRemitaRRR(
+  batchId: string,
+  rrr: string
+): Promise<ApiResult<{ success: boolean; status: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // 1. Find the batch
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized to pay for this batch" };
+    }
+
+    // 2. Check current status
+    if (
+      batch.paymentStatus === "LASG_PAID" ||
+      batch.paymentStatus === "USER_PAID"
+    ) {
+      return {
+        success: true,
+        data: { success: true, status: batch.paymentStatus },
+      };
+    }
+
+    // 3. Verify RRR with Remita
+    const remitaStatus = await checkPaymentStatus(rrr);
+
+    console.log("Remita Verification Result:", remitaStatus);
+
+    if (remitaStatus.status === "failed") {
+      return {
+        success: false,
+        error: `RRR Verification Failed: ${remitaStatus.message}`,
+      };
+    }
+
+    // 4. Validate Amount (Approximate check mainly - ensure it's not significantly less)
+    if (remitaStatus.amount) {
+      // Allow for small differences? Ideally should be exact.
+      const tolerance = 1.0; // 1 Naira tolerance
+      if (Math.abs(remitaStatus.amount - batch.totalAmount) > tolerance) {
+        return {
+          success: false,
+          error: `Payment amount mismatch. Paid: ₦${remitaStatus.amount}, Expected: ₦${batch.totalAmount}`,
+        };
+      }
+    }
+
+    // 5. Update Batch
+    // If PAID
+    if (remitaStatus.status === "paid" || remitaStatus.message?.toLowerCase().includes("approved")) {
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "LASG_PAID", // Direct to LASG
+          userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+        },
+      });
+
+      // Send notifications
+      const submitter = await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (submitter) {
+        try {
+          await notifyPaymentReceived({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            amount: batch.totalAmount,
+            paidBy: submitter,
+            sendEmail: true,
+          });
+
+          await notifyLASGReceiptUploaded({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            planCount: batch.planCount,
+            sendEmail: true,
+          });
+        } catch (e) {
+          console.error("Notification error", e);
+        }
+      }
+
+      return { success: true, data: { success: true, status: "LASG_PAID" } };
+    }
+
+    // IF PENDING
+    else if (remitaStatus.status === "pending") {
+      // Just update the Ref so we know what they are trying to pay with
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "PENDING_USER_PAYMENT"
+        },
+      });
+
+      return { success: true, data: { success: true, status: "PENDING" } };
+    }
+
+    return { success: false, error: "Payment status unknown or not successful" };
+
+  } catch (error) {
+    console.error("payWithRemitaRRR error:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "payWithRemitaRRR"),
     };
   }
 }
@@ -1896,10 +1986,10 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-              status: "LODGED",
-              redCopyStatus: "APPROVED",
-              dateLodged: new Date(),
-            }
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
           : {}),
       },
       select: {
