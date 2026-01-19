@@ -676,6 +676,8 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         isLive: dto.isLive ?? false,
         status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
         userId: user.id,
+        personCount: dto.personCount || 1,
+        personCountVerified: false,
       },
       select: { id: true, planNumber: true },
     });
@@ -785,6 +787,15 @@ export async function updateSurfPlan(
       data.lga = dto.lga ?? null;
       if (dto.dateOnSurveyPlan)
         data.dateOnSurveyPlan = new Date(dto.dateOnSurveyPlan);
+
+      // Update person count if provided
+      if (dto.personCount !== undefined) {
+        data.personCount = dto.personCount;
+        // Reset verified status if count changes
+        if (existing.personCount !== dto.personCount) {
+          data.personCountVerified = false;
+        }
+      }
     }
     // cert-related always allowed
     if (dto.pdfFilePaths) data.pdfFilePaths = dto.pdfFilePaths;
@@ -3511,5 +3522,51 @@ export async function updatePlanRecordCopy(
       error:
         error instanceof Error ? error.message : "Failed to update record copy",
     };
+  }
+}
+
+// Action to verify person count
+export async function verifyPersonCount(planId: string, count: number) {
+  try {
+     const user = await getAuthenticatedSurfUserFromCookie();
+     // Only Admins using this
+     if (!user || user.role === 'USER') { // Check permissions adequately
+        return { success: false, error: "Unauthorized" };
+     }
+
+     await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: {
+           personCount: count,
+           personCountVerified: true
+        }
+     });
+
+     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+     return { success: true };
+  } catch (error) {
+     return { success: false, error: handlePrismaError(error, "verifyPersonCount") };
+  }
+}
+
+// Action to query a plan
+export async function queryPlan(planId: string) {
+  try {
+     const user = await getAuthenticatedSurfUserFromCookie();
+     if (!user || user.role === 'USER') { 
+        return { success: false, error: "Unauthorized" };
+     }
+
+     await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: {
+           status: "QUERIED"
+        }
+     });
+
+     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+     return { success: true };
+  } catch (error) {
+     return { success: false, error: handlePrismaError(error, "queryPlan") };
   }
 }

@@ -29,6 +29,7 @@ import {
   getSurfboardUploadTargetsMulti,
   deleteSurfboardFileFromS3,
 } from "@/app/(projects)/(surfboard)/actions/awsActions";
+import { recognizePersonCount } from "@/app/(projects)/(surfboard)/actions/aiExtractionActions";
 import {
   generatePolygonFromPillars,
   parseCSVContent,
@@ -59,6 +60,7 @@ import {
   AIAutofillButtonCompact,
   type AIExtractedData,
 } from "./AIAutofillButton";
+import { SubmitConfirmationModal } from "./SubmitConfirmationModal";
 
 // Confirmation Modal Component using shadcn AlertDialog
 interface ConfirmationModalProps {
@@ -370,13 +372,19 @@ export default function SurfboardPlanForm({
     initial?.certificateFilePaths?.length
       ? true
       : mode === "edit"
-      ? false
-      : undefined
+        ? false
+        : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCheckingPlanNumber, setIsCheckingPlanNumber] = useState(false);
+
+  // Person Count State
+  const [personCountAI, setPersonCountAI] = useState<number | null>(null);
+  const [personCountManual, setPersonCountManual] = useState<number>(1);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [isRecognizing, setIsRecognizing] = useState(false);
 
   // 24h lock after mount only (unchanged/commented as provided)
   useEffect(() => {
@@ -448,12 +456,18 @@ export default function SurfboardPlanForm({
   // AI Extraction handler
   const handleAIExtractedData = useCallback(
     (data: AIExtractedData) => {
+      // Set AI person count if available
+      if (data.personCount) {
+        setPersonCountAI(data.personCount);
+      }
+
       // Only autofill empty fields to avoid overwriting user input
       setForm((prev) => ({
         ...prev,
         // Only set if field is empty
         ...(!prev.planNumber &&
           data.planNumber && { planNumber: data.planNumber }),
+        // Check if surveyTitle is empty AND if data.surveyTitle is present
         ...(!prev.surveyTitle &&
           data.surveyTitle && { surveyTitle: data.surveyTitle }),
         ...(!prev.deededArea && data.area && { deededArea: data.area }),
@@ -464,6 +478,8 @@ export default function SurfboardPlanForm({
 
       // Show what was extracted and applied
       const appliedFields: string[] = [];
+      if (data.personCount)
+        appliedFields.push(`Person Count (${data.personCount})`);
       if (data.planNumber && !form.planNumber)
         appliedFields.push("Plan Number");
       if (data.surveyTitle && !form.surveyTitle)
@@ -648,8 +664,7 @@ export default function SurfboardPlanForm({
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error(
-        `Failed to upload ${kind} files: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to upload ${kind} files: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -657,6 +672,14 @@ export default function SurfboardPlanForm({
 
   async function onSubmit() {
     if (!validateReq()) return;
+
+    // Instead of submitting directly, show the confirmation modal
+    setShowSubmitModal(true);
+  }
+
+  async function handleConfirmedSubmit() {
+    setShowSubmitModal(false);
+
     if (mode === "edit") {
       toast.info("Editing plan...");
     } else {
@@ -675,8 +698,27 @@ export default function SurfboardPlanForm({
       ]);
 
       const payload: SurfboardPlanDTO = {
-        ...form,
-        pillars,
+        planNumber: form.planNumber,
+        surveyTitle: form.surveyTitle,
+        planType: form.planType,
+        referencePlanNumber: form.referencePlanNumber,
+        deededArea: form.deededArea,
+        facilitator: form.facilitator,
+        pillarType: form.pillarType,
+        dateOnSurveyPlan: form.dateOnSurveyPlan,
+        ward: form.ward,
+        lcda: form.lcda || undefined,
+        lga: form.lga,
+        state: form.state,
+        geometry: form.geometry,
+        personCount: personCountManual, // Include person count
+        dateLodged:
+          form.dateLodged ||
+          (selectedCertFiles.length > 0 ||
+            (form.certificateFilePaths?.length || 0) > 0
+            ? new Date()
+            : undefined),
+        pillars: form.pillars,
         cadFilePaths: [...(form.cadFilePaths || []), ...newCadUrls],
         pdfFilePaths: [...(form.pdfFilePaths || []), ...newPdfUrls],
         certificateFilePaths: [
@@ -685,7 +727,7 @@ export default function SurfboardPlanForm({
         ],
         status:
           mode === "edit" &&
-          (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
+            (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
             ? "LODGED"
             : form.status,
       };
@@ -796,6 +838,48 @@ export default function SurfboardPlanForm({
     return Object.keys(errs).length === 0;
   }
 
+  // Calculate person count from survey title lines
+  const calculatePersonCount = (title: string): number => {
+    if (!title) return 0;
+    return title.split("\n").filter((line) => line.trim().length > 0).length;
+  };
+
+  // Handle title change and debounced recognition check
+  const handleSurveyTitleChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const newVal = e.target.value;
+    setField("surveyTitle", newVal);
+    setPersonCountManual(calculatePersonCount(newVal));
+  };
+
+  // Effect to re-run AI check on title edit if we suspect mismatch?
+  // For now, let's just use the manual "recognize" button or implicit check.
+  // The user requirement says: "even if a user edits... recognition function will be run"
+  // We can do this on blur or use a button to "Verify Count"
+
+  const handleVerifyCount = async () => {
+    if (!form.surveyTitle) return;
+    setIsRecognizing(true);
+    try {
+      const res = await recognizePersonCount(form.surveyTitle);
+      if (res.success && res.data) {
+        setPersonCountAI(res.data.count);
+        if (res.data.count !== personCountManual) {
+          toast.warning(
+            `Note: AI detected ${res.data.count} persons, but you have ${personCountManual} lines.`
+          );
+        } else {
+          toast.success(`Verified: ${res.data.count} persons detected.`);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRecognizing(false);
+    }
+  };
+
   const handleGeometryDisplay = () => {
     if (form.geometry && typeof form.geometry === "string") {
       try {
@@ -877,6 +961,25 @@ export default function SurfboardPlanForm({
       </div>
 
       <div className="mx-auto py-6 px-4">
+        <SubmitConfirmationModal
+          isOpen={showSubmitModal}
+          onConfirm={handleConfirmedSubmit}
+          onCancel={() => setShowSubmitModal(false)}
+          data={form}
+          personCount={{
+            manual: personCountManual,
+            ai: personCountAI,
+            isValid: personCountAI ? personCountAI === personCountManual : true, // Determine distinct validation logic if needed
+          }}
+          fileCounts={{
+            cad: (form.cadFilePaths?.length || 0) + selectedCadFiles.length,
+            pdf: (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length,
+            cert:
+              (form.certificateFilePaths?.length || 0) +
+              selectedCertFiles.length,
+          }}
+        />
+
         <div className="grid grid-cols-1 xl:grid-cols-[5fr_5fr] gap-8">
           {/* Left — Form */}
           <div className="space-y-6">
@@ -1139,26 +1242,58 @@ export default function SurfboardPlanForm({
 
               {/* Survey Title & Plan Type */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} htmlFor="surveyTitle">
-                    Survey Title {reqBadge}
-                  </label>
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls} htmlFor="surveyTitle">
+                      Survey Title {reqBadge}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleVerifyCount}
+                      disabled={isRecognizing || !form.surveyTitle}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                    >
+                      {isRecognizing ? (
+                        <Sparkles className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      Verify Count
+                    </button>
+                  </div>
 
-                  <input
+                  <textarea
                     id="surveyTitle"
                     value={form.surveyTitle}
-                    onChange={(e) => setField("surveyTitle", e.target.value)}
+                    onChange={handleSurveyTitleChange}
+                    onBlur={() => handleVerifyCount()} // Auto-verify on blur
+                    rows={Math.max(2, form.surveyTitle.split("\n").length)}
                     className={cn(
                       inputBase,
-                      errors.surveyTitle ? inputError : inputBorder
+                      errors.surveyTitle ? inputError : inputBorder,
+                      "min-h-[60px] resize-y"
                     )}
                     disabled={lockNonCert && mode === "edit"}
-                    placeholder="e.g., Parcel Layout for…"
+                    placeholder={`e.g., \nMR. BABATUNDE TAJUDEEN SHONUBI\nMRS. OGALA TURMAC NDIDI`}
                   />
+                  <p className={helpCls}>
+                    For multiple owners, please enter each person's name on a{" "}
+                    <strong>new line</strong>. Current Count:{" "}
+                    <strong>{personCountManual}</strong>
+                  </p>
 
                   {errors.surveyTitle && (
                     <p className={errorCls}>{errors.surveyTitle}</p>
                   )}
+
+                  {form.surveyTitle.toUpperCase().includes(" AND ") &&
+                    !form.surveyTitle.includes("\n") && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        It looks like there are multiple owners. Please separate
+                        them with a new line.
+                      </p>
+                    )}
                 </div>
 
                 <div>
@@ -1363,10 +1498,10 @@ export default function SurfboardPlanForm({
                     type="date"
                     value={
                       form.dateOnSurveyPlan &&
-                      typeof form.dateOnSurveyPlan == "object"
+                        typeof form.dateOnSurveyPlan == "object"
                         ? new Date(form.dateOnSurveyPlan)
-                            ?.toISOString()
-                            .split("T")[0]
+                          ?.toISOString()
+                          .split("T")[0]
                         : form.dateOnSurveyPlan
                     }
                     onChange={(e) =>
@@ -1423,8 +1558,8 @@ export default function SurfboardPlanForm({
                       certificateReady === undefined
                         ? ""
                         : certificateReady
-                        ? "yes"
-                        : "no"
+                          ? "yes"
+                          : "no"
                     }
                     onChange={(e) => {
                       if (e.target.value === "") setCertificateReady(undefined);
@@ -1455,11 +1590,11 @@ export default function SurfboardPlanForm({
                       id="dateLodged"
                       type="date"
                       value={
-                        form?.dateLodged && typeof form.dateLodged == "object"
-                          ? new Date(form.dateLodged)
-                              ?.toISOString()
-                              .split("T")[0]
-                          : form?.dateLodged ?? ""
+                        form?.dateLodged instanceof Date
+                          ? form.dateLodged.toISOString().split("T")[0]
+                          : typeof form?.dateLodged === "string"
+                            ? form.dateLodged
+                            : ""
                       }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
@@ -1595,8 +1730,8 @@ export default function SurfboardPlanForm({
                   {busy
                     ? "Saving..."
                     : mode === "create"
-                    ? "Create Plan"
-                    : "Save Changes"}
+                      ? "Create Plan"
+                      : "Save Changes"}
                 </button>
               </div>
             </Section>
@@ -1655,7 +1790,7 @@ export default function SurfboardPlanForm({
                                   className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
                                 >
                                   {handleGeometryDisplay()?.coordinates &&
-                                  handleGeometryDisplay()?.coordinates?.length >
+                                    handleGeometryDisplay()?.coordinates?.length >
                                     1 ? (
                                     <span>
                                       Polygon {i + 1} (
