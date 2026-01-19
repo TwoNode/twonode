@@ -5,10 +5,12 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
-import { paystack, getEnv } from "../utils/paystack";
 import {
-  notifyPaymentReceived,
+  checkPaymentStatus,
+} from "../utils/remita";
+import {
   notifyLASGReceiptUploaded,
+  notifyPaymentReceived,
   notifyAccountsDisapproval,
   notifyPlanQueried,
   notifyPlanApproved,
@@ -641,124 +643,167 @@ export async function getChartingInterpretation(
 }
 
 /**
- * Get LGA fees from settings
+ * Get zone from geometry by intersecting with Scale_of_fees dataset
+ * Returns the zone (e.g., "lagosZoneA", "lagosZoneB", etc.) or null if not found
  */
-export async function getLGAFees(): Promise<Record<string, number>> {
+export async function getZoneFromGeometry(
+  geometry: any
+): Promise<string | null> {
   try {
-    const settings = await prisma.surfboardSettings.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
+    const geometryString =
+      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
 
-    if (!settings || !settings.settings) {
-      return {};
+    const result = await prisma.$queryRaw<Array<{ Zone: string }>>`
+      SELECT "Zone"
+      FROM "Scale_of_fees"
+      WHERE ST_Intersects(
+        geom,
+        ST_SetSRID(ST_GeomFromGeoJSON(${geometryString}), 4326)
+      )
+      LIMIT 1;
+    `;
+
+    if (result?.length && result[0].Zone) {
+      return result[0].Zone;
     }
-
-    const settingsData = settings.settings as any;
-    return settingsData.lgaFees || {};
+    return null;
   } catch (err) {
-    console.error("Error fetching LGA fees:", err);
-    return {};
+    console.error("Zone intersection error:", err);
+    return null;
   }
 }
 
 /**
- * Get system charge percentage from settings
+ * Check if survey title should be charged double fee
+ * Returns true if:
+ * - More than 2 names detected (names separated by newlines or AI detection)
+ * - Ethnicity is "corporate"
  */
-export async function getSystemChargePercent(): Promise<number> {
-  try {
-    const settings = await prisma.surfboardSettings.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
-
-    if (!settings || !settings.settings) {
-      return 10; // Default 10%
-    }
-
-    const settingsData = settings.settings as any;
-    return settingsData.systemChargePercent || 10;
-  } catch (err) {
-    console.error("Error fetching system charge:", err);
-    return 10;
-  }
-}
-
-/**
- * Calculate fee for a single plan based on LGA and geometry
- */
-export async function calculatePlanFee(
-  lga: string | null,
-  geometry: any,
-  lgaFees: Record<string, number>,
-  systemChargePercent: number
-): Promise<{ fee: number; systemCharge: number; total: number }> {
-  const { computeGeometryDetails } = await import("../utils/dbUtils");
-
-  // Compute area from geometry
-  let area = 0;
-  try {
-    const { areaSqM } = computeGeometryDetails(geometry);
-    area = areaSqM;
-  } catch (error) {
-    console.error("Error computing area from geometry:", error);
+function shouldChargeDoubleFee(
+  surveyTitle: string,
+  ethnicity?: string | null
+): boolean {
+  // Check if ethnicity indicates corporate ownership
+  if (ethnicity?.toLowerCase() === "corporate") {
+    return true;
   }
 
-  // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
-  const normalizeLga = (str: string) => str.toUpperCase().replace(/[\s-]/g, "");
-  const normalizedLga = lga ? normalizeLga(lga) : null;
-  const lgaFeeKey = normalizedLga
-    ? Object.keys(lgaFees).find((key) => normalizeLga(key) === normalizedLga)
-    : null;
-  const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
+  // Count names by splitting on newlines
+  const names = surveyTitle
+    .split("\n")
+    .map((n) => n.trim())
+    .filter((n) => n.length > 0);
 
-  const fee = ratePerSqm * area;
-  const systemCharge = fee * (systemChargePercent / 100);
-  const total = fee + systemCharge;
+  if (names.length > 2) {
+    return true;
+  }
 
-  return { fee, systemCharge, total };
-}
+  // Additional heuristics for corporate detection
+  const corporateKeywords = [
+    "limited",
+    "ltd",
+    "corporation",
+    "inc",
+    "plc",
+    "company",
+    "co.",
+    "enterprises",
+    "ventures",
+    "holdings",
+    "group",
+    "associates",
+  ];
 
-/**
- * Calculate fee for multiple plans based on LGA and area
- */
-export async function calculateMultiplePlanFee(
-  plans: Array<{ lga: string | null; geometry: any }>
-): Promise<{ fee: number; systemCharge: number; total: number }> {
-  const lgaFees = await getLGAFees();
-  const systemChargePercent = await getSystemChargePercent();
-
-  const { computeGeometryDetails } = await import("../utils/dbUtils");
-
-  let totalFee = 0;
-
-  // Calculate fee for each plan
-  for (const plan of plans) {
-    try {
-      // Compute area from geometry
-      const { areaSqM } = computeGeometryDetails(plan.geometry);
-
-      // Get rate per sqm for the LGA (normalize case, remove spaces and dashes for matching)
-      const normalizeLga = (str: string) =>
-        str.toUpperCase().replace(/[\s-]/g, "");
-      const normalizedLga = plan.lga ? normalizeLga(plan.lga) : null;
-      const lgaFeeKey = normalizedLga
-        ? Object.keys(lgaFees).find(
-            (key) => normalizeLga(key) === normalizedLga
-          )
-        : null;
-      const ratePerSqm = lgaFeeKey ? lgaFees[lgaFeeKey] : 0;
-
-      // Calculate plan fee
-      totalFee += ratePerSqm * areaSqM;
-    } catch (error) {
-      console.error("Error calculating fee for plan:", error);
-      // Continue with other plans
+  const lowerTitle = surveyTitle.toLowerCase();
+  for (const keyword of corporateKeywords) {
+    if (lowerTitle.includes(keyword)) {
+      return true;
     }
   }
 
-  const systemCharge = totalFee * (systemChargePercent / 100);
-  const total = totalFee + systemCharge;
+  // Check for multiple names using "and", "&" separators
+  const andSeparators = surveyTitle
+    .split(/\s+and\s+|\s*&\s*/i)
+    .filter((n) => n.trim().length > 0);
+  if (andSeparators.length > 2) {
+    return true;
+  }
 
-  return { fee: totalFee, systemCharge, total };
+  return false;
+}
+
+/**
+ * Calculate fee for a single plan based on zone and area
+ */
+export async function calculatePlanFeeByZone(
+  zone: string,
+  areaSqM: number,
+  surveyTitle: string,
+  zoneFees: Array<{
+    range: string;
+    start: number;
+    end: number;
+    lagosZoneA: number;
+    lagosZoneB: number;
+    lagosZoneC: number;
+    lagosZoneD: number;
+  }>,
+  ethnicity?: string | null
+): Promise<{ fee: number; isDoubleFee: boolean }> {
+  // Find the fee row that matches the area range
+  const feeRow = zoneFees.find(
+    (row) => areaSqM >= row.start && areaSqM <= row.end
+  );
+
+  if (!feeRow) {
+    // If area is larger than max range, use the last row
+    const lastRow = zoneFees[zoneFees.length - 1];
+    if (areaSqM > lastRow.end) {
+      return calculateFeeFromRow(lastRow, zone, surveyTitle, ethnicity);
+    }
+    console.error(`No fee range found for area: ${areaSqM} sqm`);
+    return { fee: 0, isDoubleFee: false };
+  }
+
+  return calculateFeeFromRow(feeRow, zone, surveyTitle, ethnicity);
+}
+
+function calculateFeeFromRow(
+  feeRow: {
+    lagosZoneA: number;
+    lagosZoneB: number;
+    lagosZoneC: number;
+    lagosZoneD: number;
+  },
+  zone: string,
+  surveyTitle: string,
+  ethnicity?: string | null
+): { fee: number; isDoubleFee: boolean } {
+  // Map zone to fee amount
+  let baseFee = 0;
+  switch (zone) {
+    case "lagosZoneA":
+      baseFee = feeRow.lagosZoneA;
+      break;
+    case "lagosZoneB":
+      baseFee = feeRow.lagosZoneB;
+      break;
+    case "lagosZoneC":
+      baseFee = feeRow.lagosZoneC;
+      break;
+    case "lagosZoneD":
+      baseFee = feeRow.lagosZoneD;
+      break;
+    default:
+      console.error(`Unknown zone: ${zone}`);
+      return { fee: 0, isDoubleFee: false };
+  }
+
+  // Check for double fee
+  const isDoubleFee = shouldChargeDoubleFee(surveyTitle, ethnicity);
+  const fee = isDoubleFee ? baseFee * 2 : baseFee;
+
+  return { fee, isDoubleFee };
 }
 
 /**
@@ -775,7 +820,6 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     batchCode: string;
     totalAmount: number;
     reference: string | null;
-    paymentUrl?: string;
     email?: string;
   }>
 > {
@@ -798,6 +842,8 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
         id: true,
         planNumber: true,
         geometry: true,
+        surveyTitle: true,
+        ethnicity: true,
         lga: true,
         deededArea: true,
         redCopyFileUrl: true,
@@ -822,22 +868,63 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       };
     }
 
-    // Calculate fees for all plans
-    let totalFees = 0;
-    const planFees: Record<string, number> = {};
+    // Import needed utilities
+    const { computeGeometryDetails } = await import("../utils/dbUtils");
+    const { getZoneFees, getSystemChargePercent } = await import(
+      "./settingsActions"
+    );
 
-    const lgaFees = await getLGAFees();
+    // Get zone fees and system charge
+    const zoneFees = await getZoneFees();
     const systemChargePercent = await getSystemChargePercent();
 
+    // Calculate fees for all plans using zone-based approach
+    let totalFees = 0;
+    const planFeeData: Map<
+      string,
+      { fee: number; zone: string; isDoubleFee: boolean }
+    > = new Map();
+    const plansWithNoZone: string[] = [];
+
     for (const plan of plans) {
-      const { fee } = await calculatePlanFee(
-        plan.lga,
-        plan.geometry,
-        lgaFees,
-        systemChargePercent
+      // Get zone from geometry via spatial intersection
+      const zone = await getZoneFromGeometry(plan.geometry);
+
+      if (!zone) {
+        plansWithNoZone.push(plan.planNumber);
+        continue;
+      }
+
+      // Compute area from geometry
+      let areaSqM = 0;
+      try {
+        const details = computeGeometryDetails(plan.geometry as any);
+        areaSqM = details.areaSqM;
+      } catch (error) {
+        console.error("Error computing area for plan:", plan.planNumber, error);
+      }
+
+      // Calculate fee using zone and area
+      const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+        zone,
+        areaSqM,
+        plan.surveyTitle,
+        zoneFees,
+        plan.ethnicity
       );
-      planFees[plan.id] = fee;
+
+      planFeeData.set(plan.id, { fee, zone, isDoubleFee });
       totalFees += fee;
+    }
+
+    // Block submission if any plan has no zone
+    if (plansWithNoZone.length > 0) {
+      return {
+        success: false,
+        error: `The following plans are outside Lagos fee zones and cannot be submitted: ${plansWithNoZone.join(
+          ", "
+        )}. Please ensure the survey geometry falls within Lagos State.`,
+      };
     }
 
     // Round to 2 decimal places for currency precision
@@ -851,7 +938,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       return {
         success: false,
         error:
-          "Unable to calculate fees. Please ensure LGA fees are configured and plan area is valid.",
+          "Unable to calculate fees. Please ensure zone fees are configured and plan area is valid.",
       };
     }
 
@@ -872,12 +959,15 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       },
     });
 
-    // Update plans with batch ID and perform spatial intersection
+    // Update plans with batch ID, zone data, and perform spatial intersection
     for (const plan of plans) {
       // Get charting interpretation
       const chartingInterpretation = await getChartingInterpretation(
         plan.geometry
       );
+
+      // Get fee data for this plan
+      const feeData = planFeeData.get(plan.id);
 
       await prisma.surfboardPlan.update({
         where: { id: plan.id },
@@ -891,65 +981,35 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
           surconStatus: "PENDING",
           recordsIStatus: "PENDING",
           recordsIIStatus: "PENDING",
+          // Store zone-based fee data
+          zone: feeData?.zone,
+          codFee: feeData?.fee,
+          isDoubleFee: feeData?.isDoubleFee ?? false,
         },
       });
     }
 
-    // Initialize Paystack payment
-    let paymentUrl: string | undefined;
+    // RRR generation removed - User will generate manually via Iframe
     let userDetails: {
       email: string;
       firstName: string;
       lastName: string;
+      phoneNumber: string | null;
     } | null = null;
 
     try {
-      // Get user details for payment
+      // Get user details just for email return
       userDetails = await prisma.surfboardUser.findUnique({
         where: { id: user.id },
-        select: { email: true, firstName: true, lastName: true },
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+          phoneNumber: true,
+        },
       });
-
-      if (userDetails?.email) {
-        const reference = batch.userPaymentRef;
-        const callbackUrl = `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/surfboard/dashboard/payment/callback?reference=${reference}`;
-
-        // Convert from NAIRA (DB storage) to KOBO (Paystack API)
-        // Paystack expects amount in kobo: 1 naira = 100 kobo
-        // Round to 2 decimal places first to avoid floating point errors
-        const amountInKobo = Math.trunc(
-          (Math.trunc(totalAmount * 100) / 100) * 100
-        );
-
-        if (amountInKobo <= 0) {
-          throw new Error("Invalid payment amount calculated");
-        }
-
-        const paymentInit = await paystack.transactions.initialize(getEnv(), {
-          email: userDetails.email,
-          amount: amountInKobo, // Paystack expects amount in kobo (integer, no decimals)
-          reference,
-          callback_url: callbackUrl,
-          metadata: {
-            batchId: batch.id,
-            reference,
-            batchCode: batch.batchCode,
-            planCount: plans.length,
-            userId: user.id,
-            type: "certificate_of_deposit",
-            platform: "surfboard",
-          },
-        });
-
-        if (paymentInit?.data?.authorization_url) {
-          paymentUrl = paymentInit.data.authorization_url;
-        }
-      }
-    } catch (paymentError) {
-      console.error("Payment initialization error:", paymentError);
-      // Don't fail the batch creation, user can pay later
+    } catch (err) {
+      console.error("Error fetching user details:", err);
     }
 
     // Log audit action
@@ -994,8 +1054,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       data: {
         batchId: batch.id,
         batchCode: batch.batchCode,
-        totalAmount, // Amount in NAIRA - frontend converts to kobo (*100) for Paystack
-        paymentUrl,
+        totalAmount, // Amount in NAIRA
         reference: batch.userPaymentRef,
         email: userDetails?.email,
       },
@@ -1010,18 +1069,19 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 }
 
 /**
- * Verify Paystack payment and update batch status
+ * Verify Remita payment status and update batch
+ * Checks with Remita API to confirm payment before updating status
  */
 export async function verifyBatchPayment(
   reference: string
-): Promise<ApiResult<{ batchId: string }>> {
+): Promise<ApiResult<{ batchId: string; status: string }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
 
-    // Find batch by payment reference
+    // Find batch by payment reference (RRR)
     const batch = await prisma.certificateOfDepositBatch.findFirst({
       where: {
         userPaymentRef: reference,
@@ -1033,57 +1093,224 @@ export async function verifyBatchPayment(
       return { success: false, error: "Batch not found" };
     }
 
-    // Update batch payment status
-    await prisma.certificateOfDepositBatch.update({
-      where: { id: batch.id },
-      data: {
-        paymentStatus: "USER_PAID",
-        userPaymentDate: new Date(),
-      },
-    });
-
-    // Send notification to all Surfboard Admins
-    const submitter = await prisma.surfboardUser.findUnique({
-      where: { id: user.id },
-      select: { firstName: true, lastName: true },
-    });
-
-    if (submitter) {
-      await notifyPaymentReceived({
-        batchId: batch.id,
-        batchCode: batch.batchCode,
-        amount: batch.totalAmount,
-        paidBy: submitter,
-        sendEmail: true,
-      });
+    // Check if already paid
+    if (
+      batch.paymentStatus === "USER_PAID" ||
+      batch.paymentStatus === "LASG_PAID"
+    ) {
+      return {
+        success: true,
+        data: { batchId: batch.id, status: batch.paymentStatus },
+      };
     }
 
-    // Log audit action
-    await logAuditAction({
-      userId: user.id,
-      action: "VERIFY_PAYMENT",
-      entity: "CertificateOfDepositBatch",
-      entityId: batch.id,
-      changes: createChangeLog({
+    // Verify payment with Remita
+    const remitaStatus = await checkPaymentStatus(reference);
+
+    if (remitaStatus.status === "paid") {
+      // Update batch payment status directly to LASG_PAID
+      // This triggers MDA workflow since payment goes directly to MDA Remita account
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batch.id },
+        data: {
+          paymentStatus: "LASG_PAID",
+          userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+        },
+      });
+
+      // Send notification to all Surfboard Admins
+      const submitter = await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (submitter) {
+        await notifyPaymentReceived({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          amount: batch.totalAmount,
+          paidBy: submitter,
+          sendEmail: true,
+        });
+      }
+
+      // Notify MDA roles that batch is ready for review
+      await notifyLASGReceiptUploaded({
+        batchId: batch.id,
         batchCode: batch.batchCode,
-        reference,
-        amount: batch.totalAmount,
-        paymentStatus: "USER_PAID",
-      }),
-    });
+        planCount: batch.planCount,
+        sendEmail: true,
+      });
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
-    revalidatePath("/surfboard/dashboard/plans");
+      // Log audit action
+      await logAuditAction({
+        userId: user.id,
+        action: "VERIFY_PAYMENT",
+        entity: "CertificateOfDepositBatch",
+        entityId: batch.id,
+        changes: createChangeLog({
+          batchCode: batch.batchCode,
+          reference,
+          amount: batch.totalAmount,
+          paymentStatus: "LASG_PAID",
+          note: "Direct MDA Remita payment verified",
+        }),
+      });
 
-    return {
-      success: true,
-      data: { batchId: batch.id },
-    };
+      revalidatePath("/surf-restricted/dashboard/surf-plans");
+      revalidatePath("/surfboard/dashboard/plans");
+      revalidatePath("/surf-mda/dashboard");
+
+      return {
+        success: true,
+        data: { batchId: batch.id, status: "LASG_PAID" },
+      };
+    } else if (remitaStatus.status === "pending") {
+      return {
+        success: true,
+        data: { batchId: batch.id, status: "PENDING" },
+      };
+    } else {
+      return {
+        success: false,
+        error: remitaStatus.message || "Payment verification failed",
+      };
+    }
   } catch (error) {
     console.error("Error verifying payment:", error);
     return {
       success: false,
       error: handlePrismaError(error, "verifyBatchPayment"),
+    };
+  }
+}
+
+/**
+ * Pay with Remita RRR - Verifies a manually entered RRR and updates the batch
+ */
+export async function payWithRemitaRRR(
+  batchId: string,
+  rrr: string
+): Promise<ApiResult<{ success: boolean; status: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // 1. Find the batch
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized to pay for this batch" };
+    }
+
+    // 2. Check current status
+    if (
+      batch.paymentStatus === "LASG_PAID" ||
+      batch.paymentStatus === "USER_PAID"
+    ) {
+      return {
+        success: true,
+        data: { success: true, status: batch.paymentStatus },
+      };
+    }
+
+    // 3. Verify RRR with Remita
+    const remitaStatus = await checkPaymentStatus(rrr);
+
+    console.log("Remita Verification Result:", remitaStatus);
+
+    if (remitaStatus.status === "failed") {
+      return {
+        success: false,
+        error: `RRR Verification Failed: ${remitaStatus.message}`,
+      };
+    }
+
+    // 4. Validate Amount (Approximate check mainly - ensure it's not significantly less)
+    if (remitaStatus.amount) {
+      // Allow for small differences? Ideally should be exact.
+      const tolerance = 1.0; // 1 Naira tolerance
+      if (Math.abs(remitaStatus.amount - batch.totalAmount) > tolerance) {
+        return {
+          success: false,
+          error: `Payment amount mismatch. Paid: ₦${remitaStatus.amount}, Expected: ₦${batch.totalAmount}`,
+        };
+      }
+    }
+
+    // 5. Update Batch
+    // If PAID
+    if (remitaStatus.status === "paid" || remitaStatus.message?.toLowerCase().includes("approved")) {
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "LASG_PAID", // Direct to LASG
+          userPaymentDate: remitaStatus.paymentDate || new Date(),
+          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+        },
+      });
+
+      // Send notifications
+      const submitter = await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      });
+
+      if (submitter) {
+        try {
+          await notifyPaymentReceived({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            amount: batch.totalAmount,
+            paidBy: submitter,
+            sendEmail: true,
+          });
+
+          await notifyLASGReceiptUploaded({
+            batchId: batch.id,
+            batchCode: batch.batchCode,
+            planCount: batch.planCount,
+            sendEmail: true,
+          });
+        } catch (e) {
+          console.error("Notification error", e);
+        }
+      }
+
+      return { success: true, data: { success: true, status: "LASG_PAID" } };
+    }
+
+    // IF PENDING
+    else if (remitaStatus.status === "pending") {
+      // Just update the Ref so we know what they are trying to pay with
+      await prisma.certificateOfDepositBatch.update({
+        where: { id: batchId },
+        data: {
+          userPaymentRef: rrr,
+          paymentStatus: "PENDING_USER_PAYMENT"
+        },
+      });
+
+      return { success: true, data: { success: true, status: "PENDING" } };
+    }
+
+    return { success: false, error: "Payment status unknown or not successful" };
+
+  } catch (error) {
+    console.error("payWithRemitaRRR error:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "payWithRemitaRRR"),
     };
   }
 }
@@ -1759,10 +1986,10 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-              status: "LODGED",
-              redCopyStatus: "APPROVED",
-              dateLodged: new Date(),
-            }
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
           : {}),
       },
       select: {

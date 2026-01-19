@@ -15,6 +15,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,9 +41,9 @@ import {
   retryBatchPayment,
   verifyBatchPayment,
   deleteAllBatches,
+  payWithRemitaRRR,
 } from "../actions/codActions";
 import { useRouter } from "next/navigation";
-import PaystackPop from "@paystack/inline-js";
 import { format } from "date-fns";
 
 interface Batch {
@@ -71,16 +72,6 @@ interface SubmittedBatchesModalProps {
   onSuccess?: () => void;
 }
 
-type TransactionObject = {
-  reference: string;
-  trans: string;
-  status: string;
-  message: string;
-  transaction: string;
-  trxref: string;
-  redirecturl: string;
-};
-
 export function SubmittedBatchesModal({
   isOpen,
   onClose,
@@ -92,10 +83,13 @@ export function SubmittedBatchesModal({
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // No longer using Paystack
+  /*
   const publicKey = useMemo(
     () => process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
     []
   );
+  */
 
   // Fetch batches when modal opens
   useEffect(() => {
@@ -121,12 +115,16 @@ export function SubmittedBatchesModal({
     }
   };
 
-  const handlePayNow = async (batchId: string) => {
-    if (!publicKey) {
-      toast.error("Server Error: Misconfigured Payment setup");
-      return;
-    }
+  const [paymentBatch, setPaymentBatch] = useState<{
+    id: string;
+    batchCode: string;
+    totalAmount: number;
+  } | null>(null);
+  const [manualRRR, setManualRRR] = useState("");
+  const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
+  const [showPaymentView, setShowPaymentView] = useState(false);
 
+  const handlePayNow = async (batchId: string) => {
     setPayingBatchId(batchId);
     try {
       const result = await retryBatchPayment(batchId);
@@ -135,99 +133,68 @@ export function SubmittedBatchesModal({
         throw new Error(result.error || "Failed to initialize payment");
       }
 
-      const { reference, email, amount, batchCode } = result.data;
+      const { amount, batchCode } = result.data;
 
-      // Validate amount
-      if (!amount || typeof amount !== "number" || amount <= 0) {
-        throw new Error(`Invalid payment amount: ${amount}`);
-      }
-
-      console.log("Payment initialization data:", {
-        reference,
-        email,
-        amount,
+      setPaymentBatch({
+        id: batchId,
         batchCode,
+        totalAmount: amount,
       });
 
-      // Convert from NAIRA (server response) to KOBO (Paystack requires kobo: 1 naira = 100 kobo)
-      const amountInKobo = Math.round(amount * 100);
+      setShowPaymentView(true);
+      toast.success("Please generate and pay your Remita RRR in the window below.");
 
-      console.log("Amount in kobo:", amountInKobo);
-
-      // Initialize Paystack popup
-      const paystack = new PaystackPop();
-      paystack.newTransaction({
-        key: publicKey,
-        reference,
-        email,
-        amount: amountInKobo, // Convert to kobo
-        currency: "NGN",
-        metadata: {
-          custom_fields: [
-            {
-              display_name: "Batch ID",
-              variable_name: "batch_id",
-              value: batchId,
-            },
-            {
-              display_name: "Batch Code",
-              variable_name: "batch_code",
-              value: batchCode,
-            },
-            {
-              display_name: "Type",
-              variable_name: "type",
-              value: "certificate_of_deposit_retry",
-            },
-            {
-              display_name: "Platform",
-              variable_name: "platform",
-              value: "surfboard",
-            },
-          ],
-        },
-        onSuccess: async (transaction: TransactionObject) => {
-          try {
-            console.log("Payment successful:", transaction);
-            toast.loading("Verifying payment...", { id: "verify-payment" });
-
-            const verification = await verifyBatchPayment(reference);
-
-            toast.dismiss("verify-payment");
-
-            if (verification?.success) {
-              toast.success("Payment verified successfully!");
-
-              // Reload batches to show updated status
-              await loadBatches();
-
-              if (onSuccess) onSuccess();
-              router.refresh();
-            } else {
-              throw new Error(verification?.error || "Verification failed");
-            }
-          } catch (error: any) {
-            console.error("Verification error:", error);
-            toast.error(error.message || "Failed to verify payment");
-          } finally {
-            setPayingBatchId(null);
-          }
-        },
-        onCancel: () => {
-          toast.info("Payment cancelled");
-          setPayingBatchId(null);
-        },
-        onError: (error: { message: string }) => {
-          console.error("Payment error:", error);
-          toast.error(error.message || "Payment failed");
-          setPayingBatchId(null);
-        },
-      });
     } catch (error: any) {
       console.error("Payment initialization error:", error);
       toast.error(error?.message || "Failed to initialize payment");
+    } finally {
       setPayingBatchId(null);
     }
+  };
+
+  const handleVerifyManualRRR = async () => {
+    if (!manualRRR || manualRRR.length < 5) {
+      toast.error("Please enter a valid Remita RRR");
+      return;
+    }
+
+    if (!paymentBatch) return;
+
+    try {
+      setIsVerifyingRRR(true);
+      const result = await payWithRemitaRRR(paymentBatch.id, manualRRR);
+
+      if (result.success && result.data) {
+        if (result.data.status === "LASG_PAID") {
+          toast.success("Payment verified successfully!");
+          setShowPaymentView(false);
+          setPaymentBatch(null);
+          setManualRRR("");
+          // Reload batches to show updated status
+          await loadBatches();
+          if (onSuccess) onSuccess();
+          router.refresh();
+        } else if (result.data.status === "PENDING") {
+          toast.info("Payment is still pending on Remita. Please ensure you have paid.");
+        }
+      } else {
+        toast.error(result.error || "Failed to verify RRR");
+      }
+    } catch (error: any) {
+      console.error("Verification error:", error);
+      toast.error(error.message || "Failed to verify payment");
+    } finally {
+      setIsVerifyingRRR(false);
+    }
+  };
+
+  const handleClosePayment = () => {
+    if (showPaymentView && !confirm("Are you sure you want to close the payment window?")) {
+      return;
+    }
+    setShowPaymentView(false);
+    setPaymentBatch(null);
+    setManualRRR("");
   };
 
   const getStatusBadge = (status: string) => {
@@ -534,6 +501,87 @@ export function SubmittedBatchesModal({
           )}
         </div>
       </DialogContent>
+
+      {/* Manual Remita Payment Iframe Dialog */}
+      <Dialog open={showPaymentView} onOpenChange={handleClosePayment}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2 border-b">
+            <div className="flex justify-between items-start">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  Complete Payment for Batch {paymentBatch?.batchCode}
+                </DialogTitle>
+                <DialogDescription>
+                  Generate your RRR in the window below, pay, then paste the RRR to verify.
+                </DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
+                <p className="text-2xl font-bold text-green-700">
+                  ₦{paymentBatch?.totalAmount.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Verification Bar */}
+          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
+            <div className="flex-1 w-full">
+              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                Enter your generated RRR here to verify payment
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="manual-rrr"
+                  type="text"
+                  placeholder="e.g. 1234-5678-9012"
+                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
+                  value={manualRRR}
+                  onChange={(e) => setManualRRR(e.target.value)}
+                />
+                <Button
+                  onClick={handleVerifyManualRRR}
+                  disabled={isVerifyingRRR || !manualRRR}
+                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
+                >
+                  {isVerifyingRRR ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Verify & Submit
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Remita Iframe Area */}
+          <div className="flex-1 bg-gray-100 relative">
+            <iframe
+              src="https://login.remita.net/remita/lirs/internal/pay.reg"
+              className="w-full h-full border-none"
+              title="Remita Payment Portal"
+            />
+            <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
+              <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
+                <strong>Tip:</strong> Search for "Lagos State Surveyor General" to generate your RRR.
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-4 border-t bg-gray-50">
+            <Button variant="ghost" onClick={handleClosePayment} className="text-gray-500">
+              Close & Pay Later
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

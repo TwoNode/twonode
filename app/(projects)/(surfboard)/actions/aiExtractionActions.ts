@@ -17,6 +17,7 @@ export interface AIExtractedData {
     northing: string;
     easting: string;
   }>;
+  personCount?: number;
 }
 
 /**
@@ -71,7 +72,11 @@ DOCUMENT STRUCTURE (Top to Bottom):
    RULES:
    - Remove leading/trailing dashes "-" and whitespace
    - Keep name exactly as shown (with titles like MR., MRS., DR.)
-   - If multiple owners, include "AND" between names
+   - If multiple owners (separated by "AND", "&", ","), PUT EACH PERSON ON A NEW LINE ("\\n").
+     Example: "MR. A AND MRS. B" -> "MR. A\\nMRS. B"
+   - Extract all person names from the following string. 
+      If there are multiple names separated by words like "AND", "&", or commas ",", place each name on a new line (\n). 
+      Preserve titles (like Mr., Mrs., Dr., Prof., Phd., Professor, Alhaji, Alh, Pastor, Bishop, Engr, etc.) and name order. 
    - EXCLUDE: Company info at bottom (surveyor details)
 
 3. LOCALITY (Property Address):
@@ -160,6 +165,7 @@ Return ONLY valid JSON (no markdown, no code fences, no explanation):
 {
   "planNumber": "AAA/LA/1886/2024/D004",
   "surveyTitle": "MRS. BOLANLE OLUTAYO OMOTAYO",
+  "personCount": 1,
   "locality": "AT NO 26, FREEDOM CLOSE, OFF GBEMISOLA STREET, ADAMO, IKORODU",
   "area": "558.078 SQ. MTS",
   "date": "2024-09-02",
@@ -219,13 +225,17 @@ function parseAIResponse(text: string): AIExtractedData {
     surveyTitle: obj.surveyTitle
       ? normalizeSurveyTitle(String(obj.surveyTitle))
       : "",
-    locality: obj.locality 
-      ? normalizeLocality(String(obj.locality)) 
-      : "",
+    personCount: typeof obj.personCount === "number" ? obj.personCount : 1,
+    locality: obj.locality ? normalizeLocality(String(obj.locality)) : "",
     area: obj.area ? normalizeArea(String(obj.area).trim()) : "",
     date: obj.date ? normalizeDate(String(obj.date).trim()) : "",
     coordinates: [],
   };
+
+  // If personCount is missing but we have newlines in title, count them
+  if (!obj.personCount && result.surveyTitle) {
+    result.personCount = result.surveyTitle.split("\n").length;
+  }
 
   // Process coordinates array
   if (Array.isArray(obj.coordinates)) {
@@ -241,7 +251,12 @@ function parseAIResponse(text: string): AIExtractedData {
           : "";
 
         // Only include if both coordinates are present and valid
-        if (northing && easting && /^\d+\.?\d*$/.test(northing) && /^\d+\.?\d*$/.test(easting)) {
+        if (
+          northing &&
+          easting &&
+          /^\d+\.?\d*$/.test(northing) &&
+          /^\d+\.?\d*$/.test(easting)
+        ) {
           return { northing, easting };
         }
         return null;
@@ -259,26 +274,32 @@ function parseAIResponse(text: string): AIExtractedData {
  */
 function normalizePlanNumber(planNumber: string): string {
   if (!planNumber) return "";
-  return planNumber
-    .toUpperCase()
-    .trim()
-    .replace(/\s+/g, "")
-    // Remove any X placeholder patterns (like XXXXXXXXX)
-    .replace(/^X+$/, "");
+  return (
+    planNumber
+      .toUpperCase()
+      .trim()
+      .replace(/\s+/g, "")
+      // Remove any X placeholder patterns (like XXXXXXXXX)
+      .replace(/^X+$/, "")
+  );
 }
 
 /**
  * Normalize survey title - clean up dashes and extra whitespace
+ * BUT PRESERVE NEWLINES for multiple owners
  */
 function normalizeSurveyTitle(title: string): string {
   if (!title) return "";
-  return title
-    .trim()
-    // Remove leading/trailing dashes with optional spaces
-    .replace(/^[-\s]+|[-\s]+$/g, "")
-    // Collapse multiple spaces
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    title
+      .trim()
+      // Remove leading/trailing dashes with optional spaces
+      .replace(/^[-\s]+|[-\s]+$/g, "")
+      // Collapse multiple spaces but keep newlines
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s*\n/g, "\n") // Collapse multiple newlines
+      .trim()
+  );
 }
 
 /**
@@ -286,7 +307,7 @@ function normalizeSurveyTitle(title: string): string {
  */
 function normalizeLocality(locality: string): string {
   if (!locality) return "";
-  
+
   let cleaned = locality
     .trim()
     // Remove leading/trailing dashes with optional spaces
@@ -298,15 +319,17 @@ function normalizeLocality(locality: string): string {
     // Fix comma spacing
     .replace(/\s*,\s*/g, ", ")
     .trim();
-  
+
   // Ensure it doesn't end with LOCAL GOVT info (should stop before that)
-  const lgaIndex = cleaned.search(/,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i);
+  const lgaIndex = cleaned.search(
+    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i
+  );
   if (lgaIndex > 0) {
     cleaned = cleaned.substring(0, lgaIndex).trim();
     // Remove trailing comma if present
     cleaned = cleaned.replace(/,\s*$/, "");
   }
-  
+
   return cleaned;
 }
 
@@ -318,17 +341,20 @@ function normalizeArea(area: string): string {
 
   // Remove surrounding dashes
   area = area.replace(/^[-\s]+|[-\s]+$/g, "");
-  
+
   // Extract just the numeric value and unit
-  const match = area.match(/(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i);
+  const match = area.match(
+    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i
+  );
   if (match) {
     // Clean up the number (remove commas and internal spaces)
     const num = match[1].replace(/[,\s]/g, "");
-    const unit = match[2].toUpperCase()
+    const unit = match[2]
+      .toUpperCase()
       .replace(/\s+/g, "")
       .replace(/SQ\.?M(?:TS?|ETRES?)?\.?/i, "SQ. MTS")
       .replace(/HA\.?/i, "HA");
-    
+
     return `${num} ${unit}`;
   }
 
@@ -435,7 +461,7 @@ function monthNameToNumber(name: string): number | null {
  */
 function preprocessExtractedText(text: string): string {
   if (!text) return "";
-  
+
   let processed = text
     // Normalize line endings
     .replace(/\r\n/g, "\n")
@@ -460,7 +486,7 @@ function preprocessExtractedText(text: string): string {
     .replace(/-{4,}/g, "---")
     // Collapse multiple newlines
     .replace(/\n{4,}/g, "\n\n\n");
-  
+
   return processed.trim();
 }
 
@@ -493,7 +519,7 @@ export async function extractSurveyPlanDataFromText(
 
     // Preprocess the extracted text
     let payloadText = preprocessExtractedText(extractedText);
-    
+
     // Truncate if needed while preserving important parts
     const MAX_CHARS = 25000;
     if (payloadText.length > MAX_CHARS) {
@@ -503,7 +529,6 @@ export async function extractSurveyPlanDataFromText(
         "\n\n[...CONTENT TRUNCATED...]\n\n" +
         payloadText.slice(-10000);
     }
-
 
     // Prepare API request with detailed extraction instructions
     const userPrompt = `Extract survey plan data from this Nigerian cadastral survey plan (Lagos State).
@@ -527,7 +552,9 @@ CRITICAL REMINDERS:
 - Coordinates may have spaces like "737 016.246mN" - remove spaces to get "737016.246"
 - If "SAID TO BELONG TO" is followed by dashes, the name is after the dashes
 
-Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, locality, area, date, coordinates`;
+- Separate multiple owners with NEWLINEs
+
+Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, personCount, locality, area, date, coordinates`;
 
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -639,3 +666,69 @@ export async function extractSurveyPlanDataFromPdf(
   };
 }
 
+/**
+ * Dedicated action to recognize/validate person count from a survey title
+ * Used for confirming user edits or verifying AI extraction
+ */
+export async function recognizePersonCount(
+  surveyTitle: string
+): Promise<ApiResult<{ count: number; names: string[] }>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (
+      !surveyTitle ||
+      typeof surveyTitle !== "string" ||
+      !surveyTitle.trim()
+    ) {
+      return { success: false, error: "Invalid survey title" };
+    }
+
+    const prompt = `Analyze this Nigerian land survey title: "${surveyTitle}"
+    
+    Identify how many distinct legal persons/owners are listed.
+    Owners might be individuals (Mr. A, Mrs. B) or companies or groups.
+    "AND" usually separates owners.
+    
+    Return JSON: { "count": number, "names": ["Name 1", "Name 2"] }`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) throw new Error("AI Request failed");
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    const jsonStr = extractJsonFromResponse(content);
+    if (!jsonStr) throw new Error("Invalid AI response");
+
+    const result = JSON.parse(jsonStr);
+
+    return {
+      success: true,
+      data: {
+        count: result.count || 1,
+        names: result.names || [surveyTitle],
+      },
+    };
+  } catch (error) {
+    console.error("Error recognizing person count:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to recognize persons",
+    };
+  }
+}

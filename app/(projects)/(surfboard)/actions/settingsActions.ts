@@ -6,39 +6,15 @@ import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
-
-interface LGAFees {
-  [lga: string]: number;
-}
+import { COD_FEES, type ZoneFeeRow } from "../utils/CoDFees";
 
 interface SurfboardSettingsData {
-  lgaFees: LGAFees;
+  zoneFees: ZoneFeeRow[];
   systemChargePercent: number;
 }
 
 const DEFAULT_SETTINGS: SurfboardSettingsData = {
-  lgaFees: {
-    Agege: 90,
-    "Ajeromi-Ifelodun": 60,
-    Alimosho: 60,
-    "Amuwo-Odofin": 60,
-    Apapa: 60,
-    Badagry: 70,
-    Epe: 60,
-    "Eti-Osa": 50,
-    "Ibeju-Lekki": 60,
-    "Ifako-Ijaiye": 90,
-    Ikeja: 30,
-    Ikorodu: 20,
-    Kosofe: 60,
-    "Lagos Island": 60,
-    "Lagos Mainland": 60,
-    Mushin: 20,
-    Ojo: 60,
-    "Oshodi-Isolo": 60,
-    Shomolu: 30,
-    Surulere: 60,
-  },
+  zoneFees: COD_FEES,
   systemChargePercent: 10,
 };
 
@@ -59,7 +35,7 @@ export async function getCurrentSettings(): Promise<
     });
 
     if (!settings || !settings.settings) {
-      // Return default settings with Lagos LGA rates BY SAVING DEFAULT SETTINGS
+      // Return default settings with zone fees BY SAVING DEFAULT SETTINGS
       await prisma.surfboardSettings.create({
         data: {
           settings: DEFAULT_SETTINGS as any,
@@ -71,31 +47,7 @@ export async function getCurrentSettings(): Promise<
       revalidatePath("/surf-restricted/dashboard/cod-settings");
       return {
         success: true,
-        data: {
-          lgaFees: {
-            Agege: 90,
-            "Ajeromi-Ifelodun": 60,
-            Alimosho: 60,
-            "Amuwo-Odofin": 60,
-            Apapa: 60,
-            Badagry: 70,
-            Epe: 60,
-            "Eti-Osa": 50,
-            "Ibeju-Lekki": 60,
-            "Ifako-Ijaiye": 90,
-            Ikeja: 30,
-            Ikorodu: 20,
-            Kosofe: 60,
-            "Lagos Island": 60,
-            "Lagos Mainland": 60,
-            Mushin: 20,
-            Ojo: 60,
-            "Oshodi-Isolo": 60,
-            Shomolu: 30,
-            Surulere: 60,
-          },
-          systemChargePercent: 10,
-        },
+        data: DEFAULT_SETTINGS,
       };
     }
 
@@ -103,7 +55,7 @@ export async function getCurrentSettings(): Promise<
     return {
       success: true,
       data: {
-        lgaFees: settingsData.lgaFees || {},
+        zoneFees: settingsData.zoneFees || COD_FEES,
         systemChargePercent: settingsData.systemChargePercent || 10,
       },
     };
@@ -113,6 +65,48 @@ export async function getCurrentSettings(): Promise<
       success: false,
       error: handlePrismaError(error, "getCurrentSettings"),
     };
+  }
+}
+
+/**
+ * Get zone fees (for use in codActions.ts)
+ */
+export async function getZoneFees(): Promise<ZoneFeeRow[]> {
+  try {
+    const settings = await prisma.surfboardSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (!settings || !settings.settings) {
+      return COD_FEES;
+    }
+
+    const settingsData = settings.settings as any;
+    return settingsData.zoneFees || COD_FEES;
+  } catch (err) {
+    console.error("Error fetching zone fees:", err);
+    return COD_FEES;
+  }
+}
+
+/**
+ * Get system charge percentage
+ */
+export async function getSystemChargePercent(): Promise<number> {
+  try {
+    const settings = await prisma.surfboardSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (!settings || !settings.settings) {
+      return 10; // Default 10%
+    }
+
+    const settingsData = settings.settings as any;
+    return settingsData.systemChargePercent || 10;
+  } catch (err) {
+    console.error("Error fetching system charge:", err);
+    return 10;
   }
 }
 
@@ -149,7 +143,7 @@ export async function updateSettings(
       entity: "SurfboardSettings",
       entityId: newSettingsRecord.id,
       changes: createChangeLog({
-        lgaFees: newSettings.lgaFees,
+        zoneFees: `${newSettings.zoneFees.length} fee ranges`,
         systemChargePercent: newSettings.systemChargePercent,
       }),
     });
