@@ -1,0 +1,177 @@
+[
+  {
+    "billerId": "C0000264104",
+    "billerName": "9-Mobile",
+    "billerShortName": "9-Mobile",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952127/Biller%20API%20Images/9mobile_f3ctnl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "SPECSELECTRICITY",
+    "billerName": "ABUJA ELECTRICITY DISTRIBUTION COMPANY",
+    "billerShortName": "ABUJA ELECTRICITY DISTRIBUTION COMPANY",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952125/Biller%20API%20Images/Abuja_Electric_voosmh.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000264103",
+    "billerName": "AIRTEL",
+    "billerShortName": "AIRTEL",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952127/Biller%20API%20Images/Airtel_avwvem.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000168838",
+    "billerName": "Black World",
+    "billerShortName": "Black World",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000190361",
+    "billerName": "Dark Fruit Inc",
+    "billerShortName": "Dark Fruit Inc",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000120293",
+    "billerName": "EKO ELECTRICITY DISTRIBUTION PLC",
+    "billerShortName": "EKO ELECTRICITY DISTRIBUTION PLC",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952125/Biller%20API%20Images/Eko_Electric_1_g8siit.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000164693",
+    "billerName": "Enugu Electricity Distribution Company (EEDC)",
+    "billerShortName": "Enugu Electricity Distribution Company (EEDC)",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952125/Biller%20API%20Images/Enugu_Electric_estzsa.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "S0000572202",
+    "billerName": "FEDERAL ROAD SAFETY CORPS",
+    "billerShortName": "FEDERAL ROAD SAFETY CORPS",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1712256663/FRSC-1_ix2tsg.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "DEMOMDA",
+    "billerName": "GENESIS GROUP",
+    "billerShortName": "GENESIS GROUP",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000264101",
+    "billerName": "GLO",
+    "billerShortName": "GLO",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/GLO_kmutze.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000164691",
+    "billerName": "Ibadan Electricity Distribution Company (IBEDC)",
+    "billerShortName": "Ibadan Electricity Distribution Company (IBEDC)",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952126/Biller%20API%20Images/Ibadan_Electric_ukkdyl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000164682",
+    "billerName": "Ikeja Electric",
+    "billerShortName": "Ikeja Electric",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952127/Biller%20API%20Images/Ikeja_Electric_whxao0.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "JAMB",
+    "billerName": "JOINT ADMISSIONS MATRICULATION BOARD -(JAMB) - 051700500100",
+    "billerShortName": "JOINT ADMISSIONS MATRICULATION BOARD -(JAMB) - 051700500100",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "JEDC",
+    "billerName": "JOS ELECTRICITY DISTRIBUTION COMPANY",
+    "billerShortName": "JOS ELECTRICITY DISTRIBUTION COMPANY",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952126/Biller%20API%20Images/Jos_Electric_mled2q.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000288503",
+    "billerName": "KEDCO ( KADUNA ELECTRICITY DISTRIBUTION COMPANY)",
+    "billerShortName": "KEDCO ( KADUNA ELECTRICITY DISTRIBUTION COMPANY)",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952127/Biller%20API%20Images/Kaduna_Electric_ldxrem.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000263754",
+    "billerName": "MTNN",
+    "billerShortName": "MTNN",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/MTN_cngsta.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000566058",
+    "billerName": "Michelle  World",
+    "billerShortName": "Michelle  World",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "QATEST",
+    "billerName": "NSITF",
+    "billerShortName": "NSITF",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000242328",
+    "billerName": "PORT HARCOURT ELECTRICITY DISTRIBUTION COMPANY ( PHED )",
+    "billerShortName": "PORT HARCOURT ELECTRICITY DISTRIBUTION COMPANY ( PHED )",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952127/Biller%20API%20Images/Port_Harcourt_Electric_b8jurq.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "QADEMO",
+    "billerName": "QA CORPORATION",
+    "billerShortName": "QA CORPORATION",
+    "billerLogoUrl": null,
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000268894",
+    "billerName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerShortName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/RCCG_Electric_lm0whl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000268894",
+    "billerName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerShortName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/RCCG_Electric_lm0whl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000268894",
+    "billerName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerShortName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/RCCG_Electric_lm0whl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "C0000268894",
+    "billerName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerShortName": "RCCG ELECTRICAL POWER DEPARTMENT",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1673952128/Biller%20API%20Images/RCCG_Electric_lm0whl.png",
+    "countryCode": "NGN"
+  },
+  {
+    "billerId": "S0000573002",
+    "billerName": "UNIVERSITY OF IBADAN",
+    "billerShortName": "UNIVERSITY OF IBADAN",
+    "billerLogoUrl": "https://res.cloudinary.com/remita/image/upload/v1713520817/AU_REC_logos_-_2022-04-04T113109.892_xbopn8.png",
+    "countryCode": "NGN"
+  }
+]
