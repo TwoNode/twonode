@@ -372,8 +372,8 @@ export default function SurfboardPlanForm({
     initial?.certificateFilePaths?.length
       ? true
       : mode === "edit"
-      ? false
-      : undefined
+        ? false
+        : undefined
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -604,43 +604,6 @@ export default function SurfboardPlanForm({
     }
   }
 
-  // --- Duplicate validator kept as-is to avoid any behavior risk ---
-  function ___validateReq() {
-    const errs: Record<string, string> = {};
-    if (!form.planNumber?.trim()) errs.planNumber = "Required";
-    if (!form.surveyTitle?.trim()) errs.surveyTitle = "Required";
-    if (!form.deededArea?.trim()) errs.deededArea = "Required";
-    if (!form.facilitator?.trim()) errs.facilitator = "Required";
-    if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
-
-    const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
-    const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
-    if (cadCount < 1) errs.cad = "At least one CAD file is required";
-    if (pdfCount < 1) errs.pdf = "At least one PDF file is required";
-
-    if (certificateReady) {
-      const certCount =
-        (form.certificateFilePaths?.length || 0) + selectedCertFiles.length;
-      if (certCount < 1) errs.cert = "Certificate file required";
-      if (!form.dateLodged?.toString()) errs.dateLodged = "Required";
-    }
-
-    if (showReferenceField && !form.referencePlanNumber?.trim()) {
-      errs.referencePlanNumber = "Required";
-    }
-
-    const overs = [
-      ...selectedCadFiles,
-      ...selectedPdfFiles,
-      ...selectedCertFiles,
-    ].filter((f) => f.size > MAX_FILE_BYTES);
-    if (overs.length) errs.files = "Some selected files exceed 50MB";
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
   // Upload helper (unchanged)
   async function uploadSelected(
     kind: "cad" | "pdf" | "certificate",
@@ -664,8 +627,7 @@ export default function SurfboardPlanForm({
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error(
-        `Failed to upload ${kind} files: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to upload ${kind} files: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
@@ -710,15 +672,17 @@ export default function SurfboardPlanForm({
         ward: form.ward,
         lcda: form.lcda || undefined,
         lga: form.lga,
+        state: form.state,
+        locality: form.locality,
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         dateLodged:
           form.dateLodged ||
           (selectedCertFiles.length > 0 ||
-          (form.certificateFilePaths?.length || 0) > 0
-            ? new Date()
+            (form.certificateFilePaths?.length || 0) > 0
+            ? new Date().toISOString()
             : undefined),
-        pillars: form.pillars,
+        pillars: pillars, // Use local pillars state from CSV upload
         cadFilePaths: [...(form.cadFilePaths || []), ...newCadUrls],
         pdfFilePaths: [...(form.pdfFilePaths || []), ...newPdfUrls],
         certificateFilePaths: [
@@ -727,7 +691,7 @@ export default function SurfboardPlanForm({
         ],
         status:
           mode === "edit" &&
-          (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
+            (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
             ? "LODGED"
             : form.status,
       };
@@ -801,7 +765,6 @@ export default function SurfboardPlanForm({
     if (!form.deededArea?.trim()) errs.deededArea = "Required";
     if (!form.facilitator?.trim()) errs.facilitator = "Required";
     if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    console.log(form);
     if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
 
     // Add validation for CSV upload (pillars)
@@ -1498,10 +1461,10 @@ export default function SurfboardPlanForm({
                     type="date"
                     value={
                       form.dateOnSurveyPlan &&
-                      typeof form.dateOnSurveyPlan == "object"
+                        typeof form.dateOnSurveyPlan == "object"
                         ? new Date(form.dateOnSurveyPlan)
-                            ?.toISOString()
-                            .split("T")[0]
+                          ?.toISOString()
+                          .split("T")[0]
                         : form.dateOnSurveyPlan
                     }
                     onChange={(e) =>
@@ -1558,8 +1521,8 @@ export default function SurfboardPlanForm({
                       certificateReady === undefined
                         ? ""
                         : certificateReady
-                        ? "yes"
-                        : "no"
+                          ? "yes"
+                          : "no"
                     }
                     onChange={(e) => {
                       if (e.target.value === "") setCertificateReady(undefined);
@@ -1590,11 +1553,9 @@ export default function SurfboardPlanForm({
                       id="dateLodged"
                       type="date"
                       value={
-                        form?.dateLodged && typeof form.dateLodged == "object"
-                          ? new Date(form.dateLodged)
-                              ?.toISOString()
-                              .split("T")[0]
-                          : form?.dateLodged ?? ""
+                        form?.dateLodged
+                          ? new Date(form.dateLodged).toISOString().split("T")[0]
+                          : ""
                       }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
@@ -1730,8 +1691,8 @@ export default function SurfboardPlanForm({
                   {busy
                     ? "Saving..."
                     : mode === "create"
-                    ? "Create Plan"
-                    : "Save Changes"}
+                      ? "Create Plan"
+                      : "Save Changes"}
                 </button>
               </div>
             </Section>
@@ -1790,7 +1751,7 @@ export default function SurfboardPlanForm({
                                   className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
                                 >
                                   {handleGeometryDisplay()?.coordinates &&
-                                  handleGeometryDisplay()?.coordinates?.length >
+                                    handleGeometryDisplay()?.coordinates?.length >
                                     1 ? (
                                     <span>
                                       Polygon {i + 1} (
