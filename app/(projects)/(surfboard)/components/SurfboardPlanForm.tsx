@@ -412,9 +412,9 @@ export default function SurfboardPlanForm({
   }, []);
 
   // Pillars (unchanged)
-  const [pillars, setPillars] = useState<PillarData[]>([
-    ...(initial?.pillars || []),
-  ]);
+  const [pillars, setPillars] = useState<PillarData[]>(
+    Array.isArray(initial?.pillars) ? initial.pillars : []
+  );
 
   // Reference Plan Combo (unchanged logic)
   const [refOptions, setRefOptions] = useState<string[]>([]);
@@ -533,29 +533,7 @@ export default function SurfboardPlanForm({
     setForm((f) => ({ ...f, [key]: val }));
   }
 
-  // Map callback (unchanged)
-  const handleAdminData = (data: {
-    geometry?: any;
-    attributes?: any;
-    pillars?: PillarData[];
-  }) => {
-    if (!lockNonCert || mode === "create") {
-      setForm((prev) => ({
-        ...prev,
-        ...(data.geometry !== undefined && { geometry: data.geometry }),
-        ...(data.attributes?.ward !== undefined && {
-          ward: data.attributes?.ward,
-        }),
-        ...(data.attributes?.lcda !== undefined && {
-          lcda: data.attributes?.lcda,
-        }),
-        ...(data.attributes?.lga !== undefined && {
-          lga: data.attributes?.lga,
-        }),
-        ...(data.pillars !== undefined && { pillars: data.pillars }),
-      }));
-    }
-  };
+
 
   // CSV upload (unchanged logic)
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {

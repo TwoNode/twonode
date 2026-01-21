@@ -634,6 +634,12 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
     ) {
       throw new Error("Missing required fields");
     }
+    if (!dto.geometry) {
+      throw new Error("Geometry is required");
+    }
+    if (!dto.pillars || (Array.isArray(dto.pillars) && dto.pillars.length < 3)) {
+      throw new Error("At least 3 pillars are required");
+    }
     if ((dto.cadFilePaths?.length || 0) < 1)
       throw new Error("At least one CAD file is required");
     if ((dto.pdfFilePaths?.length || 0) < 1)
