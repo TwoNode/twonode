@@ -736,6 +736,11 @@ export async function updateSurfPlan(
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) throw new Error("User not authenticated");
 
+    console.log("updateSurfPlan called with:", {
+      id: dto.id,
+      planNumber: dto.planNumber,
+    });
+
     if (!dto.id) throw new Error("Missing id");
 
     let existing;
@@ -769,10 +774,16 @@ export async function updateSurfPlan(
     let geometry = dto.geometry;
 
     try {
-      if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
-
-      if (typeof geometry === "string") geometry = JSON.parse(geometry);
+      if (typeof dto.geometry === "string") {
+        geometry = JSON.parse(dto.geometry);
+      }
+      // handle double stringifying if necessary
+      if (typeof geometry === "string") {
+        geometry = JSON.parse(geometry);
+      }
     } catch (error) {
+      console.error("Error parsing geometry:", error);
+      // Fallback to original if parse fails, though likely won't work if it's an invalid string
       geometry = dto.geometry;
     }
 
