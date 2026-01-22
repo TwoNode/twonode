@@ -412,9 +412,9 @@ export default function SurfboardPlanForm({
   }, []);
 
   // Pillars (unchanged)
-  const [pillars, setPillars] = useState<PillarData[]>([
-    ...(initial?.pillars || []),
-  ]);
+  const [pillars, setPillars] = useState<PillarData[]>(
+    Array.isArray(initial?.pillars) ? initial.pillars : []
+  );
 
   // Reference Plan Combo (unchanged logic)
   const [refOptions, setRefOptions] = useState<string[]>([]);
@@ -533,29 +533,7 @@ export default function SurfboardPlanForm({
     setForm((f) => ({ ...f, [key]: val }));
   }
 
-  // Map callback (unchanged)
-  const handleAdminData = (data: {
-    geometry?: any;
-    attributes?: any;
-    pillars?: PillarData[];
-  }) => {
-    if (!lockNonCert || mode === "create") {
-      setForm((prev) => ({
-        ...prev,
-        ...(data.geometry !== undefined && { geometry: data.geometry }),
-        ...(data.attributes?.ward !== undefined && {
-          ward: data.attributes?.ward,
-        }),
-        ...(data.attributes?.lcda !== undefined && {
-          lcda: data.attributes?.lcda,
-        }),
-        ...(data.attributes?.lga !== undefined && {
-          lga: data.attributes?.lga,
-        }),
-        ...(data.pillars !== undefined && { pillars: data.pillars }),
-      }));
-    }
-  };
+
 
   // CSV upload (unchanged logic)
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -602,43 +580,6 @@ export default function SurfboardPlanForm({
     } catch (err: any) {
       toast.error(err?.message || "Failed to parse CSV");
     }
-  }
-
-  // --- Duplicate validator kept as-is to avoid any behavior risk ---
-  function ___validateReq() {
-    const errs: Record<string, string> = {};
-    if (!form.planNumber?.trim()) errs.planNumber = "Required";
-    if (!form.surveyTitle?.trim()) errs.surveyTitle = "Required";
-    if (!form.deededArea?.trim()) errs.deededArea = "Required";
-    if (!form.facilitator?.trim()) errs.facilitator = "Required";
-    if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
-
-    const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
-    const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
-    if (cadCount < 1) errs.cad = "At least one CAD file is required";
-    if (pdfCount < 1) errs.pdf = "At least one PDF file is required";
-
-    if (certificateReady) {
-      const certCount =
-        (form.certificateFilePaths?.length || 0) + selectedCertFiles.length;
-      if (certCount < 1) errs.cert = "Certificate file required";
-      if (!form.dateLodged?.toString()) errs.dateLodged = "Required";
-    }
-
-    if (showReferenceField && !form.referencePlanNumber?.trim()) {
-      errs.referencePlanNumber = "Required";
-    }
-
-    const overs = [
-      ...selectedCadFiles,
-      ...selectedPdfFiles,
-      ...selectedCertFiles,
-    ].filter((f) => f.size > MAX_FILE_BYTES);
-    if (overs.length) errs.files = "Some selected files exceed 50MB";
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
   }
 
   // Upload helper (unchanged)
@@ -710,15 +651,16 @@ export default function SurfboardPlanForm({
         lcda: form.lcda || undefined,
         lga: form.lga,
         state: form.state,
+        locality: form.locality,
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         dateLodged:
           form.dateLodged ||
           (selectedCertFiles.length > 0 ||
             (form.certificateFilePaths?.length || 0) > 0
-            ? new Date()
+            ? new Date().toISOString()
             : undefined),
-        pillars: form.pillars,
+        pillars: pillars, // Use local pillars state from CSV upload
         cadFilePaths: [...(form.cadFilePaths || []), ...newCadUrls],
         pdfFilePaths: [...(form.pdfFilePaths || []), ...newPdfUrls],
         certificateFilePaths: [
@@ -801,7 +743,6 @@ export default function SurfboardPlanForm({
     if (!form.deededArea?.trim()) errs.deededArea = "Required";
     if (!form.facilitator?.trim()) errs.facilitator = "Required";
     if (!form.pillarType?.trim()) errs.pillarType = "Required";
-    console.log(form);
     if (!form.dateOnSurveyPlan) errs.dateOnSurveyPlan = "Required";
 
     // Add validation for CSV upload (pillars)
@@ -1590,11 +1531,9 @@ export default function SurfboardPlanForm({
                       id="dateLodged"
                       type="date"
                       value={
-                        form?.dateLodged instanceof Date
-                          ? form.dateLodged.toISOString().split("T")[0]
-                          : typeof form?.dateLodged === "string"
-                            ? form.dateLodged
-                            : ""
+                        form?.dateLodged
+                          ? new Date(form.dateLodged).toISOString().split("T")[0]
+                          : ""
                       }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
