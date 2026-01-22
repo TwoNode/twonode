@@ -411,10 +411,20 @@ export default function SurfboardPlanForm({
     })();
   }, []);
 
-  // Pillars (unchanged)
-  const [pillars, setPillars] = useState<PillarData[]>(
-    Array.isArray(initial?.pillars) ? initial.pillars : []
-  );
+  // Pillars (safely handle JSON string from DB)
+  const [pillars, setPillars] = useState<PillarData[]>(() => {
+    const raw = initial?.pillars;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        console.error("Failed to parse pillars JSON:", e);
+        return [];
+      }
+    }
+    return [];
+  });
 
   // Reference Plan Combo (unchanged logic)
   const [refOptions, setRefOptions] = useState<string[]>([]);
@@ -615,6 +625,7 @@ export default function SurfboardPlanForm({
     if (!validateReq()) return;
 
     // Instead of submitting directly, show the confirmation modal
+    console.log("Validation passed, showing submit modal");
     setShowSubmitModal(true);
   }
 
@@ -639,6 +650,7 @@ export default function SurfboardPlanForm({
       ]);
 
       const payload: SurfboardPlanDTO = {
+        id: form.id,
         planNumber: form.planNumber,
         surveyTitle: form.surveyTitle,
         planType: form.planType,
