@@ -134,6 +134,7 @@ export async function createOrUpdateSubscription({
   paidAt,
   nextPaymentDate,
   status = "active",
+  skipHistory,
 }: {
   planId: PlanId;
   reference: string;
@@ -145,6 +146,7 @@ export async function createOrUpdateSubscription({
   status?: string;
   paidAt?: string | Date;
   nextPaymentDate?: string | Date;
+  skipHistory?: boolean;
 }) {
   try {
     const session = await getAndRefreshUserSession();
@@ -228,7 +230,7 @@ export async function createOrUpdateSubscription({
       },
     });
 
-    if (!historyExists) {
+    if (!historyExists && !skipHistory) {
       await prisma.subscriptionHistory.create({
         data: {
           userId,
@@ -261,6 +263,22 @@ export async function cancelSubscription() {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user?.id) {
       throw new Error("User not authenticated");
+    }
+
+    // Get current subscription to check for subCode
+    const currentSub = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!currentSub) throw new Error("No subscription found");
+
+    if (!currentSub.subCode) {
+      // Possible "zombie" state - active locally but missing link to Paystack
+      // Attempt to fetch from Paystack using email just in case
+      // For now, we abort to prevent giving false hope of cancellation
+      throw new Error(
+        "Subscription synchronization pending. Please try again in a few minutes or contact support."
+      );
     }
 
     const sub = await prisma.subscription.update({
