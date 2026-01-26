@@ -324,9 +324,8 @@ export async function initiateSubscription(
     const paystack = await createPaystackInstance(isLive);
     await logPaystackEnvironment(isLive);
 
-    const reference = `SURFBOARD_SUB_${
-      isLive ? "live" : "test"
-    }_${Date.now()}_${user.id}`;
+    const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"
+      }_${Date.now()}_${user.id}`;
     const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
     // Initialize transaction with plan
@@ -586,6 +585,7 @@ export async function verifySubscription(reference: string) {
       status: "active",
       paidAt,
       nextPaymentDate: nextPaymentDate || undefined,
+      skipHistory: false, // We rely on webhook for history to avoid duplicates
     });
 
     revalidatePath("/surfboard/dashboard/subscription");
@@ -639,6 +639,14 @@ export async function disableSubscription(): Promise<{
         message: "No subscription found",
         error: "subscription_not_found",
       };
+    }
+
+    if (!subscription.subCode && subscription.status === "active") {
+      return {
+        success: false,
+        message: "Subscription sync pending. Please try again soon.",
+        error: "sync_pending"
+      }
     }
 
     if (subscription.status !== "active") {

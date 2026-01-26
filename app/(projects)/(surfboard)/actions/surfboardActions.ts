@@ -609,7 +609,7 @@ export async function _updatePlan(
       (dto.lga && dto.lga !== existing.lga) ||
       (dto.dateOnSurveyPlan &&
         new Date(dto.dateOnSurveyPlan).toISOString() !==
-          new Date(existing.dateOnSurveyPlan ?? "").toISOString());
+        new Date(existing.dateOnSurveyPlan ?? "").toISOString());
     if (triedToChangeLocked)
       throw new Error("Locked after 24h; only certificate updates allowed");
   }
@@ -633,6 +633,12 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
       !dto.dateOnSurveyPlan
     ) {
       throw new Error("Missing required fields");
+    }
+    if (!dto.geometry) {
+      throw new Error("Geometry is required");
+    }
+    if (!dto.pillars || (Array.isArray(dto.pillars) && dto.pillars.length < 3)) {
+      throw new Error("At least 3 pillars are required");
     }
     if ((dto.cadFilePaths?.length || 0) < 1)
       throw new Error("At least one CAD file is required");
@@ -673,6 +679,7 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         lcda: dto.lcda || null,
         lga: dto.lga || null,
         state: dto.state || null,
+        locality: dto.locality || null,
         isLive: dto.isLive ?? false,
         status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
         userId: user.id,
@@ -729,6 +736,11 @@ export async function updateSurfPlan(
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) throw new Error("User not authenticated");
 
+    console.log("updateSurfPlan called with:", {
+      id: dto.id,
+      planNumber: dto.planNumber,
+    });
+
     if (!dto.id) throw new Error("Missing id");
 
     let existing;
@@ -762,10 +774,16 @@ export async function updateSurfPlan(
     let geometry = dto.geometry;
 
     try {
-      if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
-
-      if (typeof geometry === "string") geometry = JSON.parse(geometry);
+      if (typeof dto.geometry === "string") {
+        geometry = JSON.parse(dto.geometry);
+      }
+      // handle double stringifying if necessary
+      if (typeof geometry === "string") {
+        geometry = JSON.parse(geometry);
+      }
     } catch (error) {
+      console.error("Error parsing geometry:", error);
+      // Fallback to original if parse fails, though likely won't work if it's an invalid string
       geometry = dto.geometry;
     }
 
@@ -785,6 +803,8 @@ export async function updateSurfPlan(
       data.ward = dto.ward ?? null;
       data.lcda = dto.lcda ?? null;
       data.lga = dto.lga ?? null;
+      if (dto.locality !== undefined) data.locality = dto.locality;
+      if (dto.state !== undefined) data.state = dto.state;
       if (dto.dateOnSurveyPlan)
         data.dateOnSurveyPlan = new Date(dto.dateOnSurveyPlan);
 
@@ -837,7 +857,7 @@ export async function updateSurfPlan(
         (dto.state && dto.state !== existing.state) ||
         (dto.dateOnSurveyPlan &&
           new Date(dto.dateOnSurveyPlan).toISOString() !==
-            new Date(existing.dateOnSurveyPlan ?? "").toISOString());
+          new Date(existing.dateOnSurveyPlan ?? "").toISOString());
       if (triedToChangeLocked)
         throw new Error("Locked after 24h; only certificate updates allowed");
     }
@@ -875,9 +895,8 @@ export async function updateSurfPlan(
           planId: dto.id,
           planNumber: dto.planNumber || existing.planNumber,
           title: "Plan Successfully Lodged",
-          message: `Your plan ${
-            dto.planNumber || existing.planNumber
-          } has been successfully lodged with certificate!`,
+          message: `Your plan ${dto.planNumber || existing.planNumber
+            } has been successfully lodged with certificate!`,
           type: "SUCCESS",
           userIds: [user.id],
           sendEmail: true, // Send email for this important event
@@ -888,9 +907,8 @@ export async function updateSurfPlan(
           planId: dto.id,
           planNumber: dto.planNumber || existing.planNumber,
           title: "Plan Lodged",
-          message: `${user.firstName} ${user.lastName} has lodged plan ${
-            dto.planNumber || existing.planNumber
-          } with certificate.`,
+          message: `${user.firstName} ${user.lastName} has lodged plan ${dto.planNumber || existing.planNumber
+            } with certificate.`,
           type: "PLAN",
           sendEmail: false,
         });
@@ -1027,12 +1045,12 @@ export interface PlanFilters {
 
 export interface PlanSort {
   field:
-    | "createdAt"
-    | "updatedAt"
-    | "surveyTitle"
-    | "planNumber"
-    | "status"
-    | "dateOnSurveyPlan";
+  | "createdAt"
+  | "updatedAt"
+  | "surveyTitle"
+  | "planNumber"
+  | "status"
+  | "dateOnSurveyPlan";
   order: "asc" | "desc";
 }
 
@@ -1117,8 +1135,8 @@ export async function getPaginatedSurfPlans({
     // Build orderBy
     const orderBy = sort
       ? ({
-          [sort.field]: sort.order,
-        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+        [sort.field]: sort.order,
+      } as Prisma.SurfboardPlanOrderByWithRelationInput)
       : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
     const [plans, total] = await Promise.all([
@@ -1483,8 +1501,8 @@ export async function getAllSharedSurfPlans(
     // Build orderBy
     const orderBy = sort
       ? ({
-          [sort.field]: sort.order,
-        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+        [sort.field]: sort.order,
+      } as Prisma.SurfboardPlanOrderByWithRelationInput)
       : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
     const [plans, total] = await Promise.all([
@@ -1631,8 +1649,8 @@ export async function getSharedWithMeSurfPlans(
     // Build orderBy
     const orderBy = sort
       ? ({
-          [sort.field]: sort.order,
-        } as Prisma.SurfboardPlanOrderByWithRelationInput)
+        [sort.field]: sort.order,
+      } as Prisma.SurfboardPlanOrderByWithRelationInput)
       : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
     const [plans, total] = await Promise.all([
@@ -2318,9 +2336,8 @@ export async function permanentlyDeleteSurfPlan(
         console.error("Error deleting files from S3:", error);
         return {
           success: false,
-          error: `Failed to delete files from storage: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
+          error: `Failed to delete files from storage: ${error instanceof Error ? error.message : "Unknown error"
+            }`,
         };
       }
     }
@@ -3065,9 +3082,9 @@ export async function getDashboardAnalytics(): Promise<
     // Format time trends data
     const formattedTimeTrends = Array.isArray(timeTrends)
       ? timeTrends.map((item: any) => ({
-          period: item.month,
-          count: item.count,
-        }))
+        period: item.month,
+        count: item.count,
+      }))
       : [];
 
     return {
@@ -3528,45 +3545,45 @@ export async function updatePlanRecordCopy(
 // Action to verify person count
 export async function verifyPersonCount(planId: string, count: number) {
   try {
-     const user = await getAuthenticatedSurfUserFromCookie();
-     // Only Admins using this
-     if (!user || user.role === 'USER') { // Check permissions adequately
-        return { success: false, error: "Unauthorized" };
-     }
+    const user = await getAuthenticatedSurfUserFromCookie();
+    // Only Admins using this
+    if (!user || user.role === 'USER') { // Check permissions adequately
+      return { success: false, error: "Unauthorized" };
+    }
 
-     await prisma.surfboardPlan.update({
-        where: { id: planId },
-        data: {
-           personCount: count,
-           personCountVerified: true
-        }
-     });
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        personCount: count,
+        personCountVerified: true
+      }
+    });
 
-     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
-     return { success: true };
+    revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+    return { success: true };
   } catch (error) {
-     return { success: false, error: handlePrismaError(error, "verifyPersonCount") };
+    return { success: false, error: handlePrismaError(error, "verifyPersonCount") };
   }
 }
 
 // Action to query a plan
 export async function queryPlan(planId: string) {
   try {
-     const user = await getAuthenticatedSurfUserFromCookie();
-     if (!user || user.role === 'USER') { 
-        return { success: false, error: "Unauthorized" };
-     }
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || user.role === 'USER') {
+      return { success: false, error: "Unauthorized" };
+    }
 
-     await prisma.surfboardPlan.update({
-        where: { id: planId },
-        data: {
-           status: "QUERIED"
-        }
-     });
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        status: "QUERIED"
+      }
+    });
 
-     revalidatePath(`/surf-restricted/dashboard/surf-plans`);
-     return { success: true };
+    revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+    return { success: true };
   } catch (error) {
-     return { success: false, error: handlePrismaError(error, "queryPlan") };
+    return { success: false, error: handlePrismaError(error, "queryPlan") };
   }
 }

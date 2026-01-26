@@ -146,10 +146,9 @@ export default function SubscriptionManager() {
 
   const getSubscriptionStatus = useMemo(() => {
     if (isSubscriptionActive) {
-      return `You're currently subscribed to the ${
-        SUBSCRIPTION_PLANS[current?.name as keyof typeof SUBSCRIPTION_PLANS]
+      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.name as keyof typeof SUBSCRIPTION_PLANS]
           ?.name || current?.planName
-      }`;
+        }`;
     }
 
     if (isSubscriptionInGracePeriod && current?.currentEnd) {
@@ -298,6 +297,9 @@ export default function SubscriptionManager() {
         });
 
         setShowConfirmation(false);
+      } else if (result.error === "sync_pending") {
+        toast.info("Subscription setup is still finalizing. Please try again in 1-2 minutes.");
+        setShowConfirmation(false);
       } else {
         toast.error(result.message || "Failed to cancel subscription");
       }
@@ -408,18 +410,18 @@ export default function SubscriptionManager() {
             {isSubscriptionActive
               ? "Switch Plans"
               : isSubscriptionInGracePeriod
-              ? "Renew Your Subscription"
-              : "Available Plans"}
+                ? "Renew Your Subscription"
+                : "Available Plans"}
           </h2>
 
           <p className="text-muted-foreground">
             {isSubscriptionActive
               ? "Cancel your current plan to subscribe to a new one"
               : isSubscriptionInGracePeriod
-              ? `Your current plan expires on ${formatLocalDate(
+                ? `Your current plan expires on ${formatLocalDate(
                   current?.currentEnd
                 )}`
-              : "Choose the plan that works best for you"}
+                : "Choose the plan that works best for you"}
           </p>
         </div>
 
@@ -445,25 +447,22 @@ export default function SubscriptionManager() {
                 )}
 
                 <Card
-                  className={`h-full border-2 transition-all duration-300 ${
-                    isCurrent
+                  className={`h-full border-2 transition-all duration-300 ${isCurrent
                       ? "border-blue-600 ring-4 ring-blue-600/20 shadow-xl scale-105"
                       : isPopular
-                      ? "border-purple-300 dark:border-purple-700 hover:border-purple-500 hover:shadow-2xl hover:scale-105"
-                      : "border-border hover:border-blue-400 hover:shadow-xl hover:scale-105"
-                  } ${isPopular ? "pt-8" : "pt-6"} ${
-                    isDisabled && !isCurrent ? "opacity-60" : ""
-                  }`}
+                        ? "border-purple-300 dark:border-purple-700 hover:border-purple-500 hover:shadow-2xl hover:scale-105"
+                        : "border-border hover:border-blue-400 hover:shadow-xl hover:scale-105"
+                    } ${isPopular ? "pt-8" : "pt-6"} ${isDisabled && !isCurrent ? "opacity-60" : ""
+                    }`}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-2 rounded-lg ${
-                            isPopular
+                          className={`p-2 rounded-lg ${isPopular
                               ? "bg-linear-to-br from-purple-500 to-blue-500 text-white"
                               : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
-                          }`}
+                            }`}
                         >
                           {getPlanIcon(plan.interval)}
                         </div>
@@ -522,8 +521,8 @@ export default function SubscriptionManager() {
                           {plan.interval === "monthly"
                             ? "Monthly"
                             : plan.interval === "quarterly"
-                            ? "Quarterly"
-                            : "Annual"}{" "}
+                              ? "Quarterly"
+                              : "Annual"}{" "}
                           billing
                         </span>
                       </li>
@@ -542,19 +541,18 @@ export default function SubscriptionManager() {
                       size="lg"
                       disabled={isDisabled}
                       onClick={() => handlePlanSelect(plan.id)}
-                      className={`w-full font-semibold text-base h-12 ${
-                        isPopular && !isCurrent
+                      className={`w-full font-semibold text-base h-12 ${isPopular && !isCurrent
                           ? "bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
                           : isCurrent
-                          ? "bg-green-600 hover:bg-green-700"
-                          : ""
-                      }`}
+                            ? "bg-green-600 hover:bg-green-700"
+                            : ""
+                        }`}
                       variant={
                         isCurrent
                           ? "default"
                           : isPopular
-                          ? "default"
-                          : "default"
+                            ? "default"
+                            : "default"
                       }
                     >
                       {isWorking ? (

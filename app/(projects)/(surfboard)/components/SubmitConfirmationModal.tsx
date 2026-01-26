@@ -51,7 +51,7 @@ export function SubmitConfirmationModal({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <AlertDialogContent className="z-[400] max-w-2xl max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">
             Confirm Plan Submission
@@ -90,11 +90,10 @@ export function SubmitConfirmationModal({
                 Survey Title / Owners
               </div>
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  personCount.isValid
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${personCount.isValid
                     ? "bg-green-100 text-green-700"
                     : "bg-amber-100 text-amber-700"
-                }`}
+                  }`}
               >
                 {personCount.isValid ? (
                   <>
