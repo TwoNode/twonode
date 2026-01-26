@@ -333,8 +333,8 @@ export function AmendPlanModal({
               </div>
 
               {/* Pillars Table */}
-              <div className="border-2 border-blue-200 rounded-xl overflow-hidden bg-gradient-to-b from-blue-50 to-white shadow-sm">
-                <div className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 border-b border-blue-200">
+              <div className="border-2 border-blue-200 rounded-xl overflow-hidden bg-linear-to-b from-blue-50 to-white shadow-sm">
+                <div className="px-4 py-2 bg-linear-to-r from-blue-600 to-blue-500 border-b border-blue-200">
                   <span className="text-lg font-bold text-white">PL</span>
                 </div>
                 <div className="overflow-x-auto max-h-[280px]">
@@ -381,7 +381,7 @@ export function AmendPlanModal({
                                   e.target.value
                                 )
                               }
-                              className="h-7 w-16 w-auto min-w-[60px] text-sm font-medium border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              className="h-7 w-auto min-w-[60px] text-sm font-medium border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                               placeholder="P1"
                             />
                           </td>
@@ -397,7 +397,7 @@ export function AmendPlanModal({
                                   e.target.value
                                 )
                               }
-                              className="h-7 w-20 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                               placeholder="0.000"
                             />
                           </td>
@@ -413,7 +413,7 @@ export function AmendPlanModal({
                                   e.target.value
                                 )
                               }
-                              className="h-7 w-20 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                              className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
                               placeholder="0.000"
                             />
                           </td>

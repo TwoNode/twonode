@@ -28,7 +28,7 @@ export function PlanLockIndicator({
   };
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+    <div className="flex items-center gap-2 p-3 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
       <div className="flex items-center gap-2 flex-1">
         <div className="p-1.5 bg-blue-100 rounded-full">
           <Lock className="w-4 h-4 text-blue-600" />
