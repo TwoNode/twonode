@@ -290,11 +290,11 @@ export function SubmittedBatchesModal({
         <DialogHeader className="space-y-3 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+              <div className="p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   My Submitted Batches
                 </DialogTitle>
                 <DialogDescription className="text-sm mt-1">
@@ -308,7 +308,7 @@ export function SubmittedBatchesModal({
                 size="sm"
                 onClick={handleDeleteAll}
                 disabled={isDeleting || isLoading}
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-md transition-all duration-200 hover:shadow-lg"
+                className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-md transition-all duration-200 hover:shadow-lg"
               >
                 {isDeleting ? (
                   <>
@@ -339,7 +339,7 @@ export function SubmittedBatchesModal({
             </div>
           ) : batches.length === 0 ? (
             <div className="text-center py-16">
-              <div className="inline-flex p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full mb-6">
+              <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
                 <FileText className="w-20 h-20 text-gray-300" />
               </div>
               <p className="text-gray-700 text-xl font-semibold mb-2">
@@ -356,16 +356,16 @@ export function SubmittedBatchesModal({
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
-                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50"
+                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="p-5 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
+                  <div className="p-5 hover:bg-linear-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-3">
                           <AccordionTrigger className="hover:no-underline p-0 flex-1 group/trigger">
                             <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
+                              <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
                                 <Package className="w-4 h-4 text-blue-700" />
                               </div>
                               <h3 className="text-lg font-bold text-gray-900 group-hover/trigger:text-blue-700 transition-colors duration-200">
@@ -396,7 +396,7 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-900 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
+                          <div className="flex items-center gap-2.5 text-gray-900 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
                             <div className="p-1 bg-white rounded shadow-sm">
                               <CreditCard className="w-3.5 h-3.5 text-green-700" />
                             </div>
@@ -406,7 +406,7 @@ export function SubmittedBatchesModal({
                           </div>
 
                           {batch.userPaymentDate && (
-                            <div className="flex items-center gap-2.5 text-green-700 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2.5 text-green-700 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200">
                               <CheckCircle className="w-3.5 h-3.5 text-green-600" />
                               <span className="font-medium text-sm">
                                 Paid{" "}
@@ -420,13 +420,13 @@ export function SubmittedBatchesModal({
                         </div>
                       </div>
 
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {canPayBatch(batch.paymentStatus) && (
                           <Button
                             size="sm"
                             onClick={() => handlePayNow(batch.id)}
                             disabled={payingBatchId === batch.id}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                            className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
                           >
                             {payingBatchId === batch.id ? (
                               <>
@@ -451,7 +451,7 @@ export function SubmittedBatchesModal({
                           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
                             Survey Plans in this Batch
                           </h4>
-                          <div className="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent"></div>
+                          <div className="h-px flex-1 bg-linear-to-r from-gray-200 to-transparent"></div>
                         </div>
                         <div className="space-y-2.5">
                           {batch.plans.map((plan, planIndex) => (
@@ -462,7 +462,7 @@ export function SubmittedBatchesModal({
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2.5 mb-2">
-                                  <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
+                                  <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
                                     <FileText className="w-4 h-4 text-blue-700" />
                                   </div>
                                   <span className="font-bold text-sm text-gray-900 group-hover/plan:text-blue-700 transition-colors duration-200">
@@ -473,17 +473,17 @@ export function SubmittedBatchesModal({
                                   {plan.surveyTitle}
                                 </p>
                               </div>
-                              <div className="flex gap-2 flex-shrink-0">
+                              <div className="flex gap-2 shrink-0">
                                 <Badge
                                   variant="outline"
-                                  className="text-xs font-semibold bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
+                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
                                 >
                                   {plan.status}
                                 </Badge>
                                 {plan.redCopyStatus !== "NOT_SUBMITTED" && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs font-semibold bg-gradient-to-br from-blue-50 to-blue-100 text-blue-800 border-blue-300 hover:from-blue-100 hover:to-blue-200 transition-all duration-200"
+                                    className="text-xs font-semibold bg-linear-to-br from-blue-50 to-blue-100 text-blue-800 border-blue-300 hover:from-blue-100 hover:to-blue-200 transition-all duration-200"
                                   >
                                     {plan.redCopyStatus}
                                   </Badge>

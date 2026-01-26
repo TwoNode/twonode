@@ -239,7 +239,7 @@ export default function AIAutofillButton({
       case "processing":
         return `${baseStyles} bg-indigo-400 text-white cursor-not-allowed`;
       default:
-        return `${baseStyles} bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 focus:ring-indigo-500 shadow-md hover:shadow-lg`;
+        return `${baseStyles} bg-linear-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 focus:ring-indigo-500 shadow-md hover:shadow-lg`;
     }
   };
 
