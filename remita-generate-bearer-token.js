@@ -88,7 +88,7 @@ async function generateBearerToken(environment = "demo") {
             console.log("  - Store it securely (environment variables, secrets manager)");
             console.log("  - Never commit tokens to version control");
             console.log("  - Regenerate when expired");
-            
+
             return {
                 success: true,
                 accessToken: data.access_token,
@@ -96,7 +96,7 @@ async function generateBearerToken(environment = "demo") {
                 expiresIn: data.expires_in,
                 refreshToken: data.refresh_token
             };
-            
+
         } else {
             console.log("\n❌ FAILED TO GENERATE TOKEN");
             console.log("\nResponse:", data);

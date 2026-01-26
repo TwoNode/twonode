@@ -131,7 +131,7 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white">
+          <div className="bg-linear-to-r from-purple-600 to-indigo-600 p-8 text-white">
             <div className="flex items-center space-x-6">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-3xl font-bold text-purple-600">
