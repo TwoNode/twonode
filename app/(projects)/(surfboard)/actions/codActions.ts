@@ -17,6 +17,8 @@ import {
   notifyReadyForPhysicalSubmission,
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
+import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
+import { extractPaymentDetailsFromText } from "./aiExtractionActions";
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 6;
@@ -1199,7 +1201,7 @@ export async function payWithRemitaRRR(
       return { success: false, error: "User not authenticated" };
     }
 
-    // 1. Find the batch
+    // 1. Find the batch and valid access
     const batch = await prisma.certificateOfDepositBatch.findUnique({
       where: { id: batchId },
     });
@@ -1223,40 +1225,57 @@ export async function payWithRemitaRRR(
       };
     }
 
-    // 3. Verify RRR with Remita
-    const remitaStatus = await checkPaymentStatus(rrr);
+    // 3. AUTOMATED PDF VERIFICATION
+    // Construct the standard Remita PDF URL for this RRR
+    // URL Pattern: .../biller/{RRR}/printrecieptRequest.pdf
+    const remitaPdfUrl = `https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/${rrr}/printrecieptRequest.pdf`;
 
-    console.log("Remita Verification Result:", remitaStatus);
+    console.log(`Verifying RRR ${rrr} via PDF URL: ${remitaPdfUrl}`);
 
-    if (remitaStatus.status === "failed") {
-      return {
-        success: false,
-        error: `RRR Verification Failed: ${remitaStatus.message}`,
-      };
+    let verificationResult: {
+      status: "PAID" | "PENDING" | "FAILED" | "UNKNOWN";
+      amount: number;
+    } = { status: "UNKNOWN", amount: 0 };
+
+    try {
+      // Fetch and extract text
+      const { text } = await fetchAndExtractTextFromUrl(remitaPdfUrl);
+
+      // Use AI to parse the receipt
+      const aiResult = await extractPaymentDetailsFromText(text);
+
+      if (aiResult.success && aiResult.data) {
+        verificationResult = {
+          status: aiResult.data.status,
+          amount: aiResult.data.amount
+        };
+        console.log("AI Receipt Analysis:", aiResult.data);
+      }
+    } catch (pdfError: any) {
+      console.warn("Automated PDF verification failed (network/404):", pdfError.message);
+      // If PDF not found, it likely means not paid or invalid RRR, but could be network.
+      // We will allow fallback to manual link.
     }
 
-    // 4. Validate Amount (Approximate check mainly - ensure it's not significantly less)
-    if (remitaStatus.amount) {
-      // Allow for small differences? Ideally should be exact.
-      const tolerance = 1.0; // 1 Naira tolerance
-      if (Math.abs(remitaStatus.amount - batch.totalAmount) > tolerance) {
+    // 4. Process Verification Result
+    if (verificationResult.status === "PAID") {
+      // Validate Amount logic (tolerance check)
+      const tolerance = 5.0; // 5 Naira tolerance
+      if (Math.abs(verificationResult.amount - batch.totalAmount) > tolerance) {
         return {
           success: false,
-          error: `Payment amount mismatch. Paid: ₦${remitaStatus.amount}, Expected: ₦${batch.totalAmount}`,
+          error: `Payment amount mismatch. Receipt shows: ₦${verificationResult.amount}, Batch requires: ₦${batch.totalAmount}`,
         };
       }
-    }
 
-    // 5. Update Batch
-    // If PAID
-    if (remitaStatus.status === "paid" || remitaStatus.message?.toLowerCase().includes("approved")) {
+      // Update Batch to PAID
       await prisma.certificateOfDepositBatch.update({
         where: { id: batchId },
         data: {
           userPaymentRef: rrr,
-          paymentStatus: "LASG_PAID", // Direct to LASG
-          userPaymentDate: remitaStatus.paymentDate || new Date(),
-          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+          paymentStatus: "LASG_PAID",
+          userPaymentDate: new Date(),
+          lasgPaymentDate: new Date(),
         },
       });
 
@@ -1290,27 +1309,118 @@ export async function payWithRemitaRRR(
       return { success: true, data: { success: true, status: "LASG_PAID" } };
     }
 
-    // IF PENDING
-    else if (remitaStatus.status === "pending") {
-      // Just update the Ref so we know what they are trying to pay with
+    // 5. IF FAILED/PENDING/UNKNOWN -> Return special error to trigger manual fallback
+    // Only update RRR reference if it's new
+    if (batch.userPaymentRef !== rrr) {
       await prisma.certificateOfDepositBatch.update({
         where: { id: batchId },
-        data: {
-          userPaymentRef: rrr,
-          paymentStatus: "PENDING_USER_PAYMENT"
-        },
+        data: { userPaymentRef: rrr, paymentStatus: "PENDING_USER_PAYMENT" }
       });
-
-      return { success: true, data: { success: true, status: "PENDING" } };
     }
 
-    return { success: false, error: "Payment status unknown or not successful" };
+    return {
+      success: false,
+      error: "VERIFICATION_FAILED_NEED_RECEIPT", // Special code for Frontend
+      data: { success: false, status: "PENDING" } // Return data so frontend knows it's strictly a verification failure
+    };
 
   } catch (error) {
     console.error("payWithRemitaRRR error:", error);
     return {
       success: false,
       error: handlePrismaError(error, "payWithRemitaRRR"),
+    };
+  }
+}
+
+/**
+ * Fallback: Verify a user-provided LASG Receipt Link
+ */
+export async function verifyLASGReceiptLink(
+  batchId: string,
+  receiptUrl: string
+): Promise<ApiResult<{ success: boolean; status: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    // Fetch and Analyze
+    const { text } = await fetchAndExtractTextFromUrl(receiptUrl);
+    const aiResult = await extractPaymentDetailsFromText(text);
+
+    if (!aiResult.success || !aiResult.data) {
+      return { success: false, error: "Cloud not analyze receipt. Please ensure it is a valid PDF receipt." };
+    }
+
+    const { status, amount, rrr } = aiResult.data;
+
+    // Check Status
+    if (status === "PENDING" || status === "FAILED") {
+      return { success: false, error: `Receipt analysis indicates status is ${status}. Please upload a successful payment receipt.` };
+    }
+
+    // Check Amount
+    const tolerance = 5.0;
+    if (Math.abs(amount - batch.totalAmount) > tolerance) {
+      return { success: false, error: `Receipt amount (₦${amount}) does not match batch amount (₦${batch.totalAmount}).` };
+    }
+
+    // Update Batch
+    await prisma.certificateOfDepositBatch.update({
+      where: { id: batchId },
+      data: {
+        userPaymentRef: rrr || batch.userPaymentRef, // Use extracted RRR if found
+        paymentStatus: "LASG_PAID",
+        userPaymentDate: new Date(),
+        lasgPaymentDate: new Date(),
+        lasgReceiptUrl: receiptUrl
+      },
+    });
+
+    // Notify
+    const submitter = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (submitter) {
+      try {
+        await notifyPaymentReceived({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          amount: batch.totalAmount,
+          paidBy: submitter,
+          sendEmail: true,
+        });
+
+        await notifyLASGReceiptUploaded({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          planCount: batch.planCount,
+          sendEmail: true,
+        });
+      } catch (e) {
+        console.error("Notification error", e);
+      }
+    }
+
+    return { success: true, data: { success: true, status: "LASG_PAID" } };
+
+  } catch (error) {
+    console.error("verifyLASGReceiptLink error:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "verifyLASGReceiptLink"),
     };
   }
 }

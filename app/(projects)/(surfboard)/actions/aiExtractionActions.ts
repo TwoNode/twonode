@@ -732,3 +732,99 @@ export async function recognizePersonCount(
     };
   }
 }
+
+export interface AIPaymentDetails {
+  rrr: string;
+  amount: number;
+  paymentDate?: string;
+  payerName?: string;
+  status: "PAID" | "PENDING" | "FAILED" | "UNKNOWN";
+}
+
+/**
+ * Extract payment details from receipt text using AI
+ */
+export async function extractPaymentDetailsFromText(
+  text: string
+): Promise<ApiResult<AIPaymentDetails>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (!text || text.trim().length < 20) {
+      return { success: false, error: "Insufficient text for extraction" };
+    }
+
+    // Truncate text to avoid token limits (receipts are usually short, but PDF parse might be messy)
+    const truncatedText = text.slice(0, 10000);
+
+    const prompt = `Analyze this Remita/Payment Receipt text and extract the payment details.
+
+=== RECEIPT TEXT ===
+${truncatedText}
+=== END TEXT ===
+
+Extract the following:
+1. RRR (Remita Retrieval Reference) - 12 digits usually
+2. Amount (Numeric value)
+3. Payment Date (YYYY-MM-DD format if possible)
+4. Payer Name
+5. Payment Status (Look for "Approved", "Successful", "Paid", "Pending", "Failed")
+
+Return JSON: 
+{
+  "rrr": "123456789012",
+  "amount": 10000.00,
+  "paymentDate": "2024-01-01",
+  "payerName": "John Doe",
+  "status": "PAID" | "PENDING" | "FAILED" | "UNKNOWN"
+}
+
+If status is ambiguous but receipt looks like a confirmation of payment, assume PAID.
+If status specifically says Pending/Incomplete, use PENDING.
+`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) throw new Error("AI Request failed");
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    const jsonStr = extractJsonFromResponse(content);
+
+    if (!jsonStr) throw new Error("Invalid AI response");
+
+    const result = JSON.parse(jsonStr);
+
+    return {
+      success: true,
+      data: {
+        rrr: result.rrr ? String(result.rrr).replace(/\D/g, "") : "",
+        amount: Number(result.amount) || 0,
+        paymentDate: result.paymentDate,
+        payerName: result.payerName,
+        status: (result.status?.toUpperCase() as any) || "UNKNOWN",
+      },
+    };
+  } catch (error) {
+    console.error("Error extracting payment details:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to extract payment details",
+    };
+  }
+}
+

@@ -35,6 +35,7 @@ import {
   Package,
   Trash2,
   ChevronDown,
+  Copy,
 } from "lucide-react";
 import {
   getUserBatches,
@@ -42,6 +43,7 @@ import {
   verifyBatchPayment,
   deleteAllBatches,
   payWithRemitaRRR,
+  verifyLASGReceiptLink,
 } from "../actions/codActions";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -152,6 +154,16 @@ export function SubmittedBatchesModal({
     }
   };
 
+  const [manualReceiptUrl, setManualReceiptUrl] = useState("");
+  const [showManualLinkInput, setShowManualLinkInput] = useState(false);
+
+  const handleCopyAmount = () => {
+    if (paymentBatch) {
+      navigator.clipboard.writeText(paymentBatch.totalAmount.toString());
+      toast.success("Amount copied to clipboard");
+    }
+  };
+
   const handleVerifyManualRRR = async () => {
     if (!manualRRR || manualRRR.length < 5) {
       toast.error("Please enter a valid Remita RRR");
@@ -170,19 +182,57 @@ export function SubmittedBatchesModal({
           setShowPaymentView(false);
           setPaymentBatch(null);
           setManualRRR("");
+          setManualReceiptUrl("");
+          setShowManualLinkInput(false);
           // Reload batches to show updated status
           await loadBatches();
           if (onSuccess) onSuccess();
           router.refresh();
         } else if (result.data.status === "PENDING") {
-          toast.info("Payment is still pending on Remita. Please ensure you have paid.");
+          toast.info("Payment is still pending verification.");
         }
+      } else if (result.error === "VERIFICATION_FAILED_NEED_RECEIPT") {
+        toast.warning("Automatic verification failed. Please provide your receipt link.");
+        setShowManualLinkInput(true);
       } else {
         toast.error(result.error || "Failed to verify RRR");
       }
     } catch (error: any) {
       console.error("Verification error:", error);
       toast.error(error.message || "Failed to verify payment");
+    } finally {
+      setIsVerifyingRRR(false);
+    }
+  };
+
+  const handleVerifyReceiptLink = async () => {
+    if (!manualReceiptUrl || !manualReceiptUrl.startsWith("http")) {
+      toast.error("Please enter a valid receipt URL");
+      return;
+    }
+
+    if (!paymentBatch) return;
+
+    try {
+      setIsVerifyingRRR(true);
+      const result = await verifyLASGReceiptLink(paymentBatch.id, manualReceiptUrl);
+
+      if (result.success && result.data?.status === "LASG_PAID") {
+        toast.success("Receipt verified successfully via link!");
+        setShowPaymentView(false);
+        setPaymentBatch(null);
+        setManualReceiptUrl("");
+        setManualRRR("");
+        setShowManualLinkInput(false);
+        await loadBatches();
+        if (onSuccess) onSuccess();
+        router.refresh();
+      } else {
+        toast.error(result.error || "Receipt verification failed");
+      }
+    } catch (error: any) {
+      console.error("Link verification error:", error);
+      toast.error(error.message || "Failed to verify receipt link");
     } finally {
       setIsVerifyingRRR(false);
     }
@@ -290,11 +340,11 @@ export function SubmittedBatchesModal({
         <DialogHeader className="space-y-3 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+              <div className="p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <DialogTitle className="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   My Submitted Batches
                 </DialogTitle>
                 <DialogDescription className="text-sm mt-1">
@@ -308,7 +358,7 @@ export function SubmittedBatchesModal({
                 size="sm"
                 onClick={handleDeleteAll}
                 disabled={isDeleting || isLoading}
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-md transition-all duration-200 hover:shadow-lg"
+                className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-md transition-all duration-200 hover:shadow-lg"
               >
                 {isDeleting ? (
                   <>
@@ -339,7 +389,7 @@ export function SubmittedBatchesModal({
             </div>
           ) : batches.length === 0 ? (
             <div className="text-center py-16">
-              <div className="inline-flex p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full mb-6">
+              <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
                 <FileText className="w-20 h-20 text-gray-300" />
               </div>
               <p className="text-gray-700 text-xl font-semibold mb-2">
@@ -356,16 +406,16 @@ export function SubmittedBatchesModal({
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
-                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-gradient-to-br from-white to-gray-50"
+                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="p-5 hover:bg-gradient-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
+                  <div className="p-5 hover:bg-linear-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-3">
                           <AccordionTrigger className="hover:no-underline p-0 flex-1 group/trigger">
                             <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
+                              <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
                                 <Package className="w-4 h-4 text-blue-700" />
                               </div>
                               <h3 className="text-lg font-bold text-gray-900 group-hover/trigger:text-blue-700 transition-colors duration-200">
@@ -396,7 +446,7 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-900 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
+                          <div className="flex items-center gap-2.5 text-gray-900 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
                             <div className="p-1 bg-white rounded shadow-sm">
                               <CreditCard className="w-3.5 h-3.5 text-green-700" />
                             </div>
@@ -406,7 +456,7 @@ export function SubmittedBatchesModal({
                           </div>
 
                           {batch.userPaymentDate && (
-                            <div className="flex items-center gap-2.5 text-green-700 bg-gradient-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2.5 text-green-700 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200">
                               <CheckCircle className="w-3.5 h-3.5 text-green-600" />
                               <span className="font-medium text-sm">
                                 Paid{" "}
@@ -420,13 +470,13 @@ export function SubmittedBatchesModal({
                         </div>
                       </div>
 
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {canPayBatch(batch.paymentStatus) && (
                           <Button
                             size="sm"
                             onClick={() => handlePayNow(batch.id)}
                             disabled={payingBatchId === batch.id}
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
+                            className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
                           >
                             {payingBatchId === batch.id ? (
                               <>
@@ -451,7 +501,7 @@ export function SubmittedBatchesModal({
                           <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
                             Survey Plans in this Batch
                           </h4>
-                          <div className="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent"></div>
+                          <div className="h-px flex-1 bg-linear-to-r from-gray-200 to-transparent"></div>
                         </div>
                         <div className="space-y-2.5">
                           {batch.plans.map((plan, planIndex) => (
@@ -462,7 +512,7 @@ export function SubmittedBatchesModal({
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2.5 mb-2">
-                                  <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
+                                  <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
                                     <FileText className="w-4 h-4 text-blue-700" />
                                   </div>
                                   <span className="font-bold text-sm text-gray-900 group-hover/plan:text-blue-700 transition-colors duration-200">
@@ -473,17 +523,17 @@ export function SubmittedBatchesModal({
                                   {plan.surveyTitle}
                                 </p>
                               </div>
-                              <div className="flex gap-2 flex-shrink-0">
+                              <div className="flex gap-2 shrink-0">
                                 <Badge
                                   variant="outline"
-                                  className="text-xs font-semibold bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
+                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
                                 >
                                   {plan.status}
                                 </Badge>
                                 {plan.redCopyStatus !== "NOT_SUBMITTED" && (
                                   <Badge
                                     variant="outline"
-                                    className="text-xs font-semibold bg-gradient-to-br from-blue-50 to-blue-100 text-blue-800 border-blue-300 hover:from-blue-100 hover:to-blue-200 transition-all duration-200"
+                                    className="text-xs font-semibold bg-linear-to-br from-blue-50 to-blue-100 text-blue-800 border-blue-300 hover:from-blue-100 hover:to-blue-200 transition-all duration-200"
                                   >
                                     {plan.redCopyStatus}
                                   </Badge>
@@ -518,47 +568,99 @@ export function SubmittedBatchesModal({
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
-                <p className="text-2xl font-bold text-green-700">
-                  ₦{paymentBatch?.totalAmount.toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2 justify-end">
+                  <p className="text-2xl font-bold text-green-700">
+                    ₦{paymentBatch?.totalAmount.toLocaleString()}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1 ml-2 text-xs font-medium text-gray-600"
+                    onClick={handleCopyAmount}
+                    title="Copy Amount"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogHeader>
 
           {/* Verification Bar */}
-          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
-            <div className="flex-1 w-full">
-              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
-                Enter your generated RRR here to verify payment
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="manual-rrr"
-                  type="text"
-                  placeholder="e.g. 1234-5678-9012"
-                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
-                  value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
-                />
-                <Button
-                  onClick={handleVerifyManualRRR}
-                  disabled={isVerifyingRRR || !manualRRR}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                >
-                  {isVerifyingRRR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify & Submit
-                    </>
-                  )}
-                </Button>
+          <div className="bg-blue-50 p-4 border-b flex flex-col items-center gap-4 z-10 shadow-sm">
+            <div className="w-full flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                  1. Generate RRR below & Pay
+                  <span className="ml-2 font-normal text-gray-500 normal-case">(Use "Lagos State Surveyor General" biller)</span>
+                </label>
+                <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block mt-2">
+                  2. Enter RRR to Verify
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="manual-rrr"
+                    type="text"
+                    placeholder="e.g. 1234-5678-9012"
+                    className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
+                    value={manualRRR}
+                    onChange={(e) => setManualRRR(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleVerifyManualRRR}
+                    disabled={isVerifyingRRR || !manualRRR}
+                    className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
+                  >
+                    {isVerifyingRRR ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Verify
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
+
+            {/* Manual Link Fallback Input */}
+            {showManualLinkInput && (
+              <div className="w-full border-t border-blue-200 pt-3 mt-1 animate-in slide-in-from-top-2 fade-in">
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-2 text-sm text-amber-800">
+                  <p className="font-semibold flex items-center gap-2">
+                    <Loader2 className="h-3 w-3" /> Automatic verification incomplete.
+                  </p>
+                  <p className="mt-1">
+                    Please copy the <strong>Receipt Download Link</strong> from the Remita receipt page (below) and paste it here for verification.
+                  </p>
+                </div>
+                <label htmlFor="manual-link" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                  3. Paste Receipt PDF Link (Fallback)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="manual-link"
+                    type="tex"
+                    placeholder="https://login.remita.net/remita/.../printrecieptRequest.pdf"
+                    className="flex-1 h-10 px-3 rounded-md border-2 border-amber-200 focus:border-amber-500 outline-none text-sm"
+                    value={manualReceiptUrl}
+                    onChange={(e) => setManualReceiptUrl(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleVerifyReceiptLink}
+                    disabled={isVerifyingRRR || !manualReceiptUrl}
+                    className="bg-amber-600 hover:bg-amber-700 h-10 px-6 font-bold text-white"
+                  >
+                    Verify Link
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Remita Iframe Area */}
