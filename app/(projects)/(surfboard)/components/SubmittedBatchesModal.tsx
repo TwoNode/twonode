@@ -35,6 +35,7 @@ import {
   Package,
   Trash2,
   ChevronDown,
+  Copy,
 } from "lucide-react";
 import {
   getUserBatches,
@@ -42,6 +43,7 @@ import {
   verifyBatchPayment,
   deleteAllBatches,
   payWithRemitaRRR,
+  verifyLASGReceiptLink,
 } from "../actions/codActions";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -152,6 +154,16 @@ export function SubmittedBatchesModal({
     }
   };
 
+  const [manualReceiptUrl, setManualReceiptUrl] = useState("");
+  const [showManualLinkInput, setShowManualLinkInput] = useState(false);
+
+  const handleCopyAmount = () => {
+    if (paymentBatch) {
+      navigator.clipboard.writeText(paymentBatch.totalAmount.toString());
+      toast.success("Amount copied to clipboard");
+    }
+  };
+
   const handleVerifyManualRRR = async () => {
     if (!manualRRR || manualRRR.length < 5) {
       toast.error("Please enter a valid Remita RRR");
@@ -170,19 +182,57 @@ export function SubmittedBatchesModal({
           setShowPaymentView(false);
           setPaymentBatch(null);
           setManualRRR("");
+          setManualReceiptUrl("");
+          setShowManualLinkInput(false);
           // Reload batches to show updated status
           await loadBatches();
           if (onSuccess) onSuccess();
           router.refresh();
         } else if (result.data.status === "PENDING") {
-          toast.info("Payment is still pending on Remita. Please ensure you have paid.");
+          toast.info("Payment is still pending verification.");
         }
+      } else if (result.error === "VERIFICATION_FAILED_NEED_RECEIPT") {
+        toast.warning("Automatic verification failed. Please provide your receipt link.");
+        setShowManualLinkInput(true);
       } else {
         toast.error(result.error || "Failed to verify RRR");
       }
     } catch (error: any) {
       console.error("Verification error:", error);
       toast.error(error.message || "Failed to verify payment");
+    } finally {
+      setIsVerifyingRRR(false);
+    }
+  };
+
+  const handleVerifyReceiptLink = async () => {
+    if (!manualReceiptUrl || !manualReceiptUrl.startsWith("http")) {
+      toast.error("Please enter a valid receipt URL");
+      return;
+    }
+
+    if (!paymentBatch) return;
+
+    try {
+      setIsVerifyingRRR(true);
+      const result = await verifyLASGReceiptLink(paymentBatch.id, manualReceiptUrl);
+
+      if (result.success && result.data?.status === "LASG_PAID") {
+        toast.success("Receipt verified successfully via link!");
+        setShowPaymentView(false);
+        setPaymentBatch(null);
+        setManualReceiptUrl("");
+        setManualRRR("");
+        setShowManualLinkInput(false);
+        await loadBatches();
+        if (onSuccess) onSuccess();
+        router.refresh();
+      } else {
+        toast.error(result.error || "Receipt verification failed");
+      }
+    } catch (error: any) {
+      console.error("Link verification error:", error);
+      toast.error(error.message || "Failed to verify receipt link");
     } finally {
       setIsVerifyingRRR(false);
     }
@@ -518,47 +568,99 @@ export function SubmittedBatchesModal({
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
-                <p className="text-2xl font-bold text-green-700">
-                  ₦{paymentBatch?.totalAmount.toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2 justify-end">
+                  <p className="text-2xl font-bold text-green-700">
+                    ₦{paymentBatch?.totalAmount.toLocaleString()}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1 ml-2 text-xs font-medium text-gray-600"
+                    onClick={handleCopyAmount}
+                    title="Copy Amount"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogHeader>
 
           {/* Verification Bar */}
-          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
-            <div className="flex-1 w-full">
-              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
-                Enter your generated RRR here to verify payment
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="manual-rrr"
-                  type="text"
-                  placeholder="e.g. 1234-5678-9012"
-                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
-                  value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
-                />
-                <Button
-                  onClick={handleVerifyManualRRR}
-                  disabled={isVerifyingRRR || !manualRRR}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                >
-                  {isVerifyingRRR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify & Submit
-                    </>
-                  )}
-                </Button>
+          <div className="bg-blue-50 p-4 border-b flex flex-col items-center gap-4 z-10 shadow-sm">
+            <div className="w-full flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                  1. Generate RRR below & Pay
+                  <span className="ml-2 font-normal text-gray-500 normal-case">(Use "Lagos State Surveyor General" biller)</span>
+                </label>
+                <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block mt-2">
+                  2. Enter RRR to Verify
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="manual-rrr"
+                    type="text"
+                    placeholder="e.g. 1234-5678-9012"
+                    className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
+                    value={manualRRR}
+                    onChange={(e) => setManualRRR(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleVerifyManualRRR}
+                    disabled={isVerifyingRRR || !manualRRR}
+                    className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
+                  >
+                    {isVerifyingRRR ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Verify
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
+
+            {/* Manual Link Fallback Input */}
+            {showManualLinkInput && (
+              <div className="w-full border-t border-blue-200 pt-3 mt-1 animate-in slide-in-from-top-2 fade-in">
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-2 text-sm text-amber-800">
+                  <p className="font-semibold flex items-center gap-2">
+                    <Loader2 className="h-3 w-3" /> Automatic verification incomplete.
+                  </p>
+                  <p className="mt-1">
+                    Please copy the <strong>Receipt Download Link</strong> from the Remita receipt page (below) and paste it here for verification.
+                  </p>
+                </div>
+                <label htmlFor="manual-link" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+                  3. Paste Receipt PDF Link (Fallback)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="manual-link"
+                    type="tex"
+                    placeholder="https://login.remita.net/remita/.../printrecieptRequest.pdf"
+                    className="flex-1 h-10 px-3 rounded-md border-2 border-amber-200 focus:border-amber-500 outline-none text-sm"
+                    value={manualReceiptUrl}
+                    onChange={(e) => setManualReceiptUrl(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleVerifyReceiptLink}
+                    disabled={isVerifyingRRR || !manualReceiptUrl}
+                    className="bg-amber-600 hover:bg-amber-700 h-10 px-6 font-bold text-white"
+                  >
+                    Verify Link
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Remita Iframe Area */}
