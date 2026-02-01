@@ -41,7 +41,7 @@ import {
   retryBatchPayment,
   verifyBatchPayment,
   deleteAllBatches,
-  payWithRemitaRRR,
+  verifyBatchPaymentWithPdf,
 } from "../actions/codActions";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -121,6 +121,8 @@ export function SubmittedBatchesModal({
     totalAmount: number;
   } | null>(null);
   const [manualRRR, setManualRRR] = useState("");
+  const [manualEbsUrl, setManualEbsUrl] = useState("");
+  const [showManualEbs, setShowManualEbs] = useState(false);
   const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
 
@@ -142,8 +144,9 @@ export function SubmittedBatchesModal({
       });
 
       setShowPaymentView(true);
-      toast.success("Please generate and pay your Remita RRR in the window below.");
-
+      toast.success(
+        "Please generate and pay your Remita RRR in the window below.",
+      );
     } catch (error: any) {
       console.error("Payment initialization error:", error);
       toast.error(error?.message || "Failed to initialize payment");
@@ -160,25 +163,44 @@ export function SubmittedBatchesModal({
 
     if (!paymentBatch) return;
 
+    if (showManualEbs && !manualEbsUrl) {
+      toast.error("Please enter the EBS Receipt URL");
+      return;
+    }
+
     try {
       setIsVerifyingRRR(true);
-      const result = await payWithRemitaRRR(paymentBatch.id, manualRRR);
+      const result = await verifyBatchPaymentWithPdf(
+        paymentBatch.id,
+        manualRRR,
+        showManualEbs ? manualEbsUrl : undefined,
+      );
 
       if (result.success && result.data) {
         if (result.data.status === "LASG_PAID") {
-          toast.success("Payment verified successfully!");
+          toast.success(
+            "Payment verified! Receipt captured and plans submitted.",
+          );
           setShowPaymentView(false);
           setPaymentBatch(null);
           setManualRRR("");
+          setManualEbsUrl("");
+          setShowManualEbs(false);
           // Reload batches to show updated status
           await loadBatches();
           if (onSuccess) onSuccess();
           router.refresh();
-        } else if (result.data.status === "PENDING") {
-          toast.info("Payment is still pending on Remita. Please ensure you have paid.");
+        } else {
+          toast.success("Payment status updated: " + result.data.status);
         }
       } else {
         toast.error(result.error || "Failed to verify RRR");
+        if (
+          result.error?.includes("extract") ||
+          result.error?.includes("Manual")
+        ) {
+          setShowManualEbs(true);
+        }
       }
     } catch (error: any) {
       console.error("Verification error:", error);
@@ -189,12 +211,17 @@ export function SubmittedBatchesModal({
   };
 
   const handleClosePayment = () => {
-    if (showPaymentView && !confirm("Are you sure you want to close the payment window?")) {
+    if (
+      showPaymentView &&
+      !confirm("Are you sure you want to close the payment window?")
+    ) {
       return;
     }
     setShowPaymentView(false);
     setPaymentBatch(null);
     setManualRRR("");
+    setManualEbsUrl("");
+    setShowManualEbs(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -258,7 +285,7 @@ export function SubmittedBatchesModal({
   const handleDeleteAll = async () => {
     if (
       !confirm(
-        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!"
+        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!",
       )
     ) {
       return;
@@ -269,7 +296,7 @@ export function SubmittedBatchesModal({
       const result = await deleteAllBatches();
       if (result.success && result.data) {
         toast.success(
-          `Successfully deleted ${result.data.deletedCount} batch(es)`
+          `Successfully deleted ${result.data.deletedCount} batch(es)`,
         );
         await loadBatches();
         router.refresh();
@@ -412,7 +439,7 @@ export function SubmittedBatchesModal({
                                 Paid{" "}
                                 {format(
                                   new Date(batch.userPaymentDate),
-                                  "MMM d"
+                                  "MMM d",
                                 )}
                               </span>
                             </div>
@@ -513,11 +540,14 @@ export function SubmittedBatchesModal({
                   Complete Payment for Batch {paymentBatch?.batchCode}
                 </DialogTitle>
                 <DialogDescription>
-                  Generate your RRR in the window below, pay, then paste the RRR to verify.
+                  Generate your RRR in the window below, pay, then paste the RRR
+                  to verify.
                 </DialogDescription>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
+                <p className="text-xs text-gray-500 uppercase font-semibold">
+                  Total Amount
+                </p>
                 <p className="text-2xl font-bold text-green-700">
                   ₦{paymentBatch?.totalAmount.toLocaleString()}
                 </p>
@@ -528,7 +558,10 @@ export function SubmittedBatchesModal({
           {/* Verification Bar */}
           <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
             <div className="flex-1 w-full">
-              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
+              <label
+                htmlFor="manual-rrr"
+                className="text-xs font-bold text-blue-800 uppercase mb-1 block"
+              >
                 Enter your generated RRR here to verify payment
               </label>
               <div className="flex gap-2">
@@ -570,13 +603,18 @@ export function SubmittedBatchesModal({
             />
             <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
               <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
-                <strong>Tip:</strong> Search for "Lagos State Surveyor General" to generate your RRR.
+                <strong>Tip:</strong> Search for "Lagos State Surveyor General"
+                to generate your RRR.
               </div>
             </div>
           </div>
 
           <DialogFooter className="p-4 border-t bg-gray-50">
-            <Button variant="ghost" onClick={handleClosePayment} className="text-gray-500">
+            <Button
+              variant="ghost"
+              onClick={handleClosePayment}
+              className="text-gray-500"
+            >
               Close & Pay Later
             </Button>
           </DialogFooter>
