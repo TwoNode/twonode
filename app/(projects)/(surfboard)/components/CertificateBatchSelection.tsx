@@ -92,6 +92,13 @@ export function BatchSubmissionModal({
   const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
 
+  const handleCopyAmount = () => {
+    if (batchData?.totalAmount) {
+      navigator.clipboard.writeText(batchData.totalAmount.toString());
+      toast.success("Amount copied to clipboard");
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       if (selectedPlans.length === 0) {
@@ -223,9 +230,20 @@ export function BatchSubmissionModal({
                 <p className="text-xs text-gray-500 uppercase font-semibold">
                   Total Amount
                 </p>
-                <p className="text-2xl font-bold text-green-700">
-                  ₦{batchData.totalAmount.toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2 justify-end group">
+                  <p className="text-2xl font-bold text-green-700">
+                    ₦{batchData.totalAmount.toLocaleString()}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    onClick={handleCopyAmount}
+                    title="Copy Amount"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogHeader>
