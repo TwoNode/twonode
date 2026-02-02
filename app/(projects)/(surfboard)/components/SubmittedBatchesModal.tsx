@@ -35,6 +35,7 @@ import {
   Package,
   Trash2,
   ChevronDown,
+  Copy,
 } from "lucide-react";
 import {
   getUserBatches,
@@ -124,6 +125,13 @@ export function SubmittedBatchesModal({
   const [manualRRR, setManualRRR] = useState("");
   const [manualEbsUrl, setManualEbsUrl] = useState("");
   const [showManualEbs, setShowManualEbs] = useState(false);
+
+  const handleCopyAmount = () => {
+    if (paymentBatch?.totalAmount) {
+      navigator.clipboard.writeText(paymentBatch.totalAmount.toString());
+      toast.success("Amount copied to clipboard");
+    }
+  };
   const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
 
@@ -549,9 +557,21 @@ export function SubmittedBatchesModal({
                 <p className="text-xs text-gray-500 uppercase font-semibold">
                   Total Amount
                 </p>
-                <p className="text-2xl font-bold text-green-700">
-                  ₦{paymentBatch?.totalAmount.toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2 justify-end group">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    onClick={handleCopyAmount}
+                    title="Copy Amount"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+
+                  <p className="text-2xl font-bold text-green-700">
+                    ₦{paymentBatch?.totalAmount.toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
           </DialogHeader>
