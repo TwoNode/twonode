@@ -226,7 +226,7 @@ export function RemitaPaymentModal({
                     Agency Name
                   </span>
                   <span className="font-medium">
-                    4830000 -- 61004 -- Office of the State Surveyor General
+                    4830000 -- 61004 -- Office of Surveyor General
                   </span>
                 </div>
                 <div>
