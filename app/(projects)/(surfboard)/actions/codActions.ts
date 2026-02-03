@@ -1579,6 +1579,15 @@ export async function getUserBatches(): Promise<
         status: string;
         redCopyStatus: string;
       }>;
+      submitter: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber?: string | null;
+        payerID?: number | null;
+        payerIDType?: string | null;
+      } | null;
     }>;
   }>
 > {
@@ -1615,6 +1624,17 @@ export async function getUserBatches(): Promise<
             createdAt: "asc",
           },
         },
+        submitter: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phoneNumber: true,
+            payerID: true,
+            payerIDType: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -1644,6 +1664,15 @@ export async function retryBatchPayment(batchId: string): Promise<
     amount: number;
     batchCode: string;
     batchId: string;
+    submitter: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber?: string | null;
+      payerID?: number | null;
+      payerIDType?: string | null;
+    };
   }>
 > {
   try {
@@ -1679,14 +1708,21 @@ export async function retryBatchPayment(batchId: string): Promise<
       return { success: false, error: "Batch payment already completed" };
     }
 
-    // Get user email
+    // Get user details
     const userDetails = await prisma.surfboardUser.findUnique({
       where: { id: user.id },
-      select: { email: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        payerID: true,
+        payerIDType: true,
+      },
     });
-
     if (!userDetails?.email) {
-      return { success: false, error: "User email not found" };
+      return { success: false, error: "User or email not found" };
     }
 
     // Validate amount
@@ -1717,12 +1753,20 @@ export async function retryBatchPayment(batchId: string): Promise<
     return {
       success: true,
       data: {
-        reference,
+        reference: reference,
         email: userDetails.email,
-        // NOTE: amount is in NAIRA (from DB). Frontend must convert to kobo (*100) for Paystack
         amount: batch.totalAmount,
         batchCode: batch.batchCode,
         batchId: batch.id,
+        submitter: {
+          id: userDetails.id,
+          email: userDetails.email,
+          firstName: userDetails.firstName,
+          lastName: userDetails.lastName,
+          phoneNumber: userDetails.phoneNumber,
+          payerID: userDetails.payerID,
+          payerIDType: userDetails.payerIDType,
+        },
       },
     };
   } catch (error) {

@@ -37,16 +37,14 @@ import {
   ChevronDown,
   Copy,
 } from "lucide-react";
-import {
-  getUserBatches,
-  retryBatchPayment,
-  verifyBatchPayment,
-  deleteAllBatches,
-  verifyBatchPaymentWithPdf,
-  verifyLASGReceiptLink,
-} from "../actions/codActions";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { RemitaPaymentModal, type SubmitterInfo } from "./RemitaPaymentModal";
+import {
+  deleteAllBatches,
+  getUserBatches,
+  retryBatchPayment,
+} from "../actions/codActions";
 
 interface Batch {
   id: string;
@@ -66,6 +64,15 @@ interface Batch {
     status: string;
     redCopyStatus: string;
   }>;
+  submitter: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string | null;
+    payerID?: number | null;
+    payerIDType?: string | null;
+  } | null;
 }
 
 interface SubmittedBatchesModalProps {
@@ -121,18 +128,8 @@ export function SubmittedBatchesModal({
     id: string;
     batchCode: string;
     totalAmount: number;
+    submitter: SubmitterInfo | null;
   } | null>(null);
-  const [manualRRR, setManualRRR] = useState("");
-  const [manualEbsUrl, setManualEbsUrl] = useState("");
-  const [showManualEbs, setShowManualEbs] = useState(false);
-
-  const handleCopyAmount = () => {
-    if (paymentBatch?.totalAmount) {
-      navigator.clipboard.writeText(paymentBatch.totalAmount.toString());
-      toast.success("Amount copied to clipboard");
-    }
-  };
-  const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
 
   const handlePayNow = async (batchId: string) => {
@@ -144,12 +141,13 @@ export function SubmittedBatchesModal({
         throw new Error(result.error || "Failed to initialize payment");
       }
 
-      const { amount, batchCode } = result.data;
+      const { amount, batchCode, submitter } = result.data;
 
       setPaymentBatch({
         id: batchId,
         batchCode,
         totalAmount: amount,
+        submitter,
       });
 
       setShowPaymentView(true);
@@ -164,73 +162,9 @@ export function SubmittedBatchesModal({
     }
   };
 
-  const handleVerifyManualRRR = async () => {
-    if (!manualRRR || manualRRR.length < 5) {
-      toast.error("Please enter a valid Remita RRR");
-      return;
-    }
-
-    if (!paymentBatch) return;
-
-    if (showManualEbs && !manualEbsUrl) {
-      toast.error("Please enter the EBS Receipt URL");
-      return;
-    }
-
-    try {
-      setIsVerifyingRRR(true);
-      const result = await verifyBatchPaymentWithPdf(
-        paymentBatch.id,
-        manualRRR,
-        showManualEbs ? manualEbsUrl : undefined,
-      );
-
-      if (result.success && result.data) {
-        if (result.data.status === "LASG_PAID") {
-          toast.success(
-            "Payment verified! Receipt captured and plans submitted.",
-          );
-          setShowPaymentView(false);
-          setPaymentBatch(null);
-          setManualRRR("");
-          setManualEbsUrl("");
-          setShowManualEbs(false);
-          // Reload batches to show updated status
-          await loadBatches();
-          if (onSuccess) onSuccess();
-          router.refresh();
-        } else {
-          toast.success("Payment status updated: " + result.data.status);
-        }
-      } else {
-        toast.error(result.error || "Failed to verify RRR");
-        if (
-          result.error?.includes("extract") ||
-          result.error?.includes("Manual")
-        ) {
-          setShowManualEbs(true);
-        }
-      }
-    } catch (error: any) {
-      console.error("Verification error:", error);
-      toast.error(error.message || "Failed to verify payment");
-    } finally {
-      setIsVerifyingRRR(false);
-    }
-  };
-
   const handleClosePayment = () => {
-    if (
-      showPaymentView &&
-      !confirm("Are you sure you want to close the payment window?")
-    ) {
-      return;
-    }
     setShowPaymentView(false);
     setPaymentBatch(null);
-    setManualRRR("");
-    setManualEbsUrl("");
-    setShowManualEbs(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -539,108 +473,17 @@ export function SubmittedBatchesModal({
       </DialogContent>
 
       {/* Manual Remita Payment Iframe Dialog */}
-      <Dialog open={showPaymentView} onOpenChange={handleClosePayment}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 border-b">
-            <div className="flex justify-between items-start">
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-xl">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
-                  Complete Payment for Batch {paymentBatch?.batchCode}
-                </DialogTitle>
-                <DialogDescription>
-                  Generate your RRR in the window below, pay, then paste the RRR
-                  to verify.
-                </DialogDescription>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">
-                  Total Amount
-                </p>
-                <div className="flex items-center gap-2 justify-end group">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    onClick={handleCopyAmount}
-                    title="Copy Amount"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-
-                  <p className="text-2xl font-bold text-green-700">
-                    ₦{paymentBatch?.totalAmount.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Verification Bar */}
-          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
-            <div className="flex-1 w-full">
-              <label
-                htmlFor="manual-rrr"
-                className="text-xs font-bold text-blue-800 uppercase mb-1 block"
-              >
-                Enter your generated RRR here to verify payment
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="manual-rrr"
-                  type="text"
-                  placeholder="e.g. 1234-5678-9012"
-                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
-                  value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
-                />
-                <Button
-                  onClick={handleVerifyManualRRR}
-                  disabled={isVerifyingRRR || !manualRRR}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                >
-                  {isVerifyingRRR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify & Submit
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Remita Iframe Area */}
-          <div className="flex-1 bg-gray-100 relative">
-            <iframe
-              src="https://login.remita.net/remita/lirs/internal/pay.reg"
-              className="w-full h-full border-none"
-              title="Remita Payment Portal"
-            />
-            <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
-              <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
-                <strong>Tip:</strong> Search for "Lagos State Surveyor General"
-                to generate your RRR.
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="p-4 border-t bg-gray-50">
-            <Button
-              variant="ghost"
-              onClick={handleClosePayment}
-              className="text-gray-500"
-            >
-              Close & Pay Later
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showPaymentView && paymentBatch && (
+        <RemitaPaymentModal
+          isOpen={showPaymentView}
+          onClose={handleClosePayment}
+          batchData={paymentBatch}
+          onSuccess={async () => {
+            await loadBatches();
+            if (onSuccess) onSuccess();
+          }}
+        />
+      )}
     </Dialog>
   );
 }
