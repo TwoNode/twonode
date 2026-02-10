@@ -500,3 +500,101 @@ Email + in-app notifications sent for:
 ---
 
 **END OF SPECIFICATION**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Payerid Type.
+2. Payerid 
+3. Email 
+4. Phone number 
+5. Agency Name: "4830000 — 61004 — Office of the State Surveyor General"
+6. Revenue Name: "4020002 — 32202 — Lands Registry Transactions"
+7. Period: it’s the current date (dd/mm/yyyy)
+
+
+
+Then the payment verification
+
+User input the RRR Number
+
+Request is sent to this link with the RRR number mapped into it 
+E.g RRR Number: 191392819355
+"https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf" 
+
+Then the information on page one is copied and Ai extract the payerid, payer id type and the Transaction id and transactions code and map it into the Lagos EBS Receipt URL..
+
+E.g Trans Id : 60050629, Trans Code: ZCYYDEIA, PayerID: 16976764, PayerID type: N (individual)
+
+"https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=n&payerid=16976764&transid=60050629&transcode=ZCYYDEIA"
+
+
+Example of Page 1-Lagos revenue receipt from the Remita receipt URL
+
+"SMS: 0809-113-3778; 0809-…
+The Amount paid is verified with the Cod Fee...  then the Lagos revenue EBS  URL is now what the account officer should see..
+
+
+
+
+4830000 -- 61004 -- Office of Surveyor General
+4020002 -- 32202 -- Lands Registry Transactions
+
+please note This is the exact format on remita.

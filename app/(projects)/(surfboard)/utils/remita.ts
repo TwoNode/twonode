@@ -271,7 +271,7 @@ export function getRemitaPaymentUrl(rrr: string): string {
  * Endpoint: https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/{rrr}/printrecieptRequest.pdf
  */
 export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
-  const env = getRemitaEnv();
+  // const env = getRemitaEnv();
   // Construct the URL. Note: The user provided URL structure seems to confirm it's under the base URL.
   // We'll use the environment's base URL to support demo/live, assuming the path is consistent.
   // If the user's provided link is constant regardless of env, we might need to stick to the specific one, 
@@ -280,8 +280,9 @@ export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
   
   // Clean RRR just in case
   const cleanRRR = rrr.replace(/-/g, "").trim();
+  const baseUrl = "https://login.remita.net";
   
-  const url = `${env.baseUrl}/remita/exapp/api/v1/send/api/print/billsvc/biller/${cleanRRR}/printrecieptRequest.pdf`;
+  const url = `${baseUrl}/remita/exapp/api/v1/send/api/print/billsvc/biller/${cleanRRR}/printrecieptRequest.pdf`;
   
   console.log("Fetching Remita PDF from:", url);
 

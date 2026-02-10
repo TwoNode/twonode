@@ -85,11 +85,19 @@ export function RemitaPaymentModal({
     try {
       setIsVerifyingRRR(true);
 
+      console.log("Starting verifyBatchPaymentWithPdf with:", {
+        batchId: batchData.id,
+        manualRRR,
+        manualEbsUrl: showManualEbs ? manualEbsUrl : undefined,
+      });
+
       const result = await verifyBatchPaymentWithPdf(
         batchData.id,
         manualRRR,
         showManualEbs ? manualEbsUrl : undefined,
       );
+
+      console.log("verifyBatchPaymentWithPdf result:", result);
 
       if (result.success && result.data) {
         if (result.data.status === "LASG_PAID") {

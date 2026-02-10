@@ -1274,14 +1274,14 @@ export async function verifyBatchPaymentWithPdf(
       // B. Parse PDF
       let text: string;
       try {
-        // Import PDFParse as a named export
-        const { PDFParse } = await import("pdf-parse");
+        // Import pdf-parse (CJS module - handle both default and direct export)
+        const pdfParseModule = await import("pdf-parse");
+        const pdfParse = pdfParseModule.default ?? pdfParseModule;
 
-        // PDFParse constructor requires LoadParameters with the buffer data
-        const parser = new PDFParse({ data: pdfBuffer });
+        console.log("\n\n\n\n\n\n\nTypes", typeof pdfParseModule.default, typeof pdfParseModule)
 
-        // Use getText() method to extract text content
-        const pdfData = await parser.getText();
+        // Call pdf-parse function with the buffer directly
+        const pdfData = await pdfParse(pdfBuffer);
 
         // Extract the text from the result
         text = pdfData.text;
@@ -1291,7 +1291,10 @@ export async function verifyBatchPaymentWithPdf(
           text.substring(0, 200),
         );
       } catch (err: any) {
-        return { success: false, error: `Failed to parse PDF: ${err.message}` };
+        return {
+          success: false,
+          error: `Failed to parse PDF: ${err.message}`,
+        };
       }
 
       // Extract Fields using Regex
