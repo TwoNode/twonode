@@ -3,7 +3,7 @@
  * This file demonstrates how the error handler works with different Prisma errors
  */
 
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated";
 import { handlePrismaError } from "../prismaErrorHandler";
 
 // Test cases for different Prisma errors

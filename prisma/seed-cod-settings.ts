@@ -3,7 +3,7 @@
  * Run with: npx tsx prisma/seed-cod-settings.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/prisma/generated";
 
 const prisma = new PrismaClient();
 
