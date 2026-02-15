@@ -18,7 +18,10 @@ import {
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
-import { extractPaymentDetailsFromText } from "./aiExtractionActions";
+import { extractPaymentDetailsFromText, extractEBSReceiptFields } from "./aiExtractionActions";
+
+// Use pdfjs-dist directly for server-side PDF text extraction (no worker needed)
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 6;
@@ -1274,92 +1277,135 @@ export async function verifyBatchPaymentWithPdf(
       // B. Parse PDF
       let text: string;
       try {
-        // Import pdf-parse (CJS module - handle both default and direct export)
-        const pdfParseModule = await import("pdf-parse");
-        const pdfParse = pdfParseModule.default ?? pdfParseModule;
+        // Use pdfjs-dist directly for server-side text extraction
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer) });
+        const pdfDoc = await loadingTask.promise;
 
-        console.log("\n\n\n\n\n\n\nTypes", typeof pdfParseModule.default, typeof pdfParseModule)
+        const textParts: string[] = [];
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const content = await page.getTextContent();
+          const parts: string[] = [];
+          for (const item of content.items) {
+            if (!("str" in item)) continue;
+            const textItem = item as any;
+            parts.push(textItem.str);
+            if (textItem.hasEOL) {
+              parts.push("\n");
+            }
+          }
+          textParts.push(parts.join(""));
+          page.cleanup();
+        }
+        await pdfDoc.destroy();
 
-        // Call pdf-parse function with the buffer directly
-        const pdfData = await pdfParse(pdfBuffer);
-
-        // Extract the text from the result
-        text = pdfData.text;
+        text = textParts.join("\n");
 
         console.log(
-          "PDF Text Extracted (First 200 chars):",
-          text.substring(0, 200),
+          "PDF Text Extracted (First 3000 chars):",
+          text.substring(0, 3000),
         );
       } catch (err: any) {
+        console.log("\n\n\n\n\n\n\n\n\nPDF Parse Error:", err);
         return {
           success: false,
           error: `Failed to parse PDF: ${err.message}`,
         };
       }
 
-      // Extract Fields using Regex
-      // Assuming format similar to provided examples.
-      // Need patterns for: Trans Id, Trans Code, PayerID, PayerID Type
+      // ── Extraction: Regex (manual) ──
+      const transIdCodeMatch = text.match(/\b(\d{6,})\/([A-Z0-9]{4,})\b/);
+      const payerMatch = text.match(/<([NnCc])-(\d+)/);
 
-      const transIdMatch =
-        text.match(/Transaction\s*ID\s*[:]\s*(\d+)/i) ||
-        text.match(/Trans\s*ID\s*[:]\s*(\d+)/i);
-      const transCodeMatch =
-        text.match(/Transaction\s*Code\s*[:]\s*([A-Z0-9]+)/i) ||
-        text.match(/Trans\s*Code\s*[:]\s*([A-Z0-9]+)/i);
-      const payerIdMatch = text.match(/Payer\s*ID\s*[:]\s*(\d+)/i);
+      const regexFields = {
+        transId: transIdCodeMatch ? transIdCodeMatch[1] : "",
+        transCode: transIdCodeMatch ? transIdCodeMatch[2] : "",
+        payerId: payerMatch ? payerMatch[2] : "",
+        payerType: payerMatch
+          ? payerMatch[1].toLowerCase() === "c" ? "c" : "n"
+          : "n",
+      };
+      console.log("Regex extracted fields:", regexFields);
 
-      // Payer Type is trickier, usually just "N" or derived from context.
-      // The user example shows "PayerID type: N (individual)".
-      // Let's look for "Payer Type" or similar. If not found, default to 'n' (individual) or 'c' (corporate) based on batch/user info?
-      // Or try to parse it from the text "Individual" or "Commercial"
-      // Example: "Payer Type: Individual" -> n, "Payer Type: Corporate" -> c
-      const payerTypeStrMatch = text.match(/Payer\s*Type\s*[:]\s*(\w+)/i);
-      let payerType = "n"; // distinct default
-      if (payerTypeStrMatch) {
-        const types = payerTypeStrMatch[1].toLowerCase();
-        if (types.includes("commercial") || types.includes("corporate"))
-          payerType = "c";
-      }
+      // ── Extraction: AI ──
+      const aiResult = await extractEBSReceiptFields(text);
+      const aiFields = aiResult.success && aiResult.data ? aiResult.data : null;
+      console.log("AI extracted fields:", aiFields ?? aiResult.error);
 
-      const transId = transIdMatch ? transIdMatch[1] : null;
-      const transCode = transCodeMatch ? transCodeMatch[1] : null;
-      const payerId = payerIdMatch ? payerIdMatch[1] : null;
+      // ── Build EBS URL helper ──
+      const buildEbsUrl = (f: { transId: string; transCode: string; payerId: string; payerType: string }) =>
+        `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${f.payerType}&payerid=${f.payerId}&transid=${f.transId}&transcode=${f.transCode}`;
 
-      if (!transId || !transCode || !payerId) {
-        console.error("Failed to extract required fields from PDF", {
-          transId,
-          transCode,
-          payerId,
-        });
-        return {
-          success: false,
-          error:
-            "Could not extract Transaction details (ID, Code, PayerID) from the Receipt PDF. Please ensure the RRR is valid and the receipt is standard. You may need to enter the EBS Receipt URL manually.",
-        };
-      }
+      const hasAllFields = (f: { transId: string; transCode: string; payerId: string }) =>
+        !!(f.transId && f.transCode && f.payerId);
 
-      // C. Construct EBS URL
-      // https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=n&payerid=16976764&transid=60050629&transcode=ZCYYDEIA
-      ebsUrl = `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`;
-
-      // D. Verify EBS URL Validity (Make a HEAD/GET request)
-      try {
-        const checkResponse = await fetch(ebsUrl, { method: "HEAD" }); // HEAD might not be supported by all, maybe GET with Abort
-        // Or actually, user said "confirm available".
-        // Let's just try GET. If it's a PDF generator, it might be heavy.
-        // Actually, let's skip a heavy check if we extracted valid IDs.
-        // But the user insisted "confirm the receipt is valid".
-        // We can verify status 200.
-        if (checkResponse.status !== 200) {
-          throw new Error(`EBS URL returned status ${checkResponse.status}`);
+      const verifyEbsUrl = async (url: string): Promise<boolean> => {
+        try {
+          const res = await fetch(url, { method: "HEAD" });
+          console.log(`EBS URL verification (${url}): status ${res.status}`);
+          return res.status === 200;
+        } catch (err) {
+          console.warn("EBS URL verification failed:", err);
+          return false;
         }
-      } catch (err) {
-        console.warn(
-          "EBS URL verification failed, but proceeding as details were extracted.",
-          err,
-        );
+      };
+
+      let extractionSource = "";
+      let aiUrl = "";
+
+      // C. Try AI-extracted fields first
+      if (aiFields && hasAllFields(aiFields)) {
+        aiUrl = buildEbsUrl(aiFields);
+        console.log("Trying AI-extracted EBS URL:", aiUrl);
+        const aiOk = await verifyEbsUrl(aiUrl);
+        if (aiOk) {
+          ebsUrl = aiUrl;
+          extractionSource = "AI";
+        }
       }
+
+      // Fallback to regex-extracted fields if AI URL failed or AI had no data
+      if (!ebsUrl && hasAllFields(regexFields)) {
+        const regexUrl = buildEbsUrl(regexFields);
+        let regexOk = false;
+        console.log("Trying regex-extracted EBS URL:", regexUrl);
+
+        if (aiUrl !== regexUrl) {
+          regexOk = await verifyEbsUrl(regexUrl);
+        }
+
+        if (regexOk) {
+          ebsUrl = regexUrl;
+          extractionSource = "regex";
+        } else {
+          // Still use it even if verification fails — user can verify manually
+          ebsUrl = regexUrl;
+          extractionSource = "regex (unverified)";
+          console.warn("Regex EBS URL also failed verification, using anyway.");
+        }
+      }
+
+      // If neither AI nor regex produced any fields at all
+      if (!ebsUrl) {
+        if (!hasAllFields(aiFields ?? { transId: "", transCode: "", payerId: "" }) &&
+          !hasAllFields(regexFields)) {
+          console.error("Both AI and regex failed to extract required fields", {
+            regexFields,
+            aiFields,
+          });
+          return {
+            success: false,
+            error:
+              "Could not extract Transaction details (ID, Code, PayerID) from the Receipt PDF. Please ensure the RRR is valid and the receipt is standard. You may need to enter the EBS Receipt URL manually.",
+          };
+        }
+        // Use whichever has data (AI preferred)
+        const fallback = (aiFields && hasAllFields(aiFields)) ? aiFields : regexFields;
+        ebsUrl = buildEbsUrl(fallback);
+        extractionSource = "fallback (unverified)";
+      }
+
+      console.log(`Using ${extractionSource} EBS URL:`, ebsUrl);
 
       // E. Upload PDF to S3
       try {
@@ -2274,10 +2320,10 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-              status: "LODGED",
-              redCopyStatus: "APPROVED",
-              dateLodged: new Date(),
-            }
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
           : {}),
       },
       select: {

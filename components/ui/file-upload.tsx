@@ -87,9 +87,21 @@ export default function FileUploader({
     [uploadMode, validateFile, files, onFilesUploaded]
   );
 
+  // Convert acceptedFileTypes to the Accept format expected by react-dropzone
+  const acceptProp = (() => {
+    if (typeof acceptedFileTypes === "object" && !Array.isArray(acceptedFileTypes)) {
+      return acceptedFileTypes as Record<string, string[]>;
+    }
+    const types = Array.isArray(acceptedFileTypes)
+      ? acceptedFileTypes
+      : acceptedFileTypes.split(",").map((t) => t.trim());
+    // Group file extensions under a wildcard MIME type
+    return { "application/*": types } as Record<string, string[]>;
+  })();
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: acceptedFileTypes,
+    accept: acceptProp,
     maxSize,
     multiple: uploadMode === "multi",
   });
@@ -106,8 +118,8 @@ export default function FileUploader({
     isDragActive
       ? "border-blue-500 bg-blue-50"
       : internalError || externalErrors
-      ? "border-red-500"
-      : "border-gray-300 hover:border-gray-400",
+        ? "border-red-500"
+        : "border-gray-300 hover:border-gray-400",
     layout === "horizontal"
       ? "flex items-center justify-center space-x-4"
       : "flex flex-col justify-center items-center space-y-2"

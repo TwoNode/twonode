@@ -67,7 +67,7 @@ export const saveToOneTimeProperty = async (
     const newProperty = await prisma.oneTimeUserProperty.create({
       data: {
         ...data,
-      },
+      } as any,
     });
 
     console.log("New property saved:", newProperty);
@@ -98,7 +98,7 @@ export const saveToPropertyTable = async (data: PropertyCreateInputType) => {
     const newProperty = await prisma.property.create({
       data: {
         ...data,
-      },
+      } as any,
     });
 
     console.log("New property saved:", newProperty);

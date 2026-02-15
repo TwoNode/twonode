@@ -238,7 +238,7 @@ export const getAllRequestsWithUserByAdmin = async ({
       where: onlyWithReport
         ? {
             report: {
-              not: Prisma.JsonNull,
+              not: Prisma.JsonNull as any,
             },
           }
         : undefined,
@@ -265,7 +265,7 @@ export const getAllRequestsWithUserByAdmin = async ({
         where: onlyWithReport
           ? {
               report: {
-                not: Prisma.JsonNull,
+                not: Prisma.JsonNull as any,
               },
             }
           : undefined,
