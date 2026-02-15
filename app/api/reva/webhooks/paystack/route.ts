@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest } from "next/server";
 import type { PaystackWebhookType } from "@/types/PaystackWebhookType";
-import { PrismaClient } from "@/prisma/generated";
+// import { PrismaClient } from "@/prisma/generated";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import prisma from "@/lib/prisma";
 
