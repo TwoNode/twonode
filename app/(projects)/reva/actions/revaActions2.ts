@@ -3,7 +3,7 @@ import {
   NotificationAudience,
   NotificationType,
   Role,
-} from "@prisma/client";
+} from "@/prisma/generated";
 import prisma from "@/lib/prisma";
 import { sendEmailToAdmin } from "@/utils/email";
 // import { sendEmailToAllAdmins } from "@/app/(projects)/reva-restricted/actions/adminDbActions";
@@ -875,9 +875,8 @@ export const notifyPaymentReceived = async (
     await createNotification({
       type: "PAYMENT",
       title: "Payment Received",
-      message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${
-        propertyData.reference
-      }`,
+      message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${propertyData.reference
+        }`,
       link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
       audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
@@ -891,9 +890,8 @@ export const notifyPaymentReceived = async (
       await createNotification({
         type: "SUCCESS",
         title: "Payment Confirmed",
-        message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${
-          propertyData.reference
-        } has been confirmed.`,
+        message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${propertyData.reference
+          } has been confirmed.`,
         userIds: [userId],
         link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
         metadata: {

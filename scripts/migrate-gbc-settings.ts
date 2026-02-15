@@ -5,7 +5,7 @@
  * Usage: npx tsx scripts/migrate-gbc-settings.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/prisma/generated";
 
 const prisma = new PrismaClient();
 

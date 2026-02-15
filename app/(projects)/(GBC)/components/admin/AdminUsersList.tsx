@@ -16,7 +16,7 @@ import {
   updateAdminRole,
   toggleAdminStatus,
 } from "../../actions/admin-actions";
-import { GBCRole } from "@prisma/client";
+import { GBCRole } from "@/prisma/generated";
 import { DeleteAdminModal } from "./DeleteAdminModal";
 import { ConfirmToggleModal } from "./ConfirmToggleModal";
 

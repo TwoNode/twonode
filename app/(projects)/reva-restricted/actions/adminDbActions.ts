@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated";
 import { getEncryptedUserData, isPlatformUser } from "@/utils/encryptedCookies";
 import prisma from "@/lib/prisma";
 import {
@@ -113,8 +113,7 @@ export const sendEmailToAllSuperAdmins = async ({
     });
 
     console.log(
-      `Email sent to ${
-        superadminEmails.length
+      `Email sent to ${superadminEmails.length
       } superadmins: ${superadminEmails.join(", ")}`
     );
     return {
@@ -237,10 +236,10 @@ export const getAllRequestsWithUserByAdmin = async ({
       take: limit !== null ? limit : undefined,
       where: onlyWithReport
         ? {
-            report: {
-              not: Prisma.JsonNull as any,
-            },
-          }
+          report: {
+            not: Prisma.JsonNull as any,
+          },
+        }
         : undefined,
       include: {
         user: {
@@ -264,10 +263,10 @@ export const getAllRequestsWithUserByAdmin = async ({
         take: limit !== null ? limit : undefined,
         where: onlyWithReport
           ? {
-              report: {
-                not: Prisma.JsonNull as any,
-              },
-            }
+            report: {
+              not: Prisma.JsonNull as any,
+            },
+          }
           : undefined,
         orderBy: {
           updatedAt: "desc",
@@ -585,11 +584,10 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
               <p>Dear ${existingRequest.requester || "Valued Customer"},</p>
               <p>Your due diligence report for request <strong>${reference}</strong> is now available for download.</p>
               <p>You can download your report by clicking the link below:</p>
-              <p><a href="${
-                process.env.ONLINE_BASE_URL
-              }/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(
-            existingRequest.email
-          )}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p>
+              <p><a href="${process.env.ONLINE_BASE_URL
+            }/reva/onetimerequest?reference=${reference}&email=${encodeURIComponent(
+              existingRequest.email
+            )}" style="color: #1e40af; text-decoration: underline;">Download Report</a></p>
               <p>Thank you for using our service.</p>
               <p style="margin-top: 20px;">Best regards,</p>
               <p><strong>REVA Team</strong></p>
@@ -894,9 +892,8 @@ export const approveDueDiligenceReport = async (
 
       await sendMail({
         to: process.env?.EMAIL_USER || "",
-        subject: `[Super Admin] Due Diligence Report ${
-          isApproved ? "Approved" : "Disapproved"
-        }`,
+        subject: `[Super Admin] Due Diligence Report ${isApproved ? "Approved" : "Disapproved"
+          }`,
         text: `Hello Super Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}.`,
         html: mailTemplate(
           isApproved ? "Approved" : "Disapproved",
@@ -908,9 +905,8 @@ export const approveDueDiligenceReport = async (
 
       // Send email to all admins
       await sendEmailToAllAdmins({
-        subject: `[Admin] Due Diligence Report ${
-          isApproved ? "Approved" : "Disapproved"
-        }`,
+        subject: `[Admin] Due Diligence Report ${isApproved ? "Approved" : "Disapproved"
+          }`,
         text: `Hello Admin,\n\nThe due diligence report for property ${reference} has been ${statusText}.`,
         html: mailTemplate(
           isApproved ? "Approved" : "Disapproved",
@@ -927,8 +923,7 @@ export const approveDueDiligenceReport = async (
           text: `Hello,\n\nYour due diligence report for property ${reference} has been approved and is now available in your dashboard.`,
           html: mailTemplate(
             "Approved",
-            `<p style='font-size: 16px;'>Hello <strong>${
-              property?.user?.firstName || "User"
+            `<p style='font-size: 16px;'>Hello <strong>${property?.user?.firstName || "User"
             }</strong>,</p>`,
             `Your due diligence report for <strong>property #${reference}</strong> has been successfully approved.`
           ),
@@ -1096,11 +1091,10 @@ export const approveOneTimeDueDiligenceReport = async (
             <p>${body}</p>
 
             <div style="margin: 30px 0; text-align: center;">
-              <a href="${
-                process.env.ONLINE_BASE_URL
-              }${normalizedLink}?reference=${reference}&email=${encodeURIComponent(
-          property.email
-        )}"
+              <a href="${process.env.ONLINE_BASE_URL
+          }${normalizedLink}?reference=${reference}&email=${encodeURIComponent(
+            property.email
+          )}"
                 target="_blank"
                 style="
                   display: inline-block;
@@ -1128,9 +1122,8 @@ export const approveOneTimeDueDiligenceReport = async (
 
       await sendMail({
         to: process.env?.EMAIL_USER || "",
-        subject: `[Super Admin] OneTime Due Diligence Report ${
-          isApproved ? "Approved" : "Disapproved"
-        }`,
+        subject: `[Super Admin] OneTime Due Diligence Report ${isApproved ? "Approved" : "Disapproved"
+          }`,
         text: `Hello Super Admin,\n\nThe OneTime due diligence report for property ${reference} has been ${statusText}.`,
         html: mailTemplate(
           isApproved ? "Approved" : "Disapproved",
@@ -1142,9 +1135,8 @@ export const approveOneTimeDueDiligenceReport = async (
 
       // Send email to all admins
       await sendEmailToAllAdmins({
-        subject: `[Admin] OneTime Due Diligence Report ${
-          isApproved ? "Approved" : "Disapproved"
-        }`,
+        subject: `[Admin] OneTime Due Diligence Report ${isApproved ? "Approved" : "Disapproved"
+          }`,
         text: `Hello Admin,\n\nThe OneTime due diligence report for property ${reference} has been ${statusText}.`,
         html: mailTemplate(
           isApproved ? "Approved" : "Disapproved",
@@ -1162,8 +1154,7 @@ export const approveOneTimeDueDiligenceReport = async (
           text: `Hello,\n\nYour OneTime due diligence report for property ${reference} has been approved and is now available.`,
           html: mailTemplate(
             "Approved",
-            `<p style='font-size: 16px;'>Hello <strong>${
-              property?.requester || "User"
+            `<p style='font-size: 16px;'>Hello <strong>${property?.requester || "User"
             }</strong>,</p>`,
             `Your OneTime due diligence report for <strong>property #${reference}</strong> has been successfully approved.`
           ),
@@ -1206,9 +1197,8 @@ export const approveOneTimeDueDiligenceReport = async (
       success: true,
       warnings,
       data: result,
-      message: `OneTime report ${
-        isApproved ? "approved" : "rejected"
-      } successfully`,
+      message: `OneTime report ${isApproved ? "approved" : "rejected"
+        } successfully`,
     };
   } catch (error) {
     console.error(
@@ -1422,8 +1412,7 @@ export const makeUserAdmin = async (
     try {
       await notifySystemAlert(
         "User Promoted to Admin",
-        `User ${user?.firstName || ""} ${user?.lastName || ""} (${
-          user?.email
+        `User ${user?.firstName || ""} ${user?.lastName || ""} (${user?.email
         }) was promoted to ${role} by a superadmin.
          You can manage admin users in the Super Admin dashboard.`,
         []
@@ -1431,26 +1420,21 @@ export const makeUserAdmin = async (
       // Email all superadmins
       await sendEmailToAllSuperAdmins({
         subject: `REVA: User Promoted to ${role}`,
-        text: `User ${user?.firstName || ""} ${user?.lastName || ""} (${
-          user?.email
-        }) was promoted to ${role} by a superadmin.`,
-        html: `<p>User <b>${user?.firstName || ""} ${
-          user?.lastName || ""
-        }</b> (<b>${
-          user?.email
-        }</b>) was promoted to <b>${role}</b> by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
+        text: `User ${user?.firstName || ""} ${user?.lastName || ""} (${user?.email
+          }) was promoted to ${role} by a superadmin.`,
+        html: `<p>User <b>${user?.firstName || ""} ${user?.lastName || ""
+          }</b> (<b>${user?.email
+          }</b>) was promoted to <b>${role}</b> by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
       });
       // Email the user who was promoted
       if (user?.email) {
         await sendMail({
           to: user.email,
           subject: `REVA: You have been promoted to ${role}`,
-          text: `Hello ${
-            user?.firstName || ""
-          },\n\nCongratulations! You have been promoted to ${role} on the REVA platform. You now have access to admin features.`,
-          html: `<p>Hello <b>${
-            user?.firstName || ""
-          }</b>,<br><br>Congratulations! You have been promoted to <b>${role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
+          text: `Hello ${user?.firstName || ""
+            },\n\nCongratulations! You have been promoted to ${role} on the REVA platform. You now have access to admin features.`,
+          html: `<p>Hello <b>${user?.firstName || ""
+            }</b>,<br><br>Congratulations! You have been promoted to <b>${role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
         });
       }
     } catch (error) {

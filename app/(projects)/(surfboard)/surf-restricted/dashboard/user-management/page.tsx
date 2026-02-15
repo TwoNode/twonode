@@ -13,7 +13,7 @@ import {
   promoteToAdmin,
   createAdmin,
 } from "../../../actions/adminActions";
-import { SurfboardRole } from "@prisma/client";
+import { SurfboardRole } from "@/prisma/generated";
 
 interface Subscription {
   id?: string;

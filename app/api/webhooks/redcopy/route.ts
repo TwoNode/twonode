@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { SurfboardPlanStatus } from "@prisma/client";
+import { SurfboardPlanStatus } from "@/prisma/generated";
 
 type WebhookPayload = {
   planNumber: string;

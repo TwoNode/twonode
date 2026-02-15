@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 import {
   SurfboardNotificationType,
   SurfboardNotificationAudience,
-} from "@prisma/client";
+} from "@/prisma/generated";
 
 export type ApiResult<T = any> = {
   success: boolean;

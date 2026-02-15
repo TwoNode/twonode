@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated";
 
 /**
  * Maps Prisma error codes to user-friendly messages
