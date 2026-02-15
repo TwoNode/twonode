@@ -3,8 +3,7 @@ import { NextRequest } from "next/server";
 import type { PaystackWebhookType } from "@/types/PaystackWebhookType";
 import { PrismaClient } from "@/prisma/generated";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 // Helper to mark payment as paid
 async function markPaymentPaid(reference: string, message: string) {
