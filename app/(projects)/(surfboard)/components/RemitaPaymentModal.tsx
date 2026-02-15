@@ -264,10 +264,10 @@ export function RemitaPaymentModal({
                 </p>
                 <input
                   type="text"
-                  placeholder="Enter RRR (e.g. 1913-9281-9355)"
+                  placeholder="Enter RRR (e.g. 191392819355)"
                   className="w-full h-10 px-3 rounded-md border border-gray-300 focus:border-blue-500 outline-none font-mono tracking-wider"
                   value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
+                  onChange={(e) => setManualRRR(e.target.value.replace(/\D/g, ""))}
                 />
               </div>
 

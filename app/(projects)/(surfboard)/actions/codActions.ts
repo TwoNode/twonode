@@ -1257,6 +1257,22 @@ export async function verifyBatchPaymentWithPdf(
       };
     }
 
+    // 2b. RRR Uniqueness Check — ensure this RRR isn't already used by another batch
+    const existingBatchWithRRR = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        userPaymentRef: rrr,
+        id: { not: batchId }, // Exclude the current batch
+      },
+      select: { id: true, batchCode: true },
+    });
+
+    if (existingBatchWithRRR) {
+      return {
+        success: false,
+        error: `This RRR (${rrr}) has already been used for batch ${existingBatchWithRRR.batchCode}. Each RRR can only be used once.`,
+      };
+    }
+
     let ebsUrl = "";
     let s3Key = "";
     let pdfUrl = "";
@@ -1449,7 +1465,6 @@ export async function verifyBatchPaymentWithPdf(
         lasgPaymentDate: new Date(),
         lasgReceiptUrl: ebsUrl,
         lasgReceiptS3Key: s3Key, // Can be null/empty if manual
-        // Also assuming the user paid the full amount
       },
     });
 
