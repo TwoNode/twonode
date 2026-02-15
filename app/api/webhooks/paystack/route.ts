@@ -8,21 +8,8 @@ import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/co
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// ─────────────────────────── Lazy deps ───────────────────────────
-let prisma: any = null;
-try {
-  try {
-    prisma = await import("@/lib/prisma");
-    prisma = prisma.default;
-    console.log("Prisma loaded from lib/prisma");
-  } catch (error) {
-    const { PrismaClient } = await import("@prisma/client");
-    prisma = new PrismaClient();
-    console.log("Prisma loaded from @prisma/client");
-  }
-} catch {
-  console.log("Unable to load Prisma");
-}
+// ─────────────────────────── Shared Prisma singleton ───────────────────────────
+import prisma from "@/lib/prisma";
 
 // ─────────────────────────── Types ───────────────────────────
 export type PaystackWebhookPayload = { event: string; data: any };
@@ -35,8 +22,8 @@ export type SubscriptionData = {
   email_token?: string;
   customer?: { id?: number; customer_code?: string; email?: string };
   plan?:
-    | string
-    | { plan_code?: string; name?: string; interval?: string; amount?: number };
+  | string
+  | { plan_code?: string; name?: string; interval?: string; amount?: number };
   next_payment_date?: string | null;
   authorization?: { authorization_code?: string };
   amount?: number;
@@ -62,8 +49,8 @@ export type ChargeSuccessData = {
   customer?: { id?: number; email?: string; customer_code?: string };
   authorization?: { authorization_code?: string };
   plan?:
-    | string
-    | { plan_code?: string; name?: string; interval?: string; amount?: number };
+  | string
+  | { plan_code?: string; name?: string; interval?: string; amount?: number };
   plan_object?: {
     plan_code?: string;
     name?: string;
@@ -210,8 +197,8 @@ function detectPlatform(event: string, data: any): Platform {
   if (event === "charge.success") {
     const hasSubMarkers = Boolean(
       (data as any)?.subscription ||
-        (data as any)?.plan ||
-        (data as any)?.plan_object
+      (data as any)?.plan ||
+      (data as any)?.plan_object
     );
     if (hasSubMarkers) return "surfboard";
     const mRef =
@@ -795,8 +782,7 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
     });
 
     console.log(
-      `✅ certificate charge.success: ${reference} for batch ${
-        batch.batchCode
+      `✅ certificate charge.success: ${reference} for batch ${batch.batchCode
       } (₦${(paidAmountKobo / 100).toFixed(2)})`
     );
   } catch (error) {
@@ -827,9 +813,9 @@ function escapeHtml(str: string) {
   return str.replace(
     /[&<>"']/g,
     (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
-        c
-      ]!)
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+      c
+    ]!)
   );
 }
 
@@ -1001,9 +987,8 @@ async function sendWebhookEmail(args: {
     args.payload?.data?.invoice_code ||
     ""
   ).toString();
-  const subject = `[Paystack][${args.platform}] ${args.event}${
-    summaryRef ? ` — ${summaryRef}` : ""
-  }`;
+  const subject = `[Paystack][${args.platform}] ${args.event}${summaryRef ? ` — ${summaryRef}` : ""
+    }`;
 
   const prettyHeaders = JSON.stringify(args.headers, null, 2);
   const prettyPayload = JSON.stringify(args.payload, null, 2);
@@ -1014,31 +999,30 @@ async function sendWebhookEmail(args: {
     <div style="font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45">
       <h2 style="margin:0 0 8px">Paystack Webhook</h2>
       <p style="margin:4px 0"><strong>Platform:</strong> ${escapeHtml(
-        String(args.platform)
-      )}</p>
+    String(args.platform)
+  )}</p>
       <p style="margin:4px 0"><strong>Event:</strong> ${escapeHtml(
-        args.event
-      )}</p>
+    args.event
+  )}</p>
       <p style="margin:4px 0"><strong>Signature:</strong> <code>${escapeHtml(
-        args.signature
-      )}</code></p>
-      ${
+    args.signature
+  )}</code></p>
+      ${args.entityKey
+      ? `<p style="margin:4px 0"><strong>Entity:</strong> ${escapeHtml(
         args.entityKey
-          ? `<p style="margin:4px 0"><strong>Entity:</strong> ${escapeHtml(
-              args.entityKey
-            )}</p>`
-          : ""
-      }
+      )}</p>`
+      : ""
+    }
       <h3 style="margin:16px 0 6px">Diff vs previous</h3>
       ${diffHtml}
       <h3 style="margin:16px 0 6px">Headers</h3>
       <pre style="background:#f6f8fa;padding:12px;border-radius:8px;white-space:pre-wrap">${escapeHtml(
-        prettyHeaders
-      )}</pre>
+      prettyHeaders
+    )}</pre>
       <h3 style="margin:16px 0 6px">Payload</h3>
       <pre style="background:#f6f8fa;padding:12px;border-radius:8px;white-space:pre-wrap">${escapeHtml(
-        prettyPayload
-      )}</pre>
+      prettyPayload
+    )}</pre>
     </div>
   `;
   const text = `Paystack Webhook
@@ -1068,35 +1052,35 @@ async function sendWebhookEmail(args: {
     try {
       await fn({ to, subject, html, text });
       return;
-    } catch {}
+    } catch { }
     try {
       await fn(to, subject, html);
       return;
-    } catch {}
+    } catch { }
   }
   if (typeof (mailer as any).sendMail === "function") {
     try {
       await (mailer as any).sendMail({ to, subject, html, text });
       return;
-    } catch {}
+    } catch { }
   }
   if (typeof (mailer as any).send === "function") {
     try {
       await (mailer as any).send({ to, subject, html, text });
       return;
-    } catch {}
+    } catch { }
   }
   if (typeof (mailer as any).sendRawEmail === "function") {
     try {
       await (mailer as any).sendRawEmail({ to, subject, html, text });
       return;
-    } catch {}
+    } catch { }
   }
   if (typeof (mailer as any).sendSES === "function") {
     try {
       await (mailer as any).sendSES({ to, subject, html, text });
       return;
-    } catch {}
+    } catch { }
   }
 }
 
