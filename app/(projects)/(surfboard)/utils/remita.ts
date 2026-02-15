@@ -277,13 +277,13 @@ export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
   // If the user's provided link is constant regardless of env, we might need to stick to the specific one, 
   // but usually it depends on the environment. 
   // User provided: "https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf"
-  
+
   // Clean RRR just in case
   const cleanRRR = rrr.replace(/-/g, "").trim();
   const baseUrl = "https://login.remita.net";
-  
+
   const url = `${baseUrl}/remita/exapp/api/v1/send/api/print/billsvc/biller/${cleanRRR}/printrecieptRequest.pdf`;
-  
+
   console.log("Fetching Remita PDF from:", url);
 
   try {
