@@ -18,7 +18,7 @@ import {
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
-import { extractPaymentDetailsFromText, extractEBSReceiptFields } from "./aiExtractionActions";
+import { extractPaymentDetailsFromText, extractEBSReceiptFields, extractLASGReceiptFromHtml, extractRemitaReceiptFromHtml } from "./aiExtractionActions";
 
 // Use pdfjs-dist directly for server-side PDF text extraction (no worker needed)
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -1206,22 +1206,20 @@ export async function verifyBatchPayment(
 }
 
 /**
- * Pay with Remita RRR - Verifies a manually entered RRR and updates the batch
+ * Verify Batch Payment using Two Receipt Links (LASG + Remita)
+ * 
+ * New workflow replacing the old PDF-fetch approach:
+ * 1. Parses LASG URL for transId, transCode, payerId, payerType
+ * 2. Cross-checks payerId + payerType against user profile
+ * 3. Fetches HTML from both receipt URLs
+ * 4. AI extracts: anchor + amount (LASG), RRR + amount + status + anchor (Remita)
+ * 5. Cross-validates anchor match, amount match, Remita status, RRR uniqueness
+ * 6. Stores URLs directly (no S3 upload)
  */
-// ... (keeping existing payWithRemitaRRR for backward compatibility or different use cases if needed, but adding new one)
-
-/**
- * Verify Batch Payment using Remita Receipt PDF
- * 1. Fetches the PDF from Remita
- * 2. Parses it for TransID, PayerID, etc.
- * 3. Generates EBS Receipt URL
- * 4. Uploads PDF to S3
- * 5. Updates Batch record
- */
-export async function verifyBatchPaymentWithPdf(
+export async function verifyBatchPaymentWithLinks(
   batchId: string,
-  rrr: string,
-  manualEBSUrl?: string,
+  lasgReceiptUrl: string,
+  remitaReceiptUrl: string,
 ): Promise<ApiResult<{ success: boolean; ebsUrl: string; status: string }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1235,11 +1233,11 @@ export async function verifyBatchPaymentWithPdf(
     });
 
     if (!batch) {
-      return { success: false, error: "Batch not found" };
+      return { success: false, error: "[Step 1: Batch Lookup] Batch not found. Please refresh and try again." };
     }
 
     if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
-      return { success: false, error: "Unauthorized to pay for this batch" };
+      return { success: false, error: "[Step 1: Authorization] You are not authorized to pay for this batch. Only the batch submitter or a Super Admin can verify payment." };
     }
 
     // 2. Initial Status Check
@@ -1257,11 +1255,156 @@ export async function verifyBatchPaymentWithPdf(
       };
     }
 
-    // 2b. RRR Uniqueness Check — ensure this RRR isn't already used by another batch
+    // 3. Parse LASG URL parameters (deterministic — no AI needed)
+    let transId: string, transCode: string, payerId: string, payerType: string;
+    try {
+      const lasgUrl = new URL(lasgReceiptUrl);
+      transId = lasgUrl.searchParams.get("transid") || "";
+      transCode = lasgUrl.searchParams.get("transcode") || "";
+      payerId = lasgUrl.searchParams.get("payerid") || "";
+      payerType = lasgUrl.searchParams.get("payertype") || "n";
+
+      if (!transId || !transCode || !payerId) {
+        return {
+          success: false,
+          error: "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
+        };
+      }
+    } catch {
+      return {
+        success: false,
+        error: "[Step 2: LASG URL Parsing] Invalid LASG receipt URL format. Please paste a valid URL starting with https://printreceipt.ebs-rcm.com/...",
+      };
+    }
+
+    // 4. Cross-check PayerID + PayerType against user profile
+    const fullUser = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { payerID: true, payerIDType: true, firstName: true, lastName: true },
+    });
+
+    if (fullUser?.payerID) {
+      const urlPayerIdNum = parseInt(payerId, 10);
+      if (urlPayerIdNum !== fullUser.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt has Payer ID "${payerId}" but your profile has Payer ID "${fullUser.payerID}". Please ensure you are using a receipt linked to your account.`,
+        };
+      }
+
+      // Cross-check payer type
+      const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
+      if (payerType.toLowerCase() !== expectedType) {
+        return {
+          success: false,
+          error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
+        };
+      }
+    }
+    // If user has no payerID stored, skip this check (first-time user)
+
+    // 5. Fetch both receipt HTML pages (server-side)
+    let lasgHtml: string;
+    let remitaHtml: string;
+
+    try {
+      const lasgRes = await fetch(lasgReceiptUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      if (!lasgRes.ok) {
+        return {
+          success: false,
+          error: `[Step 4: Fetch LASG Receipt] Failed to fetch LASG receipt page (HTTP status ${lasgRes.status}). Please check the URL is correct and accessible.`,
+        };
+      }
+      lasgHtml = await lasgRes.text();
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `[Step 4: Fetch LASG Receipt] Failed to access LASG receipt URL: ${err.message}`,
+      };
+    }
+
+    try {
+      const remitaRes = await fetch(remitaReceiptUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      if (!remitaRes.ok) {
+        return {
+          success: false,
+          error: `[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt page (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`,
+        };
+      }
+      remitaHtml = await remitaRes.text();
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `[Step 4: Fetch Remita Receipt] Failed to access Remita receipt URL: ${err.message}`,
+      };
+    }
+
+    // 6. AI extract from both HTML pages
+    console.log("Extracting fields from LASG receipt HTML...");
+    const lasgResult = await extractLASGReceiptFromHtml(lasgHtml);
+    if (!lasgResult.success || !lasgResult.data) {
+      return {
+        success: false,
+        error: `[Step 5: LASG Data Extraction] ${lasgResult.error}`,
+      };
+    }
+    console.log("LASG extraction result:", lasgResult.data);
+
+    console.log("Extracting fields from Remita receipt HTML...");
+    const remitaResult = await extractRemitaReceiptFromHtml(remitaHtml);
+    if (!remitaResult.success || !remitaResult.data) {
+      return {
+        success: false,
+        error: `[Step 5: Remita Data Extraction] ${remitaResult.error}`,
+      };
+    }
+    console.log("Remita extraction result:", remitaResult.data);
+
+    const lasgData = lasgResult.data;
+    const remitaData = remitaResult.data;
+
+    // 7. Cross-validation (all deterministic)
+
+    // 7a. Anchor match — the transaction reference must match between both receipts
+    const normalizeAnchor = (anchor: string) =>
+      anchor.replace(/[^0-9-]/g, "").trim();
+
+    const lasgAnchor = normalizeAnchor(lasgData.transactionAnchor);
+    const remitaAnchor = normalizeAnchor(remitaData.transactionAnchor);
+
+    if (lasgAnchor !== remitaAnchor) {
+      return {
+        success: false,
+        error: `[Step 6: Anchor Cross-Check] Transaction anchor mismatch: The LASG receipt reference "${lasgData.transactionAnchor}" does not match the Remita receipt reference "${remitaData.transactionAnchor}". These two receipts do not appear to be for the same transaction.`,
+      };
+    }
+
+    // 7b. Amount match — LASG amount must exactly match the batch total
+    if (lasgData.amountPaid !== batch.totalAmount) {
+      return {
+        success: false,
+        error: `[Step 6: Amount Verification] Amount mismatch: The LASG receipt shows ₦${lasgData.amountPaid.toLocaleString()} but the batch total is ₦${batch.totalAmount.toLocaleString()}. The payment amount must exactly match.`,
+      };
+    }
+
+    // 7c. Remita payment status must indicate PAID
+    if (remitaData.status !== "PAID") {
+      return {
+        success: false,
+        error: `[Step 6: Payment Status] Remita receipt status is "${remitaData.status}" — expected "PAID". Please ensure payment is complete before verifying.`,
+      };
+    }
+
+    // 7d. RRR uniqueness check
+    const rrr = remitaData.rrr;
     const existingBatchWithRRR = await prisma.certificateOfDepositBatch.findFirst({
       where: {
         userPaymentRef: rrr,
-        id: { not: batchId }, // Exclude the current batch
+        id: { not: batchId },
       },
       select: { id: true, batchCode: true },
     });
@@ -1269,193 +1412,15 @@ export async function verifyBatchPaymentWithPdf(
     if (existingBatchWithRRR) {
       return {
         success: false,
-        error: `This RRR (${rrr}) has already been used for batch ${existingBatchWithRRR.batchCode}. Each RRR can only be used once.`,
+        error: `[Step 6: RRR Uniqueness] This RRR (${rrr}) has already been used for batch ${existingBatchWithRRR.batchCode}. Each RRR can only be used once.`,
       };
     }
 
-    let ebsUrl = "";
-    let s3Key = "";
-    let pdfUrl = "";
+    // 8. Construct the EBS URL from parsed LASG URL params
+    const ebsUrl = `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`;
+    console.log("Constructed EBS URL:", ebsUrl);
 
-    // 3. Process PDF (Unless manual EBS URL is provided as fallback)
-    if (!manualEBSUrl) {
-      // A. Fetch PDF
-      let pdfBuffer: Buffer;
-      try {
-        pdfBuffer = await fetchRemitaReceiptPdf(rrr);
-      } catch (err: any) {
-        return {
-          success: false,
-          error: `Failed to fetch Remita PDF: ${err.message}`,
-        };
-      }
-
-      // B. Parse PDF
-      let text: string;
-      try {
-        // Use pdfjs-dist directly for server-side text extraction
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer) });
-        const pdfDoc = await loadingTask.promise;
-
-        const textParts: string[] = [];
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-          const page = await pdfDoc.getPage(i);
-          const content = await page.getTextContent();
-          const parts: string[] = [];
-          for (const item of content.items) {
-            if (!("str" in item)) continue;
-            const textItem = item as any;
-            parts.push(textItem.str);
-            if (textItem.hasEOL) {
-              parts.push("\n");
-            }
-          }
-          textParts.push(parts.join(""));
-          page.cleanup();
-        }
-        await pdfDoc.destroy();
-
-        text = textParts.join("\n");
-
-        console.log(
-          "PDF Text Extracted (First 3000 chars):",
-          text.substring(0, 3000),
-        );
-      } catch (err: any) {
-        console.log("\n\n\n\n\n\n\n\n\nPDF Parse Error:", err);
-        return {
-          success: false,
-          error: `Failed to parse PDF: ${err.message}`,
-        };
-      }
-
-      // ── Extraction: Regex (manual) ──
-      const transIdCodeMatch = text.match(/\b(\d{6,})\/([A-Z0-9]{4,})\b/);
-      const payerMatch = text.match(/<([NnCc])-(\d+)/);
-
-      const regexFields = {
-        transId: transIdCodeMatch ? transIdCodeMatch[1] : "",
-        transCode: transIdCodeMatch ? transIdCodeMatch[2] : "",
-        payerId: payerMatch ? payerMatch[2] : "",
-        payerType: payerMatch
-          ? payerMatch[1].toLowerCase() === "c" ? "c" : "n"
-          : "n",
-      };
-      console.log("Regex extracted fields:", regexFields);
-
-      // ── Extraction: AI ──
-      const aiResult = await extractEBSReceiptFields(text);
-      const aiFields = aiResult.success && aiResult.data ? aiResult.data : null;
-      console.log("AI extracted fields:", aiFields ?? aiResult.error);
-
-      // ── Build EBS URL helper ──
-      const buildEbsUrl = (f: { transId: string; transCode: string; payerId: string; payerType: string }) =>
-        `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${f.payerType}&payerid=${f.payerId}&transid=${f.transId}&transcode=${f.transCode}`;
-
-      const hasAllFields = (f: { transId: string; transCode: string; payerId: string }) =>
-        !!(f.transId && f.transCode && f.payerId);
-
-      const verifyEbsUrl = async (url: string): Promise<boolean> => {
-        try {
-          const res = await fetch(url, { method: "HEAD" });
-          console.log(`EBS URL verification (${url}): status ${res.status}`);
-          return res.status === 200;
-        } catch (err) {
-          console.warn("EBS URL verification failed:", err);
-          return false;
-        }
-      };
-
-      let extractionSource = "";
-      let aiUrl = "";
-
-      // C. Try AI-extracted fields first
-      if (aiFields && hasAllFields(aiFields)) {
-        aiUrl = buildEbsUrl(aiFields);
-        console.log("Trying AI-extracted EBS URL:", aiUrl);
-        const aiOk = await verifyEbsUrl(aiUrl);
-        if (aiOk) {
-          ebsUrl = aiUrl;
-          extractionSource = "AI";
-        }
-      }
-
-      // Fallback to regex-extracted fields if AI URL failed or AI had no data
-      if (!ebsUrl && hasAllFields(regexFields)) {
-        const regexUrl = buildEbsUrl(regexFields);
-        let regexOk = false;
-        console.log("Trying regex-extracted EBS URL:", regexUrl);
-
-        if (aiUrl !== regexUrl) {
-          regexOk = await verifyEbsUrl(regexUrl);
-        }
-
-        if (regexOk) {
-          ebsUrl = regexUrl;
-          extractionSource = "regex";
-        } else {
-          // Still use it even if verification fails — user can verify manually
-          ebsUrl = regexUrl;
-          extractionSource = "regex (unverified)";
-          console.warn("Regex EBS URL also failed verification, using anyway.");
-        }
-      }
-
-      // If neither AI nor regex produced any fields at all
-      if (!ebsUrl) {
-        if (!hasAllFields(aiFields ?? { transId: "", transCode: "", payerId: "" }) &&
-          !hasAllFields(regexFields)) {
-          console.error("Both AI and regex failed to extract required fields", {
-            regexFields,
-            aiFields,
-          });
-          return {
-            success: false,
-            error:
-              "Could not extract Transaction details (ID, Code, PayerID) from the Receipt PDF. Please ensure the RRR is valid and the receipt is standard. You may need to enter the EBS Receipt URL manually.",
-          };
-        }
-        // Use whichever has data (AI preferred)
-        const fallback = (aiFields && hasAllFields(aiFields)) ? aiFields : regexFields;
-        ebsUrl = buildEbsUrl(fallback);
-        extractionSource = "fallback (unverified)";
-      }
-
-      console.log(`Using ${extractionSource} EBS URL:`, ebsUrl);
-
-      // E. Upload PDF to S3
-      try {
-        const uploadResult = await uploadFile(
-          pdfBuffer,
-          "receipt", // Using 'receipt' as filetype or redcopy?
-          // Existing types: "pdf" | "cad" | "certificate" | "redcopy".
-          // Let's use "pdf" (generic) or "redcopy" if strict.
-          // Actually, let's treat it as a generic "pdf" stored in a receipt folder structure
-          user.id,
-          batch.batchCode,
-          `RemitaReceipt_${rrr}.pdf`,
-        );
-        s3Key = uploadResult.key;
-        pdfUrl = uploadResult.url;
-      } catch (err: any) {
-        console.error("S3 Upload Failed:", err);
-        return {
-          success: false,
-          error:
-            "Payment verified but failed to save receipt PDF. Please try again.",
-        };
-      }
-    } else {
-      // Manual EBS URL Fallback
-      ebsUrl = manualEBSUrl;
-      // We don't have the PDF to upload in this case unless we fetch it from the EBS URL?
-      // User said "manual input the EBS receipt ... which will be copied from their email".
-      // We likely won't have the Remita PDF in this case. We just save the URL.
-      // But we should probably try to fetch the EBS receipt content to save as s3Key if possible?
-      // For now, let's leave s3Key empty or null if manual.
-    }
-
-    // 4. Update Batch
+    // 9. Update Batch — store URLs, skip S3
     await prisma.certificateOfDepositBatch.update({
       where: { id: batchId },
       data: {
@@ -1464,12 +1429,13 @@ export async function verifyBatchPaymentWithPdf(
         userPaymentDate: new Date(),
         lasgPaymentDate: new Date(),
         lasgReceiptUrl: ebsUrl,
-        lasgReceiptS3Key: s3Key, // Can be null/empty if manual
+        remitaReceiptUrl: remitaReceiptUrl,
+        lasgReceiptS3Key: null, // No S3 upload in two-link flow
       },
     });
 
-    // 5. Notifications
-    const submitter = await prisma.surfboardUser.findUnique({
+    // 10. Notifications
+    const submitter = fullUser || await prisma.surfboardUser.findUnique({
       where: { id: user.id },
       select: { firstName: true, lastName: true },
     });
@@ -1484,8 +1450,6 @@ export async function verifyBatchPaymentWithPdf(
           sendEmail: true,
         });
 
-        // Current flow seems to imply LASG_PAID means we are waiting for something else or is it done?
-        // LASG_PAID means user has paid to LASG. Next steps: Accounts approval?
         await notifyLASGReceiptUploaded({
           batchId: batch.id,
           batchCode: batch.batchCode,
@@ -1506,10 +1470,10 @@ export async function verifyBatchPaymentWithPdf(
       },
     };
   } catch (error) {
-    console.error("verifyBatchPaymentWithPdf error:", error);
+    console.error("verifyBatchPaymentWithLinks error:", error);
     return {
       success: false,
-      error: handlePrismaError(error, "verifyBatchPaymentWithPdf"),
+      error: handlePrismaError(error, "verifyBatchPaymentWithLinks"),
     };
   }
 }

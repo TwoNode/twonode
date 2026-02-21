@@ -571,6 +571,7 @@ model CertificateOfDepositBatch {
   // LASG Payment (Fold 2)
   lasgReceiptUrl        String? // Uploaded receipt
   lasgReceiptS3Key      String?
+  remitaReceiptUrl      String? // Remita receipt URL (from two-link flow)
   lasgPaymentDate       DateTime?
   lasgReceiptUploadedBy String?
   lasgReceiptUploadedAt DateTime?
