@@ -1375,7 +1375,87 @@ export async function verifyBatchPaymentWithLinks(
           error: `[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt data (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`,
         };
       }
-      const remitaJson = await remitaRes.json();
+      interface RemitaPaymentDetail {
+        APPLYVAT: string | null;
+        LOGO1: string | null;
+        STATUS: string;
+        NAME: string;
+        ID: string;
+        QRCODE: string;
+        PAYMENTMODE: string;
+        HE: string;
+        PAYMENTSTATUS: string;
+        DESCRIPTION: string;
+        SHOWBANK: string;
+        BRANCHCODE: string | null;
+        USERNAME: string;
+        TELLERNUMBER: string | null;
+        PAYMENTCHANNELTRUE: string;
+        RRRNUMBER: string;
+        CASHID: number;
+        COLLID: number;
+        RRR: string;
+        PAYER: string;
+        PHONENUMBER: string;
+        EMAIL: string;
+        ADDRESS: string | null;
+        TRANSACTIONDATE: string;
+        SERVICEDESC: string;
+        BILLER: string;
+        TRANSACTIONAMOUNT_NOFEE: number;
+        TRANSACTIONAMOUNT: number;
+        COLLECTOR_ID: number;
+        PAYMENTCHANNEL: string;
+        FIRSPAYMENTREF: string | null;
+        COMPANY_ID: string;
+        AUTHREF: string;
+        VATAMOUNT: number;
+        PROCFEE: number;
+        SERVICEDATA1LABEL: string | null;
+        EXTRADATA1: string | null;
+        PARENTRRR: string;
+        READABLERRR: string;
+        BENACCOUNTNO: string;
+        PAYERACCOUNTNO: string;
+        BENBANK: string;
+        BENEMAIL: string;
+        BENEFICIARYID: number;
+        TRANSACTIONREF: number;
+        CURRENCYCODE: string;
+        SL_CNT: number;
+        SP_CNT: number;
+        FLAT_CNT: number;
+        PART_CNT: number;
+        SCHE_CNT: number;
+        VATONCHARGES: number;
+        PAYLINKCUST_CNT: number;
+        CHARGE: number;
+        QRCODE_URL: string;
+        MASKEDPAN: string | null;
+        CARDSCHEME: string | null;
+        TRANSACTION_ID: string | null;
+        USER_ID: number;
+      }
+
+      interface RemitaCustomField {
+        CUSTOM_ID: number;
+        COLUMNNAME: string;
+        COLUMNVALUE: string;
+        RRRN: string;
+      }
+
+      interface RemitaApiResponse {
+        paymentDetails: RemitaPaymentDetail[];
+        customFields: RemitaCustomField[];
+        customFieldsSL: unknown[];
+        customFieldsSP: unknown[];
+        partPayment: unknown[];
+        rrrInvoice: unknown | null;
+        taxPayment: unknown[];
+        status: string;
+      }
+
+      const remitaJson: RemitaApiResponse = await remitaRes.json();
 
       // Validate the response structure
       if (
@@ -1389,12 +1469,11 @@ export async function verifyBatchPaymentWithLinks(
       }
 
       const pd = remitaJson.paymentDetails[0];
-      const customFields: Array<{ COLUMNNAME: string; COLUMNVALUE: string }> =
-        remitaJson.customFields || [];
+      const customFields = remitaJson.customFields || [];
 
       // Extract the LASG anchor from custom fields (the "Lasg" column)
       const lasgField = customFields.find(
-        (f: any) => f.COLUMNNAME?.toLowerCase() === "lasg",
+        (f) => f.COLUMNNAME?.toLowerCase() === "lasg",
       );
       const remitaTransactionAnchor = lasgField?.COLUMNVALUE || "";
 
