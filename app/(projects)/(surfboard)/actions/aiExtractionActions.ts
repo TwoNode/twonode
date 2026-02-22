@@ -262,7 +262,7 @@ function parseAIResponse(text: string): AIExtractedData {
         return null;
       })
       .filter(
-        (c: any): c is { northing: string; easting: string } => c !== null
+        (c: any): c is { northing: string; easting: string } => c !== null,
       );
   }
 
@@ -322,7 +322,7 @@ function normalizeLocality(locality: string): string {
 
   // Ensure it doesn't end with LOCAL GOVT info (should stop before that)
   const lgaIndex = cleaned.search(
-    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i
+    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i,
   );
   if (lgaIndex > 0) {
     cleaned = cleaned.substring(0, lgaIndex).trim();
@@ -344,7 +344,7 @@ function normalizeArea(area: string): string {
 
   // Extract just the numeric value and unit
   const match = area.match(
-    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i
+    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i,
   );
   if (match) {
     // Clean up the number (remove commas and internal spaces)
@@ -380,7 +380,7 @@ function normalizeDate(dateStr: string): string {
 
   // DD-MM-YYYY or DD/MM/YYYY or DD - MM - YYYY
   const dmyMatch = dateStr.match(
-    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/
+    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/,
   );
   if (dmyMatch) {
     let [, day, month, year] = dmyMatch;
@@ -393,7 +393,7 @@ function normalizeDate(dateStr: string): string {
 
   // Written formats: "21ST AUGUST, 2025" or "22ND SEPTEMBER, 2025"
   const writtenMatch = dateStr.match(
-    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i
+    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i,
   );
   if (writtenMatch) {
     const [, day, monthName, year] = writtenMatch;
@@ -401,14 +401,14 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0"
+        "0",
       )}`;
     }
   }
 
   // Reversed: "AUGUST 21, 2025"
   const reversedMatch = dateStr.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i
+    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i,
   );
   if (reversedMatch) {
     const [, monthName, day, year] = reversedMatch;
@@ -416,7 +416,7 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0"
+        "0",
       )}`;
     }
   }
@@ -496,7 +496,7 @@ function preprocessExtractedText(text: string): string {
  * @returns Promise<ApiResult<AIExtractedData>>
  */
 export async function extractSurveyPlanDataFromText(
-  extractedText: string
+  extractedText: string,
 ): Promise<ApiResult<AIExtractedData>> {
   try {
     // Validate API key
@@ -657,7 +657,7 @@ Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, personCou
  * @deprecated Use extractSurveyPlanDataFromText instead
  */
 export async function extractSurveyPlanDataFromPdf(
-  formData: FormData
+  formData: FormData,
 ): Promise<ApiResult<AIExtractedData>> {
   return {
     success: false,
@@ -671,7 +671,7 @@ export async function extractSurveyPlanDataFromPdf(
  * Used for confirming user edits or verifying AI extraction
  */
 export async function recognizePersonCount(
-  surveyTitle: string
+  surveyTitle: string,
 ): Promise<ApiResult<{ count: number; names: string[] }>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -745,7 +745,7 @@ export interface AIPaymentDetails {
  * Extract payment details from receipt text using AI
  */
 export async function extractPaymentDetailsFromText(
-  text: string
+  text: string,
 ): Promise<ApiResult<AIPaymentDetails>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -823,7 +823,9 @@ If status specifically says Pending/Incomplete, use PENDING.
     return {
       success: false,
       error:
-        error instanceof Error ? error.message : "Failed to extract payment details",
+        error instanceof Error
+          ? error.message
+          : "Failed to extract payment details",
     };
   }
 }
@@ -969,7 +971,11 @@ Return the JSON with transId, transCode, payerId, payerType.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error for EBS extraction:", response.status, errorText);
+      console.error(
+        "OpenAI API error for EBS extraction:",
+        response.status,
+        errorText,
+      );
       return {
         success: false,
         error: `AI service error (${response.status})`,
@@ -992,9 +998,12 @@ Return the JSON with transId, transCode, payerId, payerType.`;
 
     // Validate and normalize
     const transId = String(result.transId || "").replace(/\D/g, "");
-    const transCode = String(result.transCode || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+    const transCode = String(result.transCode || "")
+      .replace(/[^A-Z0-9]/gi, "")
+      .toUpperCase();
     const payerId = String(result.payerId || "").replace(/\D/g, "");
-    const payerType = String(result.payerType || "n").toLowerCase() === "c" ? "c" : "n";
+    const payerType =
+      String(result.payerType || "n").toLowerCase() === "c" ? "c" : "n";
 
     if (!transId || !transCode || !payerId) {
       return {
@@ -1016,7 +1025,8 @@ Return the JSON with transId, transCode, payerId, payerType.`;
     console.error("Error in AI EBS extraction:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "AI EBS extraction failed",
+      error:
+        error instanceof Error ? error.message : "AI EBS extraction failed",
     };
   }
 }
@@ -1033,44 +1043,60 @@ export interface LASGReceiptFields {
 }
 
 /**
- * Extract fields from LASG EBS receipt HTML content.
- * The LASG receipt is an HTML page at printreceipt.ebs-rcm.com.
+ * Extract fields from LASG EBS receipt content.
+ * The LASG receipt URL (printreceipt.ebs-rcm.com) actually returns a PDF.
+ * This function accepts either extracted PDF text or HTML content.
  * We need the cross-validation anchor (AssessRef/Teller reference) and amount.
  */
 export async function extractLASGReceiptFromHtml(
-  html: string,
+  receiptContent: string,
 ): Promise<ApiResult<LASGReceiptFields>> {
   try {
     if (!OPENAI_API_KEY) {
       return { success: false, error: "API Key missing" };
     }
 
-    if (!html || html.trim().length < 50) {
-      return { success: false, error: "Insufficient HTML content for extraction" };
+    if (!receiptContent || receiptContent.trim().length < 50) {
+      return { success: false, error: "Insufficient content for extraction" };
     }
 
-    // Strip script/style tags and limit size for AI processing
-    const cleanedHtml = html
+    // Strip script/style tags if HTML, and limit size for AI processing
+    const cleanedContent = receiptContent
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .slice(0, 15000);
 
-    const systemPrompt = `You are an expert at extracting structured data from Lagos State Government (LASG) EBS Revenue Receipt HTML pages.
+    const systemPrompt = `You are an expert at extracting structured data from Lagos State Government (LASG) EBS Revenue Receipts.
 
 === DOCUMENT TYPE ===
-This is an LASG EBS Revenue Receipt from printreceipt.ebs-rcm.com. It is NOT a Remita receipt.
-If the content does not look like an LASG EBS Revenue Receipt, return:
+This is an LASG EBS Revenue Receipt. The content may be:
+- Extracted text from a PDF receipt (from printreceipt.ebs-rcm.com)
+- HTML content from a receipt page
+Either way, it should contain LASG EBS Revenue Receipt information.
+
+If the content does not look like an LASG EBS Revenue Receipt at all (e.g., it contains no recognizable receipt fields like transaction IDs, amounts, payer info, "Revenue Receipt", "Lagos State", agency names, etc.), return:
 {"error": "NOT_LASG_RECEIPT"}
+
+=== RECEIPT STRUCTURE ===
+
+LASG EBS Revenue Receipts typically contain:
+- Header: "REVENUE RECEIPT", "Lagos State Government"
+- Transaction ID and Transaction Code (e.g., "60050629/ZCYYDEIA")
+- Agency name (e.g., "Office of Surveyor General")
+- Payer name and Payer ID (e.g., "<N-16976764>")
+- Amount paid in Naira
+- AssessRef or Teller reference: a dash-separated numeric anchor (e.g., "169767640-8154445-175")
+- Date of transaction
 
 === WHAT TO EXTRACT ===
 
 1. **transactionAnchor**: A dash-separated numeric reference that links this LASG receipt to a Remita payment.
    - LOOK FOR: "AssessRef" label, "Teller" label, or a value matching the pattern: digits-digits-digits (e.g., "169767640-8154445-175")
-   - This is typically found in a details table or section of the receipt
+   - This is typically found in a details section of the receipt
    - Extract ONLY the dash-separated numeric value, not any label text
 
 2. **amountPaid**: The total amount paid in Naira
-   - LOOK FOR: "Amount", "Total", "Amount Paid" labels
+   - LOOK FOR: "Amount", "Total", "Amount Paid", "NGN" labels
    - Return as a plain number (e.g., 2000.00), no currency symbol
 
 3. **payerName**: The name of the payer
@@ -1092,11 +1118,11 @@ Return ONLY valid JSON, no markdown, no explanation:
 If a field cannot be found, use empty string "" for strings or 0 for numbers.
 DO NOT guess or hallucinate values.`;
 
-    const userPrompt = `Extract the LASG receipt fields from this HTML content:
+    const userPrompt = `Extract the LASG receipt fields from this receipt content:
 
-=== HTML CONTENT ===
-${cleanedHtml}
-=== END HTML ===
+=== RECEIPT CONTENT ===
+${cleanedContent}
+=== END CONTENT ===
 
 Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`;
 
@@ -1119,7 +1145,11 @@ Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error for LASG extraction:", response.status, errorText);
+      console.error(
+        "OpenAI API error for LASG extraction:",
+        response.status,
+        errorText,
+      );
       return { success: false, error: `AI service error (${response.status})` };
     }
 
@@ -1141,7 +1171,8 @@ Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`
     if (result.error === "NOT_LASG_RECEIPT") {
       return {
         success: false,
-        error: "The provided URL does not appear to be an LASG EBS receipt. Please check that you've pasted the correct link.",
+        error:
+          "The provided URL does not appear to be an LASG EBS receipt. Please check that you've pasted the correct link.",
       };
     }
 
@@ -1151,7 +1182,8 @@ Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`
     if (!transactionAnchor) {
       return {
         success: false,
-        error: "Could not extract the transaction reference (anchor) from the LASG receipt.",
+        error:
+          "Could not extract the transaction reference (anchor) from the LASG receipt.",
       };
     }
 
@@ -1168,7 +1200,10 @@ Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`
     console.error("Error in LASG receipt extraction:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "LASG receipt extraction failed",
+      error:
+        error instanceof Error
+          ? error.message
+          : "LASG receipt extraction failed",
     };
   }
 }
@@ -1198,7 +1233,10 @@ export async function extractRemitaReceiptFromHtml(
     }
 
     if (!html || html.trim().length < 50) {
-      return { success: false, error: "Insufficient HTML content for extraction" };
+      return {
+        success: false,
+        error: "Insufficient HTML content for extraction",
+      };
     }
 
     // Strip script/style tags and QR code divs (massive pixel data), limit size
@@ -1285,7 +1323,11 @@ Return the JSON with rrr, amount, status, transactionAnchor, payerName, payerEma
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error for Remita extraction:", response.status, errorText);
+      console.error(
+        "OpenAI API error for Remita extraction:",
+        response.status,
+        errorText,
+      );
       return { success: false, error: `AI service error (${response.status})` };
     }
 
@@ -1307,7 +1349,8 @@ Return the JSON with rrr, amount, status, transactionAnchor, payerName, payerEma
     if (result.error === "NOT_REMITA_RECEIPT") {
       return {
         success: false,
-        error: "The provided URL does not appear to be a Remita receipt. Please check that you've pasted the correct link.",
+        error:
+          "The provided URL does not appear to be a Remita receipt. Please check that you've pasted the correct link.",
       };
     }
 
@@ -1327,7 +1370,8 @@ Return the JSON with rrr, amount, status, transactionAnchor, payerName, payerEma
     if (!transactionAnchor) {
       return {
         success: false,
-        error: "Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.",
+        error:
+          "Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.",
       };
     }
 
@@ -1346,7 +1390,10 @@ Return the JSON with rrr, amount, status, transactionAnchor, payerName, payerEma
     console.error("Error in Remita receipt extraction:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Remita receipt extraction failed",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Remita receipt extraction failed",
     };
   }
 }

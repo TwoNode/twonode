@@ -18,7 +18,12 @@ import {
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
-import { extractPaymentDetailsFromText, extractEBSReceiptFields, extractLASGReceiptFromHtml, extractRemitaReceiptFromHtml } from "./aiExtractionActions";
+import {
+  extractPaymentDetailsFromText,
+  extractEBSReceiptFields,
+  extractLASGReceiptFromHtml,
+  extractRemitaReceiptFromHtml,
+} from "./aiExtractionActions";
 
 // Use pdfjs-dist directly for server-side PDF text extraction (no worker needed)
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -1207,7 +1212,7 @@ export async function verifyBatchPayment(
 
 /**
  * Verify Batch Payment using Two Receipt Links (LASG + Remita)
- * 
+ *
  * New workflow replacing the old PDF-fetch approach:
  * 1. Parses LASG URL for transId, transCode, payerId, payerType
  * 2. Cross-checks payerId + payerType against user profile
@@ -1233,11 +1238,19 @@ export async function verifyBatchPaymentWithLinks(
     });
 
     if (!batch) {
-      return { success: false, error: "[Step 1: Batch Lookup] Batch not found. Please refresh and try again." };
+      return {
+        success: false,
+        error:
+          "[Step 1: Batch Lookup] Batch not found. Please refresh and try again.",
+      };
     }
 
     if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
-      return { success: false, error: "[Step 1: Authorization] You are not authorized to pay for this batch. Only the batch submitter or a Super Admin can verify payment." };
+      return {
+        success: false,
+        error:
+          "[Step 1: Authorization] You are not authorized to pay for this batch. Only the batch submitter or a Super Admin can verify payment.",
+      };
     }
 
     // 2. Initial Status Check
@@ -1267,20 +1280,27 @@ export async function verifyBatchPaymentWithLinks(
       if (!transId || !transCode || !payerId) {
         return {
           success: false,
-          error: "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
+          error:
+            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
         };
       }
     } catch {
       return {
         success: false,
-        error: "[Step 2: LASG URL Parsing] Invalid LASG receipt URL format. Please paste a valid URL starting with https://printreceipt.ebs-rcm.com/...",
+        error:
+          "[Step 2: LASG URL Parsing] Invalid LASG receipt URL format. Please paste a valid URL starting with https://printreceipt.ebs-rcm.com/...",
       };
     }
 
     // 4. Cross-check PayerID + PayerType against user profile
     const fullUser = await prisma.surfboardUser.findUnique({
       where: { id: user.id },
-      select: { payerID: true, payerIDType: true, firstName: true, lastName: true },
+      select: {
+        payerID: true,
+        payerIDType: true,
+        firstName: true,
+        lastName: true,
+      },
     });
 
     if (fullUser?.payerID) {
@@ -1303,21 +1323,31 @@ export async function verifyBatchPaymentWithLinks(
     }
     // If user has no payerID stored, skip this check (first-time user)
 
-    // 5. Fetch both receipt HTML pages (server-side)
-    let lasgHtml: string;
-    let remitaHtml: string;
+    // 5. Fetch both receipt pages (server-side)
+    // LASG receipt URL returns a PDF, not HTML — use fetchAndExtractTextFromUrl
+    // Remita receipt URL is a JS SPA — fetch JSON API directly
+    let lasgContent: string;
+    let remitaData: {
+      rrr: string;
+      amount: number;
+      status: string;
+      transactionAnchor: string;
+      payerName: string;
+      payerEmail: string;
+    };
 
     try {
-      const lasgRes = await fetch(lasgReceiptUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      if (!lasgRes.ok) {
+      const lasgExtracted = await fetchAndExtractTextFromUrl(lasgReceiptUrl);
+      lasgContent = lasgExtracted.text;
+      console.log(
+        `LASG receipt fetched. Content-Type: ${lasgExtracted.contentType}, Text length: ${lasgContent.length}`,
+      );
+      if (!lasgContent || lasgContent.trim().length < 50) {
         return {
           success: false,
-          error: `[Step 4: Fetch LASG Receipt] Failed to fetch LASG receipt page (HTTP status ${lasgRes.status}). Please check the URL is correct and accessible.`,
+          error: `[Step 4: Fetch LASG Receipt] LASG receipt page returned insufficient content. Please check the URL is correct and accessible.`,
         };
       }
-      lasgHtml = await lasgRes.text();
     } catch (err: any) {
       return {
         success: false,
@@ -1326,16 +1356,81 @@ export async function verifyBatchPaymentWithLinks(
     }
 
     try {
-      const remitaRes = await fetch(remitaReceiptUrl, {
+      // The Remita receipt URL (login.remita.net/remita/rrr/view-rrr/details.json?x-id=...)
+      // is a JS-rendered SPA — fetch returns an empty HTML shell.
+      // The actual data is at the JSON API: /remita/rrr/details.json?x-id=...
+      // We derive it by removing "view-rrr/" from the path.
+      const remitaApiUrl = remitaReceiptUrl.replace(
+        "/view-rrr/details.json",
+        "/details.json",
+      );
+      console.log("Fetching Remita JSON API:", remitaApiUrl);
+
+      const remitaRes = await fetch(remitaApiUrl, {
         headers: { "User-Agent": "Mozilla/5.0" },
       });
       if (!remitaRes.ok) {
         return {
           success: false,
-          error: `[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt page (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`,
+          error: `[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt data (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`,
         };
       }
-      remitaHtml = await remitaRes.text();
+      const remitaJson = await remitaRes.json();
+
+      // Validate the response structure
+      if (
+        !remitaJson?.paymentDetails ||
+        remitaJson.paymentDetails.length === 0
+      ) {
+        return {
+          success: false,
+          error: `[Step 4: Fetch Remita Receipt] Remita API returned no payment details. The receipt may be invalid or expired.`,
+        };
+      }
+
+      const pd = remitaJson.paymentDetails[0];
+      const customFields: Array<{ COLUMNNAME: string; COLUMNVALUE: string }> =
+        remitaJson.customFields || [];
+
+      // Extract the LASG anchor from custom fields (the "Lasg" column)
+      const lasgField = customFields.find(
+        (f: any) => f.COLUMNNAME?.toLowerCase() === "lasg",
+      );
+      const remitaTransactionAnchor = lasgField?.COLUMNVALUE || "";
+
+      // Determine payment status from the API response
+      // status "A" = Active/Approved, PAYMENTSTATUS "RTC" = Real-Time Cleared
+      const isRemitaPaid =
+        remitaJson.status === "A" ||
+        pd.PAYMENTSTATUS === "RTC" ||
+        pd.PAYMENTSTATUS === "00" ||
+        pd.PAYMENTSTATUS === "01";
+
+      // Build the remitaData object (same shape as the old AI-extracted one)
+      remitaData = {
+        rrr: String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, ""),
+        amount: Number(pd.TRANSACTIONAMOUNT) || 0,
+        status: isRemitaPaid ? "PAID" : "UNPAID",
+        transactionAnchor: remitaTransactionAnchor,
+        payerName: String(pd.PAYER || "").trim(),
+        payerEmail: String(pd.EMAIL || "").trim(),
+      };
+
+      console.log("Remita JSON extraction result:", remitaData);
+
+      if (!remitaData.rrr || remitaData.rrr.length < 10) {
+        return {
+          success: false,
+          error: `[Step 5: Remita Data Extraction] Could not extract a valid RRR from the Remita receipt.`,
+        };
+      }
+
+      if (!remitaData.transactionAnchor) {
+        return {
+          success: false,
+          error: `[Step 5: Remita Data Extraction] Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.`,
+        };
+      }
     } catch (err: any) {
       return {
         success: false,
@@ -1343,9 +1438,9 @@ export async function verifyBatchPaymentWithLinks(
       };
     }
 
-    // 6. AI extract from both HTML pages
-    console.log("Extracting fields from LASG receipt HTML...");
-    const lasgResult = await extractLASGReceiptFromHtml(lasgHtml);
+    // 6. AI extract from LASG receipt content (PDF text)
+    console.log("Extracting fields from LASG receipt content...");
+    const lasgResult = await extractLASGReceiptFromHtml(lasgContent);
     if (!lasgResult.success || !lasgResult.data) {
       return {
         success: false,
@@ -1354,18 +1449,7 @@ export async function verifyBatchPaymentWithLinks(
     }
     console.log("LASG extraction result:", lasgResult.data);
 
-    console.log("Extracting fields from Remita receipt HTML...");
-    const remitaResult = await extractRemitaReceiptFromHtml(remitaHtml);
-    if (!remitaResult.success || !remitaResult.data) {
-      return {
-        success: false,
-        error: `[Step 5: Remita Data Extraction] ${remitaResult.error}`,
-      };
-    }
-    console.log("Remita extraction result:", remitaResult.data);
-
     const lasgData = lasgResult.data;
-    const remitaData = remitaResult.data;
 
     // 7. Cross-validation (all deterministic)
 
@@ -1401,13 +1485,14 @@ export async function verifyBatchPaymentWithLinks(
 
     // 7d. RRR uniqueness check
     const rrr = remitaData.rrr;
-    const existingBatchWithRRR = await prisma.certificateOfDepositBatch.findFirst({
-      where: {
-        userPaymentRef: rrr,
-        id: { not: batchId },
-      },
-      select: { id: true, batchCode: true },
-    });
+    const existingBatchWithRRR =
+      await prisma.certificateOfDepositBatch.findFirst({
+        where: {
+          userPaymentRef: rrr,
+          id: { not: batchId },
+        },
+        select: { id: true, batchCode: true },
+      });
 
     if (existingBatchWithRRR) {
       return {
@@ -1435,10 +1520,12 @@ export async function verifyBatchPaymentWithLinks(
     });
 
     // 10. Notifications
-    const submitter = fullUser || await prisma.surfboardUser.findUnique({
-      where: { id: user.id },
-      select: { firstName: true, lastName: true },
-    });
+    const submitter =
+      fullUser ||
+      (await prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { firstName: true, lastName: true },
+      }));
 
     if (submitter) {
       try {
@@ -2299,10 +2386,10 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-            status: "LODGED",
-            redCopyStatus: "APPROVED",
-            dateLodged: new Date(),
-          }
+              status: "LODGED",
+              redCopyStatus: "APPROVED",
+              dateLodged: new Date(),
+            }
           : {}),
       },
       select: {
