@@ -1584,13 +1584,22 @@ export async function verifyBatchPaymentWithLinks(
     console.log("Constructed EBS URL:", ebsUrl);
 
     // 9. Update Batch — store URLs, skip S3
+    // Use the actual LASG transaction date from the receipt, fallback to now
+    const lasgPaymentDate = lasgData.transactionDate
+      ? new Date(lasgData.transactionDate)
+      : new Date();
+    // Guard against invalid date parsing
+    const validLasgPaymentDate = isNaN(lasgPaymentDate.getTime())
+      ? new Date()
+      : lasgPaymentDate;
+
     await prisma.certificateOfDepositBatch.update({
       where: { id: batchId },
       data: {
         userPaymentRef: rrr,
         paymentStatus: "LASG_PAID",
         userPaymentDate: new Date(),
-        lasgPaymentDate: new Date(),
+        lasgPaymentDate: validLasgPaymentDate,
         lasgReceiptUrl: ebsUrl,
         remitaReceiptUrl: remitaReceiptUrl,
         lasgReceiptS3Key: null, // No S3 upload in two-link flow
