@@ -1600,6 +1600,7 @@ export async function verifyBatchPaymentWithLinks(
         paymentStatus: "LASG_PAID",
         userPaymentDate: new Date(),
         lasgPaymentDate: validLasgPaymentDate,
+        paymentAnchor: lasgAnchor, // Cross-validation anchor linking LASG and Remita receipts
         lasgReceiptUrl: ebsUrl,
         remitaReceiptUrl: remitaReceiptUrl,
         lasgReceiptS3Key: null, // No S3 upload in two-link flow
