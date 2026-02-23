@@ -25,8 +25,7 @@ import {
   extractRemitaReceiptFromHtml,
 } from "./aiExtractionActions";
 
-// Use pdfjs-dist directly for server-side PDF text extraction (no worker needed)
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 6;
@@ -2465,10 +2464,10 @@ export async function updateRecordsIIStatus(
         recordsIIComment: comment,
         ...(approved
           ? {
-              status: "LODGED",
-              redCopyStatus: "APPROVED",
-              dateLodged: new Date(),
-            }
+            status: "LODGED",
+            redCopyStatus: "APPROVED",
+            dateLodged: new Date(),
+          }
           : {}),
       },
       select: {
