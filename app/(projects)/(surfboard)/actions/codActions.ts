@@ -24,6 +24,7 @@ import {
   extractLASGReceiptFromHtml,
   extractRemitaReceiptFromHtml,
 } from "./aiExtractionActions";
+import { transmitToOSSG } from "./ossgActions";
 
 
 
@@ -36,6 +37,7 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
+  | "ARCHIVE"
   | "MDA_SUPERADMIN";
 
 // Properly map role names to camelCase field prefixes
@@ -47,6 +49,7 @@ function getRoleFieldPrefix(role: MDARole): string {
     SURCON: "surcon",
     RECORDS_I: "recordsI",
     RECORDS_II: "recordsII",
+    ARCHIVE: "archive",
     MDA_SUPERADMIN: "mdaSuperadmin",
   };
   return mapping[role];
@@ -823,7 +826,10 @@ function calculateFeeFromRow(
  * - Batch creation
  * - Status updates
  */
-export async function submitRedCopyBatch(planIds: string[]): Promise<
+export async function submitRedCopyBatch(
+  planIds: string[],
+  acceptanceAcknowledged: boolean = false
+): Promise<
   ApiResult<{
     batchId: string;
     batchCode: string;
@@ -846,6 +852,10 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) {
       return { success: false, error: "User not authenticated" };
+    }
+
+    if (!acceptanceAcknowledged) {
+      return { success: false, error: "Submission policy must be acknowledged" };
     }
 
     // Get fresh user details for current info
@@ -2136,8 +2146,8 @@ export async function updateAccountsApproval(
 
     // Check if all four MDA approvals are complete for each plan
     // Accounts is now APPROVED, check the other three using already-fetched data
-    if (approved) {
-      for (const plan of batchPlans) {
+    for (const plan of batchPlans) {
+      if (approved) {
         const allFourApproved =
           plan.chartingStatus === "APPROVED" &&
           plan.surconStatus === "APPROVED" &&
@@ -2153,6 +2163,8 @@ export async function updateAccountsApproval(
           });
         }
       }
+
+      await checkAndDispatchQueries(plan.id);
     }
 
     return { success: true, data: { success: true } };
@@ -2166,11 +2178,12 @@ export async function updateAccountsApproval(
 }
 
 /**
- * Charting Admin: Update charting remarks and approve
+ * Charting Admin: Approve or query plan
  */
 export async function updateChartingStatus(
   planId: string,
-  chartingRemarks: string,
+  mode: "APPROVE" | "QUERY",
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -2178,11 +2191,14 @@ export async function updateChartingStatus(
       return { success: false, error: "Unauthorized" };
     }
 
+    const approved = mode === "APPROVE";
+
     const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
-        chartingRemarks,
-        chartingStatus: "APPROVED",
+        chartingRemarks: approved ? comment : undefined,
+        chartingComment: !approved ? comment : undefined,
+        chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
       },
@@ -2202,32 +2218,37 @@ export async function updateChartingStatus(
     // Log audit action
     await logAuditAction({
       userId: user.id,
-      action: "APPROVE_CHARTING",
+      action: approved ? "APPROVE_CHARTING" : "QUERY_CHARTING",
       entity: "SurfboardPlan",
       entityId: planId,
       changes: createChangeLog({
         planNumber: plan.planNumber,
-        chartingRemarks,
-        chartingStatus: "APPROVED",
+        approved,
+        comment: comment || null,
+        chartingStatus: approved ? "APPROVED" : "QUERIED",
       }),
     });
 
     // Check if all four MDA approvals are complete and notify user
     // Charting is now APPROVED, check the other three
-    const allFourApproved =
-      plan.accountsStatus === "APPROVED" &&
-      plan.surconStatus === "APPROVED" &&
-      plan.recordsIStatus === "APPROVED" &&
-      plan.recordsIIStatus === "PENDING";
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
 
-    if (allFourApproved && plan.userId) {
-      await notifyReadyForPhysicalSubmission({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        sendEmail: true,
-      });
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
     }
+
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2271,20 +2292,6 @@ export async function updateSurconStatus(
       },
     });
 
-    if (!approved) {
-      // Send notification to user
-      if (plan.userId) {
-        await notifyPlanQueried({
-          userId: plan.userId,
-          planId,
-          planNumber: plan.planNumber,
-          queriedBy: "SURCON",
-          comment,
-          sendEmail: true,
-        });
-      }
-    }
-
     revalidatePath("/surf-mda/dashboard/surcon");
     revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
@@ -2320,6 +2327,8 @@ export async function updateSurconStatus(
         });
       }
     }
+
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2363,20 +2372,6 @@ export async function updateRecordsIStatus(
       },
     });
 
-    if (!approved) {
-      // Send notification to user
-      if (plan.userId) {
-        await notifyPlanQueried({
-          userId: plan.userId,
-          planId,
-          planNumber: plan.planNumber,
-          queriedBy: "Records I",
-          comment,
-          sendEmail: true,
-        });
-      }
-    }
-
     revalidatePath("/surf-mda/dashboard/records-i");
     revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
 
@@ -2412,6 +2407,8 @@ export async function updateRecordsIStatus(
         });
       }
     }
+
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2480,16 +2477,15 @@ export async function updateRecordsIIStatus(
           }
           : {}),
       },
-      select: {
-        userId: true,
-        planNumber: true,
+      include: {
+        user: true,
         batch: { select: { batchCode: true } },
       },
     });
 
     if (approved) {
-      // TODO: Send data to OSSG API
-      // await sendToOSSG({ ... });
+      // Simulate transmitting to OSSG API
+      await transmitToOSSG(plan, plan.user);
 
       // Send notification to user with batch details
       if (plan.userId) {
@@ -2604,6 +2600,7 @@ export async function getPendingCountByRole(): Promise<
     surcon: number;
     recordsI: number;
     recordsII: number;
+    archive: number;
   }>
 > {
   try {
@@ -2618,6 +2615,7 @@ export async function getPendingCountByRole(): Promise<
         "SURCON",
         "RECORDS_I",
         "RECORDS_II",
+        "ARCHIVE",
         "MDA_SUPERADMIN",
       ].includes(user.role)
     ) {
@@ -2630,6 +2628,7 @@ export async function getPendingCountByRole(): Promise<
       surconCount,
       recordsICount,
       recordsIICount,
+      archiveCount,
     ] = await Promise.all([
       // Accounts: Count batches with LASG_PAID status and no accounts approval
       prisma.certificateOfDepositBatch.count({
@@ -2714,6 +2713,19 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
+      // Archive: Count plans where all other MDAs have approved, but archiveReceivedAt is null
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "SUBMITTED",
+          surconStatus: "APPROVED",
+          chartingStatus: "APPROVED",
+          recordsIStatus: "APPROVED",
+          recordsIIStatus: "APPROVED",
+          accountsStatus: "APPROVED",
+          archiveReceivedAt: null,
+          deleted: false,
+        },
+      }),
     ]);
 
     return {
@@ -2724,6 +2736,7 @@ export async function getPendingCountByRole(): Promise<
         surcon: surconCount,
         recordsI: recordsICount,
         recordsII: recordsIICount,
+        archive: archiveCount,
       },
     };
   } catch (error) {
@@ -3142,8 +3155,13 @@ export async function getQueriedPlansForUser(): Promise<
       lcda: string | null;
       deededArea: string;
       pillars: any;
+      codFee: number | null;
       redCopyFileUrl: string | null;
       redCopyStatus: string | null;
+      accountsStatus: string | null;
+      accountsComment: string | null;
+      chartingStatus: string | null;
+      chartingComment: string | null;
       surconStatus: string | null;
       surconComment: string | null;
       recordsIStatus: string | null;
@@ -3168,6 +3186,8 @@ export async function getQueriedPlansForUser(): Promise<
         deleted: false,
         // Check if any role has queried the plan
         OR: [
+          { accountsStatus: "QUERIED" },
+          { chartingStatus: "QUERIED" },
           { surconStatus: "QUERIED" },
           { recordsIStatus: "QUERIED" },
           { recordsIIStatus: "QUERIED" },
@@ -3182,8 +3202,13 @@ export async function getQueriedPlansForUser(): Promise<
         lcda: true,
         deededArea: true,
         pillars: true,
+        codFee: true,
         redCopyFileUrl: true,
         redCopyStatus: true,
+        accountsStatus: true,
+        accountsComment: true,
+        chartingStatus: true,
+        chartingComment: true,
         surconStatus: true,
         surconComment: true,
         recordsIStatus: true,
@@ -3219,6 +3244,8 @@ export async function resubmitQueriedPlan(
   pillars?: any,
   recordCopyUrl?: string,
   location?: { lga?: string; lcda?: string; ward?: string; state?: string },
+  lasgReceiptUrl?: string,
+  remitaReceiptUrl?: string
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -3233,6 +3260,8 @@ export async function resubmitQueriedPlan(
         userId: user.id,
         // Check if any role has queried the plan
         OR: [
+          { accountsStatus: "QUERIED" },
+          { chartingStatus: "QUERIED" },
           { surconStatus: "QUERIED" },
           { recordsIStatus: "QUERIED" },
           { recordsIIStatus: "QUERIED" },
@@ -3241,6 +3270,8 @@ export async function resubmitQueriedPlan(
       select: {
         id: true,
         planNumber: true,
+        accountsStatus: true,
+        chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
         recordsIIStatus: true,
@@ -3252,6 +3283,32 @@ export async function resubmitQueriedPlan(
         success: false,
         error: "Plan not found or no pending queries to respond to",
       };
+    }
+
+    // Determine if payment verification is needed
+    if (lasgReceiptUrl && remitaReceiptUrl) {
+      // We need expectedAmount. Re-fetch plan with codFee
+      const fullPlan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { codFee: true },
+      });
+      const { getCodSubmissionSettings } = await import("./settingsActions");
+      const settings = await getCodSubmissionSettings();
+      const feePercent = settings.queryResponseFeePercent || 0;
+      const expectedAmount = fullPlan?.codFee ? (fullPlan.codFee * feePercent) / 100 : 0;
+
+      if (expectedAmount > 0) {
+        // Verify the payment links
+        const verifyRes = await verifyQueryPaymentLinks(
+          user,
+          lasgReceiptUrl,
+          remitaReceiptUrl,
+          expectedAmount
+        );
+        if (!verifyRes.success) {
+          return { success: false, error: verifyRes.error };
+        }
+      }
     }
 
     // Determine which role queried the plan
@@ -3267,10 +3324,20 @@ export async function resubmitQueriedPlan(
     };
 
     // Reset only the querying role's status to PENDING
+    if (plan.accountsStatus === "QUERIED") {
+      updates.accountsStatus = "PENDING";
+      updates.accountsComment = null;
+      queriedBy = "Accounts";
+    }
+    if (plan.chartingStatus === "QUERIED") {
+      updates.chartingStatus = "PENDING";
+      updates.chartingComment = null;
+      queriedBy = queriedBy ? `${queriedBy}, Charting` : "Charting";
+    }
     if (plan.surconStatus === "QUERIED") {
       updates.surconStatus = "PENDING";
       updates.surconComment = null;
-      queriedBy = "SURCON";
+      queriedBy = queriedBy ? `${queriedBy}, SURCON` : "SURCON";
     }
     if (plan.recordsIStatus === "QUERIED") {
       updates.recordsIStatus = "PENDING";
@@ -3309,6 +3376,11 @@ export async function resubmitQueriedPlan(
         queriedBy,
         pillarsUpdated: !!pillars,
         recordCopyUpdated: !!recordCopyUrl,
+        queryPayment: lasgReceiptUrl && remitaReceiptUrl ? {
+          lasgReceiptUrl,
+          remitaReceiptUrl,
+          verified: true
+        } : undefined
       }),
     });
 
@@ -3624,6 +3696,301 @@ export async function getAccountsHistory() {
     return {
       success: false,
       error: handlePrismaError(error, "getAccountsHistory"),
+    };
+  }
+}
+
+/**
+ * Batched Query Dispatcher
+ * Checks if all four parallel roles (Accounts, Charting, SURCON, Records I)
+ * have made a decision (i.e. not PENDING). If any queried, dispatches a consolidated note.
+ */
+export async function checkAndDispatchQueries(planId: string) {
+  try {
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        accountsComment: true,
+        chartingStatus: true,
+        chartingComment: true,
+        surconStatus: true,
+        surconComment: true,
+        recordsIStatus: true,
+        recordsIComment: true,
+      },
+    });
+
+    if (!plan || !plan.userId) return;
+
+    // Check if ALL four parallel roles are no longer PENDING
+    const allActed =
+      plan.accountsStatus !== "PENDING" &&
+      plan.chartingStatus !== "PENDING" &&
+      plan.surconStatus !== "PENDING" &&
+      plan.recordsIStatus !== "PENDING";
+
+    if (!allActed) return;
+
+    // Compile queries
+    const queries: Array<{ role: string; comment?: string }> = [];
+    if (plan.accountsStatus === "QUERIED")
+      queries.push({ role: "Accounts", comment: plan.accountsComment || undefined });
+    if (plan.chartingStatus === "QUERIED")
+      queries.push({ role: "Charting", comment: plan.chartingComment || undefined });
+    if (plan.surconStatus === "QUERIED")
+      queries.push({ role: "SURCON", comment: plan.surconComment || undefined });
+    if (plan.recordsIStatus === "QUERIED")
+      queries.push({ role: "Records I", comment: plan.recordsIComment || undefined });
+
+    if (queries.length > 0) {
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries,
+        sendEmail: true,
+      });
+    }
+  } catch (error) {
+    console.error("Error in checkAndDispatchQueries:", error);
+  }
+}
+
+/**
+ * Helper to verify query response payment links
+ */
+async function verifyQueryPaymentLinks(
+  user: any,
+  lasgReceiptUrl: string,
+  remitaReceiptUrl: string,
+  expectedAmount: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Parse LASG URL parameters
+    let transId: string, transCode: string, payerId: string;
+    try {
+      const lasgUrl = new URL(lasgReceiptUrl);
+      transId = lasgUrl.searchParams.get("transid") || "";
+      transCode = lasgUrl.searchParams.get("transcode") || "";
+      payerId = lasgUrl.searchParams.get("payerid") || "";
+
+      if (!transId || !transCode || !payerId) {
+        return {
+          success: false,
+          error: "Invalid LASG receipt URL: missing required parameters.",
+        };
+      }
+    } catch {
+      return {
+        success: false,
+        error: "Invalid LASG receipt URL format.",
+      };
+    }
+
+    // 2. Cross-check PayerID
+    const fullUser = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { payerID: true },
+    });
+
+    if (fullUser?.payerID) {
+      if (parseInt(payerId, 10) !== fullUser.payerID) {
+        return {
+          success: false,
+          error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${fullUser.payerID}.`,
+        };
+      }
+    }
+
+    // 3. Fetch LASG receipt content
+    try {
+      const lasgExtracted = await fetchAndExtractTextFromUrl(lasgReceiptUrl);
+      if (!lasgExtracted.text || lasgExtracted.text.trim().length < 50) {
+        return {
+          success: false,
+          error: "LASG receipt returned insufficient content.",
+        };
+      }
+    } catch {
+      return { success: false, error: "Failed to access LASG receipt URL." };
+    }
+
+    // 4. Fetch Remita JSON API
+    try {
+      const remitaApiUrl = remitaReceiptUrl.replace(
+        "/view-rrr/details.json",
+        "/details.json"
+      );
+      const remitaRes = await fetch(remitaApiUrl, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      if (!remitaRes.ok) {
+        return { success: false, error: "Failed to fetch Remita receipt data." };
+      }
+      const data = await remitaRes.json();
+
+      // Allow minor rounding differences
+      if (Math.abs(data.amount - expectedAmount) > 1) {
+        return {
+          success: false,
+          error: `Payment amount mismatch: Expected ₦${expectedAmount}, but receipt is for ₦${data.amount}.`,
+        };
+      }
+
+      if (data.status?.toUpperCase() !== "PAID" && data.PAYMENTSTATUS?.toUpperCase() !== "PAID" && data.STATUS?.toUpperCase() !== "PAID" && data.PAYMENTSTATUS?.toUpperCase() !== "SUCCESSFUL") {
+        return {
+          success: false,
+          error: `Payment status is not PAID (${data.status}).`,
+        };
+      }
+    } catch {
+      return { success: false, error: "Failed to parse Remita receipt data." };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: `Verification error: ${error.message}` };
+  }
+}
+
+/**
+ * Get plans pending archiving (all approved, not yet archived)
+ */
+export async function getPendingArchivePlans() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        redCopyStatus: "SUBMITTED",
+        surconStatus: "APPROVED",
+        chartingStatus: "APPROVED",
+        recordsIStatus: "APPROVED",
+        recordsIIStatus: "APPROVED",
+        accountsStatus: "APPROVED",
+        archiveReceivedAt: null,
+        deleted: false,
+      },
+      include: {
+        user: {
+          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true },
+        },
+        batch: {
+          select: { batchCode: true },
+        },
+      },
+      orderBy: { updatedAt: "asc" },
+    });
+
+    return { success: true, data: { plans } };
+  } catch (error) {
+    console.error("Error fetching pending archive plans:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getPendingArchivePlans"),
+    };
+  }
+}
+
+/**
+ * Get recently archived plans
+ */
+export async function getArchiveHistory() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        archiveReceivedAt: { not: null },
+        deleted: false,
+      },
+      include: {
+        user: {
+          select: { firstName: true, lastName: true, companyName: true },
+        },
+        batch: {
+          select: { batchCode: true },
+        },
+      },
+      orderBy: { archiveReceivedAt: "desc" },
+      take: 100,
+    });
+
+    return { success: true, data: { plans } };
+  } catch (error) {
+    console.error("Error fetching archive history:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getArchiveHistory"),
+    };
+  }
+}
+
+/**
+ * Mark a plan as physically received and archived
+ */
+export async function markPlanArchived(planId: string, notes?: string) {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role as string) !== "ARCHIVE") {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) return { success: false, error: "Plan not found" };
+
+    if (
+      plan.surconStatus !== "APPROVED" ||
+      plan.chartingStatus !== "APPROVED" ||
+      plan.recordsIStatus !== "APPROVED" ||
+      plan.recordsIIStatus !== "APPROVED" ||
+      plan.accountsStatus !== "APPROVED"
+    ) {
+      return { success: false, error: "Plan is not fully approved by all MDAs yet" };
+    }
+
+    const updated = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        archiveReceivedBy: user.id,
+        archiveReceivedAt: new Date(),
+        archiveNotes: notes || null,
+      }
+    });
+
+    revalidatePath("/surf-mda/dashboard/archive");
+    revalidatePath("/surf-mda/dashboard");
+
+    await logAuditAction({
+      userId: user.id,
+      action: "MARK_PLAN_ARCHIVED",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        archiveReceivedAt: updated.archiveReceivedAt,
+        archiveNotes: notes
+      }),
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error marking plan archived:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "markPlanArchived"),
     };
   }
 }

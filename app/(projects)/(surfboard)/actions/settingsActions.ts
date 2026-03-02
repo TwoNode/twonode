@@ -11,11 +11,17 @@ import { COD_FEES, type ZoneFeeRow } from "../utils/CoDFees";
 interface SurfboardSettingsData {
   zoneFees: ZoneFeeRow[];
   systemChargePercent: number;
+  codAcceptanceText: string;
+  codPolicyContent: string;
+  queryResponseFeePercent: number;
 }
 
 const DEFAULT_SETTINGS: SurfboardSettingsData = {
   zoneFees: COD_FEES,
   systemChargePercent: 10,
+  codAcceptanceText: "I hereby affirm that the information provided in this submission is true, accurate, and complete to the best of my knowledge.",
+  codPolicyContent: "Official CoD Submission Policy.\n\nBy clicking 'Submit', you agree to the terms and conditions outlined by the MDA.",
+  queryResponseFeePercent: 10,
 };
 
 /**
@@ -57,6 +63,9 @@ export async function getCurrentSettings(): Promise<
       data: {
         zoneFees: settingsData.zoneFees || COD_FEES,
         systemChargePercent: settingsData.systemChargePercent || 10,
+        codAcceptanceText: settingsData.codAcceptanceText || DEFAULT_SETTINGS.codAcceptanceText,
+        codPolicyContent: settingsData.codPolicyContent || DEFAULT_SETTINGS.codPolicyContent,
+        queryResponseFeePercent: settingsData.queryResponseFeePercent || DEFAULT_SETTINGS.queryResponseFeePercent,
       },
     };
   } catch (error) {
@@ -107,6 +116,43 @@ export async function getSystemChargePercent(): Promise<number> {
   } catch (err) {
     console.error("Error fetching system charge:", err);
     return 10;
+  }
+}
+
+/**
+ * Public getter for Surveyor CoD Submission modal
+ */
+export async function getCodSubmissionSettings(): Promise<{
+  codAcceptanceText: string;
+  codPolicyContent: string;
+  queryResponseFeePercent: number;
+}> {
+  try {
+    const settings = await prisma.surfboardSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (!settings || !settings.settings) {
+      return {
+        codAcceptanceText: DEFAULT_SETTINGS.codAcceptanceText,
+        codPolicyContent: DEFAULT_SETTINGS.codPolicyContent,
+        queryResponseFeePercent: DEFAULT_SETTINGS.queryResponseFeePercent,
+      };
+    }
+
+    const s = settings.settings as any;
+    return {
+      codAcceptanceText: s.codAcceptanceText || DEFAULT_SETTINGS.codAcceptanceText,
+      codPolicyContent: s.codPolicyContent || DEFAULT_SETTINGS.codPolicyContent,
+      queryResponseFeePercent: s.queryResponseFeePercent || DEFAULT_SETTINGS.queryResponseFeePercent,
+    };
+  } catch (error) {
+    console.error("Error fetching CoD submission settings:", error);
+    return {
+      codAcceptanceText: DEFAULT_SETTINGS.codAcceptanceText,
+      codPolicyContent: DEFAULT_SETTINGS.codPolicyContent,
+      queryResponseFeePercent: DEFAULT_SETTINGS.queryResponseFeePercent,
+    };
   }
 }
 

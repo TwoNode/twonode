@@ -30,12 +30,11 @@ import {
   Clock,
   History,
   User,
-  Hash,
-  Briefcase,
   Mail,
   Phone,
   Lock,
   Search,
+  XCircle,
 } from "lucide-react";
 import {
   getChartingPlans,
@@ -53,6 +52,8 @@ interface Plan {
   id: string;
   planNumber: string;
   surveyTitle: string;
+  planType?: string;
+  referencePlanNumber?: string | null;
   lga: string | null;
   ward: string | null;
   lcda: string | null;
@@ -89,6 +90,7 @@ export default function ChartingAdminPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [actionType, setActionType] = useState<"approve" | "query">("approve");
   const [chartingRemarks, setChartingRemarks] = useState("");
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -223,9 +225,10 @@ export default function ChartingAdminPage() {
     }
   };
 
-  const handleEditClick = (plan: Plan) => {
+  const handleActionClick = (plan: Plan, action: "approve" | "query") => {
     setSelectedPlan(plan);
-    setChartingRemarks(plan.possibleChartingRemarks || "");
+    setActionType(action);
+    setChartingRemarks(action === "approve" ? (plan.possibleChartingRemarks || "") : "");
     setShowDialog(true);
   };
 
@@ -239,16 +242,24 @@ export default function ChartingAdminPage() {
   const handleSubmit = async () => {
     if (!selectedPlan) return;
 
+    if (actionType === "query" && !chartingRemarks.trim()) {
+      toast.error("Please provide a reason for the query");
+      return;
+    }
+
     try {
       setProcessing(true);
       const result = await updateChartingStatus(
         selectedPlan.id,
+        actionType.toUpperCase() as "APPROVE" | "QUERY",
         chartingRemarks
       );
 
       if (result.success) {
         toast.success(
-          `Charting remarks approved for ${selectedPlan.planNumber}`
+          actionType === "approve"
+            ? `Charting remarks approved for ${selectedPlan.planNumber}`
+            : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
         fetchPlans();
@@ -319,13 +330,12 @@ export default function ChartingAdminPage() {
     return (
       <Card
         key={plan.id}
-        className={`transition-all duration-200 ${
-          isHistory
-            ? "border-l-4 border-l-green-400"
-            : isPlanLockedByMe
+        className={`transition-all duration-200 ${isHistory
+          ? "border-l-4 border-l-green-400"
+          : isPlanLockedByMe
             ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
-            : "opacity-60 grayscale-[30%]"
-        }`}
+            : "opacity-60 grayscale-30"
+          }`}
       >
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -345,6 +355,18 @@ export default function ChartingAdminPage() {
                 )}
               </div>
               <CardDescription>{plan.surveyTitle}</CardDescription>
+              <div className="flex gap-2 mt-1 mb-1">
+                {plan.planType && (
+                  <Badge variant="secondary" className="text-xs">
+                    {plan.planType}
+                  </Badge>
+                )}
+                {plan.referencePlanNumber && (
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
+                    Ref: {plan.referencePlanNumber}
+                  </span>
+                )}
+              </div>
               {plan.batch && (
                 <div className="mt-2">
                   <Badge variant="outline">Batch: {plan.batch.batchCode}</Badge>
@@ -514,25 +536,36 @@ export default function ChartingAdminPage() {
             </div>
           )}
 
-          {/* Action Button (for pending only) */}
+          {/* Action Buttons (for pending only) */}
           {!isHistory && (
-            <Button
-              onClick={() => handleEditClick(plan)}
-              className="w-full"
-              disabled={isDisabled}
-            >
-              {isDisabled ? (
-                <>
-                  <Lock className="w-4 h-4 mr-2" />
-                  View Only (Another plan is locked)
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Edit & Approve Charting Remarks
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => handleActionClick(plan, "approve")}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={isDisabled}
+              >
+                {isDisabled ? (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    View Only
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Edit & Approve
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => handleActionClick(plan, "query")}
+                variant="outline"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                disabled={isDisabled}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Query
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -655,15 +688,20 @@ export default function ChartingAdminPage() {
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Edit Charting Remarks</DialogTitle>
+              <DialogTitle>
+                {actionType === "approve"
+                  ? "Edit & Approve Charting Remarks"
+                  : "Query Plan"}
+              </DialogTitle>
               <DialogDescription>
-                Review and edit the charting remarks for{" "}
-                {selectedPlan?.planNumber}
+                {actionType === "approve"
+                  ? `Review and edit the charting remarks for ${selectedPlan?.planNumber}`
+                  : `Provide a reason for querying ${selectedPlan?.planNumber}`}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              {selectedPlan?.possibleChartingRemarks && (
+              {actionType === "approve" && selectedPlan?.possibleChartingRemarks && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <p className="text-sm font-medium text-gray-700">
@@ -687,9 +725,9 @@ export default function ChartingAdminPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium text-gray-700">
-                    Final Charting Remarks *
+                    {actionType === "approve" ? "Final Charting Remarks *" : "Query Reason *"}
                   </label>
-                  {selectedPlan?.possibleChartingRemarks && (
+                  {actionType === "approve" && selectedPlan?.possibleChartingRemarks && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -704,12 +742,14 @@ export default function ChartingAdminPage() {
                 <Textarea
                   value={chartingRemarks}
                   onChange={(e) => setChartingRemarks(e.target.value)}
-                  placeholder="Enter or edit charting remarks..."
+                  placeholder={actionType === "approve" ? "Enter or edit charting remarks..." : "Explain why this plan is being queried..."}
                   className="mt-1"
                   rows={6}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  These remarks will be used in the final certificate
+                  {actionType === "approve"
+                    ? "These remarks will be used in the final certificate"
+                    : "The surveyor will be notified and can make corrections"}
                 </p>
               </div>
             </div>
@@ -725,7 +765,11 @@ export default function ChartingAdminPage() {
               <Button
                 onClick={handleSubmit}
                 disabled={processing || !chartingRemarks.trim()}
-                className="bg-green-600 hover:bg-green-700"
+                className={
+                  actionType === "approve"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }
               >
                 {processing ? (
                   <>
@@ -734,8 +778,12 @@ export default function ChartingAdminPage() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
+                    {actionType === "approve" ? (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-2" />
+                    )}
+                    {actionType === "approve" ? "Approve" : "Query"}
                   </>
                 )}
               </Button>

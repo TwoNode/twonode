@@ -40,6 +40,7 @@ interface Plan {
   lcda: string | null;
   ward: string | null;
   state: string | null;
+  codFee?: number | null;
 }
 
 interface AmendPlanModalProps {
@@ -84,6 +85,31 @@ export function AmendPlanModal({
   const [lcda, setLcda] = useState(plan.lcda || "");
   const [ward, setWard] = useState(plan.ward || "");
   const [state, setState] = useState(plan.state || "");
+
+  // Payment fields state
+  const [feePercent, setFeePercent] = useState(0);
+  const [showPayment, setShowPayment] = useState(false);
+  const [lasgReceiptUrl, setLasgReceiptUrl] = useState("");
+  const [remitaReceiptUrl, setRemitaReceiptUrl] = useState("");
+  const [iframeKey, setIframeKey] = useState(0);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { getCodSubmissionSettings } = await import("../actions/settingsActions");
+      try {
+        const settings = await getCodSubmissionSettings();
+        if (settings) {
+          setFeePercent(settings.queryResponseFeePercent || 0);
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings", e);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const feeAmount = plan.codFee ? (plan.codFee * feePercent) / 100 : 0;
 
   // Reset state when plan changes
   useEffect(() => {
@@ -138,12 +164,12 @@ export function AmendPlanModal({
       prev.map((p, i) =>
         i === index
           ? {
-              ...p,
-              [field]:
-                field === "pillarNumber"
-                  ? value
-                  : parseFloat(value as string) || 0,
-            }
+            ...p,
+            [field]:
+              field === "pillarNumber"
+                ? value
+                : parseFloat(value as string) || 0,
+          }
           : p
       )
     );
@@ -215,6 +241,28 @@ export function AmendPlanModal({
       return;
     }
 
+    // Handle payment step
+    if (feeAmount > 0 && !showPayment) {
+      setShowPayment(true);
+      return;
+    }
+
+    // If payment is shown but links are incomplete
+    if (showPayment) {
+      if (!lasgReceiptUrl.trim() || !remitaReceiptUrl.trim()) {
+        toast.error("Please provide both LASG and Remita receipt links.");
+        return;
+      }
+      if (!lasgReceiptUrl.includes("printreceipt.ebs-rcm.com")) {
+        toast.error("Invalid LASG receipt URL.");
+        return;
+      }
+      if (!remitaReceiptUrl.includes("login.remita.net")) {
+        toast.error("Invalid Remita receipt URL.");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
 
@@ -241,18 +289,20 @@ export function AmendPlanModal({
       const pillarsData = pillarsChanged ? pillars : undefined;
       const locationData = locationChanged
         ? {
-            lga: lga || undefined,
-            lcda: lcda || undefined,
-            ward: ward || undefined,
-            state: state || undefined,
-          }
+          lga: lga || undefined,
+          lcda: lcda || undefined,
+          ward: ward || undefined,
+          state: state || undefined,
+        }
         : undefined;
 
       const result = await resubmitQueriedPlan(
         plan.id,
         pillarsData,
         recordCopyUrl,
-        locationData
+        locationData,
+        showPayment ? lasgReceiptUrl : undefined,
+        showPayment ? remitaReceiptUrl : undefined
       );
 
       if (result.success) {
@@ -594,30 +644,84 @@ export function AmendPlanModal({
             </div>
           </div>
 
-          {/* Right Column - Map Preview */}
+          {/* Right Column - Map Preview & Remita Portal */}
           <div className="space-y-4">
-            <Label className="text-base font-semibold">Map Preview</Label>
-            <div
-              className={`rounded-xl overflow-hidden border-2 ${
-                pillars.length > 0 ? "border-blue-300" : "border-gray-200"
-              }`}
-              style={{ height: "500px" }}
-            >
-              {pillars.length > 0 ? (
-                <MaplibreMap processedPillars={pillars} />
-              ) : (
-                <div className="h-full flex items-center justify-center bg-gray-50">
-                  <div className="text-center text-gray-400">
-                    <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Add pillars to see map preview</p>
+            {!showPayment ? (
+              <>
+                <Label className="text-base font-semibold">Map Preview</Label>
+                <div
+                  className={`rounded-xl overflow-hidden border-2 flex-1 min-h-[500px] ${pillars.length > 0 ? "border-blue-300" : "border-gray-200"
+                    }`}
+                  style={{ height: "500px" }}
+                >
+                  {pillars.length > 0 ? (
+                    <MaplibreMap processedPillars={pillars} />
+                  ) : (
+                    <div className="h-full flex items-center justify-center bg-gray-50">
+                      <div className="text-center text-gray-400">
+                        <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>Add pillars to see map preview</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {pillars.length > 0 && (
+                  <p className="text-xs text-gray-500 text-center">
+                    Map shows the polygon formed by pillar coordinates
+                  </p>
+                )}
+              </>
+            ) : (
+              // Payment Section Overlay
+              <div className="border border-blue-200 rounded-xl overflow-hidden bg-blue-50 flex flex-col h-[500px]">
+                <div className="p-4 bg-white border-b flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Query Response Fee</h3>
+                    <p className="text-sm text-gray-500">Pay via Remita to resubmit</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-600">
+                      ₦{feeAmount.toLocaleString()}
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-            {pillars.length > 0 && (
-              <p className="text-xs text-gray-500 text-center">
-                Map shows the polygon formed by pillar coordinates
-              </p>
+                <div className="flex-1 relative">
+                  <iframe
+                    key={iframeKey}
+                    src="https://login.remita.net/remita/lirs/internal/pay.reg"
+                    className="w-full h-full border-none"
+                    title="Remita Payment Portal"
+                  />
+                  <Button
+                    onClick={() => setIframeKey((k) => k + 1)}
+                    variant="outline"
+                    size="sm"
+                    className="absolute top-2 right-2 bg-white opacity-80 hover:opacity-100"
+                  >
+                    Reload Remita
+                  </Button>
+                </div>
+                {/* Link inputs */}
+                <div className="bg-white p-4 border-t space-y-3">
+                  <p className="text-xs text-gray-500">
+                    Paste the receipt links sent to your email after successful payment:
+                  </p>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="LASG Receipt Link (printreceipt.ebs-rcm.com...)"
+                      value={lasgReceiptUrl}
+                      onChange={(e) => setLasgReceiptUrl(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    <Input
+                      placeholder="Remita Receipt Link (login.remita.net/remita/rrr...)"
+                      value={remitaReceiptUrl}
+                      onChange={(e) => setRemitaReceiptUrl(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -638,7 +742,16 @@ export function AmendPlanModal({
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {uploading ? "Uploading..." : "Resubmitting..."}
+                {uploading ? "Uploading..." : "Processing..."}
+              </>
+            ) : showPayment ? (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Verify & Resubmit
+              </>
+            ) : feeAmount > 0 ? (
+              <>
+                Pay Query Fee (₦{feeAmount.toLocaleString()})
               </>
             ) : (
               <>

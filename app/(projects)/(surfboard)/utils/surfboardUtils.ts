@@ -151,8 +151,7 @@ export async function convertCoordinates(
   } catch (error) {
     console.error("Coordinate conversion failed:", error);
     throw new Error(
-      `Failed to convert coordinates: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to convert coordinates: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -255,8 +254,7 @@ export function parseCSVContent(csvContent: string): PillarData[] {
     return pillars;
   } catch (error) {
     throw new Error(
-      `Failed to parse CSV: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to parse CSV: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -300,8 +298,7 @@ export async function generatePolygonFromPillars(
   } catch (error) {
     console.error("Failed to generate polygon:", error);
     throw new Error(
-      `Failed to generate polygon: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate polygon: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -326,8 +323,7 @@ export async function generatePointFromPillar(
   } catch (error) {
     console.error("Failed to generate point:", error);
     throw new Error(
-      `Failed to generate point: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to generate point: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -368,11 +364,26 @@ function calculatePolygonArea(geometry: any): number {
   }
 }
 
-// Helper function to get file URL from key
 export function getSurfboardFileUrl(key: string): string {
   const bucketName =
     process.env.SURFBOARD_AWS_BUCKET_NAME || process.env.REVA_AWS_BUCKET_NAME!;
   const region =
     process.env.SURFBOARD_AWS_REGION || process.env.REVA_AWS_REGION!;
   return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
+}
+
+// -----------------------------------------------------------------------------
+// OSSG Support Utilities
+// -----------------------------------------------------------------------------
+
+/**
+ * Compresses an array of pillar numbers into a concise format for OSSG payloads.
+ * e.g. ["P1", "P2", "P3"] -> "P1 - P3"
+ */
+export function compressPillarNumbers(pillars: string[]): string {
+  if (!pillars || pillars.length === 0) return "";
+  if (pillars.length <= 2) return pillars.join(", ");
+
+  // A simple dummy compression: First and last pillar
+  return `${pillars[0]} - ${pillars[pillars.length - 1]}`;
 }

@@ -61,6 +61,8 @@ interface Batch {
   plans: Array<{
     id: string;
     planNumber: string;
+    planType?: string;
+    referencePlanNumber?: string | null;
     lga: string | null;
     deededArea: string;
   }>;
@@ -222,8 +224,7 @@ export default function AccountsAdminPage() {
 
       if (result.success) {
         toast.success(
-          `Batch ${selectedBatch.batchCode} ${
-            approvalAction === "approve" ? "approved" : "disapproved"
+          `Batch ${selectedBatch.batchCode} ${approvalAction === "approve" ? "approved" : "disapproved"
           } successfully`
         );
         setShowApprovalDialog(false);
@@ -371,6 +372,7 @@ export default function AccountsAdminPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Plan Number</TableHead>
+                            <TableHead>Plan Type</TableHead>
                             <TableHead>LGA</TableHead>
                             <TableHead>Area</TableHead>
                           </TableRow>
@@ -379,7 +381,13 @@ export default function AccountsAdminPage() {
                           {batch.plans.map((plan) => (
                             <TableRow key={plan.id}>
                               <TableCell className="font-medium">
-                                {plan.planNumber}
+                                <span className="block">{plan.planNumber}</span>
+                                {plan.referencePlanNumber && (
+                                  <span className="text-xs text-gray-500 block">Ref: {plan.referencePlanNumber}</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {plan.planType || "N/A"}
                               </TableCell>
                               <TableCell>{plan.lga || "N/A"}</TableCell>
                               <TableCell>{plan.deededArea}</TableCell>

@@ -33,6 +33,7 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
+  | "ARCHIVE"
   | "SUPERADMIN"
   | "MDA_SUPERADMIN";
 
@@ -100,6 +101,17 @@ const roleConfigs: Record<MDARole, RoleConfig> = {
     iconBg: "bg-pink-100",
     iconColor: "text-pink-600",
     heroGradient: "from-pink-600 via-pink-700 to-rose-800",
+  },
+  ARCHIVE: {
+    title: "Archive Admin",
+    description:
+      "Acknowledge and archive physically submitted plans",
+    icon: Archive,
+    href: "/surf-mda/dashboard/archive",
+    color: "from-slate-500 to-gray-500",
+    iconBg: "bg-slate-100",
+    iconColor: "text-slate-600",
+    heroGradient: "from-slate-600 via-slate-700 to-gray-800",
   },
   SUPERADMIN: {
     title: "Super Admin",
@@ -176,6 +188,16 @@ const allQuickActions = [
     iconBg: "bg-pink-100",
     iconColor: "text-pink-600",
   },
+  {
+    role: "ARCHIVE" as MDARole,
+    title: "Archive",
+    description: "Receive and archive final physical plans",
+    icon: Archive,
+    href: "/surf-mda/dashboard/archive",
+    color: "from-slate-500 to-gray-500",
+    iconBg: "bg-slate-100",
+    iconColor: "text-slate-600",
+  },
 ];
 
 export default function MDADashboardHome() {
@@ -188,6 +210,7 @@ export default function MDADashboardHome() {
     surcon: 0,
     recordsI: 0,
     recordsII: 0,
+    archive: 0,
   });
 
   useEffect(() => {
@@ -238,9 +261,9 @@ export default function MDADashboardHome() {
   const quickActions = isSuperAdmin
     ? allQuickActions
     : [
-        allQuickActions.find((a) => a.role === currentRole)!,
-        ...allQuickActions.filter((a) => a.role !== currentRole),
-      ];
+      allQuickActions.find((a) => a.role === currentRole)!,
+      ...allQuickActions.filter((a) => a.role !== currentRole),
+    ];
 
   // Build stats based on role
   const getStats = () => {
@@ -291,6 +314,15 @@ export default function MDADashboardHome() {
           textColor: "text-pink-600",
           href: "/surf-mda/dashboard/records-ii",
         },
+        {
+          title: "Archive Pending",
+          value: pendingCounts.archive,
+          icon: Archive,
+          color: "from-slate-500 to-slate-600",
+          bgColor: "bg-slate-50",
+          textColor: "text-slate-600",
+          href: "/surf-mda/dashboard/archive",
+        },
       ];
     }
 
@@ -304,6 +336,7 @@ export default function MDADashboardHome() {
       SURCON: { key: "surcon", title: "Plans Pending SURCON" },
       RECORDS_I: { key: "recordsI", title: "Plans Pending Records I" },
       RECORDS_II: { key: "recordsII", title: "Plans Ready for Final Approval" },
+      ARCHIVE: { key: "archive", title: "Plans Pending Archive" },
     };
 
     const roleStat = roleStatMap[currentRole];
@@ -376,11 +409,10 @@ export default function MDADashboardHome() {
 
       {/* Stats Grid */}
       <div
-        className={`grid gap-6 mb-8 ${
-          isSuperAdmin
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
-            : "grid-cols-1"
-        }`}
+        className={`grid gap-6 mb-8 ${isSuperAdmin
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+          : "grid-cols-1"
+          }`}
       >
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -394,11 +426,10 @@ export default function MDADashboardHome() {
             >
               <Link href={stat.href}>
                 <div
-                  className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer ${
-                    (stat as any).isPrimary
-                      ? "ring-2 ring-offset-2 ring-purple-500"
-                      : ""
-                  }`}
+                  className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer ${(stat as any).isPrimary
+                    ? "ring-2 ring-offset-2 ring-purple-500"
+                    : ""
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3 rounded-xl ${stat.bgColor}`}>
@@ -408,9 +439,8 @@ export default function MDADashboardHome() {
                   </div>
                   <div>
                     <div
-                      className={`font-bold text-gray-900 mb-1 ${
-                        (stat as any).isPrimary ? "text-5xl" : "text-3xl"
-                      }`}
+                      className={`font-bold text-gray-900 mb-1 ${(stat as any).isPrimary ? "text-5xl" : "text-3xl"
+                        }`}
                     >
                       {stat.value.toLocaleString()}
                     </div>
@@ -443,9 +473,9 @@ export default function MDADashboardHome() {
               const Icon = action.icon;
               const pendingCount =
                 pendingCounts[
-                  action.role === "RECORDS_I"
-                    ? "recordsI"
-                    : action.role === "RECORDS_II"
+                action.role === "RECORDS_I"
+                  ? "recordsI"
+                  : action.role === "RECORDS_II"
                     ? "recordsII"
                     : (action.role.toLowerCase() as keyof typeof pendingCounts)
                 ];
