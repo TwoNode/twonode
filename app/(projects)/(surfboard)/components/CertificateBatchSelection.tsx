@@ -4,7 +4,7 @@
  * Uses Remita RRR for payment
  */
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
 import { RemitaPaymentModal } from "./RemitaPaymentModal";
 import { submitRedCopyBatch } from "../actions/codActions";
+import { getCodSubmissionSettings } from "../actions/settingsActions";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Plan {
   id: string;
@@ -69,6 +71,22 @@ export function BatchSubmissionModal({
 
   const [showPaymentView, setShowPaymentView] = useState(false);
 
+  // New states for CoD policy
+  const [acceptanceText, setAcceptanceText] = useState("Loading policy...");
+  const [policyContent, setPolicyContent] = useState("");
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      getCodSubmissionSettings().then((settings) => {
+        setAcceptanceText(settings.codAcceptanceText);
+        setPolicyContent(settings.codPolicyContent);
+      });
+      setIsAccepted(false);
+    }
+  }, [isOpen]);
+
   const handleSubmit = async () => {
     try {
       if (selectedPlans.length === 0) {
@@ -77,9 +95,17 @@ export function BatchSubmissionModal({
         return;
       }
 
+      if (!isAccepted) {
+        toast.error("You must accept the submission policy before proceeding.");
+        return;
+      }
+
       setIsSubmitting(true);
 
-      const result = await submitRedCopyBatch(selectedPlans.map((p) => p.id));
+      const result = await submitRedCopyBatch(
+        selectedPlans.map((p) => p.id),
+        isAccepted
+      );
 
       if (result.success && result.data) {
         const { batchId, batchCode, totalAmount, planCount, submitter } =
@@ -218,13 +244,39 @@ export function BatchSubmissionModal({
               </div>
             </div>
           </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="policy-acceptance"
+                checked={isAccepted}
+                onCheckedChange={(checked) => setIsAccepted(!!checked)}
+                className="mt-1"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="policy-acceptance"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {acceptanceText}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPolicyModal(true)}
+                  className="text-xs text-blue-600 hover:underline text-left mt-1"
+                >
+                  View full policy
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !isAccepted}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -239,6 +291,20 @@ export function BatchSubmissionModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showPolicyModal} onOpenChange={setShowPolicyModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Submission Policy</DialogTitle>
+          </DialogHeader>
+          <div className="prose max-w-none text-sm text-gray-700 whitespace-pre-wrap">
+            {policyContent}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowPolicyModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

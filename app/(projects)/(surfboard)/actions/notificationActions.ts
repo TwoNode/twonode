@@ -217,9 +217,8 @@ function generateNotificationEmailHtml(
                       ${notification.message}
                     </p>
                     
-                    ${
-                      notification.link
-                        ? `
+                    ${notification.link
+      ? `
                     <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
                       <tr>
                         <td style="background-color: ${color}; border-radius: 6px; padding: 12px 30px;">
@@ -230,8 +229,8 @@ function generateNotificationEmailHtml(
                       </tr>
                     </table>
                     `
-                        : ""
-                    }
+      : ""
+    }
                   </td>
                 </tr>
                 
@@ -577,9 +576,8 @@ export async function notifyPaymentReceived(params: {
     await createNotification({
       type: "SYSTEM",
       title: "Payment Received",
-      message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${
-        params.batchCode
-      } from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
+      message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${params.batchCode
+        } from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
       audience: "GENERAL_ADMINS",
       link: `/surf-restricted/dashboard/cod`,
       metadata: {
@@ -649,9 +647,8 @@ export async function notifyAccountsDisapproval(params: {
     await createNotification({
       type: "WARNING",
       title: "Batch Disapproved by Accounts",
-      message: `Batch ${params.batchCode} was disapproved by Accounts. ${
-        params.comment ? `Reason: ${params.comment}` : ""
-      }`,
+      message: `Batch ${params.batchCode} was disapproved by Accounts. ${params.comment ? `Reason: ${params.comment}` : ""
+        }`,
       audience: "GENERAL_ADMINS",
       link: `/surf-restricted/dashboard/cod`,
       metadata: {
@@ -681,13 +678,11 @@ export async function notifyPlanQueried(params: {
     await createNotification({
       type: "WARNING",
       title: "Plan Queried",
-      message: `Your plan ${params.planNumber} was queried by ${
-        params.queriedBy
-      }. ${
-        params.comment
+      message: `Your plan ${params.planNumber} was queried by ${params.queriedBy
+        }. ${params.comment
           ? `Comment: ${params.comment}`
           : "Please review and resubmit."
-      }`,
+        }`,
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans?tab=queried`,
@@ -705,6 +700,40 @@ export async function notifyPlanQueried(params: {
 }
 
 /**
+ * Helper function to notify user when their plan is queried by multiple MDA roles
+ */
+export async function notifyConsolidatedQueries(params: {
+  userId: string;
+  planId: string;
+  planNumber: string;
+  queries: Array<{ role: string; comment?: string }>;
+  sendEmail?: boolean;
+}): Promise<void> {
+  try {
+    const queryList = params.queries
+      .map((q) => `- **${q.role}**: ${q.comment || "Please review."}`)
+      .join("\n");
+
+    await createNotification({
+      type: "WARNING",
+      title: "Plan Queried by MDA",
+      message: `Your plan ${params.planNumber} has been queried following MDA review. Please see details below:\n\n${queryList}`,
+      audience: "SPECIFIC_USERS",
+      userIds: [params.userId],
+      link: `/surfboard/dashboard/plans?tab=queried`,
+      metadata: {
+        planId: params.planId,
+        planNumber: params.planNumber,
+        queries: params.queries,
+      },
+      sendEmail: params.sendEmail ?? true,
+    });
+  } catch (error) {
+    console.error("Error sending consolidated query notification:", error);
+  }
+}
+
+/**
  * Helper function to notify user when their plan is approved/lodged
  */
 export async function notifyPlanApproved(params: {
@@ -718,11 +747,9 @@ export async function notifyPlanApproved(params: {
     await createNotification({
       type: "SUCCESS",
       title: "Plan Successfully Lodged",
-      message: `Congratulations! Your plan ${
-        params.planNumber
-      } has been successfully lodged. ${
-        params.batchCode ? `Batch: ${params.batchCode}` : ""
-      }`,
+      message: `Congratulations! Your plan ${params.planNumber
+        } has been successfully lodged. ${params.batchCode ? `Batch: ${params.batchCode}` : ""
+        }`,
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,
@@ -754,9 +781,8 @@ export async function notifyMDAApproval(params: {
     await createNotification({
       type: params.approved ? "SUCCESS" : "WARNING",
       title: `${params.role} ${params.approved ? "Approved" : "Queried"} Plan`,
-      message: `Plan ${params.planNumber} was ${
-        params.approved ? "approved" : "queried"
-      } by ${params.role}. ${params.comment || ""}`,
+      message: `Plan ${params.planNumber} was ${params.approved ? "approved" : "queried"
+        } by ${params.role}. ${params.comment || ""}`,
       audience: "GENERAL_ADMINS",
       link: `/surf-restricted/dashboard/cod`,
       metadata: {
@@ -846,9 +872,8 @@ export async function notifyRecordCopySubmitted(params: {
     await createNotification({
       type: "INFO",
       title: "Record Copy Batch Submitted",
-      message: `Your batch ${params.batchCode} with ${
-        params.planCount
-      } plan(s) has been submitted for processing. Total amount: ₦${params.totalAmount.toLocaleString()}.`,
+      message: `Your batch ${params.batchCode} with ${params.planCount
+        } plan(s) has been submitted for processing. Total amount: ₦${params.totalAmount.toLocaleString()}.`,
       audience: "SPECIFIC_USERS",
       userIds: [params.userId],
       link: `/surfboard/dashboard/plans`,

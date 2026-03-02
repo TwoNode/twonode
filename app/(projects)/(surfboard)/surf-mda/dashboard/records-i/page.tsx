@@ -55,6 +55,8 @@ interface Plan {
   id: string;
   planNumber: string;
   surveyTitle: string;
+  planType?: string;
+  referencePlanNumber?: string | null;
   lga: string | null;
   ward: string | null;
   lcda: string | null;
@@ -330,15 +332,14 @@ export default function RecordsIAdminPage() {
     return (
       <Card
         key={plan.id}
-        className={`transition-all duration-200 ${
-          isHistory
+        className={`transition-all duration-200 ${isHistory
             ? plan.recordsIStatus === "QUERIED"
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
-            ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
-            : "border-l-4 border-l-gray-300 opacity-60 grayscale-30"
-        }`}
+              ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
+              : "border-l-4 border-l-gray-300 opacity-60 grayscale-30"
+          }`}
       >
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -354,6 +355,18 @@ export default function RecordsIAdminPage() {
                 )}
               </div>
               <CardDescription>{plan.surveyTitle}</CardDescription>
+              <div className="flex gap-2 mt-1 mb-1">
+                {plan.planType && (
+                  <Badge variant="secondary" className="text-xs">
+                    {plan.planType}
+                  </Badge>
+                )}
+                {plan.referencePlanNumber && (
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
+                    Ref: {plan.referencePlanNumber}
+                  </span>
+                )}
+              </div>
               {plan.batch && (
                 <div className="mt-2">
                   <Badge variant="outline">Batch: {plan.batch.batchCode}</Badge>
