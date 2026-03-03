@@ -189,7 +189,8 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {!isLoading && stats && stats.availableTickets > 0 && (
+            {/* Hiding tickets remaining for now */}
+            {false && !isLoading && stats && stats.availableTickets > 0 && (
               <p className="mt-8 text-lg text-yellow-300 animate-pulse">
                 ⚡ Only {stats.availableTickets} tickets remaining!
               </p>
@@ -209,7 +210,7 @@ export default function HomePage() {
       <section className="py-12 sm:py-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-            <div className="text-center">
+            <div className="text-center hidden">
               {isLoading ? (
                 <>
                   <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
@@ -463,19 +464,18 @@ export default function HomePage() {
               <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${
-                    stats.soldEarlyBirdTickets >=
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${stats.soldEarlyBirdTickets >=
+                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
                       ? "opacity-60"
                       : ""
-                  }`}
+                    }`}
                 >
                   {stats.soldEarlyBirdTickets >=
                     (settings?.tickets.maxEarlyBirdCapacity ?? 500) && (
-                    <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      SOLD OUT
-                    </div>
-                  )}
+                      <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                        SOLD OUT
+                      </div>
+                    )}
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white">Early Bird</h3>
                     <div className="text-3xl font-bold text-yellow-300 mt-2">
@@ -498,7 +498,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                   {stats.soldEarlyBirdTickets <
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <Link
                       href="/gbc/tickets?tier=early_bird"
                       className="w-full"
@@ -519,15 +519,14 @@ export default function HomePage() {
 
                 {/* Regular Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col ${
-                    stats.soldEarlyBirdTickets <
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col ${stats.soldEarlyBirdTickets <
+                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
                       ? "opacity-60"
                       : ""
-                  }`}
+                    }`}
                 >
                   {stats.soldEarlyBirdTickets <
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <div className="absolute top-0 right-0 bg-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
                       NOT YET AVAILABLE
                     </div>
@@ -543,7 +542,7 @@ export default function HomePage() {
                     </div>
                     <p className="text-sm text-gray-300 mt-1">
                       {stats.soldEarlyBirdTickets <
-                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                        (settings?.tickets.maxEarlyBirdCapacity ?? 500)
                         ? "Available after early bird sells out"
                         : "Standard access"}
                     </p>
@@ -560,7 +559,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                   {stats.soldEarlyBirdTickets >=
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <Link href="/gbc/tickets?tier=regular" className="w-full">
                       <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
                         Select Regular
@@ -616,7 +615,8 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              {!isLoading && (
+              {/* Hiding tickets remaining for now */}
+              {false && !isLoading && (
                 <p className="mt-4 text-yellow-300 font-medium animate-pulse">
                   Only {stats.availableTickets} tickets left!
                 </p>
