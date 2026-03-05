@@ -147,7 +147,7 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
   <div class="container">
     <div class="header">
       <h1>🎉 Ticket Confirmed!</h1>
-      <p style="margin: 10px 0 0 0; font-size: 16px;">Geospatial Builders Conference 2025</p>
+      <p style="margin: 10px 0 0 0; font-size: 16px;">Geospatial Builders Conference 2026</p>
     </div>
 
     <div class="content">
