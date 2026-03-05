@@ -66,7 +66,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       key: "event_name",
       label: "Event Name",
       type: "text",
-      placeholder: "Geospatial Builders Conference 2025",
+      placeholder: "Geospatial Builders Conference 2026",
     },
     {
       key: "event_theme",
