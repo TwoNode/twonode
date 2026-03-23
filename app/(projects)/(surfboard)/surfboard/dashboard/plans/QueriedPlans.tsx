@@ -27,6 +27,10 @@ interface QueriedPlan {
   pillars: any;
   redCopyFileUrl: string | null;
   redCopyStatus: string;
+  accountsStatus: string;
+  accountsComment: string | null;
+  chartingStatus: string;
+  chartingComment: string | null;
   surconStatus: string;
   surconComment: string | null;
   recordsIStatus: string;
@@ -79,6 +83,8 @@ export default function QueriedPlans() {
   // Determine which role(s) queried the plan
   const getQueriedBy = (plan: QueriedPlan): string[] => {
     const roles: string[] = [];
+    if (plan.accountsStatus === "QUERIED") roles.push("Accounts");
+    if (plan.chartingStatus === "QUERIED") roles.push("Charting");
     if (plan.surconStatus === "QUERIED") roles.push("SURCON");
     if (plan.recordsIStatus === "QUERIED") roles.push("Records I");
     if (plan.recordsIIStatus === "QUERIED") roles.push("Records II");
@@ -90,6 +96,12 @@ export default function QueriedPlans() {
     plan: QueriedPlan
   ): Array<{ role: string; comment: string }> => {
     const comments: Array<{ role: string; comment: string }> = [];
+    if (plan.accountsStatus === "QUERIED" && plan.accountsComment) {
+      comments.push({ role: "Accounts", comment: plan.accountsComment });
+    }
+    if (plan.chartingStatus === "QUERIED" && plan.chartingComment) {
+      comments.push({ role: "Charting", comment: plan.chartingComment });
+    }
     if (plan.surconStatus === "QUERIED" && plan.surconComment) {
       comments.push({ role: "SURCON", comment: plan.surconComment });
     }

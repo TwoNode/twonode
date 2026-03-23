@@ -65,6 +65,8 @@ interface Batch {
     referencePlanNumber?: string | null;
     lga: string | null;
     deededArea: string;
+    queryLasgReceiptUrls?: string[];
+    queryRemitaReceiptUrls?: string[];
   }>;
 }
 
@@ -374,7 +376,8 @@ export default function AccountsAdminPage() {
                             <TableHead>Plan Number</TableHead>
                             <TableHead>Plan Type</TableHead>
                             <TableHead>LGA</TableHead>
-                            <TableHead>Area</TableHead>
+                            <TableHead>Area (m²)</TableHead>
+                            <TableHead>Query Fee Receipts</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -391,6 +394,37 @@ export default function AccountsAdminPage() {
                               </TableCell>
                               <TableCell>{plan.lga || "N/A"}</TableCell>
                               <TableCell>{plan.deededArea}</TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  {plan.queryLasgReceiptUrls?.map((url: string, idx: number) => (
+                                    <a
+                                      key={`lasg-${idx}`}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                                    >
+                                      <FileText className="w-3 h-3" />
+                                      Query LASG {idx + 1}
+                                    </a>
+                                  ))}
+                                  {plan.queryRemitaReceiptUrls?.map((url: string, idx: number) => (
+                                    <a
+                                      key={`remita-${idx}`}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                                    >
+                                      <FileText className="w-3 h-3" />
+                                      Query Remita {idx + 1}
+                                    </a>
+                                  ))}
+                                  {!plan.queryLasgReceiptUrls?.length && !plan.queryRemitaReceiptUrls?.length && (
+                                    <span className="text-xs text-gray-400">No Query Fees</span>
+                                  )}
+                                </div>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -505,6 +539,30 @@ export default function AccountsAdminPage() {
                       <span className="font-medium">Plans:</span>{" "}
                       {batch.plans.map((p) => p.planNumber).join(", ")}
                     </div>
+
+                    {/* Query Receipts for History */}
+                    {batch.plans.some(p => p.queryLasgReceiptUrls?.length || p.queryRemitaReceiptUrls?.length) && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-medium text-gray-500">Query Fee Receipts:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {batch.plans.flatMap(p => [
+                            ...(p.queryLasgReceiptUrls?.map((url, i) => ({ url, label: `${p.planNumber} LASG ${i + 1}` })) || []),
+                            ...(p.queryRemitaReceiptUrls?.map((url, i) => ({ url, label: `${p.planNumber} Remita ${i + 1}` })) || [])
+                          ]).map((item, idx) => (
+                            <a
+                              key={idx}
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                            >
+                              <FileText className="w-3 h-3" />
+                              {item.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

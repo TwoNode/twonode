@@ -370,6 +370,12 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
       where: {
         redCopyStatus: "SUBMITTED",
         [statusField]: "PENDING",
+        // Ensure no other role has queried this plan
+        accountsStatus: { not: "QUERIED" },
+        chartingStatus: { not: "QUERIED" },
+        surconStatus: { not: "QUERIED" },
+        recordsIStatus: { not: "QUERIED" },
+        recordsIIStatus: { not: "QUERIED" },
         deleted: false,
         ...getRoleSpecificCriteria(),
         OR: [
@@ -577,6 +583,12 @@ export async function canWorkOnPlan(
       where: {
         redCopyStatus: "SUBMITTED",
         [statusField]: "PENDING",
+        // Ensure no other role has queried this plan
+        accountsStatus: { not: "QUERIED" },
+        chartingStatus: { not: "QUERIED" },
+        surconStatus: { not: "QUERIED" },
+        recordsIStatus: { not: "QUERIED" },
+        recordsIIStatus: { not: "QUERIED" },
         deleted: false,
         OR: [
           { [lockedByField]: null },
@@ -2093,6 +2105,7 @@ export async function updateAccountsApproval(
         id: true,
         userId: true,
         planNumber: true,
+        accountsStatus: true,
         chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
@@ -2108,6 +2121,14 @@ export async function updateAccountsApproval(
         accountsApprovedBy: user.id,
         accountsApprovedAt: new Date(),
         accountsComment: comment,
+        // Nullify other roles and set redCopyStatus if queried
+        ...(!approved ? {
+          redCopyStatus: "QUERIED",
+          chartingStatus: "PENDING",
+          surconStatus: "PENDING",
+          recordsIStatus: "PENDING",
+          recordsIIStatus: "PENDING",
+        } : {}),
       },
     });
 
@@ -2162,9 +2183,18 @@ export async function updateAccountsApproval(
             sendEmail: true,
           });
         }
+        
+        if (plan.accountsStatus === "QUERIED" && plan.userId) {
+          const { notifyConsolidatedQueries } = await import("./notificationActions");
+          await notifyConsolidatedQueries({
+            userId: plan.userId,
+            planId: plan.id,
+            planNumber: plan.planNumber,
+            queries: [{ role: "Accounts", comment: comment || undefined }],
+            sendEmail: true,
+          });
+        }
       }
-
-      await checkAndDispatchQueries(plan.id);
     }
 
     return { success: true, data: { success: true } };
@@ -2201,6 +2231,14 @@ export async function updateChartingStatus(
         chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
+        // Nullify other roles and set redCopyStatus if queried
+        ...(!approved ? {
+          redCopyStatus: "QUERIED",
+          accountsStatus: "PENDING",
+          surconStatus: "PENDING",
+          recordsIStatus: "PENDING",
+          recordsIIStatus: "PENDING",
+        } : {}),
       },
       select: {
         userId: true,
@@ -2246,9 +2284,17 @@ export async function updateChartingStatus(
           sendEmail: true,
         });
       }
+    } else if (plan.userId) {
+      // Immediate dispatch if queried
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries: [{ role: "Charting", comment: comment || undefined }],
+        sendEmail: true,
+      });
     }
-
-    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2281,6 +2327,14 @@ export async function updateSurconStatus(
         surconApprovedBy: user.id,
         surconApprovedAt: new Date(),
         surconComment: comment,
+        // Nullify other roles and set redCopyStatus if queried
+        ...(!approved ? {
+          redCopyStatus: "QUERIED",
+          accountsStatus: "PENDING",
+          chartingStatus: "PENDING",
+          recordsIStatus: "PENDING",
+          recordsIIStatus: "PENDING",
+        } : {}),
       },
       select: {
         userId: true,
@@ -2326,9 +2380,17 @@ export async function updateSurconStatus(
           sendEmail: true,
         });
       }
+    } else if (plan.userId) {
+      // Immediate dispatch if queried
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries: [{ role: "SURCON", comment: comment || undefined }],
+        sendEmail: true,
+      });
     }
-
-    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2361,6 +2423,14 @@ export async function updateRecordsIStatus(
         recordsIApprovedBy: user.id,
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
+        // Nullify other roles and set redCopyStatus if queried
+        ...(!approved ? {
+          redCopyStatus: "QUERIED",
+          accountsStatus: "PENDING",
+          chartingStatus: "PENDING",
+          surconStatus: "PENDING",
+          recordsIIStatus: "PENDING",
+        } : {}),
       },
       select: {
         userId: true,
@@ -2406,9 +2476,17 @@ export async function updateRecordsIStatus(
           sendEmail: true,
         });
       }
+    } else if (plan.userId) {
+      // Immediate dispatch if queried
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries: [{ role: "Records I", comment: comment || undefined }],
+        sendEmail: true,
+      });
     }
-
-    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2469,6 +2547,13 @@ export async function updateRecordsIIStatus(
         recordsIIApprovedBy: user.id,
         recordsIIApprovedAt: new Date(),
         recordsIIComment: comment,
+        // Nullify other roles if queried
+        ...(!approved ? {
+          accountsStatus: "PENDING",
+          chartingStatus: "PENDING",
+          surconStatus: "PENDING",
+          recordsIStatus: "PENDING",
+        } : {}),
         ...(approved
           ? {
             status: "LODGED",
@@ -2572,6 +2657,8 @@ export async function getAccountsBatches() {
             planNumber: true,
             lga: true,
             deededArea: true,
+            queryLasgReceiptUrls: true,
+            queryRemitaReceiptUrls: true,
           },
         },
       },
@@ -3321,32 +3408,41 @@ export async function resubmitQueriedPlan(
       ...(location?.lcda && { lcda: location.lcda }),
       ...(location?.ward && { ward: location.ward }),
       ...(location?.state && { state: location.state }),
+      // Append query receipts if provided
+      ...(lasgReceiptUrl && {
+        queryLasgReceiptUrls: { push: lasgReceiptUrl }
+      }),
+      ...(remitaReceiptUrl && {
+        queryRemitaReceiptUrls: { push: remitaReceiptUrl }
+      }),
+      // ALWAYS reset ALL MDA statuses to PENDING on resubmission
+      // regardless of which role specifically queried it
+      redCopyStatus: "SUBMITTED",
+      accountsStatus: "PENDING",
+      accountsComment: null,
+      chartingStatus: "PENDING",
+      chartingComment: null,
+      surconStatus: "PENDING",
+      surconComment: null,
+      recordsIStatus: "PENDING",
+      recordsIComment: null,
+      recordsIIStatus: "PENDING",
+      recordsIIComment: null,
     };
 
-    // Reset only the querying role's status to PENDING
     if (plan.accountsStatus === "QUERIED") {
-      updates.accountsStatus = "PENDING";
-      updates.accountsComment = null;
       queriedBy = "Accounts";
     }
     if (plan.chartingStatus === "QUERIED") {
-      updates.chartingStatus = "PENDING";
-      updates.chartingComment = null;
       queriedBy = queriedBy ? `${queriedBy}, Charting` : "Charting";
     }
     if (plan.surconStatus === "QUERIED") {
-      updates.surconStatus = "PENDING";
-      updates.surconComment = null;
       queriedBy = queriedBy ? `${queriedBy}, SURCON` : "SURCON";
     }
     if (plan.recordsIStatus === "QUERIED") {
-      updates.recordsIStatus = "PENDING";
-      updates.recordsIComment = null;
       queriedBy = queriedBy ? `${queriedBy}, Records I` : "Records I";
     }
     if (plan.recordsIIStatus === "QUERIED") {
-      updates.recordsIIStatus = "PENDING";
-      updates.recordsIIComment = null;
       queriedBy = queriedBy ? `${queriedBy}, Records II` : "Records II";
     }
 
@@ -3681,6 +3777,8 @@ export async function getAccountsHistory() {
             planNumber: true,
             lga: true,
             deededArea: true,
+            queryLasgReceiptUrls: true,
+            queryRemitaReceiptUrls: true,
           },
         },
       },
@@ -3745,18 +3843,8 @@ export async function checkAndDispatchQueries(planId: string) {
     if (plan.recordsIStatus === "QUERIED")
       queries.push({ role: "Records I", comment: plan.recordsIComment || undefined });
 
-    if (queries.length > 0) {
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
-      await notifyConsolidatedQueries({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        queries,
-        sendEmail: true,
-      });
-    }
   } catch (error) {
-    console.error("Error in checkAndDispatchQueries:", error);
+    console.error("Error in checkAndDispatchQueries (deprecated):", error);
   }
 }
 

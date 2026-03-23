@@ -471,6 +471,10 @@ model SurfboardPlan {
   deletedAt DateTime?
   deletedBy String? // User ID who deleted the plan
 
+  // Query Fee Receipts
+  queryLasgReceiptUrls   String[] @default([])
+  queryRemitaReceiptUrls String[] @default([])
+
   /// Creation & update timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
