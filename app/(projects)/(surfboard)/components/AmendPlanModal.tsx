@@ -129,6 +129,7 @@ export function AmendPlanModal({
   };
 
   const feeAmount = plan.codFee ? (plan.codFee * feePercent) / 100 : 0;
+  const today = new Date().toLocaleDateString("en-GB");
 
   // Reset state when plan changes
   useEffect(() => {
@@ -345,8 +346,8 @@ export function AmendPlanModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={showPayment ? "max-w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50" : "max-w-5xl max-h-[90vh] overflow-y-auto"}>
-        <DialogHeader className={showPayment ? "p-6 pb-2 border-b bg-white" : ""}>
+      <DialogContent className={showPayment ? "w-[95vw] lg:max-w-[1400px] h-[95vh] lg:h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50" : "w-[95vw] lg:max-w-5xl max-h-[90vh] overflow-y-auto"}>
+        <DialogHeader className={showPayment ? "p-4 lg:p-6 pb-2 border-b bg-white" : ""}>
           {!showPayment ? (
             <>
               <DialogTitle className="flex items-center gap-2">
@@ -359,14 +360,18 @@ export function AmendPlanModal({
               </DialogDescription>
             </>
           ) : (
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
                 <DialogTitle className="flex items-center gap-2 text-xl">
                   <CreditCard className="w-5 h-5 text-blue-600" />
                   Complete Payment for Query Response
                 </DialogTitle>
-                <DialogDescription>
-                  Paste both receipt links from your email to verify payment.
+                <DialogDescription className="space-y-1">
+                  <p>Paste both receipt links from your email to verify payment.</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-blue-700 bg-blue-50/50 px-2 py-1 rounded border border-blue-100">
+                    <span className="flex items-center gap-1"><Building className="w-3 h-3" /> Agency: Office of Surveyor General</span>
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Period: {today}</span>
+                  </div>
                 </DialogDescription>
               </div>
               <div className="text-right">
@@ -691,9 +696,9 @@ export function AmendPlanModal({
 
           </div>
         ) : (
-          <div className="flex flex-1 overflow-hidden h-[500px] border rounded-lg -mx-4">
+          <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden border-y lg:border rounded-none lg:rounded-lg mx-0 lg:-mx-4 lg:my-2">
             {/* Left Panel: Payer Info & Receipt Links */}
-            <div className="w-1/3 p-6 overflow-y-auto border-r bg-white space-y-6">
+            <div className="w-full lg:w-1/3 p-4 lg:p-6 lg:overflow-y-auto lg:border-r bg-white space-y-6">
               {/* Payer ID Match Warning */}
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -731,6 +736,33 @@ export function AmendPlanModal({
                 </div>
               </div>
 
+              {/* Payment Info Card */}
+              <div className="border rounded-lg p-4 bg-slate-50 space-y-3 shadow-xs">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+                  <Building className="w-4 h-4 text-blue-500" /> Payment Details
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <span className="text-gray-500 block">Agency Name</span>
+                    <span className="font-medium text-gray-900 border-b border-gray-100 pb-1 block">
+                      4830000 -- 61004 -- Office of Surveyor General
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Revenue Name</span>
+                    <span className="font-medium text-gray-900 border-b border-gray-100 pb-1 block">
+                      4020002 -- 32202 -- Lands Registry Transactions
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Period</span>
+                    <span className="font-medium text-gray-900 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-gray-400" /> {today}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Receipt Links Form */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-sm text-slate-700">Verify Payment Links</h3>
@@ -763,7 +795,7 @@ export function AmendPlanModal({
             </div>
 
             {/* Right Panel: Embedded Remita Portal */}
-            <div className="flex-1 bg-gray-100 flex flex-col relative w-2/3">
+            <div className="w-full lg:w-2/3 bg-gray-100 flex flex-col relative min-h-[400px] lg:min-h-0 border-t lg:border-t-0">
               <div className="bg-yellow-50 text-yellow-800 text-xs px-4 py-2 border-b flex items-center justify-between shadow-sm z-10">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5" />
