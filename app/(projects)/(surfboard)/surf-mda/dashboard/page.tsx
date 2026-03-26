@@ -32,6 +32,7 @@ type MDARole =
   | "CHARTING"
   | "SURCON"
   | "RECORDS_I"
+  | "INTAKE"
   | "RECORDS_II"
   | "ARCHIVE"
   | "SUPERADMIN"
@@ -90,6 +91,16 @@ const roleConfigs: Record<MDARole, RoleConfig> = {
     iconBg: "bg-indigo-100",
     iconColor: "text-indigo-600",
     heroGradient: "from-indigo-600 via-indigo-700 to-purple-800",
+  },
+  INTAKE: {
+    title: "Intake Admin",
+    description: "Review and approve physical document bundles (batches) sequentially",
+    icon: FileCheck,
+    href: "/surf-mda/dashboard/intake",
+    color: "from-orange-500 to-amber-500",
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-600",
+    heroGradient: "from-orange-600 via-orange-700 to-amber-800",
   },
   RECORDS_II: {
     title: "Records II Admin",
@@ -179,6 +190,16 @@ const allQuickActions = [
     iconColor: "text-indigo-600",
   },
   {
+    role: "INTAKE" as MDARole,
+    title: "Intake",
+    description: "Process and approve physical batches",
+    icon: FileCheck,
+    href: "/surf-mda/dashboard/intake",
+    color: "from-orange-500 to-amber-500",
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-600",
+  },
+  {
     role: "RECORDS_II" as MDARole,
     title: "Records II",
     description: "Final approval and lodge with OSSG",
@@ -209,6 +230,7 @@ export default function MDADashboardHome() {
     charting: 0,
     surcon: 0,
     recordsI: 0,
+    intake: 0,
     recordsII: 0,
     archive: 0,
   });
@@ -306,6 +328,15 @@ export default function MDADashboardHome() {
           href: "/surf-mda/dashboard/records-i",
         },
         {
+          title: "Intake Pending",
+          value: pendingCounts.intake,
+          icon: FileCheck,
+          color: "from-orange-500 to-amber-500",
+          bgColor: "bg-orange-50",
+          textColor: "text-orange-600",
+          href: "/surf-mda/dashboard/intake",
+        },
+        {
           title: "Records II Pending",
           value: pendingCounts.recordsII,
           icon: FolderCheck,
@@ -335,6 +366,7 @@ export default function MDADashboardHome() {
       CHARTING: { key: "charting", title: "Plans Pending Charting" },
       SURCON: { key: "surcon", title: "Plans Pending SURCON" },
       RECORDS_I: { key: "recordsI", title: "Plans Pending Records I" },
+      INTAKE: { key: "intake", title: "Batches Pending Intake Review" },
       RECORDS_II: { key: "recordsII", title: "Plans Ready for Final Approval" },
       ARCHIVE: { key: "archive", title: "Plans Pending Archive" },
     };
