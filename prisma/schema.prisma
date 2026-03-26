@@ -187,7 +187,8 @@ enum SurfboardRole {
   ADMIN
   SUPERADMIN
   RECORDS_I // MDA Role: Verifies record copies
-  RECORDS_II // MDA Role: Verifies physical copies and submits to OSSG
+  INTAKE // MDA Role: Verifies physical copies (grouped by batch)
+  RECORDS_II // MDA Role: Final verification of physical copies and submits to OSSG
   ACCOUNTS // MDA Role: Approves LASG payment receipts
   CHARTING // MDA Role: Edits/confirms charting remarks
   SURCON // MDA Role: Confirms pillar numbers
@@ -241,6 +242,7 @@ model SurfboardUser {
   plansApprovedAsCharting   SurfboardPlan[]             @relation("ChartingApprover")
   plansApprovedAsSurcon     SurfboardPlan[]             @relation("SurconApprover")
   plansApprovedAsRecordsI   SurfboardPlan[]             @relation("RecordsIApprover")
+  plansApprovedAsIntake     SurfboardPlan[]             @relation("IntakeApprover")
   plansApprovedAsRecordsII  SurfboardPlan[]             @relation("RecordsIIApprover")
   batchesApprovedAsAccounts CertificateOfDepositBatch[] @relation("BatchAccountsApprover")
 
@@ -413,6 +415,13 @@ model SurfboardPlan {
   recordsILockedBy       String? // User ID who locked this plan for Records I review
   recordsILockedAt       DateTime? // When the lock was acquired
   recordsILockExpiresAt  DateTime? // When the lock expires
+
+  // Approval tracking - Intake
+  intakeApprovedBy     String?
+  intakeApprovedByUser SurfboardUser?  @relation("IntakeApprover", fields: [intakeApprovedBy], references: [id])
+  intakeApprovedAt     DateTime?
+  intakeStatus         ApprovalStatus? @default(PENDING)
+  intakeComment        String?
 
   // Approval tracking - Records II
   recordsIIApprovedBy     String?

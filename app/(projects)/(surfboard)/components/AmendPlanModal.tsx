@@ -24,8 +24,14 @@ import {
   ChevronDown,
   FileSpreadsheet,
   MapPin,
+  CreditCard,
+  User,
+  Building,
+  Calendar,
+  AlertTriangle,
+  Copy,
 } from "lucide-react";
-import { resubmitQueriedPlan } from "../actions/codActions";
+import { resubmitQueriedPlan, getCurrentPayerProfile } from "../actions/codActions";
 import { uploadSurfboardFileToS3 } from "../actions/awsActions";
 import { parseCSVContent, PillarData } from "../utils/surfboardUtils";
 import MaplibreMap from "./maps/MaplibreMap";
@@ -92,6 +98,7 @@ export function AmendPlanModal({
   const [lasgReceiptUrl, setLasgReceiptUrl] = useState("");
   const [remitaReceiptUrl, setRemitaReceiptUrl] = useState("");
   const [iframeKey, setIframeKey] = useState(0);
+  const [payer, setPayer] = useState<any>(null);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -102,12 +109,24 @@ export function AmendPlanModal({
         if (settings) {
           setFeePercent(settings.queryResponseFeePercent || 0);
         }
+        const profileRes = await getCurrentPayerProfile();
+        if (profileRes.success && profileRes.data) {
+          setPayer(profileRes.data);
+        }
       } catch (e) {
         console.error("Failed to fetch settings", e);
       }
     };
     fetchSettings();
   }, []);
+
+  const handleCopyAmount = () => {
+    if (plan.codFee) {
+      const amt = (plan.codFee * feePercent) / 100;
+      navigator.clipboard.writeText(amt.toString());
+      toast.success("Amount copied to clipboard");
+    }
+  };
 
   const feeAmount = plan.codFee ? (plan.codFee * feePercent) / 100 : 0;
 
@@ -326,19 +345,45 @@ export function AmendPlanModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit3 className="w-5 h-5 text-amber-600" />
-            Amend Plan - {plan.planNumber}
-          </DialogTitle>
-          <DialogDescription>
-            Make corrections to the pillars, location, and/or upload a new
-            record copy, then resubmit for review
-          </DialogDescription>
+      <DialogContent className={showPayment ? "max-w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50" : "max-w-5xl max-h-[90vh] overflow-y-auto"}>
+        <DialogHeader className={showPayment ? "p-6 pb-2 border-b bg-white" : ""}>
+          {!showPayment ? (
+            <>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-600" />
+                Amend Plan - {plan.planNumber}
+              </DialogTitle>
+              <DialogDescription>
+                Make corrections to the pillars, location, and/or upload a new
+                record copy, then resubmit for review
+              </DialogDescription>
+            </>
+          ) : (
+            <div className="flex justify-between items-start">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  Complete Payment for Query Response
+                </DialogTitle>
+                <DialogDescription>
+                  Paste both receipt links from your email to verify payment.
+                </DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
+                <div className="flex items-center gap-2 justify-end group">
+                  <p className="text-2xl font-bold text-green-700">₦{feeAmount.toLocaleString()}</p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" onClick={handleCopyAmount} title="Copy Amount">
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {!showPayment ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form Fields */}
           <div className="space-y-6">
             {/* Pillars Section */}
@@ -644,87 +689,104 @@ export function AmendPlanModal({
             </div>
           </div>
 
-          {/* Right Column - Map Preview & Remita Portal */}
-          <div className="space-y-4">
-            {!showPayment ? (
-              <>
-                <Label className="text-base font-semibold">Map Preview</Label>
-                <div
-                  className={`rounded-xl overflow-hidden border-2 flex-1 min-h-[500px] ${pillars.length > 0 ? "border-blue-300" : "border-gray-200"
-                    }`}
-                  style={{ height: "500px" }}
-                >
-                  {pillars.length > 0 ? (
-                    <MaplibreMap processedPillars={pillars} />
-                  ) : (
-                    <div className="h-full flex items-center justify-center bg-gray-50">
-                      <div className="text-center text-gray-400">
-                        <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>Add pillars to see map preview</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {pillars.length > 0 && (
-                  <p className="text-xs text-gray-500 text-center">
-                    Map shows the polygon formed by pillar coordinates
-                  </p>
-                )}
-              </>
-            ) : (
-              // Payment Section Overlay
-              <div className="border border-blue-200 rounded-xl overflow-hidden bg-blue-50 flex flex-col h-[500px]">
-                <div className="p-4 bg-white border-b flex justify-between items-center">
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden h-[500px] border rounded-lg -mx-4">
+            {/* Left Panel: Payer Info & Receipt Links */}
+            <div className="w-1/3 p-6 overflow-y-auto border-r bg-white space-y-6">
+              {/* Payer ID Match Warning */}
+              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800">
+                  <strong>Important:</strong> Please ensure your Payer ID and Payer Type match the LASG receipt before making payment.
+                </p>
+              </div>
+
+              {/* Payer Info Card */}
+              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+                  <User className="w-4 h-4" /> Payer Details
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <h3 className="font-semibold text-gray-900">Query Response Fee</h3>
-                    <p className="text-sm text-gray-500">Pay via Remita to resubmit</p>
+                    <label className="text-xs text-gray-500">Payer ID</label>
+                    <p className="font-medium">{payer?.payerID || "Not Set"}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-600">
-                      ₦{feeAmount.toLocaleString()}
-                    </p>
+                  <div>
+                    <label className="text-xs text-gray-500">Payer Type</label>
+                    <p className="font-medium">{payer?.payerIDType || "Not Set"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-gray-500">Name</label>
+                    <p className="font-medium">{payer ? `${payer.firstName} ${payer.lastName}` : "Loading..."}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-gray-500">Email</label>
+                    <p className="font-medium truncate">{payer?.email || "N/A"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-gray-500">Phone</label>
+                    <p className="font-medium">{payer?.phoneNumber || "N/A"}</p>
                   </div>
                 </div>
-                <div className="flex-1 relative">
-                  <iframe
-                    key={iframeKey}
-                    src="https://login.remita.net/remita/lirs/internal/pay.reg"
-                    className="w-full h-full border-none"
-                    title="Remita Payment Portal"
-                  />
-                  <Button
-                    onClick={() => setIframeKey((k) => k + 1)}
-                    variant="outline"
-                    size="sm"
-                    className="absolute top-2 right-2 bg-white opacity-80 hover:opacity-100"
-                  >
-                    Reload Remita
-                  </Button>
-                </div>
-                {/* Link inputs */}
-                <div className="bg-white p-4 border-t space-y-3">
-                  <p className="text-xs text-gray-500">
-                    Paste the receipt links sent to your email after successful payment:
-                  </p>
-                  <div className="space-y-2">
+              </div>
+
+              {/* Receipt Links Form */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm text-slate-700">Verify Payment Links</h3>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm flex justify-between">
+                      LASG Receipt URL
+                    </Label>
                     <Input
-                      placeholder="LASG Receipt Link (printreceipt.ebs-rcm.com...)"
+                      placeholder="https://printreceipt.ebs-rcm.com/..."
                       value={lasgReceiptUrl}
                       onChange={(e) => setLasgReceiptUrl(e.target.value)}
-                      className="h-8 text-sm"
+                      className="bg-gray-50 border-gray-200 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm flex justify-between">
+                      Remita Receipt URL
+                    </Label>
                     <Input
-                      placeholder="Remita Receipt Link (login.remita.net/remita/rrr...)"
+                      placeholder="https://login.remita.net/remita/rrr/..."
                       value={remitaReceiptUrl}
                       onChange={(e) => setRemitaReceiptUrl(e.target.value)}
-                      className="h-8 text-sm"
+                      className="bg-gray-50 border-gray-200 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
                     />
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Right Panel: Embedded Remita Portal */}
+            <div className="flex-1 bg-gray-100 flex flex-col relative w-2/3">
+              <div className="bg-yellow-50 text-yellow-800 text-xs px-4 py-2 border-b flex items-center justify-between shadow-sm z-10">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>Use <strong>{payer?.payerID || "YOUR_PAYER_ID"}</strong> when requested on the payment portal.</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIframeKey((k) => k + 1)} className="h-7 text-xs bg-white">
+                  Refresh Portal
+                </Button>
+              </div>
+              <div className="flex-1 relative overflow-hidden bg-white shadow-inner">
+                <div className="absolute inset-0 flex items-center justify-center -z-10">
+                  <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+                </div>
+                <iframe
+                  key={iframeKey}
+                  src="https://login.remita.net/remita/lirs/internal/pay.reg"
+                  className="w-full h-full border-0 absolute inset-0 z-0 bg-white"
+                  title="Remita Payment Portal"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         <DialogFooter className="mt-6">
           <Button

@@ -156,6 +156,7 @@ export async function acquirePlanLock(
       select: {
         [lockedByField]: true,
         [lockExpiresAtField]: true,
+        batchId: true,
       },
     });
 
@@ -178,6 +179,41 @@ export async function acquirePlanLock(
         error: "Plan is currently being reviewed by another user",
         data: { locked: false, lockedBy: currentLock },
       };
+    }
+
+    // Batch-level locking for RECORDS_II
+    if (role === "RECORDS_II" && plan.batchId) {
+      const batchPlans = await prisma.surfboardPlan.findMany({
+        where: { batchId: plan.batchId, deleted: false },
+        select: { id: true, [lockedByField]: true, [lockExpiresAtField]: true }
+      });
+
+      // Ensure no other plan in the batch is locked by someone else
+      for (const bp of batchPlans) {
+        const bpLock = (bp as any)[lockedByField];
+        const bpExpiry = (bp as any)[lockExpiresAtField];
+        if (bpLock && bpLock !== userId && bpExpiry && new Date(bpExpiry) > now) {
+          return {
+            success: false,
+            error: "Another plan in this batch is being reviewed by another user",
+            data: { locked: false, lockedBy: bpLock },
+          };
+        }
+      }
+
+      // Calculate dynamic batch lock expiry: 3 minutes per plan
+      const batchLockExpiry = new Date(now.getTime() + (3 * batchPlans.length * 60000));
+
+      await prisma.surfboardPlan.updateMany({
+        where: { batchId: plan.batchId, deleted: false },
+        data: {
+          [lockedByField]: userId,
+          [lockedAtField]: now,
+          [lockExpiresAtField]: batchLockExpiry,
+        },
+      });
+
+      return { success: true, data: { locked: true } };
     }
 
     // Acquire or refresh lock
@@ -213,6 +249,25 @@ export async function releasePlanLock(
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    // Batch-level unlocking for RECORDS_II
+    if (role === "RECORDS_II") {
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { batchId: true }
+      });
+      if (plan?.batchId) {
+        await prisma.surfboardPlan.updateMany({
+          where: { batchId: plan.batchId, [lockedByField]: userId },
+          data: {
+            [lockedByField]: null,
+            [lockedAtField]: null,
+            [lockExpiresAtField]: null,
+          },
+        });
+        return { success: true, data: { released: true } };
+      }
+    }
 
     // Only release if locked by this user
     await prisma.surfboardPlan.updateMany({
@@ -2121,14 +2176,6 @@ export async function updateAccountsApproval(
         accountsApprovedBy: user.id,
         accountsApprovedAt: new Date(),
         accountsComment: comment,
-        // Nullify other roles and set redCopyStatus if queried
-        ...(!approved ? {
-          redCopyStatus: "QUERIED",
-          chartingStatus: "PENDING",
-          surconStatus: "PENDING",
-          recordsIStatus: "PENDING",
-          recordsIIStatus: "PENDING",
-        } : {}),
       },
     });
 
@@ -2183,18 +2230,9 @@ export async function updateAccountsApproval(
             sendEmail: true,
           });
         }
-        
-        if (plan.accountsStatus === "QUERIED" && plan.userId) {
-          const { notifyConsolidatedQueries } = await import("./notificationActions");
-          await notifyConsolidatedQueries({
-            userId: plan.userId,
-            planId: plan.id,
-            planNumber: plan.planNumber,
-            queries: [{ role: "Accounts", comment: comment || undefined }],
-            sendEmail: true,
-          });
-        }
       }
+      // Re-evaluate consolidated queries after updating accounts 
+      await checkAndDispatchQueries(plan.id);
     }
 
     return { success: true, data: { success: true } };
@@ -2231,14 +2269,6 @@ export async function updateChartingStatus(
         chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
-        // Nullify other roles and set redCopyStatus if queried
-        ...(!approved ? {
-          redCopyStatus: "QUERIED",
-          accountsStatus: "PENDING",
-          surconStatus: "PENDING",
-          recordsIStatus: "PENDING",
-          recordsIIStatus: "PENDING",
-        } : {}),
       },
       select: {
         userId: true,
@@ -2284,17 +2314,9 @@ export async function updateChartingStatus(
           sendEmail: true,
         });
       }
-    } else if (plan.userId) {
-      // Immediate dispatch if queried
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
-      await notifyConsolidatedQueries({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        queries: [{ role: "Charting", comment: comment || undefined }],
-        sendEmail: true,
-      });
     }
+    
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2327,14 +2349,6 @@ export async function updateSurconStatus(
         surconApprovedBy: user.id,
         surconApprovedAt: new Date(),
         surconComment: comment,
-        // Nullify other roles and set redCopyStatus if queried
-        ...(!approved ? {
-          redCopyStatus: "QUERIED",
-          accountsStatus: "PENDING",
-          chartingStatus: "PENDING",
-          recordsIStatus: "PENDING",
-          recordsIIStatus: "PENDING",
-        } : {}),
       },
       select: {
         userId: true,
@@ -2380,17 +2394,9 @@ export async function updateSurconStatus(
           sendEmail: true,
         });
       }
-    } else if (plan.userId) {
-      // Immediate dispatch if queried
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
-      await notifyConsolidatedQueries({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        queries: [{ role: "SURCON", comment: comment || undefined }],
-        sendEmail: true,
-      });
     }
+    
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2423,14 +2429,6 @@ export async function updateRecordsIStatus(
         recordsIApprovedBy: user.id,
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
-        // Nullify other roles and set redCopyStatus if queried
-        ...(!approved ? {
-          redCopyStatus: "QUERIED",
-          accountsStatus: "PENDING",
-          chartingStatus: "PENDING",
-          surconStatus: "PENDING",
-          recordsIIStatus: "PENDING",
-        } : {}),
       },
       select: {
         userId: true,
@@ -2476,17 +2474,9 @@ export async function updateRecordsIStatus(
           sendEmail: true,
         });
       }
-    } else if (plan.userId) {
-      // Immediate dispatch if queried
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
-      await notifyConsolidatedQueries({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        queries: [{ role: "Records I", comment: comment || undefined }],
-        sendEmail: true,
-      });
     }
+
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2494,6 +2484,103 @@ export async function updateRecordsIStatus(
     return {
       success: false,
       error: handlePrismaError(error, "updateRecordsIStatus"),
+    };
+  }
+}
+
+/**
+ * Intake Admin: Sequential approval of batches
+ */
+export async function updateIntakeStatus(
+  planId: string,
+  approved: boolean,
+  comment?: string,
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Check if parallel approvals are done before intake can approve
+    const planCheck = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        accountsStatus: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+      },
+    });
+
+    if (!planCheck) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    if (
+      planCheck.accountsStatus !== "APPROVED" ||
+      planCheck.chartingStatus !== "APPROVED" ||
+      planCheck.surconStatus !== "APPROVED" ||
+      planCheck.recordsIStatus !== "APPROVED"
+    ) {
+      return { success: false, error: "Parallel reviews must be completed before Intake Admin can act." };
+    }
+
+    const plan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        intakeStatus: approved ? "APPROVED" : "QUERIED",
+        intakeApprovedBy: user.id,
+        intakeApprovedAt: new Date(),
+        intakeComment: comment,
+      },
+      select: {
+        userId: true,
+        planNumber: true,
+        redCopyStatus: true,
+      },
+    });
+
+    revalidatePath("/surf-mda/dashboard/intake");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_INTAKE" : "QUERY_INTAKE",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        approved,
+        comment: comment || null,
+        intakeStatus: approved ? "APPROVED" : "QUERIED",
+      }),
+    });
+
+    // If INTAKE queries, dispatch a consolidated note indicating Intake queried
+    if (!approved && plan.userId) {
+      await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: { redCopyStatus: "QUERIED" }
+      });
+
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries: [{ role: "Intake", comment: comment || undefined }],
+        sendEmail: true,
+      });
+    }
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error updating Intake status:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "updateIntakeStatus"),
     };
   }
 }
@@ -2688,6 +2775,7 @@ export async function getPendingCountByRole(): Promise<
     recordsI: number;
     recordsII: number;
     archive: number;
+    intake: number;
   }>
 > {
   try {
@@ -2701,6 +2789,7 @@ export async function getPendingCountByRole(): Promise<
         "CHARTING",
         "SURCON",
         "RECORDS_I",
+        "INTAKE",
         "RECORDS_II",
         "ARCHIVE",
         "MDA_SUPERADMIN",
@@ -2716,6 +2805,7 @@ export async function getPendingCountByRole(): Promise<
       recordsICount,
       recordsIICount,
       archiveCount,
+      intakeCount,
     ] = await Promise.all([
       // Accounts: Count batches with LASG_PAID status and no accounts approval
       prisma.certificateOfDepositBatch.count({
@@ -2813,6 +2903,23 @@ export async function getPendingCountByRole(): Promise<
           deleted: false,
         },
       }),
+      // Intake: Count batches with at least one plan pending intake (and previous steps approved)
+      prisma.certificateOfDepositBatch.count({
+        where: {
+          plans: {
+            some: {
+              redCopyStatus: "SUBMITTED",
+              accountsStatus: "APPROVED",
+              chartingStatus: "APPROVED",
+              surconStatus: "APPROVED",
+              recordsIStatus: "APPROVED",
+              recordsIIStatus: "PENDING",
+              intakeStatus: "PENDING",
+              deleted: false,
+            }
+          }
+        }
+      }),
     ]);
 
     return {
@@ -2824,6 +2931,7 @@ export async function getPendingCountByRole(): Promise<
         recordsI: recordsICount,
         recordsII: recordsIICount,
         archive: archiveCount,
+        intake: intakeCount,
       },
     };
   } catch (error) {
@@ -3843,6 +3951,22 @@ export async function checkAndDispatchQueries(planId: string) {
     if (plan.recordsIStatus === "QUERIED")
       queries.push({ role: "Records I", comment: plan.recordsIComment || undefined });
 
+    if (queries.length > 0) {
+      // Set redCopyStatus to QUERIED now that all roles have checked
+      await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: { redCopyStatus: "QUERIED" },
+      });
+
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries,
+        sendEmail: true,
+      });
+    }
   } catch (error) {
     console.error("Error in checkAndDispatchQueries (deprecated):", error);
   }
@@ -4080,5 +4204,218 @@ export async function markPlanArchived(planId: string, notes?: string) {
       success: false,
       error: handlePrismaError(error, "markPlanArchived"),
     };
+  }
+}
+
+/**
+ * Fetches the current authenticated user's payer profile for payment modals
+ */
+export async function getCurrentPayerProfile(): Promise<ApiResult<any>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const dbUser = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        payerID: true,
+        payerIDType: true,
+      },
+    });
+
+    if (!dbUser) return { success: false, error: "User not found" };
+
+    return { success: true, data: dbUser };
+  } catch (error) {
+    console.error("Error fetching payer profile:", error);
+    return { success: false, error: "Failed to fetch payer profile" };
+  }
+}
+
+/**
+ * Intake Admin: Get batches awaiting intake approval
+ * Ordered oldest to newest.
+ */
+export async function getIntakeBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN" && user.role !== "MDA_SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Get batches that have at least one plan ready for intake
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+            recordsIIStatus: "PENDING",
+          }
+        }
+      },
+      include: {
+        submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+          }
+        }
+      },
+      orderBy: { createdAt: "asc" }
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching intake batches:", error);
+    return { success: false, error: "Failed to fetch intake batches" };
+  }
+}
+
+/**
+ * Intake Admin: Get history of processed batches
+ */
+export async function getIntakeHistoryBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN" && user.role !== "MDA_SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+          }
+        }
+      },
+      include: {
+        submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        plans: {
+          where: {
+            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+          },
+          include: {
+            intakeApprovedByUser: { select: { id: true, firstName: true, lastName: true } }
+          }
+        }
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching intake history:", error);
+    return { success: false, error: "Failed to fetch intake history" };
+  }
+}
+
+/**
+ * Intake Admin: Approve or query all eligible plans in a batch
+ */
+export async function updateIntakeBatchStatus(
+  batchId: string,
+  approved: boolean,
+  comment?: string,
+): Promise<ApiResult<{ success: boolean; updatedCount: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+      include: {
+        plans: {
+          where: {
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+            deleted: false,
+          }
+        }
+      }
+    });
+
+    if (!batch || batch.plans.length === 0) {
+      return { success: false, error: "No eligible plans found in batch" };
+    }
+
+    const planIds = batch.plans.map(p => p.id);
+
+    // Update all plans in a transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.surfboardPlan.updateMany({
+        where: { id: { in: planIds } },
+        data: {
+          intakeStatus: approved ? "APPROVED" : "QUERIED",
+          intakeApprovedBy: user.id,
+          intakeApprovedAt: new Date(),
+          intakeComment: comment,
+          ...(approved ? {} : { redCopyStatus: "QUERIED" })
+        }
+      });
+
+      // Audit logs
+      for (const p of batch.plans) {
+        await tx.surfboardAuditLog.create({
+          data: {
+            userId: user.id,
+            action: approved ? "APPROVE_INTAKE" : "QUERY_INTAKE",
+            entity: "SurfboardPlan",
+            entityId: p.id,
+            ipAddress: "System",
+            changes: JSON.stringify(createChangeLog({
+              planNumber: p.planNumber,
+              approved,
+              intakeStatus: approved ? "APPROVED" : "QUERIED"
+            }))
+          }
+        });
+      }
+    });
+
+    revalidatePath("/surf-mda/dashboard/intake");
+    revalidatePath("/surf-mda/dashboard"); 
+
+    // Dispatch notifications if queried
+    if (!approved && batch.submittedBy) {
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      for (const p of batch.plans) {
+        await notifyConsolidatedQueries({
+          userId: batch.submittedBy,
+          planId: p.id,
+          planNumber: p.planNumber,
+          queries: [{ role: "Intake", comment: comment || undefined }],
+          sendEmail: true,
+        });
+      }
+    }
+
+    return { success: true, data: { success: true, updatedCount: planIds.length } };
+  } catch (error) {
+    console.error("Error updating Intake batch:", error);
+    return { success: false, error: handlePrismaError(error, "updateIntakeBatchStatus") };
   }
 }

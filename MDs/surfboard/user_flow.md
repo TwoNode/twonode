@@ -28,7 +28,8 @@ This document describes the end-to-end journey of a survey plan, from the survey
 
 ### Page 4: Payment via Remita
 *   **Display**: A split-panel payment modal:
-    *   **Left Panel**: Payer information (Payer ID, Payer Type, name, email, phone), payment details (Agency: Office of Surveyor General, Revenue: Lands Registry Transactions), and receipt link input fields.
+    *   **Left Panel**: Payer information (Payer ID, Payer Type, name, email, phone), payment details (Agency: 4830000 -- 61004 -- Office of Surveyor General, Revenue: 4020002 -- 32202 -- Lands Registry Transactions), and receipt link input fields.
+        * Copy to cliqboard button for each of the information on the left panel for easy pasting in the right panel
     *   **Right Panel**: An embedded **Remita Payment Portal** (iframe) where the user completes payment directly into the LASG MDA Remita account.
 *   **Payment Process**:
     1.  The user fills in the payment fields on the **Remita portal** (right panel) using the displayed Payer ID and amount.
@@ -51,11 +52,11 @@ This document describes the end-to-end journey of a survey plan, from the survey
 *   **Effect**: Once the user's receipt links are verified and the batch status moves to `LASG_PAID`, all MDA roles (Accounts, Charting, SURCON, Records I) are automatically notified, and plans become visible for review.
 
 ### Role-Based Review (Parallel)
-MDA admins process plans simultaneously. Each plan is **Locked** for 30 minutes when an admin starts reviewing it to prevent double-work.
+MDA admins process plans simultaneously. Each plan is **Locked** for 3 minutes when an admin starts reviewing it to prevent double-work.
 
 #### A. Accounts Admin
-*   **Display**: The LASG payment receipt, query fee receipt(s) (if applicable from a previous round of queries), and the batch details.
-*   **Action**: Verify the payment(s).
+*   **Display**: The LASG payment receipt and the batch details.
+*   **Action**: Verify the payment.
 *   **Decision**: **Approve** or **Disapprove** (requires a comment).
 
 #### B. Charting Admin
@@ -78,28 +79,32 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 30 minutes 
 
 ## 3. Query & Resubmission Management
 
-### Immediate Query Notifications & Status Nullification
-*   **Logic**: If *any* role (Charting, SURCON, Records I) queries a record, the system immediately **nullifies the status of all other parallel roles** (except Accounts, which verifies payment first).
-*   **Effect**: 
-    1.  The queried plan is immediately taken off the queues of the other roles to save their time.
-    2.  For example, if SURCON queries a plan first, Charting and Records I will no longer see it in their queue.
-    3.  A notification email is sent to the surveyor detailing the query and comments.
+### Consolidated Query Notification
+*   **Logic**: If multiple roles raise a query, the system **holds** the notifications.
+*   **Action**: Once all parallel roles have finished their review, a **single consolidated email** is sent to the surveyor listing all queries and comments.
 
 ### User Response to Query
 *   **Page**: All Plans Dashboard.
 *   **Indicator**: Plan shows a "QUERIED" status and a "Respond to Query" button.
 *   **Action**: The user must pay a **Query Response Fee** (configured percentage of the original fee) for the specific queried record.
 *   **Edit**: After payment, the user can edit coordinates or re-upload the record copy.
-*   **Resubmit**: Upon resubmission, the plan **queues at the earliest stage for all roles**, requiring all parallel roles to review the adjusted record again.
+*   **Resubmit**: Plan returns to all the roles for re-review (Account (review the query fee receipt, while also showing the CoD receipt), Charting, SURCON, and Record I re-review).
 
 ---
-
-## 4. Final Approvals & Lodging
-
-### Records II Admin (Sequential)
+## 4. Intake Admin
 *   **Prerequisite**: Only visible once Accounts, Charting, SURCON, and Records I have all **Approved**.
-*   **Action**: Verify that the physical plan submitted to the office matches the online digital copy.
-*   **Decision**: Final **Approve** or **Query**.
+*   **Display**: The uploaded Record Copy (PDF/Image).
+*   **Action**: Collects the envelop (physical plan), and Verify that the physical plan submitted to the office matches the online digital copy.
+*   **Decision**: **Approve** or **Query** (requires a comment).
+    Here No Locking feature all records are sorted Sequentially - oldest to newest. (the reason is When Surveyor A is mailed to submit physical documents but delays doing so, the locking feature locks their records for the intake admin to work on. This prevents the intake admin from moving forward with other records that may perhaps have submitted their physical documents thereby stalling the workflow.)
+
+## 5. Final Approvals & Lodging
+
+### Records II Admin (Sequential by date approved by the intake admin oldest to newest)
+*   **Prerequisite**: Only visible once Accounts, Charting, SURCON, and Records I have all **Approved**. and the intake Admin **Approved**
+*   **Action**: Final Verification that the physical plan submitted to the office matches the online digital copy.
+*   **Decision**: Final **Approve** or **Query**
+    Here the Locking feature should lock records with same batch no to a Records II Admin (could be one or more however the timing should be calculated based on 3 minutes per record, meaning if we have three records that happens to be in a batch the time allocated will now be 9minutes)
 
 ### Automated Lodging (OSSG)
 Upon Records II approval, the system automatically:
