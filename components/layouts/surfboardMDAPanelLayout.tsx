@@ -15,6 +15,7 @@ import {
   FileText,
   BarChart3,
   Menu,
+  Archive,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -117,6 +118,17 @@ export default function SurfboardMDAPanelLayout({
           },
         ]
       : []),
+    ...(userData?.role === "INTAKE" ||
+    userData?.role === "SUPERADMIN" ||
+    userData?.role === "MDA_SUPERADMIN"
+      ? [
+          {
+            icon: FileCheck,
+            label: "Intake",
+            url: `${dashboardUrl}/intake`,
+          },
+        ]
+      : []),
     ...(userData?.role === "RECORDS_I" ||
     userData?.role === "SUPERADMIN" ||
     userData?.role === "MDA_SUPERADMIN"
@@ -136,6 +148,17 @@ export default function SurfboardMDAPanelLayout({
             icon: FileText,
             label: "Records II",
             url: `${dashboardUrl}/records-ii`,
+          },
+        ]
+      : []),
+    ...(userData?.role === "ARCHIVE" ||
+    userData?.role === "SUPERADMIN" ||
+    userData?.role === "MDA_SUPERADMIN"
+      ? [
+          {
+            icon: Archive,
+            label: "Archive",
+            url: `${dashboardUrl}/archive`,
           },
         ]
       : []),

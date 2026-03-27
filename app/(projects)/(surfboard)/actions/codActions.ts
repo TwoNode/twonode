@@ -4041,7 +4041,9 @@ async function verifyQueryPaymentLinks(
         headers: { "User-Agent": "Mozilla/5.0" },
       });
       if (!remitaRes.ok) {
-        return { success: false, error: "Failed to fetch Remita receipt data." };
+        const errorText = await remitaRes.text().catch(() => "Could not read error text");
+        console.error(`Remita fetch failed with status ${remitaRes.status}:`, errorText);
+        return { success: false, error: `Failed to fetch Remita receipt data (Status: ${remitaRes.status}).` };
       }
       const data = await remitaRes.json();
 
@@ -4059,8 +4061,9 @@ async function verifyQueryPaymentLinks(
           error: `Payment status is not PAID (${data.status}).`,
         };
       }
-    } catch {
-      return { success: false, error: "Failed to parse Remita receipt data." };
+    } catch (err: any) {
+      console.error("Error parsing Remita receipt data:", err);
+      return { success: false, error: `Failed to parse Remita receipt data: ${err.message}` };
     }
 
     return { success: true };
