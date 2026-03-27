@@ -425,12 +425,6 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
       where: {
         redCopyStatus: "SUBMITTED",
         [statusField]: "PENDING",
-        // Ensure no other role has queried this plan
-        accountsStatus: { not: "QUERIED" },
-        chartingStatus: { not: "QUERIED" },
-        surconStatus: { not: "QUERIED" },
-        recordsIStatus: { not: "QUERIED" },
-        recordsIIStatus: { not: "QUERIED" },
         deleted: false,
         ...getRoleSpecificCriteria(),
         OR: [
@@ -638,12 +632,6 @@ export async function canWorkOnPlan(
       where: {
         redCopyStatus: "SUBMITTED",
         [statusField]: "PENDING",
-        // Ensure no other role has queried this plan
-        accountsStatus: { not: "QUERIED" },
-        chartingStatus: { not: "QUERIED" },
-        surconStatus: { not: "QUERIED" },
-        recordsIStatus: { not: "QUERIED" },
-        recordsIIStatus: { not: "QUERIED" },
         deleted: false,
         OR: [
           { [lockedByField]: null },
