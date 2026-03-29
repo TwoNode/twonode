@@ -394,7 +394,7 @@ export function GBCTicketPurchaseForm({
                     !earlyBirdAvailability.available ? "text-gray-400" : ""
                   }
                 >
-                  Early Bird
+                  Single Ticket (One Attendee)
                   {!earlyBirdAvailability.available && " (Sold Out)"}
                 </span>
                 <span
@@ -416,7 +416,7 @@ export function GBCTicketPurchaseForm({
                     !regularAvailability.available ? "text-gray-400" : ""
                   }
                 >
-                  Regular
+                  Pair Ticket (Two attendees)
                   {!regularAvailability.available && " (Not Yet Available)"}
                 </span>
                 <span
@@ -438,7 +438,7 @@ export function GBCTicketPurchaseForm({
                     !companyAvailability.available ? "text-gray-400" : ""
                   }
                 >
-                  Group (5 People)
+                  Group Ticket (Five Attendees)
                 </span>
                 <span
                   className={`ml-4 font-bold ${
@@ -466,7 +466,7 @@ export function GBCTicketPurchaseForm({
           <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
             <p className="text-xs sm:text-sm text-green-800">
-              Early bird tickets are sold out. Regular tickets are now
+              Single tickets are sold out. Pair tickets are now
               available!
             </p>
           </div>
