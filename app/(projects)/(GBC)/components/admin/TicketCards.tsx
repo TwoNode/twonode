@@ -81,7 +81,7 @@ export function TicketCards({
       >
         {earlyBirdAvailability.available ? (
           <div className="absolute top-0 right-0 bg-purple-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
-            POPULAR
+            AVAILABLE
           </div>
         ) : (
           <div className="absolute top-0 right-0 bg-red-500 text-white px-2 sm:px-3 py-1 text-xs font-bold">
@@ -90,7 +90,7 @@ export function TicketCards({
         )}
 
         <div className="text-center mb-3 sm:mb-4">
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Early Bird</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">Single Ticket (One Attendee)</h3>
           <div className="text-3xl sm:text-4xl font-bold text-purple-600 mb-2">
             ₦{(earlyBirdPrice / 1000).toFixed(0)}K
           </div>
@@ -129,7 +129,7 @@ export function TicketCards({
       >
         {regularAvailability.available ? (
           <div className="absolute top-0 right-0 bg-green-500 text-white px-2 sm:px-3 py-1 text-xs font-bold">
-            NOW AVAILABLE
+            MOST POPULAR
           </div>
         ) : (
           <div className="absolute top-0 right-0 bg-blue-500 text-white px-2 sm:px-3 py-1 text-xs font-bold">
@@ -138,14 +138,14 @@ export function TicketCards({
         )}
 
         <div className="text-center mb-3 sm:mb-4">
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Regular</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">Pair Ticket (Two attendees)</h3>
           <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">
             ₦{(regularPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">
             {regularAvailability.available
-              ? "Standard pricing"
-              : "Available after early bird sells out"}
+              ? "Standard pricing for 2"
+              : "Available after single ticket sells out"}
           </p>
         </div>
 
@@ -178,7 +178,7 @@ export function TicketCards({
         </div>
 
         <div className="text-center mb-3 sm:mb-4">
-          <h3 className="text-xl sm:text-2xl font-bold mb-2">Company</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">Group Ticket (Five Attendees)</h3>
           <div className="text-3xl sm:text-4xl font-bold text-amber-600 mb-2">
             ₦{(companyPrice / 1000).toFixed(0)}K
           </div>

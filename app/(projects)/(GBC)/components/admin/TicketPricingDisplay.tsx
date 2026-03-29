@@ -93,31 +93,31 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
 
   const ticketTypes = [
     {
-      name: "Early Bird",
+      name: "Single Ticket (One Attendee)",
       key: "earlyBirdPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "earlyBirdInfoList" as keyof GBCSettingsData["tickets"],
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      description: "Available until early bird deadline",
+      description: "Available until single ticket deadline",
     },
     {
-      name: "Regular",
+      name: "Pair Ticket (Two attendees)",
       key: "regularPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "regularInfoList" as keyof GBCSettingsData["tickets"],
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      description: "Standard ticket price",
+      description: "Standard ticket price for 2",
     },
     {
-      name: "Company",
+      name: "Group Ticket (Five Attendees)",
       key: "companyPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "companyInfoList" as keyof GBCSettingsData["tickets"],
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      description: "For corporate attendees",
+      description: "For corporate groups of 5",
     },
   ];
 

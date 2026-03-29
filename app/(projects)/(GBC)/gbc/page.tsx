@@ -477,7 +477,7 @@ export default function HomePage() {
                       </div>
                     )}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Early Bird</h3>
+                    <h3 className="text-xl font-bold text-white">Single Ticket (One Attendee)</h3>
                     <div className="text-3xl font-bold text-yellow-300 mt-2">
                       ₦{(earlyBirdPrice / 1000).toFixed(0)}K
                     </div>
@@ -504,7 +504,7 @@ export default function HomePage() {
                       className="w-full"
                     >
                       <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold">
-                        Select Early Bird
+                        Select Single Ticket
                       </Button>
                     </Link>
                   ) : (
@@ -532,19 +532,19 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      NOW AVAILABLE
+                      MOST POPULAR
                     </div>
                   )}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Regular</h3>
+                    <h3 className="text-xl font-bold text-white">Pair Ticket (Two attendees)</h3>
                     <div className="text-3xl font-bold text-white mt-2">
                       ₦{(regularPrice / 1000).toFixed(0)}K
                     </div>
                     <p className="text-sm text-gray-300 mt-1">
                       {stats.soldEarlyBirdTickets <
                         (settings?.tickets.maxEarlyBirdCapacity ?? 500)
-                        ? "Available after early bird sells out"
-                        : "Standard access"}
+                        ? "Available after single ticket sells out"
+                        : "Standard access for 2"}
                     </p>
                   </div>
                   <ul className="space-y-2 mb-6 grow">
@@ -562,7 +562,7 @@ export default function HomePage() {
                     (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <Link href="/gbc/tickets?tier=regular" className="w-full">
                       <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
-                        Select Regular
+                        Select Ticket for 2
                       </Button>
                     </Link>
                   ) : (
@@ -581,7 +581,7 @@ export default function HomePage() {
                     ALWAYS AVAILABLE
                   </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Company</h3>
+                    <h3 className="text-xl font-bold text-white">Group Ticket (Five Attendees)</h3>
                     <div className="text-3xl font-bold text-amber-300 mt-2">
                       ₦{(companyPrice / 1000).toFixed(0)}K
                     </div>
@@ -600,7 +600,7 @@ export default function HomePage() {
                   </ul>
                   <Link href="/gbc/tickets?tier=company" className="w-full">
                     <Button className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold">
-                      Select Company
+                      Select Ticket for 5
                     </Button>
                   </Link>
                 </div>

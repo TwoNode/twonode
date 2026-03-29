@@ -113,6 +113,7 @@ export const defaultSettings: GBCSettingsData = {
     maxVipCapacity: 500,
     maxRegularCapacity: 500,
     earlyBirdInfoList: [
+      "One Attendee",
       "Full conference access",
       "All keynote sessions",
       "Networking opportunities",
@@ -122,6 +123,7 @@ export const defaultSettings: GBCSettingsData = {
       "Access to exhibition area",
     ],
     companyInfoList: [
+      "Group Ticket (Five Attendees)",
       "Tickets for 5 attendees",
       "Full conference access",
       "All keynote sessions",
@@ -149,6 +151,8 @@ export const defaultSettings: GBCSettingsData = {
       "Access to exhibition area",
     ],
     regularInfoList: [
+      "Pair Ticket (Two attendees)",
+      "Tickets for 2 attendees",
       "Full conference access",
       "All keynote sessions",
       "Networking opportunities",
