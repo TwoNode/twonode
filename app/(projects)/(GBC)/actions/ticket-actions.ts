@@ -134,6 +134,13 @@ export async function createGBCTicket(formData: FormData) {
       );
     }
 
+    // For REGULAR (pair) tickets created via createGBCTicket (shouldn't happen, but validate anyway)
+    if (validated.ticketType === "REGULAR") {
+      throw new Error(
+        "REGULAR (pair) tickets should be created via createGBCPairTicket function."
+      );
+    }
+
     console.log("\n\n\n\n\n\n\n");
     console.log(paymentResponse);
     console.log("\n\n\n\n\n\n\n");
@@ -395,6 +402,218 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
   }
 }
 
+// Create pair tickets for Regular ticket type (2 attendees)
+export async function createGBCPairTicket(attendeesData: any[]) {
+  try {
+    // Validate that we have exactly 2 attendees
+    if (!attendeesData || attendeesData.length !== 2) {
+      return {
+        success: false,
+        error: "Pair tickets require exactly 2 attendees",
+      };
+    }
+
+    // Validate each attendee's data
+    for (let i = 0; i < attendeesData.length; i++) {
+      const attendee = attendeesData[i];
+      const attendeeNum = i + 1;
+
+      if (!attendee.name || attendee.name.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Name is required`,
+        };
+      }
+
+      if (!attendee.email || attendee.email.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Email is required`,
+        };
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(attendee.email)) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Invalid email format`,
+        };
+      }
+
+      if (!attendee.gender || attendee.gender.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Gender is required`,
+        };
+      }
+
+      const validGenders = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"];
+      if (!validGenders.includes(attendee.gender)) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Invalid gender value`,
+        };
+      }
+
+      if (!attendee.profession || attendee.profession.trim() === "") {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Profession is required`,
+        };
+      }
+
+      if (
+        attendee.profession === "OTHER" &&
+        (!attendee.otherProfession || attendee.otherProfession.trim() === "")
+      ) {
+        return {
+          success: false,
+          error: `Attendee ${attendeeNum}: Please specify profession when selecting "Other"`,
+        };
+      }
+
+      if (attendee.phone && attendee.phone.trim() !== "") {
+        const phoneRegex = /^[0-9]{11}$/;
+        if (!phoneRegex.test(attendee.phone.replace(/\s/g, ""))) {
+          return {
+            success: false,
+            error: `Attendee ${attendeeNum}: Phone number must be 11 digits`,
+          };
+        }
+      }
+    }
+
+    // Check for duplicate emails among attendees
+    const emails = attendeesData.map((a) => a.email.toLowerCase());
+    const uniqueEmails = new Set(emails);
+    if (uniqueEmails.size !== emails.length) {
+      return {
+        success: false,
+        error: "Each attendee must have a unique email address",
+      };
+    }
+
+    // Validate that exactly one attendee is marked as primary
+    const primaryAttendees = attendeesData.filter((a) => a.isPrimary);
+    if (primaryAttendees.length === 0) {
+      return {
+        success: false,
+        error: "Please designate one attendee as the primary contact",
+      };
+    }
+    if (primaryAttendees.length > 1) {
+      return {
+        success: false,
+        error: "Only one attendee can be designated as the primary contact",
+      };
+    }
+
+    const primaryAttendee = primaryAttendees[0];
+
+    // Check ticket availability (need 2 seats)
+    const soldTickets = await prisma.gBCTicket.count({
+      where: { paymentStatus: "COMPLETED" },
+    });
+
+    const settingsResult = await getAllGBCSettings();
+    const settings = settingsResult.success ? settingsResult.data : null;
+
+    if (settings?.tickets.pauseTicketReg) {
+      return {
+        success: false,
+        error: "Ticket registration is currently paused.",
+      };
+    }
+
+    const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
+
+    if (soldTickets + 2 > maxTickets) {
+      return {
+        success: false,
+        error: `Sorry, only ${
+          maxTickets - soldTickets
+        } tickets remaining. Not enough for a pair purchase.`,
+      };
+    }
+
+    // Get the price for regular (pair) tickets using settings
+    const price = calculateTicketPrice("REGULAR", settings?.tickets);
+
+    // Create both tickets
+    const ticketPromises = attendeesData.map((attendee) => {
+      const professionValue =
+        attendee.profession === "OTHER" && attendee.otherProfession
+          ? `Other: ${attendee.otherProfession}`
+          : attendee.profession;
+
+      return prisma.gBCTicket.create({
+        data: {
+          name: attendee.name,
+          email: attendee.email,
+          phone: attendee.phone || undefined,
+          gender: attendee.gender,
+          profession: professionValue,
+          ticketType: "REGULAR",
+          price: price / 2, // Split the price equally among 2 attendees
+          paymentStatus: "PENDING",
+        },
+      });
+    });
+
+    const tickets = await Promise.all(ticketPromises);
+
+    // Use the primary attendee's email for payment
+    const primaryEmail = primaryAttendee.email;
+    const ticketNumbers = tickets.map((t) => t.ticketNumber);
+
+    // Initialize payment for the pair
+    const paymentResponse = await initializeTicketPayment(
+      primaryEmail,
+      price,
+      ticketNumbers[0],
+      "REGULAR",
+      {
+        name: `Pair Ticket (${attendeesData.length} attendees)`,
+        phone: primaryAttendee.phone,
+        profession: "PAIR_PURCHASE",
+        ticketIds: tickets.map((t) => t.id),
+        allTicketNumbers: ticketNumbers,
+      }
+    );
+
+    // Update all tickets with the same payment reference
+    await Promise.all(
+      tickets.map((ticket) =>
+        prisma.gBCTicket.update({
+          where: { id: ticket.id },
+          data: { paymentRef: paymentResponse.data.reference },
+        })
+      )
+    );
+
+    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc/tickets");
+
+    return {
+      success: true,
+      data: {
+        tickets,
+        reference: paymentResponse.data.reference,
+        paymentUrl: paymentResponse.data.authorization_url,
+      },
+    };
+  } catch (error) {
+    console.error("Pair ticket creation error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create pair tickets",
+    };
+  }
+}
+
 /**
  * Verify GBC payment and update ticket status
  * @param reference - Payment reference from Paystack
@@ -444,10 +663,17 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
       );
     }
 
-    // Validate count for non-COMPANY tickets (should be exactly 1)
-    if (firstTicketType !== "COMPANY" && tickets.length > 1) {
+    // Validate count based on ticket type
+    if (firstTicketType === "EARLY_BIRD" && tickets.length !== 1) {
       throw new Error(
-        `Invalid payment: non-COMPANY tickets should have only 1 ticket per payment reference, found ${tickets.length}`
+        `Invalid payment: EARLY_BIRD tickets should have exactly 1 ticket per payment reference, found ${tickets.length}`
+      );
+    }
+
+    // Validate count for REGULAR (pair) tickets (should be exactly 2)
+    if (firstTicketType === "REGULAR" && tickets.length !== 2) {
+      throw new Error(
+        `Invalid payment: REGULAR (pair) tickets require exactly 2 tickets, found ${tickets.length}`
       );
     }
 
