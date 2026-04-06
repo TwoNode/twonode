@@ -4072,10 +4072,11 @@ export async function getPendingArchivePlans() {
 
     const plans = await prisma.surfboardPlan.findMany({
       where: {
-        redCopyStatus: "SUBMITTED",
+        redCopyStatus: "APPROVED",
         surconStatus: "APPROVED",
         chartingStatus: "APPROVED",
         recordsIStatus: "APPROVED",
+        intakeStatus: "APPROVED",
         recordsIIStatus: "APPROVED",
         accountsStatus: "APPROVED",
         archiveReceivedAt: null,
