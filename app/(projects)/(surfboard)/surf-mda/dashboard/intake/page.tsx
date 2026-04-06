@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
@@ -78,6 +79,7 @@ interface Batch {
     companyName: string | null;
   } | null;
   plans: Plan[];
+  _count?: { plans: number };
 }
 
 export default function IntakeAdminPage() {
@@ -261,6 +263,17 @@ export default function IntakeAdminPage() {
               <CardDescription className="mt-1">
                 Submitted on {formatDate(batch.createdAt)} • {batch.plans.length} plan{batch.plans.length !== 1 ? 's' : ''} in batch
               </CardDescription>
+              {!isHistory && batch._count && batch._count.plans > batch.plans.length && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Progress
+                    value={(batch.plans.length / batch._count.plans) * 100}
+                    className="w-32 h-2"
+                  />
+                  <span className="text-xs text-gray-600">
+                    {batch.plans.length}/{batch._count.plans} ready for intake
+                  </span>
+                </div>
+              )}
             </div>
             {isHistory && intakeTime && (
                <div className="text-right text-xs text-gray-500">

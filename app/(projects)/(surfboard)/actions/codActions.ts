@@ -4257,6 +4257,7 @@ export async function getIntakeBatches() {
       },
       include: {
         submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        _count: { select: { plans: true } },
         plans: {
           where: {
             redCopyStatus: "SUBMITTED",
@@ -4299,6 +4300,7 @@ export async function getIntakeHistoryBatches() {
       },
       include: {
         submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        _count: { select: { plans: true } },
         plans: {
           where: {
             intakeStatus: { in: ["APPROVED", "QUERIED"] }
