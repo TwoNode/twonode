@@ -36,6 +36,8 @@ import {
   Phone,
   Search,
   Package,
+  ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   getIntakeBatches,
@@ -51,6 +53,7 @@ interface Plan {
   ward: string | null;
   lcda: string | null;
   deededArea: string;
+  redCopyFileUrl: string | null;
   intakeStatus?: string;
   intakeApprovedAt?: Date;
   intakeApprovedByUser?: {
@@ -89,6 +92,7 @@ export default function IntakeAdminPage() {
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const filteredBatches = useMemo(() => {
     if (!searchQuery.trim()) return batches;
@@ -211,6 +215,10 @@ export default function IntakeAdminPage() {
     });
   };
 
+  const isImageUrl = (url: string): boolean => {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -308,26 +316,72 @@ export default function IntakeAdminPage() {
             </div>
           )}
 
-          {/* Plan Summaries */}
+          {/* Plan Summaries with Record Copy */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
               Plans in this Batch
             </div>
-            <ul className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
+            <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                {batch.plans.map(p => (
-                 <li key={p.id} className="p-3 text-sm hover:bg-gray-50 flex justify-between items-center bg-white">
-                    <div>
-                      <span className="font-medium text-gray-900">{p.planNumber}</span>
-                      <span className="text-gray-500 ml-2">{p.surveyTitle}</span>
+                 <div key={p.id} className="p-4 bg-white hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                      <div>
+                        <span className="font-medium text-gray-900">{p.planNumber}</span>
+                        <span className="text-gray-500 ml-2">{p.surveyTitle}</span>
+                      </div>
+                      {isHistory && p.intakeStatus && (
+                         <Badge variant={p.intakeStatus === "APPROVED" ? "outline" : "destructive"} className="text-[10px] h-5">
+                            {p.intakeStatus}
+                         </Badge>
+                      )}
                     </div>
-                    {isHistory && p.intakeStatus && (
-                       <Badge variant={p.intakeStatus === "APPROVED" ? "outline" : "destructive"} className="text-[10px] h-5">
-                          {p.intakeStatus}
-                       </Badge>
-                    )}
-                 </li>
+                    {/* Record Copy Document */}
+                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mt-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <p className="text-xs font-medium text-blue-800">
+                          Record Copy
+                        </p>
+                      </div>
+                      {p.redCopyFileUrl ? (
+                        <div className="space-y-2">
+                          {isImageUrl(p.redCopyFileUrl) && (
+                            <div
+                              className="cursor-pointer inline-block"
+                              onClick={() => setViewingImage(p.redCopyFileUrl)}
+                            >
+                              <img
+                                src={p.redCopyFileUrl}
+                                alt={`Record Copy - ${p.planNumber}`}
+                                className="max-h-32 rounded border shadow-sm hover:shadow-md transition-shadow"
+                              />
+                              <p className="text-[10px] text-gray-500 mt-0.5">
+                                Click to view full size
+                              </p>
+                            </div>
+                          )}
+                          <a
+                            href={p.redCopyFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                          >
+                            {isImageUrl(p.redCopyFileUrl) ? (
+                              <ImageIcon className="w-3.5 h-3.5" />
+                            ) : (
+                              <FileText className="w-3.5 h-3.5" />
+                            )}
+                            Open Record Copy
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-red-600">No record copy uploaded</p>
+                      )}
+                    </div>
+                 </div>
                ))}
-            </ul>
+            </div>
           </div>
 
           {/* Action Buttons (for pending only) */}
@@ -520,6 +574,27 @@ export default function IntakeAdminPage() {
                 )}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Image Viewer Dialog */}
+        <Dialog
+          open={!!viewingImage}
+          onOpenChange={() => setViewingImage(null)}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Record Copy Preview</DialogTitle>
+            </DialogHeader>
+            {viewingImage && (
+              <div className="flex justify-center">
+                <img
+                  src={viewingImage}
+                  alt="Record Copy"
+                  className="max-h-[70vh] rounded-lg"
+                />
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
