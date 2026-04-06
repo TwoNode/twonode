@@ -519,32 +519,18 @@ export default function HomePage() {
 
                 {/* Regular Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col ${stats.soldEarlyBirdTickets <
-                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
-                      ? "opacity-60"
-                      : ""
-                    }`}
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col"
                 >
-                  {stats.soldEarlyBirdTickets <
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
-                    <div className="absolute top-0 right-0 bg-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      NOT YET AVAILABLE
-                    </div>
-                  ) : (
-                    <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      MOST POPULAR
-                    </div>
-                  )}
+                  <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                    ALWAYS AVAILABLE
+                  </div>
                   <div className="mb-4">
                     <h3 className="text-xl font-bold text-white">Pair Ticket (Two attendees)</h3>
                     <div className="text-3xl font-bold text-white mt-2">
                       ₦{(regularPrice / 1000).toFixed(0)}K
                     </div>
                     <p className="text-sm text-gray-300 mt-1">
-                      {stats.soldEarlyBirdTickets <
-                        (settings?.tickets.maxEarlyBirdCapacity ?? 500)
-                        ? "Available after single ticket sells out"
-                        : "Standard access for 2"}
+                      Standard access for 2
                     </p>
                   </div>
                   <ul className="space-y-2 mb-6 grow">
@@ -558,21 +544,11 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  {stats.soldEarlyBirdTickets >=
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
-                    <Link href="/gbc/tickets?tier=regular" className="w-full">
-                      <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
-                        Select Ticket for 2
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      disabled
-                      className="w-full bg-gray-500 text-gray-300 cursor-not-allowed"
-                    >
-                      Not Yet Available
+                  <Link href="/gbc/tickets?tier=regular" className="w-full">
+                    <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
+                      Select Ticket for 2
                     </Button>
-                  )}
+                  </Link>
                 </div>
 
                 {/* Company Card */}
