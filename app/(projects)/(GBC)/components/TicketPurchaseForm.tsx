@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   createGBCTicket,
   createGBCGroupTicket,
+  createGBCPairTicket,
   verifyGBCPayment,
 } from "../actions/ticket-actions";
 import { ShoppingCart, Loader2, Users, AlertCircle } from "lucide-react";
@@ -85,6 +86,26 @@ export function GBCTicketPurchaseForm({
       profession: "",
       otherProfession: "",
       isPrimary: false,
+    },
+    {
+      name: "",
+      email: "",
+      phone: "",
+      gender: "",
+      profession: "",
+      otherProfession: "",
+      isPrimary: false,
+    },
+  ]);
+  const [pairAttendees, setPairAttendees] = useState<Attendee[]>([
+    {
+      name: "",
+      email: "",
+      phone: "",
+      gender: "",
+      profession: "",
+      otherProfession: "",
+      isPrimary: true,
     },
     {
       name: "",
@@ -203,6 +224,17 @@ export function GBCTicketPurchaseForm({
     setAttendees(newAttendees);
   };
 
+  // Update pair attendee field
+  const updatePairAttendee = (
+    index: number,
+    field: keyof Attendee,
+    value: string
+  ) => {
+    const newAttendees = [...pairAttendees];
+    newAttendees[index] = { ...newAttendees[index], [field]: value };
+    setPairAttendees(newAttendees);
+  };
+
   // Set primary attendee (ensure only one is primary)
   const setPrimaryAttendee = (index: number) => {
     const newAttendees = attendees.map((attendee, i) => ({
@@ -210,6 +242,15 @@ export function GBCTicketPurchaseForm({
       isPrimary: i === index,
     }));
     setAttendees(newAttendees);
+  };
+
+  // Set primary pair attendee
+  const setPrimaryPairAttendee = (index: number) => {
+    const newAttendees = pairAttendees.map((attendee, i) => ({
+      ...attendee,
+      isPrimary: i === index,
+    }));
+    setPairAttendees(newAttendees);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -229,8 +270,38 @@ export function GBCTicketPurchaseForm({
       let primaryEmail: string;
       let primaryName: string;
 
-      // Handle Group/Company tickets differently
-      if (ticketType === "COMPANY") {
+      // Handle Pair/Regular tickets (2 attendees)
+      if (ticketType === "REGULAR") {
+        const validAttendees = pairAttendees.filter(
+          (a) => a.name && a.email && a.gender && a.profession
+        );
+
+        if (validAttendees.length !== 2) {
+          throw new Error("Please fill in both attendees' information");
+        }
+
+        const primaryAttendees = validAttendees.filter((a) => a.isPrimary);
+        if (primaryAttendees.length === 0) {
+          throw new Error("Please select a primary contact for the pair");
+        }
+        if (primaryAttendees.length > 1) {
+          throw new Error("Only one attendee can be marked as primary contact");
+        }
+
+        const primaryAttendee = primaryAttendees[0];
+
+        result = await createGBCPairTicket(validAttendees);
+
+        if (!result.success || !result.data) {
+          throw new Error(result.error || "Failed to create pair tickets");
+        }
+
+        reference = result.data.reference;
+        totalPrice = result.data.tickets[0].price * 2;
+        primaryEmail = primaryAttendee.email;
+        primaryName = primaryAttendee.name;
+      } else if (ticketType === "COMPANY") {
+        // Handle Group/Company tickets (5 attendees)
         // Validate all attendees have required fields
         const validAttendees = attendees.filter(
           (a) => a.name && a.email && a.gender && a.profession
@@ -362,6 +433,7 @@ export function GBCTicketPurchaseForm({
   }
 
   const isGroupTicket = selectedTicketType === "COMPANY";
+  const isPairTicket = selectedTicketType === "REGULAR";
 
   return (
     <form
@@ -486,9 +558,24 @@ export function GBCTicketPurchaseForm({
             </p>
           </div>
         )}
+
+        {isPairTicket && (
+          <div className="space-y-2 mt-2">
+            <p className="text-xs sm:text-sm text-blue-600 flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              Pair ticket includes 2 attendees. Please fill in details for both
+              people below.
+            </p>
+            <p className="text-xs sm:text-sm text-blue-800 bg-blue-100 p-2 rounded border border-blue-300">
+              <strong>Note:</strong> The primary contact will receive the
+              payment confirmation and be the main point of contact for this
+              pair booking.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Conditional Rendering: Group Ticket or Individual Ticket */}
+      {/* Conditional Rendering: Group Ticket, Pair Ticket, or Individual Ticket */}
       {isGroupTicket ? (
         // GROUP TICKET FORM (5 Attendees)
         <div className="space-y-6">
@@ -652,6 +739,183 @@ export function GBCTicketPurchaseForm({
                         value={attendee.otherProfession || ""}
                         onChange={(e) =>
                           updateAttendee(
+                            index,
+                            "otherProfession",
+                            e.target.value
+                          )
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : isPairTicket ? (
+        // PAIR TICKET FORM (2 Attendees)
+        <div className="space-y-6">
+          {pairAttendees.map((attendee, index) => (
+            <div
+              key={index}
+              className={`p-4 border-2 rounded-lg ${
+                attendee.isPrimary
+                  ? "border-blue-500 bg-blue-100/50"
+                  : "border-blue-200 bg-blue-50/50"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Attendee {index + 1}
+                </h3>
+
+                {/* Primary Contact Radio Button */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id={`pair-primary-${index}`}
+                    name="pairPrimaryContact"
+                    checked={attendee.isPrimary || false}
+                    onChange={() => setPrimaryPairAttendee(index)}
+                    disabled={isSubmitting}
+                    className="w-4 h-4 text-blue-600 cursor-pointer"
+                  />
+                  <Label
+                    htmlFor={`pair-primary-${index}`}
+                    className="text-sm font-semibold text-blue-700 cursor-pointer"
+                  >
+                    Primary Contact
+                  </Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Name */}
+                <div>
+                  <Label className="text-sm">Full Name *</Label>
+                  <Input
+                    required
+                    placeholder="John Doe"
+                    value={attendee.name}
+                    onChange={(e) =>
+                      updatePairAttendee(index, "name", e.target.value)
+                    }
+                    disabled={isSubmitting}
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <Label className="text-sm">Email Address *</Label>
+                  <Input
+                    type="email"
+                    required
+                    placeholder="john@example.com"
+                    value={attendee.email}
+                    onChange={(e) =>
+                      updatePairAttendee(index, "email", e.target.value)
+                    }
+                    disabled={isSubmitting}
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <Label className="text-sm">Phone Number (Optional)</Label>
+                  <Input
+                    type="tel"
+                    placeholder="08012345678"
+                    value={attendee.phone}
+                    onChange={(e) =>
+                      updatePairAttendee(index, "phone", e.target.value)
+                    }
+                    disabled={isSubmitting}
+                    maxLength={11}
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* Gender */}
+                <div>
+                  <Label className="text-sm">Gender *</Label>
+                  <Select
+                    required
+                    value={attendee.gender}
+                    onValueChange={(value) =>
+                      updatePairAttendee(index, "gender", value)
+                    }
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">Female</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                      <SelectItem value="PREFER_NOT_TO_SAY">
+                        Prefer not to say
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Profession */}
+                <div className="md:col-span-2">
+                  <Label className="text-sm">Profession *</Label>
+                  <Select
+                    required
+                    value={attendee.profession}
+                    onValueChange={(value) =>
+                      updatePairAttendee(index, "profession", value)
+                    }
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select profession" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SURVEYOR">Surveyor</SelectItem>
+                      <SelectItem value="GIS_ANALYST">GIS Analyst</SelectItem>
+                      <SelectItem value="URBAN_PLANNER">
+                        Urban Planner
+                      </SelectItem>
+                      <SelectItem value="LAWYER">Lawyer</SelectItem>
+                      <SelectItem value="ENGINEER">Engineer</SelectItem>
+                      <SelectItem value="ARCHITECT">Architect</SelectItem>
+                      <SelectItem value="DATA_SCIENTIST">
+                        Data Scientist
+                      </SelectItem>
+                      <SelectItem value="DEVELOPER">Developer</SelectItem>
+                      <SelectItem value="PROJECT_MANAGER">
+                        Project Manager
+                      </SelectItem>
+                      <SelectItem value="STUDENT">Student</SelectItem>
+                      <SelectItem value="RESEARCHER">Researcher</SelectItem>
+                      <SelectItem value="ENTREPRENEUR">Entrepreneur</SelectItem>
+                      <SelectItem value="GOVERNMENT_OFFICIAL">
+                        Government Official
+                      </SelectItem>
+                      <SelectItem value="NGO_STAFF">NGO Staff</SelectItem>
+                      <SelectItem value="CONSULTANT">Consultant</SelectItem>
+                      <SelectItem value="OTHER">
+                        Other (please specify)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {attendee.profession === "OTHER" && (
+                    <div className="mt-2">
+                      <Input
+                        required
+                        placeholder="Please specify your profession"
+                        value={attendee.otherProfession || ""}
+                        onChange={(e) =>
+                          updatePairAttendee(
                             index,
                             "otherProfession",
                             e.target.value
@@ -846,7 +1110,7 @@ export function GBCTicketPurchaseForm({
           </>
         ) : (
           <>
-            {isGroupTicket ? (
+            {isGroupTicket || isPairTicket ? (
               <Users className="mr-2 h-5 w-5" />
             ) : (
               <ShoppingCart className="mr-2 h-5 w-5" />
