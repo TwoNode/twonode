@@ -125,14 +125,15 @@ export function isTicketTypeAvailable(
       return { available: true };
 
     case "REGULAR":
-      // Regular is only available when early bird is over (deadline passed OR sold out)
-      if (!isEarlyBirdOver) {
-        return {
-          available: false,
-          reason:
-            "Regular tickets will be available after early bird deadline or when early bird sells out",
-        };
-      }
+      // Pair ticket is always available (alongside either early bird or company)
+      // // Regular is only available when early bird is over (deadline passed OR sold out)
+      // if (!isEarlyBirdOver) {
+      //   return {
+      //     available: false,
+      //     reason:
+      //       "Regular tickets will be available after early bird deadline or when early bird sells out",
+      //   };
+      // }
       return { available: true };
 
     case "COMPANY":
