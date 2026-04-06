@@ -44,6 +44,7 @@ import {
   getIntakeBatches,
   getIntakeHistoryBatches,
   updateIntakeBatchStatus,
+  updateIntakeStatus,
 } from "../../../actions/codActions";
 
 interface Plan {
@@ -88,13 +89,20 @@ export default function IntakeAdminPage() {
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Dialog state - supports both batch-level and plan-level actions
   const [showDialog, setShowDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"batch" | "plan">("batch");
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [actionType, setActionType] = useState<"approve" | "query">("approve");
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Track per-plan processing state (for inline loading indicators)
+  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
   const filteredBatches = useMemo(() => {
     if (!searchQuery.trim()) return batches;
@@ -165,14 +173,35 @@ export default function IntakeAdminPage() {
     }
   };
 
-  const handleActionClick = (batch: Batch, action: "approve" | "query") => {
+  // Batch-level action
+  const handleBatchActionClick = (batch: Batch, action: "approve" | "query") => {
     setSelectedBatch(batch);
+    setSelectedPlan(null);
+    setDialogMode("batch");
+    setActionType(action);
+    setComment("");
+    setShowDialog(true);
+  };
+
+  // Plan-level action
+  const handlePlanActionClick = (plan: Plan, batch: Batch, action: "approve" | "query") => {
+    setSelectedPlan(plan);
+    setSelectedBatch(batch);
+    setDialogMode("plan");
     setActionType(action);
     setComment("");
     setShowDialog(true);
   };
 
   const handleSubmit = async () => {
+    if (dialogMode === "batch") {
+      await handleBatchSubmit();
+    } else {
+      await handlePlanSubmit();
+    }
+  };
+
+  const handleBatchSubmit = async () => {
     if (!selectedBatch) return;
 
     if (actionType === "query" && !comment.trim()) {
@@ -207,6 +236,46 @@ export default function IntakeAdminPage() {
       toast.error("An error occurred while updating status");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handlePlanSubmit = async () => {
+    if (!selectedPlan) return;
+
+    if (actionType === "query" && !comment.trim()) {
+      toast.error("Please provide a reason for querying this plan");
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setProcessingPlanId(selectedPlan.id);
+      const result = await updateIntakeStatus(
+        selectedPlan.id,
+        actionType === "approve",
+        comment.trim() || undefined
+      );
+
+      if (result.success) {
+        toast.success(
+          actionType === "approve"
+            ? `Plan ${selectedPlan.planNumber} approved successfully`
+            : `Plan ${selectedPlan.planNumber} has been queried`
+        );
+        setShowDialog(false);
+        fetchBatches();
+        if (activeTab === "history") {
+          fetchHistory();
+        }
+      } else {
+        toast.error(result.error || "Failed to update plan status");
+      }
+    } catch (error) {
+      console.error("Error updating Intake plan status:", error);
+      toast.error("An error occurred while updating plan status");
+    } finally {
+      setProcessing(false);
+      setProcessingPlanId(null);
     }
   };
 
@@ -329,14 +398,16 @@ export default function IntakeAdminPage() {
             </div>
           )}
 
-          {/* Plan Summaries with Record Copy */}
+          {/* Plan Summaries with Record Copy & Per-Plan Actions */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
               Plans in this Batch
             </div>
             <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-               {batch.plans.map(p => (
-                 <div key={p.id} className="p-4 bg-white hover:bg-gray-50 transition-colors">
+               {batch.plans.map(p => {
+                 const isPlanProcessing = processingPlanId === p.id;
+                 return (
+                  <div key={p.id} className="p-4 bg-white hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-center mb-2">
                       <div>
                         <span className="font-medium text-gray-900">{p.planNumber}</span>
@@ -392,28 +463,58 @@ export default function IntakeAdminPage() {
                         <p className="text-xs text-red-600">No record copy uploaded</p>
                       )}
                     </div>
-                 </div>
-               ))}
+
+                    {/* Per-Plan Action Buttons */}
+                    {!isHistory && (
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          onClick={() => handlePlanActionClick(p, batch, "approve")}
+                          className="bg-green-600 hover:bg-green-700 text-xs h-8"
+                          disabled={isPlanProcessing}
+                        >
+                          {isPlanProcessing ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                          )}
+                          Approve Plan
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePlanActionClick(p, batch, "query")}
+                          className="border-red-300 text-red-600 hover:bg-red-50 text-xs h-8"
+                          disabled={isPlanProcessing}
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Query Plan
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                 );
+               })}
             </div>
           </div>
 
-          {/* Action Buttons (for pending only) */}
-          {!isHistory && (
-            <div className="flex gap-3 pt-2">
+          {/* Batch-Level Action Buttons (for pending only) */}
+          {!isHistory && batch.plans.length > 1 && (
+            <div className="flex gap-3 pt-2 border-t border-gray-200">
               <Button
-                onClick={() => handleActionClick(batch, "approve")}
+                onClick={() => handleBatchActionClick(batch, "approve")}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Approve Entire Batch
+                Approve Entire Batch ({batch.plans.length} plans)
               </Button>
               <Button
-                onClick={() => handleActionClick(batch, "query")}
+                onClick={() => handleBatchActionClick(batch, "query")}
                 variant="outline"
                 className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
               >
                 <XCircle className="w-4 h-4 mr-2" />
-                Query Batch
+                Query Entire Batch
               </Button>
             </div>
           )}
@@ -422,13 +523,18 @@ export default function IntakeAdminPage() {
     );
   };
 
+  // Determine dialog labels based on mode
+  const dialogTarget = dialogMode === "batch"
+    ? `Batch ${selectedBatch?.batchCode}`
+    : `Plan ${selectedPlan?.planNumber}`;
+
   return (
     <>
       <div className="container mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Intake Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">
-            Review and approve physical document bundles (batches) sequentially
+            Review and approve physical documents sequentially — approve or query each plan individually
           </p>
         </div>
 
@@ -507,17 +613,21 @@ export default function IntakeAdminPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Action Dialog */}
+        {/* Unified Action Dialog (handles both batch and plan level) */}
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                {actionType === "approve" ? "Approve Batch" : "Query Batch"}
+                {actionType === "approve" ? `Approve ${dialogTarget}` : `Query ${dialogTarget}`}
               </DialogTitle>
               <DialogDescription>
                 {actionType === "approve"
-                  ? `Confirm that you have received and verified the physical bundle for Batch ${selectedBatch?.batchCode}`
-                  : `Provide a query reason for Physical Batch ${selectedBatch?.batchCode}`}
+                  ? dialogMode === "batch"
+                    ? `Confirm that you have received and verified ALL physical plans in Batch ${selectedBatch?.batchCode}`
+                    : `Confirm that the physical copy for ${selectedPlan?.planNumber} matches the digital record copy`
+                  : dialogMode === "batch"
+                    ? `Provide a query reason for all plans in Batch ${selectedBatch?.batchCode}`
+                    : `Provide a query reason for plan ${selectedPlan?.planNumber}`}
               </DialogDescription>
             </DialogHeader>
 
@@ -528,8 +638,17 @@ export default function IntakeAdminPage() {
                     By approving, you confirm that:
                   </p>
                   <ul className="text-sm text-green-700 list-disc list-inside mt-2">
-                    <li>The physical copies of ALL plans ({selectedBatch?.plans.length}) in this batch align perfectly.</li>
-                    <li>Records II will now be able to process this batch.</li>
+                    {dialogMode === "batch" ? (
+                      <>
+                        <li>The physical copies of ALL plans ({selectedBatch?.plans.length}) in this batch align perfectly.</li>
+                        <li>Records II will now be able to process these plans.</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>The physical copy of {selectedPlan?.planNumber} matches the uploaded record copy.</li>
+                        <li>Records II will be able to process this plan once all plans in the batch are approved.</li>
+                      </>
+                    )}
                   </ul>
                 </div>
               ) : (
@@ -540,12 +659,16 @@ export default function IntakeAdminPage() {
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Specific issue with the physical plans..."
+                    placeholder={
+                      dialogMode === "batch"
+                        ? "Specific issue with the physical plans..."
+                        : `Issue with plan ${selectedPlan?.planNumber}...`
+                    }
                     className="mt-1"
                     rows={4}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    The surveyor will be notified of this query across all associated plans.
+                    The surveyor will be notified of this query.
                   </p>
                 </div>
               )}
