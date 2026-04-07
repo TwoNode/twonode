@@ -2856,7 +2856,7 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
-      // Records II: Count plans with all other approvals complete (only from batches with LASG receipt)
+      // Records II: Count plans with all other approvals complete including intake
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
@@ -2865,6 +2865,7 @@ export async function getPendingCountByRole(): Promise<
           chartingStatus: "APPROVED",
           surconStatus: "APPROVED",
           recordsIStatus: "APPROVED",
+          intakeStatus: "APPROVED",
           deleted: false,
           batch: {
             paymentStatus: {
@@ -2878,13 +2879,14 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
-      // Archive: Count plans where all other MDAs have approved, but archiveReceivedAt is null
+      // Archive: Count plans fully approved (including Records II and Intake), not yet archived
       prisma.surfboardPlan.count({
         where: {
-          redCopyStatus: "SUBMITTED",
+          redCopyStatus: "APPROVED",
           surconStatus: "APPROVED",
           chartingStatus: "APPROVED",
           recordsIStatus: "APPROVED",
+          intakeStatus: "APPROVED",
           recordsIIStatus: "APPROVED",
           accountsStatus: "APPROVED",
           archiveReceivedAt: null,
