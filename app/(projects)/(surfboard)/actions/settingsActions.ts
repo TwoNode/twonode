@@ -32,7 +32,7 @@ export async function getCurrentSettings(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -164,7 +164,7 @@ export async function updateSettings(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -222,7 +222,7 @@ export async function getSettingsHistory(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -267,7 +267,7 @@ export async function revertToPreviousSettings(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
