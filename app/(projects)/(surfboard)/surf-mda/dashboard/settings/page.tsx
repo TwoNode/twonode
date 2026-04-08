@@ -76,7 +76,7 @@ export default function SettingsPage() {
   const [mdaSettingsSaving, setMdaSettingsSaving] = useState(false);
   const [showPolicyPreview, setShowPolicyPreview] = useState(false);
 
-  const isSuperAdmin = profile?.role === "SUPERADMIN" || profile?.role === "MDA_SUPERADMIN";
+  const isSuperAdmin = profile?.role === "SUPERADMIN";
 
   useEffect(() => {
     const fetchProfile = async () => {
