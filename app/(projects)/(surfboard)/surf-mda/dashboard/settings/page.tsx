@@ -618,16 +618,14 @@ export default function SettingsPage() {
                         <p className="text-xs text-blue-800">
                           <strong>Example:</strong> If the original CoD fee was ₦10,000 and the
                           query response fee is {mdaSettings.queryResponseFeePercent}%, the
-                          resubmission fee will be ₦
-                          {(10000 * mdaSettings.queryResponseFeePercent / 100).toLocaleString(undefined, {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}{" "}
-                          (total: ₦
-                          {(10000 + 10000 * mdaSettings.queryResponseFeePercent / 100).toLocaleString(undefined, {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
+                          surveyor pays{" "}
+                          <strong>
+                            ₦{(10000 * mdaSettings.queryResponseFeePercent / 100).toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
+                          </strong>{" "}
+                          to resubmit (i.e. {mdaSettings.queryResponseFeePercent}% of ₦10,000 — not the full CoD fee again
                           ).
                         </p>
                       </div>
