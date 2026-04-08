@@ -350,12 +350,13 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
     const getRoleSpecificCriteria = (): any => {
       switch (role) {
         case "RECORDS_II":
-          // Records II: All 4 other approvals must be complete
+          // Records II: All 4 other approvals + intake must be complete
           return {
             accountsStatus: "APPROVED" as const,
             chartingStatus: "APPROVED" as const,
             surconStatus: "APPROVED" as const,
             recordsIStatus: "APPROVED" as const,
+            intakeStatus: "APPROVED" as const,
             batch: {
               paymentStatus: {
                 in: [
@@ -2587,7 +2588,7 @@ export async function updateRecordsIIStatus(
       return { success: false, error: "Unauthorized" };
     }
 
-    // Check if all other approvals are done
+    // Check if all other approvals are done (including intake)
     const planCheck = await prisma.surfboardPlan.findUnique({
       where: { id: planId },
       select: {
@@ -2595,6 +2596,7 @@ export async function updateRecordsIIStatus(
         chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
+        intakeStatus: true,
         batchId: true,
       },
     });
@@ -2607,11 +2609,12 @@ export async function updateRecordsIIStatus(
       planCheck.accountsStatus !== "APPROVED" ||
       planCheck.chartingStatus !== "APPROVED" ||
       planCheck.surconStatus !== "APPROVED" ||
-      planCheck.recordsIStatus !== "APPROVED"
+      planCheck.recordsIStatus !== "APPROVED" ||
+      planCheck.intakeStatus !== "APPROVED"
     ) {
       return {
         success: false,
-        error: "All other approvals must be completed first",
+        error: "All other approvals (including Intake) must be completed first",
       };
     }
 
@@ -2622,12 +2625,13 @@ export async function updateRecordsIIStatus(
         recordsIIApprovedBy: user.id,
         recordsIIApprovedAt: new Date(),
         recordsIIComment: comment,
-        // Nullify other roles if queried
+        // Nullify other roles + intake if queried
         ...(!approved ? {
           accountsStatus: "PENDING",
           chartingStatus: "PENDING",
           surconStatus: "PENDING",
           recordsIStatus: "PENDING",
+          intakeStatus: "PENDING",
         } : {}),
         ...(approved
           ? {
@@ -3182,6 +3186,7 @@ export async function getRecordsIIPlans() {
         chartingStatus: "APPROVED",
         surconStatus: "APPROVED",
         recordsIStatus: "APPROVED",
+        intakeStatus: "APPROVED",
         deleted: false,
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
@@ -3214,7 +3219,7 @@ export async function getRecordsIIPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
+      orderBy: { intakeApprovedAt: "asc" }, // Sequential by intake approval date
     });
 
     // Add lock status information
@@ -4413,5 +4418,429 @@ export async function updateIntakeBatchStatus(
   } catch (error) {
     console.error("Error updating Intake batch:", error);
     return { success: false, error: handlePrismaError(error, "updateIntakeBatchStatus") };
+  }
+}
+
+// ============================================================================
+// Records II: Batch-oriented functions
+// ============================================================================
+
+const RECORDS_II_LOCK_MINUTES_PER_PLAN = 3;
+
+/**
+ * Get batches for Records II Admin view (batch-based display).
+ * Only returns batches where all 5 prerequisite approvals are complete.
+ * Ordered by oldest intake approval date first.
+ */
+export async function getRecordsIIBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const now = new Date();
+
+    // Get batches that have at least one plan ready for Records II
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            intakeApprovedAt: true,
+            recordsIILockedBy: true,
+            recordsIILockExpiresAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Sort batches by the earliest intakeApprovedAt among their plans
+    const sortedBatches = batches
+      .map((batch) => {
+        const earliestIntake = Math.min(
+          ...batch.plans.map((p) =>
+            p.intakeApprovedAt ? new Date(p.intakeApprovedAt).getTime() : Infinity
+          )
+        );
+        return { ...batch, _sortKey: earliestIntake };
+      })
+      .sort((a, b) => a._sortKey - b._sortKey)
+      .map(({ _sortKey, ...batch }) => ({
+        ...batch,
+        // Add lock status info to each plan
+        plans: batch.plans.map((plan) => ({
+          ...plan,
+          isLocked:
+            !!plan.recordsIILockedBy &&
+            !!plan.recordsIILockExpiresAt &&
+            new Date(plan.recordsIILockExpiresAt) > now,
+          isLockedByMe:
+            plan.recordsIILockedBy === user.id &&
+            !!plan.recordsIILockExpiresAt &&
+            new Date(plan.recordsIILockExpiresAt) > now,
+        })),
+        // Batch-level lock info (check if first plan in batch is locked by current user)
+        isBatchLockedByMe:
+          batch.plans.length > 0 &&
+          batch.plans[0].recordsIILockedBy === user.id &&
+          !!batch.plans[0].recordsIILockExpiresAt &&
+          new Date(batch.plans[0].recordsIILockExpiresAt) > now,
+        batchLockExpiresAt:
+          batch.plans.length > 0 &&
+          batch.plans[0].recordsIILockedBy === user.id &&
+          batch.plans[0].recordsIILockExpiresAt
+            ? batch.plans[0].recordsIILockExpiresAt
+            : null,
+      }));
+
+    return { success: true, data: sortedBatches };
+  } catch (error) {
+    console.error("Error fetching Records II batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIIBatches"),
+    };
+  }
+}
+
+/**
+ * Get history batches for Records II Admin.
+ * Returns batches where at least one plan has been approved or queried by Records II.
+ */
+export async function getRecordsIIHistoryBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            recordsIIStatus: { in: ["APPROVED", "QUERIED"] },
+            recordsIIApprovedAt: { not: null },
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            recordsIIStatus: { in: ["APPROVED", "QUERIED"] },
+            recordsIIApprovedAt: { not: null },
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            recordsIIStatus: true,
+            recordsIIComment: true,
+            recordsIIApprovedAt: true,
+          },
+          include: {
+            recordsIIApprovedByUser: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching Records II history batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIIHistoryBatches"),
+    };
+  }
+}
+
+/**
+ * Records II: Find and lock the oldest available batch.
+ * Locks ALL plans in the batch atomically.
+ * Lock duration = 3 minutes × number of plans in the batch.
+ */
+export async function getAndLockBatchForRecordsII(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+
+    // First, check if user already has plans locked for Records II
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        recordsIILockedBy: user.id,
+        recordsIILockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        recordsIILockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          recordsIILockedBy: user.id,
+          recordsIILockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.recordsIILockExpiresAt,
+        },
+      };
+    }
+
+    // Find the oldest batch with plans ready for Records II (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+            OR: [
+              { recordsIILockedBy: null },
+              { recordsIILockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+            OR: [
+              { recordsIILockedBy: null },
+              { recordsIILockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true, intakeApprovedAt: true },
+          orderBy: { intakeApprovedAt: "asc" },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Calculate lock duration: 3 minutes per plan in the batch
+    const planCount = availableBatch.plans.length;
+    const lockDurationMs =
+      RECORDS_II_LOCK_MINUTES_PER_PLAN * planCount * 60000;
+    const lockExpiry = new Date(now.getTime() + lockDurationMs);
+
+    const planIds = availableBatch.plans.map((p) => p.id);
+
+    // Lock all plans in the batch atomically
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: { in: planIds },
+        OR: [
+          { recordsIILockedBy: null },
+          { recordsIILockedBy: user.id },
+          { recordsIILockExpiresAt: { lt: now } },
+        ],
+      },
+      data: {
+        recordsIILockedBy: user.id,
+        recordsIILockedAt: now,
+        recordsIILockExpiresAt: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Another user grabbed the lock first — retry
+      return getAndLockBatchForRecordsII();
+    }
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount: lockResult.count,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error locking batch for Records II:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForRecordsII"),
+    };
+  }
+}
+
+/**
+ * Records II: Release all batch locks held by the current user.
+ */
+export async function releaseBatchLockForRecordsII(): Promise<
+  ApiResult<{ releasedCount: number }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: {
+        recordsIILockedBy: user.id,
+      },
+      data: {
+        recordsIILockedBy: null,
+        recordsIILockedAt: null,
+        recordsIILockExpiresAt: null,
+      },
+    });
+
+    return {
+      success: true,
+      data: { releasedCount: result.count },
+    };
+  } catch (error) {
+    console.error("Error releasing batch lock for Records II:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForRecordsII"),
+    };
   }
 }

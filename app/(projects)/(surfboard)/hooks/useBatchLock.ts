@@ -1,0 +1,215 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import {
+  getAndLockBatchForRecordsII,
+  releaseBatchLockForRecordsII,
+} from "../actions/codActions";
+
+interface UseBatchLockProps {
+  onLockAcquired?: (batchId: string, batchCode: string, planCount: number) => void;
+  onLockReleased?: () => void;
+}
+
+interface UseBatchLockReturn {
+  lockedBatchId: string | null;
+  lockedBatchCode: string | null;
+  lockExpiresAt: Date | null;
+  lockedPlanCount: number;
+  isLocking: boolean;
+  lockError: string | null;
+  acquireLock: () => Promise<void>;
+  releaseLock: () => Promise<void>;
+  isBatchLockedByMe: (batchId: string) => boolean;
+  showLeaveWarning: boolean;
+  setShowLeaveWarning: (show: boolean) => void;
+  confirmLeave: () => void;
+  cancelLeave: () => void;
+  pendingNavigation: string | null;
+}
+
+/**
+ * Hook for Records II batch-level locking.
+ * Locks ALL plans in a batch with duration = 3min × planCount.
+ */
+export function useBatchLock({
+  onLockAcquired,
+  onLockReleased,
+}: UseBatchLockProps): UseBatchLockReturn {
+  const router = useRouter();
+
+  const [lockedBatchId, setLockedBatchId] = useState<string | null>(null);
+  const [lockedBatchCode, setLockedBatchCode] = useState<string | null>(null);
+  const [lockExpiresAt, setLockExpiresAt] = useState<Date | null>(null);
+  const [lockedPlanCount, setLockedPlanCount] = useState(0);
+  const [isLocking, setIsLocking] = useState(false);
+  const [lockError, setLockError] = useState<string | null>(null);
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  const hasLock = useRef(false);
+  const isUnmounting = useRef(false);
+
+  // Acquire lock on the oldest available batch
+  const acquireLock = useCallback(async () => {
+    setIsLocking(true);
+    setLockError(null);
+
+    try {
+      const result = await getAndLockBatchForRecordsII();
+
+      if (result.success && result.data) {
+        if (result.data.locked && result.data.batchId) {
+          setLockedBatchId(result.data.batchId);
+          setLockedBatchCode(result.data.batchCode);
+          setLockedPlanCount(result.data.planCount);
+          setLockExpiresAt(
+            result.data.lockExpiresAt
+              ? new Date(result.data.lockExpiresAt)
+              : null
+          );
+          hasLock.current = true;
+          onLockAcquired?.(
+            result.data.batchId,
+            result.data.batchCode || "",
+            result.data.planCount
+          );
+        } else {
+          // No batches available to lock
+          setLockedBatchId(null);
+          setLockedBatchCode(null);
+          setLockedPlanCount(0);
+          setLockExpiresAt(null);
+          hasLock.current = false;
+        }
+      } else {
+        setLockError(result.error || "Failed to acquire batch lock");
+      }
+    } catch (error) {
+      console.error("Error acquiring batch lock:", error);
+      setLockError("An unexpected error occurred");
+    } finally {
+      setIsLocking(false);
+    }
+  }, [onLockAcquired]);
+
+  // Release the current lock
+  const releaseLock = useCallback(async () => {
+    if (!lockedBatchId || !hasLock.current) return;
+
+    try {
+      await releaseBatchLockForRecordsII();
+      setLockedBatchId(null);
+      setLockedBatchCode(null);
+      setLockedPlanCount(0);
+      setLockExpiresAt(null);
+      hasLock.current = false;
+      onLockReleased?.();
+    } catch (error) {
+      console.error("Error releasing batch lock:", error);
+    }
+  }, [lockedBatchId, onLockReleased]);
+
+  // Release all locks (called on page leave)
+  const releaseAllLocks = useCallback(async () => {
+    try {
+      await releaseBatchLockForRecordsII();
+      setLockedBatchId(null);
+      setLockedBatchCode(null);
+      setLockedPlanCount(0);
+      setLockExpiresAt(null);
+      hasLock.current = false;
+    } catch (error) {
+      console.error("Error releasing all batch locks:", error);
+    }
+  }, []);
+
+  // Check if a specific batch is locked by the current user
+  const isBatchLockedByMe = useCallback(
+    (batchId: string) => {
+      return lockedBatchId === batchId;
+    },
+    [lockedBatchId]
+  );
+
+  // Handle confirming navigation
+  const confirmLeave = useCallback(async () => {
+    setShowLeaveWarning(false);
+    await releaseAllLocks();
+
+    if (pendingNavigation) {
+      router.push(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  }, [releaseAllLocks, pendingNavigation, router]);
+
+  // Handle cancelling navigation
+  const cancelLeave = useCallback(() => {
+    setShowLeaveWarning(false);
+    setPendingNavigation(null);
+  }, []);
+
+  // Handle browser beforeunload event
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasLock.current && lockedBatchId) {
+        e.preventDefault();
+        e.returnValue =
+          "You have a locked batch. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [lockedBatchId]);
+
+  // Handle visibility change (tab switching)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden" && isUnmounting.current) {
+        releaseAllLocks();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [releaseAllLocks]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isUnmounting.current = true;
+      if (hasLock.current) {
+        releaseAllLocks();
+      }
+    };
+  }, [releaseAllLocks]);
+
+  // Auto-acquire lock on mount
+  useEffect(() => {
+    acquireLock();
+  }, []);
+
+  return {
+    lockedBatchId,
+    lockedBatchCode,
+    lockExpiresAt,
+    lockedPlanCount,
+    isLocking,
+    lockError,
+    acquireLock,
+    releaseLock,
+    isBatchLockedByMe,
+    showLeaveWarning,
+    setShowLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+    pendingNavigation,
+  };
+}
