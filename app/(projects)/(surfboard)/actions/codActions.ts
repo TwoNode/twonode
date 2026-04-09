@@ -4091,13 +4091,16 @@ export async function getPendingArchivePlans() {
       },
       include: {
         user: {
-          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true },
+          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true, email: true, phoneNumber: true },
         },
         batch: {
           select: { batchCode: true },
         },
+        recordsIIApprovedByUser: {
+          select: { firstName: true, lastName: true },
+        },
       },
-      orderBy: { updatedAt: "asc" },
+      orderBy: { recordsIIApprovedAt: "asc" },
     });
 
     return { success: true, data: { plans } };
@@ -4127,7 +4130,7 @@ export async function getArchiveHistory() {
       },
       include: {
         user: {
-          select: { firstName: true, lastName: true, companyName: true },
+          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true, email: true, phoneNumber: true },
         },
         batch: {
           select: { batchCode: true },
@@ -4153,7 +4156,7 @@ export async function getArchiveHistory() {
 export async function markPlanArchived(planId: string, notes?: string) {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role as string) !== "ARCHIVE") {
+    if (!user || !["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -4167,6 +4170,7 @@ export async function markPlanArchived(planId: string, notes?: string) {
       plan.surconStatus !== "APPROVED" ||
       plan.chartingStatus !== "APPROVED" ||
       plan.recordsIStatus !== "APPROVED" ||
+      plan.intakeStatus !== "APPROVED" ||
       plan.recordsIIStatus !== "APPROVED" ||
       plan.accountsStatus !== "APPROVED"
     ) {
