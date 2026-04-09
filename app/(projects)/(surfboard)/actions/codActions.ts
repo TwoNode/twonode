@@ -4614,8 +4614,6 @@ export async function getRecordsIIHistoryBatches() {
             recordsIIStatus: true,
             recordsIIComment: true,
             recordsIIApprovedAt: true,
-          },
-          include: {
             recordsIIApprovedByUser: {
               select: {
                 firstName: true,
