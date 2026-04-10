@@ -4068,84 +4068,161 @@ async function verifyQueryPaymentLinks(
 }
 
 /**
- * Get plans pending archiving (all approved, not yet archived)
+ * Get batches pending archiving (all plans fully approved, not yet archived).
+ * Grouped by batch, sorted by earliest Records II approval date (FIFO).
  */
-export async function getPendingArchivePlans() {
+export async function getPendingArchiveBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const plans = await prisma.surfboardPlan.findMany({
+    const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
-        redCopyStatus: "APPROVED",
-        surconStatus: "APPROVED",
-        chartingStatus: "APPROVED",
-        recordsIStatus: "APPROVED",
-        intakeStatus: "APPROVED",
-        recordsIIStatus: "APPROVED",
-        accountsStatus: "APPROVED",
-        archiveReceivedAt: null,
-        deleted: false,
+        plans: {
+          some: {
+            redCopyStatus: "APPROVED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "APPROVED",
+            archiveReceivedAt: null,
+          },
+        },
       },
       include: {
-        user: {
-          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true, email: true, phoneNumber: true },
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
         },
-        batch: {
-          select: { batchCode: true },
-        },
-        recordsIIApprovedByUser: {
-          select: { firstName: true, lastName: true },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            redCopyStatus: "APPROVED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "APPROVED",
+            archiveReceivedAt: null,
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            recordsIIApprovedAt: true,
+          },
         },
       },
-      orderBy: { recordsIIApprovedAt: "asc" },
+      orderBy: { createdAt: "asc" },
     });
 
-    return { success: true, data: { plans } };
+    // Sort batches by the earliest recordsIIApprovedAt among their plans
+    const sortedBatches = batches
+      .map((batch) => {
+        const earliestApproval = Math.min(
+          ...batch.plans.map((p) =>
+            p.recordsIIApprovedAt ? new Date(p.recordsIIApprovedAt).getTime() : Infinity
+          )
+        );
+        return { ...batch, _sortKey: earliestApproval };
+      })
+      .sort((a, b) => a._sortKey - b._sortKey)
+      .map(({ _sortKey, ...batch }) => batch);
+
+    return { success: true, data: sortedBatches };
   } catch (error) {
-    console.error("Error fetching pending archive plans:", error);
+    console.error("Error fetching pending archive batches:", error);
     return {
       success: false,
-      error: handlePrismaError(error, "getPendingArchivePlans"),
+      error: handlePrismaError(error, "getPendingArchiveBatches"),
     };
   }
 }
 
 /**
- * Get recently archived plans
+ * Get recently archived batches (history view).
  */
-export async function getArchiveHistory() {
+export async function getArchiveHistoryBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const plans = await prisma.surfboardPlan.findMany({
+    const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
-        archiveReceivedAt: { not: null },
-        deleted: false,
+        plans: {
+          some: {
+            archiveReceivedAt: { not: null },
+            deleted: false,
+          },
+        },
       },
       include: {
-        user: {
-          select: { firstName: true, lastName: true, companyName: true, surconRegNumber: true, email: true, phoneNumber: true },
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
         },
-        batch: {
-          select: { batchCode: true },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            archiveReceivedAt: { not: null },
+            deleted: false,
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            archiveReceivedAt: true,
+            archiveNotes: true,
+          },
         },
       },
-      orderBy: { archiveReceivedAt: "desc" },
-      take: 100,
+      orderBy: { updatedAt: "desc" },
+      take: 50,
     });
 
-    return { success: true, data: { plans } };
+    return { success: true, data: batches };
   } catch (error) {
-    console.error("Error fetching archive history:", error);
+    console.error("Error fetching archive history batches:", error);
     return {
       success: false,
-      error: handlePrismaError(error, "getArchiveHistory"),
+      error: handlePrismaError(error, "getArchiveHistoryBatches"),
     };
   }
 }
