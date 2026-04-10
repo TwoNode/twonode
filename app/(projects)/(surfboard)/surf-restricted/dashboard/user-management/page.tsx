@@ -140,10 +140,12 @@ export default function UserManagementPage() {
   const adminRoles: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
   const mdaRoles: SurfboardRole[] = [
     "RECORDS_I",
+    "INTAKE",
     "RECORDS_II",
     "ACCOUNTS",
     "CHARTING",
     "SURCON",
+    "ARCHIVE",
     "MDA_SUPERADMIN",
   ];
 
@@ -297,6 +299,10 @@ export default function UserManagementPage() {
         return "bg-teal-100 text-teal-800";
       case "SURCON":
         return "bg-cyan-100 text-cyan-800";
+      case "INTAKE":
+        return "bg-amber-100 text-amber-800";
+      case "ARCHIVE":
+        return "bg-stone-100 text-stone-800";
       case "MDA_SUPERADMIN":
         return "bg-red-100 text-red-800";
       default:
@@ -557,10 +563,12 @@ export default function UserManagementPage() {
                   ) : (
                     <>
                       <option value="RECORDS_I">Records I</option>
+                      <option value="INTAKE">Intake</option>
                       <option value="RECORDS_II">Records II</option>
                       <option value="ACCOUNTS">Accounts</option>
                       <option value="CHARTING">Charting</option>
                       <option value="SURCON">SURCON</option>
+                      <option value="ARCHIVE">Archive</option>
                       <option value="MDA_SUPERADMIN">MDA Super Admin</option>
                     </>
                   )}
@@ -660,10 +668,12 @@ export default function UserManagementPage() {
                           ) : (
                             <>
                               <option value="RECORDS_I">RECORDS_I</option>
+                              <option value="INTAKE">INTAKE</option>
                               <option value="RECORDS_II">RECORDS_II</option>
                               <option value="ACCOUNTS">ACCOUNTS</option>
                               <option value="CHARTING">CHARTING</option>
                               <option value="SURCON">SURCON</option>
+                              <option value="ARCHIVE">ARCHIVE</option>
                               <option value="MDA_SUPERADMIN">
                                 MDA_SUPERADMIN
                               </option>
@@ -1180,10 +1190,12 @@ export default function UserManagementPage() {
                         ) : (
                           <>
                             <option value="RECORDS_I">Records I</option>
+                            <option value="INTAKE">Intake</option>
                             <option value="RECORDS_II">Records II</option>
                             <option value="ACCOUNTS">Accounts</option>
                             <option value="CHARTING">Charting</option>
                             <option value="SURCON">SURCON</option>
+                            <option value="ARCHIVE">Archive</option>
                           </>
                         )}
                       </select>
