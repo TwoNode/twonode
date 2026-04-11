@@ -28,6 +28,7 @@ export enum SurfboardRole {
   INTAKE = "INTAKE",
   RECORDS_II = "RECORDS_II",
   MDA_SUPERADMIN = "MDA_SUPERADMIN",
+  ARCHIVE = "ARCHIVE",
 }
 
 export enum GBCRole {

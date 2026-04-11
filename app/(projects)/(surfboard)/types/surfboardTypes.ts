@@ -243,7 +243,18 @@ export interface AnalyticsData {
   totalPlansCount: number;
 }
 
-export type SurfboardRole = "USER" | "ADMIN" | "SUPERADMIN";
+export type SurfboardRole =
+  | "USER"
+  | "ADMIN"
+  | "SUPERADMIN"
+  | "RECORDS_I"
+  | "INTAKE"
+  | "RECORDS_II"
+  | "ACCOUNTS"
+  | "CHARTING"
+  | "SURCON"
+  | "MDA_SUPERADMIN"
+  | "ARCHIVE";
 
 export const PLAN_TYPES = {
   APPROVED_LAYOUT: "APPROVED LAYOUT",
