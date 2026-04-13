@@ -1357,17 +1357,108 @@ export async function verifyBatchPaymentWithLinks(
       };
     }
 
-    // 4. Cross-check PayerID + PayerType against user profile
-    const fullUser = await prisma.surfboardUser.findUnique({
+    // 4. Define Interfaces for Remita Response
+    interface RemitaPaymentDetail {
+      STATUS?: string;
+      PAYMENTSTATUS?: string;
+      RRRNUMBER?: string;
+      RRR?: string;
+      PAYER?: string;
+      EMAIL?: string;
+      TRANSACTIONAMOUNT?: number;
+    }
+
+    interface RemitaCustomField {
+      COLUMNNAME?: string;
+      COLUMNVALUE?: string;
+    }
+
+    interface RemitaApiResponse {
+      paymentDetails?: RemitaPaymentDetail[];
+      customFields?: RemitaCustomField[];
+      status?: string;
+    }
+
+    // 5. Parallelize User lookup, LASG Content Fetch + AI Extraction, and Remita Fetch
+    const lasgPipeline = fetchAndExtractTextFromUrl(lasgReceiptUrl)
+      .then(async (lasgExtracted) => {
+        const text = lasgExtracted.text;
+        console.log(`LASG receipt fetched. Content-Type: ${lasgExtracted.contentType}, Text length: ${text?.length || 0}`);
+        if (!text || text.trim().length < 50) {
+          throw new Error("[Step 4: Fetch LASG Receipt] LASG receipt page returned insufficient content. Please check the URL is correct and accessible.");
+        }
+        
+        console.log("Extracting fields from LASG receipt content...");
+        const aiResult = await extractLASGReceiptFromHtml(text);
+        if (!aiResult.success || !aiResult.data) {
+          throw new Error(`[Step 5: LASG Data Extraction] ${aiResult.error}`);
+        }
+        console.log("LASG extraction result:", aiResult.data);
+        return aiResult.data;
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message.includes("[Step")) throw err;
+        throw new Error(`[Step 4: Fetch LASG Receipt] Failed to access LASG receipt URL: ${err.message}`);
+      });
+
+    const remitaApiUrl = remitaReceiptUrl.replace("/view-rrr/details.json", "/details.json");
+    console.log("Fetching Remita JSON API:", remitaApiUrl);
+
+    const remitaPipeline = fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } })
+      .then(async (remitaRes) => {
+        if (!remitaRes.ok) {
+          throw new Error(`[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt data (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`);
+        }
+        const remitaJson: RemitaApiResponse = await remitaRes.json();
+        
+        if (!remitaJson?.paymentDetails || remitaJson.paymentDetails.length === 0) {
+          throw new Error(`[Step 4: Fetch Remita Receipt] Remita API returned no payment details. The receipt may be invalid or expired.`);
+        }
+        
+        const pd = remitaJson.paymentDetails[0];
+        const customFields = remitaJson.customFields || [];
+        const lasgField = customFields.find((f) => f.COLUMNNAME?.toLowerCase() === "lasg");
+        const remitaTransactionAnchor = lasgField?.COLUMNVALUE || "";
+        
+        const isRemitaPaid = remitaJson.status === "A" || pd.PAYMENTSTATUS === "RTC" || pd.PAYMENTSTATUS === "00" || pd.PAYMENTSTATUS === "01";
+        
+        const data = {
+          rrr: String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, ""),
+          amount: Number(pd.TRANSACTIONAMOUNT) || 0,
+          status: isRemitaPaid ? "PAID" : "UNPAID",
+          transactionAnchor: remitaTransactionAnchor,
+          payerName: String(pd.PAYER || "").trim(),
+          payerEmail: String(pd.EMAIL || "").trim(),
+        };
+        
+        console.log("Remita JSON extraction result:", data);
+        
+        if (!data.rrr || data.rrr.length < 10) {
+          throw new Error(`[Step 5: Remita Data Extraction] Could not extract a valid RRR from the Remita receipt.`);
+        }
+        if (!data.transactionAnchor) {
+          throw new Error(`[Step 5: Remita Data Extraction] Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.`);
+        }
+        return data;
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message.includes("[Step")) throw err;
+        throw new Error(`[Step 4: Fetch Remita Receipt] Failed to access Remita receipt URL: ${err.message}`);
+      });
+
+    const userPromise = prisma.surfboardUser.findUnique({
       where: { id: user.id },
-      select: {
-        payerID: true,
-        payerIDType: true,
-        firstName: true,
-        lastName: true,
-      },
+      select: { payerID: true, payerIDType: true, firstName: true, lastName: true },
     });
 
+    const [lasgResultPromise, remitaResultPromise, userResultPromise] = await Promise.allSettled([
+      lasgPipeline,
+      remitaPipeline,
+      userPromise
+    ]);
+
+    // 6. Cross-check PayerID + PayerType against user profile
+    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
     if (fullUser?.payerID) {
       const urlPayerIdNum = parseInt(payerId, 10);
       if (urlPayerIdNum !== fullUser.payerID) {
@@ -1377,7 +1468,6 @@ export async function verifyBatchPaymentWithLinks(
         };
       }
 
-      // Cross-check payer type
       const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
       if (payerType.toLowerCase() !== expectedType) {
         return {
@@ -1386,216 +1476,19 @@ export async function verifyBatchPaymentWithLinks(
         };
       }
     }
-    // If user has no payerID stored, skip this check (first-time user)
 
-    // 5. Fetch both receipt pages (server-side)
-    // LASG receipt URL returns a PDF, not HTML — use fetchAndExtractTextFromUrl
-    // Remita receipt URL is a JS SPA — fetch JSON API directly
-    let lasgContent: string;
-    let remitaData: {
-      rrr: string;
-      amount: number;
-      status: string;
-      transactionAnchor: string;
-      payerName: string;
-      payerEmail: string;
-    };
-
-    try {
-      const lasgExtracted = await fetchAndExtractTextFromUrl(lasgReceiptUrl);
-      lasgContent = lasgExtracted.text;
-      console.log(
-        `LASG receipt fetched. Content-Type: ${lasgExtracted.contentType}, Text length: ${lasgContent.length}`,
-      );
-      if (!lasgContent || lasgContent.trim().length < 50) {
-        return {
-          success: false,
-          error: `[Step 4: Fetch LASG Receipt] LASG receipt page returned insufficient content. Please check the URL is correct and accessible.`,
-        };
-      }
-    } catch (err: any) {
-      return {
-        success: false,
-        error: `[Step 4: Fetch LASG Receipt] Failed to access LASG receipt URL: ${err.message}`,
-      };
+    // 7. Handle fetching errors
+    if (lasgResultPromise.status === "rejected") {
+      return { success: false, error: lasgResultPromise.reason?.message || "Unknown error parsing LASG receipt" };
     }
+    const lasgData = lasgResultPromise.value;
 
-    try {
-      // The Remita receipt URL (login.remita.net/remita/rrr/view-rrr/details.json?x-id=...)
-      // is a JS-rendered SPA — fetch returns an empty HTML shell.
-      // The actual data is at the JSON API: /remita/rrr/details.json?x-id=...
-      // We derive it by removing "view-rrr/" from the path.
-      const remitaApiUrl = remitaReceiptUrl.replace(
-        "/view-rrr/details.json",
-        "/details.json",
-      );
-      console.log("Fetching Remita JSON API:", remitaApiUrl);
-
-      const remitaRes = await fetch(remitaApiUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      if (!remitaRes.ok) {
-        return {
-          success: false,
-          error: `[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt data (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`,
-        };
-      }
-      interface RemitaPaymentDetail {
-        APPLYVAT: string | null;
-        LOGO1: string | null;
-        STATUS: string;
-        NAME: string;
-        ID: string;
-        QRCODE: string;
-        PAYMENTMODE: string;
-        HE: string;
-        PAYMENTSTATUS: string;
-        DESCRIPTION: string;
-        SHOWBANK: string;
-        BRANCHCODE: string | null;
-        USERNAME: string;
-        TELLERNUMBER: string | null;
-        PAYMENTCHANNELTRUE: string;
-        RRRNUMBER: string;
-        CASHID: number;
-        COLLID: number;
-        RRR: string;
-        PAYER: string;
-        PHONENUMBER: string;
-        EMAIL: string;
-        ADDRESS: string | null;
-        TRANSACTIONDATE: string;
-        SERVICEDESC: string;
-        BILLER: string;
-        TRANSACTIONAMOUNT_NOFEE: number;
-        TRANSACTIONAMOUNT: number;
-        COLLECTOR_ID: number;
-        PAYMENTCHANNEL: string;
-        FIRSPAYMENTREF: string | null;
-        COMPANY_ID: string;
-        AUTHREF: string;
-        VATAMOUNT: number;
-        PROCFEE: number;
-        SERVICEDATA1LABEL: string | null;
-        EXTRADATA1: string | null;
-        PARENTRRR: string;
-        READABLERRR: string;
-        BENACCOUNTNO: string;
-        PAYERACCOUNTNO: string;
-        BENBANK: string;
-        BENEMAIL: string;
-        BENEFICIARYID: number;
-        TRANSACTIONREF: number;
-        CURRENCYCODE: string;
-        SL_CNT: number;
-        SP_CNT: number;
-        FLAT_CNT: number;
-        PART_CNT: number;
-        SCHE_CNT: number;
-        VATONCHARGES: number;
-        PAYLINKCUST_CNT: number;
-        CHARGE: number;
-        QRCODE_URL: string;
-        MASKEDPAN: string | null;
-        CARDSCHEME: string | null;
-        TRANSACTION_ID: string | null;
-        USER_ID: number;
-      }
-
-      interface RemitaCustomField {
-        CUSTOM_ID: number;
-        COLUMNNAME: string;
-        COLUMNVALUE: string;
-        RRRN: string;
-      }
-
-      interface RemitaApiResponse {
-        paymentDetails: RemitaPaymentDetail[];
-        customFields: RemitaCustomField[];
-        customFieldsSL: unknown[];
-        customFieldsSP: unknown[];
-        partPayment: unknown[];
-        rrrInvoice: unknown | null;
-        taxPayment: unknown[];
-        status: string;
-      }
-
-      const remitaJson: RemitaApiResponse = await remitaRes.json();
-
-      // Validate the response structure
-      if (
-        !remitaJson?.paymentDetails ||
-        remitaJson.paymentDetails.length === 0
-      ) {
-        return {
-          success: false,
-          error: `[Step 4: Fetch Remita Receipt] Remita API returned no payment details. The receipt may be invalid or expired.`,
-        };
-      }
-
-      const pd = remitaJson.paymentDetails[0];
-      const customFields = remitaJson.customFields || [];
-
-      // Extract the LASG anchor from custom fields (the "Lasg" column)
-      const lasgField = customFields.find(
-        (f) => f.COLUMNNAME?.toLowerCase() === "lasg",
-      );
-      const remitaTransactionAnchor = lasgField?.COLUMNVALUE || "";
-
-      // Determine payment status from the API response
-      // status "A" = Active/Approved, PAYMENTSTATUS "RTC" = Real-Time Cleared
-      const isRemitaPaid =
-        remitaJson.status === "A" ||
-        pd.PAYMENTSTATUS === "RTC" ||
-        pd.PAYMENTSTATUS === "00" ||
-        pd.PAYMENTSTATUS === "01";
-
-      // Build the remitaData object (same shape as the old AI-extracted one)
-      remitaData = {
-        rrr: String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, ""),
-        amount: Number(pd.TRANSACTIONAMOUNT) || 0,
-        status: isRemitaPaid ? "PAID" : "UNPAID",
-        transactionAnchor: remitaTransactionAnchor,
-        payerName: String(pd.PAYER || "").trim(),
-        payerEmail: String(pd.EMAIL || "").trim(),
-      };
-
-      console.log("Remita JSON extraction result:", remitaData);
-
-      if (!remitaData.rrr || remitaData.rrr.length < 10) {
-        return {
-          success: false,
-          error: `[Step 5: Remita Data Extraction] Could not extract a valid RRR from the Remita receipt.`,
-        };
-      }
-
-      if (!remitaData.transactionAnchor) {
-        return {
-          success: false,
-          error: `[Step 5: Remita Data Extraction] Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.`,
-        };
-      }
-    } catch (err: any) {
-      return {
-        success: false,
-        error: `[Step 4: Fetch Remita Receipt] Failed to access Remita receipt URL: ${err.message}`,
-      };
+    if (remitaResultPromise.status === "rejected") {
+      return { success: false, error: remitaResultPromise.reason?.message || "Unknown error parsing Remita receipt" };
     }
+    const remitaData = remitaResultPromise.value;
 
-    // 6. AI extract from LASG receipt content (PDF text)
-    console.log("Extracting fields from LASG receipt content...");
-    const lasgResult = await extractLASGReceiptFromHtml(lasgContent);
-    if (!lasgResult.success || !lasgResult.data) {
-      return {
-        success: false,
-        error: `[Step 5: LASG Data Extraction] ${lasgResult.error}`,
-      };
-    }
-    console.log("LASG extraction result:", lasgResult.data);
-
-    const lasgData = lasgResult.data;
-
-    // 7. Cross-validation (all deterministic)
+    // 8. Cross-validation (all deterministic)
 
     // 7a. Anchor match — the transaction reference must match between both receipts
     const normalizeAnchor = (anchor: string) =>
@@ -3460,6 +3353,7 @@ export async function resubmitQueriedPlan(
       select: {
         id: true,
         planNumber: true,
+        codFee: true,
         accountsStatus: true,
         chartingStatus: true,
         surconStatus: true,
@@ -3477,15 +3371,11 @@ export async function resubmitQueriedPlan(
 
     // Determine if payment verification is needed
     if (lasgReceiptUrl && remitaReceiptUrl) {
-      // We need expectedAmount. Re-fetch plan with codFee
-      const fullPlan = await prisma.surfboardPlan.findUnique({
-        where: { id: planId },
-        select: { codFee: true },
-      });
+      // We use plan.codFee from the initial fetch
       const { getCodSubmissionSettings } = await import("./settingsActions");
       const settings = await getCodSubmissionSettings();
       const feePercent = settings.queryResponseFeePercent || 0;
-      const expectedAmount = fullPlan?.codFee ? (fullPlan.codFee * feePercent) / 100 : 0;
+      const expectedAmount = plan?.codFee ? (Number(plan.codFee) * feePercent) / 100 : 0;
 
       if (expectedAmount > 0) {
         // Verify the payment links
@@ -3977,7 +3867,22 @@ async function verifyQueryPaymentLinks(
   expectedAmount: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Parse LASG URL parameters
+    // 1. Parallelize external fetches and ID lookup
+    const remitaApiUrl = remitaReceiptUrl.replace(
+      "/view-rrr/details.json",
+      "/details.json"
+    );
+
+    const [lasgResult, remitaResult, fullUserResult] = await Promise.allSettled([
+      fetchAndExtractTextFromUrl(lasgReceiptUrl),
+      fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } }),
+      prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { payerID: true },
+      })
+    ]);
+
+    // 2. Parse LASG URL parameters (locally)
     let transId: string, transCode: string, payerId: string;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
@@ -3986,83 +3891,65 @@ async function verifyQueryPaymentLinks(
       payerId = lasgUrl.searchParams.get("payerid") || "";
 
       if (!transId || !transCode || !payerId) {
-        return {
-          success: false,
-          error: "Invalid LASG receipt URL: missing required parameters.",
-        };
+        return { success: false, error: "Invalid LASG receipt URL parameters." };
       }
     } catch {
+      return { success: false, error: "Invalid LASG receipt URL format." };
+    }
+
+    // 3. Verify PayerID
+    if (fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
+      const dbPayerID = fullUserResult.value.payerID;
+      if (parseInt(payerId, 10) !== dbPayerID) {
+        return {
+          success: false,
+          error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${dbPayerID}.`,
+        };
+      }
+    }
+
+    // 4. Check LASG Fetch Result
+    if (lasgResult.status === "rejected") {
+      return { success: false, error: `Failed to access LASG receipt: ${lasgResult.reason?.message || "Unknown error"}` };
+    }
+    const lasgExtracted = lasgResult.value;
+    if (!lasgExtracted.text || lasgExtracted.text.trim().length < 50) {
+      return { success: false, error: "LASG receipt returned insufficient content." };
+    }
+
+    // 5. Check Remita Fetch Result
+    if (remitaResult.status === "rejected") {
+      return { success: false, error: "Failed to fetch Remita receipt data." };
+    }
+    const remitaRes = remitaResult.value;
+    if (!remitaRes.ok) {
+      return { success: false, error: `Remita receipt API error (Status: ${remitaRes.status}).` };
+    }
+
+    const data = (await remitaRes.json()) as { 
+      amount: number; 
+      status?: string; 
+      PAYMENTSTATUS?: string; 
+      STATUS?: string; 
+    };
+
+    // Verify amount
+    if (Math.abs(data.amount - expectedAmount) > 1) {
       return {
         success: false,
-        error: "Invalid LASG receipt URL format.",
+        error: `Payment mismatch: Expected ₦${expectedAmount.toLocaleString()}, but receipt is ₦${data.amount?.toLocaleString()}.`,
       };
     }
 
-    // 2. Cross-check PayerID
-    const fullUser = await prisma.surfboardUser.findUnique({
-      where: { id: user.id },
-      select: { payerID: true },
-    });
-
-    if (fullUser?.payerID) {
-      if (parseInt(payerId, 10) !== fullUser.payerID) {
-        return {
-          success: false,
-          error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${fullUser.payerID}.`,
-        };
-      }
-    }
-
-    // 3. Fetch LASG receipt content
-    try {
-      const lasgExtracted = await fetchAndExtractTextFromUrl(lasgReceiptUrl);
-      if (!lasgExtracted.text || lasgExtracted.text.trim().length < 50) {
-        return {
-          success: false,
-          error: "LASG receipt returned insufficient content.",
-        };
-      }
-    } catch {
-      return { success: false, error: "Failed to access LASG receipt URL." };
-    }
-
-    // 4. Fetch Remita JSON API
-    try {
-      const remitaApiUrl = remitaReceiptUrl.replace(
-        "/view-rrr/details.json",
-        "/details.json"
-      );
-      const remitaRes = await fetch(remitaApiUrl, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      if (!remitaRes.ok) {
-        const errorText = await remitaRes.text().catch(() => "Could not read error text");
-        console.error(`Remita fetch failed with status ${remitaRes.status}:`, errorText);
-        return { success: false, error: `Failed to fetch Remita receipt data (Status: ${remitaRes.status}).` };
-      }
-      const data = await remitaRes.json();
-
-      // Allow minor rounding differences
-      if (Math.abs(data.amount - expectedAmount) > 1) {
-        return {
-          success: false,
-          error: `Payment amount mismatch: Expected ₦${expectedAmount}, but receipt is for ₦${data.amount}.`,
-        };
-      }
-
-      if (data.status?.toUpperCase() !== "PAID" && data.PAYMENTSTATUS?.toUpperCase() !== "PAID" && data.STATUS?.toUpperCase() !== "PAID" && data.PAYMENTSTATUS?.toUpperCase() !== "SUCCESSFUL") {
-        return {
-          success: false,
-          error: `Payment status is not PAID (${data.status}).`,
-        };
-      }
-    } catch (err: any) {
-      console.error("Error parsing Remita receipt data:", err);
-      return { success: false, error: `Failed to parse Remita receipt data: ${err.message}` };
+    // Verify status
+    const status = (data.status || data.PAYMENTSTATUS || data.STATUS || "").toUpperCase();
+    if (!["PAID", "SUCCESSFUL"].includes(status)) {
+      return { success: false, error: `Payment status is ${status || "PENDING"}.` };
     }
 
     return { success: true };
   } catch (error: any) {
+    console.error("Verification error:", error);
     return { success: false, error: `Verification error: ${error.message}` };
   }
 }
