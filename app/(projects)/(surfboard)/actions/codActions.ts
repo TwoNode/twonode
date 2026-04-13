@@ -2612,8 +2612,21 @@ export async function getAccountsBatches() {
 
     const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
-        paymentStatus: "LASG_PAID",
-        accountsApprovedBy: null,
+        OR: [
+          // Scenario A: Initial submission waiting for verification
+          {
+            paymentStatus: "LASG_PAID",
+            accountsApprovedBy: null,
+          },
+          // Scenario B: Already approved batch, but has one or more plans resubmitted with pending accountsStatus
+          {
+            plans: {
+              some: {
+                accountsStatus: "PENDING",
+              },
+            },
+          },
+        ],
       },
       include: {
         submitter: {
@@ -2692,11 +2705,22 @@ export async function getPendingCountByRole(): Promise<
       archiveCount,
       intakeCount,
     ] = await Promise.all([
-      // Accounts: Count batches with LASG_PAID status and no accounts approval
+      // Accounts: Count batches with LASG_PAID status and no accounts approval, OR batches with at least one pending plan resubmission
       prisma.certificateOfDepositBatch.count({
         where: {
-          paymentStatus: "LASG_PAID",
-          accountsApprovedBy: null,
+          OR: [
+            {
+              paymentStatus: "LASG_PAID",
+              accountsApprovedBy: null,
+            },
+            {
+              plans: {
+                some: {
+                  accountsStatus: "PENDING",
+                },
+              },
+            },
+          ],
         },
       }),
       // Charting: Count plans with PENDING charting status (only from batches with LASG receipt)
@@ -3355,6 +3379,7 @@ export async function resubmitQueriedPlan(
         planNumber: true,
         codFee: true,
         accountsStatus: true,
+        accountsComment: true,
         chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
@@ -3393,6 +3418,12 @@ export async function resubmitQueriedPlan(
 
     // Determine which role queried the plan
     let queriedBy: string | null = null;
+    // Determine if Accounts needs to re-verify (only if they queried it OR a new payment link was provided)
+    const needsAccountReview = 
+      plan.accountsStatus === "QUERIED" || 
+      !!lasgReceiptUrl || 
+      !!remitaReceiptUrl;
+
     const updates: any = {
       // Update fields if provided
       ...(pillars && { pillars }),
@@ -3408,11 +3439,12 @@ export async function resubmitQueriedPlan(
       ...(remitaReceiptUrl && {
         queryRemitaReceiptUrls: { push: remitaReceiptUrl }
       }),
-      // ALWAYS reset ALL MDA statuses to PENDING on resubmission
-      // regardless of which role specifically queried it
+      // Status management
       redCopyStatus: "SUBMITTED",
-      accountsStatus: "PENDING",
-      accountsComment: null,
+      // Only reset accountsStatus to PENDING if review is actually needed
+      accountsStatus: needsAccountReview ? "PENDING" : plan.accountsStatus,
+      accountsComment: needsAccountReview ? null : plan.accountsComment,
+      // Always reset other MDA statuses to PENDING on resubmission
       chartingStatus: "PENDING",
       chartingComment: null,
       surconStatus: "PENDING",
