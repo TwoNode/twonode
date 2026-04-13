@@ -1387,7 +1387,7 @@ export async function verifyBatchPaymentWithLinks(
         if (!text || text.trim().length < 50) {
           throw new Error("[Step 4: Fetch LASG Receipt] LASG receipt page returned insufficient content. Please check the URL is correct and accessible.");
         }
-        
+
         console.log("Extracting fields from LASG receipt content...");
         const aiResult = await extractLASGReceiptFromHtml(text);
         if (!aiResult.success || !aiResult.data) {
@@ -3933,7 +3933,7 @@ async function verifyQueryPaymentLinks(
     }
 
     const pd = remitaJson.paymentDetails[0];
-    const amount = Number(pd.TRANSACTIONAMOUNT) || 0;
+    const amount = Number(pd.TRANSACTIONAMOUNT_NOFEE || pd.TRANSACTIONAMOUNT) || 0;
 
     // Verify amount
     if (Math.abs(amount - expectedAmount) > 1) {
