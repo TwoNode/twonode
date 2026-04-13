@@ -3934,6 +3934,40 @@ async function verifyQueryPaymentLinks(
 
     const pd = remitaJson.paymentDetails[0];
     const amount = Number(pd.TRANSACTIONAMOUNT_NOFEE || pd.TRANSACTIONAMOUNT) || 0;
+    const rrr = String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, "");
+
+    // 6. Check for duplicate receipt usage concurrently
+    const [existingBatch, existingPlanWithReceipt] = await Promise.all([
+      // a. Check if used for any Initial Batch Submission
+      prisma.certificateOfDepositBatch.findFirst({
+        where: { userPaymentRef: rrr },
+        select: { batchCode: true },
+      }),
+      // b. Check if used for any other Query Response
+      prisma.surfboardPlan.findFirst({
+        where: {
+          OR: [
+            { queryLasgReceiptUrls: { has: lasgReceiptUrl } },
+            { queryRemitaReceiptUrls: { has: remitaReceiptUrl } },
+          ],
+        },
+        select: { planNumber: true },
+      }),
+    ]);
+
+    if (existingBatch) {
+      return {
+        success: false,
+        error: `This receipt (RRR: ${rrr}) has already been used for batch submission (${existingBatch.batchCode}).`,
+      };
+    }
+
+    if (existingPlanWithReceipt) {
+      return {
+        success: false,
+        error: `This receipt has already been used for a query response (Plan: ${existingPlanWithReceipt.planNumber}). Each query response requires a new, unique payment.`,
+      };
+    }
 
     // Verify amount
     if (Math.abs(amount - expectedAmount) > 1) {
