@@ -3926,25 +3926,33 @@ async function verifyQueryPaymentLinks(
       return { success: false, error: `Remita receipt API error (Status: ${remitaRes.status}).` };
     }
 
-    const data = (await remitaRes.json()) as { 
-      amount: number; 
-      status?: string; 
-      PAYMENTSTATUS?: string; 
-      STATUS?: string; 
-    };
+    const remitaJson = await remitaRes.json();
+    
+    if (!remitaJson?.paymentDetails || remitaJson.paymentDetails.length === 0) {
+      return { success: false, error: "Remita API returned no payment details." };
+    }
+
+    const pd = remitaJson.paymentDetails[0];
+    const amount = Number(pd.TRANSACTIONAMOUNT) || 0;
 
     // Verify amount
-    if (Math.abs(data.amount - expectedAmount) > 1) {
+    if (Math.abs(amount - expectedAmount) > 1) {
       return {
         success: false,
-        error: `Payment mismatch: Expected ₦${expectedAmount.toLocaleString()}, but receipt is ₦${data.amount?.toLocaleString()}.`,
+        error: `Payment mismatch: Expected ₦${expectedAmount.toLocaleString()}, but receipt is ₦${amount?.toLocaleString()}.`,
       };
     }
 
     // Verify status
-    const status = (data.status || data.PAYMENTSTATUS || data.STATUS || "").toUpperCase();
-    if (!["PAID", "SUCCESSFUL"].includes(status)) {
-      return { success: false, error: `Payment status is ${status || "PENDING"}.` };
+    const isRemitaPaid =
+      remitaJson.status === "A" ||
+      pd.PAYMENTSTATUS === "RTC" ||
+      pd.PAYMENTSTATUS === "00" ||
+      pd.PAYMENTSTATUS === "01";
+
+    if (!isRemitaPaid) {
+      const statusLabel = pd.PAYMENTSTATUS || remitaJson.status || "PENDING";
+      return { success: false, error: `Payment status is ${statusLabel}.` };
     }
 
     return { success: true };
