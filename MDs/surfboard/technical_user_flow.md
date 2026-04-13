@@ -49,8 +49,9 @@ This document outlines the technical architecture, functions, and logic governin
     2.  **Payer Cross-check**: Validates `payerId` and `payerType` against the submitter's profile.
     3.  **HTML Fetch**: Fetches HTML content from both receipt URLs.
     4.  **AI Extraction**: `extractLASGReceiptFromHtml()` and `extractRemitaReceiptFromHtml()` use AI to extract structured fields (amount, anchor/transaction code, RRR, payment status).
-    5.  **Cross-validation**: Anchor code match between receipts, amount match against batch total, Remita payment status is "successful", RRR uniqueness check.
-    6.  **Storage**: Stores both receipt URLs on the batch record (no S3 upload needed).
+    5.  **RRR Uniqueness**: Cross-checks the database to ensure the RRR has not been used in any initial batch submission or any other query response.
+    6.  **Link Reuse Prevention**: Ensures the exact receipt URLs have not been submitted previously.
+    7.  **Storage**: Stores both receipt URLs on the batch record (no S3 upload needed).
 *   **Status Change**: `paymentStatus` → `LASG_PAID` (skips `USER_PAID` since payment goes directly to MDA account).
 *   **Fallback Function**: `verifyBatchPayment(reference)` — verifies payment via Remita Biller API using RRR status check (`checkPaymentStatus()`).
 
@@ -70,6 +71,7 @@ This document outlines the technical architecture, functions, and logic governin
 
 ### Role-Specific Processing
 *   **Accounts**: `updateAccountsApproval(batchId, approved, comment)` — verifies CoD and any subsequent query fee receipts.
+    *   **Workflow Revival**: If a previously approved batch has a plan resubmitted with a query fee, the batch is automatically returned to the Accounts "Pending" view.
 *   **Charting**: `updateChartingStatus(planId, chartingRemarks, mode: "APPROVE" | "QUERY")`
 *   **SURCON**: `updateSurconStatus(planId, approved, comment)`
 *   **Records I**: `updateRecordsIStatus(planId, approved, comment)`
@@ -88,6 +90,9 @@ This document outlines the technical architecture, functions, and logic governin
 
 ### Query Response Fee
 *   **Logic**: `resubmitFee = plan.codFee * (queryResponseFeePercent / 100)`.
+*   **Selective Account Review**: `resubmitQueriedPlan` only sets `accountsStatus` to `PENDING` if:
+    1.  `plan.accountsStatus === 'QUERIED'` (Accounts issued the query).
+    2.  `lasgReceiptUrl` is provided (New payment made).
 *   **Mechanism**: System blocks the "Resubmit" interface until `verifyQueryPayment(planId)` returns success.
 
 ---
