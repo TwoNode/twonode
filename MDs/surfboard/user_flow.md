@@ -39,7 +39,7 @@ This document describes the end-to-end journey of a survey plan, from the survey
         *   URL format validation (LASG vs Remita domains).
         *   Payer ID cross-check against the user's profile.
         *   AI-powered extraction of payment details (amount, RRR, anchor/transaction codes) from both receipt pages.
-        *   Cross-validation: anchor match between receipts, amount match against batch total, and RRR uniqueness.
+        *   **RRR Uniqueness**: The system ensures the RRR has not been used for any previous batch submission or any other query response.
     5.  Upon successful verification, the batch receipt URLs are stored and the status moves to `LASG_PAID`.
 *   **Important**: The user's **Payer ID** and **Payer Type** in their profile must match the LASG receipt for verification to succeed.
 
@@ -88,7 +88,8 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 3 minutes w
 *   **Indicator**: Plan shows a "QUERIED" status and a "Respond to Query" button.
 *   **Action**: The user must pay a **Query Response Fee** (configured percentage of the original fee) for the specific queried record.
 *   **Edit**: After payment, the user can edit coordinates or re-upload the record copy.
-*   **Resubmit**: Plan returns to all the roles for re-review (Account (review the query fee receipt, while also showing the CoD receipt), Charting, SURCON, and Record I re-review).
+*   **Resubmit**: Plan returns for mandatory re-review (Charting, SURCON, and Record I always re-review).
+    *   **Accounts Role**: Specifically notified to re-verify ONLY if a query fee was paid (new payment link provided) or if they were the role that originally queried the plan.
 
 ---
 ## 4. Intake Admin
