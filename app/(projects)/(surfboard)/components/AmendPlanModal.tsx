@@ -840,7 +840,7 @@ export function AmendPlanModal({
           </div>
         )}
 
-        <DialogFooter className="mt-6">
+        <DialogFooter className="my-4 flex justify-center items-center">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
