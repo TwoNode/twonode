@@ -26,7 +26,9 @@ export default async function TicketsPage() {
   const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 250000;
+  const studentPrice = settings?.tickets.studentPrice ?? 20000;
   const maxEarlyBirdCapacity = settings?.tickets.maxEarlyBirdCapacity ?? 500;
+  const maxStudentCapacity = settings?.tickets.maxStudentCapacity ?? 500;
   const earlyBirdDeadline = settings?.tickets.earlyBirdDeadline;
   const pauseTicketReg = settings?.tickets.pauseTicketReg ?? false;
 
@@ -50,6 +52,12 @@ export default async function TicketsPage() {
     "Premium seating",
     "Company mention",
     "Dedicated networking",
+  ];
+  const studentInfoList = settings?.tickets.studentInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Certificate of attendance",
   ];
 
   const eventName =
@@ -158,11 +166,14 @@ export default async function TicketsPage() {
                   earlyBirdPrice={earlyBirdPrice}
                   regularPrice={regularPrice}
                   companyPrice={companyPrice}
+                  studentPrice={studentPrice}
                   maxEarlyBirdCapacity={maxEarlyBirdCapacity}
+                  maxStudentCapacity={maxStudentCapacity}
                   earlyBirdDeadline={earlyBirdDeadline}
                   earlyBirdInfoList={earlyBirdInfoList}
                   regularInfoList={regularInfoList}
                   companyInfoList={companyInfoList}
+                  studentInfoList={studentInfoList}
                   stats={stats}
                 />
               </div>

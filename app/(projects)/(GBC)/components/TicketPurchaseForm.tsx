@@ -122,6 +122,7 @@ export function GBCTicketPurchaseForm({
   const earlyBirdPrice = ticketSettings?.earlyBirdPrice ?? 100000;
   const regularPrice = ticketSettings?.regularPrice ?? 120000;
   const companyPrice = ticketSettings?.companyPrice ?? 250000;
+  const studentPrice = ticketSettings?.studentPrice ?? 20000;
   const maxEarlyBirdCapacity = ticketSettings?.maxEarlyBirdCapacity ?? 500;
   const earlyBirdDeadline = ticketSettings?.earlyBirdDeadline;
   const pauseTicketReg = ticketSettings?.pauseTicketReg ?? false;
@@ -145,6 +146,7 @@ export function GBCTicketPurchaseForm({
     soldEarlyBirdTickets,
     { maxEarlyBirdCapacity, earlyBirdDeadline }
   );
+  const studentAvailability = isTicketTypeAvailable("STUDENT", 0, {});
 
   useEffect(() => {
     const loadPaystack = async () => {
@@ -518,6 +520,27 @@ export function GBCTicketPurchaseForm({
                   }`}
                 >
                   ₦{(companyPrice / 1000).toFixed(0)}K
+                </span>
+              </div>
+            </SelectItem>
+            <SelectItem
+              value="STUDENT"
+              disabled={!studentAvailability.available}
+            >
+              <div className="flex items-center justify-between w-full text-sm sm:text-base">
+                <span
+                  className={
+                    !studentAvailability.available ? "text-gray-400" : ""
+                  }
+                >
+                  Student Ticket (Valid ID required)
+                </span>
+                <span
+                  className={`ml-4 font-bold ${
+                    !studentAvailability.available ? "text-gray-400" : ""
+                  }`}
+                >
+                  ₦{(studentPrice / 1000).toFixed(0)}K
                 </span>
               </div>
             </SelectItem>

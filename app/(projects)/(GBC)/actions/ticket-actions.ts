@@ -71,7 +71,7 @@ export async function createGBCTicket(formData: FormData) {
     // Check if the selected ticket type is available
     const { isTicketTypeAvailable } = await import("../utils");
     const ticketAvailability = isTicketTypeAvailable(
-      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY",
+      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT",
       soldEarlyBirdTickets,
       {
         maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
@@ -667,6 +667,12 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
     if (firstTicketType === "EARLY_BIRD" && tickets.length !== 1) {
       throw new Error(
         `Invalid payment: EARLY_BIRD tickets should have exactly 1 ticket per payment reference, found ${tickets.length}`
+      );
+    }
+
+    if (firstTicketType === "STUDENT" && tickets.length !== 1) {
+      throw new Error(
+        `Invalid payment: STUDENT tickets should have exactly 1 ticket per payment reference, found ${tickets.length}`
       );
     }
 

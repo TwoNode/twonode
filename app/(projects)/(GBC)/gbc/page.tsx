@@ -47,6 +47,7 @@ export default function HomePage() {
   const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 150000;
+  const studentPrice = settings?.tickets.studentPrice ?? 20000;
   const importantNotices = settings?.event.importantNotices ?? [];
 
   const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
@@ -69,6 +70,12 @@ export default function HomePage() {
     "Premium seating",
     "Company mention",
     "Dedicated networking",
+  ];
+  const studentInfoList = settings?.tickets.studentInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Certificate of attendance",
   ];
 
   // Format date for display
@@ -441,8 +448,8 @@ export default function HomePage() {
           </p>
 
           {isLoading ? (
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6"
@@ -461,7 +468,7 @@ export default function HomePage() {
             </div>
           ) : stats && stats.availableTickets > 0 ? (
             <>
-              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
                 <div
                   className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${stats.soldEarlyBirdTickets >=
@@ -577,6 +584,36 @@ export default function HomePage() {
                   <Link href="/gbc/tickets?tier=company" className="w-full">
                     <Button className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold">
                       Select Ticket for 5
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Student Card */}
+                <div className="bg-linear-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative">
+                  <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl text-white">
+                    ALWAYS AVAILABLE
+                  </div>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">Student Ticket</h3>
+                    <div className="text-3xl font-bold text-green-300 mt-2">
+                      ₦{(studentPrice / 1000).toFixed(0)}K
+                    </div>
+                    <p className="text-sm text-gray-300 mt-1">Valid ID required</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 grow">
+                    {studentInfoList.map((item: string, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-200"
+                      >
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/gbc/tickets?tier=student" className="w-full">
+                    <Button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold">
+                      Select Student Ticket
                     </Button>
                   </Link>
                 </div>
