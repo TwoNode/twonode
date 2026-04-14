@@ -71,7 +71,7 @@ export default async function TicketSuccessPage({
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";
   const eventVenue = settings?.event.venue ?? "Eko Hotel & Suites, Lagos";
-  const contactEmail = settings?.contact?.email ?? "info@gbc.ng";
+  const contactEmail = settings?.contact?.email ?? "info@twonodetechnologies.com";
 
   // Format the date
   const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);

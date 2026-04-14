@@ -102,7 +102,7 @@ export const defaultSettings: GBCSettingsData = {
   tickets: {
     earlyBirdPrice: 100000,
     regularPrice: 120000,
-    companyPrice: 150000,
+    companyPrice: 250000,
     vipPrice: 200000,
     studentPrice: 20000,
     earlyBirdDeadline: "2026-02-28",
