@@ -72,7 +72,7 @@ const defaultSettings: NewSettingsData = {
     regularPrice: 120000,
     companyPrice: 150000,
     vipPrice: 200000,
-    studentPrice: 50000,
+    studentPrice: 20000,
     earlyBirdDeadline: "2025-02-28",
     maxCapacity: 150,
   },
