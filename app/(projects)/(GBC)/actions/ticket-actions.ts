@@ -683,6 +683,12 @@ export async function verifyGBCPayment(reference: string, sendEmail?: boolean) {
       );
     }
 
+    if (firstTicketType === "VIP" && tickets.length !== 1) {
+      throw new Error(
+        `Invalid payment: VIP tickets should have exactly 1 ticket per payment reference, found ${tickets.length}`
+      );
+    }
+
     // Validate count for COMPANY tickets (should be exactly 5)
     if (firstTicketType === "COMPANY" && tickets.length !== 5) {
       throw new Error(

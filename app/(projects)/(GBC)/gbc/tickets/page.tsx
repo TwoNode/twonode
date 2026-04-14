@@ -65,7 +65,7 @@ export default async function TicketsPage() {
   const eventTheme =
     settings?.event.theme ??
     "Geospatial Capital: A Catalyst for Inclusive Growth";
-  const eventDate = settings?.event.date ?? "2025-03-15";
+  const eventDate = settings?.event.date ?? "2026-03-15";
   const eventVenue = settings?.event.venue ?? "Eko Hotel & Suites, Lagos";
   const eventTime = settings?.event.time ?? "09:00";
 

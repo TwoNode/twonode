@@ -35,7 +35,7 @@ export const ticketPurchaseSchema = z
       Object.values(GBCProfessions) as [keyof typeof GBCProfessions]
     ),
     otherProfession: z.string().optional(),
-    ticketType: z.enum(["EARLY_BIRD", "REGULAR", "COMPANY"]),
+    ticketType: z.enum(["EARLY_BIRD", "REGULAR", "COMPANY", "VIP", "STUDENT"]),
   })
   .refine(
     (data) => (data.profession === "OTHER" ? !!data.otherProfession : true),

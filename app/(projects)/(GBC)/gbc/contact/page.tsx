@@ -22,8 +22,8 @@ export default async function ContactPage() {
   const eventDate = settings?.event.date || "2026-03-15";
   const eventVenue = settings?.event.venue || "Eko Hotel & Suites, Lagos";
 
-  const contactEmail = settings?.contact.email || "info@gbc.ng";
-  const contactPhone = settings?.contact.phone || "+234 800 GBC 2024";
+  const contactEmail = settings?.contact.email || "info@twonodetechnologies.com";
+  const contactPhone = settings?.contact.phone || "+234-916-0002-740";
   const contactCity = settings?.contact.city || "Lagos, Nigeria";
   const officeHours = settings?.contact.officeHours || "Mon-Fri 9AM-5PM";
   const responseTime = settings?.contact.responseTime || "24hrs";
