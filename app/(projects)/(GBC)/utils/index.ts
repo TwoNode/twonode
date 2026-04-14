@@ -44,12 +44,13 @@ export function generateTicketNumber(): string {
 }
 
 export function calculateTicketPrice(
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT",
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
   ticketSettings?: {
     earlyBirdPrice?: number;
     regularPrice?: number;
     companyPrice?: number;
     studentPrice?: number;
+    vipPrice?: number;
   }
 ): number {
   // Default prices if settings not provided
@@ -58,6 +59,7 @@ export function calculateTicketPrice(
     regularPrice: 120000,
     companyPrice: 250000,
     studentPrice: 20000,
+    vipPrice: 200000,
   };
 
   switch (ticketType) {
@@ -69,6 +71,8 @@ export function calculateTicketPrice(
       return ticketSettings?.companyPrice ?? defaultPrices.companyPrice;
     case "STUDENT":
       return ticketSettings?.studentPrice ?? defaultPrices.studentPrice;
+    case "VIP":
+      return ticketSettings?.vipPrice ?? defaultPrices.vipPrice;
     default:
       throw new Error(`Unknown ticket type: ${ticketType}`);
   }
@@ -82,7 +86,7 @@ export function calculateTicketPrice(
  * @returns Object with availability status and reason
  */
 export function isTicketTypeAvailable(
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT",
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
   soldEarlyBirdTickets: number,
   settings?: {
     maxEarlyBirdCapacity?: number;
@@ -145,6 +149,8 @@ export function isTicketTypeAvailable(
       return { available: true };
 
     case "STUDENT":
+      return { available: true };
+    case "VIP":
       return { available: true };
 
     default:
