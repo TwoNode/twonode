@@ -86,8 +86,8 @@ export const defaultSettings: GBCSettingsData = {
     ],
   },
   contact: {
-    email: "info@gbc.ng",
-    phone: "+234 800 GBC 2024",
+    email: "info@twonodetechnologies.com",
+    phone: "+234-916-0002-740",
     address: "Eko Hotel & Suites",
     city: "Lagos, Nigeria",
     officeHours: "Mon-Fri 9AM-5PM",

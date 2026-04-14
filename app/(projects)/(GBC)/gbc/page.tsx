@@ -685,8 +685,8 @@ export default function HomePage() {
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>+234-916-0002-740</li>
-                <li>info@twonodetechnologies.com</li>
+                <li>{settings?.contact?.phone || "+234-916-0002-740"}</li>
+                <li>{settings?.contact?.email || "info@twonodetechnologies.com"}</li>
                 <li>
                   <Link href="/gbc/contact" className="hover:text-white">
                     Contact Form
