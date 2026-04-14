@@ -149,7 +149,7 @@ export async function verifyWebhookSignature(
  */
 export function generatePaymentReference(
   ticketNumber: string,
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY"
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "VIP" | "STUDENT"
 ): string {
   const timestamp = Date.now();
   const prefix =
@@ -157,6 +157,10 @@ export function generatePaymentReference(
       ? "CMP"
       : ticketType === "EARLY_BIRD"
       ? "EB"
+      : ticketType === "VIP"
+      ? "VIP"
+      : ticketType === "STUDENT"
+      ? "STD"
       : "REG";
   return `${prefix}_${ticketNumber}_${timestamp}_REF`;
 }
@@ -182,7 +186,7 @@ export async function initializeTicketPayment(
   email: string,
   amount: number, // in Naira
   ticketNumber: string,
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "VIP" | "STUDENT",
   metadata?: Record<string, any>
 ) {
   const reference = generatePaymentReference(ticketNumber, ticketType);

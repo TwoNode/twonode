@@ -71,7 +71,7 @@ export async function createGBCTicket(formData: FormData) {
     // Check if the selected ticket type is available
     const { isTicketTypeAvailable } = await import("../utils");
     const ticketAvailability = isTicketTypeAvailable(
-      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT",
+      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
       soldEarlyBirdTickets,
       {
         maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
