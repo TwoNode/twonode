@@ -45,7 +45,7 @@ export default async function AdminTicketsPage({
                 type="search"
                 placeholder="Search by name, email, or ticket number..."
                 className="pl-9 sm:pl-10 text-sm sm:text-base"
-                defaultValue={searchParams.search}
+                defaultValue={search}
               />
             </div>
           </div>
@@ -53,7 +53,7 @@ export default async function AdminTicketsPage({
           <select
             name="status"
             className="px-3 sm:px-4 py-2 border rounded-lg bg-white text-sm sm:text-base"
-            defaultValue={searchParams.status || "all"}
+            defaultValue={status || "all"}
           >
             <option value="all">All Status</option>
             <option value="COMPLETED">Completed</option>
