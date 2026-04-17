@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
   Trash2,
   ChevronDown,
   Copy,
+  Download,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -44,7 +46,18 @@ import {
   deleteAllBatches,
   getUserBatches,
   retryBatchPayment,
+  getBatchPDFData,
 } from "../actions/codActions";
+import {
+  RedCopySubmissionPDF,
+  type RedCopyBatchPDFData,
+} from "./RedCopySubmissionPDF";
+
+// Dynamically import PDFDownloadLink to avoid SSR issues
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => <Loader2 className="w-4 h-4 animate-spin" /> },
+);
 
 interface Batch {
   id: string;
@@ -91,6 +104,10 @@ export function SubmittedBatchesModal({
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // PDF generation state: stores fetched PDF data keyed by batchId
+  const [pdfDataMap, setPdfDataMap] = useState<Record<string, RedCopyBatchPDFData>>({});
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   // No longer using Paystack
   /*
@@ -224,6 +241,38 @@ export function SubmittedBatchesModal({
   const canPayBatch = (status: string) => {
     return status === "PENDING_USER_PAYMENT";
   };
+
+  const canDownloadLetter = (status: string) => {
+    return [
+      "USER_PAID",
+      "LASG_PAID",
+      "ACCOUNTS_APPROVED",
+      "COMPLETED",
+    ].includes(status);
+  };
+
+  const handleFetchPdfData = useCallback(async (batchId: string) => {
+    // If we already have data for this batch, do nothing
+    if (pdfDataMap[batchId]) return;
+
+    setLoadingPdfId(batchId);
+    try {
+      const result = await getBatchPDFData(batchId);
+      if (result.success && result.data) {
+        setPdfDataMap((prev) => ({
+          ...prev,
+          [batchId]: result.data as RedCopyBatchPDFData,
+        }));
+      } else {
+        toast.error(result.error || "Failed to load batch data for PDF");
+      }
+    } catch (error) {
+      console.error("Error fetching PDF data:", error);
+      toast.error("An error occurred while loading PDF data");
+    } finally {
+      setLoadingPdfId(null);
+    }
+  }, [pdfDataMap]);
 
   const handleDeleteAll = async () => {
     if (
@@ -390,7 +439,7 @@ export function SubmittedBatchesModal({
                         </div>
                       </div>
 
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex items-center gap-2">
                         {canPayBatch(batch.paymentStatus) && (
                           <Button
                             size="sm"
@@ -410,6 +459,68 @@ export function SubmittedBatchesModal({
                               </>
                             )}
                           </Button>
+                        )}
+
+                        {/* Download Submission Letter PDF */}
+                        {canDownloadLetter(batch.paymentStatus) && (
+                          <>
+                            {pdfDataMap[batch.id] ? (
+                              <PDFDownloadLink
+                                document={
+                                  <RedCopySubmissionPDF
+                                    data={pdfDataMap[batch.id]}
+                                  />
+                                }
+                                fileName={`RedCopy_Submission_${batch.batchCode}.pdf`}
+                              >
+                                {({ loading, error }: { loading: boolean; error: Error | null }) => (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={loading}
+                                    className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                                  >
+                                    {loading ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Generating...
+                                      </>
+                                    ) : error ? (
+                                      <>
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Error
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Download Letter
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </PDFDownloadLink>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFetchPdfData(batch.id)}
+                                disabled={loadingPdfId === batch.id}
+                                className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                              >
+                                {loadingPdfId === batch.id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Loading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download Letter
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
