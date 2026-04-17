@@ -1817,6 +1817,131 @@ export async function getUserBatches(): Promise<
 }
 
 /**
+ * Get full batch data for PDF generation
+ * Fetches all plan fields needed for the Red Copy Submission PDF letter
+ */
+export async function getBatchPDFData(batchId: string): Promise<
+  ApiResult<{
+    batchCode: string;
+    createdAt: Date;
+    plans: Array<{
+      planNumber: string;
+      pillarType: string;
+      pillarCount: number;
+      surveyTitle: string;
+      locality: string;
+      deededArea: string;
+      zone: string;
+      planType: string;
+    }>;
+    submitter: {
+      firstName: string;
+      lastName: string;
+      prefix?: string | null;
+      suffix?: string | null;
+      surconRegName?: string | null;
+      surconRegNumber?: string | null;
+      signature?: string | null;
+      companyAddress?: string | null;
+    };
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        id: batchId,
+        submittedBy: user.id,
+      },
+      select: {
+        batchCode: true,
+        createdAt: true,
+        paymentStatus: true,
+        plans: {
+          select: {
+            planNumber: true,
+            pillarType: true,
+            pillars: true,
+            surveyTitle: true,
+            locality: true,
+            deededArea: true,
+            zone: true,
+            planType: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            prefix: true,
+            suffix: true,
+            surconRegName: true,
+            surconRegNumber: true,
+            signature: true,
+            companyAddress: true,
+          },
+        },
+      },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    // Map plans to include calculated pillar count
+    const plans = batch.plans.map((plan) => {
+      let pillarCount = 0;
+      if (Array.isArray(plan.pillars)) {
+        pillarCount = plan.pillars.length;
+      } else if (plan.pillars && typeof plan.pillars === "object") {
+        try {
+          const parsed = Array.isArray(plan.pillars)
+            ? plan.pillars
+            : Object.values(plan.pillars as Record<string, unknown>);
+          pillarCount = parsed.length;
+        } catch {
+          pillarCount = 0;
+        }
+      }
+
+      return {
+        planNumber: plan.planNumber,
+        pillarType: plan.pillarType || "Beacons",
+        pillarCount,
+        surveyTitle: plan.surveyTitle,
+        locality: plan.locality || "",
+        deededArea: plan.deededArea || "0",
+        zone: plan.zone || "UTM(ZONE 31)",
+        planType: plan.planType,
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        batchCode: batch.batchCode,
+        createdAt: batch.createdAt,
+        plans,
+        submitter: batch.submitter,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching batch PDF data:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getBatchPDFData"),
+    };
+  }
+}
+
+/**
  * Retry payment for a batch with pending/failed payment
  */
 export async function retryBatchPayment(batchId: string): Promise<
