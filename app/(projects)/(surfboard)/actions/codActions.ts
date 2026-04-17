@@ -1913,20 +1913,27 @@ export async function getBatchPDFData(batchId: string): Promise<
 
     const eligiblePlansCount = eligiblePlans.length;
 
-    // Map plans to include calculated pillar count
+    // Map plans to include calculated pillar count (unique pillar numbers only)
     const plans = eligiblePlans.map((plan) => {
       let pillarCount = 0;
+      let pillarArray: any[] = [];
+
       if (Array.isArray(plan.pillars)) {
-        pillarCount = plan.pillars.length;
-      } else if (plan.pillars && typeof plan.pillars === "object") {
-        try {
-          const parsed = Array.isArray(plan.pillars)
-            ? plan.pillars
-            : Object.values(plan.pillars as Record<string, unknown>);
-          pillarCount = parsed.length;
-        } catch {
-          pillarCount = 0;
-        }
+        pillarArray = plan.pillars;
+      } else if (plan.pillars && typeof plan.pillars === "object" && plan.pillars !== null) {
+        pillarArray = Object.values(plan.pillars as Record<string, unknown>);
+      }
+
+      if (pillarArray.length > 0) {
+        // Count unique pillar numbers string-wise
+        const uniquePillarNumbers = new Set(
+          pillarArray
+            .map((p) => String(p?.pillarNumber || "").trim())
+            .filter((n) => n !== "")
+        );
+        pillarCount = uniquePillarNumbers.size;
+      } else {
+        pillarCount = 0;
       }
 
       return {
