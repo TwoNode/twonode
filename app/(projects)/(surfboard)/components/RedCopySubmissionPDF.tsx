@@ -20,12 +20,14 @@ import { format } from "date-fns";
 
 // Register fonts
 Font.register({
-  family: "Helvetica",
+  family: "Times-Roman",
   fonts: [
-    { src: "/fonts/Helvetica.ttf" },
-    { src: "/fonts/Helvetica-Bold.ttf", fontWeight: "bold" },
+    { src: "/fonts/times.ttf" },
+    { src: "/fonts/times-bold.ttf", fontWeight: "bold" },
   ],
 });
+// react-pdf has built-in support for Times-Roman, Times-Bold, etc. without needing to load .ttf if standard.
+// We'll use the standard built-in "Times-Roman" which doesn't need to be explicitly registered if we just use the name, but setting font-family to "Times-Roman" is required.
 
 // ============================================================================
 // Types
@@ -58,6 +60,8 @@ export interface RedCopyBatchPDFData {
   createdAt: Date | string;
   plans: RedCopyPlanData[];
   submitter: RedCopySubmitterData;
+  totalPlansInBatch: number;
+  eligiblePlansCount: number;
 }
 
 // ============================================================================
@@ -66,11 +70,11 @@ export interface RedCopyBatchPDFData {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 50,
+    paddingTop: 120, // Leave space for letterhead
     paddingBottom: 60,
     paddingHorizontal: 50,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: "Times-Roman",
     lineHeight: 1.5,
   },
 
@@ -300,13 +304,11 @@ function getPillarDescription(pillarCount: number, pillarType: string): string {
 }
 
 /**
- * Format the reference line from batch plan numbers
- * e.g. "DCA/MAA/RC_L-B/005, B006, B007"
+ * Format the reference line from batch code and plan counts
+ * e.g. "Batch No: SurfCoD_ABCD (7/8 ready)"
  */
-function formatReferenceFromPlans(plans: RedCopyPlanData[]): string {
-  if (!plans.length) return "";
-  const planNumbers = plans.map((p) => p.planNumber);
-  return `DCA/MAA/RC_L-${planNumbers.join(", ")}`;
+function formatReferenceFromPlans(batchCode: string, eligible: number, total: number): string {
+  return `Batch No: ${batchCode} (${eligible}/${total} ready)`;
 }
 
 /**
@@ -344,10 +346,10 @@ function getFullName(submitter: RedCopySubmitterData): string {
 // ============================================================================
 
 export function RedCopySubmissionPDF({ data }: { data: RedCopyBatchPDFData }) {
-  const { plans, submitter, createdAt } = data;
+  const { plans, submitter, createdAt, batchCode, eligiblePlansCount, totalPlansInBatch } = data;
 
   const formattedDate = format(new Date(createdAt), "dd-MM-yyyy");
-  const referenceText = formatReferenceFromPlans(plans);
+  const referenceText = formatReferenceFromPlans(batchCode, eligiblePlansCount, totalPlansInBatch);
   const fullName = getFullName(submitter);
 
   return (
@@ -367,7 +369,7 @@ export function RedCopySubmissionPDF({ data }: { data: RedCopyBatchPDFData }) {
         <Text style={styles.dateText}>{formattedDate}</Text>
 
         {/* Greeting */}
-        <Text style={styles.greeting}>Dear Sir,</Text>
+        <Text style={styles.greeting}>Dear Sir/Ma,</Text>
 
         {/* Subject */}
         <Text style={styles.subject}>
@@ -408,7 +410,7 @@ export function RedCopySubmissionPDF({ data }: { data: RedCopyBatchPDFData }) {
               </Text>
               <Text style={styles.tdTitle}>{plan.surveyTitle}</Text>
               <Text style={styles.tdLocality}>{plan.locality || "N/A"}</Text>
-              <Text style={styles.tdSize}>{plan.deededArea} m²</Text>
+              <Text style={styles.tdSize}>{plan.deededArea}</Text>
               <Text style={styles.tdRemarks}>{getRemarks(plan)}</Text>
             </View>
           ))}

@@ -1844,6 +1844,8 @@ export async function getBatchPDFData(batchId: string): Promise<
       signature?: string | null;
       companyAddress?: string | null;
     };
+    totalPlansInBatch: number;
+    eligiblePlansCount: number;
   }>
 > {
   try {
@@ -1871,6 +1873,10 @@ export async function getBatchPDFData(batchId: string): Promise<
             deededArea: true,
             zone: true,
             planType: true,
+            accountsStatus: true,
+            chartingStatus: true,
+            surconStatus: true,
+            recordsIStatus: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -1895,8 +1901,20 @@ export async function getBatchPDFData(batchId: string): Promise<
       return { success: false, error: "Batch not found" };
     }
 
+    const totalPlansInBatch = batch.plans.length;
+
+    // Filter plans that are fully approved
+    const eligiblePlans = batch.plans.filter((plan) => 
+      plan.accountsStatus === "APPROVED" &&
+      plan.chartingStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED"
+    );
+
+    const eligiblePlansCount = eligiblePlans.length;
+
     // Map plans to include calculated pillar count
-    const plans = batch.plans.map((plan) => {
+    const plans = eligiblePlans.map((plan) => {
       let pillarCount = 0;
       if (Array.isArray(plan.pillars)) {
         pillarCount = plan.pillars.length;
@@ -1930,6 +1948,8 @@ export async function getBatchPDFData(batchId: string): Promise<
         createdAt: batch.createdAt,
         plans,
         submitter: batch.submitter,
+        totalPlansInBatch,
+        eligiblePlansCount,
       },
     };
   } catch (error) {
