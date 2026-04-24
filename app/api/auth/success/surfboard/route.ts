@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
             subscription: {
               status: dbUser.subscription[0].status as
                 | "active"
-                | "cancelled"
+                | "canceled"
                 | "expired"
                 | "past_due",
               interval: dbUser.subscription[0].interval as

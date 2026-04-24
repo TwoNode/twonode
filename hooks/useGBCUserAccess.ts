@@ -58,11 +58,15 @@ export function useGBCUserAccess() {
           throw new Error(result.error || "Failed to fetch user data");
         }
 
-        const fetchedUserData: UserData = result.data;
+        const fullUserData = result.data;
         if (!isMounted) return;
-        setUserData(fetchedUserData);
 
-        if (fetchedUserData.platform !== "gbc") {
+        // Multi-platform awareness: Get specifically the GBC portal session
+        const gbcSession = fullUserData.platforms?.[Platform.GBC] || 
+                          (fullUserData.platform === Platform.GBC ? { role: fullUserData.role } : null);
+
+        if (!gbcSession) {
+          console.log("🛡️ GBC Portal access check failed: No active GBC session found");
           if (isMounted) {
             setIsUser(false);
             router.push("/gbc/login");
@@ -70,7 +74,14 @@ export function useGBCUserAccess() {
           return;
         }
 
-        const canAccess = canAccessGBCUserPanel(fetchedUserData.role);
+        // Set the active session role/data for this platform
+        setUserData({
+            ...fullUserData,
+            platform: Platform.GBC,
+            role: gbcSession.role
+        });
+
+        const canAccess = canAccessGBCUserPanel(gbcSession.role);
         if (isMounted) {
           setIsUser(canAccess);
         }
