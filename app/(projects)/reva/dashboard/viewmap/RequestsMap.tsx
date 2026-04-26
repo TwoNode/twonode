@@ -9,6 +9,8 @@ import {
   StandaloneSearchBox,
 } from "@react-google-maps/api";
 
+const libraries: ("places")[] = ["places"];
+
 const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
   const [selectedProperty, setSelectedProperty] = useState<null | {
     lat: number;
@@ -26,8 +28,9 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
 
   // Load Google Maps script
   const { isLoaded, loadError } = useLoadScript({
+    id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ["places"],
+    libraries,
   });
 
   // Filter properties based on search query
