@@ -55,25 +55,28 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
     }
 
     const userData = sessionData.userData;
-    
+
     // Multi-platform awareness: specifically find the Surfboard session
-    const surfboardSession = userData.platforms[Platform.SURFBOARD] || 
-                            (userData.platform === Platform.SURFBOARD ? { role: userData.role, subscription: userData.subscription } : null);
+    const surfboardSession =
+      userData.platforms[Platform.SURFBOARD] ||
+      (userData.platform === Platform.SURFBOARD
+        ? { role: userData.role, subscription: userData.subscription }
+        : null);
 
     if (!surfboardSession) {
       throw new Error("User not found in Surfboard session");
     }
 
-    return { 
-        ...user, 
-        userId: userData.userId, 
-        role: surfboardSession.role,
-        subscription: surfboardSession.subscription
+    return {
+      ...user,
+      userId: userData.userId,
+      role: surfboardSession.role,
+      subscription: surfboardSession.subscription,
     };
   } catch (error) {
     console.error(
       "Error getting authenticated Surfboard user from cookie:",
-      error
+      error,
     );
     throw error;
   }

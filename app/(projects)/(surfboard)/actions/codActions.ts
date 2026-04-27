@@ -20,9 +20,9 @@ import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
 import {
   extractPaymentDetailsFromText,
-  extractEBSReceiptFields,
   extractLASGReceiptFromHtml,
   extractRemitaReceiptFromHtml,
+  extractEBSReceiptFields,
 } from "./aiExtractionActions";
 import { transmitToOSSG } from "./ossgActions";
 
@@ -85,7 +85,7 @@ export async function getBatchesByStatus(status?: string): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2102,7 +2102,7 @@ export async function uploadLASGReceipt(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2843,7 +2843,7 @@ export async function getPendingCountByRole(): Promise<
         "RECORDS_II",
         "ARCHIVE",
         "MDA_SUPERADMIN",
-      ].includes(user.role)
+      ].includes(user.role as string)
     ) {
       return { success: false, error: "Unauthorized" };
     }
@@ -3329,7 +3329,7 @@ export async function deleteAllBatches(): Promise<
     }
 
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["SUPERADMIN"].includes(user.role)) {
+    if (!user || !["SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -4187,7 +4187,7 @@ async function verifyQueryPaymentLinks(
 export async function getPendingArchiveBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string))) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -4280,7 +4280,7 @@ export async function getPendingArchiveBatches() {
 export async function getArchiveHistoryBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string))) {
       return { success: false, error: "Unauthorized" };
     }
 
