@@ -47,6 +47,7 @@ export default function HomePage() {
   const earlyBirdPrice = settings?.tickets.earlyBirdPrice ?? 100000;
   const regularPrice = settings?.tickets.regularPrice ?? 120000;
   const companyPrice = settings?.tickets.companyPrice ?? 150000;
+  const studentPrice = settings?.tickets.studentPrice ?? 20000;
   const importantNotices = settings?.event.importantNotices ?? [];
 
   const earlyBirdInfoList = settings?.tickets.earlyBirdInfoList ?? [
@@ -69,6 +70,12 @@ export default function HomePage() {
     "Premium seating",
     "Company mention",
     "Dedicated networking",
+  ];
+  const studentInfoList = settings?.tickets.studentInfoList ?? [
+    "Full conference access",
+    "All keynote sessions",
+    "Networking opportunities",
+    "Certificate of attendance",
   ];
 
   // Format date for display
@@ -189,7 +196,8 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {!isLoading && stats && stats.availableTickets > 0 && (
+            {/* Hiding tickets remaining for now */}
+            {false && !isLoading && stats && stats.availableTickets > 0 && (
               <p className="mt-8 text-lg text-yellow-300 animate-pulse">
                 ⚡ Only {stats.availableTickets} tickets remaining!
               </p>
@@ -209,7 +217,7 @@ export default function HomePage() {
       <section className="py-12 sm:py-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-            <div className="text-center">
+            <div className="text-center hidden">
               {isLoading ? (
                 <>
                   <TextSkeleton className="h-10 sm:h-12 md:h-14 w-24 mx-auto mb-1 sm:mb-2 bg-purple-200" />
@@ -440,8 +448,8 @@ export default function HomePage() {
           </p>
 
           {isLoading ? (
-            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+              {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6"
@@ -460,24 +468,23 @@ export default function HomePage() {
             </div>
           ) : stats && stats.availableTickets > 0 ? (
             <>
-              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12 text-left">
                 {/* Early Bird Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${
-                    stats.soldEarlyBirdTickets >=
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
+                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative ${stats.soldEarlyBirdTickets >=
+                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
                       ? "opacity-60"
                       : ""
-                  }`}
+                    }`}
                 >
                   {stats.soldEarlyBirdTickets >=
                     (settings?.tickets.maxEarlyBirdCapacity ?? 500) && (
-                    <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      SOLD OUT
-                    </div>
-                  )}
+                      <div className="absolute top-0 right-0 bg-red-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                        SOLD OUT
+                      </div>
+                    )}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Early Bird</h3>
+                    <h3 className="text-xl font-bold text-white">Single Ticket (One Attendee)</h3>
                     <div className="text-3xl font-bold text-yellow-300 mt-2">
                       ₦{(earlyBirdPrice / 1000).toFixed(0)}K
                     </div>
@@ -498,13 +505,13 @@ export default function HomePage() {
                     ))}
                   </ul>
                   {stats.soldEarlyBirdTickets <
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
+                    (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
                     <Link
                       href="/gbc/tickets?tier=early_bird"
                       className="w-full"
                     >
                       <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold">
-                        Select Early Bird
+                        Select Single Ticket
                       </Button>
                     </Link>
                   ) : (
@@ -519,33 +526,18 @@ export default function HomePage() {
 
                 {/* Regular Card */}
                 <div
-                  className={`bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col ${
-                    stats.soldEarlyBirdTickets <
-                    (settings?.tickets.maxEarlyBirdCapacity ?? 500)
-                      ? "opacity-60"
-                      : ""
-                  }`}
+                  className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 relative overflow-hidden flex flex-col"
                 >
-                  {stats.soldEarlyBirdTickets <
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
-                    <div className="absolute top-0 right-0 bg-blue-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      NOT YET AVAILABLE
-                    </div>
-                  ) : (
-                    <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
-                      NOW AVAILABLE
-                    </div>
-                  )}
+                  <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl">
+                    ALWAYS AVAILABLE
+                  </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Regular</h3>
+                    <h3 className="text-xl font-bold text-white">Pair Ticket (Two attendees)</h3>
                     <div className="text-3xl font-bold text-white mt-2">
                       ₦{(regularPrice / 1000).toFixed(0)}K
                     </div>
                     <p className="text-sm text-gray-300 mt-1">
-                      {stats.soldEarlyBirdTickets <
-                      (settings?.tickets.maxEarlyBirdCapacity ?? 500)
-                        ? "Available after early bird sells out"
-                        : "Standard access"}
+                      Standard access for 2
                     </p>
                   </div>
                   <ul className="space-y-2 mb-6 grow">
@@ -559,21 +551,11 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  {stats.soldEarlyBirdTickets >=
-                  (settings?.tickets.maxEarlyBirdCapacity ?? 500) ? (
-                    <Link href="/gbc/tickets?tier=regular" className="w-full">
-                      <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
-                        Select Regular
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      disabled
-                      className="w-full bg-gray-500 text-gray-300 cursor-not-allowed"
-                    >
-                      Not Yet Available
+                  <Link href="/gbc/tickets?tier=regular" className="w-full">
+                    <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
+                      Select Ticket for 2
                     </Button>
-                  )}
+                  </Link>
                 </div>
 
                 {/* Company Card */}
@@ -582,7 +564,7 @@ export default function HomePage() {
                     ALWAYS AVAILABLE
                   </div>
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Company</h3>
+                    <h3 className="text-xl font-bold text-white">Group Ticket (Five Attendees)</h3>
                     <div className="text-3xl font-bold text-amber-300 mt-2">
                       ₦{(companyPrice / 1000).toFixed(0)}K
                     </div>
@@ -601,7 +583,37 @@ export default function HomePage() {
                   </ul>
                   <Link href="/gbc/tickets?tier=company" className="w-full">
                     <Button className="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold">
-                      Select Company
+                      Select Ticket for 5
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Student Card */}
+                <div className="bg-linear-to-br from-green-500/20 to-emerald-600/20 backdrop-blur-sm border border-green-500/30 rounded-2xl p-6 hover:transform hover:scale-105 transition-all duration-300 flex flex-col relative">
+                  <div className="absolute top-0 right-0 bg-green-500 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-2xl text-white">
+                    ALWAYS AVAILABLE
+                  </div>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">Student Ticket</h3>
+                    <div className="text-3xl font-bold text-green-300 mt-2">
+                      ₦{(studentPrice / 1000).toFixed(0)}K
+                    </div>
+                    <p className="text-sm text-gray-300 mt-1">Valid ID required</p>
+                  </div>
+                  <ul className="space-y-2 mb-6 grow">
+                    {studentInfoList.map((item: string, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-200"
+                      >
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/gbc/tickets?tier=student" className="w-full">
+                    <Button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold">
+                      Select Student Ticket
                     </Button>
                   </Link>
                 </div>
@@ -616,7 +628,8 @@ export default function HomePage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              {!isLoading && (
+              {/* Hiding tickets remaining for now */}
+              {false && !isLoading && (
                 <p className="mt-4 text-yellow-300 font-medium animate-pulse">
                   Only {stats.availableTickets} tickets left!
                 </p>
@@ -672,8 +685,8 @@ export default function HomePage() {
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>+234-916-0002-740</li>
-                <li>info@twonodetechnologies.com</li>
+                <li>{settings?.contact?.phone || "+234-916-0002-740"}</li>
+                <li>{settings?.contact?.email || "info@twonodetechnologies.com"}</li>
                 <li>
                   <Link href="/gbc/contact" className="hover:text-white">
                     Contact Form

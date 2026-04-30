@@ -5,7 +5,7 @@
  * Usage: npx tsx scripts/migrate-gbc-settings.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/prisma/generated";
 
 const prisma = new PrismaClient();
 
@@ -58,22 +58,22 @@ type NewSettingsData = {
 const defaultSettings: NewSettingsData = {
   event: {
     name: "Geospatial Builders Conference 2.0",
-    date: "2025-03-15",
+    date: "2026-03-15",
     time: "09:00",
     venue: "Eko Hotel & Suites, Lagos",
     theme: "Geospatial Capital: A Catalyst for Inclusive Growth",
     subTheme: "Driving Transformation in Land Administration and Energy",
     description: "The premier platform for geospatial innovation in Nigeria",
-    registrationOpens: "2025-01-01",
-    registrationCloses: "2025-03-10",
+    registrationOpens: "2026-01-01",
+    registrationCloses: "2026-03-10",
   },
   tickets: {
     earlyBirdPrice: 100000,
     regularPrice: 120000,
-    companyPrice: 150000,
+    companyPrice: 250000,
     vipPrice: 200000,
-    studentPrice: 50000,
-    earlyBirdDeadline: "2025-02-28",
+    studentPrice: 20000,
+    earlyBirdDeadline: "2026-02-28",
     maxCapacity: 150,
   },
   notifications: {

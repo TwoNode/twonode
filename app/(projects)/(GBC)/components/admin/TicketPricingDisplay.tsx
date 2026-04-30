@@ -9,6 +9,8 @@ import {
   Save,
   X,
   AlertCircle,
+  GraduationCap,
+  Star,
 } from "lucide-react";
 import { updateGBCSettingsSection } from "../../actions/settings-actions";
 import { toast } from "sonner";
@@ -93,31 +95,49 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
 
   const ticketTypes = [
     {
-      name: "Early Bird",
+      name: "Single Ticket (One Attendee)",
       key: "earlyBirdPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "earlyBirdInfoList" as keyof GBCSettingsData["tickets"],
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      description: "Available until early bird deadline",
+      description: "Available until single ticket deadline",
     },
     {
-      name: "Regular",
+      name: "Pair Ticket (Two attendees)",
       key: "regularPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "regularInfoList" as keyof GBCSettingsData["tickets"],
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      description: "Standard ticket price",
+      description: "Standard ticket price for 2",
     },
     {
-      name: "Company",
+      name: "Group Ticket (Five Attendees)",
       key: "companyPrice" as keyof GBCSettingsData["tickets"],
       infoKey: "companyInfoList" as keyof GBCSettingsData["tickets"],
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      description: "For corporate attendees",
+      description: "For corporate groups of 5",
+    },
+    {
+      name: "Student Ticket (One Attendee)",
+      key: "studentPrice" as keyof GBCSettingsData["tickets"],
+      infoKey: "studentInfoList" as keyof GBCSettingsData["tickets"],
+      icon: GraduationCap,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      description: "Valid student ID required",
+    },
+    {
+      name: "VIP Ticket (One Attendee)",
+      key: "vipPrice" as keyof GBCSettingsData["tickets"],
+      infoKey: "vipInfoList" as keyof GBCSettingsData["tickets"],
+      icon: Star,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      description: "Premium conference experience",
     },
   ];
 
@@ -327,6 +347,146 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 Max early bird tickets available
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-5 w-5 text-blue-600" />
+            <h3 className="font-medium">Regular Cap</h3>
+          </div>
+          {isEditing ? (
+            <div>
+              <input
+                type="number"
+                value={pricing.maxRegularCapacity}
+                onChange={(e) =>
+                  handlePriceChange(
+                    "maxRegularCapacity",
+                    parseInt(e.target.value)
+                  )
+                }
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Max regular tickets available
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-blue-600">
+                {pricing.maxRegularCapacity} seats
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Max regular tickets available
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-5 w-5 text-purple-600" />
+            <h3 className="font-medium">Group Cap</h3>
+          </div>
+          {isEditing ? (
+            <div>
+              <input
+                type="number"
+                value={pricing.maxCompanyCapacity}
+                onChange={(e) =>
+                  handlePriceChange(
+                    "maxCompanyCapacity",
+                    parseInt(e.target.value)
+                  )
+                }
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Max group tickets available
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-purple-600">
+                {pricing.maxCompanyCapacity} seats
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Max group tickets available
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <GraduationCap className="h-5 w-5 text-indigo-600" />
+            <h3 className="font-medium">Student Cap</h3>
+          </div>
+          {isEditing ? (
+            <div>
+              <input
+                type="number"
+                value={pricing.maxStudentCapacity}
+                onChange={(e) =>
+                  handlePriceChange(
+                    "maxStudentCapacity",
+                    parseInt(e.target.value)
+                  )
+                }
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Max student tickets available
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-indigo-600">
+                {pricing.maxStudentCapacity} seats
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Max student tickets available
+              </p>
+            </>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="h-5 w-5 text-amber-600" />
+            <h3 className="font-medium">VIP Cap</h3>
+          </div>
+          {isEditing ? (
+            <div>
+              <input
+                type="number"
+                value={pricing.maxVipCapacity}
+                onChange={(e) =>
+                  handlePriceChange(
+                    "maxVipCapacity",
+                    parseInt(e.target.value)
+                  )
+                }
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Max VIP tickets available
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-amber-600">
+                {pricing.maxVipCapacity} seats
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Max VIP tickets available
               </p>
             </>
           )}

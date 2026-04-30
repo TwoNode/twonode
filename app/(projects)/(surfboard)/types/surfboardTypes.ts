@@ -1,5 +1,5 @@
 // app/(projects)/(surfboard)/types/surfboardTypes.ts
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/prisma/generated";
 
 /**
  * A single survey pillar with its coordinates.
@@ -40,12 +40,12 @@ export interface CreatePlanData {
   lcda?: string;
   lga?: string;
   geometry:
-    | GeoJSONPolygon
-    | {
-        type: "Polygon";
-        coordinates: [[number, number][]];
-      }
-    | any;
+  | GeoJSONPolygon
+  | {
+    type: "Polygon";
+    coordinates: [[number, number][]];
+  }
+  | any;
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
@@ -74,10 +74,10 @@ export interface Plan {
   facilitator: string;
   pillarType: string;
   geometry:
-    | Prisma.JsonValue
-    | GeoJSONPolygon
-    | { type: "Polygon"; coordinates: [[number, number][]] }
-    | null; // Using Prisma's JsonValue type
+  | Prisma.JsonValue
+  | GeoJSONPolygon
+  | { type: "Polygon"; coordinates: [[number, number][]] }
+  | null; // Using Prisma's JsonValue type
   pdfFilePaths: string[];
   cadFilePaths: string[];
   certificateFilePaths: string[];
@@ -145,12 +145,12 @@ export interface CreatePlanData {
   lcda?: string;
   lga?: string;
   geometry:
-    | GeoJSONPolygon
-    | {
-        type: "Polygon";
-        coordinates: [[number, number][]];
-      }
-    | any;
+  | GeoJSONPolygon
+  | {
+    type: "Polygon";
+    coordinates: [[number, number][]];
+  }
+  | any;
   /** Array of simple pillar objects */
   pillars: PillarData[] | any;
   certificateReady?: boolean;
@@ -243,7 +243,18 @@ export interface AnalyticsData {
   totalPlansCount: number;
 }
 
-export type SurfboardRole = "USER" | "ADMIN" | "SUPERADMIN";
+export type SurfboardRole =
+  | "USER"
+  | "ADMIN"
+  | "SUPERADMIN"
+  | "RECORDS_I"
+  | "INTAKE"
+  | "RECORDS_II"
+  | "ACCOUNTS"
+  | "CHARTING"
+  | "SURCON"
+  | "MDA_SUPERADMIN"
+  | "ARCHIVE";
 
 export const PLAN_TYPES = {
   APPROVED_LAYOUT: "APPROVED LAYOUT",
@@ -391,12 +402,12 @@ export interface UserFilters {
 
 export interface UserSort {
   field:
-    | "firstName"
-    | "lastName"
-    | "email"
-    | "role"
-    | "createdAt"
-    | "lastLogin";
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "role"
+  | "createdAt"
+  | "lastLogin";
   order: "asc" | "desc";
 }
 

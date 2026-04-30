@@ -262,7 +262,7 @@ function parseAIResponse(text: string): AIExtractedData {
         return null;
       })
       .filter(
-        (c: any): c is { northing: string; easting: string } => c !== null
+        (c: any): c is { northing: string; easting: string } => c !== null,
       );
   }
 
@@ -322,7 +322,7 @@ function normalizeLocality(locality: string): string {
 
   // Ensure it doesn't end with LOCAL GOVT info (should stop before that)
   const lgaIndex = cleaned.search(
-    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i
+    /,?\s*(LOCAL GOVT|LOCAL GOVERNMENT|L\.G\.A)/i,
   );
   if (lgaIndex > 0) {
     cleaned = cleaned.substring(0, lgaIndex).trim();
@@ -344,7 +344,7 @@ function normalizeArea(area: string): string {
 
   // Extract just the numeric value and unit
   const match = area.match(
-    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i
+    /(\d[\d,\s]*\.?\d*)\s*(SQ\.?\s*M(?:TS?|ETRES?)?\.?|HA\.?)/i,
   );
   if (match) {
     // Clean up the number (remove commas and internal spaces)
@@ -380,7 +380,7 @@ function normalizeDate(dateStr: string): string {
 
   // DD-MM-YYYY or DD/MM/YYYY or DD - MM - YYYY
   const dmyMatch = dateStr.match(
-    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/
+    /^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/,
   );
   if (dmyMatch) {
     let [, day, month, year] = dmyMatch;
@@ -393,7 +393,7 @@ function normalizeDate(dateStr: string): string {
 
   // Written formats: "21ST AUGUST, 2025" or "22ND SEPTEMBER, 2025"
   const writtenMatch = dateStr.match(
-    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i
+    /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i,
   );
   if (writtenMatch) {
     const [, day, monthName, year] = writtenMatch;
@@ -401,14 +401,14 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0"
+        "0",
       )}`;
     }
   }
 
   // Reversed: "AUGUST 21, 2025"
   const reversedMatch = dateStr.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i
+    /([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i,
   );
   if (reversedMatch) {
     const [, monthName, day, year] = reversedMatch;
@@ -416,7 +416,7 @@ function normalizeDate(dateStr: string): string {
     if (month) {
       return `${year}-${String(month).padStart(2, "0")}-${day.padStart(
         2,
-        "0"
+        "0",
       )}`;
     }
   }
@@ -496,7 +496,7 @@ function preprocessExtractedText(text: string): string {
  * @returns Promise<ApiResult<AIExtractedData>>
  */
 export async function extractSurveyPlanDataFromText(
-  extractedText: string
+  extractedText: string,
 ): Promise<ApiResult<AIExtractedData>> {
   try {
     // Validate API key
@@ -657,7 +657,7 @@ Return ONLY valid JSON with these exact keys: planNumber, surveyTitle, personCou
  * @deprecated Use extractSurveyPlanDataFromText instead
  */
 export async function extractSurveyPlanDataFromPdf(
-  formData: FormData
+  formData: FormData,
 ): Promise<ApiResult<AIExtractedData>> {
   return {
     success: false,
@@ -671,7 +671,7 @@ export async function extractSurveyPlanDataFromPdf(
  * Used for confirming user edits or verifying AI extraction
  */
 export async function recognizePersonCount(
-  surveyTitle: string
+  surveyTitle: string,
 ): Promise<ApiResult<{ count: number; names: string[] }>> {
   try {
     if (!OPENAI_API_KEY) {
@@ -729,6 +729,671 @@ export async function recognizePersonCount(
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to recognize persons",
+    };
+  }
+}
+
+export interface AIPaymentDetails {
+  rrr: string;
+  amount: number;
+  paymentDate?: string;
+  payerName?: string;
+  status: "PAID" | "PENDING" | "FAILED" | "UNKNOWN";
+}
+
+/**
+ * Extract payment details from receipt text using AI
+ */
+export async function extractPaymentDetailsFromText(
+  text: string,
+): Promise<ApiResult<AIPaymentDetails>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (!text || text.trim().length < 20) {
+      return { success: false, error: "Insufficient text for extraction" };
+    }
+
+    // Truncate text to avoid token limits (receipts are usually short, but PDF parse might be messy)
+    const truncatedText = text.slice(0, 10000);
+
+    const prompt = `Analyze this Remita/Payment Receipt text and extract the payment details.
+
+=== RECEIPT TEXT ===
+${truncatedText}
+=== END TEXT ===
+
+Extract the following:
+1. RRR (Remita Retrieval Reference) - 12 digits usually
+2. Amount (Numeric value)
+3. Payment Date (YYYY-MM-DD format if possible)
+4. Payer Name
+5. Payment Status (Look for "Approved", "Successful", "Paid", "Pending", "Failed")
+
+Return JSON: 
+{
+  "rrr": "123456789012",
+  "amount": 10000.00,
+  "paymentDate": "2024-01-01",
+  "payerName": "John Doe",
+  "status": "PAID" | "PENDING" | "FAILED" | "UNKNOWN"
+}
+
+If status is ambiguous but receipt looks like a confirmation of payment, assume PAID.
+If status specifically says Pending/Incomplete, use PENDING.
+`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) throw new Error("AI Request failed");
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    const jsonStr = extractJsonFromResponse(content);
+
+    if (!jsonStr) throw new Error("Invalid AI response");
+
+    const result = JSON.parse(jsonStr);
+
+    return {
+      success: true,
+      data: {
+        rrr: result.rrr ? String(result.rrr).replace(/\D/g, "") : "",
+        amount: Number(result.amount) || 0,
+        paymentDate: result.paymentDate,
+        payerName: result.payerName,
+        status: (result.status?.toUpperCase() as any) || "UNKNOWN",
+      },
+    };
+  } catch (error) {
+    console.error("Error extracting payment details:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to extract payment details",
+    };
+  }
+}
+
+// ============================================================
+// EBS Receipt Field Extraction (for Remita→LASG payment flow)
+// ============================================================
+
+export interface AIEBSFields {
+  transId: string;
+  transCode: string;
+  payerId: string;
+  payerType: "n" | "c"; // n = individual, c = corporate
+}
+
+/**
+ * Extract EBS receipt fields from Remita/LASG payment receipt text using AI.
+ *
+ * The receipt PDF contains two sections:
+ *  1. EBS Revenue Receipt (top) — has transId, transCode, payerId, payerType
+ *  2. Remita Payment Receipt (bottom) — has RRR, amount, payer info
+ *
+ * We need the EBS fields to construct the LASG printable receipt URL:
+ *   https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG
+ *     &payertype={payerType}&payerid={payerId}&transid={transId}&transcode={transCode}
+ */
+export async function extractEBSReceiptFields(
+  text: string,
+): Promise<ApiResult<AIEBSFields>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (!text || text.trim().length < 30) {
+      return { success: false, error: "Insufficient text for extraction" };
+    }
+
+    const truncatedText = text.slice(0, 8000);
+
+    const systemPrompt = `You are an expert at extracting structured data from Lagos State Government (LASG) EBS Revenue Receipts generated via Remita.
+
+=== DOCUMENT STRUCTURE ===
+
+These receipts have TWO distinct sections concatenated together:
+
+**SECTION 1 — EBS REVENUE RECEIPT (top half)**
+Format (line by line, top to bottom):
+1. Phone numbers: "SMS: 0809-113-3778; ..."
+2. "REVENUE RECEIPT"
+3. "Lagos State Government"
+4. URL: "https://lagos.ebs-rcm.com/"
+5. Date: "Sunday Dec 14, 2025"
+6. **Transaction ID / Transaction Code** on ONE line, slash-separated:
+     "60050629/ZCYYDEIA"
+   - The FIRST part (digits) is the Transaction ID (transId)
+   - The SECOND part (letters/digits) is the Transaction Code (transCode)
+7. Agency name: "Office of Surveyor General"
+8. Dotted separator lines
+9. Payer name line containing **PayerID** embedded in angle brackets:
+     "Mr Rafiu Olamide Abowaba / <N-16976764/c-15399>"
+   - "N" prefix = individual (payerType "n")
+   - "C" prefix = corporate (payerType "c")
+   - The NUMBER after the prefix letter and dash is the Payer ID
+   - There may be TWO IDs: "N-{id}" (individual) and "c-{id}" (corporate account)
+   - **Use the N- prefixed ID for the payerId** (the individual payer)
+   - PayerType is determined by the FIRST letter: N→"n", C→"c"
+10. "Payer" label
+11. Address line
+12. Amount line: "Amount NGN 2,000.00 (Two thousand naira only)"
+13. Agency/Revenue code details
+14. Payment details line referencing the same transId/transCode again:
+      "...>60050629/ZCYYDEIA //191392819355 //"
+15. "Your Payer ID is<N-16976764>" — ANOTHER occurrence of the payer ID
+
+**SECTION 2 — REMITA PAYMENT RECEIPT (bottom half)**
+Contains: RRR, payer name, email, phone, payment table with amounts.
+This section is NOT needed for this extraction.
+
+=== WHAT TO EXTRACT ===
+
+1. **transId**: The numeric Transaction ID (e.g. "60050629")
+   - Found in the "transId/transCode" line (e.g. "60050629/ZCYYDEIA")
+   - Also repeated in payment details lines
+   - Always 7-10 digits
+
+2. **transCode**: The alphanumeric Transaction Code (e.g. "ZCYYDEIA")
+   - Found right after transId, separated by "/"
+   - Usually 6-10 uppercase alphanumeric characters
+
+3. **payerId**: The numeric Payer ID (e.g. "16976764")
+   - Found in "<N-16976764>" or similar patterns
+   - Also appears after "Your Payer ID is"
+   - Always digits only, strip any prefix letter
+
+4. **payerType**: "n" for individual, "c" for corporate
+   - Determined by the prefix letter before the payerId
+   - "N" or "n" → "n" (individual)
+   - "C" or "c" → "c" (corporate)
+   - Default to "n" if unclear
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "transId": "60050629",
+  "transCode": "ZCYYDEIA",
+  "payerId": "16976764",
+  "payerType": "n"
+}
+
+All values must be strings. transId and payerId must be digits only.
+transCode must be uppercase alphanumeric.
+payerType must be lowercase "n" or "c".
+
+If you cannot find a field, return empty string "".
+DO NOT guess or hallucinate. Only extract what is clearly present.`;
+
+    const userPrompt = `Extract the EBS receipt fields from this LASG/Remita payment receipt text:
+
+=== RECEIPT TEXT ===
+${truncatedText}
+=== END TEXT ===
+
+Return the JSON with transId, transCode, payerId, payerType.`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 200,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "OpenAI API error for EBS extraction:",
+        response.status,
+        errorText,
+      );
+      return {
+        success: false,
+        error: `AI service error (${response.status})`,
+      };
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return { success: false, error: "AI did not return a valid response" };
+    }
+
+    const jsonStr = extractJsonFromResponse(content);
+    if (!jsonStr) {
+      return { success: false, error: "Could not parse AI response as JSON" };
+    }
+
+    const result = JSON.parse(jsonStr);
+
+    // Validate and normalize
+    const transId = String(result.transId || "").replace(/\D/g, "");
+    const transCode = String(result.transCode || "")
+      .replace(/[^A-Z0-9]/gi, "")
+      .toUpperCase();
+    const payerId = String(result.payerId || "").replace(/\D/g, "");
+    const payerType =
+      String(result.payerType || "n").toLowerCase() === "c" ? "c" : "n";
+
+    if (!transId || !transCode || !payerId) {
+      return {
+        success: false,
+        error: "AI extraction returned incomplete fields",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        transId,
+        transCode,
+        payerId,
+        payerType: payerType as "n" | "c",
+      },
+    };
+  } catch (error) {
+    console.error("Error in AI EBS extraction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "AI EBS extraction failed",
+    };
+  }
+}
+
+// ============================================================
+// Two-Link Receipt Verification — HTML Extraction Functions
+// ============================================================
+
+export interface LASGReceiptFields {
+  transactionAnchor: string; // e.g., "169767640-8154445-175"
+  amountPaid: number;
+  payerName: string;
+  transactionDate: string; // YYYY-MM-DD if possible
+}
+
+/**
+ * Extract fields from LASG EBS receipt content.
+ * The LASG receipt URL (printreceipt.ebs-rcm.com) actually returns a PDF.
+ * This function accepts either extracted PDF text or HTML content.
+ * We need the cross-validation anchor (AssessRef/Teller reference) and amount.
+ */
+export async function extractLASGReceiptFromHtml(
+  receiptContent: string,
+): Promise<ApiResult<LASGReceiptFields>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (!receiptContent || receiptContent.trim().length < 50) {
+      return { success: false, error: "Insufficient content for extraction" };
+    }
+
+    // Strip script/style tags if HTML, and limit size for AI processing
+    const cleanedContent = receiptContent
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .slice(0, 15000);
+
+    const systemPrompt = `You are an expert at extracting structured data from Lagos State Government (LASG) EBS Revenue Receipts.
+
+=== DOCUMENT TYPE ===
+This is an LASG EBS Revenue Receipt. The content may be:
+- Extracted text from a PDF receipt (from printreceipt.ebs-rcm.com)
+- HTML content from a receipt page
+Either way, it should contain LASG EBS Revenue Receipt information.
+
+If the content does not look like an LASG EBS Revenue Receipt at all (e.g., it contains no recognizable receipt fields like transaction IDs, amounts, payer info, "Revenue Receipt", "Lagos State", agency names, etc.), return:
+{"error": "NOT_LASG_RECEIPT"}
+
+=== RECEIPT STRUCTURE ===
+
+LASG EBS Revenue Receipts typically contain:
+- Header: "REVENUE RECEIPT", "Lagos State Government"
+- Transaction ID and Transaction Code (e.g., "60050629/ZCYYDEIA")
+- Agency name (e.g., "Office of Surveyor General")
+- Payer name and Payer ID (e.g., "<N-16976764>")
+- Amount paid in Naira
+- AssessRef or Teller reference: a dash-separated numeric anchor (e.g., "169767640-8154445-175")
+- Date of transaction
+
+=== WHAT TO EXTRACT ===
+
+1. **transactionAnchor**: A dash-separated numeric reference that links this LASG receipt to a Remita payment.
+   - LOOK FOR: "AssessRef" label, "Teller" label, or a value matching the pattern: digits-digits-digits (e.g., "169767640-8154445-175")
+   - This is typically found in a details section of the receipt
+   - Extract ONLY the dash-separated numeric value, not any label text
+
+2. **amountPaid**: The total amount paid in Naira
+   - LOOK FOR: "Amount", "Total", "Amount Paid", "NGN" labels
+   - Return as a plain number (e.g., 2000.00), no currency symbol
+
+3. **payerName**: The name of the payer
+   - Usually found near payer details section
+
+4. **transactionDate**: The date of the transaction
+   - Return in YYYY-MM-DD format if possible
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "transactionAnchor": "169767640-8154445-175",
+  "amountPaid": 2000.00,
+  "payerName": "Mr Rafiu Olamide Abowaba",
+  "transactionDate": "2025-12-14"
+}
+
+If a field cannot be found, use empty string "" for strings or 0 for numbers.
+DO NOT guess or hallucinate values.`;
+
+    const userPrompt = `Extract the LASG receipt fields from this receipt content:
+
+=== RECEIPT CONTENT ===
+${cleanedContent}
+=== END CONTENT ===
+
+Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 300,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "OpenAI API error for LASG extraction:",
+        response.status,
+        errorText,
+      );
+      return { success: false, error: `AI service error (${response.status})` };
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return { success: false, error: "AI did not return a valid response" };
+    }
+
+    const jsonStr = extractJsonFromResponse(content);
+    if (!jsonStr) {
+      return { success: false, error: "Could not parse AI response as JSON" };
+    }
+
+    const result = JSON.parse(jsonStr);
+
+    // Check for wrong document type
+    if (result.error === "NOT_LASG_RECEIPT") {
+      return {
+        success: false,
+        error:
+          "The provided URL does not appear to be an LASG EBS receipt. Please check that you've pasted the correct link.",
+      };
+    }
+
+    const transactionAnchor = String(result.transactionAnchor || "").trim();
+    const amountPaid = Number(result.amountPaid) || 0;
+
+    if (!transactionAnchor) {
+      return {
+        success: false,
+        error:
+          "Could not extract the transaction reference (anchor) from the LASG receipt.",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        transactionAnchor,
+        amountPaid,
+        payerName: String(result.payerName || "").trim(),
+        transactionDate: String(result.transactionDate || "").trim(),
+      },
+    };
+  } catch (error) {
+    console.error("Error in LASG receipt extraction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "LASG receipt extraction failed",
+    };
+  }
+}
+
+// ============================================================
+
+export interface RemitaReceiptFields {
+  rrr: string; // 12 digits, no dashes
+  amount: number;
+  status: string; // "PAID" expected
+  transactionAnchor: string; // from BILLER REQUIRED INFO "Lasg" field
+  payerName: string;
+  payerEmail: string;
+}
+
+/**
+ * Extract fields from Remita receipt HTML content.
+ * The Remita receipt is an HTML page at login.remita.net.
+ * We need RRR, amount, payment status, and the LASG anchor for cross-validation.
+ */
+export async function extractRemitaReceiptFromHtml(
+  html: string,
+): Promise<ApiResult<RemitaReceiptFields>> {
+  try {
+    if (!OPENAI_API_KEY) {
+      return { success: false, error: "API Key missing" };
+    }
+
+    if (!html || html.trim().length < 50) {
+      return {
+        success: false,
+        error: "Insufficient HTML content for extraction",
+      };
+    }
+
+    // Strip script/style tags and QR code divs (massive pixel data), limit size
+    const cleanedHtml = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<div[^>]*class="[^"]*qr[^"]*"[\s\S]*?<\/div>\s*<\/div>/gi, "")
+      .slice(0, 15000);
+
+    const systemPrompt = `You are an expert at extracting structured data from Remita payment receipt HTML pages.
+
+=== DOCUMENT TYPE ===
+This is a Remita payment receipt from login.remita.net. It is NOT an LASG EBS receipt.
+If the content does not look like a Remita receipt, return:
+{"error": "NOT_REMITA_RECEIPT"}
+
+=== STRUCTURE OF A REMITA RECEIPT ===
+
+The receipt has these key sections:
+1. **RRR Details**: Contains "Remita Retrieval Reference (RRR)" with a formatted number like "2114-3151-5010"
+2. **Receipt Type**: "Payment Receipt" means PAID. If it says something else, the status is not PAID.
+3. **Payer Information**: Name, Email, Phone Number
+4. **Payment Details Table**: Columns for Payment Date, Payment REF, Service Description, Amount, Charges, VAT, Total
+5. **BILLER REQUIRED INFORMATION**: Contains an "ITEM" and "DESCRIPTION" table. Look for a row with item "Lasg" — its description value is the cross-validation anchor (e.g., "169767640-1247538-259")
+
+=== WHAT TO EXTRACT ===
+
+1. **rrr**: The RRR number — strip all dashes/spaces to get 12 continuous digits
+   - "2114-3151-5010" → "211431515010"
+
+2. **amount**: The TOTAL AMOUNT from the payment details (the final total, not individual line items)
+   - Look for the "TOTAL AMOUNT" row or the Amount column value
+   - Return as plain number
+
+3. **status**: "PAID" if the receipt type label says "Payment Receipt", otherwise "UNPAID" or "PENDING"
+
+4. **transactionAnchor**: From BILLER REQUIRED INFORMATION section, the value next to "Lasg" item
+   - e.g., "169767640-1247538-259"
+   - This must be a dash-separated numeric pattern
+
+5. **payerName**: From Payer Information section
+
+6. **payerEmail**: From Payer Information section
+
+=== OUTPUT FORMAT ===
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "rrr": "211431515010",
+  "amount": 207.50,
+  "status": "PAID",
+  "transactionAnchor": "169767640-1247538-259",
+  "payerName": "Rafiu Olamide Abowaba",
+  "payerEmail": "abowabaolamide@gmail.com"
+}
+
+If a field cannot be found, use empty string "" for strings or 0 for numbers.
+DO NOT guess or hallucinate values.`;
+
+    const userPrompt = `Extract the Remita receipt fields from this HTML content:
+
+=== HTML CONTENT ===
+${cleanedHtml}
+=== END HTML ===
+
+Return the JSON with rrr, amount, status, transactionAnchor, payerName, payerEmail.`;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 300,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "OpenAI API error for Remita extraction:",
+        response.status,
+        errorText,
+      );
+      return { success: false, error: `AI service error (${response.status})` };
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return { success: false, error: "AI did not return a valid response" };
+    }
+
+    const jsonStr = extractJsonFromResponse(content);
+    if (!jsonStr) {
+      return { success: false, error: "Could not parse AI response as JSON" };
+    }
+
+    const result = JSON.parse(jsonStr);
+
+    // Check for wrong document type
+    if (result.error === "NOT_REMITA_RECEIPT") {
+      return {
+        success: false,
+        error:
+          "The provided URL does not appear to be a Remita receipt. Please check that you've pasted the correct link.",
+      };
+    }
+
+    // Normalize RRR — strip all non-digits
+    const rrr = String(result.rrr || "").replace(/\D/g, "");
+    const amount = Number(result.amount) || 0;
+    const status = String(result.status || "UNKNOWN").toUpperCase();
+    const transactionAnchor = String(result.transactionAnchor || "").trim();
+
+    if (!rrr || rrr.length < 10) {
+      return {
+        success: false,
+        error: "Could not extract a valid RRR from the Remita receipt.",
+      };
+    }
+
+    if (!transactionAnchor) {
+      return {
+        success: false,
+        error:
+          "Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        rrr,
+        amount,
+        status,
+        transactionAnchor,
+        payerName: String(result.payerName || "").trim(),
+        payerEmail: String(result.payerEmail || "").trim(),
+      },
+    };
+  } catch (error) {
+    console.error("Error in Remita receipt extraction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Remita receipt extraction failed",
     };
   }
 }

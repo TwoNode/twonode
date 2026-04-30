@@ -586,6 +586,8 @@ export default function AllPlans() {
   // Helper to check if a plan has been queried by any MDA role
   const isQueried = (plan: any) => {
     return (
+      plan.accountsStatus === "QUERIED" ||
+      plan.chartingStatus === "QUERIED" ||
       plan.surconStatus === "QUERIED" ||
       plan.recordsIStatus === "QUERIED" ||
       plan.recordsIIStatus === "QUERIED"
@@ -595,14 +597,23 @@ export default function AllPlans() {
   // Get query info for a plan
   const getQueryInfo = (plan: any) => {
     const queriers: string[] = [];
+    if (plan.accountsStatus === "QUERIED") queriers.push("Accounts");
+    if (plan.chartingStatus === "QUERIED") queriers.push("Charting");
     if (plan.surconStatus === "QUERIED") queriers.push("SURCON");
     if (plan.recordsIStatus === "QUERIED") queriers.push("Records I");
     if (plan.recordsIIStatus === "QUERIED") queriers.push("Records II");
+
+    const comments = [];
+    if (plan.accountsComment) comments.push(`Accounts: ${plan.accountsComment}`);
+    if (plan.chartingComment) comments.push(`Charting: ${plan.chartingComment}`);
+    if (plan.surconComment) comments.push(`SURCON: ${plan.surconComment}`);
+    if (plan.recordsIComment) comments.push(`Records I: ${plan.recordsIComment}`);
+    if (plan.recordsIIComment) comments.push(`Records II: ${plan.recordsIIComment}`);
+
     return {
       isQueried: queriers.length > 0,
       queriedBy: queriers.join(", "),
-      comment:
-        plan.surconComment || plan.recordsIComment || plan.recordsIIComment,
+      comment: comments.length > 0 ? comments.join("\n") : undefined,
     };
   };
 
@@ -1111,8 +1122,8 @@ export default function AllPlans() {
                           "border-2 border-gray-200 hover:border-blue-300",
                           "shadow-sm hover:shadow-md",
                           !filters.dateFrom &&
-                            !filters.dateTo &&
-                            "text-muted-foreground"
+                          !filters.dateTo &&
+                          "text-muted-foreground"
                         )}
                       >
                         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -1127,12 +1138,12 @@ export default function AllPlans() {
                                   <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
                                     {filters.dateFrom
                                       ? new Date(
-                                          filters.dateFrom
-                                        ).toLocaleDateString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
+                                        filters.dateFrom
+                                      ).toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
                                       : "Start"}
                                   </span>
                                 </div>
@@ -1154,12 +1165,12 @@ export default function AllPlans() {
                                   <span className="text-[0.65rem] sm:text-xs font-semibold text-white whitespace-nowrap">
                                     {filters.dateTo
                                       ? new Date(
-                                          filters.dateTo
-                                        ).toLocaleDateString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
+                                        filters.dateTo
+                                      ).toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
                                       : "End"}
                                   </span>
                                 </div>
@@ -1604,13 +1615,11 @@ export default function AllPlans() {
                           <div className="mt-1">
                             <span
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
-                              title={`Queried by ${
-                                getQueryInfo(plan).queriedBy
-                              }${
-                                getQueryInfo(plan).comment
+                              title={`Queried by ${getQueryInfo(plan).queriedBy
+                                }${getQueryInfo(plan).comment
                                   ? `: ${getQueryInfo(plan).comment}`
                                   : ""
-                              }`}
+                                }`}
                             >
                               <AlertTriangle className="w-3 h-3" />
                               Queried
@@ -1624,8 +1633,8 @@ export default function AllPlans() {
                           <div className="text-sm text-gray-900">
                             {plan.dateOnSurveyPlan
                               ? new Date(
-                                  plan.dateOnSurveyPlan
-                                ).toLocaleDateString()
+                                plan.dateOnSurveyPlan
+                              ).toLocaleDateString()
                               : "N/A"}
                           </div>
                         </div>
@@ -1718,11 +1727,10 @@ export default function AllPlans() {
                                   (isDeleting && planToDelete === plan.id) ||
                                   isPlanLocked(plan)
                                 }
-                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
-                                  isPlanLocked(plan)
+                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
                                     ? "opacity-50 cursor-not-allowed"
                                     : ""
-                                }`}
+                                  }`}
                               >
                                 {isDeleting && planToDelete === plan.id ? (
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1732,8 +1740,8 @@ export default function AllPlans() {
                                 {isDeleting && planToDelete === plan.id
                                   ? "Deleting..."
                                   : isPlanLocked(plan)
-                                  ? "Delete (Locked)"
-                                  : "Delete Plan"}
+                                    ? "Delete (Locked)"
+                                    : "Delete Plan"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1883,11 +1891,10 @@ export default function AllPlans() {
                         {isQueried(plan) && (
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
-                            title={`Queried by ${getQueryInfo(plan).queriedBy}${
-                              getQueryInfo(plan).comment
+                            title={`Queried by ${getQueryInfo(plan).queriedBy}${getQueryInfo(plan).comment
                                 ? `: ${getQueryInfo(plan).comment}`
                                 : ""
-                            }`}
+                              }`}
                           >
                             <AlertTriangle className="w-3 h-3" />
                             Queried
@@ -2030,7 +2037,7 @@ export default function AllPlans() {
                               if (eligibilityMessage) {
                                 toast.error(
                                   eligibilityMessage?.message ||
-                                    "Something went wrong"
+                                  "Something went wrong"
                                 );
                                 return;
                               }
@@ -2061,11 +2068,10 @@ export default function AllPlans() {
                               (isDeleting && planToDelete === plan.id) ||
                               isPlanLocked(plan)
                             }
-                            className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${
-                              isPlanLocked(plan)
+                            className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
                                 ? "opacity-50 cursor-not-allowed"
                                 : ""
-                            }`}
+                              }`}
                           >
                             {isDeleting && planToDelete === plan.id ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2075,8 +2081,8 @@ export default function AllPlans() {
                             {isDeleting && planToDelete === plan.id
                               ? "Deleting..."
                               : isPlanLocked(plan)
-                              ? "Delete (Locked)"
-                              : "Delete Plan"}
+                                ? "Delete (Locked)"
+                                : "Delete Plan"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

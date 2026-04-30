@@ -3,7 +3,7 @@
  * Types for the Certificate of Deposit batch submission and approval workflow
  */
 
-import { ApprovalStatus, BatchPaymentStatus } from "@prisma/client";
+import { ApprovalStatus, BatchPaymentStatus } from "@/prisma/generated";
 
 // ============================================================================
 // Batch Submission Types

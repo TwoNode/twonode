@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { GBCRole } from "@prisma/client";
+import { GBCRole } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
 
 export async function getAllAdmins() {

@@ -71,6 +71,7 @@ export default async function TicketSuccessPage({
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";
   const eventVenue = settings?.event.venue ?? "Eko Hotel & Suites, Lagos";
+  const contactEmail = settings?.contact?.email ?? "info@twonodetechnologies.com";
 
   // Format the date
   const eventDateTime = new Date(`${eventDate}T${eventTime}:00`);
@@ -261,10 +262,10 @@ export default async function TicketSuccessPage({
           <p className="text-sm text-gray-500">
             Didn't receive your ticket? Check your spam folder or contact us at{" "}
             <a
-              href="mailto:support@gbc2.com"
+              href={`mailto:${contactEmail}`}
               className="text-purple-600 hover:underline"
             >
-              support@gbc2.com
+              {contactEmail}
             </a>
           </p>
         </div>

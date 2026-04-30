@@ -7,6 +7,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
+  output          = "./generated"
 }
 
 datasource db {
@@ -186,11 +187,13 @@ enum SurfboardRole {
   ADMIN
   SUPERADMIN
   RECORDS_I // MDA Role: Verifies record copies
-  RECORDS_II // MDA Role: Verifies physical copies and submits to OSSG
+  INTAKE // MDA Role: Verifies physical copies (grouped by batch)
+  RECORDS_II // MDA Role: Final verification of physical copies and submits to OSSG
   ACCOUNTS // MDA Role: Approves LASG payment receipts
   CHARTING // MDA Role: Edits/confirms charting remarks
   SURCON // MDA Role: Confirms pillar numbers
   MDA_SUPERADMIN // MDA Role: Can view all activities of all MDA users
+  ARCHIVE // MDA Role: Manages arched/received plans
 }
 
 enum PayerIDType {
@@ -239,6 +242,7 @@ model SurfboardUser {
   plansApprovedAsCharting   SurfboardPlan[]             @relation("ChartingApprover")
   plansApprovedAsSurcon     SurfboardPlan[]             @relation("SurconApprover")
   plansApprovedAsRecordsI   SurfboardPlan[]             @relation("RecordsIApprover")
+  plansApprovedAsIntake     SurfboardPlan[]             @relation("IntakeApprover")
   plansApprovedAsRecordsII  SurfboardPlan[]             @relation("RecordsIIApprover")
   batchesApprovedAsAccounts CertificateOfDepositBatch[] @relation("BatchAccountsApprover")
 
@@ -412,6 +416,13 @@ model SurfboardPlan {
   recordsILockedAt       DateTime? // When the lock was acquired
   recordsILockExpiresAt  DateTime? // When the lock expires
 
+  // Approval tracking - Intake
+  intakeApprovedBy     String?
+  intakeApprovedByUser SurfboardUser?  @relation("IntakeApprover", fields: [intakeApprovedBy], references: [id])
+  intakeApprovedAt     DateTime?
+  intakeStatus         ApprovalStatus? @default(PENDING)
+  intakeComment        String?
+
   // Approval tracking - Records II
   recordsIIApprovedBy     String?
   recordsIIApprovedByUser SurfboardUser?  @relation("RecordsIIApprover", fields: [recordsIIApprovedBy], references: [id])
@@ -421,6 +432,11 @@ model SurfboardPlan {
   recordsIILockedBy       String? // User ID who locked this plan for Records II review
   recordsIILockedAt       DateTime? // When the lock was acquired
   recordsIILockExpiresAt  DateTime? // When the lock expires
+
+  // Archive Tracking
+  archiveReceivedBy String?
+  archiveReceivedAt DateTime?
+  archiveNotes      String?
 
   // Location fields
   ward  String?
@@ -463,6 +479,10 @@ model SurfboardPlan {
   deleted   Boolean   @default(false)
   deletedAt DateTime?
   deletedBy String? // User ID who deleted the plan
+
+  // Query Fee Receipts
+  queryLasgReceiptUrls   String[] @default([])
+  queryRemitaReceiptUrls String[] @default([])
 
   /// Creation & update timestamps
   createdAt DateTime @default(now())
@@ -570,6 +590,8 @@ model CertificateOfDepositBatch {
   // LASG Payment (Fold 2)
   lasgReceiptUrl        String? // Uploaded receipt
   lasgReceiptS3Key      String?
+  remitaReceiptUrl      String? // Remita receipt URL (from two-link flow)
+  paymentAnchor         String? // Cross-validation anchor linking LASG and Remita receipts (e.g., "169767640-8154445-175")
   lasgPaymentDate       DateTime?
   lasgReceiptUploadedBy String?
   lasgReceiptUploadedAt DateTime?

@@ -86,8 +86,8 @@ export const defaultSettings: GBCSettingsData = {
     ],
   },
   contact: {
-    email: "info@gbc.ng",
-    phone: "+234 800 GBC 2024",
+    email: "info@twonodetechnologies.com",
+    phone: "+234-916-0002-740",
     address: "Eko Hotel & Suites",
     city: "Lagos, Nigeria",
     officeHours: "Mon-Fri 9AM-5PM",
@@ -102,9 +102,9 @@ export const defaultSettings: GBCSettingsData = {
   tickets: {
     earlyBirdPrice: 100000,
     regularPrice: 120000,
-    companyPrice: 150000,
+    companyPrice: 250000,
     vipPrice: 200000,
-    studentPrice: 50000,
+    studentPrice: 20000,
     earlyBirdDeadline: "2026-02-28",
     maxCapacity: 800,
     maxEarlyBirdCapacity: 500,
@@ -113,6 +113,7 @@ export const defaultSettings: GBCSettingsData = {
     maxVipCapacity: 500,
     maxRegularCapacity: 500,
     earlyBirdInfoList: [
+      "One Attendee",
       "Full conference access",
       "All keynote sessions",
       "Networking opportunities",
@@ -122,6 +123,7 @@ export const defaultSettings: GBCSettingsData = {
       "Access to exhibition area",
     ],
     companyInfoList: [
+      "Group Ticket (Five Attendees)",
       "Tickets for 5 attendees",
       "Full conference access",
       "All keynote sessions",
@@ -143,12 +145,11 @@ export const defaultSettings: GBCSettingsData = {
       "Full conference access",
       "All keynote sessions",
       "Networking opportunities",
-      "Lunch & refreshments",
-      "Conference materials",
       "Certificate of attendance",
-      "Access to exhibition area",
     ],
     regularInfoList: [
+      "Pair Ticket (Two attendees)",
+      "Tickets for 2 attendees",
       "Full conference access",
       "All keynote sessions",
       "Networking opportunities",

@@ -4,7 +4,7 @@
  * Uses Remita RRR for payment
  */
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,19 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  X,
-  Copy,
-  ExternalLink,
-  RefreshCcw,
-  CreditCard,
-} from "lucide-react";
-import { submitRedCopyBatch, verifyBatchPayment, payWithRemitaRRR } from "../actions/codActions";
+import { FileText, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
+import { RemitaPaymentModal } from "./RemitaPaymentModal";
+import { submitRedCopyBatch } from "../actions/codActions";
+import { getCodSubmissionSettings } from "../actions/settingsActions";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Plan {
   id: string;
@@ -58,18 +51,41 @@ export function BatchSubmissionModal({
 }: BatchSubmissionModalProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
 
   // State for the new flow
   const [batchData, setBatchData] = useState<{
     id: string;
     batchCode: string;
     totalAmount: number;
+    planCount: number;
+    submitter: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber?: string | null;
+      payerID?: number | null;
+      payerIDType?: string | null;
+    } | null;
   } | null>(null);
 
-  const [manualRRR, setManualRRR] = useState("");
-  const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
+
+  // New states for CoD policy
+  const [acceptanceText, setAcceptanceText] = useState("Loading policy...");
+  const [policyContent, setPolicyContent] = useState("");
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      getCodSubmissionSettings().then((settings) => {
+        setAcceptanceText(settings.codAcceptanceText);
+        setPolicyContent(settings.codPolicyContent);
+      });
+      setIsAccepted(false);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     try {
@@ -79,23 +95,34 @@ export function BatchSubmissionModal({
         return;
       }
 
+      if (!isAccepted) {
+        toast.error("You must accept the submission policy before proceeding.");
+        return;
+      }
+
       setIsSubmitting(true);
 
-      const result = await submitRedCopyBatch(selectedPlans.map((p) => p.id));
+      const result = await submitRedCopyBatch(
+        selectedPlans.map((p) => p.id),
+        isAccepted
+      );
 
       if (result.success && result.data) {
-        const { batchId, batchCode, totalAmount } = result.data;
+        const { batchId, batchCode, totalAmount, planCount, submitter } =
+          result.data;
 
         setBatchData({
           id: batchId,
           batchCode,
           totalAmount,
+          planCount,
+          submitter,
         });
 
         setShowPaymentView(true);
 
         toast.success(
-          `Batch ${batchCode} created! Please make payment via the Remita portal below.`
+          `Batch ${batchCode} created! Please make payment via the Remita portal.`,
         );
       } else {
         toast.error(result.error || "Failed to submit batch");
@@ -108,132 +135,23 @@ export function BatchSubmissionModal({
     }
   };
 
-  const handleVerifyRRR = async () => {
-    if (!manualRRR || manualRRR.length < 5) {
-      toast.error("Please enter a valid Remita RRR");
-      return;
-    }
-
-    if (!batchData) return;
-
-    try {
-      setIsVerifyingRRR(true);
-      const result = await payWithRemitaRRR(batchData.id, manualRRR);
-
-      if (result.success && result.data) {
-        if (result.data.status === "LASG_PAID") {
-          toast.success("Payment verified! Your plans are now with MDA for review.");
-          setShowPaymentView(false);
-          setBatchData(null);
-          onClose();
-          if (onSuccess) onSuccess();
-          router.refresh();
-        } else if (result.data.status === "PENDING") {
-          toast.info(
-            "Payment is still pending on Remita. Please ensure you have completed the payment."
-          );
-        }
-      } else {
-        toast.error(result.error || "Failed to verify RRR");
-      }
-    } catch (error) {
-      console.error("RRR Verification error:", error);
-      toast.error("Failed to verify RRR");
-    } finally {
-      setIsVerifyingRRR(false);
-    }
-  };
-
   const handleClose = () => {
-    if (showPaymentView && !confirm("You have an active batch submission. Are you sure you want to close? You will need to provide the RRR later to verify payment.")) {
-      return;
-    }
     setShowPaymentView(false);
     setBatchData(null);
-    setManualRRR("");
     onClose();
   };
 
   // Payment & Verification View
   if (showPaymentView && batchData) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 border-b">
-            <div className="flex justify-between items-start">
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-xl">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
-                  Complete Payment for Batch {batchData.batchCode}
-                </DialogTitle>
-                <DialogDescription>
-                  Generate your RRR in the window below, pay, then paste the RRR to verify.
-                </DialogDescription>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
-                <p className="text-2xl font-bold text-green-700">₦{batchData.totalAmount.toLocaleString()}</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Verification Bar - "On top of iframe" */}
-          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
-            <div className="flex-1 w-full">
-              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
-                Enter your generated RRR here to verify payment
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="manual-rrr"
-                  type="text"
-                  placeholder="e.g. 1234-5678-9012"
-                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
-                  value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
-                />
-                <Button
-                  onClick={handleVerifyRRR}
-                  disabled={isVerifyingRRR || !manualRRR}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                >
-                  {isVerifyingRRR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify & Submit
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Remita Iframe Area */}
-          <div className="flex-1 bg-gray-100 relative p-4">
-            <iframe
-              src="https://login.remita.net/remita/lirs/internal/pay.reg"
-              className="w-full h-full border-none"
-              title="Remita Payment Portal"
-            />
-            <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
-              <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
-                <strong>Tip:</strong> Search for "Lagos State Surveyor General" or use the relevant service type to generate your RRR.
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="p-4 border-t bg-gray-50">
-            <Button variant="ghost" onClick={handleClose} className="text-gray-500">
-              Close & Pay Later
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RemitaPaymentModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        batchData={batchData}
+        onSuccess={() => {
+          if (onSuccess) onSuccess();
+        }}
+      />
     );
   }
 
@@ -326,13 +244,39 @@ export function BatchSubmissionModal({
               </div>
             </div>
           </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="policy-acceptance"
+                checked={isAccepted}
+                onCheckedChange={(checked) => setIsAccepted(!!checked)}
+                className="mt-1"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="policy-acceptance"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {acceptanceText}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPolicyModal(true)}
+                  className="text-xs text-blue-600 hover:underline text-left mt-1"
+                >
+                  View full policy
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !isAccepted}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -347,6 +291,20 @@ export function BatchSubmissionModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showPolicyModal} onOpenChange={setShowPolicyModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Submission Policy</DialogTitle>
+          </DialogHeader>
+          <div className="prose max-w-none text-sm text-gray-700 whitespace-pre-wrap">
+            {policyContent}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowPolicyModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -17,7 +17,7 @@ import {
   ChartingIntersectionResult,
   OSSGCertificateData,
 } from "../types/certificateOfDepositTypes";
-import { SurfboardPlanStatus, SurfboardRedCopyStatus } from "@prisma/client";
+import { SurfboardPlanStatus, SurfboardRedCopyStatus } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
 import * as turf from "@turf/turf";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";

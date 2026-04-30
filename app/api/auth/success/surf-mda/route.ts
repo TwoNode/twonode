@@ -29,10 +29,12 @@ export async function GET(request: NextRequest) {
         role: {
           in: [
             "RECORDS_I",
+            "INTAKE",
             "RECORDS_II",
             "ACCOUNTS",
             "CHARTING",
             "SURCON",
+            "ARCHIVE",
             "SUPERADMIN",
             "MDA_SUPERADMIN",
           ],

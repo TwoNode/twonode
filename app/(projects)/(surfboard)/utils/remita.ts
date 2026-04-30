@@ -265,3 +265,44 @@ export function getRemitaPaymentUrl(rrr: string): string {
   }
   return `https://login.remita.net/remita/onepage/biller/${rrr}`;
 }
+
+/**
+ * Fetch the official Remita Receipt PDF
+ * Endpoint: https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/{rrr}/printrecieptRequest.pdf
+ */
+export async function fetchRemitaReceiptPdf(rrr: string): Promise<Buffer> {
+  // const env = getRemitaEnv();
+  // Construct the URL. Note: The user provided URL structure seems to confirm it's under the base URL.
+  // We'll use the environment's base URL to support demo/live, assuming the path is consistent.
+  // If the user's provided link is constant regardless of env, we might need to stick to the specific one, 
+  // but usually it depends on the environment. 
+  // User provided: "https://login.remita.net/remita/exapp/api/v1/send/api/print/billsvc/biller/191392819355/printrecieptRequest.pdf"
+
+  // Clean RRR just in case
+  const cleanRRR = rrr.replace(/-/g, "").trim();
+  const baseUrl = "https://login.remita.net";
+
+  const url = `${baseUrl}/remita/exapp/api/v1/send/api/print/billsvc/biller/${cleanRRR}/printrecieptRequest.pdf`;
+
+  console.log("Fetching Remita PDF from:", url);
+
+  try {
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+      timeout: 30000,
+      headers: {
+        // Some endpoints require headers, adding basic ones just in case
+        Accept: "application/pdf",
+      },
+      validateStatus: (status) => status === 200,
+    });
+
+    return Buffer.from(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Error fetching Remita PDF:", error.message, error.response?.status);
+      throw new Error(`Failed to download Remita Receipt: ${error.message}`);
+    }
+    throw error;
+  }
+}

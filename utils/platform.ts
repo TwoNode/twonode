@@ -20,13 +20,15 @@ export enum SurfboardRole {
   USER = "USER",
   ADMIN = "ADMIN",
   SUPERADMIN = "SUPERADMIN",
-
+  
   CHARTING = "CHARTING",
   ACCOUNTS = "ACCOUNTS",
   SURCON = "SURCON",
   RECORDS_I = "RECORDS_I",
+  INTAKE = "INTAKE",
   RECORDS_II = "RECORDS_II",
   MDA_SUPERADMIN = "MDA_SUPERADMIN",
+  ARCHIVE = "ARCHIVE",
 }
 
 export enum GBCRole {

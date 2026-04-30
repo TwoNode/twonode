@@ -147,7 +147,7 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
   <div class="container">
     <div class="header">
       <h1>🎉 Ticket Confirmed!</h1>
-      <p style="margin: 10px 0 0 0; font-size: 16px;">Geospatial Builders Conference 2025</p>
+      <p style="margin: 10px 0 0 0; font-size: 16px;">Geospatial Builders Conference 2026</p>
     </div>
 
     <div class="content">
@@ -204,9 +204,8 @@ function generateGBCTicketEmailHTML(data: GBCTicketEmailData): string {
       </ul>
 
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${
-          process.env.NEXT_PUBLIC_APP_URL
-        }" class="button">Visit Conference Website</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL
+    }" class="button">Visit Conference Website</a>
       </div>
 
       <p>Looking forward to seeing you at GBC 2.0!</p>
@@ -260,11 +259,27 @@ export async function sendGBCTicketConfirmation(
     });
 
     console.log("📧 Sending email via transporter...");
+
+    // Convert base64 data URI to CID attachment for better email client compatibility
+    const base64Data = data.qrCodeBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    const htmlContent = generateGBCTicketEmailHTML({
+      ...data,
+      qrCodeBase64: "cid:qrcode@twonodetechnologies.com"
+    });
+
     const info = await transporter.sendMail({
       from: `"GBC 2.0" <${FROM_EMAIL}>`,
       to: data.email,
       subject: `GBC 2.0 Ticket Confirmation - ${data.ticketNumber}`,
-      html: generateGBCTicketEmailHTML(data),
+      html: htmlContent,
+      attachments: [
+        {
+          filename: 'qrcode.png',
+          content: base64Data,
+          encoding: 'base64',
+          cid: 'qrcode@twonodetechnologies.com'
+        }
+      ]
     });
 
     console.log("✅ Email sent successfully! MessageID: %s", info.messageId);

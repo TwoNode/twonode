@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/generated";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { revalidatePath } from "next/cache";
 import { GBCSettingsData, defaultSettings } from "../utils/settings";
@@ -165,7 +165,7 @@ export async function updateAllGBCSettings(
       updatedSettings = await prisma.gBCSettings.create({
         data: {
           settings: settings as Prisma.InputJsonValue,
-          previousSettings: Prisma.JsonNull,
+          previousSettings: Prisma.JsonNull as any,
         },
       });
     }
@@ -411,7 +411,7 @@ export async function initializeDefaultSettings(): Promise<{
     const newSettings = await prisma.gBCSettings.create({
       data: {
         settings: defaultSettings as Prisma.InputJsonValue,
-        previousSettings: Prisma.JsonNull,
+        previousSettings: Prisma.JsonNull as any,
       },
     });
 

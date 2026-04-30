@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,16 +36,28 @@ import {
   Package,
   Trash2,
   ChevronDown,
+  Copy,
+  Download,
 } from "lucide-react";
-import {
-  getUserBatches,
-  retryBatchPayment,
-  verifyBatchPayment,
-  deleteAllBatches,
-  payWithRemitaRRR,
-} from "../actions/codActions";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { RemitaPaymentModal, type SubmitterInfo } from "./RemitaPaymentModal";
+import {
+  deleteAllBatches,
+  getUserBatches,
+  retryBatchPayment,
+  getBatchPDFData,
+} from "../actions/codActions";
+import {
+  RedCopySubmissionPDF,
+  type RedCopyBatchPDFData,
+} from "./RedCopySubmissionPDF";
+
+// Dynamically import PDFDownloadLink to avoid SSR issues
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  { ssr: false, loading: () => <Loader2 className="w-4 h-4 animate-spin" /> },
+);
 
 interface Batch {
   id: string;
@@ -64,6 +77,15 @@ interface Batch {
     status: string;
     redCopyStatus: string;
   }>;
+  submitter: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string | null;
+    payerID?: number | null;
+    payerIDType?: string | null;
+  } | null;
 }
 
 interface SubmittedBatchesModalProps {
@@ -82,6 +104,10 @@ export function SubmittedBatchesModal({
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // PDF generation state: stores fetched PDF data keyed by batchId
+  const [pdfDataMap, setPdfDataMap] = useState<Record<string, RedCopyBatchPDFData>>({});
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   // No longer using Paystack
   /*
@@ -119,9 +145,8 @@ export function SubmittedBatchesModal({
     id: string;
     batchCode: string;
     totalAmount: number;
+    submitter: SubmitterInfo | null;
   } | null>(null);
-  const [manualRRR, setManualRRR] = useState("");
-  const [isVerifyingRRR, setIsVerifyingRRR] = useState(false);
   const [showPaymentView, setShowPaymentView] = useState(false);
 
   const handlePayNow = async (batchId: string) => {
@@ -133,17 +158,19 @@ export function SubmittedBatchesModal({
         throw new Error(result.error || "Failed to initialize payment");
       }
 
-      const { amount, batchCode } = result.data;
+      const { amount, batchCode, submitter } = result.data;
 
       setPaymentBatch({
         id: batchId,
         batchCode,
         totalAmount: amount,
+        submitter,
       });
 
       setShowPaymentView(true);
-      toast.success("Please generate and pay your Remita RRR in the window below.");
-
+      toast.success(
+        "Please generate and pay your Remita RRR in the window below.",
+      );
     } catch (error: any) {
       console.error("Payment initialization error:", error);
       toast.error(error?.message || "Failed to initialize payment");
@@ -152,49 +179,9 @@ export function SubmittedBatchesModal({
     }
   };
 
-  const handleVerifyManualRRR = async () => {
-    if (!manualRRR || manualRRR.length < 5) {
-      toast.error("Please enter a valid Remita RRR");
-      return;
-    }
-
-    if (!paymentBatch) return;
-
-    try {
-      setIsVerifyingRRR(true);
-      const result = await payWithRemitaRRR(paymentBatch.id, manualRRR);
-
-      if (result.success && result.data) {
-        if (result.data.status === "LASG_PAID") {
-          toast.success("Payment verified successfully!");
-          setShowPaymentView(false);
-          setPaymentBatch(null);
-          setManualRRR("");
-          // Reload batches to show updated status
-          await loadBatches();
-          if (onSuccess) onSuccess();
-          router.refresh();
-        } else if (result.data.status === "PENDING") {
-          toast.info("Payment is still pending on Remita. Please ensure you have paid.");
-        }
-      } else {
-        toast.error(result.error || "Failed to verify RRR");
-      }
-    } catch (error: any) {
-      console.error("Verification error:", error);
-      toast.error(error.message || "Failed to verify payment");
-    } finally {
-      setIsVerifyingRRR(false);
-    }
-  };
-
   const handleClosePayment = () => {
-    if (showPaymentView && !confirm("Are you sure you want to close the payment window?")) {
-      return;
-    }
     setShowPaymentView(false);
     setPaymentBatch(null);
-    setManualRRR("");
   };
 
   const getStatusBadge = (status: string) => {
@@ -255,10 +242,42 @@ export function SubmittedBatchesModal({
     return status === "PENDING_USER_PAYMENT";
   };
 
+  const canDownloadLetter = (status: string) => {
+    return [
+      "USER_PAID",
+      "LASG_PAID",
+      "ACCOUNTS_APPROVED",
+      "COMPLETED",
+    ].includes(status);
+  };
+
+  const handleFetchPdfData = useCallback(async (batchId: string) => {
+    // If we already have data for this batch, do nothing
+    if (pdfDataMap[batchId]) return;
+
+    setLoadingPdfId(batchId);
+    try {
+      const result = await getBatchPDFData(batchId);
+      if (result.success && result.data) {
+        setPdfDataMap((prev) => ({
+          ...prev,
+          [batchId]: result.data as RedCopyBatchPDFData,
+        }));
+      } else {
+        toast.error(result.error || "Failed to load batch data for PDF");
+      }
+    } catch (error) {
+      console.error("Error fetching PDF data:", error);
+      toast.error("An error occurred while loading PDF data");
+    } finally {
+      setLoadingPdfId(null);
+    }
+  }, [pdfDataMap]);
+
   const handleDeleteAll = async () => {
     if (
       !confirm(
-        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!"
+        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!",
       )
     ) {
       return;
@@ -269,7 +288,7 @@ export function SubmittedBatchesModal({
       const result = await deleteAllBatches();
       if (result.success && result.data) {
         toast.success(
-          `Successfully deleted ${result.data.deletedCount} batch(es)`
+          `Successfully deleted ${result.data.deletedCount} batch(es)`,
         );
         await loadBatches();
         router.refresh();
@@ -412,7 +431,7 @@ export function SubmittedBatchesModal({
                                 Paid{" "}
                                 {format(
                                   new Date(batch.userPaymentDate),
-                                  "MMM d"
+                                  "MMM d",
                                 )}
                               </span>
                             </div>
@@ -420,7 +439,7 @@ export function SubmittedBatchesModal({
                         </div>
                       </div>
 
-                      <div className="shrink-0">
+                      <div className="shrink-0 flex items-center gap-2">
                         {canPayBatch(batch.paymentStatus) && (
                           <Button
                             size="sm"
@@ -440,6 +459,68 @@ export function SubmittedBatchesModal({
                               </>
                             )}
                           </Button>
+                        )}
+
+                        {/* Download Submission Letter PDF */}
+                        {canDownloadLetter(batch.paymentStatus) && (
+                          <>
+                            {pdfDataMap[batch.id] ? (
+                              <PDFDownloadLink
+                                document={
+                                  <RedCopySubmissionPDF
+                                    data={pdfDataMap[batch.id]}
+                                  />
+                                }
+                                fileName={`RedCopy_Submission_${batch.batchCode}.pdf`}
+                              >
+                                {({ loading, error }: { loading: boolean; error: Error | null }) => (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={loading}
+                                    className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                                  >
+                                    {loading ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Generating...
+                                      </>
+                                    ) : error ? (
+                                      <>
+                                        <XCircle className="w-4 h-4 mr-2" />
+                                        Error
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Download Letter
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </PDFDownloadLink>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFetchPdfData(batch.id)}
+                                disabled={loadingPdfId === batch.id}
+                                className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                              >
+                                {loadingPdfId === batch.id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Loading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download Letter
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -503,85 +584,17 @@ export function SubmittedBatchesModal({
       </DialogContent>
 
       {/* Manual Remita Payment Iframe Dialog */}
-      <Dialog open={showPaymentView} onOpenChange={handleClosePayment}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 border-b">
-            <div className="flex justify-between items-start">
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-xl">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
-                  Complete Payment for Batch {paymentBatch?.batchCode}
-                </DialogTitle>
-                <DialogDescription>
-                  Generate your RRR in the window below, pay, then paste the RRR to verify.
-                </DialogDescription>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
-                <p className="text-2xl font-bold text-green-700">
-                  ₦{paymentBatch?.totalAmount.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Verification Bar */}
-          <div className="bg-blue-50 p-4 border-b flex flex-col sm:flex-row items-center gap-4 z-10 shadow-sm">
-            <div className="flex-1 w-full">
-              <label htmlFor="manual-rrr" className="text-xs font-bold text-blue-800 uppercase mb-1 block">
-                Enter your generated RRR here to verify payment
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="manual-rrr"
-                  type="text"
-                  placeholder="e.g. 1234-5678-9012"
-                  className="flex-1 h-10 px-3 rounded-md border-2 border-blue-200 focus:border-blue-500 outline-none font-mono text-lg tracking-wider"
-                  value={manualRRR}
-                  onChange={(e) => setManualRRR(e.target.value)}
-                />
-                <Button
-                  onClick={handleVerifyManualRRR}
-                  disabled={isVerifyingRRR || !manualRRR}
-                  className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                >
-                  {isVerifyingRRR ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify & Submit
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Remita Iframe Area */}
-          <div className="flex-1 bg-gray-100 relative">
-            <iframe
-              src="https://login.remita.net/remita/lirs/internal/pay.reg"
-              className="w-full h-full border-none"
-              title="Remita Payment Portal"
-            />
-            <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
-              <div className="bg-amber-100/90 backdrop-blur-sm border border-amber-200 p-2 rounded text-[10px] text-amber-900 shadow-sm max-w-sm">
-                <strong>Tip:</strong> Search for "Lagos State Surveyor General" to generate your RRR.
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="p-4 border-t bg-gray-50">
-            <Button variant="ghost" onClick={handleClosePayment} className="text-gray-500">
-              Close & Pay Later
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showPaymentView && paymentBatch && (
+        <RemitaPaymentModal
+          isOpen={showPaymentView}
+          onClose={handleClosePayment}
+          batchData={paymentBatch}
+          onSuccess={async () => {
+            await loadBatches();
+            if (onSuccess) onSuccess();
+          }}
+        />
+      )}
     </Dialog>
   );
 }

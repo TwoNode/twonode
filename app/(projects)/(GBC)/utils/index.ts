@@ -44,11 +44,13 @@ export function generateTicketNumber(): string {
 }
 
 export function calculateTicketPrice(
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
   ticketSettings?: {
     earlyBirdPrice?: number;
     regularPrice?: number;
     companyPrice?: number;
+    studentPrice?: number;
+    vipPrice?: number;
   }
 ): number {
   // Default prices if settings not provided
@@ -56,6 +58,8 @@ export function calculateTicketPrice(
     earlyBirdPrice: 100000,
     regularPrice: 120000,
     companyPrice: 250000,
+    studentPrice: 20000,
+    vipPrice: 200000,
   };
 
   switch (ticketType) {
@@ -65,6 +69,10 @@ export function calculateTicketPrice(
       return ticketSettings?.regularPrice ?? defaultPrices.regularPrice;
     case "COMPANY":
       return ticketSettings?.companyPrice ?? defaultPrices.companyPrice;
+    case "STUDENT":
+      return ticketSettings?.studentPrice ?? defaultPrices.studentPrice;
+    case "VIP":
+      return ticketSettings?.vipPrice ?? defaultPrices.vipPrice;
     default:
       throw new Error(`Unknown ticket type: ${ticketType}`);
   }
@@ -78,7 +86,7 @@ export function calculateTicketPrice(
  * @returns Object with availability status and reason
  */
 export function isTicketTypeAvailable(
-  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY",
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
   soldEarlyBirdTickets: number,
   settings?: {
     maxEarlyBirdCapacity?: number;
@@ -125,18 +133,24 @@ export function isTicketTypeAvailable(
       return { available: true };
 
     case "REGULAR":
-      // Regular is only available when early bird is over (deadline passed OR sold out)
-      if (!isEarlyBirdOver) {
-        return {
-          available: false,
-          reason:
-            "Regular tickets will be available after early bird deadline or when early bird sells out",
-        };
-      }
+      // Pair ticket is always available (alongside either early bird or company)
+      // // Regular is only available when early bird is over (deadline passed OR sold out)
+      // if (!isEarlyBirdOver) {
+      //   return {
+      //     available: false,
+      //     reason:
+      //       "Regular tickets will be available after early bird deadline or when early bird sells out",
+      //   };
+      // }
       return { available: true };
 
     case "COMPANY":
       // Company tickets are always available (alongside either early bird or regular)
+      return { available: true };
+
+    case "STUDENT":
+      return { available: true };
+    case "VIP":
       return { available: true };
 
     default:

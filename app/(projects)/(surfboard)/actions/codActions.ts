@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
-import {
-  checkPaymentStatus,
-} from "../utils/remita";
+import { checkPaymentStatus, fetchRemitaReceiptPdf } from "../utils/remita";
+// pdf-parse will be dynamically imported where needed
+import { uploadFile } from "./awsActions";
 import {
   notifyLASGReceiptUploaded,
   notifyPaymentReceived,
@@ -17,6 +17,16 @@ import {
   notifyReadyForPhysicalSubmission,
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
+import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
+import {
+  extractPaymentDetailsFromText,
+  extractEBSReceiptFields,
+  extractLASGReceiptFromHtml,
+  extractRemitaReceiptFromHtml,
+} from "./aiExtractionActions";
+import { transmitToOSSG } from "./ossgActions";
+
+
 
 // Lock duration in minutes
 const LOCK_DURATION_MINUTES = 6;
@@ -27,6 +37,7 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
+  | "ARCHIVE"
   | "MDA_SUPERADMIN";
 
 // Properly map role names to camelCase field prefixes
@@ -38,6 +49,7 @@ function getRoleFieldPrefix(role: MDARole): string {
     SURCON: "surcon",
     RECORDS_I: "recordsI",
     RECORDS_II: "recordsII",
+    ARCHIVE: "archive",
     MDA_SUPERADMIN: "mdaSuperadmin",
   };
   return mapping[role];
@@ -127,7 +139,7 @@ export async function getBatchesByStatus(status?: string): Promise<
 export async function acquirePlanLock(
   planId: string,
   role: MDARole,
-  userId: string
+  userId: string,
 ): Promise<ApiResult<{ locked: boolean; lockedBy?: string }>> {
   try {
     const now = new Date();
@@ -144,6 +156,7 @@ export async function acquirePlanLock(
       select: {
         [lockedByField]: true,
         [lockExpiresAtField]: true,
+        batchId: true,
       },
     });
 
@@ -166,6 +179,41 @@ export async function acquirePlanLock(
         error: "Plan is currently being reviewed by another user",
         data: { locked: false, lockedBy: currentLock },
       };
+    }
+
+    // Batch-level locking for RECORDS_II
+    if (role === "RECORDS_II" && plan.batchId) {
+      const batchPlans = await prisma.surfboardPlan.findMany({
+        where: { batchId: plan.batchId, deleted: false },
+        select: { id: true, [lockedByField]: true, [lockExpiresAtField]: true }
+      });
+
+      // Ensure no other plan in the batch is locked by someone else
+      for (const bp of batchPlans) {
+        const bpLock = (bp as any)[lockedByField];
+        const bpExpiry = (bp as any)[lockExpiresAtField];
+        if (bpLock && bpLock !== userId && bpExpiry && new Date(bpExpiry) > now) {
+          return {
+            success: false,
+            error: "Another plan in this batch is being reviewed by another user",
+            data: { locked: false, lockedBy: bpLock },
+          };
+        }
+      }
+
+      // Calculate dynamic batch lock expiry: 3 minutes per plan
+      const batchLockExpiry = new Date(now.getTime() + (3 * batchPlans.length * 60000));
+
+      await prisma.surfboardPlan.updateMany({
+        where: { batchId: plan.batchId, deleted: false },
+        data: {
+          [lockedByField]: userId,
+          [lockedAtField]: now,
+          [lockExpiresAtField]: batchLockExpiry,
+        },
+      });
+
+      return { success: true, data: { locked: true } };
     }
 
     // Acquire or refresh lock
@@ -194,13 +242,32 @@ export async function acquirePlanLock(
 export async function releasePlanLock(
   planId: string,
   role: MDARole,
-  userId: string
+  userId: string,
 ): Promise<ApiResult<{ released: boolean }>> {
   try {
     const rolePrefix = getRoleFieldPrefix(role);
     const lockedByField = `${rolePrefix}LockedBy` as any;
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
+
+    // Batch-level unlocking for RECORDS_II
+    if (role === "RECORDS_II") {
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+        select: { batchId: true }
+      });
+      if (plan?.batchId) {
+        await prisma.surfboardPlan.updateMany({
+          where: { batchId: plan.batchId, [lockedByField]: userId },
+          data: {
+            [lockedByField]: null,
+            [lockedAtField]: null,
+            [lockExpiresAtField]: null,
+          },
+        });
+        return { success: true, data: { released: true } };
+      }
+    }
 
     // Only release if locked by this user
     await prisma.surfboardPlan.updateMany({
@@ -283,12 +350,13 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
     const getRoleSpecificCriteria = (): any => {
       switch (role) {
         case "RECORDS_II":
-          // Records II: All 4 other approvals must be complete
+          // Records II: All 4 other approvals + intake must be complete
           return {
             accountsStatus: "APPROVED" as const,
             chartingStatus: "APPROVED" as const,
             surconStatus: "APPROVED" as const,
             recordsIStatus: "APPROVED" as const,
+            intakeStatus: "APPROVED" as const,
             batch: {
               paymentStatus: {
                 in: [
@@ -429,7 +497,7 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
  * Called when leaving the MDA admin page
  */
 export async function releaseAllLocksForUser(
-  role: MDARole
+  role: MDARole,
 ): Promise<ApiResult<{ releasedCount: number }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -468,7 +536,7 @@ export async function releaseAllLocksForUser(
  */
 export async function getPlanLockStatus(
   planId: string,
-  role: MDARole
+  role: MDARole,
 ): Promise<
   ApiResult<{
     isLocked: boolean;
@@ -529,7 +597,7 @@ export async function getPlanLockStatus(
 export async function canWorkOnPlan(
   planId: string,
   role: MDARole,
-  userId: string
+  userId: string,
 ): Promise<
   ApiResult<{
     allowed: boolean;
@@ -616,7 +684,7 @@ export async function canWorkOnPlan(
  * Get charting interpretation by intersecting survey plan geometry with LASG dataset
  */
 export async function getChartingInterpretation(
-  geometry: any
+  geometry: any,
 ): Promise<string | null> {
   try {
     const geometryString =
@@ -647,7 +715,7 @@ export async function getChartingInterpretation(
  * Returns the zone (e.g., "lagosZoneA", "lagosZoneB", etc.) or null if not found
  */
 export async function getZoneFromGeometry(
-  geometry: any
+  geometry: any,
 ): Promise<string | null> {
   try {
     const geometryString =
@@ -681,7 +749,7 @@ export async function getZoneFromGeometry(
  */
 function shouldChargeDoubleFee(
   surveyTitle: string,
-  ethnicity?: string | null
+  ethnicity?: string | null,
 ): boolean {
   // Check if ethnicity indicates corporate ownership
   if (ethnicity?.toLowerCase() === "corporate") {
@@ -748,11 +816,11 @@ export async function calculatePlanFeeByZone(
     lagosZoneC: number;
     lagosZoneD: number;
   }>,
-  ethnicity?: string | null
+  ethnicity?: string | null,
 ): Promise<{ fee: number; isDoubleFee: boolean }> {
   // Find the fee row that matches the area range
   const feeRow = zoneFees.find(
-    (row) => areaSqM >= row.start && areaSqM <= row.end
+    (row) => areaSqM >= row.start && areaSqM <= row.end,
   );
 
   if (!feeRow) {
@@ -777,7 +845,7 @@ function calculateFeeFromRow(
   },
   zone: string,
   surveyTitle: string,
-  ethnicity?: string | null
+  ethnicity?: string | null,
 ): { fee: number; isDoubleFee: boolean } {
   // Map zone to fee amount
   let baseFee = 0;
@@ -814,13 +882,26 @@ function calculateFeeFromRow(
  * - Batch creation
  * - Status updates
  */
-export async function submitRedCopyBatch(planIds: string[]): Promise<
+export async function submitRedCopyBatch(
+  planIds: string[],
+  acceptanceAcknowledged: boolean = false
+): Promise<
   ApiResult<{
     batchId: string;
     batchCode: string;
     totalAmount: number;
+    planCount: number;
     reference: string | null;
     email?: string;
+    submitter: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber?: string | null;
+      payerID?: number | null;
+      payerIDType?: string | null;
+    };
   }>
 > {
   try {
@@ -828,6 +909,27 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
+
+    if (!acceptanceAcknowledged) {
+      return { success: false, error: "Submission policy must be acknowledged" };
+    }
+
+    // Get fresh user details for current info
+    const userDetails = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        payerID: true,
+        payerIDType: true,
+      },
+    });
+
+    if (!userDetails)
+      return { success: false, error: "User details not found" };
 
     // Validate that all plans exist and belong to the user
     const plans = await prisma.surfboardPlan.findMany({
@@ -870,9 +972,8 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 
     // Import needed utilities
     const { computeGeometryDetails } = await import("../utils/dbUtils");
-    const { getZoneFees, getSystemChargePercent } = await import(
-      "./settingsActions"
-    );
+    const { getZoneFees, getSystemChargePercent } =
+      await import("./settingsActions");
 
     // Get zone fees and system charge
     const zoneFees = await getZoneFees();
@@ -910,7 +1011,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
         areaSqM,
         plan.surveyTitle,
         zoneFees,
-        plan.ethnicity
+        plan.ethnicity,
       );
 
       planFeeData.set(plan.id, { fee, zone, isDoubleFee });
@@ -922,7 +1023,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       return {
         success: false,
         error: `The following plans are outside Lagos fee zones and cannot be submitted: ${plansWithNoZone.join(
-          ", "
+          ", ",
         )}. Please ensure the survey geometry falls within Lagos State.`,
       };
     }
@@ -963,7 +1064,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
     for (const plan of plans) {
       // Get charting interpretation
       const chartingInterpretation = await getChartingInterpretation(
-        plan.geometry
+        plan.geometry,
       );
 
       // Get fee data for this plan
@@ -989,28 +1090,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
       });
     }
 
-    // RRR generation removed - User will generate manually via Iframe
-    let userDetails: {
-      email: string;
-      firstName: string;
-      lastName: string;
-      phoneNumber: string | null;
-    } | null = null;
-
-    try {
-      // Get user details just for email return
-      userDetails = await prisma.surfboardUser.findUnique({
-        where: { id: user.id },
-        select: {
-          email: true,
-          firstName: true,
-          lastName: true,
-          phoneNumber: true,
-        },
-      });
-    } catch (err) {
-      console.error("Error fetching user details:", err);
-    }
+    // (userDetails already fetched at the top of this function)
 
     // Log audit action
     await logAuditAction({
@@ -1030,9 +1110,8 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
 
     // Notify user about their batch submission
     try {
-      const { notifyRecordCopySubmitted } = await import(
-        "./notificationActions"
-      );
+      const { notifyRecordCopySubmitted } =
+        await import("./notificationActions");
       await notifyRecordCopySubmitted({
         userId: user.id,
         batchId: batch.id,
@@ -1055,8 +1134,18 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
         batchId: batch.id,
         batchCode: batch.batchCode,
         totalAmount, // Amount in NAIRA
+        planCount: plans.length,
         reference: batch.userPaymentRef,
-        email: userDetails?.email,
+        email: userDetails.email,
+        submitter: {
+          id: userDetails.id,
+          email: userDetails.email,
+          firstName: userDetails.firstName,
+          lastName: userDetails.lastName,
+          phoneNumber: userDetails.phoneNumber,
+          payerID: userDetails.payerID,
+          payerIDType: userDetails.payerIDType, // Enum or string
+        },
       },
     };
   } catch (error) {
@@ -1073,7 +1162,7 @@ export async function submitRedCopyBatch(planIds: string[]): Promise<
  * Checks with Remita API to confirm payment before updating status
  */
 export async function verifyBatchPayment(
-  reference: string
+  reference: string,
 ): Promise<ApiResult<{ batchId: string; status: string }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1187,12 +1276,21 @@ export async function verifyBatchPayment(
 }
 
 /**
- * Pay with Remita RRR - Verifies a manually entered RRR and updates the batch
+ * Verify Batch Payment using Two Receipt Links (LASG + Remita)
+ *
+ * New workflow replacing the old PDF-fetch approach:
+ * 1. Parses LASG URL for transId, transCode, payerId, payerType
+ * 2. Cross-checks payerId + payerType against user profile
+ * 3. Fetches HTML from both receipt URLs
+ * 4. AI extracts: anchor + amount (LASG), RRR + amount + status + anchor (Remita)
+ * 5. Cross-validates anchor match, amount match, Remita status, RRR uniqueness
+ * 6. Stores URLs directly (no S3 upload)
  */
-export async function payWithRemitaRRR(
+export async function verifyBatchPaymentWithLinks(
   batchId: string,
-  rrr: string
-): Promise<ApiResult<{ success: boolean; status: string }>> {
+  lasgReceiptUrl: string,
+  remitaReceiptUrl: string,
+): Promise<ApiResult<{ success: boolean; ebsUrl: string; status: string }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
     if (!user) {
@@ -1205,112 +1303,417 @@ export async function payWithRemitaRRR(
     });
 
     if (!batch) {
-      return { success: false, error: "Batch not found" };
+      return {
+        success: false,
+        error:
+          "[Step 1: Batch Lookup] Batch not found. Please refresh and try again.",
+      };
     }
 
     if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
-      return { success: false, error: "Unauthorized to pay for this batch" };
+      return {
+        success: false,
+        error:
+          "[Step 1: Authorization] You are not authorized to pay for this batch. Only the batch submitter or a Super Admin can verify payment.",
+      };
     }
 
-    // 2. Check current status
+    // 2. Initial Status Check
     if (
       batch.paymentStatus === "LASG_PAID" ||
       batch.paymentStatus === "USER_PAID"
     ) {
       return {
         success: true,
-        data: { success: true, status: batch.paymentStatus },
+        data: {
+          success: true,
+          status: batch.paymentStatus,
+          ebsUrl: batch.lasgReceiptUrl || "",
+        },
       };
     }
 
-    // 3. Verify RRR with Remita
-    const remitaStatus = await checkPaymentStatus(rrr);
+    // 3. Parse LASG URL parameters (deterministic — no AI needed)
+    let transId: string, transCode: string, payerId: string, payerType: string;
+    try {
+      const lasgUrl = new URL(lasgReceiptUrl);
+      transId = lasgUrl.searchParams.get("transid") || "";
+      transCode = lasgUrl.searchParams.get("transcode") || "";
+      payerId = lasgUrl.searchParams.get("payerid") || "";
+      payerType = lasgUrl.searchParams.get("payertype") || "n";
 
-    console.log("Remita Verification Result:", remitaStatus);
-
-    if (remitaStatus.status === "failed") {
-      return {
-        success: false,
-        error: `RRR Verification Failed: ${remitaStatus.message}`,
-      };
-    }
-
-    // 4. Validate Amount (Approximate check mainly - ensure it's not significantly less)
-    if (remitaStatus.amount) {
-      // Allow for small differences? Ideally should be exact.
-      const tolerance = 1.0; // 1 Naira tolerance
-      if (Math.abs(remitaStatus.amount - batch.totalAmount) > tolerance) {
+      if (!transId || !transCode || !payerId) {
         return {
           success: false,
-          error: `Payment amount mismatch. Paid: ₦${remitaStatus.amount}, Expected: ₦${batch.totalAmount}`,
+          error:
+            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
+        };
+      }
+    } catch {
+      return {
+        success: false,
+        error:
+          "[Step 2: LASG URL Parsing] Invalid LASG receipt URL format. Please paste a valid URL starting with https://printreceipt.ebs-rcm.com/...",
+      };
+    }
+
+    // 4. Define Interfaces for Remita Response
+    interface RemitaPaymentDetail {
+      STATUS?: string;
+      PAYMENTSTATUS?: string;
+      RRRNUMBER?: string;
+      RRR?: string;
+      PAYER?: string;
+      EMAIL?: string;
+      TRANSACTIONAMOUNT?: number;
+    }
+
+    interface RemitaCustomField {
+      COLUMNNAME?: string;
+      COLUMNVALUE?: string;
+    }
+
+    interface RemitaApiResponse {
+      paymentDetails?: RemitaPaymentDetail[];
+      customFields?: RemitaCustomField[];
+      status?: string;
+    }
+
+    // 5. Parallelize User lookup, LASG Content Fetch + AI Extraction, and Remita Fetch
+    const lasgPipeline = fetchAndExtractTextFromUrl(lasgReceiptUrl)
+      .then(async (lasgExtracted) => {
+        const text = lasgExtracted.text;
+        console.log(`LASG receipt fetched. Content-Type: ${lasgExtracted.contentType}, Text length: ${text?.length || 0}`);
+        if (!text || text.trim().length < 50) {
+          throw new Error("[Step 4: Fetch LASG Receipt] LASG receipt page returned insufficient content. Please check the URL is correct and accessible.");
+        }
+
+        console.log("Extracting fields from LASG receipt content...");
+        const aiResult = await extractLASGReceiptFromHtml(text);
+        if (!aiResult.success || !aiResult.data) {
+          throw new Error(`[Step 5: LASG Data Extraction] ${aiResult.error}`);
+        }
+        console.log("LASG extraction result:", aiResult.data);
+        return aiResult.data;
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message.includes("[Step")) throw err;
+        throw new Error(`[Step 4: Fetch LASG Receipt] Failed to access LASG receipt URL: ${err.message}`);
+      });
+
+    const remitaApiUrl = remitaReceiptUrl.replace("/view-rrr/details.json", "/details.json");
+    console.log("Fetching Remita JSON API:", remitaApiUrl);
+
+    const remitaPipeline = fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } })
+      .then(async (remitaRes) => {
+        if (!remitaRes.ok) {
+          throw new Error(`[Step 4: Fetch Remita Receipt] Failed to fetch Remita receipt data (HTTP status ${remitaRes.status}). Please check the URL is correct and accessible.`);
+        }
+        const remitaJson: RemitaApiResponse = await remitaRes.json();
+        
+        if (!remitaJson?.paymentDetails || remitaJson.paymentDetails.length === 0) {
+          throw new Error(`[Step 4: Fetch Remita Receipt] Remita API returned no payment details. The receipt may be invalid or expired.`);
+        }
+        
+        const pd = remitaJson.paymentDetails[0];
+        const customFields = remitaJson.customFields || [];
+        const lasgField = customFields.find((f) => f.COLUMNNAME?.toLowerCase() === "lasg");
+        const remitaTransactionAnchor = lasgField?.COLUMNVALUE || "";
+        
+        const isRemitaPaid = remitaJson.status === "A" || pd.PAYMENTSTATUS === "RTC" || pd.PAYMENTSTATUS === "00" || pd.PAYMENTSTATUS === "01";
+        
+        const data = {
+          rrr: String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, ""),
+          amount: Number(pd.TRANSACTIONAMOUNT) || 0,
+          status: isRemitaPaid ? "PAID" : "UNPAID",
+          transactionAnchor: remitaTransactionAnchor,
+          payerName: String(pd.PAYER || "").trim(),
+          payerEmail: String(pd.EMAIL || "").trim(),
+        };
+        
+        console.log("Remita JSON extraction result:", data);
+        
+        if (!data.rrr || data.rrr.length < 10) {
+          throw new Error(`[Step 5: Remita Data Extraction] Could not extract a valid RRR from the Remita receipt.`);
+        }
+        if (!data.transactionAnchor) {
+          throw new Error(`[Step 5: Remita Data Extraction] Could not extract the LASG reference (anchor) from the Remita receipt BILLER REQUIRED INFORMATION section.`);
+        }
+        return data;
+      })
+      .catch((err) => {
+        if (err instanceof Error && err.message.includes("[Step")) throw err;
+        throw new Error(`[Step 4: Fetch Remita Receipt] Failed to access Remita receipt URL: ${err.message}`);
+      });
+
+    const userPromise = prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { payerID: true, payerIDType: true, firstName: true, lastName: true },
+    });
+
+    const [lasgResultPromise, remitaResultPromise, userResultPromise] = await Promise.allSettled([
+      lasgPipeline,
+      remitaPipeline,
+      userPromise
+    ]);
+
+    // 6. Cross-check PayerID + PayerType against user profile
+    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
+    if (fullUser?.payerID) {
+      const urlPayerIdNum = parseInt(payerId, 10);
+      if (urlPayerIdNum !== fullUser.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt has Payer ID "${payerId}" but your profile has Payer ID "${fullUser.payerID}". Please ensure you are using a receipt linked to your account.`,
+        };
+      }
+
+      const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
+      if (payerType.toLowerCase() !== expectedType) {
+        return {
+          success: false,
+          error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
         };
       }
     }
 
-    // 5. Update Batch
-    // If PAID
-    if (remitaStatus.status === "paid" || remitaStatus.message?.toLowerCase().includes("approved")) {
-      await prisma.certificateOfDepositBatch.update({
-        where: { id: batchId },
-        data: {
+    // 7. Handle fetching errors
+    if (lasgResultPromise.status === "rejected") {
+      return { success: false, error: lasgResultPromise.reason?.message || "Unknown error parsing LASG receipt" };
+    }
+    const lasgData = lasgResultPromise.value;
+
+    if (remitaResultPromise.status === "rejected") {
+      return { success: false, error: remitaResultPromise.reason?.message || "Unknown error parsing Remita receipt" };
+    }
+    const remitaData = remitaResultPromise.value;
+
+    // 8. Cross-validation (all deterministic)
+
+    // 7a. Anchor match — the transaction reference must match between both receipts
+    const normalizeAnchor = (anchor: string) =>
+      anchor.replace(/[^0-9-]/g, "").trim();
+
+    const lasgAnchor = normalizeAnchor(lasgData.transactionAnchor);
+    const remitaAnchor = normalizeAnchor(remitaData.transactionAnchor);
+
+    if (lasgAnchor !== remitaAnchor) {
+      return {
+        success: false,
+        error: `[Step 6: Anchor Cross-Check] Transaction anchor mismatch: The LASG receipt reference "${lasgData.transactionAnchor}" does not match the Remita receipt reference "${remitaData.transactionAnchor}". These two receipts do not appear to be for the same transaction.`,
+      };
+    }
+
+    // 7b. Amount match — LASG amount must exactly match the batch total
+    if (lasgData.amountPaid !== batch.totalAmount) {
+      return {
+        success: false,
+        error: `[Step 6: Amount Verification] Amount mismatch: The LASG receipt shows ₦${lasgData.amountPaid.toLocaleString()} but the batch total is ₦${batch.totalAmount.toLocaleString()}. The payment amount must exactly match.`,
+      };
+    }
+
+    // 7c. Remita payment status must indicate PAID
+    if (remitaData.status !== "PAID") {
+      return {
+        success: false,
+        error: `[Step 6: Payment Status] Remita receipt status is "${remitaData.status}" — expected "PAID". Please ensure payment is complete before verifying.`,
+      };
+    }
+
+    // 7d. RRR uniqueness check
+    const rrr = remitaData.rrr;
+    const existingBatchWithRRR =
+      await prisma.certificateOfDepositBatch.findFirst({
+        where: {
           userPaymentRef: rrr,
-          paymentStatus: "LASG_PAID", // Direct to LASG
-          userPaymentDate: remitaStatus.paymentDate || new Date(),
-          lasgPaymentDate: remitaStatus.paymentDate || new Date(),
+          id: { not: batchId },
         },
+        select: { id: true, batchCode: true },
       });
 
-      // Send notifications
-      const submitter = await prisma.surfboardUser.findUnique({
+    if (existingBatchWithRRR) {
+      return {
+        success: false,
+        error: `[Step 6: RRR Uniqueness] This RRR (${rrr}) has already been used for batch ${existingBatchWithRRR.batchCode}. Each RRR can only be used once.`,
+      };
+    }
+
+    // 8. Construct the EBS URL from parsed LASG URL params
+    const ebsUrl = `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`;
+    console.log("Constructed EBS URL:", ebsUrl);
+
+    // 9. Update Batch — store URLs, skip S3
+    // Use the actual LASG transaction date from the receipt, fallback to now
+    const lasgPaymentDate = lasgData.transactionDate
+      ? new Date(lasgData.transactionDate)
+      : new Date();
+    // Guard against invalid date parsing
+    const validLasgPaymentDate = isNaN(lasgPaymentDate.getTime())
+      ? new Date()
+      : lasgPaymentDate;
+
+    await prisma.certificateOfDepositBatch.update({
+      where: { id: batchId },
+      data: {
+        userPaymentRef: rrr,
+        paymentStatus: "LASG_PAID",
+        userPaymentDate: new Date(),
+        lasgPaymentDate: validLasgPaymentDate,
+        paymentAnchor: lasgAnchor, // Cross-validation anchor linking LASG and Remita receipts
+        lasgReceiptUrl: ebsUrl,
+        remitaReceiptUrl: remitaReceiptUrl,
+        lasgReceiptS3Key: null, // No S3 upload in two-link flow
+      },
+    });
+
+    // 10. Notifications
+    const submitter =
+      fullUser ||
+      (await prisma.surfboardUser.findUnique({
         where: { id: user.id },
         select: { firstName: true, lastName: true },
-      });
+      }));
 
-      if (submitter) {
-        try {
-          await notifyPaymentReceived({
-            batchId: batch.id,
-            batchCode: batch.batchCode,
-            amount: batch.totalAmount,
-            paidBy: submitter,
-            sendEmail: true,
-          });
+    if (submitter) {
+      try {
+        await notifyPaymentReceived({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          amount: batch.totalAmount,
+          paidBy: submitter,
+          sendEmail: true,
+        });
 
-          await notifyLASGReceiptUploaded({
-            batchId: batch.id,
-            batchCode: batch.batchCode,
-            planCount: batch.planCount,
-            sendEmail: true,
-          });
-        } catch (e) {
-          console.error("Notification error", e);
-        }
+        await notifyLASGReceiptUploaded({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          planCount: batch.planCount,
+          sendEmail: true,
+        });
+      } catch (e) {
+        console.error("Notification error", e);
       }
-
-      return { success: true, data: { success: true, status: "LASG_PAID" } };
     }
 
-    // IF PENDING
-    else if (remitaStatus.status === "pending") {
-      // Just update the Ref so we know what they are trying to pay with
-      await prisma.certificateOfDepositBatch.update({
-        where: { id: batchId },
-        data: {
-          userPaymentRef: rrr,
-          paymentStatus: "PENDING_USER_PAYMENT"
-        },
-      });
-
-      return { success: true, data: { success: true, status: "PENDING" } };
-    }
-
-    return { success: false, error: "Payment status unknown or not successful" };
-
+    return {
+      success: true,
+      data: {
+        success: true,
+        status: "LASG_PAID",
+        ebsUrl,
+      },
+    };
   } catch (error) {
-    console.error("payWithRemitaRRR error:", error);
+    console.error("verifyBatchPaymentWithLinks error:", error);
     return {
       success: false,
-      error: handlePrismaError(error, "payWithRemitaRRR"),
+      error: handlePrismaError(error, "verifyBatchPaymentWithLinks"),
+    };
+  }
+}
+
+/**
+ * Fallback: Verify a user-provided LASG Receipt Link
+ * Uses AI to analyze the receipt PDF and validate payment
+ */
+export async function verifyLASGReceiptLink(
+  batchId: string,
+  receiptUrl: string,
+): Promise<ApiResult<{ success: boolean; status: string }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    if (batch.submittedBy !== user.id && user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized to verify this batch" };
+    }
+
+    // Fetch and Analyze the receipt using AI
+    const { text } = await fetchAndExtractTextFromUrl(receiptUrl);
+    const aiResult = await extractPaymentDetailsFromText(text);
+
+    if (!aiResult.success || !aiResult.data) {
+      return {
+        success: false,
+        error:
+          "Could not analyze receipt. Please ensure it is a valid PDF receipt.",
+      };
+    }
+
+    const { status, amount, rrr } = aiResult.data;
+
+    // Check Status
+    if (status === "PENDING" || status === "FAILED") {
+      return {
+        success: false,
+        error: `Receipt analysis indicates status is ${status}. Please upload a successful payment receipt.`,
+      };
+    }
+
+    // Check Amount (with tolerance)
+    const tolerance = 5.0;
+    if (Math.abs(amount - batch.totalAmount) > tolerance) {
+      return {
+        success: false,
+        error: `Receipt amount (₦${amount}) does not match batch amount (₦${batch.totalAmount}).`,
+      };
+    }
+
+    // Update Batch
+    await prisma.certificateOfDepositBatch.update({
+      where: { id: batchId },
+      data: {
+        userPaymentRef: rrr || batch.userPaymentRef,
+        paymentStatus: "LASG_PAID",
+        userPaymentDate: new Date(),
+        lasgPaymentDate: new Date(),
+        lasgReceiptUrl: receiptUrl,
+      },
+    });
+
+    // Send Notifications
+    const submitter = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { firstName: true, lastName: true },
+    });
+
+    if (submitter) {
+      try {
+        await notifyPaymentReceived({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          amount: batch.totalAmount,
+          paidBy: submitter,
+          sendEmail: true,
+        });
+
+        await notifyLASGReceiptUploaded({
+          batchId: batch.id,
+          batchCode: batch.batchCode,
+          planCount: batch.planCount,
+          sendEmail: true,
+        });
+      } catch (e) {
+        console.error("Notification error", e);
+      }
+    }
+
+    return { success: true, data: { success: true, status: "LASG_PAID" } };
+  } catch (error) {
+    console.error("verifyLASGReceiptLink error:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "verifyLASGReceiptLink"),
     };
   }
 }
@@ -1338,6 +1741,15 @@ export async function getUserBatches(): Promise<
         status: string;
         redCopyStatus: string;
       }>;
+      submitter: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phoneNumber?: string | null;
+        payerID?: number | null;
+        payerIDType?: string | null;
+      } | null;
     }>;
   }>
 > {
@@ -1374,6 +1786,17 @@ export async function getUserBatches(): Promise<
             createdAt: "asc",
           },
         },
+        submitter: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phoneNumber: true,
+            payerID: true,
+            payerIDType: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -1394,6 +1817,158 @@ export async function getUserBatches(): Promise<
 }
 
 /**
+ * Get full batch data for PDF generation
+ * Fetches all plan fields needed for the Red Copy Submission PDF letter
+ */
+export async function getBatchPDFData(batchId: string): Promise<
+  ApiResult<{
+    batchCode: string;
+    createdAt: Date;
+    plans: Array<{
+      planNumber: string;
+      pillarType: string;
+      pillarCount: number;
+      surveyTitle: string;
+      locality: string;
+      deededArea: string;
+      zone: string;
+      planType: string;
+    }>;
+    submitter: {
+      firstName: string;
+      lastName: string;
+      prefix?: string | null;
+      suffix?: string | null;
+      surconRegName?: string | null;
+      surconRegNumber?: string | null;
+      signature?: string | null;
+      companyAddress?: string | null;
+    };
+    totalPlansInBatch: number;
+    eligiblePlansCount: number;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        id: batchId,
+        submittedBy: user.id,
+      },
+      select: {
+        batchCode: true,
+        createdAt: true,
+        paymentStatus: true,
+        plans: {
+          select: {
+            planNumber: true,
+            pillarType: true,
+            pillars: true,
+            surveyTitle: true,
+            locality: true,
+            deededArea: true,
+            zone: true,
+            planType: true,
+            accountsStatus: true,
+            chartingStatus: true,
+            surconStatus: true,
+            recordsIStatus: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            prefix: true,
+            suffix: true,
+            surconRegName: true,
+            surconRegNumber: true,
+            signature: true,
+            companyAddress: true,
+          },
+        },
+      },
+    });
+
+    if (!batch) {
+      return { success: false, error: "Batch not found" };
+    }
+
+    const totalPlansInBatch = batch.plans.length;
+
+    // Filter plans that are fully approved
+    const eligiblePlans = batch.plans.filter((plan) => 
+      plan.accountsStatus === "APPROVED" &&
+      plan.chartingStatus === "APPROVED" &&
+      plan.surconStatus === "APPROVED" &&
+      plan.recordsIStatus === "APPROVED"
+    );
+
+    const eligiblePlansCount = eligiblePlans.length;
+
+    // Map plans to include calculated pillar count (unique pillar numbers only)
+    const plans = eligiblePlans.map((plan) => {
+      let pillarCount = 0;
+      let pillarArray: any[] = [];
+
+      if (Array.isArray(plan.pillars)) {
+        pillarArray = plan.pillars;
+      } else if (plan.pillars && typeof plan.pillars === "object" && plan.pillars !== null) {
+        pillarArray = Object.values(plan.pillars as Record<string, unknown>);
+      }
+
+      if (pillarArray.length > 0) {
+        // Count unique pillar numbers string-wise
+        const uniquePillarNumbers = new Set(
+          pillarArray
+            .map((p) => String(p?.pillarNumber || "").trim())
+            .filter((n) => n !== "")
+        );
+        pillarCount = uniquePillarNumbers.size;
+      } else {
+        pillarCount = 0;
+      }
+
+      return {
+        planNumber: plan.planNumber,
+        pillarType: plan.pillarType || "Beacons",
+        pillarCount,
+        surveyTitle: plan.surveyTitle,
+        locality: plan.locality || "",
+        deededArea: plan.deededArea || "0",
+        zone: plan.zone || "UTM(ZONE 31)",
+        planType: plan.planType,
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        batchCode: batch.batchCode,
+        createdAt: batch.createdAt,
+        plans,
+        submitter: batch.submitter,
+        totalPlansInBatch,
+        eligiblePlansCount,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching batch PDF data:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getBatchPDFData"),
+    };
+  }
+}
+
+/**
  * Retry payment for a batch with pending/failed payment
  */
 export async function retryBatchPayment(batchId: string): Promise<
@@ -1403,6 +1978,15 @@ export async function retryBatchPayment(batchId: string): Promise<
     amount: number;
     batchCode: string;
     batchId: string;
+    submitter: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber?: string | null;
+      payerID?: number | null;
+      payerIDType?: string | null;
+    };
   }>
 > {
   try {
@@ -1438,14 +2022,21 @@ export async function retryBatchPayment(batchId: string): Promise<
       return { success: false, error: "Batch payment already completed" };
     }
 
-    // Get user email
+    // Get user details
     const userDetails = await prisma.surfboardUser.findUnique({
       where: { id: user.id },
-      select: { email: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        payerID: true,
+        payerIDType: true,
+      },
     });
-
     if (!userDetails?.email) {
-      return { success: false, error: "User email not found" };
+      return { success: false, error: "User or email not found" };
     }
 
     // Validate amount
@@ -1476,12 +2067,20 @@ export async function retryBatchPayment(batchId: string): Promise<
     return {
       success: true,
       data: {
-        reference,
+        reference: reference,
         email: userDetails.email,
-        // NOTE: amount is in NAIRA (from DB). Frontend must convert to kobo (*100) for Paystack
         amount: batch.totalAmount,
         batchCode: batch.batchCode,
         batchId: batch.id,
+        submitter: {
+          id: userDetails.id,
+          email: userDetails.email,
+          firstName: userDetails.firstName,
+          lastName: userDetails.lastName,
+          phoneNumber: userDetails.phoneNumber,
+          payerID: userDetails.payerID,
+          payerIDType: userDetails.payerIDType,
+        },
       },
     };
   } catch (error) {
@@ -1499,7 +2098,7 @@ export async function retryBatchPayment(batchId: string): Promise<
 export async function uploadLASGReceipt(
   batchId: string,
   receiptUrl: string,
-  receiptS3Key: string
+  receiptS3Key: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1566,7 +2165,7 @@ export async function uploadLASGReceipt(
 export async function updateAccountsApproval(
   batchId: string,
   approved: boolean,
-  comment?: string
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1595,6 +2194,7 @@ export async function updateAccountsApproval(
         id: true,
         userId: true,
         planNumber: true,
+        accountsStatus: true,
         chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
@@ -1648,8 +2248,8 @@ export async function updateAccountsApproval(
 
     // Check if all four MDA approvals are complete for each plan
     // Accounts is now APPROVED, check the other three using already-fetched data
-    if (approved) {
-      for (const plan of batchPlans) {
+    for (const plan of batchPlans) {
+      if (approved) {
         const allFourApproved =
           plan.chartingStatus === "APPROVED" &&
           plan.surconStatus === "APPROVED" &&
@@ -1665,6 +2265,8 @@ export async function updateAccountsApproval(
           });
         }
       }
+      // Re-evaluate consolidated queries after updating accounts 
+      await checkAndDispatchQueries(plan.id);
     }
 
     return { success: true, data: { success: true } };
@@ -1678,11 +2280,12 @@ export async function updateAccountsApproval(
 }
 
 /**
- * Charting Admin: Update charting remarks and approve
+ * Charting Admin: Approve or query plan
  */
 export async function updateChartingStatus(
   planId: string,
-  chartingRemarks: string
+  mode: "APPROVE" | "QUERY",
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1690,11 +2293,14 @@ export async function updateChartingStatus(
       return { success: false, error: "Unauthorized" };
     }
 
+    const approved = mode === "APPROVE";
+
     const plan = await prisma.surfboardPlan.update({
       where: { id: planId },
       data: {
-        chartingRemarks,
-        chartingStatus: "APPROVED",
+        chartingRemarks: approved ? comment : undefined,
+        chartingComment: !approved ? comment : undefined,
+        chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
       },
@@ -1714,32 +2320,37 @@ export async function updateChartingStatus(
     // Log audit action
     await logAuditAction({
       userId: user.id,
-      action: "APPROVE_CHARTING",
+      action: approved ? "APPROVE_CHARTING" : "QUERY_CHARTING",
       entity: "SurfboardPlan",
       entityId: planId,
       changes: createChangeLog({
         planNumber: plan.planNumber,
-        chartingRemarks,
-        chartingStatus: "APPROVED",
+        approved,
+        comment: comment || null,
+        chartingStatus: approved ? "APPROVED" : "QUERIED",
       }),
     });
 
     // Check if all four MDA approvals are complete and notify user
     // Charting is now APPROVED, check the other three
-    const allFourApproved =
-      plan.accountsStatus === "APPROVED" &&
-      plan.surconStatus === "APPROVED" &&
-      plan.recordsIStatus === "APPROVED" &&
-      plan.recordsIIStatus === "PENDING";
+    if (approved) {
+      const allFourApproved =
+        plan.accountsStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.recordsIIStatus === "PENDING";
 
-    if (allFourApproved && plan.userId) {
-      await notifyReadyForPhysicalSubmission({
-        userId: plan.userId,
-        planId,
-        planNumber: plan.planNumber,
-        sendEmail: true,
-      });
+      if (allFourApproved && plan.userId) {
+        await notifyReadyForPhysicalSubmission({
+          userId: plan.userId,
+          planId,
+          planNumber: plan.planNumber,
+          sendEmail: true,
+        });
+      }
     }
+    
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1757,7 +2368,7 @@ export async function updateChartingStatus(
 export async function updateSurconStatus(
   planId: string,
   approved: boolean,
-  comment?: string
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1782,20 +2393,6 @@ export async function updateSurconStatus(
         recordsIIStatus: true,
       },
     });
-
-    if (!approved) {
-      // Send notification to user
-      if (plan.userId) {
-        await notifyPlanQueried({
-          userId: plan.userId,
-          planId,
-          planNumber: plan.planNumber,
-          queriedBy: "SURCON",
-          comment,
-          sendEmail: true,
-        });
-      }
-    }
 
     revalidatePath("/surf-mda/dashboard/surcon");
     revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
@@ -1832,6 +2429,8 @@ export async function updateSurconStatus(
         });
       }
     }
+    
+    await checkAndDispatchQueries(planId);
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -1849,7 +2448,7 @@ export async function updateSurconStatus(
 export async function updateRecordsIStatus(
   planId: string,
   approved: boolean,
-  comment?: string
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -1874,20 +2473,6 @@ export async function updateRecordsIStatus(
         recordsIIStatus: true,
       },
     });
-
-    if (!approved) {
-      // Send notification to user
-      if (plan.userId) {
-        await notifyPlanQueried({
-          userId: plan.userId,
-          planId,
-          planNumber: plan.planNumber,
-          queriedBy: "Records I",
-          comment,
-          sendEmail: true,
-        });
-      }
-    }
 
     revalidatePath("/surf-mda/dashboard/records-i");
     revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
@@ -1925,6 +2510,8 @@ export async function updateRecordsIStatus(
       }
     }
 
+    await checkAndDispatchQueries(planId);
+
     return { success: true, data: { success: true } };
   } catch (error) {
     console.error("Error updating Records I status:", error);
@@ -1936,20 +2523,20 @@ export async function updateRecordsIStatus(
 }
 
 /**
- * Records II Admin: Final approval and submission to OSSG
+ * Intake Admin: Sequential approval of batches
  */
-export async function updateRecordsIIStatus(
+export async function updateIntakeStatus(
   planId: string,
   approved: boolean,
-  comment?: string
+  comment?: string,
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN")) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // Check if all other approvals are done
+    // Check if parallel approvals are done before intake can approve
     const planCheck = await prisma.surfboardPlan.findUnique({
       where: { id: planId },
       select: {
@@ -1957,7 +2544,6 @@ export async function updateRecordsIIStatus(
         chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
-        batchId: true,
       },
     });
 
@@ -1971,9 +2557,109 @@ export async function updateRecordsIIStatus(
       planCheck.surconStatus !== "APPROVED" ||
       planCheck.recordsIStatus !== "APPROVED"
     ) {
+      return { success: false, error: "Parallel reviews must be completed before Intake Admin can act." };
+    }
+
+    const plan = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        intakeStatus: approved ? "APPROVED" : "QUERIED",
+        intakeApprovedBy: user.id,
+        intakeApprovedAt: new Date(),
+        intakeComment: comment,
+      },
+      select: {
+        userId: true,
+        planNumber: true,
+        redCopyStatus: true,
+      },
+    });
+
+    revalidatePath("/surf-mda/dashboard/intake");
+    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard
+
+    // Log audit action
+    await logAuditAction({
+      userId: user.id,
+      action: approved ? "APPROVE_INTAKE" : "QUERY_INTAKE",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        planNumber: plan.planNumber,
+        approved,
+        comment: comment || null,
+        intakeStatus: approved ? "APPROVED" : "QUERIED",
+      }),
+    });
+
+    // If INTAKE queries, dispatch a consolidated note indicating Intake queried
+    if (!approved && plan.userId) {
+      await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: { redCopyStatus: "QUERIED" }
+      });
+
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries: [{ role: "Intake", comment: comment || undefined }],
+        sendEmail: true,
+      });
+    }
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error updating Intake status:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "updateIntakeStatus"),
+    };
+  }
+}
+
+/**
+ * Records II Admin: Final approval and submission to OSSG
+ */
+export async function updateRecordsIIStatus(
+  planId: string,
+  approved: boolean,
+  comment?: string,
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "RECORDS_II" && user.role !== "SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Check if all other approvals are done (including intake)
+    const planCheck = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        accountsStatus: true,
+        chartingStatus: true,
+        surconStatus: true,
+        recordsIStatus: true,
+        intakeStatus: true,
+        batchId: true,
+      },
+    });
+
+    if (!planCheck) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    if (
+      planCheck.accountsStatus !== "APPROVED" ||
+      planCheck.chartingStatus !== "APPROVED" ||
+      planCheck.surconStatus !== "APPROVED" ||
+      planCheck.recordsIStatus !== "APPROVED" ||
+      planCheck.intakeStatus !== "APPROVED"
+    ) {
       return {
         success: false,
-        error: "All other approvals must be completed first",
+        error: "All other approvals (including Intake) must be completed first",
       };
     }
 
@@ -1984,6 +2670,14 @@ export async function updateRecordsIIStatus(
         recordsIIApprovedBy: user.id,
         recordsIIApprovedAt: new Date(),
         recordsIIComment: comment,
+        // Nullify other roles + intake if queried
+        ...(!approved ? {
+          accountsStatus: "PENDING",
+          chartingStatus: "PENDING",
+          surconStatus: "PENDING",
+          recordsIStatus: "PENDING",
+          intakeStatus: "PENDING",
+        } : {}),
         ...(approved
           ? {
             status: "LODGED",
@@ -1992,16 +2686,15 @@ export async function updateRecordsIIStatus(
           }
           : {}),
       },
-      select: {
-        userId: true,
-        planNumber: true,
+      include: {
+        user: true,
         batch: { select: { batchCode: true } },
       },
     });
 
     if (approved) {
-      // TODO: Send data to OSSG API
-      // await sendToOSSG({ ... });
+      // Simulate transmitting to OSSG API
+      await transmitToOSSG(plan, plan.user);
 
       // Send notification to user with batch details
       if (plan.userId) {
@@ -2071,8 +2764,21 @@ export async function getAccountsBatches() {
 
     const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
-        paymentStatus: "LASG_PAID",
-        accountsApprovedBy: null,
+        OR: [
+          // Scenario A: Initial submission waiting for verification
+          {
+            paymentStatus: "LASG_PAID",
+            accountsApprovedBy: null,
+          },
+          // Scenario B: Already approved batch, but has one or more plans resubmitted with pending accountsStatus
+          {
+            plans: {
+              some: {
+                accountsStatus: "PENDING",
+              },
+            },
+          },
+        ],
       },
       include: {
         submitter: {
@@ -2088,6 +2794,8 @@ export async function getAccountsBatches() {
             planNumber: true,
             lga: true,
             deededArea: true,
+            queryLasgReceiptUrls: true,
+            queryRemitaReceiptUrls: true,
           },
         },
       },
@@ -2116,6 +2824,8 @@ export async function getPendingCountByRole(): Promise<
     surcon: number;
     recordsI: number;
     recordsII: number;
+    archive: number;
+    intake: number;
   }>
 > {
   try {
@@ -2129,7 +2839,9 @@ export async function getPendingCountByRole(): Promise<
         "CHARTING",
         "SURCON",
         "RECORDS_I",
+        "INTAKE",
         "RECORDS_II",
+        "ARCHIVE",
         "MDA_SUPERADMIN",
       ].includes(user.role)
     ) {
@@ -2142,12 +2854,25 @@ export async function getPendingCountByRole(): Promise<
       surconCount,
       recordsICount,
       recordsIICount,
+      archiveCount,
+      intakeCount,
     ] = await Promise.all([
-      // Accounts: Count batches with LASG_PAID status and no accounts approval
+      // Accounts: Count batches with LASG_PAID status and no accounts approval, OR batches with at least one pending plan resubmission
       prisma.certificateOfDepositBatch.count({
         where: {
-          paymentStatus: "LASG_PAID",
-          accountsApprovedBy: null,
+          OR: [
+            {
+              paymentStatus: "LASG_PAID",
+              accountsApprovedBy: null,
+            },
+            {
+              plans: {
+                some: {
+                  accountsStatus: "PENDING",
+                },
+              },
+            },
+          ],
         },
       }),
       // Charting: Count plans with PENDING charting status (only from batches with LASG receipt)
@@ -2204,7 +2929,7 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
-      // Records II: Count plans with all other approvals complete (only from batches with LASG receipt)
+      // Records II: Count plans with all other approvals complete including intake
       prisma.surfboardPlan.count({
         where: {
           redCopyStatus: "SUBMITTED",
@@ -2213,6 +2938,7 @@ export async function getPendingCountByRole(): Promise<
           chartingStatus: "APPROVED",
           surconStatus: "APPROVED",
           recordsIStatus: "APPROVED",
+          intakeStatus: "APPROVED",
           deleted: false,
           batch: {
             paymentStatus: {
@@ -2226,6 +2952,37 @@ export async function getPendingCountByRole(): Promise<
           },
         },
       }),
+      // Archive: Count plans fully approved (including Records II and Intake), not yet archived
+      prisma.surfboardPlan.count({
+        where: {
+          redCopyStatus: "APPROVED",
+          surconStatus: "APPROVED",
+          chartingStatus: "APPROVED",
+          recordsIStatus: "APPROVED",
+          intakeStatus: "APPROVED",
+          recordsIIStatus: "APPROVED",
+          accountsStatus: "APPROVED",
+          archiveReceivedAt: null,
+          deleted: false,
+        },
+      }),
+      // Intake: Count batches with at least one plan pending intake (and previous steps approved)
+      prisma.certificateOfDepositBatch.count({
+        where: {
+          plans: {
+            some: {
+              redCopyStatus: "SUBMITTED",
+              accountsStatus: "APPROVED",
+              chartingStatus: "APPROVED",
+              surconStatus: "APPROVED",
+              recordsIStatus: "APPROVED",
+              recordsIIStatus: "PENDING",
+              intakeStatus: "PENDING",
+              deleted: false,
+            }
+          }
+        }
+      }),
     ]);
 
     return {
@@ -2236,6 +2993,8 @@ export async function getPendingCountByRole(): Promise<
         surcon: surconCount,
         recordsI: recordsICount,
         recordsII: recordsIICount,
+        archive: archiveCount,
+        intake: intakeCount,
       },
     };
   } catch (error) {
@@ -2496,6 +3255,7 @@ export async function getRecordsIIPlans() {
         chartingStatus: "APPROVED",
         surconStatus: "APPROVED",
         recordsIStatus: "APPROVED",
+        intakeStatus: "APPROVED",
         deleted: false,
         // Only show plans where batch has LASG receipt uploaded (LASG_PAID or later)
         batch: {
@@ -2528,7 +3288,7 @@ export async function getRecordsIIPlans() {
           },
         },
       },
-      orderBy: { redCopySubmittedAt: "asc" }, // Oldest first for FIFO
+      orderBy: { intakeApprovedAt: "asc" }, // Sequential by intake approval date
     });
 
     // Add lock status information
@@ -2654,8 +3414,13 @@ export async function getQueriedPlansForUser(): Promise<
       lcda: string | null;
       deededArea: string;
       pillars: any;
+      codFee: number | null;
       redCopyFileUrl: string | null;
       redCopyStatus: string | null;
+      accountsStatus: string | null;
+      accountsComment: string | null;
+      chartingStatus: string | null;
+      chartingComment: string | null;
       surconStatus: string | null;
       surconComment: string | null;
       recordsIStatus: string | null;
@@ -2680,6 +3445,8 @@ export async function getQueriedPlansForUser(): Promise<
         deleted: false,
         // Check if any role has queried the plan
         OR: [
+          { accountsStatus: "QUERIED" },
+          { chartingStatus: "QUERIED" },
           { surconStatus: "QUERIED" },
           { recordsIStatus: "QUERIED" },
           { recordsIIStatus: "QUERIED" },
@@ -2694,8 +3461,13 @@ export async function getQueriedPlansForUser(): Promise<
         lcda: true,
         deededArea: true,
         pillars: true,
+        codFee: true,
         redCopyFileUrl: true,
         redCopyStatus: true,
+        accountsStatus: true,
+        accountsComment: true,
+        chartingStatus: true,
+        chartingComment: true,
         surconStatus: true,
         surconComment: true,
         recordsIStatus: true,
@@ -2730,7 +3502,9 @@ export async function resubmitQueriedPlan(
   planId: string,
   pillars?: any,
   recordCopyUrl?: string,
-  location?: { lga?: string; lcda?: string; ward?: string; state?: string }
+  location?: { lga?: string; lcda?: string; ward?: string; state?: string },
+  lasgReceiptUrl?: string,
+  remitaReceiptUrl?: string
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
@@ -2745,6 +3519,8 @@ export async function resubmitQueriedPlan(
         userId: user.id,
         // Check if any role has queried the plan
         OR: [
+          { accountsStatus: "QUERIED" },
+          { chartingStatus: "QUERIED" },
           { surconStatus: "QUERIED" },
           { recordsIStatus: "QUERIED" },
           { recordsIIStatus: "QUERIED" },
@@ -2753,6 +3529,10 @@ export async function resubmitQueriedPlan(
       select: {
         id: true,
         planNumber: true,
+        codFee: true,
+        accountsStatus: true,
+        accountsComment: true,
+        chartingStatus: true,
         surconStatus: true,
         recordsIStatus: true,
         recordsIIStatus: true,
@@ -2766,8 +3546,36 @@ export async function resubmitQueriedPlan(
       };
     }
 
+    // Determine if payment verification is needed
+    if (lasgReceiptUrl && remitaReceiptUrl) {
+      // We use plan.codFee from the initial fetch
+      const { getCodSubmissionSettings } = await import("./settingsActions");
+      const settings = await getCodSubmissionSettings();
+      const feePercent = settings.queryResponseFeePercent || 0;
+      const expectedAmount = plan?.codFee ? (Number(plan.codFee) * feePercent) / 100 : 0;
+
+      if (expectedAmount > 0) {
+        // Verify the payment links
+        const verifyRes = await verifyQueryPaymentLinks(
+          user,
+          lasgReceiptUrl,
+          remitaReceiptUrl,
+          expectedAmount
+        );
+        if (!verifyRes.success) {
+          return { success: false, error: verifyRes.error };
+        }
+      }
+    }
+
     // Determine which role queried the plan
     let queriedBy: string | null = null;
+    // Determine if Accounts needs to re-verify (only if they queried it OR a new payment link was provided)
+    const needsAccountReview = 
+      plan.accountsStatus === "QUERIED" || 
+      !!lasgReceiptUrl || 
+      !!remitaReceiptUrl;
+
     const updates: any = {
       // Update fields if provided
       ...(pillars && { pillars }),
@@ -2776,22 +3584,42 @@ export async function resubmitQueriedPlan(
       ...(location?.lcda && { lcda: location.lcda }),
       ...(location?.ward && { ward: location.ward }),
       ...(location?.state && { state: location.state }),
+      // Append query receipts if provided
+      ...(lasgReceiptUrl && {
+        queryLasgReceiptUrls: { push: lasgReceiptUrl }
+      }),
+      ...(remitaReceiptUrl && {
+        queryRemitaReceiptUrls: { push: remitaReceiptUrl }
+      }),
+      // Status management
+      redCopyStatus: "SUBMITTED",
+      // Only reset accountsStatus to PENDING if review is actually needed
+      accountsStatus: needsAccountReview ? "PENDING" : plan.accountsStatus,
+      accountsComment: needsAccountReview ? null : plan.accountsComment,
+      // Always reset other MDA statuses to PENDING on resubmission
+      chartingStatus: "PENDING",
+      chartingComment: null,
+      surconStatus: "PENDING",
+      surconComment: null,
+      recordsIStatus: "PENDING",
+      recordsIComment: null,
+      recordsIIStatus: "PENDING",
+      recordsIIComment: null,
     };
 
-    // Reset only the querying role's status to PENDING
+    if (plan.accountsStatus === "QUERIED") {
+      queriedBy = "Accounts";
+    }
+    if (plan.chartingStatus === "QUERIED") {
+      queriedBy = queriedBy ? `${queriedBy}, Charting` : "Charting";
+    }
     if (plan.surconStatus === "QUERIED") {
-      updates.surconStatus = "PENDING";
-      updates.surconComment = null;
-      queriedBy = "SURCON";
+      queriedBy = queriedBy ? `${queriedBy}, SURCON` : "SURCON";
     }
     if (plan.recordsIStatus === "QUERIED") {
-      updates.recordsIStatus = "PENDING";
-      updates.recordsIComment = null;
       queriedBy = queriedBy ? `${queriedBy}, Records I` : "Records I";
     }
     if (plan.recordsIIStatus === "QUERIED") {
-      updates.recordsIIStatus = "PENDING";
-      updates.recordsIIComment = null;
       queriedBy = queriedBy ? `${queriedBy}, Records II` : "Records II";
     }
 
@@ -2821,6 +3649,11 @@ export async function resubmitQueriedPlan(
         queriedBy,
         pillarsUpdated: !!pillars,
         recordCopyUpdated: !!recordCopyUrl,
+        queryPayment: lasgReceiptUrl && remitaReceiptUrl ? {
+          lasgReceiptUrl,
+          remitaReceiptUrl,
+          verified: true
+        } : undefined
       }),
     });
 
@@ -3121,6 +3954,8 @@ export async function getAccountsHistory() {
             planNumber: true,
             lga: true,
             deededArea: true,
+            queryLasgReceiptUrls: true,
+            queryRemitaReceiptUrls: true,
           },
         },
       },
@@ -3136,6 +3971,1068 @@ export async function getAccountsHistory() {
     return {
       success: false,
       error: handlePrismaError(error, "getAccountsHistory"),
+    };
+  }
+}
+
+/**
+ * Batched Query Dispatcher
+ * Checks if all four parallel roles (Accounts, Charting, SURCON, Records I)
+ * have made a decision (i.e. not PENDING). If any queried, dispatches a consolidated note.
+ */
+export async function checkAndDispatchQueries(planId: string) {
+  try {
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+      select: {
+        userId: true,
+        planNumber: true,
+        accountsStatus: true,
+        accountsComment: true,
+        chartingStatus: true,
+        chartingComment: true,
+        surconStatus: true,
+        surconComment: true,
+        recordsIStatus: true,
+        recordsIComment: true,
+      },
+    });
+
+    if (!plan || !plan.userId) return;
+
+    // Check if ALL four parallel roles are no longer PENDING
+    const allActed =
+      plan.accountsStatus !== "PENDING" &&
+      plan.chartingStatus !== "PENDING" &&
+      plan.surconStatus !== "PENDING" &&
+      plan.recordsIStatus !== "PENDING";
+
+    if (!allActed) return;
+
+    // Compile queries
+    const queries: Array<{ role: string; comment?: string }> = [];
+    if (plan.accountsStatus === "QUERIED")
+      queries.push({ role: "Accounts", comment: plan.accountsComment || undefined });
+    if (plan.chartingStatus === "QUERIED")
+      queries.push({ role: "Charting", comment: plan.chartingComment || undefined });
+    if (plan.surconStatus === "QUERIED")
+      queries.push({ role: "SURCON", comment: plan.surconComment || undefined });
+    if (plan.recordsIStatus === "QUERIED")
+      queries.push({ role: "Records I", comment: plan.recordsIComment || undefined });
+
+    if (queries.length > 0) {
+      // Set redCopyStatus to QUERIED now that all roles have checked
+      await prisma.surfboardPlan.update({
+        where: { id: planId },
+        data: { redCopyStatus: "QUERIED" },
+      });
+
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      await notifyConsolidatedQueries({
+        userId: plan.userId,
+        planId,
+        planNumber: plan.planNumber,
+        queries,
+        sendEmail: true,
+      });
+    }
+  } catch (error) {
+    console.error("Error in checkAndDispatchQueries (deprecated):", error);
+  }
+}
+
+/**
+ * Helper to verify query response payment links
+ */
+async function verifyQueryPaymentLinks(
+  user: any,
+  lasgReceiptUrl: string,
+  remitaReceiptUrl: string,
+  expectedAmount: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Parallelize external fetches and ID lookup
+    const remitaApiUrl = remitaReceiptUrl.replace(
+      "/view-rrr/details.json",
+      "/details.json"
+    );
+
+    const [lasgResult, remitaResult, fullUserResult] = await Promise.allSettled([
+      fetchAndExtractTextFromUrl(lasgReceiptUrl),
+      fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } }),
+      prisma.surfboardUser.findUnique({
+        where: { id: user.id },
+        select: { payerID: true },
+      })
+    ]);
+
+    // 2. Parse LASG URL parameters (locally)
+    let transId: string, transCode: string, payerId: string;
+    try {
+      const lasgUrl = new URL(lasgReceiptUrl);
+      transId = lasgUrl.searchParams.get("transid") || "";
+      transCode = lasgUrl.searchParams.get("transcode") || "";
+      payerId = lasgUrl.searchParams.get("payerid") || "";
+
+      if (!transId || !transCode || !payerId) {
+        return { success: false, error: "Invalid LASG receipt URL parameters." };
+      }
+    } catch {
+      return { success: false, error: "Invalid LASG receipt URL format." };
+    }
+
+    // 3. Verify PayerID
+    if (fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
+      const dbPayerID = fullUserResult.value.payerID;
+      if (parseInt(payerId, 10) !== dbPayerID) {
+        return {
+          success: false,
+          error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${dbPayerID}.`,
+        };
+      }
+    }
+
+    // 4. Check LASG Fetch Result
+    if (lasgResult.status === "rejected") {
+      return { success: false, error: `Failed to access LASG receipt: ${lasgResult.reason?.message || "Unknown error"}` };
+    }
+    const lasgExtracted = lasgResult.value;
+    if (!lasgExtracted.text || lasgExtracted.text.trim().length < 50) {
+      return { success: false, error: "LASG receipt returned insufficient content." };
+    }
+
+    // 5. Check Remita Fetch Result
+    if (remitaResult.status === "rejected") {
+      return { success: false, error: "Failed to fetch Remita receipt data." };
+    }
+    const remitaRes = remitaResult.value;
+    if (!remitaRes.ok) {
+      return { success: false, error: `Remita receipt API error (Status: ${remitaRes.status}).` };
+    }
+
+    const remitaJson = await remitaRes.json();
+    
+    if (!remitaJson?.paymentDetails || remitaJson.paymentDetails.length === 0) {
+      return { success: false, error: "Remita API returned no payment details." };
+    }
+
+    const pd = remitaJson.paymentDetails[0];
+    const amount = Number(pd.TRANSACTIONAMOUNT_NOFEE || pd.TRANSACTIONAMOUNT) || 0;
+    const rrr = String(pd.RRRNUMBER || pd.RRR || "").replace(/\D/g, "");
+
+    // 6. Check for duplicate receipt usage concurrently
+    const [existingBatch, existingPlanWithReceipt] = await Promise.all([
+      // a. Check if used for any Initial Batch Submission
+      prisma.certificateOfDepositBatch.findFirst({
+        where: { userPaymentRef: rrr },
+        select: { batchCode: true },
+      }),
+      // b. Check if used for any other Query Response
+      prisma.surfboardPlan.findFirst({
+        where: {
+          OR: [
+            { queryLasgReceiptUrls: { has: lasgReceiptUrl } },
+            { queryRemitaReceiptUrls: { has: remitaReceiptUrl } },
+          ],
+        },
+        select: { planNumber: true },
+      }),
+    ]);
+
+    if (existingBatch) {
+      return {
+        success: false,
+        error: `This receipt (RRR: ${rrr}) has already been used for batch submission (${existingBatch.batchCode}).`,
+      };
+    }
+
+    if (existingPlanWithReceipt) {
+      return {
+        success: false,
+        error: `This receipt has already been used for a query response (Plan: ${existingPlanWithReceipt.planNumber}). Each query response requires a new, unique payment.`,
+      };
+    }
+
+    // Verify amount
+    if (Math.abs(amount - expectedAmount) > 1) {
+      return {
+        success: false,
+        error: `Payment mismatch: Expected ₦${expectedAmount.toLocaleString()}, but receipt is ₦${amount?.toLocaleString()}.`,
+      };
+    }
+
+    // Verify status
+    const isRemitaPaid =
+      remitaJson.status === "A" ||
+      pd.PAYMENTSTATUS === "RTC" ||
+      pd.PAYMENTSTATUS === "00" ||
+      pd.PAYMENTSTATUS === "01";
+
+    if (!isRemitaPaid) {
+      const statusLabel = pd.PAYMENTSTATUS || remitaJson.status || "PENDING";
+      return { success: false, error: `Payment status is ${statusLabel}.` };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Verification error:", error);
+    return { success: false, error: `Verification error: ${error.message}` };
+  }
+}
+
+/**
+ * Get batches pending archiving (all plans fully approved, not yet archived).
+ * Grouped by batch, sorted by earliest Records II approval date (FIFO).
+ */
+export async function getPendingArchiveBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "APPROVED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "APPROVED",
+            archiveReceivedAt: null,
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            redCopyStatus: "APPROVED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "APPROVED",
+            archiveReceivedAt: null,
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            recordsIIApprovedAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Sort batches by the earliest recordsIIApprovedAt among their plans
+    const sortedBatches = batches
+      .map((batch) => {
+        const earliestApproval = Math.min(
+          ...batch.plans.map((p) =>
+            p.recordsIIApprovedAt ? new Date(p.recordsIIApprovedAt).getTime() : Infinity
+          )
+        );
+        return { ...batch, _sortKey: earliestApproval };
+      })
+      .sort((a, b) => a._sortKey - b._sortKey)
+      .map(({ _sortKey, ...batch }) => batch);
+
+    return { success: true, data: sortedBatches };
+  } catch (error) {
+    console.error("Error fetching pending archive batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getPendingArchiveBatches"),
+    };
+  }
+}
+
+/**
+ * Get recently archived batches (history view).
+ */
+export async function getArchiveHistoryBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            archiveReceivedAt: { not: null },
+            deleted: false,
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            archiveReceivedAt: { not: null },
+            deleted: false,
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            archiveReceivedAt: true,
+            archiveNotes: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching archive history batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getArchiveHistoryBatches"),
+    };
+  }
+}
+
+/**
+ * Mark a plan as physically received and archived
+ */
+export async function markPlanArchived(planId: string, notes?: string) {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) return { success: false, error: "Plan not found" };
+
+    if (
+      plan.surconStatus !== "APPROVED" ||
+      plan.chartingStatus !== "APPROVED" ||
+      plan.recordsIStatus !== "APPROVED" ||
+      plan.intakeStatus !== "APPROVED" ||
+      plan.recordsIIStatus !== "APPROVED" ||
+      plan.accountsStatus !== "APPROVED"
+    ) {
+      return { success: false, error: "Plan is not fully approved by all MDAs yet" };
+    }
+
+    const updated = await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        archiveReceivedBy: user.id,
+        archiveReceivedAt: new Date(),
+        archiveNotes: notes || null,
+      }
+    });
+
+    revalidatePath("/surf-mda/dashboard/archive");
+    revalidatePath("/surf-mda/dashboard");
+
+    await logAuditAction({
+      userId: user.id,
+      action: "MARK_PLAN_ARCHIVED",
+      entity: "SurfboardPlan",
+      entityId: planId,
+      changes: createChangeLog({
+        archiveReceivedAt: updated.archiveReceivedAt,
+        archiveNotes: notes
+      }),
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error marking plan archived:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "markPlanArchived"),
+    };
+  }
+}
+
+/**
+ * Fetches the current authenticated user's payer profile for payment modals
+ */
+export async function getCurrentPayerProfile(): Promise<ApiResult<any>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) return { success: false, error: "Not authenticated" };
+
+    const dbUser = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        payerID: true,
+        payerIDType: true,
+      },
+    });
+
+    if (!dbUser) return { success: false, error: "User not found" };
+
+    return { success: true, data: dbUser };
+  } catch (error) {
+    console.error("Error fetching payer profile:", error);
+    return { success: false, error: "Failed to fetch payer profile" };
+  }
+}
+
+/**
+ * Intake Admin: Get batches awaiting intake approval
+ * Ordered oldest to newest.
+ */
+export async function getIntakeBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN" && user.role !== "MDA_SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Get batches that have at least one plan ready for intake
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+            recordsIIStatus: "PENDING",
+          }
+        }
+      },
+      include: {
+        submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+          }
+        }
+      },
+      orderBy: { createdAt: "asc" }
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching intake batches:", error);
+    return { success: false, error: "Failed to fetch intake batches" };
+  }
+}
+
+/**
+ * Intake Admin: Get history of processed batches
+ */
+export async function getIntakeHistoryBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN" && user.role !== "MDA_SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+          }
+        }
+      },
+      include: {
+        submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+          },
+          include: {
+            intakeApprovedByUser: { select: { id: true, firstName: true, lastName: true } }
+          }
+        }
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching intake history:", error);
+    return { success: false, error: "Failed to fetch intake history" };
+  }
+}
+
+/**
+ * Intake Admin: Approve or query all eligible plans in a batch
+ */
+export async function updateIntakeBatchStatus(
+  batchId: string,
+  approved: boolean,
+  comment?: string,
+): Promise<ApiResult<{ success: boolean; updatedCount: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || (user.role !== "INTAKE" && user.role !== "SUPERADMIN")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batch = await prisma.certificateOfDepositBatch.findUnique({
+      where: { id: batchId },
+      include: {
+        plans: {
+          where: {
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "PENDING",
+            deleted: false,
+          }
+        }
+      }
+    });
+
+    if (!batch || batch.plans.length === 0) {
+      return { success: false, error: "No eligible plans found in batch" };
+    }
+
+    const planIds = batch.plans.map(p => p.id);
+
+    // Update all plans in a transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.surfboardPlan.updateMany({
+        where: { id: { in: planIds } },
+        data: {
+          intakeStatus: approved ? "APPROVED" : "QUERIED",
+          intakeApprovedBy: user.id,
+          intakeApprovedAt: new Date(),
+          intakeComment: comment,
+          ...(approved ? {} : { redCopyStatus: "QUERIED" })
+        }
+      });
+
+      // Audit logs
+      for (const p of batch.plans) {
+        await tx.surfboardAuditLog.create({
+          data: {
+            userId: user.id,
+            action: approved ? "APPROVE_INTAKE" : "QUERY_INTAKE",
+            entity: "SurfboardPlan",
+            entityId: p.id,
+            ipAddress: "System",
+            changes: JSON.stringify(createChangeLog({
+              planNumber: p.planNumber,
+              approved,
+              intakeStatus: approved ? "APPROVED" : "QUERIED"
+            }))
+          }
+        });
+      }
+    });
+
+    revalidatePath("/surf-mda/dashboard/intake");
+    revalidatePath("/surf-mda/dashboard"); 
+
+    // Dispatch notifications if queried
+    if (!approved && batch.submittedBy) {
+      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      for (const p of batch.plans) {
+        await notifyConsolidatedQueries({
+          userId: batch.submittedBy,
+          planId: p.id,
+          planNumber: p.planNumber,
+          queries: [{ role: "Intake", comment: comment || undefined }],
+          sendEmail: true,
+        });
+      }
+    }
+
+    return { success: true, data: { success: true, updatedCount: planIds.length } };
+  } catch (error) {
+    console.error("Error updating Intake batch:", error);
+    return { success: false, error: handlePrismaError(error, "updateIntakeBatchStatus") };
+  }
+}
+
+// ============================================================================
+// Records II: Batch-oriented functions
+// ============================================================================
+
+const RECORDS_II_LOCK_MINUTES_PER_PLAN = 3;
+
+/**
+ * Get batches for Records II Admin view (batch-based display).
+ * Only returns batches where all 5 prerequisite approvals are complete.
+ * Ordered by oldest intake approval date first.
+ */
+export async function getRecordsIIBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const now = new Date();
+
+    // Get batches that have at least one plan ready for Records II
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            intakeApprovedAt: true,
+            recordsIILockedBy: true,
+            recordsIILockExpiresAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // Sort batches by the earliest intakeApprovedAt among their plans
+    const sortedBatches = batches
+      .map((batch) => {
+        const earliestIntake = Math.min(
+          ...batch.plans.map((p) =>
+            p.intakeApprovedAt ? new Date(p.intakeApprovedAt).getTime() : Infinity
+          )
+        );
+        return { ...batch, _sortKey: earliestIntake };
+      })
+      .sort((a, b) => a._sortKey - b._sortKey)
+      .map(({ _sortKey, ...batch }) => ({
+        ...batch,
+        // Add lock status info to each plan
+        plans: batch.plans.map((plan) => ({
+          ...plan,
+          isLocked:
+            !!plan.recordsIILockedBy &&
+            !!plan.recordsIILockExpiresAt &&
+            new Date(plan.recordsIILockExpiresAt) > now,
+          isLockedByMe:
+            plan.recordsIILockedBy === user.id &&
+            !!plan.recordsIILockExpiresAt &&
+            new Date(plan.recordsIILockExpiresAt) > now,
+        })),
+        // Batch-level lock info (check if first plan in batch is locked by current user)
+        isBatchLockedByMe:
+          batch.plans.length > 0 &&
+          batch.plans[0].recordsIILockedBy === user.id &&
+          !!batch.plans[0].recordsIILockExpiresAt &&
+          new Date(batch.plans[0].recordsIILockExpiresAt) > now,
+        batchLockExpiresAt:
+          batch.plans.length > 0 &&
+          batch.plans[0].recordsIILockedBy === user.id &&
+          batch.plans[0].recordsIILockExpiresAt
+            ? batch.plans[0].recordsIILockExpiresAt
+            : null,
+      }));
+
+    return { success: true, data: sortedBatches };
+  } catch (error) {
+    console.error("Error fetching Records II batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIIBatches"),
+    };
+  }
+}
+
+/**
+ * Get history batches for Records II Admin.
+ * Returns batches where at least one plan has been approved or queried by Records II.
+ */
+export async function getRecordsIIHistoryBatches() {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (
+      !user ||
+      (user.role !== "RECORDS_II" &&
+        user.role !== "SUPERADMIN" &&
+        user.role !== "MDA_SUPERADMIN")
+    ) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const batches = await prisma.certificateOfDepositBatch.findMany({
+      where: {
+        plans: {
+          some: {
+            recordsIIStatus: { in: ["APPROVED", "QUERIED"] },
+            recordsIIApprovedAt: { not: null },
+          },
+        },
+      },
+      include: {
+        submitter: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            surconRegNumber: true,
+            companyName: true,
+          },
+        },
+        _count: { select: { plans: true } },
+        plans: {
+          where: {
+            recordsIIStatus: { in: ["APPROVED", "QUERIED"] },
+            recordsIIApprovedAt: { not: null },
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            planType: true,
+            referencePlanNumber: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            locality: true,
+            deededArea: true,
+            chartingRemarks: true,
+            redCopyFileUrl: true,
+            recordsIIStatus: true,
+            recordsIIComment: true,
+            recordsIIApprovedAt: true,
+            recordsIIApprovedByUser: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    });
+
+    return { success: true, data: batches };
+  } catch (error) {
+    console.error("Error fetching Records II history batches:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getRecordsIIHistoryBatches"),
+    };
+  }
+}
+
+/**
+ * Records II: Find and lock the oldest available batch.
+ * Locks ALL plans in the batch atomically.
+ * Lock duration = 3 minutes × number of plans in the batch.
+ */
+export async function getAndLockBatchForRecordsII(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+
+    // First, check if user already has plans locked for Records II
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        recordsIILockedBy: user.id,
+        recordsIILockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        recordsIILockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          recordsIILockedBy: user.id,
+          recordsIILockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.recordsIILockExpiresAt,
+        },
+      };
+    }
+
+    // Find the oldest batch with plans ready for Records II (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+            OR: [
+              { recordsIILockedBy: null },
+              { recordsIILockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            surconStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            intakeStatus: "APPROVED",
+            recordsIIStatus: "PENDING",
+            OR: [
+              { recordsIILockedBy: null },
+              { recordsIILockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true, intakeApprovedAt: true },
+          orderBy: { intakeApprovedAt: "asc" },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Calculate lock duration: 3 minutes per plan in the batch
+    const planCount = availableBatch.plans.length;
+    const lockDurationMs =
+      RECORDS_II_LOCK_MINUTES_PER_PLAN * planCount * 60000;
+    const lockExpiry = new Date(now.getTime() + lockDurationMs);
+
+    const planIds = availableBatch.plans.map((p) => p.id);
+
+    // Lock all plans in the batch atomically
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: { in: planIds },
+        OR: [
+          { recordsIILockedBy: null },
+          { recordsIILockedBy: user.id },
+          { recordsIILockExpiresAt: { lt: now } },
+        ],
+      },
+      data: {
+        recordsIILockedBy: user.id,
+        recordsIILockedAt: now,
+        recordsIILockExpiresAt: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Another user grabbed the lock first — retry
+      return getAndLockBatchForRecordsII();
+    }
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount: lockResult.count,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error locking batch for Records II:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForRecordsII"),
+    };
+  }
+}
+
+/**
+ * Records II: Release all batch locks held by the current user.
+ */
+export async function releaseBatchLockForRecordsII(): Promise<
+  ApiResult<{ releasedCount: number }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: {
+        recordsIILockedBy: user.id,
+      },
+      data: {
+        recordsIILockedBy: null,
+        recordsIILockedAt: null,
+        recordsIILockExpiresAt: null,
+      },
+    });
+
+    return {
+      success: true,
+      data: { releasedCount: result.count },
+    };
+  } catch (error) {
+    console.error("Error releasing batch lock for Records II:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForRecordsII"),
     };
   }
 }

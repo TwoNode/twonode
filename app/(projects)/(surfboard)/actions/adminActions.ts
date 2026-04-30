@@ -2,7 +2,7 @@
 
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import prisma from "@/lib/prisma";
-import { Prisma, SurfboardRole } from "@prisma/client";
+import { Prisma, SurfboardRole } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { ApiResult } from "../types/surfboardTypes";
@@ -389,9 +389,7 @@ export async function updateUserSubscription(input: UpdateSubscriptionInput) {
     return {
       success: true,
       subscription,
-      message: `Subscription ${
-        existingSubscription ? "updated" : "created"
-      } successfully`,
+      message: `Subscription ${existingSubscription ? "updated" : "created"} successfully`,
     };
   } catch (error: any) {
     console.error("Error updating subscription:", error);
@@ -679,7 +677,7 @@ export async function getAllSurfPlansForAdmin(): Promise<
       where: {
         deleted: false,
         geometry: {
-          not: Prisma.DbNull,
+          not: Prisma.DbNull as any,
         },
       },
       select: {
@@ -716,7 +714,7 @@ export async function getAllSurfPlansForAdmin(): Promise<
       geometry: plan.geometry,
       ward: plan.ward,
       lga: plan.lga,
-      owner: plan.user,
+      owner: plan.user ?? null,
     }));
 
     return { success: true, data: { plans: mappedPlans } };

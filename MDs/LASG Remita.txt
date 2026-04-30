@@ -1,0 +1,120 @@
+So I have been thinking if this our present workflow is not working we can consider changing the approach.. 
+
+Since after payment remita sends two links to the mail provided during the purchase. We treat it just like that
+
+We provide the user to input the two links of the two receipts but not attached to S3 bucket just the way the Ai feature works for the fill form on new plan page. 
+
+Link 1 - LASG receipt 
+Link 2 - Remita receipt.. 
+
+“This has to be smart such that it identifies if the user mis-match the upload for example upload remita receipt to Upload 1” 
+
+Now what do we do with Link 1 - LASG receipt? 
+
+1. We extract the information needed to map the url of the LASG ebs receipt - the transcode and trans id, we have the payer id and type in the user table already. 
+
+2. We confirm the amount paid against the CoD fees.. 
+
+Now what do we do with Link 2 - Remita receipt? 
+
+We extract the RRR number and validate that it does not exist in the table. As the RRR number must be unique, so that users don't use the same receipt for several.
+
+
+So to also add to our check that the two uploads are for the same transaction we extract 
+
+From Link 1 we extract for example 
+
+AssessRef<169767640-8154445-175>
+Or
+Teller-169767640-8154445-175
+
+From Link 2 we extract
+
+Lasg-169767640-8154445-175
+
+These values must be the same.
+
+
+
+=============================
+Test Samples:::
+=============================
+
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60636044&transcode=BGRARMJE
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=AQiys19QnTfYX7wywQQOKA==
+
+
+
+3514-3204-5770
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60636044&transcode=BGRARMJE
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=AQiys19QnTfYX7wywQQOKA==
+
+
+3214-3151-4817
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60627011&transcode=DTFKJZSY
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=cj/6Wj3sHTBLoBlzjsJlzw==
+
+
+2114-3151-5010
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60627021&transcode=MXBTKHYF
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=MtdmqqD2OHmgpHsfcQEZsQ==
+
+
+3114-3160-0485
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60627072&transcode=KPSVJJVP
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=lQeG4FJvpcdwDGNHvrHYVg==
+
+
+1514-3083-2486
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60619531&transcode=QEIFWGEX
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=DYNP9gu9qJBbNY8Bnn0p8w==
+
+
+
+2014-3087-4469
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60619537&transcode=QLGVDXTH
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=NFK0xGN12fj2EOt7+/JpMQ==
+
+
+
+2314-1679-9697
+
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60315564&transcode=MYEYYRAS
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=DUSph5NWFxmoP3pi3+5p2A==
+
+
+2714-2112-5038
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60393107&transcode=UAUSCUMF
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=gH0NiHmGONSyGrQuuv9U9w==
+
+
+1913-9281-9355
+
+LASG receipt link: https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=N&payerid=16976764&transid=60050629&transcode=ZCYYDEIA
+
+
+Remita receipt link: https://login.remita.net/remita/rrr/view-rrr/details.json?x-id=MgCCam3VN+gQYB494e3JwQ==
