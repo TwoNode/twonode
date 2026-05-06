@@ -240,6 +240,7 @@ export default function SurfboardUserPanelLayout({
       element: (
         <LogoutLink
           key={"logout"}
+          postLogoutRedirectURL="/api/auth/logout_redirect?from=surfboard"
           className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{ backgroundColor: "transparent" }}
         >

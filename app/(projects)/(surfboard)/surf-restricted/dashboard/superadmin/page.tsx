@@ -3,6 +3,8 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
+import { Platform } from "@/utils/platform";
 
 interface UserData {
   platform: string;
@@ -13,23 +15,32 @@ interface UserData {
 }
 
 export default function SurfboardSuperAdminPage() {
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("/api/auth/user-data");
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data);
+        const result = await getUserData();
+        if (result.success && result.data) {
+          const data = result.data;
+          
+          // Multi-platform awareness: Get specifically the Surfboard portal session
+          const surfboardSession = data.platforms?.[Platform.SURFBOARD] || 
+                                  (data.platform === Platform.SURFBOARD ? { role: data.role } : null);
 
-          // Check if user has proper access
-          if (data.platform !== "surfboard" || data.role !== "SUPERADMIN") {
-            router.push("/surf-restricted/login");
-            return;
+          if (!surfboardSession || surfboardSession.role !== "SUPERADMIN") {
+             console.log("❌ Unauthorized access to SuperAdmin dashboard");
+             router.push("/surf-restricted/login");
+             return;
           }
+
+          setUserData({
+              ...data,
+              platform: Platform.SURFBOARD,
+              role: surfboardSession.role
+          });
         } else {
           router.push("/surf-restricted/login");
           return;

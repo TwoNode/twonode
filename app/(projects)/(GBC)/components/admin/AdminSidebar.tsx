@@ -76,6 +76,7 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
         })}
 
         <LogoutLink
+          postLogoutRedirectURL="/api/auth/logout_redirect?from=gbc"
           className={cn(
             "mt-5 flex items-center gap-3",
             "rounded-lg transition text-sm sm:text-base",

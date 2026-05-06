@@ -74,7 +74,7 @@ export default function RevaAdminPanelLayout({
       element: (
         <LogoutLink
           key={"logout"}
-          // postLogoutRedirectURL="/dashboard"
+          postLogoutRedirectURL="/api/auth/logout_redirect?from=reva"
           className={cn(
             "group w-full h-[60px] rounded-xl",
             "flex flex-col items-center justify-center gap-2.5",

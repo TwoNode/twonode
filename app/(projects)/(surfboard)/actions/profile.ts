@@ -32,12 +32,12 @@ export async function getProfile(): Promise<{
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
-    if (!user) {
+    if (!user || !user.email) {
       return { error: "Unauthorized" };
     }
 
     const dbUser = await prisma.surfboardUser.findUnique({
-      where: { email: user.email },
+      where: { email: user.email as string },
       select: {
         id: true,
         firstName: true,
@@ -75,7 +75,7 @@ export async function updateProfile(
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
 
-    if (!user) {
+    if (!user || !user.email) {
       return { error: "Unauthorized" };
     }
 
@@ -133,7 +133,7 @@ export async function updateProfile(
 
     // Update user in database
     const updatedUser = await prisma.surfboardUser.update({
-      where: { email: user.email },
+      where: { email: user.email as string },
       data: updates,
       select: {
         id: true,

@@ -111,7 +111,7 @@ export interface ApiResult<T> {
   error?: string;
 }
 
-export type SubscriptionStatus = "active" | "cancelled" | "expired" | "pending";
+export type SubscriptionStatus = "active" | "canceled" | "expired" | "pending";
 export type SurfPlanStatus = "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
 
 export interface SubscriptionPlan {

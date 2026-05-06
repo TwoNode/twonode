@@ -22,7 +22,7 @@ interface ApiResult<T> {
  * Returns platform, role, email, firstName, lastName
  * Used by access control hooks for authorization checks
  */
-export async function getUserData(): Promise<ApiResult<UserData>> {
+export async function getUserData(): Promise<ApiResult<any>> {
   try {
     const userData = await getEncryptedUserData();
 
@@ -33,16 +33,10 @@ export async function getUserData(): Promise<ApiResult<UserData>> {
       };
     }
 
-    // Return only necessary data for client-side
+    // Return the full object for multi-platform support
     return {
       success: true,
-      data: {
-        platform: userData.platform as Platform,
-        role: userData.role,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-      },
+      data: userData
     };
   } catch (error) {
     console.error("Error getting user data:", error);
