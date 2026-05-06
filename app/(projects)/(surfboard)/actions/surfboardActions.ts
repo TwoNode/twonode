@@ -2625,7 +2625,7 @@ export async function searchUsers(
 ): Promise<ApiResult<SearchUser[]>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user) {
+    if (!user || !user.email) {
       return { success: false, error: "Not authenticated" };
     }
 

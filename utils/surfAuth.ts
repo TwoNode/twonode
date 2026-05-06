@@ -70,6 +70,9 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
     return {
       ...user,
       userId: userData.userId,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
       role: surfboardSession.role,
       subscription: surfboardSession.subscription,
     };
