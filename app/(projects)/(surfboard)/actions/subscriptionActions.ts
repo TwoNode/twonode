@@ -19,7 +19,7 @@ export async function getUserActiveSubscription() {
       const isActive =
         userSub.status === "active" || userSub.status === "past_due";
       const isCancelledButValid =
-        userSub.status === "cancelled" &&
+        userSub.status === "canceled" &&
         userSub.expiresAt &&
         new Date(userSub.expiresAt) >= new Date();
 
@@ -72,7 +72,7 @@ export async function getUserAndActiveSub() {
       const isActive =
         userSub.status === "active" || userSub.status === "past_due";
       const isCancelledButValid =
-        userSub.status === "cancelled" &&
+        userSub.status === "canceled" &&
         userSub.expiresAt &&
         new Date(userSub.expiresAt) >= new Date();
 

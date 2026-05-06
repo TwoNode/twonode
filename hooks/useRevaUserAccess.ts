@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { canAccessRevaUserPanel } from "@/permissions";
 import { Platform } from "@/utils/platform";
+import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
 
 interface UserData {
   platform: Platform;
@@ -52,15 +53,20 @@ export function useRevaUserAccess() {
       }
 
       try {
-        const response = await fetch("/api/auth/user-data");
-        if (!response.ok) throw new Error("Failed to fetch user data");
+        console.log("🔍 Checking admin access & fetching user data...");
+        const result = await getRevaUserData();
+        if (!result.success || !result.data) throw new Error(result.error || "Failed to fetch user data");
 
-        const fetchedUserData: UserData = await response.json();
+        const fullUserData = result.data;
         if (!isMounted) return;
-        setUserData(fetchedUserData);
+        
+        // Multi-platform awareness: Get specifically the Reva portal session
+        // Fallback to legacy fields if necessary
+        const revaSession = fullUserData.platforms?.[Platform.REVA] || 
+                          (fullUserData.platform === Platform.REVA ? { role: fullUserData.role, subscription: fullUserData.subscription } : null);
 
-        if (fetchedUserData.platform !== "reva") {
-          // Assuming Platform.REVA is "reva" string
+        if (!revaSession) {
+          console.log("🛡️ Reva Portal access check failed: No active Reva session found in current login.");
           if (isMounted) {
             setIsUser(false);
             router.push("/reva/login");
@@ -68,7 +74,14 @@ export function useRevaUserAccess() {
           return;
         }
 
-        const canAccess = canAccessRevaUserPanel(fetchedUserData.role);
+        // Set the active session role/data for this platform
+        setUserData({
+            ...fullUserData,
+            platform: Platform.REVA,
+            role: revaSession.role
+        });
+
+        const canAccess = canAccessRevaUserPanel(revaSession.role);
         if (isMounted) {
           setIsUser(canAccess);
         }

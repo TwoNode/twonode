@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
-  LoadScript,
+  useJsApiLoader,
   GoogleMap,
   Autocomplete,
   Marker,
@@ -54,6 +54,8 @@ const containerStyle = {
 
 const center = { lat: 6.5244, lng: 3.3792 };
 
+const libraries: ("places")[] = ["places"];
+
 const watchTime = 30000;
 
 const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
@@ -89,7 +91,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
   const [lga, setLga] = useState("Unknown");
   const [totalCost, setTotalCost] = useState(0);
   const [showReview, setShowReview] = useState(false);
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState("");
+
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [comments, setComments] = useState("");
   const [showConfirmFallback, setShowConfirmFallback] = useState(false);
@@ -104,9 +106,11 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
   const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
   const [isLocationFromGPS, setIsLocationFromGPS] = useState(false);
 
-  useEffect(() => {
-    setGoogleMapsApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "");
-  }, []);
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries,
+  });
 
   const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
@@ -803,10 +807,8 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
     }
   };
 
-  if (!googleMapsApiKey) {
-    // Show a loading spinner or message while waiting for the API key
-    // and window object to be available
-
+  if (!isLoaded) {
+    // Show a loading spinner while waiting for the Google Maps script
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
@@ -815,7 +817,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
   }
 
   return (
-    <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={["places"]}>
+    <>
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-999">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
@@ -1169,7 +1171,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
           </div>
         )}
       </div>
-    </LoadScript>
+    </>
   );
 };
 
