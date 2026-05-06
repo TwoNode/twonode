@@ -69,7 +69,9 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
 
     return {
       ...user,
+      id: userData.userId, // Override Kinde's id with actual DB userId
       userId: userData.userId,
+      kindeId: userData.kindeId,
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
