@@ -91,6 +91,10 @@ export default function SubscriptionManager() {
         setCurrent(sub);
         setPendingPlan(null);
       });
+      // Refresh layout
+      window.dispatchEvent(new Event("refreshUser"));
+
+      router.refresh(); // Update server components/layout state
       router.replace(pathname);
     }
 
