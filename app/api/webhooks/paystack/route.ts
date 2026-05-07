@@ -213,8 +213,8 @@ function detectPlatform(event: string, data: any): Platform {
     // Check reference prefixes first (very reliable)
     const reference = String(data.reference || (meta as any).reference || "");
     if (reference.startsWith("REVA_") || reference.startsWith("reva_")) return "reva";
+    if (reference.toUpperCase().includes("GBC")) return "gbc";
     if (reference.startsWith("SurfCoD") || reference.startsWith("SurfCoDRef_")) return "surfboard";
-    if (reference.startsWith("GBC") || reference.startsWith("EB_GBC")) return "gbc";
     if (reference.startsWith("SURFBOARD_SUB_") || reference.startsWith("SURF_")) return "surfboard";
 
     // Subscription markers
@@ -238,6 +238,9 @@ function detectPlatform(event: string, data: any): Platform {
       undefined;
     if (mRef) return "reva";
   }
+
+    // 4) Metadata keys (for GBC and others)
+    if (meta.ticketNumber || meta.ticketType || meta.allTicketNumbers) return "gbc";
 
   return "unknown";
 }
@@ -723,6 +726,14 @@ async function onInvoiceInformational(event: string, data: InvoiceData) {
   const userId = await findSurfboardUserIdFromEvent(data);
   if (!userId) return;
 
+  // If invoice failed, mark subscription as past_due
+  if (data.status === "failed") {
+    await prisma.subscription.update({
+      where: { userId },
+      data: { status: "past_due" },
+    });
+  }
+
   await prisma.subscriptionHistory.create({
     data: {
       userId,
@@ -737,7 +748,7 @@ async function onInvoiceInformational(event: string, data: InvoiceData) {
     },
   });
 
-  console.log(`ℹ️ ${event}: ${data.invoice_code}`);
+  console.log(`ℹ️ ${event}: ${data.invoice_code} (Status: ${data.status})`);
 }
 
 // ─────────────────────────── Reva (one‑time) ───────────────────────────

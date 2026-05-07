@@ -315,7 +315,7 @@ export async function isUserSubscribed(): Promise<boolean> {
     const sub = await prisma.subscription.findFirst({
       where: {
         userId: user.id,
-        status: { in: ["active", "past_due"] },
+        status: { in: ["active", "past_due", "canceled"] },
       },
       orderBy: { updatedAt: "desc" },
     });
