@@ -237,7 +237,7 @@ export async function createOrUpdateSubscription({
           reference,
           planCode: plan.plan_code,
           planName: plan.name,
-          amount: plan.amount,
+          amount: plan.amount * 100, // Convert to Kobo
           interval: plan.interval,
           status: "active",
           eventType: "subscription.create",
