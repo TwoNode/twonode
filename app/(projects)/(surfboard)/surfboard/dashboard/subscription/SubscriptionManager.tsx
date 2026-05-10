@@ -150,7 +150,7 @@ export default function SubscriptionManager() {
 
   const getSubscriptionStatus = useMemo(() => {
     if (isSubscriptionActive) {
-      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.name as keyof typeof SUBSCRIPTION_PLANS]
+      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.interval as keyof typeof SUBSCRIPTION_PLANS]
           ?.name || current?.planName
         }`;
     }
