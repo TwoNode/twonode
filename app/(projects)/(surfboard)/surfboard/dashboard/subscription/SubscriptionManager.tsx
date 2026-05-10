@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -331,86 +332,136 @@ export default function SubscriptionManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-          <p className="text-muted-foreground">Loading subscription plans...</p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-4"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full animate-pulse" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 relative z-10 mx-auto" />
+          </div>
+          <p className="text-muted-foreground font-medium">Loading subscription plans...</p>
+        </motion.div>
       </div>
     );
   }
 
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
+  };
+
   return (
-    <div className="space-y-8 pb-8">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="space-y-12 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+    >
       {/* Header Section */}
-      <div className="text-center space-y-3 pt-6">
-        <h1 className="text-4xl font-bold tracking-tight bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <motion.div variants={itemVariants} className="text-center space-y-4 pt-8">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient-x pb-1">
           Choose Your Plan
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
           Select the perfect subscription plan for your needs. Cancel anytime.
         </p>
-      </div>
+      </motion.div>
 
       {/* Current Plan Card */}
-      {current && (
-        <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-          <CardHeader className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Crown className="h-6 w-6 text-blue-600" />
-                  Current Plan
-                </CardTitle>
-                <CardDescription className="text-base mt-2">
-                  {getSubscriptionStatus}
-                </CardDescription>
-              </div>
-              {isSubscriptionActive && (
-                <Badge className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-1.5">
-                  Active
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h3 className="text-2xl font-bold">
-                  {SUBSCRIPTION_PLANS[
-                    current.interval as keyof typeof SUBSCRIPTION_PLANS
-                  ]?.name || current.planName}
-                </h3>
-                <p className="text-muted-foreground text-lg">
-                  {getNextBillingText}
-                </p>
-              </div>
-              {isSubscriptionActive && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowConfirmation(true)}
-                  disabled={isDisabling}
-                  size="lg"
-                  className="shadow-lg"
-                >
-                  {isDisabling ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Cancel Subscription"
+      <AnimatePresence mode="wait">
+        {current && (
+          <motion.div
+            key="current-plan"
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative overflow-hidden rounded-2xl p-0.5 max-w-4xl mx-auto"
+          >
+            {/* Animated glowing border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 animate-pulse" />
+            
+            <Card className="relative border border-white/20 dark:border-white/10 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl shadow-xl">
+              <CardHeader className="border-b border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-r from-blue-500/5 to-purple-500/5 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-2xl flex items-center gap-3 font-bold">
+                      <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shadow-sm">
+                        <Crown className="h-6 w-6" />
+                      </div>
+                      Current VIP Plan
+                    </CardTitle>
+                    <CardDescription className="text-base mt-2 font-medium">
+                      {getSubscriptionStatus}
+                    </CardDescription>
+                  </div>
+                  {isSubscriptionActive && (
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 font-semibold shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      Active
+                    </div>
                   )}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-8 pb-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 dark:from-slate-100 dark:to-slate-400 bg-clip-text text-transparent">
+                      {SUBSCRIPTION_PLANS[
+                        current.interval as keyof typeof SUBSCRIPTION_PLANS
+                      ]?.name || current.planName}
+                    </h3>
+                    <p className="text-muted-foreground text-lg flex items-center gap-2 font-medium">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-500" />
+                      {getNextBillingText}
+                    </p>
+                  </div>
+                  {isSubscriptionActive && (
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        variant="destructive"
+                        onClick={() => setShowConfirmation(true)}
+                        disabled={isDisabling}
+                        size="lg"
+                        className="shadow-lg hover:shadow-red-500/20 transition-all duration-300 h-12 px-8 rounded-xl font-semibold text-base border border-red-500/20"
+                      >
+                        {isDisabling ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          "Cancel Subscription"
+                        )}
+                      </Button>
+                    </motion.div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Available Plans */}
-      <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold">
+      <motion.div variants={itemVariants} className="space-y-8 max-w-7xl mx-auto">
+        <div className="text-center space-y-3">
+          <h2 className="text-3xl font-bold tracking-tight">
             {isSubscriptionActive
               ? "Switch Plans"
               : isSubscriptionInGracePeriod
@@ -418,7 +469,7 @@ export default function SubscriptionManager() {
                 : "Available Plans"}
           </h2>
 
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-lg">
             {isSubscriptionActive
               ? "Cancel your current plan to subscribe to a new one"
               : isSubscriptionInGracePeriod
@@ -429,7 +480,7 @@ export default function SubscriptionManager() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 md:grid-cols-2 grid-cols-1 max-w-7xl mx-auto px-4">
+        <div className="grid lg:grid-cols-3 gap-8 md:grid-cols-2 grid-cols-1">
           {Object.values(SUBSCRIPTION_PLANS).map((plan) => {
             const isWorking = pendingPlan === plan.id;
             const isCurrent = current?.planCode === plan.planCode;
@@ -440,88 +491,99 @@ export default function SubscriptionManager() {
               !!pendingPlan;
 
             return (
-              <div key={plan.id} className="relative group">
+              <motion.div 
+                key={plan.id} 
+                variants={itemVariants}
+                whileHover={!isDisabled ? { y: -8 } : {}}
+                className="relative group h-full"
+              >
                 {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                    <span className="bg-linear-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" />
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 ring-2 ring-white dark:ring-slate-900">
+                      <Sparkles className="h-3.5 w-3.5" />
                       MOST POPULAR
                     </span>
                   </div>
                 )}
+                
+                {/* Ambient Glow for Popular Plan */}
+                {isPopular && (
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-60 transition duration-500" />
+                )}
 
                 <Card
-                  className={`h-full border-2 transition-all duration-300 ${isCurrent
-                      ? "border-blue-600 ring-4 ring-blue-600/20 shadow-xl scale-105"
+                  className={`relative h-full flex flex-col border transition-all duration-500 overflow-hidden rounded-2xl
+                    ${isCurrent
+                      ? "border-blue-500/50 bg-blue-50/80 dark:bg-blue-950/20 shadow-[0_0_30px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/50"
                       : isPopular
-                        ? "border-purple-300 dark:border-purple-700 hover:border-purple-500 hover:shadow-2xl hover:scale-105"
-                        : "border-border hover:border-blue-400 hover:shadow-xl hover:scale-105"
-                    } ${isPopular ? "pt-8" : "pt-6"} ${isDisabled && !isCurrent ? "opacity-60" : ""
+                        ? "border-purple-500/30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl"
+                        : "border-slate-200/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl hover:shadow-xl hover:border-blue-500/30"
+                    } ${isPopular ? "pt-8" : "pt-6"} ${isDisabled && !isCurrent ? "opacity-60 grayscale-[0.3]" : ""
                     }`}
                 >
-                  <CardHeader className="pb-4">
+                  <CardHeader className="pb-4 shrink-0">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div
-                          className={`p-2 rounded-lg ${isPopular
-                              ? "bg-linear-to-br from-purple-500 to-blue-500 text-white"
-                              : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
+                          className={`p-3 rounded-xl shadow-sm border ${isPopular
+                              ? "bg-gradient-to-br from-purple-500 to-blue-500 text-white border-transparent"
+                              : "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border-slate-200 dark:border-slate-700"
                             }`}
                         >
                           {getPlanIcon(plan.interval)}
                         </div>
                         <div>
-                          <CardTitle className="text-2xl font-bold">
+                          <CardTitle className="text-2xl font-bold tracking-tight">
                             {plan.name}
                           </CardTitle>
                         </div>
                       </div>
                       {isCurrent && (
-                        <Badge className="bg-green-500 hover:bg-green-600 text-white">
-                          Active
-                        </Badge>
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-xs font-bold border border-green-500/20">
+                          <Check className="h-3 w-3" /> Active
+                        </div>
                       )}
                     </div>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-base leading-relaxed font-medium">
                       {plan.description}
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="pb-6 space-y-6">
-                    <div className="border-t border-b py-6">
+                  <CardContent className="pb-6 space-y-6 flex-grow">
+                    <div className="py-6 border-y border-slate-200/60 dark:border-slate-800/60">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">
+                        <span className="text-4xl lg:text-5xl font-extrabold tracking-tight">
                           ₦{plan.price.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground text-lg">
+                        <span className="text-muted-foreground font-medium text-lg">
                           /{plan.interval}
                         </span>
                       </div>
                       {plan.interval === "quarterly" && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-                          Save 15% compared to monthly
-                        </p>
+                        <div className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm font-semibold border border-green-200 dark:border-green-800/30">
+                          <Zap className="h-4 w-4 text-amber-500" /> Save 15% compared to monthly
+                        </div>
                       )}
                       {plan.interval === "annually" && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-                          Save 30% compared to monthly
-                        </p>
+                        <div className="inline-flex items-center gap-1.5 mt-4 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-sm font-semibold border border-green-200 dark:border-green-800/30">
+                          <Zap className="h-4 w-4 text-amber-500" /> Save 30% compared to monthly
+                        </div>
                       )}
                     </div>
 
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <ul className="space-y-4">
+                      <li className="flex items-start gap-3 text-base">
+                        <div className="shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 p-1 mt-0.5">
+                          <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span>Full access to all features</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Full access to all features</span>
                       </li>
 
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <li className="flex items-start gap-3 text-base">
+                        <div className="shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 p-1 mt-0.5">
+                          <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">
                           {plan.interval === "monthly"
                             ? "Monthly"
                             : plan.interval === "quarterly"
@@ -531,81 +593,85 @@ export default function SubscriptionManager() {
                         </span>
                       </li>
 
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <li className="flex items-start gap-3 text-base">
+                        <div className="shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 p-1 mt-0.5">
+                          <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span>24/7 Priority support</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">24/7 Priority support</span>
                       </li>
                     </ul>
                   </CardContent>
 
-                  <CardFooter className="pt-0">
-                    <Button
-                      size="lg"
-                      disabled={isDisabled}
-                      onClick={() => handlePlanSelect(plan.id)}
-                      className={`w-full font-semibold text-base h-12 ${isPopular && !isCurrent
-                          ? "bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-                          : isCurrent
-                            ? "bg-green-600 hover:bg-green-700"
-                            : ""
-                        }`}
-                      variant={
-                        isCurrent
-                          ? "default"
-                          : isPopular
+                  <CardFooter className="pt-0 shrink-0">
+                    <motion.div className="w-full" whileTap={!isDisabled ? { scale: 0.97 } : {}}>
+                      <Button
+                        size="lg"
+                        disabled={isDisabled}
+                        onClick={() => handlePlanSelect(plan.id)}
+                        className={`w-full font-bold text-base h-14 rounded-xl shadow-md transition-all ${
+                          isPopular && !isCurrent
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white hover:shadow-xl hover:shadow-blue-500/25 border-0"
+                            : isCurrent
+                              ? "bg-green-600 hover:bg-green-700 text-white border-0"
+                              : "border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100"
+                          }`}
+                        variant={
+                          isCurrent
                             ? "default"
-                            : "default"
-                      }
-                    >
-                      {isWorking ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Processing...
-                        </>
-                      ) : isCurrent ? (
-                        <>
-                          <Check className="mr-2 h-5 w-5" />
-                          Current Plan
-                        </>
-                      ) : (
-                        <>
-                          Get Started
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                      )}
-                    </Button>
+                            : isPopular
+                              ? "default"
+                              : "outline"
+                        }
+                      >
+                        {isWorking ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Processing...
+                          </>
+                        ) : isCurrent ? (
+                          <>
+                            <Check className="mr-2 h-5 w-5" />
+                            Current Plan
+                          </>
+                        ) : (
+                          <>
+                            Get Started
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
                   </CardFooter>
                 </Card>
-              </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle className="text-2xl font-bold">
               Cancel Current Subscription?
             </DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-4 pt-4">
-                <p className="text-base">
+                <p className="text-base text-slate-600 dark:text-slate-400 font-medium">
                   To subscribe to a different plan, you need to cancel your
                   current subscription first. You'll continue to have access
                   until the end of your current billing period.
                 </p>
 
                 {current?.currentEnd && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
-                    <p className="text-yellow-800 dark:text-yellow-200 font-semibold">
+                  <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50">
+                    <p className="text-amber-800 dark:text-amber-300 font-semibold flex items-center gap-2">
+                      <Zap className="h-4 w-4" />
                       Your current plan will remain active until{" "}
                       {formatLocalDate(current.currentEnd)}.
                     </p>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-2">
+                    <p className="text-amber-700 dark:text-amber-400/80 text-sm mt-2 ml-6">
                       After that date, you can subscribe to a new plan.
                     </p>
                   </div>
@@ -613,12 +679,13 @@ export default function SubscriptionManager() {
               </div>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-3 sm:gap-0 mt-6">
             <Button
               variant="outline"
               onClick={() => setShowConfirmation(false)}
               disabled={isDisabling}
               size="lg"
+              className="font-semibold rounded-xl h-12"
             >
               Keep Current Plan
             </Button>
@@ -627,10 +694,11 @@ export default function SubscriptionManager() {
               disabled={isDisabling}
               variant="destructive"
               size="lg"
+              className="font-semibold rounded-xl h-12 shadow-lg shadow-red-500/20"
             >
               {isDisabling ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Processing...
                 </>
               ) : (
@@ -643,6 +711,6 @@ export default function SubscriptionManager() {
 
       {/* Admin FAB for Development */}
       {process.env.NODE_ENV === "development" && <SubscriptionAdminFAB />}
-    </div>
+    </motion.div>
   );
 }
