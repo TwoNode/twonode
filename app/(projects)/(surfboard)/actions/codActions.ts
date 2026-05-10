@@ -2764,13 +2764,16 @@ export async function getAccountsBatches() {
 
     const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
+        // Only show batches that have a submitted LASG receipt
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
         OR: [
           // Scenario A: Initial submission waiting for verification
           {
-            paymentStatus: "LASG_PAID",
             accountsApprovedBy: null,
           },
-          // Scenario B: Already approved batch, but has one or more plans resubmitted with pending accountsStatus
+          // Scenario B: Already processed batch, but has one or more plans resubmitted with pending accountsStatus
           {
             plans: {
               some: {
@@ -2860,9 +2863,12 @@ export async function getPendingCountByRole(): Promise<
       // Accounts: Count batches with LASG_PAID status and no accounts approval, OR batches with at least one pending plan resubmission
       prisma.certificateOfDepositBatch.count({
         where: {
+          // Only count batches that have a submitted LASG receipt
+          paymentStatus: {
+            in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+          },
           OR: [
             {
-              paymentStatus: "LASG_PAID",
               accountsApprovedBy: null,
             },
             {
