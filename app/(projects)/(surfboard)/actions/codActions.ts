@@ -58,7 +58,7 @@ function getRoleFieldPrefix(role: MDARole): string {
 /**
  * Fetches certificate batches filtered by payment status
  * Requires ADMIN or SUPERADMIN role
- * @param status - Optional payment status filter (e.g., "USER_PAID")
+ * @param status - Optional payment status filter (e.g., "LASG_PAID")
  */
 export async function getBatchesByStatus(status?: string): Promise<
   ApiResult<{
@@ -1183,10 +1183,7 @@ export async function verifyBatchPayment(
     }
 
     // Check if already paid
-    if (
-      batch.paymentStatus === "USER_PAID" ||
-      batch.paymentStatus === "LASG_PAID"
-    ) {
+    if (batch.paymentStatus === "LASG_PAID") {
       return {
         success: true,
         data: { batchId: batch.id, status: batch.paymentStatus },
@@ -1320,8 +1317,7 @@ export async function verifyBatchPaymentWithLinks(
 
     // 2. Initial Status Check
     if (
-      batch.paymentStatus === "LASG_PAID" ||
-      batch.paymentStatus === "USER_PAID"
+      batch.paymentStatus === "LASG_PAID"
     ) {
       return {
         success: true,
@@ -2015,10 +2011,7 @@ export async function retryBatchPayment(batchId: string): Promise<
     }
 
     // Check if already paid
-    if (
-      batch.paymentStatus === "USER_PAID" ||
-      batch.paymentStatus === "LASG_PAID"
-    ) {
+    if (batch.paymentStatus === "LASG_PAID") {
       return { success: false, error: "Batch payment already completed" };
     }
 

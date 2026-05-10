@@ -196,16 +196,6 @@ export function SubmittedBatchesModal({
             Payment Pending
           </Badge>
         );
-      case "USER_PAID":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-300"
-          >
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Paid
-          </Badge>
-        );
       case "LASG_PAID":
         return (
           <Badge
@@ -244,7 +234,6 @@ export function SubmittedBatchesModal({
 
   const canDownloadLetter = (status: string) => {
     return [
-      "USER_PAID",
       "LASG_PAID",
       "ACCOUNTS_APPROVED",
       "COMPLETED",

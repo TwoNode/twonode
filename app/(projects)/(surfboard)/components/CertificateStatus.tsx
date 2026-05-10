@@ -119,7 +119,6 @@ export function CertificateOfDepositStatus({
         return "bg-green-100 text-green-700 border-green-200";
       case "ACCOUNTS_DISAPPROVED":
         return "bg-red-100 text-red-700 border-red-200";
-      case "USER_PAID":
       case "LASG_PAID":
         return "bg-blue-100 text-blue-700 border-blue-200";
       case "PENDING_USER_PAYMENT":

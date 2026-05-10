@@ -817,10 +817,7 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
     }
 
     // Check if already processed (idempotency)
-    if (
-      batch.paymentStatus === "USER_PAID" ||
-      batch.paymentStatus === "LASG_PAID"
-    ) {
+    if (batch.paymentStatus === "LASG_PAID") {
       console.log(
         `ℹ️ certificate charge.success: batch ${batch.batchCode} already marked as paid (idempotent)`
       );
@@ -850,7 +847,7 @@ async function onCertificatePaymentSuccess(data: ChargeSuccessData) {
     await prisma.certificateOfDepositBatch.update({
       where: { id: batch.id },
       data: {
-        paymentStatus: "USER_PAID",
+        paymentStatus: "LASG_PAID",
         userPaymentDate: paidAt,
       },
     });
