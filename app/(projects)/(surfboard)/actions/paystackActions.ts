@@ -545,11 +545,11 @@ export async function verifySubscription(reference: string) {
     let nextPaymentDate = "";
 
     try {
-      // List subscriptions for this customer
+      // List subscriptions for this customer for the specific plan
       const subscriptionsResponse: SubscriptionListResponse =
         await paystack.subscription.list({
           customer: customerId,
-          // plan: planObject.plan_code,
+          plan: planObject.plan_code,
         });
 
       console.log(
