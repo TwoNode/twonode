@@ -370,10 +370,10 @@ export default function SubscriptionManager() {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="space-y-16 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen"
+      className="space-y-16 pb-20 px-2 sm:px-4 lg:px-6 max-w-7xl mx-auto min-h-screen"
     >
       {/* Premium Hero Section */}
-      <motion.div variants={itemVariants} className="relative pt-16 pb-8 text-center">
+      <motion.div variants={itemVariants} className="relative pt-0 pb-2 text-center">
         {/* Animated Background Mesh */}
         <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
           <div className="absolute w-[600px] h-[400px] bg-blue-500/10 dark:bg-blue-600/10 blur-[100px] rounded-full mix-blend-screen animate-pulse" />
@@ -381,10 +381,15 @@ export default function SubscriptionManager() {
         </div>
 
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tighter text-slate-900 dark:text-white mb-6">
-          Plans that scale with <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">your ambition.</span>
+          Plans that scale with{" "}
+          <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+            your ambition.
+          </span>
         </h1>
+
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-          Unlock the full potential of Surfboard. Choose the perfect plan tailored to your workflow.
+          Unlock the full potential of Surfboard. Choose the perfect plan
+          tailored to your workflow.
         </p>
       </motion.div>
 
