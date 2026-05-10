@@ -521,7 +521,7 @@ export default function SubscriptionManager() {
                         per {plan.interval === 'quarterly' ? 'quarter' : plan.interval === 'annually' ? 'year' : 'month'}
                       </div>
                       
-                      {plan.interval === 'quarterly' && (
+                      {/* {plan.interval === 'quarterly' && (
                         <div className="mt-3 inline-flex text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-3 py-1 rounded-lg">
                           Save 15% vs monthly
                         </div>
@@ -530,7 +530,7 @@ export default function SubscriptionManager() {
                         <div className="mt-3 inline-flex text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-3 py-1 rounded-lg">
                           Save 30% vs monthly
                         </div>
-                      )}
+                      )} */}
                     </div>
 
                     <div className="space-y-4 mb-8 flex-1">
