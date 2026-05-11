@@ -20,9 +20,9 @@ import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
 import {
   extractPaymentDetailsFromText,
-  extractEBSReceiptFields,
   extractLASGReceiptFromHtml,
   extractRemitaReceiptFromHtml,
+  extractEBSReceiptFields,
 } from "./aiExtractionActions";
 import { transmitToOSSG } from "./ossgActions";
 
@@ -58,7 +58,7 @@ function getRoleFieldPrefix(role: MDARole): string {
 /**
  * Fetches certificate batches filtered by payment status
  * Requires ADMIN or SUPERADMIN role
- * @param status - Optional payment status filter (e.g., "USER_PAID")
+ * @param status - Optional payment status filter (e.g., "LASG_PAID")
  */
 export async function getBatchesByStatus(status?: string): Promise<
   ApiResult<{
@@ -85,7 +85,7 @@ export async function getBatchesByStatus(status?: string): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -1183,10 +1183,7 @@ export async function verifyBatchPayment(
     }
 
     // Check if already paid
-    if (
-      batch.paymentStatus === "USER_PAID" ||
-      batch.paymentStatus === "LASG_PAID"
-    ) {
+    if (batch.paymentStatus === "LASG_PAID") {
       return {
         success: true,
         data: { batchId: batch.id, status: batch.paymentStatus },
@@ -1320,8 +1317,7 @@ export async function verifyBatchPaymentWithLinks(
 
     // 2. Initial Status Check
     if (
-      batch.paymentStatus === "LASG_PAID" ||
-      batch.paymentStatus === "USER_PAID"
+      batch.paymentStatus === "LASG_PAID"
     ) {
       return {
         success: true,
@@ -2015,10 +2011,7 @@ export async function retryBatchPayment(batchId: string): Promise<
     }
 
     // Check if already paid
-    if (
-      batch.paymentStatus === "USER_PAID" ||
-      batch.paymentStatus === "LASG_PAID"
-    ) {
+    if (batch.paymentStatus === "LASG_PAID") {
       return { success: false, error: "Batch payment already completed" };
     }
 
@@ -2102,7 +2095,7 @@ export async function uploadLASGReceipt(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -2764,13 +2757,16 @@ export async function getAccountsBatches() {
 
     const batches = await prisma.certificateOfDepositBatch.findMany({
       where: {
+        // Only show batches that have a submitted LASG receipt
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
         OR: [
           // Scenario A: Initial submission waiting for verification
           {
-            paymentStatus: "LASG_PAID",
             accountsApprovedBy: null,
           },
-          // Scenario B: Already approved batch, but has one or more plans resubmitted with pending accountsStatus
+          // Scenario B: Already processed batch, but has one or more plans resubmitted with pending accountsStatus
           {
             plans: {
               some: {
@@ -2843,7 +2839,7 @@ export async function getPendingCountByRole(): Promise<
         "RECORDS_II",
         "ARCHIVE",
         "MDA_SUPERADMIN",
-      ].includes(user.role)
+      ].includes(user.role as string)
     ) {
       return { success: false, error: "Unauthorized" };
     }
@@ -2860,9 +2856,12 @@ export async function getPendingCountByRole(): Promise<
       // Accounts: Count batches with LASG_PAID status and no accounts approval, OR batches with at least one pending plan resubmission
       prisma.certificateOfDepositBatch.count({
         where: {
+          // Only count batches that have a submitted LASG receipt
+          paymentStatus: {
+            in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+          },
           OR: [
             {
-              paymentStatus: "LASG_PAID",
               accountsApprovedBy: null,
             },
             {
@@ -3329,7 +3328,7 @@ export async function deleteAllBatches(): Promise<
     }
 
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["SUPERADMIN"].includes(user.role)) {
+    if (!user || !["SUPERADMIN"].includes(user.role as string)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -4187,7 +4186,7 @@ async function verifyQueryPaymentLinks(
 export async function getPendingArchiveBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string))) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -4280,7 +4279,7 @@ export async function getPendingArchiveBatches() {
 export async function getArchiveHistoryBatches() {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role))) {
+    if (!user || (!["ARCHIVE", "SUPERADMIN", "MDA_SUPERADMIN"].includes(user.role as string))) {
       return { success: false, error: "Unauthorized" };
     }
 

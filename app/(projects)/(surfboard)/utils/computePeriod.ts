@@ -48,7 +48,7 @@ export const computePeriodPerTimestamp = (
       monthsToAdd = 1;
       break;
     case "quarterly":
-      monthsToAdd = 4;
+      monthsToAdd = 3;
       break;
     case "annually":
       monthsToAdd = 12;

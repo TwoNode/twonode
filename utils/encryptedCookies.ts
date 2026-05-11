@@ -29,10 +29,22 @@ const getEncryptionKey = (): Uint8Array => {
   return new Uint8Array(keyBuffer);
 };
 
+export interface SubscriptionData {
+  status: "active" | "canceled" | "expired" | "past_due";
+  interval: "monthly" | "quarterly" | "annually";
+  expiresAt?: number | string | Date | null;
+  subCode?: string;
+  planCode?: string;
+  emailToken?: string;
+}
+
+export interface PlatformSession {
+  role: RevaRole | SurfboardRole | GBCRole;
+  subscription?: SubscriptionData;
+}
+
 // Interface for user data to be encrypted
 export interface EncryptedUserData {
-  platform: Platform; // Platform.REVA, Platform.SCRAM, Platform.SURFBOARD, Platform.GBC, etc.
-  role: RevaRole | SurfboardRole | GBCRole; // RevaRole.USER, SurfboardRole.USER, GBCRole.USER, etc.
   userId: string;
   email: string;
   firstName: string;
@@ -41,20 +53,18 @@ export interface EncryptedUserData {
   sessionId: string; // Unique session identifier
   lastActivity: number; // For idle timeout tracking
   picture?: string | null; // Optional user picture URL
-  subscription?: {
-    status: "active" | "cancelled" | "expired" | "past_due";
-    interval: "monthly" | "quarterly" | "annually";
-    expiresAt?: number | string | Date | null; // Unix timestamp in seconds
-    subCode?: string;
-    planCode?: string;
-    emailToken?: string;
-  };
+  
+  // Multi-platform support
+  platforms: Partial<Record<Platform, PlatformSession>>;
+  
+  // Legacy fields (kept for backward compatibility during transition)
+  platform?: Platform; 
+  role?: RevaRole | SurfboardRole | GBCRole;
+  subscription?: SubscriptionData;
 }
 
 // Extended JWT payload interface
 interface UserJWTPayload extends JWTPayload {
-  platform: Platform;
-  role: RevaRole | SurfboardRole | GBCRole;
   userId: string;
   email: string;
   firstName: string;
@@ -62,15 +72,14 @@ interface UserJWTPayload extends JWTPayload {
   kindeId: string;
   sessionId: string;
   lastActivity: number;
-  picture?: string | null; // Optional user picture URL
-  subscription?: {
-    status: "active" | "cancelled" | "expired" | "past_due";
-    interval: "monthly" | "quarterly" | "annually";
-    expiresAt?: number | string | Date | null; // Unix timestamp in seconds
-    subCode?: string;
-    planCode?: string;
-    emailToken?: string;
-  };
+  picture?: string | null;
+  
+  platforms: Partial<Record<Platform, PlatformSession>>;
+  
+  // Legacy
+  platform?: Platform;
+  role?: RevaRole | SurfboardRole | GBCRole;
+  subscription?: SubscriptionData;
 }
 
 // Generate a unique session ID
@@ -80,9 +89,7 @@ const generateSessionId = (): string => {
 
 // Encrypt user data using JOSE JWE
 export async function encryptUserData(
-  data: Omit<EncryptedUserData, "sessionId" | "lastActivity"> & {
-    subscription?: EncryptedUserData["subscription"];
-  }
+  data: Omit<EncryptedUserData, "sessionId" | "lastActivity">
 ): Promise<string> {
   try {
     const key = getEncryptionKey();
@@ -91,7 +98,6 @@ export async function encryptUserData(
     const payload: UserJWTPayload = {
       ...data,
       sessionId: generateSessionId(),
-      subscription: data.subscription, // Include subscription in payload
       lastActivity: now,
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
@@ -150,9 +156,17 @@ export async function decryptUserData(
       throw new Error("Session expired due to inactivity");
     }
 
+    // Migration logic: handle old single-platform payloads
+    let platforms = userPayload.platforms || {};
+    if ((!platforms || Object.keys(platforms).length === 0) && userPayload.platform && userPayload.role) {
+      platforms = {};
+      platforms[userPayload.platform] = {
+        role: userPayload.role,
+        subscription: userPayload.subscription
+      };
+    }
+
     const userData: EncryptedUserData = {
-      platform: userPayload.platform,
-      role: userPayload.role,
       userId: userPayload.userId,
       email: userPayload.email,
       firstName: userPayload.firstName,
@@ -161,7 +175,11 @@ export async function decryptUserData(
       picture: userPayload.picture,
       sessionId: userPayload.sessionId,
       lastActivity: userPayload.lastActivity,
-      subscription: userPayload.subscription, // Include subscription in decrypted data
+      platforms: platforms,
+      // Keep legacy fields populated for safety
+      platform: userPayload.platform,
+      role: userPayload.role,
+      subscription: userPayload.subscription
     };
 
     return userData;
@@ -232,7 +250,6 @@ export async function updateLastActivity(
       ...dataForEncryption,
       sessionId, // Preserve existing session ID
       lastActivity: now,
-      subscription: userData.subscription, // Include subscription in payload
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
       iat: now,
@@ -260,22 +277,11 @@ export async function updateLastActivity(
   }
 }
 
-type Subscription = {
-  status: "active" | "cancelled" | "expired" | "past_due";
-  interval: "monthly" | "quarterly" | "annually";
-  expiresAt?: number | string | Date | null; // Unix timestamp in seconds
-  subCode?: string;
-  planCode?: string;
-  emailToken?: string;
-};
-
-async function getUserActiveSubscription(user: EncryptedUserData) {
+async function getUserActiveSubscription(userId: string) {
   try {
-    if (!user) return null;
-
-    const sub = await prisma.subscription.findUnique({
+    const sub = await prisma.subscription.findFirst({
       where: {
-        userId: user.userId,
+        userId: userId,
         OR: [
           { status: "active" },
           {
@@ -286,29 +292,36 @@ async function getUserActiveSubscription(user: EncryptedUserData) {
       },
     });
 
+    if (!sub) return null;
+
     return {
-      status: sub?.status,
-      interval: sub?.interval,
-      expiresAt: sub?.currentEnd,
-      subCode: sub?.subCode,
-      planCode: sub?.planCode,
-      emailToken: sub?.emailToken,
-    } as Subscription;
+      status: sub.status,
+      interval: sub.interval,
+      expiresAt: sub.currentEnd,
+      subCode: sub.subCode,
+      planCode: sub.planCode,
+      emailToken: sub.emailToken,
+    } as SubscriptionData;
   } catch (error) {
     console.error("Error fetching user subscription:", error);
     return null;
   }
 }
 
-// Update last activity timestamp
+// Update last activity timestamp and refresh subscriptions for ALL platforms
 export async function updateLastActivityAndSubscription(
   encryptedJWT: string
 ): Promise<string> {
   try {
     const userData = await decryptUserData(encryptedJWT);
-    const sub = await getUserActiveSubscription(userData);
-
-    const currentSub = sub ? sub : undefined;
+    
+    // Refresh subscription for Surfboard if it exists in the platforms
+    if (userData.platforms[Platform.SURFBOARD]) {
+      const sub = await getUserActiveSubscription(userData.userId);
+      if (sub) {
+        userData.platforms[Platform.SURFBOARD]!.subscription = sub;
+      }
+    }
 
     // Create new JWT with updated lastActivity
     const updatedData = {
@@ -327,15 +340,12 @@ export async function updateLastActivityAndSubscription(
       ...dataForEncryption,
       sessionId, // Preserve existing session ID
       lastActivity: now,
-      subscription: currentSub, // Include subscription in payload
       iss: JWT_ISSUER,
       aud: JWT_AUDIENCE,
       iat: now,
       exp: now + 24 * 60 * 60,
       nbf: now,
     };
-
-    console.log("Payload for enc", payload);
 
     const jwt = await new EncryptJWT(payload)
       .setProtectedHeader({
@@ -357,14 +367,48 @@ export async function updateLastActivityAndSubscription(
   }
 }
 
-// Set encrypted user cookie (server-side)
+// Set/Merge encrypted user cookie (server-side)
+// Now handles multiple platforms by merging into existing session
 export async function setEncryptedUserCookie(
-  userData: Omit<EncryptedUserData, "sessionId" | "lastActivity"> & {
-    subscription?: EncryptedUserData["subscription"];
+  newData: Omit<EncryptedUserData, "sessionId" | "lastActivity" | "platforms"> & {
+    platform: Platform;
+    role: PlatformSession["role"];
+    subscription?: PlatformSession["subscription"];
   },
   response?: NextResponse
 ): Promise<NextResponse> {
-  const encryptedJWT = await encryptUserData(userData);
+  // 1. Get existing session
+  const existingData = await getEncryptedUserData();
+  
+  let finalPlatforms: Partial<Record<Platform, PlatformSession>> = {};
+  
+  if (existingData) {
+    // Port existing platforms
+    finalPlatforms = { ...existingData.platforms };
+  }
+  
+  // 2. Add/Update the specific platform
+  finalPlatforms[newData.platform] = {
+    role: newData.role,
+    subscription: newData.subscription
+  };
+
+  // 3. Prepare final data object
+  const finalUserData: Omit<EncryptedUserData, "sessionId" | "lastActivity"> = {
+    userId: newData.userId,
+    email: newData.email,
+    firstName: newData.firstName,
+    lastName: newData.lastName,
+    kindeId: newData.kindeId,
+    picture: newData.picture,
+    platforms: finalPlatforms,
+    // Keep legacy fields updated for compatibility
+    platform: newData.platform,
+    role: newData.role,
+    subscription: newData.subscription
+  };
+
+  const encryptedJWT = await encryptUserData(finalUserData);
 
   const cookieOptions = {
     httpOnly: true,
@@ -403,24 +447,6 @@ export async function getEncryptedUserData(
   }
 }
 
-// Get encrypted user data from request (middleware)
-export async function getEncryptedUserDataFromRequest(
-  req: NextRequest
-): Promise<EncryptedUserData | null> {
-  try {
-    const encryptedJWT = req.cookies.get("USER_SESSION")?.value;
-
-    if (!encryptedJWT) {
-      return null;
-    }
-
-    return await decryptUserData(encryptedJWT);
-  } catch (error) {
-    console.error("Error getting encrypted user data from request:", error);
-    return null;
-  }
-}
-
 // Get and refresh user session (updates last activity)
 export async function getAndRefreshUserSession(
   req?: NextRequest,
@@ -436,7 +462,7 @@ export async function getAndRefreshUserSession(
 
     const userData = await decryptUserData(encryptedJWT);
     const refreshedJWT =
-      updateSubscription || !userData.subscription
+      updateSubscription 
         ? await updateLastActivityAndSubscription(encryptedJWT)
         : await updateLastActivity(encryptedJWT);
 
@@ -472,49 +498,32 @@ export async function clearEncryptedUserCookie(
 
   if (response) {
     response.cookies.set(cookieName, "", cookieOptions);
-
-    const cookieStore = await cookies();
-    cookieStore.set(cookieName, "", cookieOptions);
-    cookieStore.delete(cookieName);
-
+    // Note: serverside clear for headers
     return response;
   } else {
     const newResponse = NextResponse.next();
     newResponse.cookies.set(cookieName, "", cookieOptions);
-
-    const cookieStore = await cookies();
-    cookieStore.set(cookieName, "", cookieOptions);
-    cookieStore.delete(cookieName);
-
     return newResponse;
   }
 }
 
-// Invalidate a specific session (for logout from specific device)
-export async function invalidateSession(sessionId: string): Promise<void> {
-  // In a real application, you would store invalidated session IDs in a database/cache
-  // For now, we'll just log the invalidation
-  console.log(`Session invalidated: ${sessionId}`);
-
-  // TODO: Implement session invalidation storage (Redis, database, etc.)
-  // This would be checked during decryptUserData to ensure the session hasn't been invalidated
+// Checker functions - refined for multi-platform
+export function isSuperAdmin(userData: EncryptedUserData | null, platform: Platform): boolean {
+  if (!userData) return false;
+  return userData.platforms[platform]?.role === RevaRole.SUPERADMIN;
 }
 
-export function isSuperAdmin(userData: EncryptedUserData | null): boolean {
+export function isAdmin(userData: EncryptedUserData | null, platform: Platform): boolean {
   if (!userData) return false;
-  return userData.role === RevaRole.SUPERADMIN;
-}
-
-export function isAdmin(userData: EncryptedUserData | null): boolean {
-  if (!userData) return false;
+  const role = userData.platforms[platform]?.role;
   return (
-    userData.role === RevaRole.ADMIN || userData.role === RevaRole.SUPERADMIN
+    role === RevaRole.ADMIN || role === RevaRole.SUPERADMIN
   );
 }
 
-export function isRegularUser(userData: EncryptedUserData | null): boolean {
+export function isRegularUser(userData: EncryptedUserData | null, platform: Platform): boolean {
   if (!userData) return false;
-  return userData.role === RevaRole.USER;
+  return userData.platforms[platform]?.role === RevaRole.USER;
 }
 
 export function isPlatformUser(
@@ -522,10 +531,10 @@ export function isPlatformUser(
   platform: Platform
 ): boolean {
   if (!userData) return false;
-  return userData.platform === platform;
+  return !!userData.platforms[platform];
 }
 
-// Additional utility functions for session management
+// Legacy helpers (can be removed once all references are updated)
 export function getSessionId(
   userData: EncryptedUserData | null
 ): string | null {

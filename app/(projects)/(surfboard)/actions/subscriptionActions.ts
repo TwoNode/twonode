@@ -16,19 +16,19 @@ export async function getUserActiveSubscription() {
     // Check if user object already has an active subscription from the session
     const userSub = user.subscription;
     if (userSub) {
-      const isActive =
-        userSub.status === "active" || userSub.status === "past_due";
-      const isCancelledButValid =
-        userSub.status === "cancelled" &&
-        userSub.expiresAt &&
-        new Date(userSub.expiresAt) >= new Date();
+      const gracePeriodMs = 24 * 60 * 60 * 1000;
+      const expiresAt = userSub.expiresAt ? new Date(userSub.expiresAt) : null;
+      const isValid = expiresAt ? new Date() <= new Date(expiresAt.getTime() + gracePeriodMs) : true;
+
+      const isActive = (userSub.status === "active" || userSub.status === "past_due") && isValid;
+      const isCancelledButValid = userSub.status === "canceled" && isValid;
 
       if (isActive || isCancelledButValid) {
         // Return subscription from session, no need for DB call
         return {
           status: userSub.status,
           interval: userSub.interval,
-          currentEnd: userSub.expiresAt ? new Date(userSub.expiresAt) : null,
+          currentEnd: expiresAt,
           subCode: userSub.subCode,
           planCode: userSub.planCode,
           emailToken: userSub.emailToken,
@@ -41,20 +41,25 @@ export async function getUserActiveSubscription() {
     const sub = await prisma.subscription.findUnique({
       where: {
         userId: user.id,
-        OR: [
-          { status: "active" },
-          {
-            // Include cancelled subscriptions still in grace period
-            AND: [{ status: "canceled" }, { currentEnd: { gte: new Date() } }],
-          },
-        ],
       },
     });
 
-    // Refresh session with updated subscription data from DB
-    await getAndRefreshUserSession(undefined, true);
+    if (!sub) return null;
 
-    return { ...sub, user };
+    const gracePeriodMs = 24 * 60 * 60 * 1000;
+    const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
+    const isValid = currentEnd ? new Date() <= new Date(currentEnd.getTime() + gracePeriodMs) : true;
+
+    const isActive = (sub.status === "active" || sub.status === "past_due") && isValid;
+    const isCancelledButValid = sub.status === "canceled" && isValid;
+
+    if (isActive || isCancelledButValid) {
+      // Refresh session with updated subscription data from DB
+      await getAndRefreshUserSession(undefined, true);
+      return { ...sub, user };
+    }
+
+    return null;
   } catch (error) {
     console.error("Error fetching user subscription:", error);
     return null;
@@ -69,12 +74,12 @@ export async function getUserAndActiveSub() {
     // Check if user object already has an active subscription from the session
     const userSub = user.subscription;
     if (userSub) {
-      const isActive =
-        userSub.status === "active" || userSub.status === "past_due";
-      const isCancelledButValid =
-        userSub.status === "cancelled" &&
-        userSub.expiresAt &&
-        new Date(userSub.expiresAt) >= new Date();
+      const gracePeriodMs = 24 * 60 * 60 * 1000;
+      const expiresAt = userSub.expiresAt ? new Date(userSub.expiresAt) : null;
+      const isValid = expiresAt ? new Date() <= new Date(expiresAt.getTime() + gracePeriodMs) : true;
+
+      const isActive = (userSub.status === "active" || userSub.status === "past_due") && isValid;
+      const isCancelledButValid = userSub.status === "canceled" && isValid;
 
       if (isActive || isCancelledButValid) {
         // Return subscription from session, no need for DB call
@@ -82,7 +87,7 @@ export async function getUserAndActiveSub() {
           subscription: {
             status: userSub.status,
             interval: userSub.interval,
-            currentEnd: userSub.expiresAt ? new Date(userSub.expiresAt) : null,
+            currentEnd: expiresAt,
             subCode: userSub.subCode,
             planCode: userSub.planCode,
             emailToken: userSub.emailToken,
@@ -97,23 +102,25 @@ export async function getUserAndActiveSub() {
       const sub = await prisma.subscription.findUnique({
         where: {
           userId: user.id,
-          OR: [
-            { status: "active" },
-            {
-              // Include cancelled subscriptions still in grace period
-              AND: [
-                { status: "canceled" },
-                { currentEnd: { gte: new Date() } },
-              ],
-            },
-          ],
         },
       });
 
-      // Refresh session with updated subscription data from DB
-      await getAndRefreshUserSession(undefined, true);
+      if (!sub) return { subscription: null, user };
 
-      return { subscription: sub, user };
+      const gracePeriodMs = 24 * 60 * 60 * 1000;
+      const currentEnd = sub.currentEnd ? new Date(sub.currentEnd) : null;
+      const isValid = currentEnd ? new Date() <= new Date(currentEnd.getTime() + gracePeriodMs) : true;
+
+      const isActive = (sub.status === "active" || sub.status === "past_due") && isValid;
+      const isCancelledButValid = sub.status === "canceled" && isValid;
+
+      if (isActive || isCancelledButValid) {
+        // Refresh session with updated subscription data from DB
+        await getAndRefreshUserSession(undefined, true);
+        return { subscription: sub, user };
+      }
+
+      return { subscription: null, user };
     } catch (error) {
       return { subscription: null, user };
     }
@@ -237,7 +244,7 @@ export async function createOrUpdateSubscription({
           reference,
           planCode: plan.plan_code,
           planName: plan.name,
-          amount: plan.amount,
+          amount: plan.amount * 100, // Convert to Kobo
           interval: plan.interval,
           status: "active",
           eventType: "subscription.create",
@@ -308,14 +315,23 @@ export async function isUserSubscribed(): Promise<boolean> {
     }
 
     // Check user object first
-    if (user?.subscription?.status === "active") return true;
-    if (user?.subscription?.status === "past_due") return true;
+    if (user?.subscription?.status === "active" || user?.subscription?.status === "past_due") {
+      const expiresAt = user.subscription.expiresAt ? new Date(user.subscription.expiresAt) : null;
+      if (expiresAt) {
+        const gracePeriodMs = 24 * 60 * 60 * 1000;
+        if (new Date() <= new Date(expiresAt.getTime() + gracePeriodMs)) {
+          return true;
+        }
+      } else {
+        return true; // No expiration date, treat as active
+      }
+    }
 
     // Check database
     const sub = await prisma.subscription.findFirst({
       where: {
         userId: user.id,
-        status: { in: ["active", "past_due"] },
+        status: { in: ["active", "past_due", "canceled"] },
       },
       orderBy: { updatedAt: "desc" },
     });

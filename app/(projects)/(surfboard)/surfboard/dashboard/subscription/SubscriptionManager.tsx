@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -91,6 +92,10 @@ export default function SubscriptionManager() {
         setCurrent(sub);
         setPendingPlan(null);
       });
+      // Refresh layout
+      window.dispatchEvent(new Event("refreshUser"));
+
+      router.refresh(); // Update server components/layout state
       router.replace(pathname);
     }
 
@@ -146,7 +151,7 @@ export default function SubscriptionManager() {
 
   const getSubscriptionStatus = useMemo(() => {
     if (isSubscriptionActive) {
-      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.name as keyof typeof SUBSCRIPTION_PLANS]
+      return `You're currently subscribed to the ${SUBSCRIPTION_PLANS[current?.interval as keyof typeof SUBSCRIPTION_PLANS]
           ?.name || current?.planName
         }`;
     }
@@ -327,105 +332,132 @@ export default function SubscriptionManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-          <p className="text-muted-foreground">Loading subscription plans...</p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-4"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full animate-pulse" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 relative z-10 mx-auto" />
+          </div>
+          <p className="text-muted-foreground font-medium">Loading subscription plans...</p>
+        </motion.div>
       </div>
     );
   }
 
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
+  };
+
   return (
-    <div className="space-y-8 pb-8">
-      {/* Header Section */}
-      <div className="text-center space-y-3 pt-6">
-        <h1 className="text-4xl font-bold tracking-tight bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Choose Your Plan
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Select the perfect subscription plan for your needs. Cancel anytime.
-        </p>
-      </div>
-
-      {/* Current Plan Card */}
-      {current && (
-        <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
-          <CardHeader className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Crown className="h-6 w-6 text-blue-600" />
-                  Current Plan
-                </CardTitle>
-                <CardDescription className="text-base mt-2">
-                  {getSubscriptionStatus}
-                </CardDescription>
-              </div>
-              {isSubscriptionActive && (
-                <Badge className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-1.5">
-                  Active
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h3 className="text-2xl font-bold">
-                  {SUBSCRIPTION_PLANS[
-                    current.interval as keyof typeof SUBSCRIPTION_PLANS
-                  ]?.name || current.planName}
-                </h3>
-                <p className="text-muted-foreground text-lg">
-                  {getNextBillingText}
-                </p>
-              </div>
-              {isSubscriptionActive && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowConfirmation(true)}
-                  disabled={isDisabling}
-                  size="lg"
-                  className="shadow-lg"
-                >
-                  {isDisabling ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Cancel Subscription"
-                  )}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Available Plans */}
-      <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold">
-            {isSubscriptionActive
-              ? "Switch Plans"
-              : isSubscriptionInGracePeriod
-                ? "Renew Your Subscription"
-                : "Available Plans"}
-          </h2>
-
-          <p className="text-muted-foreground">
-            {isSubscriptionActive
-              ? "Cancel your current plan to subscribe to a new one"
-              : isSubscriptionInGracePeriod
-                ? `Your current plan expires on ${formatLocalDate(
-                  current?.currentEnd
-                )}`
-                : "Choose the plan that works best for you"}
-          </p>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="space-y-16 pb-20 px-2 sm:px-4 lg:px-6 max-w-7xl mx-auto min-h-screen"
+    >
+      {/* Premium Hero Section */}
+      <motion.div variants={itemVariants} className="relative pt-0 pb-2 text-center">
+        {/* Animated Background Mesh */}
+        <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+          <div className="absolute w-[600px] h-[400px] bg-blue-500/10 dark:bg-blue-600/10 blur-[100px] rounded-full mix-blend-screen animate-pulse" />
+          <div className="absolute w-[500px] h-[300px] bg-purple-500/10 dark:bg-purple-600/10 blur-[100px] rounded-full mix-blend-screen translate-x-20 translate-y-10" />
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 md:grid-cols-2 grid-cols-1 max-w-7xl mx-auto px-4">
+        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tighter text-slate-900 dark:text-white mb-6">
+          Plans that scale with{" "}
+          <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+            your ambition.
+          </span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+          Unlock the full potential of Surfboard. Choose the perfect plan
+          tailored to your workflow.
+        </p>
+      </motion.div>
+
+      {/* VIP Pass Current Plan */}
+      <AnimatePresence mode="wait">
+        {current && (
+          <motion.div
+            key="current-plan"
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative mx-auto max-w-3xl group"
+          >
+            {/* Outer Glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-[2rem] blur-xl opacity-20 group-hover:opacity-40 transition duration-1000" />
+            
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/20 dark:border-white/10 bg-white/40 dark:bg-slate-950/40 backdrop-blur-3xl shadow-2xl">
+              {/* Premium Sheen */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite]" />
+              
+              <div className="p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                <div className="flex-1 text-center md:text-left space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 font-semibold text-sm mb-2">
+                    <Crown className="h-4 w-4" />
+                    VIP Member
+                  </div>
+                  <h3 className="text-4xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
+                    {SUBSCRIPTION_PLANS[current.interval as keyof typeof SUBSCRIPTION_PLANS]?.name || current.planName}
+                  </h3>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 text-slate-600 dark:text-slate-400 font-medium">
+                    <span className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                      {isSubscriptionActive ? "Active Subscription" : "Grace Period"}
+                    </span>
+                    <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                    <span>{getNextBillingText}</span>
+                  </div>
+                </div>
+                
+                {isSubscriptionActive && (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="shrink-0 w-full md:w-auto">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowConfirmation(true)}
+                      disabled={isDisabling}
+                      className="w-full h-12 px-8 rounded-xl font-semibold text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                    >
+                      {isDisabling ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        "Cancel Plan"
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Grid of Plans */}
+      <motion.div variants={itemVariants} className="relative z-10 pt-8">
+        <div className="grid lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
           {Object.values(SUBSCRIPTION_PLANS).map((plan) => {
             const isWorking = pendingPlan === plan.id;
             const isCurrent = current?.planCode === plan.planCode;
@@ -436,209 +468,177 @@ export default function SubscriptionManager() {
               !!pendingPlan;
 
             return (
-              <div key={plan.id} className="relative group">
+              <motion.div
+                key={plan.id}
+                variants={itemVariants}
+                className={`relative group h-full flex ${isPopular ? 'lg:-mt-4 lg:mb-4' : ''}`}
+              >
+                {/* Spotlight Background effect */}
+                <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-slate-200/50 to-transparent dark:from-white/5 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
                 {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                    <span className="bg-linear-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" />
-                      MOST POPULAR
-                    </span>
-                  </div>
+                  <div className="absolute -inset-[1px] bg-gradient-to-b from-blue-500 to-purple-600 rounded-[2rem] z-0 opacity-50 group-hover:opacity-100 transition duration-500" />
                 )}
 
-                <Card
-                  className={`h-full border-2 transition-all duration-300 ${isCurrent
-                      ? "border-blue-600 ring-4 ring-blue-600/20 shadow-xl scale-105"
-                      : isPopular
-                        ? "border-purple-300 dark:border-purple-700 hover:border-purple-500 hover:shadow-2xl hover:scale-105"
-                        : "border-border hover:border-blue-400 hover:shadow-xl hover:scale-105"
-                    } ${isPopular ? "pt-8" : "pt-6"} ${isDisabled && !isCurrent ? "opacity-60" : ""
-                    }`}
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded-lg ${isPopular
-                              ? "bg-linear-to-br from-purple-500 to-blue-500 text-white"
-                              : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
-                            }`}
-                        >
-                          {getPlanIcon(plan.interval)}
-                        </div>
-                        <div>
-                          <CardTitle className="text-2xl font-bold">
-                            {plan.name}
-                          </CardTitle>
-                        </div>
-                      </div>
-                      {isCurrent && (
-                        <Badge className="bg-green-500 hover:bg-green-600 text-white">
-                          Active
-                        </Badge>
-                      )}
+                <div className={`relative z-10 flex flex-col w-full rounded-[2rem] backdrop-blur-xl border transition-all duration-300
+                  ${isPopular 
+                    ? 'bg-white/90 dark:bg-slate-900/95 border-transparent shadow-2xl' 
+                    : 'bg-white/50 dark:bg-slate-950/50 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-xl'
+                  } ${isDisabled && !isCurrent ? 'opacity-60 grayscale-[0.2]' : ''}
+                `}>
+                  {isPopular && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] flex items-center gap-1.5 whitespace-nowrap">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        RECOMMENDED
+                      </span>
                     </div>
-                    <CardDescription className="text-base">
-                      {plan.description}
-                    </CardDescription>
-                  </CardHeader>
+                  )}
 
-                  <CardContent className="pb-6 space-y-6">
-                    <div className="border-t border-b py-6">
+                  <div className="p-8 flex-1 flex flex-col">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={`p-3 rounded-2xl shadow-sm ${isPopular ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                        {getPlanIcon(plan.interval)}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                          {plan.name}
+                        </h3>
+                        {isCurrent && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/50 px-2 py-0.5 rounded-full mt-1">
+                            <Check className="h-3 w-3" /> Current
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-slate-600 dark:text-slate-400 font-medium text-sm mb-8 leading-relaxed">
+                      {plan.description}
+                    </p>
+
+                    <div className="mb-8">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">
+                        <span className="text-5xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
                           ₦{plan.price.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground text-lg">
-                          /{plan.interval}
-                        </span>
                       </div>
-                      {plan.interval === "quarterly" && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-                          Save 15% compared to monthly
-                        </p>
+                      <div className="text-slate-500 dark:text-slate-400 font-medium mt-1">
+                        per {plan.interval === 'quarterly' ? 'quarter' : plan.interval === 'annually' ? 'year' : 'month'}
+                      </div>
+                      
+                      {/* {plan.interval === 'quarterly' && (
+                        <div className="mt-3 inline-flex text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-3 py-1 rounded-lg">
+                          Save 15% vs monthly
+                        </div>
                       )}
-                      {plan.interval === "annually" && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-                          Save 30% compared to monthly
-                        </p>
-                      )}
+                      {plan.interval === 'annually' && (
+                        <div className="mt-3 inline-flex text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 px-3 py-1 rounded-lg">
+                          Save 30% vs monthly
+                        </div>
+                      )} */}
                     </div>
 
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="space-y-4 mb-8 flex-1">
+                      {[
+                        "Full platform access",
+                        `Billed ${plan.interval}`,
+                        "24/7 Priority support",
+                        "Unlimited projects"
+                      ].map((feature, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className={`shrink-0 p-0.5 rounded-full ${isPopular ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                            <Check className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feature}</span>
                         </div>
-                        <span>Full access to all features</span>
-                      </li>
+                      ))}
+                    </div>
 
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <span>
-                          {plan.interval === "monthly"
-                            ? "Monthly"
-                            : plan.interval === "quarterly"
-                              ? "Quarterly"
-                              : "Annual"}{" "}
-                          billing
-                        </span>
-                      </li>
-
-                      <li className="flex items-center gap-3 text-base">
-                        <div className="rounded-full bg-green-100 dark:bg-green-900 p-1">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <span>24/7 Priority support</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-
-                  <CardFooter className="pt-0">
                     <Button
                       size="lg"
                       disabled={isDisabled}
                       onClick={() => handlePlanSelect(plan.id)}
-                      className={`w-full font-semibold text-base h-12 ${isPopular && !isCurrent
-                          ? "bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                      className={`w-full h-14 rounded-xl font-bold text-base transition-all duration-300 ${
+                        isPopular && !isCurrent
+                          ? "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 shadow-xl"
                           : isCurrent
-                            ? "bg-green-600 hover:bg-green-700"
-                            : ""
-                        }`}
-                      variant={
-                        isCurrent
-                          ? "default"
-                          : isPopular
-                            ? "default"
-                            : "default"
-                      }
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800"
+                      }`}
                     >
                       {isWorking ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Processing...
-                        </>
+                        <Loader2 className="h-5 w-5 animate-spin" />
                       ) : isCurrent ? (
-                        <>
-                          <Check className="mr-2 h-5 w-5" />
-                          Current Plan
-                        </>
+                        "Active Plan"
                       ) : (
-                        <>
-                          Get Started
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
+                        "Select Plan"
                       )}
                     </Button>
-                  </CardFooter>
-                </Card>
-              </div>
+                  </div>
+                </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Confirmation Dialog */}
+      {/* Modern Dialog */}
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              Cancel Current Subscription?
-            </DialogTitle>
-            <DialogDescription asChild>
-              <div className="space-y-4 pt-4">
-                <p className="text-base">
-                  To subscribe to a different plan, you need to cancel your
-                  current subscription first. You'll continue to have access
-                  until the end of your current billing period.
-                </p>
+        <DialogContent className="sm:max-w-md border-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl shadow-2xl rounded-3xl overflow-hidden p-0">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 to-amber-500" />
+          <div className="p-8">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Cancel Subscription?
+              </DialogTitle>
+              <DialogDescription className="text-base text-slate-600 dark:text-slate-400 font-medium mt-3">
+                To switch plans, you must first cancel your current subscription. 
+                Don't worry, you'll retain full access until the end of your billing cycle.
+              </DialogDescription>
+            </DialogHeader>
 
-                {current?.currentEnd && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-2 border-yellow-200 dark:border-yellow-800">
-                    <p className="text-yellow-800 dark:text-yellow-200 font-semibold">
-                      Your current plan will remain active until{" "}
-                      {formatLocalDate(current.currentEnd)}.
-                    </p>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-2">
-                      After that date, you can subscribe to a new plan.
+            {current?.currentEnd && (
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 mb-8 border border-slate-100 dark:border-slate-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 shrink-0">
+                    <Zap className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900 dark:text-white">Access guaranteed</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Your VIP benefits remain active until {formatLocalDate(current.currentEnd)}.
                     </p>
                   </div>
-                )}
+                </div>
               </div>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmation(false)}
-              disabled={isDisabling}
-              size="lg"
-            >
-              Keep Current Plan
-            </Button>
-            <Button
-              onClick={handleDisableSubscription}
-              disabled={isDisabling}
-              variant="destructive"
-              size="lg"
-            >
-              {isDisabling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Cancel Subscription"
-              )}
-            </Button>
-          </DialogFooter>
+            )}
+
+            <DialogFooter className="flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmation(false)}
+                disabled={isDisabling}
+                size="lg"
+                className="w-full sm:w-auto h-12 rounded-xl font-semibold border-slate-200 dark:border-slate-800"
+              >
+                Keep Plan
+              </Button>
+              <Button
+                onClick={handleDisableSubscription}
+                disabled={isDisabling}
+                variant="destructive"
+                size="lg"
+                className="w-full sm:w-auto h-12 rounded-xl font-semibold bg-red-600 hover:bg-red-700"
+              >
+                {isDisabling ? <Loader2 className="h-5 w-5 animate-spin" /> : "Cancel Plan"}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Admin FAB for Development */}
       {process.env.NODE_ENV === "development" && <SubscriptionAdminFAB />}
-    </div>
+    </motion.div>
   );
 }

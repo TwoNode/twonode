@@ -10,6 +10,7 @@ import {
   canAccessSurfSuperAdminPanel,
   canAccessGBCAdminPanel,
   canAccessGBCUserPanel,
+  isMDARole,
 } from "@/permissions";
 
 export async function GET() {
@@ -39,6 +40,8 @@ export async function GET() {
       redirectUrl = "/surf-restricted/superadmin";
     } else if (canAccessSurfAdminPanel(userData.role)) {
       redirectUrl = "/surf-restricted/dashboard";
+    } else if (isMDARole(userData.role)) {
+      redirectUrl = "/surf-mda/dashboard";
     } else if (canAccessSurfUserPanel(userData.role)) {
       redirectUrl = "/surfboard/dashboard";
     }

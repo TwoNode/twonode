@@ -78,8 +78,6 @@ export default function CertificatesPage() {
     switch (status) {
       case "PENDING_USER_PAYMENT":
         return "bg-amber-100 text-amber-700 border-amber-200";
-      case "USER_PAID":
-        return "bg-blue-100 text-blue-700 border-blue-200";
       case "LASG_PAID":
         return "bg-purple-100 text-purple-700 border-purple-200";
       case "ACCOUNTS_APPROVED":
@@ -236,7 +234,6 @@ export default function CertificatesPage() {
             >
               <option value="ALL">All Status</option>
               <option value="PENDING_USER_PAYMENT">Pending Payment</option>
-              <option value="USER_PAID">User Paid</option>
               <option value="LASG_PAID">LASG Paid</option>
               <option value="ACCOUNTS_APPROVED">Accounts Approved</option>
               <option value="COMPLETED">Completed</option>

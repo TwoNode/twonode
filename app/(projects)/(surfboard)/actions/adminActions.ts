@@ -669,7 +669,7 @@ export async function getAllSurfPlansForAdmin(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !user.role || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 

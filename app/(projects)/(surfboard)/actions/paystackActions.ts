@@ -545,11 +545,11 @@ export async function verifySubscription(reference: string) {
     let nextPaymentDate = "";
 
     try {
-      // List subscriptions for this customer
+      // List subscriptions for this customer for the specific plan
       const subscriptionsResponse: SubscriptionListResponse =
         await paystack.subscription.list({
           customer: customerId,
-          // plan: planObject.plan_code,
+          plan: planObject.plan_code,
         });
 
       console.log(
@@ -585,7 +585,7 @@ export async function verifySubscription(reference: string) {
       status: "active",
       paidAt,
       nextPaymentDate: nextPaymentDate || undefined,
-      skipHistory: false, // We rely on webhook for history to avoid duplicates
+      skipHistory: true, // We rely on webhook for history to avoid duplicates
     });
 
     revalidatePath("/surfboard/dashboard/subscription");
@@ -695,13 +695,30 @@ export async function disableSubscription(): Promise<{
 
         if (!response.ok) {
           console.error("Paystack disable error:", result);
-          // Don't fail if Paystack disable fails - update our DB anyway
+          // If Paystack says it's already disabled or not found, we can proceed to update our DB.
+          // Otherwise, we should fail to prevent "orphan" active subs in Paystack.
+          const isSafeToIgnore =
+            result.message?.toLowerCase().includes("disabled") ||
+            result.message?.toLowerCase().includes("not found");
+
+          if (!isSafeToIgnore) {
+            return {
+              success: false,
+              message: `Paystack Error: ${result.message || "Failed to disable subscription"}`,
+              error: "paystack_error",
+            };
+          }
         }
       } catch (error) {
         console.error("Error calling Paystack disable API:", error);
-        // Continue to update our database
+        return {
+          success: false,
+          message: "Failed to reach payment provider. Please try again.",
+          error: "network_error",
+        };
       }
     }
+
 
     await getAndRefreshUserSession(undefined, true);
 
@@ -722,7 +739,7 @@ export async function disableSubscription(): Promise<{
         reference: `cancel_${Date.now()}`,
         planCode: subscription.planCode,
         planName: subscription.planName,
-        amount: subscription.amount,
+        amount: subscription.amount * 100, // Convert to Kobo
         interval: subscription.interval,
         status: "canceled",
         eventType: "subscription.disable",

@@ -42,7 +42,7 @@ export default function RevaUserPanelLayout({
       element: (
         <LogoutLink
           key={"logout"}
-          // postLogoutRedirectURL="/dashboard"
+          postLogoutRedirectURL="/api/auth/logout_redirect?from=reva"
           className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{
             backgroundColor: "transparent",

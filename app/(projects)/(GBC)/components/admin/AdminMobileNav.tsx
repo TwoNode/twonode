@@ -32,7 +32,7 @@ export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
       </button>
       <h1 className="text-lg font-bold text-gray-900">{title}</h1>
 
-      <LogoutLink className="ml-auto">
+      <LogoutLink postLogoutRedirectURL="/api/auth/logout_redirect?from=gbc" className="ml-auto">
         <Button variant="outline" size="sm" className="w-full sm:w-auto">
           Sign Out
         </Button>

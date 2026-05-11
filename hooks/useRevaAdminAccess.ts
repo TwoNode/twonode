@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
+import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
+import { Platform } from "@/utils/platform";
 
 interface UserData {
   platform: string;
@@ -63,7 +64,7 @@ export function useRevaAdminAccess() {
       // 5. Fetch User Data
       try {
         console.log("🔍 Checking admin access & fetching user data...");
-        const result = await getUserData();
+        const result = await getRevaUserData();
 
         if (!result.success || !result.data) {
           console.log(
@@ -73,16 +74,17 @@ export function useRevaAdminAccess() {
           throw new Error(result.error || "Failed to fetch user data");
         }
 
-        const fetchedUserData: UserData = result.data;
-        console.log("👤 User data:", fetchedUserData);
+        const fullUserData = result.data;
+        console.log("👤 Full User data received:", fullUserData);
 
-        if (!isMounted) return; // Component unmounted during async operation
+        if (!isMounted) return;
 
-        setUserData(fetchedUserData);
+        // Multi-platform awareness: Get specifically the Reva portal session
+        const revaSession = fullUserData.platforms?.[Platform.REVA] || 
+                          (fullUserData.platform === Platform.REVA ? { role: fullUserData.role } : null);
 
-        // 6. Platform Check
-        if (fetchedUserData.platform !== "reva") {
-          console.log("❌ Wrong platform, redirecting to login");
+        if (!revaSession) {
+          console.log("❌ No active Reva session found in current multi-platform login");
           if (isMounted) {
             setIsAdmin(false);
             router.push("/reva-restricted/login");
@@ -90,10 +92,17 @@ export function useRevaAdminAccess() {
           return;
         }
 
+        // Set the active session role/data for this platform
+        setUserData({
+            ...fullUserData,
+            platform: Platform.REVA,
+            role: revaSession.role
+        });
+
         // 7. Admin Role Check
         const hasAdminRole =
-          fetchedUserData.role === "ADMIN" ||
-          fetchedUserData.role === "SUPERADMIN";
+          revaSession.role === "ADMIN" ||
+          revaSession.role === "SUPERADMIN";
 
         if (isMounted) {
           setIsAdmin(hasAdminRole);
