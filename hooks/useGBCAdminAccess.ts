@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
+import { Platform } from "@/utils/platform";
 
 interface UserData {
   platform: string;
@@ -63,15 +64,17 @@ export function useGBCAdminAccess() {
           throw new Error(result.error || "Failed to fetch user data");
         }
 
-        const fetchedUserData: UserData = result.data;
-        console.log("👤 GBC User data:", fetchedUserData);
+        const fullUserData = result.data;
+        console.log("👤 Full User data received:", fullUserData);
 
         if (!isMounted) return;
 
-        setUserData(fetchedUserData);
+        // Multi-platform awareness: Get specifically the GBC portal session
+        const gbcSession = fullUserData.platforms?.[Platform.GBC] || 
+                          (fullUserData.platform === Platform.GBC ? { role: fullUserData.role } : null);
 
-        if (fetchedUserData.platform !== "gbc") {
-          console.log("❌ Wrong platform, redirecting to login");
+        if (!gbcSession) {
+          console.log("❌ No active GBC session found in current multi-platform login");
           if (isMounted) {
             setIsAdmin(false);
             router.push("/gbc/restricted/login");
@@ -79,9 +82,16 @@ export function useGBCAdminAccess() {
           return;
         }
 
+        // Set the active session role/data for this platform
+        setUserData({
+            ...fullUserData,
+            platform: Platform.GBC,
+            role: gbcSession.role
+        });
+
         const hasAdminRole =
-          fetchedUserData.role === "ADMIN" ||
-          fetchedUserData.role === "SUPERADMIN";
+          gbcSession.role === "ADMIN" ||
+          gbcSession.role === "SUPERADMIN";
 
         if (isMounted) {
           setIsAdmin(hasAdminRole);

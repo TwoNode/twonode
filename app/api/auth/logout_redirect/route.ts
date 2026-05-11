@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { Platform } from "@/utils/platform";
 import {
@@ -13,38 +13,48 @@ import {
   isMDARole,
 } from "@/permissions";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userData = await getEncryptedUserData();
+    const userData = await getEncryptedUserData(request);
+    const { searchParams } = new URL(request.url);
+    
+    // Check if we have an explicit platform we're logging out from
+    const fromPlatform = searchParams.get("from") as Platform | null;
 
     let redirectUrl = "/";
 
     if (userData) {
-      if (userData.platform === Platform.REVA) {
-        if (canAccessRevaAdminPanel(userData.role)) {
+      // Determine which platform session to use for the redirect decision
+      // Prioritize 'from' param, then legacy 'platform' field
+      const activePlatform = fromPlatform || userData.platform || Object.keys(userData.platforms)[0] as Platform;
+      const session = userData.platforms[activePlatform];
+      const role = session?.role || userData.role || "";
+
+      if (activePlatform === Platform.REVA) {
+        if (canAccessRevaAdminPanel(role)) {
           redirectUrl = "/reva-restricted/login";
         } else {
           redirectUrl = "/reva/login";
         }
-      } else if (userData.platform === Platform.SCRAM) {
-        if (canAccessRevaAdminPanel(userData.role)) {
+      } else if (activePlatform === Platform.SCRAM) {
+        // Scram uses Reva admin check for now as per previous implementation
+        if (canAccessRevaAdminPanel(role)) {
           redirectUrl = "/scram-restricted/login";
         } else {
           redirectUrl = "/scram/login";
         }
-      } else if (userData.platform === Platform.SURFBOARD) {
-        if (canAccessSurfSuperAdminPanel(userData.role)) {
+      } else if (activePlatform === Platform.SURFBOARD) {
+        if (canAccessSurfSuperAdminPanel(role)) {
           redirectUrl = "/surf-restricted/login";
-        } else if (canAccessSurfAdminPanel(userData.role)) {
+        } else if (canAccessSurfAdminPanel(role)) {
           redirectUrl = "/surf-restricted/login";
-        } else if (isMDARole(userData.role)) {
-          // MDA users (ACCOUNTS, CHARTING, SURCON, RECORDS_I, RECORDS_II, MDA_SUPERADMIN)
+        } else if (isMDARole(role)) {
           redirectUrl = "/surf-mda/login";
         } else {
           redirectUrl = "/surfboard/login";
         }
-      } else if (userData.platform === Platform.GBC) {
-        if (canAccessGBCAdminPanel(userData.role)) {
+      } else if (activePlatform === Platform.GBC) {
+        if (canAccessGBCAdminPanel(role)) {
           redirectUrl = "/gbc/restricted-login";
         } else {
           redirectUrl = "/gbc/login";
@@ -56,13 +66,13 @@ export async function GET() {
     const response = NextResponse.redirect(addBaseUrl(redirectUrl));
 
     // Apply cookie clearing to the response
-    const clearedResponse = clearEncryptedUserCookie(response);
+    const clearedResponse = await clearEncryptedUserCookie(response);
 
     return clearedResponse;
   } catch (error) {
     console.error("Error in logout handler:", error);
     // Fallback redirect to home page
     const response = NextResponse.redirect(addBaseUrl("/"));
-    return clearEncryptedUserCookie(response);
+    return await clearEncryptedUserCookie(response);
   }
 }

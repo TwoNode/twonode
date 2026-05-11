@@ -105,6 +105,8 @@ const MDA_ROLES = {
   records_i: "RECORDS_I",
   records_ii: "RECORDS_II",
   mda_superadmin: "MDA_SUPERADMIN",
+  intake: "INTAKE",
+  archive: "ARCHIVE",
 };
 
 export const MDA_ROLE_LIST = [
@@ -114,6 +116,8 @@ export const MDA_ROLE_LIST = [
   MDA_ROLES.records_i,
   MDA_ROLES.records_ii,
   MDA_ROLES.mda_superadmin,
+  MDA_ROLES.intake,
+  MDA_ROLES.archive,
 ];
 
 export const isMDARole = (role: string | null = "") => {

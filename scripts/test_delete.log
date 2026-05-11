@@ -1,0 +1,17 @@
+Delete result: {
+  id: '842e2cc0-625b-479a-a0a1-f7a1383c33ec',
+  reference: 'REVA_150d95ef2',
+  userId: 'a5419e80-cc4c-45e9-934a-a1b38cddf1cc',
+  planCode: '',
+  planName: '',
+  amount: 5000000,
+  interval: 'monthly',
+  lastPaymentDate: 2025-08-19T10:45:53.000Z,
+  startDate: 2025-08-01T00:00:00.000Z,
+  endDate: 2025-08-31T00:00:00.000Z,
+  status: 'active',
+  eventType: 'charge.success',
+  createdAt: 2025-08-19T10:45:55.829Z,
+  updatedAt: 2025-08-19T10:45:55.829Z
+}
+Check after delete: null

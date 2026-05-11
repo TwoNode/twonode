@@ -52,6 +52,7 @@ interface Batch {
   batchCode: string;
   totalAmount: number;
   lasgReceiptUrl: string;
+  remitaReceiptUrl?: string | null;
   createdAt: Date;
   submitter: {
     firstName: string;
@@ -348,21 +349,49 @@ export default function AccountsAdminPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* LASG Receipt */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        LASG Payment Receipt
-                      </p>
-                      <a
-                        href={batch.lasgReceiptUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                      >
-                        <FileText className="w-4 h-4" />
-                        View Receipt
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                    {/* Payment Receipts */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* LASG Receipt */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          LASG Payment Receipt
+                        </p>
+                        {batch.lasgReceiptUrl ? (
+                          <a
+                            href={batch.lasgReceiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            <FileText className="w-4 h-4" />
+                            View LASG Receipt
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-400 italic">No LASG receipt</span>
+                        )}
+                      </div>
+
+                      {/* Remita Receipt */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Remita Payment Receipt
+                        </p>
+                        {batch.remitaReceiptUrl ? (
+                          <a
+                            href={batch.remitaReceiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            <FileText className="w-4 h-4" />
+                            View Remita Receipt
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-400 italic">No Remita receipt</span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Plans Table */}
@@ -531,6 +560,32 @@ export default function AccountsAdminPage() {
                           <span className="font-medium">Comment:</span>{" "}
                           {batch.accountsComment}
                         </p>
+                      )}
+                    </div>
+
+                    {/* Batch Receipts for History */}
+                    <div className="flex flex-wrap gap-3">
+                      {batch.lasgReceiptUrl && (
+                        <a
+                          href={batch.lasgReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Batch LASG Receipt
+                        </a>
+                      )}
+                      {batch.remitaReceiptUrl && (
+                        <a
+                          href={batch.remitaReceiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Batch Remita Receipt
+                        </a>
                       )}
                     </div>
 

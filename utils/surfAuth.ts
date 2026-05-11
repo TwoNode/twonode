@@ -4,6 +4,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { canAccessSurfAdminPanel, canAccessSurfUserPanel } from "@/permissions";
 import { getAndRefreshUserSession } from "./encryptedCookies";
 import { cache } from "react";
+import { Platform } from "./platform";
 
 export async function getUserFromSurfDB(userId: string) {
   try {
@@ -49,17 +50,40 @@ export const getAuthenticatedSurfUserFromCookie = cache(async () => {
     }
 
     const sessionData = await getAndRefreshUserSession();
-    const surfUser = sessionData?.userData;
+    if (!sessionData) {
+      throw new Error("No active session found");
+    }
 
-    if (!surfUser) {
+    const userData = sessionData.userData;
+
+    // Multi-platform awareness: specifically find the Surfboard session
+    const surfboardSession =
+      userData.platforms[Platform.SURFBOARD] ||
+      (userData.platform === Platform.SURFBOARD
+        ? { role: userData.role, subscription: userData.subscription }
+        : null);
+
+    if (!surfboardSession) {
       throw new Error("User not found in Surfboard session");
     }
 
-    return { ...user, ...surfUser, id: surfUser.userId };
+    return {
+      ...user,
+      id: userData.userId, // Override Kinde's id with actual DB userId
+      userId: userData.userId,
+      kindeId: userData.kindeId,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: surfboardSession.role,
+      // sessionId: userData.platforms?.surfboard?.activeSessionId,
+      // lastActivity: userData.platforms?.surfboard?.lastActivity,
+      subscription: surfboardSession.subscription,
+    };
   } catch (error) {
     console.error(
       "Error getting authenticated Surfboard user from cookie:",
-      error
+      error,
     );
     throw error;
   }

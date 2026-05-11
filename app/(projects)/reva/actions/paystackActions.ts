@@ -39,12 +39,18 @@ export const initializePaystack = async ({
       amount,
       reference,
       metadata: {
+        platform: "reva", // Explicit platform identification
         requester, // Name of the requester
         address, // Property address
         lga, // Local Government Area (LGA)
         comments,
         isLive, // Track if this is a live or test transaction
         custom_fields: [
+          {
+            display_name: "Platform",
+            variable_name: "platform",
+            value: "reva",
+          },
           {
             display_name: "Requester Name", // Display name for the requester
             variable_name: "requester", // Variable name for the requester
