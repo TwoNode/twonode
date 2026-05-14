@@ -16,6 +16,9 @@ import {
   SurfboardPlanDTO,
   MAX_FILE_BYTES,
   ApiResult,
+  PILLAR_TYPES,
+  PILLAR_TYPE_ADJOINING_FILTERS,
+  ParcelInfo,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import {
   createSurfPlan,
@@ -32,6 +35,7 @@ import {
 import { recognizePersonCount } from "@/app/(projects)/(surfboard)/actions/aiExtractionActions";
 import {
   generatePolygonFromPillars,
+  generateMultiPolygonFromPillarGroups,
   parseCSVContent,
 } from "../utils/surfboardUtils";
 import { useRouter } from "next/navigation";
@@ -354,6 +358,9 @@ const INITIALS = (initial: any) => ({
   isLive: initial?.isLive ?? false,
   id: initial?.id,
   createdAt: initial?.createdAt,
+  withdrawalAndResubmissionStatus: initial?.withdrawalAndResubmissionStatus ?? "No_Action",
+  pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber ?? "",
+  parcels: initial?.parcels ?? [],
 });
 
 export default function SurfboardPlanForm({
@@ -385,6 +392,20 @@ export default function SurfboardPlanForm({
   const [personCountManual, setPersonCountManual] = useState<number>(1);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isRecognizing, setIsRecognizing] = useState(false);
+
+  // --- MultiPolygon State ---
+  const [csvFiles, setCsvFiles] = useState<File[]>([]);
+  const [pillarGroups, setPillarGroups] = useState<PillarData[][]>([]);
+  const [parcels, setParcels] = useState<ParcelInfo[]>(() => initial?.parcels || []);
+  const [useSameTitleForAll, setUseSameTitleForAll] = useState(() => {
+    // If we have parcels and they have different titles, set to false
+    if (initial?.parcels && initial.parcels.length > 1) {
+      const titles = initial.parcels.map(p => p.surveyTitle).filter(Boolean);
+      const uniqueTitles = new Set(titles);
+      return uniqueTitles.size <= 1;
+    }
+    return true;
+  });
 
   // 24h lock after mount only (unchanged/commented as provided)
   useEffect(() => {
@@ -426,14 +447,62 @@ export default function SurfboardPlanForm({
     return [];
   });
 
-  // Reference Plan Combo (unchanged logic)
+  // Adjoining Plan search state
   const [refOptions, setRefOptions] = useState<string[]>([]);
   const [refQuery, setRefQuery] = useState("");
   const [refOpen, setRefOpen] = useState(false);
   const refTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Populate pillarGroups from pillars on load
+  useEffect(() => {
+    if (pillars.length > 0 && pillarGroups.length === 0) {
+      const groups: Record<number, PillarData[]> = {};
+      pillars.forEach((p) => {
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push(p);
+      });
+      const sortedGroups = Object.keys(groups)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => groups[Number(key)]);
+      setPillarGroups(sortedGroups);
+    }
+  }, [pillars, pillarGroups.length]);
   const refFilterConf = REFERENCE_FILTERS[form.planType];
   const showReferenceField = refFilterConf.showField;
   const isReferenceRequired = refFilterConf.required;
+
+  // Adjoining Pillar logic
+  const adjoiningFilterConf = PILLAR_TYPE_ADJOINING_FILTERS[form.pillarType];
+  const showAdjoiningField = adjoiningFilterConf?.showReferenceField;
+  const isAdjoiningRequired = adjoiningFilterConf?.required;
+
+  // Adjoining Ref Plan search state
+  const [adjOptions, setAdjOptions] = useState<string[]>([]);
+  const [adjQuery, setAdjQuery] = useState("");
+  const [adjOpen, setAdjOpen] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED); // Use generic search
+        setAdjOptions(list || []);
+      } catch (e) {
+        console.error(e);
+        setAdjOptions([]);
+      }
+    };
+    if (showAdjoiningField) {
+      load();
+      setAdjQuery("");
+    }
+  }, [showAdjoiningField]);
+
+  const filteredAdjOptions = useMemo(() => {
+    if (!adjQuery.trim()) return adjOptions;
+    const q = adjQuery.toLowerCase();
+    return adjOptions.filter((o) => o.toLowerCase().includes(q));
+  }, [adjOptions, adjQuery]);
 
   useEffect(() => {
     const load = async () => {
@@ -545,51 +614,114 @@ export default function SurfboardPlanForm({
 
 
 
-  // CSV upload (unchanged logic)
+  // Multi-CSV upload logic
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_BYTES) {
-      toast.error("CSV exceeds 50MB");
-      return;
-    }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setBusy(true);
     try {
-      const text = await file.text();
-      const parsed = parseCSVContent(text);
-      if (parsed.length < 3) {
-        toast.error("Need at least 3 pillars");
-        return;
+      const newPillarGroups: PillarData[][] = [...pillarGroups];
+      const newParcels: ParcelInfo[] = [...parcels];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > MAX_FILE_BYTES) {
+          toast.error(`${file.name} exceeds 50MB`);
+          continue;
+        }
+
+        const text = await file.text();
+        const parsed = parseCSVContent(text);
+        if (parsed.length < 3) {
+          toast.error(`${file.name} has fewer than 3 pillars`);
+          continue;
+        }
+
+        const parcelIdx = newPillarGroups.length;
+        // Add polygonIndex to each pillar
+        const pillarsWithIndex = parsed.map(p => ({ ...p, polygonIndex: parcelIdx }));
+        newPillarGroups.push(pillarsWithIndex);
+
+        // Get admin boundaries for this polygon
+        const tempPoly = await generatePolygonFromPillars(pillarsWithIndex);
+        const adminData = await getAdminBoundaries(tempPoly as any);
+
+        newParcels.push({
+          polygonIndex: parcelIdx,
+          surveyTitle: useSameTitleForAll ? form.surveyTitle : "",
+          ward: adminData?.success ? adminData.data?.wardname : null,
+          lcda: adminData?.success ? adminData.data?.lcdaname : null,
+          lga: adminData?.success ? adminData.data?.lganame : null,
+          state: adminData?.success ? adminData.data?.statename : null,
+          pillarCount: parsed.length
+        });
       }
-      setPillars(() => parsed);
-      const geom = await generatePolygonFromPillars(parsed);
+
+      if (newPillarGroups.length === 0) return;
+
+      setPillarGroups(newPillarGroups);
+      setParcels(newParcels);
+      
+      const allPillars = newPillarGroups.flat();
+      setPillars(allPillars);
+
+      let geom;
+      if (newPillarGroups.length === 1) {
+        geom = await generatePolygonFromPillars(newPillarGroups[0]);
+      } else {
+        geom = await generateMultiPolygonFromPillarGroups(newPillarGroups);
+      }
 
       if (geom) {
         setField("geometry", geom as any);
-        try {
-          const adminData = await getAdminBoundaries(geom as any);
-          if (adminData?.success && adminData.data) {
-            setForm((prev) => ({
-              ...prev,
-              ward: adminData.data.wardname,
-              lcda: adminData.data.lcdaname,
-              lga: adminData.data.lganame,
-              state: adminData.data.statename,
-            }));
-          }
-          console.log(adminData);
-        } catch (error) {
-          console.error("Error fetching administrative data:", error);
-          // why: do not block user if admin lookup fails
-          toast.warning(
-            "Could not fetch administrative boundaries. Please enter them manually."
-          );
-        }
+        // Set primary location fields from the first parcel if not already set
+        const first = newParcels[0];
+        setForm(prev => ({
+          ...prev,
+          ward: prev.ward || first.ward || null,
+          lcda: prev.lcda || first.lcda || null,
+          lga: prev.lga || first.lga || null,
+          state: prev.state || first.state || null,
+        }));
       }
 
-      toast.success(`Parsed ${parsed.length} pillars and generated geometry`);
+      toast.success(`Added ${files.length} parcel(s). Total: ${newPillarGroups.length}`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to parse CSV");
+    } finally {
+      setBusy(false);
     }
+  }
+
+  async function removeParcel(index: number) {
+    const nextGroups = pillarGroups.filter((_, i) => i !== index);
+    const nextParcels = parcels.filter((_, i) => i !== index)
+      .map((p, i) => ({ ...p, polygonIndex: i })); // re-index
+
+    // Update polygonIndex in pillars
+    const updatedGroups = nextGroups.map((group, i) => 
+      group.map(p => ({ ...p, polygonIndex: i }))
+    );
+
+    setPillarGroups(updatedGroups);
+    setParcels(nextParcels);
+    
+    const allPillars = updatedGroups.flat();
+    setPillars(allPillars);
+
+    if (updatedGroups.length === 0) {
+      setField("geometry", null);
+      return;
+    }
+
+    let geom;
+    if (updatedGroups.length === 1) {
+      geom = await generatePolygonFromPillars(updatedGroups[0]);
+    } else {
+      geom = await generateMultiPolygonFromPillarGroups(updatedGroups);
+    }
+    setField("geometry", geom as any);
   }
 
   // Upload helper (unchanged)
@@ -666,6 +798,9 @@ export default function SurfboardPlanForm({
         locality: form.locality,
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
+        withdrawalAndResubmissionStatus: form.withdrawalAndResubmissionStatus,
+        pillarTypeReferencePlanNumber: form.pillarTypeReferencePlanNumber,
+        parcels: parcels,
         dateLodged:
           form.dateLodged ||
           (selectedCertFiles.length > 0 ||
@@ -780,6 +915,15 @@ export default function SurfboardPlanForm({
       errs.referencePlanNumber = "Required";
     }
 
+    if (showAdjoiningField && !form.pillarTypeReferencePlanNumber?.trim()) {
+      errs.pillarTypeReferencePlanNumber = "Required";
+    }
+
+    if (!useSameTitleForAll) {
+      const missingTitles = parcels.some(p => !p.surveyTitle?.trim());
+      if (missingTitles) errs.parcels = "All parcels must have a survey title";
+    }
+
     const overs = [
       ...selectedCadFiles,
       ...selectedPdfFiles,
@@ -799,11 +943,26 @@ export default function SurfboardPlanForm({
 
   // Handle title change and debounced recognition check
   const handleSurveyTitleChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+    index?: number
   ) => {
     const newVal = e.target.value;
-    setField("surveyTitle", newVal);
-    setPersonCountManual(calculatePersonCount(newVal));
+    if (index === undefined) {
+      setField("surveyTitle", newVal);
+      setPersonCountManual(calculatePersonCount(newVal));
+      
+      // If we're using the same title for all, update parcels too
+      if (useSameTitleForAll) {
+        setParcels(prev => prev.map(p => ({ ...p, surveyTitle: newVal })));
+      }
+    } else {
+      // Per-parcel title update
+      setParcels(prev => {
+        const next = [...prev];
+        next[index] = { ...next[index], surveyTitle: newVal };
+        return next;
+      });
+    }
   };
 
   // Effect to re-run AI check on title edit if we suspect mismatch?
@@ -1218,7 +1377,7 @@ export default function SurfboardPlanForm({
                   <textarea
                     id="surveyTitle"
                     value={form.surveyTitle}
-                    onChange={handleSurveyTitleChange}
+                    onChange={(e) => handleSurveyTitleChange(e)}
                     onBlur={() => handleVerifyCount()} // Auto-verify on blur
                     rows={Math.max(2, form.surveyTitle.split("\n").length)}
                     className={cn(
@@ -1226,9 +1385,58 @@ export default function SurfboardPlanForm({
                       errors.surveyTitle ? inputError : inputBorder,
                       "min-h-[60px] resize-y"
                     )}
-                    disabled={lockNonCert && mode === "edit"}
+                    disabled={(lockNonCert && mode === "edit") || (parcels.length > 1 && !useSameTitleForAll)}
                     placeholder={`e.g., \nMR. BABATUNDE TAJUDEEN SHONUBI\nMRS. OGALA TURMAC NDIDI`}
                   />
+                  
+                  {parcels.length > 1 && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center gap-4 mb-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={useSameTitleForAll}
+                            onChange={() => {
+                              setUseSameTitleForAll(true);
+                              // Sync current main title to all parcels
+                              setParcels(prev => prev.map(p => ({ ...p, surveyTitle: form.surveyTitle })));
+                            }}
+                            className="w-4 h-4 text-indigo-600"
+                          />
+                          <span className="text-sm font-medium">Same title for all parcels</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={!useSameTitleForAll}
+                            onChange={() => setUseSameTitleForAll(false)}
+                            className="w-4 h-4 text-indigo-600"
+                          />
+                          <span className="text-sm font-medium">Different title per parcel</span>
+                        </label>
+                      </div>
+
+                      {!useSameTitleForAll && (
+                        <div className="space-y-4">
+                          {parcels.map((parcel, idx) => (
+                            <div key={idx}>
+                              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                                Parcel {idx + 1} Survey Title
+                              </label>
+                              <textarea
+                                value={parcel.surveyTitle || ""}
+                                onChange={(e) => handleSurveyTitleChange(e, idx)}
+                                rows={2}
+                                className={cn(inputBase, inputBorder, "text-sm")}
+                                placeholder={`Title for Parcel ${idx + 1}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <p className={helpCls}>
                     For multiple owners, please enter each person's name on a{" "}
                     <strong>new line</strong>. Current Count:{" "}
@@ -1237,6 +1445,9 @@ export default function SurfboardPlanForm({
 
                   {errors.surveyTitle && (
                     <p className={errorCls}>{errors.surveyTitle}</p>
+                  )}
+                  {errors.parcels && (
+                    <p className={errorCls}>{errors.parcels}</p>
                   )}
 
                   {form.surveyTitle.toUpperCase().includes(" AND ") &&
@@ -1434,8 +1645,11 @@ export default function SurfboardPlanForm({
                     disabled={lockNonCert && mode === "edit"}
                   >
                     <option value="">-- Select Pillar Type --</option>
-                    <option value="REGULAR">REGULAR</option>
-                    <option value="SPECIAL">SPECIAL</option>
+                    {Object.values(PILLAR_TYPES).map((pt) => (
+                      <option key={pt} value={pt}>
+                        {pt}
+                      </option>
+                    ))}
                   </select>
                   {errors.pillarType && (
                     <p className={errorCls}>{errors.pillarType}</p>
@@ -1470,6 +1684,56 @@ export default function SurfboardPlanForm({
                     <p className={errorCls}>{errors.dateOnSurveyPlan}</p>
                   )}
                 </div>
+
+                {showAdjoiningField && (
+                  <div className="md:col-span-2">
+                    <label className={labelCls} htmlFor="pillarTypeReferencePlan">
+                      Adjoining Reference Plan No. {isAdjoiningRequired && reqBadge}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="pillarTypeReferencePlan"
+                        type="text"
+                        value={form.pillarTypeReferencePlanNumber ?? ""}
+                        onChange={(e) => {
+                          setAdjQuery(e.target.value);
+                          setField("pillarTypeReferencePlanNumber", e.target.value);
+                        }}
+                        onFocus={() => setAdjOpen(true)}
+                        onBlur={() => setTimeout(() => setAdjOpen(false), 120)}
+                        className={cn(
+                          inputBase, 
+                          errors.pillarTypeReferencePlanNumber ? inputError : inputBorder,
+                          "pr-8"
+                        )}
+                        placeholder="Search for reference plan..."
+                        aria-invalid={!!errors.pillarTypeReferencePlanNumber}
+                      />
+                      {adjOpen && filteredAdjOptions.length > 0 && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          <ul className="py-1">
+                            {filteredAdjOptions.map((pn, i) => (
+                              <li
+                                key={pn + i}
+                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                onMouseDown={() => {
+                                  setField("pillarTypeReferencePlanNumber", pn);
+                                  setAdjQuery("");
+                                  setAdjOpen(false);
+                                }}
+                              >
+                                {pn}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {errors.pillarTypeReferencePlanNumber && (
+                      <p className={errorCls}>{errors.pillarTypeReferencePlanNumber}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Locality - Full width field */}
@@ -1566,17 +1830,18 @@ export default function SurfboardPlanForm({
               id="admin"
               step={showReferenceField ? 7 : 6}
               title="Administrative Information"
-              subtitle="Upload a CSV file with pillar data (required). Fields will be auto-populated."
+              subtitle="Upload CSV file(s) with pillar data. Multiple parcels supported."
               accent="rose"
             >
               <div>
                 <label className={labelCls} htmlFor="pillarsCsv">
-                  Pillars CSV File {reqBadge}
+                  Pillars CSV File(s) {reqBadge}
                 </label>
                 <input
                   id="pillarsCsv"
                   type="file"
                   accept=".csv"
+                  multiple
                   onChange={handleCsvUpload}
                   className={cn(
                     "block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100",
@@ -1585,13 +1850,38 @@ export default function SurfboardPlanForm({
                 />
                 {errors.pillars && <p className={errorCls}>{errors.pillars}</p>}
                 <p className={helpCls}>
-                  Upload a CSV file containing pillar coordinates (at least 3
-                  points required)
+                  Upload one or more CSV files (at least 3 points per file required)
                 </p>
-                {pillars.length > 0 && (
-                  <p className="mt-2 text-sm text-green-600">
-                    ✓ {pillars.length} pillars loaded successfully
-                  </p>
+                
+                {parcels.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Loaded Parcels</h4>
+                    {parcels.map((parcel, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              Parcel {idx + 1} ({parcel.pillarCount} pillars)
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {parcel.lga || "Unknown LGA"}, {parcel.ward || "Unknown Ward"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeParcel(idx)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                          title="Remove parcel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -1600,12 +1890,12 @@ export default function SurfboardPlanForm({
                   <label
                     className={cn(labelCls, !form.ward && "text-gray-400")}
                   >
-                    Ward
+                    Primary Ward
                   </label>
                   <input
                     type="text"
                     value={form.ward || ""}
-                    placeholder="Will be set from CSV Upload"
+                    placeholder="Auto-populated"
                     readOnly
                     className={cn(inputBase, "bg-gray-50")}
                   />
@@ -1614,26 +1904,26 @@ export default function SurfboardPlanForm({
                   <label
                     className={cn(labelCls, !form.lcda && "text-gray-400")}
                   >
-                    LCDA
+                    Primary LCDA
                   </label>
                   <input
                     type="text"
                     value={form.lcda || ""}
                     readOnly
-                    placeholder="Will be set from CSV Upload"
+                    placeholder="Auto-populated"
                     className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
                 <div className="flex-1 min-w-[200px]">
                   <label className={cn(labelCls, !form.lga && "text-gray-400")}>
-                    LGA
+                    Primary LGA
                   </label>
                   <input
                     type="text"
                     value={form.lga || ""}
                     readOnly
                     className={cn(inputBase, "bg-gray-50")}
-                    placeholder="Will be set from CSV Upload"
+                    placeholder="Auto-populated"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px]">
@@ -1645,15 +1935,10 @@ export default function SurfboardPlanForm({
                   <input
                     type="text"
                     value={form.state || ""}
-                    onChange={(e) => setField("state", e.target.value)}
                     readOnly
-                    className={cn(
-                      inputBase,
-                      errors.state ? inputError : inputBorder
-                    )}
-                    placeholder="Will be set from CSV Upload"
+                    className={cn(inputBase, "bg-gray-50")}
+                    placeholder="Auto-populated"
                   />
-                  {errors.state && <p className={errorCls}>{errors.state}</p>}
                 </div>
               </div>
             </Section>
@@ -1780,17 +2065,28 @@ export default function SurfboardPlanForm({
                   </div>
                 </div>
 
-                <div className="max-h-40 overflow-y-auto mt-3 text-sm">
-                  {pillars.slice(0, 10).map((p, i) => (
-                    <div key={i} className="text-gray-700 py-0.5">
-                      {String(p.pillarNumber)}: ({p.easting.toFixed(2)},{" "}
-                      {p.northing.toFixed(2)})
+                <div className="max-h-80 overflow-y-auto mt-3 text-sm space-y-4">
+                  {pillarGroups.map((group, gIdx) => (
+                    <div key={gIdx} className="p-2 bg-gray-50 rounded border border-gray-200">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Parcel {gIdx + 1}</h4>
+                      {group.slice(0, 5).map((p, i) => (
+                        <div key={i} className="text-gray-700 py-0.5 font-mono text-xs">
+                          {String(p.pillarNumber)}: ({p.easting.toFixed(2)}, {p.northing.toFixed(2)})
+                        </div>
+                      ))}
+                      {group.length > 5 && (
+                        <div className="text-xs text-gray-400 italic">
+                          …and {group.length - 5} more
+                        </div>
+                      )}
                     </div>
                   ))}
-                  {pillars.length > 10 && (
-                    <div className="text-sm text-gray-500 italic">
-                      …and {pillars.length - 10} more
-                    </div>
+                  {pillarGroups.length === 0 && pillars.length > 0 && (
+                    pillars.slice(0, 10).map((p, i) => (
+                      <div key={i} className="text-gray-700 py-0.5">
+                        {String(p.pillarNumber)}: ({p.easting.toFixed(2)}, {p.northing.toFixed(2)})
+                      </div>
+                    ))
                   )}
                 </div>
               </section>

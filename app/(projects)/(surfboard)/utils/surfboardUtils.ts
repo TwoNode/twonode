@@ -2,6 +2,7 @@ import * as projectOperator from "@arcgis/core/geometry/operators/projectOperato
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 import Point from "@arcgis/core/geometry/Point";
 import { PlanId, SubscriptionPlan } from "./paystackSubscription";
+import { PillarData } from "../types/surfboardTypes";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -86,16 +87,8 @@ export function proratedAmount(
 }
 
 // -----------------------------------------------------------------------------
-// EXISTING mapping utilities (kept intact, minimized for brevity). If you had
-// more here, paste them below or keep them in this same file.
+// EXISTING mapping utilities
 // -----------------------------------------------------------------------------
-export interface PillarData {
-  easting: number;
-  northing: number;
-  pointIndex: number;
-  pillarNumber: string;
-  geometry?: string; // GeoJSON point
-}
 
 export async function ensureProjectionLoaded(): Promise<void> {
   // If already loaded, return immediately
@@ -299,6 +292,69 @@ export async function generatePolygonFromPillars(
     console.error("Failed to generate polygon:", error);
     throw new Error(
       `Failed to generate polygon: ${error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Generates a MultiPolygon GeoJSON string from groups of pillars (one group per parcel).
+ */
+export async function generateMultiPolygonFromPillarGroups(
+  pillarGroups: PillarData[][]
+): Promise<string> {
+  if (pillarGroups.length === 0) {
+    throw new Error("At least one pillar group is required");
+  }
+
+  try {
+    const allCoordinates: [number, number][][][] = [];
+
+    for (const group of pillarGroups) {
+      if (group.length < 3) {
+        console.warn("Skipping parcel with fewer than 3 pillars");
+        continue;
+      }
+
+      // Convert each pillar to WGS84
+      const coordinatesPromises = group.map(async (pillar) => {
+        const { lat, lng } = await convertCoordinates(
+          pillar.easting,
+          pillar.northing
+        );
+        return [lng, lat] as [number, number];
+      });
+
+      const coordinates = await Promise.all(coordinatesPromises);
+
+      // Close the ring
+      if (
+        coordinates.length > 0 &&
+        (coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
+          coordinates[0][1] !== coordinates[coordinates.length - 1][1])
+      ) {
+        coordinates.push([...coordinates[0]]);
+      }
+
+      // GeoJSON MultiPolygon coordinates are [Polygon1, Polygon2, ...]
+      // where each Polygon is [ExteriorRing, InteriorRing1, ...]
+      allCoordinates.push([coordinates]);
+    }
+
+    if (allCoordinates.length === 0) {
+      throw new Error("No valid polygons could be generated from the groups");
+    }
+
+    const multiPolygon = {
+      type: "MultiPolygon",
+      coordinates: allCoordinates,
+    };
+
+    return JSON.stringify(multiPolygon);
+  } catch (error) {
+    console.error("Failed to generate MultiPolygon:", error);
+    throw new Error(
+      `Failed to generate MultiPolygon: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }

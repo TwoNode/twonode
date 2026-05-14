@@ -459,6 +459,16 @@ model SurfboardPlan {
   /// Reason required when planType is "Withdrawal and Resubmission"
   reasonForWithdrawalAndResubmission String?
 
+  /// Withdrawal and Resubmission status tracking
+  /// Values: "No_Action" (default), "Withdrawn", "Resubmitted"
+  withdrawalAndResubmissionStatus String? @default("No_Action")
+
+  /// Reference plan triggered by adjoining pillar type (REGULAR+ADJOINING, SPECIAL+ADJOINING)
+  pillarTypeReferencePlanNumber String?
+
+  /// Per-parcel metadata for MultiPolygon plans (survey titles, locations)
+  parcels Json? // Array of ParcelInfo objects
+
   /// Workflow status (default PENDING)
   status SurfboardPlanStatus @default(PENDING)
 

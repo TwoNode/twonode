@@ -284,16 +284,34 @@ export default function ChartingAdminPage() {
         ? pillars
         : JSON.parse(pillars);
 
-      const lines: string[] = [];
-      for (const p of pillarsArray) {
-        const easting = p.easting ?? p.lng ?? "";
-        const northing = p.northing ?? p.lat ?? "";
-        if (easting && northing) {
-          lines.push(`${easting},${northing}`);
+      // Group by polygonIndex if available
+      const groups: Record<number, any[]> = {};
+      pillarsArray.forEach((p: any) => {
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push(p);
+      });
+
+      const output: string[] = [];
+      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+      
+      for (const key of groupKeys) {
+        const group = groups[Number(key)];
+        if (groupKeys.length > 1) {
+          output.push(`PL Parcel ${Number(key) + 1}`);
+        } else {
+          output.push("PL");
+        }
+        for (const p of group) {
+          const easting = p.easting ?? p.lng ?? "";
+          const northing = p.northing ?? p.lat ?? "";
+          if (easting && northing) {
+            output.push(`${easting},${northing}`);
+          }
         }
       }
 
-      return `PL\n${lines.join("\n")}`;
+      return output.join("\n");
     } catch {
       return "";
     }

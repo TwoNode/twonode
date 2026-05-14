@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
+import { PLAN_TYPES } from "../types/surfboardTypes";
 import type {
   Plan,
   ApiResult,
@@ -591,6 +592,13 @@ export async function _updatePlan(
     data.status = "PENDING";
   }
 
+  if (dto.withdrawalAndResubmissionStatus !== undefined)
+    data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+  if (dto.pillarTypeReferencePlanNumber !== undefined)
+    data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
+  if (dto.parcels !== undefined)
+    data.parcels = dto.parcels as any;
+
   if (enforceLock) {
     // Validate we didn't try to modify locked fields
     const triedToChangeLocked =
@@ -685,9 +693,27 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         userId: user.id,
         personCount: dto.personCount || 1,
         personCountVerified: false,
+        withdrawalAndResubmissionStatus:
+          dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION
+            ? "Resubmitted"
+            : "No_Action",
+        pillarTypeReferencePlanNumber: dto.pillarTypeReferencePlanNumber || null,
+        parcels: (dto.parcels as any) || null,
       },
-      select: { id: true, planNumber: true },
+      select: { id: true, planNumber: true, referencePlanNumber: true, planType: true },
     });
+
+    // If it's a withdrawal, flip the status of the original plan
+    if (rec.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && rec.referencePlanNumber) {
+      try {
+        await prisma.surfboardPlan.update({
+          where: { planNumber: rec.referencePlanNumber },
+          data: { withdrawalAndResubmissionStatus: "Withdrawn" }
+        });
+      } catch (e) {
+        console.warn("Could not find/update referenced plan for withdrawal status:", rec.referencePlanNumber);
+      }
+    }
 
     // Send notification to user about new plan creation
     try {
@@ -798,6 +824,12 @@ export async function updateSurfPlan(
       if (dto.facilitator) data.facilitator = dto.facilitator;
       if (dto.pillarType) data.pillarType = dto.pillarType;
       if (dto.geometry) data.geometry = geometry;
+      if (dto.pillars) data.pillars = dto.pillars;
+      if (dto.withdrawalAndResubmissionStatus)
+        data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+      if (dto.pillarTypeReferencePlanNumber !== undefined)
+        data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
+      if (dto.parcels) data.parcels = dto.parcels;
       if (dto.pillars) data.pillars = dto.pillars;
 
       data.ward = dto.ward ?? null;

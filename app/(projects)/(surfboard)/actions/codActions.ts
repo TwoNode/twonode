@@ -25,7 +25,7 @@ import {
   extractEBSReceiptFields,
 } from "./aiExtractionActions";
 import { transmitToOSSG } from "./ossgActions";
-
+import area from "@turf/area";
 
 
 // Lock duration in minutes
@@ -687,9 +687,30 @@ export async function getChartingInterpretation(
   geometry: any,
 ): Promise<string | null> {
   try {
-    const geometryString =
-      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+    const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
+    
+    if (geom.type === "MultiPolygon") {
+      const interpretations: string[] = [];
+      for (let i = 0; i < geom.coordinates.length; i++) {
+        const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
+        const polyString = JSON.stringify(poly);
+        const result = await prisma.$queryRaw<Array<{ interpretation: string }>>`
+          SELECT interpretation
+          FROM "LASG_charting_interpretation"
+          WHERE ST_Intersects(
+            geom,
+            ST_SetSRID(ST_GeomFromGeoJSON(${polyString}), 4326)
+          )
+          LIMIT 1;
+        `;
+        if (result?.length && result[0].interpretation) {
+          interpretations.push(`Parcel ${i + 1}: ${result[0].interpretation}`);
+        }
+      }
+      return interpretations.length > 0 ? interpretations.join("\n") : null;
+    }
 
+    const geometryString = JSON.stringify(geom);
     const result = await prisma.$queryRaw<Array<{ interpretation: string }>>`
       SELECT interpretation
       FROM "LASG_charting_interpretation"
@@ -718,8 +739,15 @@ export async function getZoneFromGeometry(
   geometry: any,
 ): Promise<string | null> {
   try {
-    const geometryString =
-      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+    const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
+    
+    // For MultiPolygon, we take the zone of the first parcel for plan-level storage,
+    // but the actual fee calculation will iterate through all parcels.
+    const geometryToUse = geom.type === "MultiPolygon" 
+      ? { type: "Polygon", coordinates: geom.coordinates[0] }
+      : geom;
+
+    const geometryString = JSON.stringify(geometryToUse);
 
     const result = await prisma.$queryRaw<Array<{ Zone: string }>>`
       SELECT "Zone"
@@ -988,34 +1016,78 @@ export async function submitRedCopyBatch(
     const plansWithNoZone: string[] = [];
 
     for (const plan of plans) {
-      // Get zone from geometry via spatial intersection
-      const zone = await getZoneFromGeometry(plan.geometry);
+      const geom = typeof plan.geometry === "string" ? JSON.parse(plan.geometry) : plan.geometry;
+      let planTotalFee = 0;
+      let primaryZone = "";
+      let anyDoubleFee = false;
 
-      if (!zone) {
-        plansWithNoZone.push(plan.planNumber);
-        continue;
+      if (geom.type === "MultiPolygon") {
+        // Multi-parcel fee calculation
+        for (let i = 0; i < geom.coordinates.length; i++) {
+          const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
+          const polyString = JSON.stringify(poly);
+          
+          // 1. Get zone for this specific parcel
+          const zoneResult = await prisma.$queryRaw<Array<{ Zone: string }>>`
+            SELECT "Zone" FROM "Scale_of_fees"
+            WHERE ST_Intersects(geom, ST_SetSRID(ST_GeomFromGeoJSON(${polyString}), 4326))
+            LIMIT 1;
+          `;
+          const parcelZone = zoneResult?.[0]?.Zone;
+          if (!parcelZone) {
+            plansWithNoZone.push(`${plan.planNumber} (Parcel ${i + 1})`);
+            continue;
+          }
+          if (!primaryZone) primaryZone = parcelZone;
+
+          // 2. Get area for this specific parcel
+          const parcelArea = area(poly as any);
+          
+          // 3. Get title for this parcel if available, otherwise use plan title
+          const parcelInfo = (plan as any).parcels?.find((p: any) => p.polygonIndex === i);
+          const titleToUse = parcelInfo?.surveyTitle || plan.surveyTitle;
+
+          // 4. Calculate fee for this parcel
+          const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+            parcelZone,
+            parcelArea,
+            titleToUse,
+            zoneFees,
+            plan.ethnicity,
+          );
+          planTotalFee += fee;
+          if (isDoubleFee) anyDoubleFee = true;
+        }
+      } else {
+        // Single parcel fee calculation (existing logic)
+        const zone = await getZoneFromGeometry(plan.geometry);
+        if (!zone) {
+          plansWithNoZone.push(plan.planNumber);
+          continue;
+        }
+        primaryZone = zone;
+
+        let areaSqM = 0;
+        try {
+          const details = computeGeometryDetails(plan.geometry as any);
+          areaSqM = details.areaSqM;
+        } catch (error) {
+          console.error("Error computing area for plan:", plan.planNumber, error);
+        }
+
+        const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+          zone,
+          areaSqM,
+          plan.surveyTitle,
+          zoneFees,
+          plan.ethnicity,
+        );
+        planTotalFee = fee;
+        anyDoubleFee = isDoubleFee;
       }
 
-      // Compute area from geometry
-      let areaSqM = 0;
-      try {
-        const details = computeGeometryDetails(plan.geometry as any);
-        areaSqM = details.areaSqM;
-      } catch (error) {
-        console.error("Error computing area for plan:", plan.planNumber, error);
-      }
-
-      // Calculate fee using zone and area
-      const { fee, isDoubleFee } = await calculatePlanFeeByZone(
-        zone,
-        areaSqM,
-        plan.surveyTitle,
-        zoneFees,
-        plan.ethnicity,
-      );
-
-      planFeeData.set(plan.id, { fee, zone, isDoubleFee });
-      totalFees += fee;
+      planFeeData.set(plan.id, { fee: planTotalFee, zone: primaryZone, isDoubleFee: anyDoubleFee });
+      totalFees += planTotalFee;
     }
 
     // Block submission if any plan has no zone
