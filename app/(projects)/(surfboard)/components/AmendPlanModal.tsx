@@ -33,7 +33,8 @@ import {
 } from "lucide-react";
 import { resubmitQueriedPlan, getCurrentPayerProfile } from "../actions/codActions";
 import { uploadSurfboardFileToS3 } from "../actions/awsActions";
-import { parseCSVContent, PillarData } from "../utils/surfboardUtils";
+import { parseCSVContent } from "../utils/surfboardUtils";
+import type { PillarData } from "../types/surfboardTypes";
 import MaplibreMap from "./maps/MaplibreMap";
 
 interface Plan {
