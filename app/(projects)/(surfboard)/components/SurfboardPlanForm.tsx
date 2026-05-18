@@ -123,7 +123,7 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
   const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const getFileIcon = (fileName: string) => {
@@ -153,7 +153,7 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
   };
 
   const formatFileName = (
-    fileName: string
+    fileName: string,
   ): { displayText: string; isUrl: boolean; href?: string } => {
     // Check if it's an S3 URL
     const s3Match = fileName.match(/surfboard\/([^/]+)\/(.+)$/);
@@ -298,7 +298,7 @@ function Section({
           <div
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-              badgeMap[accent]
+              badgeMap[accent],
             )}
           >
             Step {step}
@@ -358,7 +358,8 @@ const INITIALS = (initial: any) => ({
   isLive: initial?.isLive ?? false,
   id: initial?.id,
   createdAt: initial?.createdAt,
-  withdrawalAndResubmissionStatus: initial?.withdrawalAndResubmissionStatus ?? "No_Action",
+  withdrawalAndResubmissionStatus:
+    initial?.withdrawalAndResubmissionStatus ?? "No_Action",
   pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber ?? "",
   parcels: initial?.parcels ?? [],
 });
@@ -380,7 +381,7 @@ export default function SurfboardPlanForm({
       ? true
       : mode === "edit"
         ? false
-        : undefined
+        : undefined,
   );
   const [lockNonCert, setLockNonCert] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -396,11 +397,13 @@ export default function SurfboardPlanForm({
   // --- MultiPolygon State ---
   const [csvFiles, setCsvFiles] = useState<File[]>([]);
   const [pillarGroups, setPillarGroups] = useState<PillarData[][]>([]);
-  const [parcels, setParcels] = useState<ParcelInfo[]>(() => initial?.parcels || []);
+  const [parcels, setParcels] = useState<ParcelInfo[]>(
+    () => initial?.parcels || [],
+  );
   const [useSameTitleForAll, setUseSameTitleForAll] = useState(() => {
     // If we have parcels and they have different titles, set to false
     if (initial?.parcels && initial.parcels.length > 1) {
-      const titles = initial.parcels.map(p => p.surveyTitle).filter(Boolean);
+      const titles = initial.parcels.map((p) => p.surveyTitle).filter(Boolean);
       const uniqueTitles = new Set(titles);
       return uniqueTitles.size <= 1;
     }
@@ -592,7 +595,7 @@ export default function SurfboardPlanForm({
       if (data.coordinates && data.coordinates.length > 0) {
         console.log("AI extracted coordinates:", data.coordinates);
         toast.info(
-          `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`
+          `AI also found ${data.coordinates.length} coordinate pairs (check console for details)`,
         );
       }
     },
@@ -602,17 +605,15 @@ export default function SurfboardPlanForm({
       form.deededArea,
       form.dateOnSurveyPlan,
       form.locality,
-    ]
+    ],
   );
 
   function setField<K extends keyof SurfboardPlanDTO>(
     key: K,
-    val: SurfboardPlanDTO[K]
+    val: SurfboardPlanDTO[K],
   ) {
     setForm((f) => ({ ...f, [key]: val }));
   }
-
-
 
   // Multi-CSV upload logic
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -623,7 +624,7 @@ export default function SurfboardPlanForm({
     try {
       const newPillarGroups: PillarData[][] = [...pillarGroups];
       const newParcels: ParcelInfo[] = [...parcels];
-      
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (file.size > MAX_FILE_BYTES) {
@@ -640,7 +641,10 @@ export default function SurfboardPlanForm({
 
         const parcelIdx = newPillarGroups.length;
         // Add polygonIndex to each pillar
-        const pillarsWithIndex = parsed.map(p => ({ ...p, polygonIndex: parcelIdx }));
+        const pillarsWithIndex = parsed.map((p) => ({
+          ...p,
+          polygonIndex: parcelIdx,
+        }));
         newPillarGroups.push(pillarsWithIndex);
 
         // Get admin boundaries for this polygon
@@ -654,7 +658,7 @@ export default function SurfboardPlanForm({
           lcda: adminData?.success ? adminData.data?.lcdaname : null,
           lga: adminData?.success ? adminData.data?.lganame : null,
           state: adminData?.success ? adminData.data?.statename : null,
-          pillarCount: parsed.length
+          pillarCount: parsed.length,
         });
       }
 
@@ -662,7 +666,7 @@ export default function SurfboardPlanForm({
 
       setPillarGroups(newPillarGroups);
       setParcels(newParcels);
-      
+
       const allPillars = newPillarGroups.flat();
       setPillars(allPillars);
 
@@ -677,7 +681,7 @@ export default function SurfboardPlanForm({
         setField("geometry", geom as any);
         // Set primary location fields from the first parcel if not already set
         const first = newParcels[0];
-        setForm(prev => ({
+        setForm((prev) => ({
           ...prev,
           ward: prev.ward || first.ward || null,
           lcda: prev.lcda || first.lcda || null,
@@ -686,7 +690,9 @@ export default function SurfboardPlanForm({
         }));
       }
 
-      toast.success(`Added ${files.length} parcel(s). Total: ${newPillarGroups.length}`);
+      toast.success(
+        `Added ${files.length} parcel(s). Total: ${newPillarGroups.length}`,
+      );
     } catch (err: any) {
       toast.error(err?.message || "Failed to parse CSV");
     } finally {
@@ -696,17 +702,18 @@ export default function SurfboardPlanForm({
 
   async function removeParcel(index: number) {
     const nextGroups = pillarGroups.filter((_, i) => i !== index);
-    const nextParcels = parcels.filter((_, i) => i !== index)
+    const nextParcels = parcels
+      .filter((_, i) => i !== index)
       .map((p, i) => ({ ...p, polygonIndex: i })); // re-index
 
     // Update polygonIndex in pillars
-    const updatedGroups = nextGroups.map((group, i) => 
-      group.map(p => ({ ...p, polygonIndex: i }))
+    const updatedGroups = nextGroups.map((group, i) =>
+      group.map((p) => ({ ...p, polygonIndex: i })),
     );
 
     setPillarGroups(updatedGroups);
     setParcels(nextParcels);
-    
+
     const allPillars = updatedGroups.flat();
     setPillars(allPillars);
 
@@ -727,7 +734,7 @@ export default function SurfboardPlanForm({
   // Upload helper (unchanged)
   async function uploadSelected(
     kind: "cad" | "pdf" | "certificate",
-    files: File[]
+    files: File[],
   ): Promise<string[]> {
     if (!files.length) return [];
     const formData = new FormData();
@@ -738,7 +745,7 @@ export default function SurfboardPlanForm({
       formData.append(`filename-${index}`, encodeURIComponent(file.name));
       formData.append(
         `filetype-${index}`,
-        file.type || "application/octet-stream"
+        file.type || "application/octet-stream",
       );
     });
     try {
@@ -747,8 +754,9 @@ export default function SurfboardPlanForm({
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error(
-        `Failed to upload ${kind} files: ${error instanceof Error ? error.message : "Unknown error"
-        }`
+        `Failed to upload ${kind} files: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     }
   }
@@ -777,7 +785,7 @@ export default function SurfboardPlanForm({
         uploadSelected("pdf", selectedPdfFiles),
         uploadSelected(
           "certificate",
-          certificateReady ? selectedCertFiles : []
+          certificateReady ? selectedCertFiles : [],
         ),
       ]);
 
@@ -804,7 +812,7 @@ export default function SurfboardPlanForm({
         dateLodged:
           form.dateLodged ||
           (selectedCertFiles.length > 0 ||
-            (form.certificateFilePaths?.length || 0) > 0
+          (form.certificateFilePaths?.length || 0) > 0
             ? new Date().toISOString()
             : undefined),
         pillars: pillars, // Use local pillars state from CSV upload
@@ -816,7 +824,7 @@ export default function SurfboardPlanForm({
         ],
         status:
           mode === "edit" &&
-            (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
+          (form.certificateFilePaths?.length || 0) + newCertUrls.length > 0
             ? "LODGED"
             : form.status,
       };
@@ -920,7 +928,7 @@ export default function SurfboardPlanForm({
     }
 
     if (!useSameTitleForAll) {
-      const missingTitles = parcels.some(p => !p.surveyTitle?.trim());
+      const missingTitles = parcels.some((p) => !p.surveyTitle?.trim());
       if (missingTitles) errs.parcels = "All parcels must have a survey title";
     }
 
@@ -944,20 +952,20 @@ export default function SurfboardPlanForm({
   // Handle title change and debounced recognition check
   const handleSurveyTitleChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
-    index?: number
+    index?: number,
   ) => {
     const newVal = e.target.value;
     if (index === undefined) {
       setField("surveyTitle", newVal);
       setPersonCountManual(calculatePersonCount(newVal));
-      
+
       // If we're using the same title for all, update parcels too
       if (useSameTitleForAll) {
-        setParcels(prev => prev.map(p => ({ ...p, surveyTitle: newVal })));
+        setParcels((prev) => prev.map((p) => ({ ...p, surveyTitle: newVal })));
       }
     } else {
       // Per-parcel title update
-      setParcels(prev => {
+      setParcels((prev) => {
         const next = [...prev];
         next[index] = { ...next[index], surveyTitle: newVal };
         return next;
@@ -979,7 +987,7 @@ export default function SurfboardPlanForm({
         setPersonCountAI(res.data.count);
         if (res.data.count !== personCountManual) {
           toast.warning(
-            `Note: AI detected ${res.data.count} persons, but you have ${personCountManual} lines.`
+            `Note: AI detected ${res.data.count} persons, but you have ${personCountManual} lines.`,
           );
         } else {
           toast.success(`Verified: ${res.data.count} persons detected.`);
@@ -1014,7 +1022,7 @@ export default function SurfboardPlanForm({
 
   const handleDeleteFile = async (
     file: string | File,
-    fileType: "cad" | "pdf" | "certificate"
+    fileType: "cad" | "pdf" | "certificate",
   ) => {
     try {
       const field = `${fileType}FilePaths` as
@@ -1121,15 +1129,15 @@ export default function SurfboardPlanForm({
                       const invalidFiles = files.filter(
                         (file) =>
                           !VALID_CAD_EXTENSIONS.some((ext) =>
-                            file.name.toLowerCase().endsWith(ext)
-                          )
+                            file.name.toLowerCase().endsWith(ext),
+                          ),
                       );
 
                       if (invalidFiles.length > 0) {
                         toast.error(
                           `Invalid file type. Only ${VALID_CAD_EXTENSIONS.join(
-                            ", "
-                          )} files are allowed.`
+                            ", ",
+                          )} files are allowed.`,
                         );
                         // Clear the input
                         e.target.value = "";
@@ -1154,20 +1162,20 @@ export default function SurfboardPlanForm({
                       if (typeof fileToDelete === "string") {
                         const deleteSuccess = await handleDeleteFile(
                           fileToDelete,
-                          "cad"
+                          "cad",
                         );
                         if (!deleteSuccess) return;
                         setForm((prev) => ({
                           ...prev,
                           cadFilePaths: prev.cadFilePaths?.filter(
-                            (f) => f !== fileToDelete
+                            (f) => f !== fileToDelete,
                           ),
                         }));
                       } else {
                         const selectedIndex =
                           index - (form.cadFilePaths?.length || 0);
                         setSelectedCadFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex)
+                          prev.filter((_, i) => i !== selectedIndex),
                         );
                       }
                     }}
@@ -1223,20 +1231,20 @@ export default function SurfboardPlanForm({
                       if (typeof fileToDelete === "string") {
                         const deleteSuccess = await handleDeleteFile(
                           fileToDelete,
-                          "pdf"
+                          "pdf",
                         );
                         if (!deleteSuccess) return;
                         setForm((prev) => ({
                           ...prev,
                           pdfFilePaths: prev.pdfFilePaths?.filter(
-                            (f) => f !== fileToDelete
+                            (f) => f !== fileToDelete,
                           ),
                         }));
                       } else {
                         const selectedIndex =
                           index - (form.pdfFilePaths?.length || 0);
                         setSelectedPdfFiles((prev) =>
-                          prev.filter((_, i) => i !== selectedIndex)
+                          prev.filter((_, i) => i !== selectedIndex),
                         );
                       }
                     }}
@@ -1274,21 +1282,21 @@ export default function SurfboardPlanForm({
                         if (typeof fileToDelete === "string") {
                           const deleteSuccess = await handleDeleteFile(
                             fileToDelete,
-                            "certificate"
+                            "certificate",
                           );
                           if (!deleteSuccess) return;
                           setForm((prev) => ({
                             ...prev,
                             certificateFilePaths:
                               prev.certificateFilePaths?.filter(
-                                (f) => f !== fileToDelete
+                                (f) => f !== fileToDelete,
                               ),
                           }));
                         } else {
                           const selectedIndex =
                             index - (form.certificateFilePaths?.length || 0);
                           setSelectedCertFiles((prev) =>
-                            prev.filter((_, i) => i !== selectedIndex)
+                            prev.filter((_, i) => i !== selectedIndex),
                           );
                         }
                       }}
@@ -1330,7 +1338,7 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.planNumber ? inputError : inputBorder,
-                      "pr-28"
+                      "pr-28",
                     )}
                     placeholder="Enter plan number"
                     disabled={
@@ -1383,12 +1391,15 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.surveyTitle ? inputError : inputBorder,
-                      "min-h-[60px] resize-y"
+                      "min-h-[60px] resize-y",
                     )}
-                    disabled={(lockNonCert && mode === "edit") || (parcels.length > 1 && !useSameTitleForAll)}
+                    disabled={
+                      (lockNonCert && mode === "edit") ||
+                      (parcels.length > 1 && !useSameTitleForAll)
+                    }
                     placeholder={`e.g., \nMR. BABATUNDE TAJUDEEN SHONUBI\nMRS. OGALA TURMAC NDIDI`}
                   />
-                  
+
                   {parcels.length > 1 && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-4 mb-3">
@@ -1399,11 +1410,18 @@ export default function SurfboardPlanForm({
                             onChange={() => {
                               setUseSameTitleForAll(true);
                               // Sync current main title to all parcels
-                              setParcels(prev => prev.map(p => ({ ...p, surveyTitle: form.surveyTitle })));
+                              setParcels((prev) =>
+                                prev.map((p) => ({
+                                  ...p,
+                                  surveyTitle: form.surveyTitle,
+                                })),
+                              );
                             }}
                             className="w-4 h-4 text-indigo-600"
                           />
-                          <span className="text-sm font-medium">Same title for all parcels</span>
+                          <span className="text-sm font-medium">
+                            Same title for all parcels
+                          </span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -1412,7 +1430,9 @@ export default function SurfboardPlanForm({
                             onChange={() => setUseSameTitleForAll(false)}
                             className="w-4 h-4 text-indigo-600"
                           />
-                          <span className="text-sm font-medium">Different title per parcel</span>
+                          <span className="text-sm font-medium">
+                            Different title per parcel
+                          </span>
                         </label>
                       </div>
 
@@ -1425,9 +1445,15 @@ export default function SurfboardPlanForm({
                               </label>
                               <textarea
                                 value={parcel.surveyTitle || ""}
-                                onChange={(e) => handleSurveyTitleChange(e, idx)}
+                                onChange={(e) =>
+                                  handleSurveyTitleChange(e, idx)
+                                }
                                 rows={2}
-                                className={cn(inputBase, inputBorder, "text-sm")}
+                                className={cn(
+                                  inputBase,
+                                  inputBorder,
+                                  "text-sm",
+                                )}
                                 placeholder={`Title for Parcel ${idx + 1}`}
                               />
                             </div>
@@ -1570,7 +1596,7 @@ export default function SurfboardPlanForm({
                     onChange={(e) => setField("deededArea", e.target.value)}
                     className={cn(
                       inputBase,
-                      errors.deededArea ? inputError : inputBorder
+                      errors.deededArea ? inputError : inputBorder,
                     )}
                     disabled={lockNonCert && mode === "edit"}
                     placeholder="e.g., 12,345.67 m²"
@@ -1596,7 +1622,7 @@ export default function SurfboardPlanForm({
                       }
                       className={cn(
                         inputBase,
-                        errors.facilitator ? inputError : inputBorder
+                        errors.facilitator ? inputError : inputBorder,
                       )}
                       disabled={lockNonCert && mode === "edit"}
                       placeholder="Type or select a facilitator"
@@ -1608,7 +1634,7 @@ export default function SurfboardPlanForm({
                           .filter((f) =>
                             f
                               .toLowerCase()
-                              .includes(form.facilitator.toLowerCase())
+                              .includes(form.facilitator.toLowerCase()),
                           )
                           .map((f) => (
                             <div
@@ -1640,7 +1666,7 @@ export default function SurfboardPlanForm({
                     onChange={(e) => setField("pillarType", e.target.value)}
                     className={cn(
                       inputBase,
-                      errors.pillarType ? inputError : inputBorder
+                      errors.pillarType ? inputError : inputBorder,
                     )}
                     disabled={lockNonCert && mode === "edit"}
                   >
@@ -1665,10 +1691,10 @@ export default function SurfboardPlanForm({
                     type="date"
                     value={
                       form.dateOnSurveyPlan &&
-                        typeof form.dateOnSurveyPlan == "object"
+                      typeof form.dateOnSurveyPlan == "object"
                         ? new Date(form.dateOnSurveyPlan)
-                          ?.toISOString()
-                          .split("T")[0]
+                            ?.toISOString()
+                            .split("T")[0]
                         : form.dateOnSurveyPlan
                     }
                     onChange={(e) =>
@@ -1676,7 +1702,7 @@ export default function SurfboardPlanForm({
                     }
                     className={cn(
                       inputBase,
-                      errors.dateOnSurveyPlan ? inputError : inputBorder
+                      errors.dateOnSurveyPlan ? inputError : inputBorder,
                     )}
                     disabled={lockNonCert && mode === "edit"}
                   />
@@ -1687,8 +1713,12 @@ export default function SurfboardPlanForm({
 
                 {showAdjoiningField && (
                   <div className="md:col-span-2">
-                    <label className={labelCls} htmlFor="pillarTypeReferencePlan">
-                      Adjoining Reference Plan No. {isAdjoiningRequired && reqBadge}
+                    <label
+                      className={labelCls}
+                      htmlFor="pillarTypeReferencePlan"
+                    >
+                      Adjoining Reference Plan No.{" "}
+                      {isAdjoiningRequired && reqBadge}
                     </label>
                     <div className="relative">
                       <input
@@ -1697,14 +1727,19 @@ export default function SurfboardPlanForm({
                         value={form.pillarTypeReferencePlanNumber ?? ""}
                         onChange={(e) => {
                           setAdjQuery(e.target.value);
-                          setField("pillarTypeReferencePlanNumber", e.target.value);
+                          setField(
+                            "pillarTypeReferencePlanNumber",
+                            e.target.value,
+                          );
                         }}
                         onFocus={() => setAdjOpen(true)}
                         onBlur={() => setTimeout(() => setAdjOpen(false), 120)}
                         className={cn(
-                          inputBase, 
-                          errors.pillarTypeReferencePlanNumber ? inputError : inputBorder,
-                          "pr-8"
+                          inputBase,
+                          errors.pillarTypeReferencePlanNumber
+                            ? inputError
+                            : inputBorder,
+                          "pr-8",
                         )}
                         placeholder="Search for reference plan..."
                         aria-invalid={!!errors.pillarTypeReferencePlanNumber}
@@ -1730,7 +1765,9 @@ export default function SurfboardPlanForm({
                       )}
                     </div>
                     {errors.pillarTypeReferencePlanNumber && (
-                      <p className={errorCls}>{errors.pillarTypeReferencePlanNumber}</p>
+                      <p className={errorCls}>
+                        {errors.pillarTypeReferencePlanNumber}
+                      </p>
                     )}
                   </div>
                 )}
@@ -1784,7 +1821,7 @@ export default function SurfboardPlanForm({
                     }}
                     className={cn(
                       inputBase,
-                      errors.certificateReady ? inputError : inputBorder
+                      errors.certificateReady ? inputError : inputBorder,
                     )}
                     required
                   >
@@ -1808,13 +1845,15 @@ export default function SurfboardPlanForm({
                       type="date"
                       value={
                         form?.dateLodged
-                          ? new Date(form.dateLodged).toISOString().split("T")[0]
+                          ? new Date(form.dateLodged)
+                              .toISOString()
+                              .split("T")[0]
                           : ""
                       }
                       onChange={(e) => setField("dateLodged", e.target.value)}
                       className={cn(
                         inputBase,
-                        errors.dateLodged ? inputError : inputBorder
+                        errors.dateLodged ? inputError : inputBorder,
                       )}
                       disabled={lockNonCert && mode === "edit"}
                     />
@@ -1845,19 +1884,25 @@ export default function SurfboardPlanForm({
                   onChange={handleCsvUpload}
                   className={cn(
                     "block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-gray-300 file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100",
-                    errors.pillars ? "border-red-500" : ""
+                    errors.pillars ? "border-red-500" : "",
                   )}
                 />
                 {errors.pillars && <p className={errorCls}>{errors.pillars}</p>}
                 <p className={helpCls}>
-                  Upload one or more CSV files (at least 3 points per file required)
+                  Upload one or more CSV files (at least 3 points per file
+                  required)
                 </p>
-                
+
                 {parcels.length > 0 && (
                   <div className="mt-4 space-y-3">
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Loaded Parcels</h4>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Loaded Parcels
+                    </h4>
                     {parcels.map((parcel, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 group">
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 group"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
                             {idx + 1}
@@ -1867,7 +1912,8 @@ export default function SurfboardPlanForm({
                               Parcel {idx + 1} ({parcel.pillarCount} pillars)
                             </p>
                             <p className="text-xs text-gray-500">
-                              {parcel.lga || "Unknown LGA"}, {parcel.ward || "Unknown Ward"}
+                              {parcel.lga || "Unknown LGA"},{" "}
+                              {parcel.ward || "Unknown Ward"}
                             </p>
                           </div>
                         </div>
@@ -1960,7 +2006,7 @@ export default function SurfboardPlanForm({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 w-full",
                     "bg-linear-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-md font-medium",
-                    "shadow hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
+                    "shadow hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50",
                   )}
                 >
                   {busy
@@ -1981,7 +2027,7 @@ export default function SurfboardPlanForm({
                 aria-labelledby="pillar-summary-title"
                 className={cn(
                   sectionCardBase,
-                  "border-l-4 border-l-emerald-500"
+                  "border-l-4 border-l-emerald-500",
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -2018,45 +2064,65 @@ export default function SurfboardPlanForm({
                     <span className="font-medium text-gray-900">
                       {form.geometry ? (
                         <div className="flex flex-col">
-                          {handleGeometryDisplay()?.type === "Polygon" &&
-                            handleGeometryDisplay()?.coordinates?.map(
-                              (coordSet: [number, number][], i: number) => (
-                                <div
-                                  key={i}
-                                  className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
-                                >
-                                  {handleGeometryDisplay()?.coordinates &&
-                                    handleGeometryDisplay()?.coordinates?.length >
-                                    1 ? (
-                                    <span>
-                                      Polygon {i + 1} (
-                                      {
-                                        handleGeometryDisplay()?.coordinates[i]
-                                          ?.length
-                                      }{" "}
-                                      points):
-                                    </span>
-                                  ) : (
-                                    <span>
-                                      Polygon (
-                                      {
-                                        handleGeometryDisplay()?.coordinates[i]
-                                          ?.length
-                                      }{" "}
-                                      points):
-                                    </span>
-                                  )}
-                                  {coordSet.map(
-                                    (coord: [number, number], j: number) => (
-                                      <div key={j} className="py-0.5">
-                                        Point {j + 1}: ({coord[0].toFixed(6)},{" "}
-                                        {coord[1].toFixed(6)})
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              )
-                            )}
+                          {(() => {
+                            const geometry = handleGeometryDisplay();
+                            if (!geometry || !geometry.coordinates?.length) {
+                              return <span className="text-xs text-gray-500 italic">No coordinates data</span>;
+                            }
+
+                            const boundaries: { label: string; points: [number, number][] }[] = [];
+
+                            if (geometry.type === "Polygon") {
+                              geometry.coordinates.forEach((ring: [number, number][], ringIndex: number) => {
+                                if (Array.isArray(ring) && ring.length > 0) {
+                                  boundaries.push({
+                                    label: geometry.coordinates.length > 1
+                                      ? `Polygon Ring ${ringIndex + 1}`
+                                      : "Polygon",
+                                    points: ring,
+                                  });
+                                }
+                              });
+                            } else if (geometry.type === "MultiPolygon") {
+                              geometry.coordinates.forEach((polygon: [number, number][][], polyIndex: number) => {
+                                if (Array.isArray(polygon)) {
+                                  polygon.forEach((ring: [number, number][], ringIndex: number) => {
+                                    if (Array.isArray(ring) && ring.length > 0) {
+                                      boundaries.push({
+                                        label: polygon.length > 1
+                                          ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
+                                          : `Polygon ${polyIndex + 1}`,
+                                        points: ring,
+                                      });
+                                    }
+                                  });
+                                }
+                              });
+                            } else {
+                              return <span className="text-xs text-gray-500 italic">Unsupported geometry: {geometry.type}</span>;
+                            }
+
+                            return boundaries.map((boundary, i) => (
+                              <div
+                                key={i}
+                                className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
+                              >
+                                <span>
+                                  {boundary.label} ({boundary.points.length} points):
+                                </span>
+                                {boundary.points.map((coord, j) => {
+                                  if (!Array.isArray(coord) || coord.length < 2) return null;
+                                  const [x, y] = coord;
+                                  return (
+                                    <div key={j} className="py-0.5">
+                                      Point {j + 1}: ({typeof x === "number" ? x.toFixed(6) : String(x)},{" "}
+                                      {typeof y === "number" ? y.toFixed(6) : String(y)})
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ));
+                          })()}
                         </div>
                       ) : (
                         "—"
@@ -2067,11 +2133,20 @@ export default function SurfboardPlanForm({
 
                 <div className="max-h-80 overflow-y-auto mt-3 text-sm space-y-4">
                   {pillarGroups.map((group, gIdx) => (
-                    <div key={gIdx} className="p-2 bg-gray-50 rounded border border-gray-200">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Parcel {gIdx + 1}</h4>
+                    <div
+                      key={gIdx}
+                      className="p-2 bg-gray-50 rounded border border-gray-200"
+                    >
+                      <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
+                        Parcel {gIdx + 1}
+                      </h4>
                       {group.slice(0, 5).map((p, i) => (
-                        <div key={i} className="text-gray-700 py-0.5 font-mono text-xs">
-                          {String(p.pillarNumber)}: ({p.easting.toFixed(2)}, {p.northing.toFixed(2)})
+                        <div
+                          key={i}
+                          className="text-gray-700 py-0.5 font-mono text-xs"
+                        >
+                          {String(p.pillarNumber)}: ({p.easting.toFixed(2)},{" "}
+                          {p.northing.toFixed(2)})
                         </div>
                       ))}
                       {group.length > 5 && (
@@ -2081,13 +2156,14 @@ export default function SurfboardPlanForm({
                       )}
                     </div>
                   ))}
-                  {pillarGroups.length === 0 && pillars.length > 0 && (
+                  {pillarGroups.length === 0 &&
+                    pillars.length > 0 &&
                     pillars.slice(0, 10).map((p, i) => (
                       <div key={i} className="text-gray-700 py-0.5">
-                        {String(p.pillarNumber)}: ({p.easting.toFixed(2)}, {p.northing.toFixed(2)})
+                        {String(p.pillarNumber)}: ({p.easting.toFixed(2)},{" "}
+                        {p.northing.toFixed(2)})
                       </div>
-                    ))
-                  )}
+                    ))}
                 </div>
               </section>
             )}
@@ -2123,7 +2199,7 @@ export default function SurfboardPlanForm({
                   "h-160 w-full rounded-lg overflow-hidden",
                   pillars?.length > 0
                     ? "border-4 border-blue-400"
-                    : "border border-gray-200"
+                    : "border border-gray-200",
                 )}
               >
                 <MaplibreMap processedPillars={pillars} />
