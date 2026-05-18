@@ -1733,45 +1733,65 @@ export default function SurfboardPlanForm({
                     <span className="font-medium text-gray-900">
                       {form.geometry ? (
                         <div className="flex flex-col">
-                          {handleGeometryDisplay()?.type === "Polygon" &&
-                            handleGeometryDisplay()?.coordinates?.map(
-                              (coordSet: [number, number][], i: number) => (
-                                <div
-                                  key={i}
-                                  className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
-                                >
-                                  {handleGeometryDisplay()?.coordinates &&
-                                    handleGeometryDisplay()?.coordinates?.length >
-                                    1 ? (
-                                    <span>
-                                      Polygon {i + 1} (
-                                      {
-                                        handleGeometryDisplay()?.coordinates[i]
-                                          ?.length
-                                      }{" "}
-                                      points):
-                                    </span>
-                                  ) : (
-                                    <span>
-                                      Polygon (
-                                      {
-                                        handleGeometryDisplay()?.coordinates[i]
-                                          ?.length
-                                      }{" "}
-                                      points):
-                                    </span>
-                                  )}
-                                  {coordSet.map(
-                                    (coord: [number, number], j: number) => (
-                                      <div key={j} className="py-0.5">
-                                        Point {j + 1}: ({coord[0].toFixed(6)},{" "}
-                                        {coord[1].toFixed(6)})
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              )
-                            )}
+                          {(() => {
+                            const geometry = handleGeometryDisplay();
+                            if (!geometry || !geometry.coordinates?.length) {
+                              return <span className="text-xs text-gray-500 italic">No coordinates data</span>;
+                            }
+
+                            const boundaries: { label: string; points: [number, number][] }[] = [];
+
+                            if (geometry.type === "Polygon") {
+                              geometry.coordinates.forEach((ring: [number, number][], ringIndex: number) => {
+                                if (Array.isArray(ring) && ring.length > 0) {
+                                  boundaries.push({
+                                    label: geometry.coordinates.length > 1
+                                      ? `Polygon Ring ${ringIndex + 1}`
+                                      : "Polygon",
+                                    points: ring,
+                                  });
+                                }
+                              });
+                            } else if (geometry.type === "MultiPolygon") {
+                              geometry.coordinates.forEach((polygon: [number, number][][], polyIndex: number) => {
+                                if (Array.isArray(polygon)) {
+                                  polygon.forEach((ring: [number, number][], ringIndex: number) => {
+                                    if (Array.isArray(ring) && ring.length > 0) {
+                                      boundaries.push({
+                                        label: polygon.length > 1
+                                          ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
+                                          : `Polygon ${polyIndex + 1}`,
+                                        points: ring,
+                                      });
+                                    }
+                                  });
+                                }
+                              });
+                            } else {
+                              return <span className="text-xs text-gray-500 italic">Unsupported geometry: {geometry.type}</span>;
+                            }
+
+                            return boundaries.map((boundary, i) => (
+                              <div
+                                key={i}
+                                className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
+                              >
+                                <span>
+                                  {boundary.label} ({boundary.points.length} points):
+                                </span>
+                                {boundary.points.map((coord, j) => {
+                                  if (!Array.isArray(coord) || coord.length < 2) return null;
+                                  const [x, y] = coord;
+                                  return (
+                                    <div key={j} className="py-0.5">
+                                      Point {j + 1}: ({typeof x === "number" ? x.toFixed(6) : String(x)},{" "}
+                                      {typeof y === "number" ? y.toFixed(6) : String(y)})
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ));
+                          })()}
                         </div>
                       ) : (
                         "—"
