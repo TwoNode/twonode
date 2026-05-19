@@ -3,10 +3,8 @@
 import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import {
-  PillarData,
-  convertCoordinates,
-} from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
+import { convertCoordinates } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
+import type { PillarData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
 // Fix for Leaflet marker icons in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;

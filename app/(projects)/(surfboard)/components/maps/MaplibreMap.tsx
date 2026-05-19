@@ -13,6 +13,7 @@ export interface PillarData {
   northing: number;
   pointIndex: number;
   pillarNumber: string;
+  polygonIndex?: number;
 }
 
 interface MaplibreMapProps {
@@ -188,6 +189,30 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
     }
 
     const mapInstance = map.current;
+    const groups: Record<number, any[]> = {};
+    processedPillars.forEach((p) => {
+      const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+        p.easting,
+        p.northing,
+      ]);
+      const idx = p.polygonIndex ?? 0;
+      if (!groups[idx]) groups[idx] = [];
+      groups[idx].push([lon, lat]);
+    });
+
+    const polygonFeatures = Object.values(groups).map((coords) => {
+      const closedCoords = [...coords];
+      if (
+        turf.booleanEqual(
+          turf.point(closedCoords[0]),
+          turf.point(closedCoords.at(-1)!)
+        ) === false
+      ) {
+        closedCoords.push(closedCoords[0]);
+      }
+      return turf.polygon([closedCoords]);
+    });
+
     const pointFeatures = processedPillars.map((p) => {
       const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
         p.easting,
@@ -198,24 +223,20 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
         easting: p.easting,
         northing: p.northing,
         pointIndex: p.pointIndex,
+        polygonIndex: p.polygonIndex,
       });
     });
-    const coords = pointFeatures.map((f) => f.geometry.coordinates);
-    if (
-      turf.booleanEqual(turf.point(coords[0]), turf.point(coords.at(-1)!)) ===
-      false
-    ) {
-      coords.push(coords[0]);
-    }
-    const polygonFeature = turf.polygon([coords]);
+
     (mapInstance.getSource("pointLayer") as GeoJSONSource)?.setData(
       turf.featureCollection(pointFeatures)
     );
     (mapInstance.getSource("polygonLayer") as GeoJSONSource)?.setData(
-      turf.featureCollection([polygonFeature])
+      turf.featureCollection(polygonFeatures)
     );
+
+    const fullCollection = turf.featureCollection(polygonFeatures);
     mapInstance.fitBounds(
-      turf.bbox(polygonFeature) as [number, number, number, number],
+      turf.bbox(fullCollection) as [number, number, number, number],
       { padding: 40 }
     );
   }, [processedPillars, isReady]);

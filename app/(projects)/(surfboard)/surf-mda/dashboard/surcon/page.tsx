@@ -289,15 +289,35 @@ export default function SurconAdminPage() {
       const pillarsArray = Array.isArray(pillars)
         ? pillars
         : JSON.parse(pillars);
-      const lines: string[] = [];
-      for (const p of pillarsArray) {
-        const easting = p.easting ?? p.lng ?? "";
-        const northing = p.northing ?? p.lat ?? "";
-        if (easting && northing) {
-          lines.push(`${easting},${northing}`);
+
+      // Group by polygonIndex if available
+      const groups: Record<number, any[]> = {};
+      pillarsArray.forEach((p: any) => {
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push(p);
+      });
+
+      const output: string[] = [];
+      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+      
+      for (const key of groupKeys) {
+        const group = groups[Number(key)];
+        if (groupKeys.length > 1) {
+          output.push(`PL Parcel ${Number(key) + 1}`);
+        } else {
+          output.push("PL");
+        }
+        for (const p of group) {
+          const easting = p.easting ?? p.lng ?? "";
+          const northing = p.northing ?? p.lat ?? "";
+          if (easting && northing) {
+            output.push(`${easting},${northing}`);
+          }
         }
       }
-      return `PL\n${lines.join("\n")}`;
+
+      return output.join("\n");
     } catch {
       return "";
     }
@@ -542,45 +562,68 @@ export default function SurconAdminPage() {
                   </div>
                 );
               }
+
+              // Group by polygonIndex if available
+              const groups: Record<number, any[]> = {};
+              pillarsArray.forEach((p: any) => {
+                const idx = p.polygonIndex ?? 0;
+                if (!groups[idx]) groups[idx] = [];
+                groups[idx].push(p);
+              });
+
+              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+
               return (
                 <div className="overflow-x-auto">
-                  <div className="px-4 py-2 bg-blue-100 border-b border-blue-200">
-                    <span className="text-lg font-bold text-blue-800">PL</span>
-                  </div>
-                  <table className="min-w-full divide-y divide-blue-200">
-                    <thead className="bg-blue-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Pillar #
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Easting
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Northing
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-blue-100">
-                      {pillarsArray.map((pillar: any, index: number) => (
-                        <tr key={index} className="hover:bg-blue-50">
-                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {pillar.pillarNumber ||
-                              pillar.name ||
-                              `P${index + 1}`}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
-                            {(pillar.easting ?? pillar.lng)?.toFixed(3) ||
-                              "N/A"}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
-                            {(pillar.northing ?? pillar.lat)?.toFixed(3) ||
-                              "N/A"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {groupKeys.map((key) => {
+                    const group = groups[Number(key)];
+                    return (
+                      <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-blue-200" : ""}>
+                        <div className="px-4 py-2 bg-blue-100 border-b border-blue-200 flex justify-between items-center">
+                          <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">
+                            Parcel {Number(key) + 1}
+                          </span>
+                          <span className="text-xs text-blue-600 font-medium">
+                            {group.length} pillars
+                          </span>
+                        </div>
+                        <table className="min-w-full divide-y divide-blue-200">
+                          <thead className="bg-blue-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Pillar #
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Easting
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Northing
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-blue-100">
+                            {group.map((pillar: any, index: number) => (
+                              <tr key={index} className="hover:bg-blue-50">
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {pillar.pillarNumber ||
+                                    pillar.name ||
+                                    `P${index + 1}`}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.easting ?? pillar.lng)?.toFixed(3) ||
+                                    "N/A"}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.northing ?? pillar.lat)?.toFixed(3) ||
+                                    "N/A"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
