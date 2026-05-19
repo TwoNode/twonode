@@ -1363,7 +1363,6 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       },
                     );
                   } else {
-
                     return (
                       <div className="text-gray-500 italic">
                         Unsupported geometry type: {geometry.type}
