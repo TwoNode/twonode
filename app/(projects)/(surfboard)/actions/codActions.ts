@@ -1402,20 +1402,26 @@ export async function verifyBatchPaymentWithLinks(
     }
 
     // 3. Parse LASG URL parameters (deterministic — no AI needed)
-    let transId: string, transCode: string, payerId: string, payerType: string;
+    let transId: string = "", transCode: string = "", payerId: string = "", payerType: string = "n";
+    let isLegacyUrl = false;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
+      
+      if (lasgUrl.hostname !== "printreceipt.ebs-rcm.com" && !lasgUrl.hostname.includes("ebs-rcm.com")) {
+        return {
+          success: false,
+          error:
+            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL. Please paste a valid URL from ebs-rcm.com.",
+        };
+      }
+
       transId = lasgUrl.searchParams.get("transid") || "";
       transCode = lasgUrl.searchParams.get("transcode") || "";
       payerId = lasgUrl.searchParams.get("payerid") || "";
       payerType = lasgUrl.searchParams.get("payertype") || "n";
 
-      if (!transId || !transCode || !payerId) {
-        return {
-          success: false,
-          error:
-            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
-        };
+      if (transId && transCode && payerId) {
+        isLegacyUrl = true;
       }
     } catch {
       return {
@@ -1527,7 +1533,7 @@ export async function verifyBatchPaymentWithLinks(
 
     // 6. Cross-check PayerID + PayerType against user profile
     const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
-    if (fullUser?.payerID) {
+    if (isLegacyUrl && fullUser?.payerID) {
       const urlPayerIdNum = parseInt(payerId, 10);
       if (urlPayerIdNum !== fullUser.payerID) {
         return {
@@ -1607,7 +1613,9 @@ export async function verifyBatchPaymentWithLinks(
     }
 
     // 8. Construct the EBS URL from parsed LASG URL params
-    const ebsUrl = `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`;
+    const ebsUrl = isLegacyUrl
+      ? `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`
+      : lasgReceiptUrl;
     console.log("Constructed EBS URL:", ebsUrl);
 
     // 9. Update Batch — store URLs, skip S3
@@ -4138,22 +4146,28 @@ async function verifyQueryPaymentLinks(
     ]);
 
     // 2. Parse LASG URL parameters (locally)
-    let transId: string, transCode: string, payerId: string;
+    let transId: string = "", transCode: string = "", payerId: string = "";
+    let isLegacyUrl = false;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
+      
+      if (lasgUrl.hostname !== "printreceipt.ebs-rcm.com" && !lasgUrl.hostname.includes("ebs-rcm.com")) {
+        return { success: false, error: "Invalid LASG receipt URL. Please paste a valid URL from ebs-rcm.com." };
+      }
+
       transId = lasgUrl.searchParams.get("transid") || "";
       transCode = lasgUrl.searchParams.get("transcode") || "";
       payerId = lasgUrl.searchParams.get("payerid") || "";
 
-      if (!transId || !transCode || !payerId) {
-        return { success: false, error: "Invalid LASG receipt URL parameters." };
+      if (transId && transCode && payerId) {
+        isLegacyUrl = true;
       }
     } catch {
       return { success: false, error: "Invalid LASG receipt URL format." };
     }
 
     // 3. Verify PayerID
-    if (fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
+    if (isLegacyUrl && fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
       const dbPayerID = fullUserResult.value.payerID;
       if (parseInt(payerId, 10) !== dbPayerID) {
         return {

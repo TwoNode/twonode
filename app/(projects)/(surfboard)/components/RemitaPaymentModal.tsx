@@ -332,7 +332,7 @@ export function RemitaPaymentModal({
                   </label>
                   <input
                     type="url"
-                    placeholder="https://printreceipt.ebs-rcm.com/Listen/..."
+                    placeholder="https://printreceipt.ebs-rcm.com/..."
                     className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${lasgReceiptUrl && !isValidLasgUrl(lasgReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
                         : "border-gray-300 focus:border-blue-500"
