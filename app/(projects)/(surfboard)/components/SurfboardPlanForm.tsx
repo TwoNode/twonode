@@ -360,6 +360,8 @@ const INITIALS = (initial: any) => ({
   createdAt: initial?.createdAt,
   withdrawalAndResubmissionStatus:
     initial?.withdrawalAndResubmissionStatus ?? "No_Action",
+  reasonForWithdrawalAndResubmission:
+    initial?.reasonForWithdrawalAndResubmission ?? "",
   pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber ?? "",
   parcels: initial?.parcels ?? [],
 });
@@ -807,6 +809,7 @@ export default function SurfboardPlanForm({
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         withdrawalAndResubmissionStatus: form.withdrawalAndResubmissionStatus,
+        reasonForWithdrawalAndResubmission: form.reasonForWithdrawalAndResubmission,
         pillarTypeReferencePlanNumber: form.pillarTypeReferencePlanNumber,
         parcels: parcels,
         dateLodged:
@@ -905,6 +908,14 @@ export default function SurfboardPlanForm({
       errs.pillars = "CSV file with pillar data is required";
     }
 
+    if (
+      (form.planType === "APPROVED LAYOUT" ||
+        form.planType === "PROVISIONAL LAYOUT") &&
+      pillarGroups.length <= 1
+    ) {
+      errs.pillars = `More than one CSV file is required for ${form.planType} plans.`;
+    }
+
     const cadCount = (form.cadFilePaths?.length || 0) + selectedCadFiles.length;
     const pdfCount = (form.pdfFilePaths?.length || 0) + selectedPdfFiles.length;
     if (cadCount < 1) errs.cad = "At least one CAD file is required";
@@ -921,6 +932,13 @@ export default function SurfboardPlanForm({
 
     if (showReferenceField && !form.referencePlanNumber?.trim()) {
       errs.referencePlanNumber = "Required";
+    }
+
+    if (
+      form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
+      !form.reasonForWithdrawalAndResubmission?.trim()
+    ) {
+      errs.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
     }
 
     if (showAdjoiningField && !form.pillarTypeReferencePlanNumber?.trim()) {
@@ -1506,6 +1524,34 @@ export default function SurfboardPlanForm({
                     ))}
                   </select>
                 </div>
+
+                {form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && (
+                  <div className="md:col-span-2">
+                    <label className={labelCls} htmlFor="reasonForWithdrawal">
+                      Reason for Withdrawal {reqBadge}
+                    </label>
+                    <textarea
+                      id="reasonForWithdrawal"
+                      value={form.reasonForWithdrawalAndResubmission || ""}
+                      onChange={(e) =>
+                        setField("reasonForWithdrawalAndResubmission", e.target.value)
+                      }
+                      rows={3}
+                      className={cn(
+                        inputBase,
+                        errors.reasonForWithdrawalAndResubmission ? inputError : inputBorder,
+                        "min-h-[80px] resize-y"
+                      )}
+                      disabled={lockNonCert && mode === "edit"}
+                      placeholder="Please explain why the reference plan was withdrawn..."
+                    />
+                    {errors.reasonForWithdrawalAndResubmission && (
+                      <p className={errorCls}>
+                        {errors.reasonForWithdrawalAndResubmission}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </Section>
 

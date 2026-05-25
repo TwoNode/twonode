@@ -690,7 +690,7 @@ export async function getChartingInterpretation(
     const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
     
     if (geom.type === "MultiPolygon") {
-      const interpretations: string[] = [];
+      const interpretations = new Set<string>();
       for (let i = 0; i < geom.coordinates.length; i++) {
         const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
         const polyString = JSON.stringify(poly);
@@ -704,10 +704,10 @@ export async function getChartingInterpretation(
           LIMIT 1;
         `;
         if (result?.length && result[0].interpretation) {
-          interpretations.push(`Parcel ${i + 1}: ${result[0].interpretation}`);
+          interpretations.add(result[0].interpretation);
         }
       }
-      return interpretations.length > 0 ? interpretations.join("\n") : null;
+      return interpretations.size > 0 ? Array.from(interpretations).join(", ") : null;
     }
 
     const geometryString = JSON.stringify(geom);
