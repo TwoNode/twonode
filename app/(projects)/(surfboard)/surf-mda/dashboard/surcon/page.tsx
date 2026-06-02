@@ -544,14 +544,6 @@ export default function SurconAdminPage() {
                   Pillar Coordinates {!isHistory && "(Verify Against Database)"}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => copyPillarsToClipboard(plan.pillars)}
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
             </div>
             {(() => {
               const pillarsArray = getPillarsArray(plan.pillars);
@@ -581,11 +573,35 @@ export default function SurconAdminPage() {
                       <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-blue-200" : ""}>
                         <div className="px-4 py-2 bg-blue-100 border-b border-blue-200 flex justify-between items-center">
                           <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">
-                            Parcel {Number(key) + 1}
+                            Parcel {String.fromCharCode(65 + Number(key))}
                           </span>
-                          <span className="text-xs text-blue-600 font-medium">
-                            {group.length} pillars
-                          </span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs text-blue-600 font-medium">
+                              {group.length} pillars
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs bg-white"
+                              onClick={() => {
+                                const groupText = [
+                                  "PL",
+                                  ...group.map((p: any) => {
+                                    const easting = p.easting ?? p.lng ?? "";
+                                    const northing = p.northing ?? p.lat ?? "";
+                                    return easting && northing ? `${easting},${northing}` : null;
+                                  }).filter(Boolean)
+                                ].join("\n");
+                                const isMulti = groupKeys.length > 1;
+                                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
+                                navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
+                                toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                              }}
+                            >
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copy
+                            </Button>
+                          </div>
                         </div>
                         <table className="min-w-full divide-y divide-blue-200">
                           <thead className="bg-blue-50">

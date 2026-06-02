@@ -465,32 +465,76 @@ export default function ChartingAdminPage() {
 
           {/* Pillars */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-700">
-                Pillar Coordinates
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => copyPillarsToClipboard(plan.pillars)}
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
-            </div>
-            <div className="px-4 py-2 bg-blue-50 border-b border-gray-200">
-              <span className="text-lg font-bold text-blue-800">PL</span>
-            </div>
-            <pre className="text-xs bg-white p-3 overflow-x-auto">
-              {(() => {
-                const text = getPillarsText(plan.pillars);
-                const lines = text.split("\n");
-                if (lines[0] === "PL" || lines[0]?.length === 2) {
-                  return lines.slice(1).join("\n") || "No pillars data";
-                }
-                return text || "No pillars data";
-              })()}
-            </pre>
+            {(() => {
+              let pillarsArray: any[] = [];
+              try {
+                pillarsArray = Array.isArray(plan.pillars)
+                  ? plan.pillars
+                  : JSON.parse(plan.pillars || "[]");
+              } catch {
+                pillarsArray = [];
+              }
+
+              if (pillarsArray.length === 0) {
+                return (
+                  <div className="p-3 text-center text-sm text-gray-500">
+                    No pillars data
+                  </div>
+                );
+              }
+
+              const groups: Record<number, any[]> = {};
+              pillarsArray.forEach((p: any) => {
+                const idx = p.polygonIndex ?? 0;
+                if (!groups[idx]) groups[idx] = [];
+                groups[idx].push(p);
+              });
+
+              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+
+              return groupKeys.map((key, index) => {
+                const group = groups[Number(key)];
+                const isMulti = groupKeys.length > 1;
+                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
+                
+                const groupText = [
+                  "PL",
+                  ...group.map((p) => {
+                    const easting = p.easting ?? p.lng ?? "";
+                    const northing = p.northing ?? p.lat ?? "";
+                    return easting && northing ? `${easting},${northing}` : null;
+                  }).filter(Boolean)
+                ].join("\n");
+
+                return (
+                  <div key={key} className={index > 0 ? "border-t border-gray-200" : ""}>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-700">
+                        {isMulti ? `Pillar Coordinates - ${parcelLabel}` : "Pillar Coordinates"}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
+                          toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="px-4 py-2 bg-blue-50 border-b border-gray-200">
+                      <span className="text-lg font-bold text-blue-800">{isMulti ? parcelLabel : "PL"}</span>
+                    </div>
+                    <pre className="text-xs bg-white p-3 overflow-x-auto">
+                      {isMulti && <span className="font-bold text-blue-800">PL{"\n"}</span>}
+                      {groupText.substring(3) || "No valid coordinates"}
+                    </pre>
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           {/* Record Copy */}

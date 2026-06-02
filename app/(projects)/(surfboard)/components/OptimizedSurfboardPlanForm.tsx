@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   PillarData,
@@ -8,11 +8,14 @@ import {
   PlanType,
   SurfboardPlanDTO,
   MAX_FILE_BYTES,
+  PILLAR_TYPES,
+  PILLAR_TYPE_ADJOINING_FILTERS,
 } from "../types/surfboardTypes";
 import {
   createSurfPlan,
   updateSurfPlan,
   checkPlanNumberExists,
+  searchReferencePlanNumbers,
 } from "../actions/surfboardActions";
 import { uploadSurfboardFileWithAuth } from "../actions/awsActions";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +57,7 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     dateLodged: initial?.dateLodged || null,
     id: initial?.id,
     userId: initial?.userId,
+    pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
   };
 };
 
@@ -166,6 +170,38 @@ export default function OptimizedSurfboardPlanForm({
   const [cadFiles, setCadFiles] = useState<File[]>([]);
   const [certFiles, setCertFiles] = useState<File[]>([]);
 
+  // Adjoining Pillar logic
+  const adjoiningFilterConf = PILLAR_TYPE_ADJOINING_FILTERS[formData.pillarType];
+  const showAdjoiningField = adjoiningFilterConf?.showReferenceField;
+  const isAdjoiningRequired = adjoiningFilterConf?.required;
+
+  // Adjoining Ref Plan search state
+  const [adjOptions, setAdjOptions] = useState<string[]>([]);
+  const [adjQuery, setAdjQuery] = useState("");
+  const [adjOpen, setAdjOpen] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED);
+        setAdjOptions(list || []);
+      } catch (e) {
+        console.error(e);
+        setAdjOptions([]);
+      }
+    };
+    if (showAdjoiningField) {
+      load();
+      setAdjQuery("");
+    }
+  }, [showAdjoiningField]);
+
+  const filteredAdjOptions = useMemo(() => {
+    if (!adjQuery.trim()) return adjOptions;
+    const q = adjQuery.toLowerCase();
+    return adjOptions.filter((o) => o.toLowerCase().includes(q));
+  }, [adjOptions, adjQuery]);
+
   // Update form data when initialData changes
   useEffect(() => {
     if (initialData) {
@@ -211,6 +247,10 @@ export default function OptimizedSurfboardPlanForm({
     }
     if (!formData.dateOnSurveyPlan) {
       newErrors.dateOnSurveyPlan = "Date on survey plan is required";
+    }
+
+    if (showAdjoiningField && isAdjoiningRequired && !formData.pillarTypeReferencePlanNumber?.trim()) {
+      newErrors.pillarTypeReferencePlanNumber = "Adjoining reference plan number is required";
     }
 
     // File validation for create mode
@@ -556,13 +596,77 @@ export default function OptimizedSurfboardPlanForm({
                     )}
                   >
                     <option value="">-- Select Pillar Type --</option>
-                    <option value="REGULAR">REGULAR</option>
-                    <option value="SPECIAL">SPECIAL</option>
+                    {Object.values(PILLAR_TYPES).map((pt) => (
+                      <option key={pt} value={pt}>
+                        {pt}
+                      </option>
+                    ))}
                   </select>
                   {errors.pillarType && (
                     <p className={errorCls}>{errors.pillarType}</p>
                   )}
                 </div>
+
+                {showAdjoiningField && (
+                  <div>
+                    <label
+                      className={labelCls}
+                      htmlFor="pillarTypeReferencePlan"
+                    >
+                      Adjoining Reference Plan No.{" "}
+                      {isAdjoiningRequired && reqBadge}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="pillarTypeReferencePlan"
+                        type="text"
+                        value={formData.pillarTypeReferencePlanNumber ?? ""}
+                        onChange={(e) => {
+                          setAdjQuery(e.target.value);
+                          setField(
+                            "pillarTypeReferencePlanNumber",
+                            e.target.value
+                          );
+                        }}
+                        onFocus={() => setAdjOpen(true)}
+                        onBlur={() => setTimeout(() => setAdjOpen(false), 120)}
+                        className={cn(
+                          inputBase,
+                          errors.pillarTypeReferencePlanNumber
+                            ? inputError
+                            : inputBorder,
+                          "pr-8"
+                        )}
+                        placeholder="Search for reference plan..."
+                        aria-invalid={!!errors.pillarTypeReferencePlanNumber}
+                      />
+                      {adjOpen && filteredAdjOptions.length > 0 && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          <ul className="py-1">
+                            {filteredAdjOptions.map((pn, i) => (
+                              <li
+                                key={pn + i}
+                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                onMouseDown={() => {
+                                  setField("pillarTypeReferencePlanNumber", pn);
+                                  setAdjQuery("");
+                                  setAdjOpen(false);
+                                }}
+                              >
+                                {pn}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {errors.pillarTypeReferencePlanNumber && (
+                      <p className={errorCls}>
+                        {errors.pillarTypeReferencePlanNumber}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </Section>
 

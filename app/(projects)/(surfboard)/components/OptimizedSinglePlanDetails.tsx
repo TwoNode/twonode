@@ -283,6 +283,28 @@ export default function OptimizedSinglePlanDetails({
                       </p>
                     </div>
                   )}
+                  {planData.withdrawalAndResubmissionStatus && planData.withdrawalAndResubmissionStatus !== "No_Action" && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium text-gray-500">
+                        Withdrawal Status
+                      </p>
+                      <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        planData.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {planData.withdrawalAndResubmissionStatus}
+                      </span>
+                    </div>
+                  )}
+                  {planData.reasonForWithdrawalAndResubmission && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium text-gray-500">
+                        Reason for Withdrawal
+                      </p>
+                      <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                        {planData.reasonForWithdrawalAndResubmission}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

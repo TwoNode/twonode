@@ -418,6 +418,7 @@ export interface SurfboardPlanDTO {
   personCount?: number;
   personCountVerified?: boolean;
   withdrawalAndResubmissionStatus?: string | null;
+  reasonForWithdrawalAndResubmission?: string | null;
   pillarTypeReferencePlanNumber?: string | null;
   parcels?: ParcelInfo[] | null;
 }

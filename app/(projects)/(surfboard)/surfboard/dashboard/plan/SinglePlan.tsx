@@ -963,6 +963,30 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         </p>
                       </div>
                     )}
+                    {plan.withdrawalAndResubmissionStatus && plan.withdrawalAndResubmissionStatus !== "No_Action" && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-500">
+                          Withdrawal Status
+                        </p>
+                        <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          plan.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {plan.withdrawalAndResubmissionStatus}
+                        </span>
+                      </div>
+                    )}
+                    {/* @ts-ignore - reasonForWithdrawalAndResubmission may not be in PlanWithPillars type yet */}
+                    {plan.reasonForWithdrawalAndResubmission && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-500">
+                          Reason for Withdrawal
+                        </p>
+                        <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                          {/* @ts-ignore */}
+                          {plan.reasonForWithdrawalAndResubmission}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
                     {plan.status.replace("_", " ")}

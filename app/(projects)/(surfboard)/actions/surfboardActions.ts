@@ -689,7 +689,12 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         state: dto.state || null,
         locality: dto.locality || null,
         isLive: dto.isLive ?? false,
-        status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
+        status:
+          dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION
+            ? "LODGED"
+            : dto.certificateFilePaths?.length
+            ? "LODGED"
+            : "PENDING",
         userId: user.id,
         personCount: dto.personCount || 1,
         personCountVerified: false,
@@ -697,6 +702,7 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
           dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION
             ? "Resubmitted"
             : "No_Action",
+        reasonForWithdrawalAndResubmission: dto.reasonForWithdrawalAndResubmission || null,
         pillarTypeReferencePlanNumber: dto.pillarTypeReferencePlanNumber || null,
         parcels: (dto.parcels as any) || null,
       },
@@ -827,6 +833,8 @@ export async function updateSurfPlan(
       if (dto.pillars) data.pillars = dto.pillars;
       if (dto.withdrawalAndResubmissionStatus)
         data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+      if (dto.reasonForWithdrawalAndResubmission !== undefined)
+        data.reasonForWithdrawalAndResubmission = dto.reasonForWithdrawalAndResubmission || null;
       if (dto.pillarTypeReferencePlanNumber !== undefined)
         data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
       if (dto.parcels) data.parcels = dto.parcels;
@@ -863,8 +871,9 @@ export async function updateSurfPlan(
         existing.certificateFilePaths.length) > 0;
     const statusChanged = !existing.certificateFilePaths.length && hasCert;
 
-    // Update status based on certificate availability
-    if (hasCert) {
+    // Update status based on certificate availability or withdrawal status
+    const isResubmission = (dto.planType ?? existing.planType) === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION;
+    if (hasCert || isResubmission) {
       data.status = "LODGED";
     } else {
       data.status = "PENDING";
@@ -899,6 +908,24 @@ export async function updateSurfPlan(
         where: { id: dto.id, userId: user.id },
         data,
       });
+
+      // If it's a withdrawal, flip the status of the original plan
+      if (
+        data.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
+        data.referencePlanNumber
+      ) {
+        try {
+          await prisma.surfboardPlan.update({
+            where: { planNumber: data.referencePlanNumber },
+            data: { withdrawalAndResubmissionStatus: "Withdrawn" },
+          });
+        } catch (e) {
+          console.warn(
+            "Could not find/update referenced plan for withdrawal status:",
+            data.referencePlanNumber
+          );
+        }
+      }
     } catch (error) {
       return {
         success: false,
