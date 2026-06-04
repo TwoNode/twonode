@@ -526,11 +526,10 @@ export default function SurfboardPlanForm({
   }, [form.planType, showReferenceField]);
 
   const filteredRefOptions = useMemo(() => {
-    if (refFilterConf && (!refFilterConf.allowFreeText || !refQuery.trim()))
-      return refOptions;
+    if (!refQuery.trim()) return refOptions;
     const q = refQuery.toLowerCase();
     return refOptions.filter((o) => o.toLowerCase().includes(q));
-  }, [refOptions, refQuery, refFilterConf]);
+  }, [refOptions, refQuery]);
 
   // Deferred uploads (unchanged)
   const [selectedCadFiles, setSelectedCadFiles] = useState<File[]>([]);
@@ -930,8 +929,16 @@ export default function SurfboardPlanForm({
       if (!form.dateLodged?.toString()) errs.dateLodged = "Required";
     }
 
-    if (showReferenceField && !form.referencePlanNumber?.trim()) {
-      errs.referencePlanNumber = "Required";
+    if (showReferenceField) {
+      if (!form.referencePlanNumber?.trim()) {
+        errs.referencePlanNumber = "Required";
+      } else if (
+        refFilterConf &&
+        !refFilterConf.allowFreeText &&
+        !refOptions.includes(form.referencePlanNumber)
+      ) {
+        errs.referencePlanNumber = "Must select a valid plan number from the list";
+      }
     }
 
     if (
@@ -1573,20 +1580,13 @@ export default function SurfboardPlanForm({
                       type="text"
                       value={form.referencePlanNumber ?? ""}
                       onChange={(e) => {
-                        if (refFilterConf.allowFreeText) {
-                          setRefQuery(e.target.value);
-                          setField("referencePlanNumber", e.target.value);
-                        }
+                        setRefQuery(e.target.value);
+                        setField("referencePlanNumber", e.target.value);
                       }}
                       onFocus={() => setRefOpen(true)}
                       onBlur={() => setTimeout(() => setRefOpen(false), 120)}
                       className={cn(inputBase, inputBorder, "pr-8")}
-                      placeholder={
-                        refFilterConf.allowFreeText
-                          ? "Type or select…"
-                          : "Select from list"
-                      }
-                      readOnly={!refFilterConf.allowFreeText}
+                      placeholder="Type to search or select..."
                       aria-invalid={!!errors.referencePlanNumber}
                       aria-describedby={
                         errors.referencePlanNumber

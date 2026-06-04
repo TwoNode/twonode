@@ -367,6 +367,25 @@ function PlanDetails({ planId }: { planId: string }) {
                         className="border-b pb-3"
                       />
                     )}
+                  {plan.withdrawalAndResubmissionStatus &&
+                    plan.withdrawalAndResubmissionStatus !== "No_Action" && (
+                      <DetailItem
+                        icon={FileText}
+                        label="Withdrawal Status"
+                        value={
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                              plan.withdrawalAndResubmissionStatus === "Withdrawn"
+                                ? "bg-red-100 text-red-800 border-red-200"
+                                : "bg-blue-100 text-blue-800 border-blue-200"
+                            }`}
+                          >
+                            {plan.withdrawalAndResubmissionStatus}
+                          </span>
+                        }
+                        className="border-b pb-3"
+                      />
+                    )}
                   <DetailItem
                     icon={Layers}
                     label="Plan Type"
