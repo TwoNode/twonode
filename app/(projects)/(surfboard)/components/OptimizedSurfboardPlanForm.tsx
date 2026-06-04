@@ -10,6 +10,7 @@ import {
   MAX_FILE_BYTES,
   PILLAR_TYPES,
   PILLAR_TYPE_ADJOINING_FILTERS,
+  REFERENCE_FILTERS,
 } from "../types/surfboardTypes";
 import {
   createSurfPlan,
@@ -53,11 +54,12 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     state: initial?.state || null,
     status: initial?.status || "PENDING",
     isLive: initial?.isLive || false,
-    referencePlanNumber: initial?.referencePlanNumber || null,
+    referencePlanNumber: initial?.referencePlanNumber || "",
     dateLodged: initial?.dateLodged || null,
     id: initial?.id,
     userId: initial?.userId,
     pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
+    reasonForWithdrawalAndResubmission: initial?.reasonForWithdrawalAndResubmission || "",
   };
 };
 
@@ -202,6 +204,39 @@ export default function OptimizedSurfboardPlanForm({
     return adjOptions.filter((o) => o.toLowerCase().includes(q));
   }, [adjOptions, adjQuery]);
 
+  // Reference Plan Logic
+  const refFilterConf = formData.planType ? REFERENCE_FILTERS[formData.planType] : null;
+  const showReferenceField = refFilterConf?.showField;
+  const isReferenceRequired = refFilterConf?.required;
+
+  // Reference Plan search state
+  const [refOptions, setRefOptions] = useState<string[]>([]);
+  const [refQuery, setRefQuery] = useState("");
+  const [refOpen, setRefOpen] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!formData.planType) return;
+      try {
+        const list = await searchReferencePlanNumbers(formData.planType);
+        setRefOptions(list || []);
+      } catch (e) {
+        console.error(e);
+        setRefOptions([]);
+      }
+    };
+    if (showReferenceField) {
+      load();
+      setRefQuery("");
+    }
+  }, [formData.planType, showReferenceField]);
+
+  const filteredRefOptions = useMemo(() => {
+    if (!refQuery.trim()) return refOptions;
+    const q = refQuery.toLowerCase();
+    return refOptions.filter((o) => o.toLowerCase().includes(q));
+  }, [refOptions, refQuery]);
+
   // Update form data when initialData changes
   useEffect(() => {
     if (initialData) {
@@ -251,6 +286,25 @@ export default function OptimizedSurfboardPlanForm({
 
     if (showAdjoiningField && isAdjoiningRequired && !formData.pillarTypeReferencePlanNumber?.trim()) {
       newErrors.pillarTypeReferencePlanNumber = "Adjoining reference plan number is required";
+    }
+
+    if (showReferenceField) {
+      if (!formData.referencePlanNumber?.trim()) {
+        newErrors.referencePlanNumber = "Reference plan number is required";
+      } else if (
+        refFilterConf &&
+        !refFilterConf.allowFreeText &&
+        !refOptions.includes(formData.referencePlanNumber)
+      ) {
+        newErrors.referencePlanNumber = "Must select a valid plan number from the list";
+      }
+    }
+
+    if (
+      formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
+      !formData.reasonForWithdrawalAndResubmission?.trim()
+    ) {
+      newErrors.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
     }
 
     // File validation for create mode
@@ -660,9 +714,88 @@ export default function OptimizedSurfboardPlanForm({
                         </div>
                       )}
                     </div>
-                    {errors.pillarTypeReferencePlanNumber && (
+                  </div>
+                )}
+
+                {showReferenceField && (
+                  <div>
+                    <label className={labelCls} htmlFor="referencePlan">
+                      Reference Plan No.{" "}
+                      {isReferenceRequired && reqBadge}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="referencePlan"
+                        type="text"
+                        value={formData.referencePlanNumber ?? ""}
+                        onChange={(e) => {
+                          setRefQuery(e.target.value);
+                          setField("referencePlanNumber", e.target.value);
+                        }}
+                        onFocus={() => setRefOpen(true)}
+                        onBlur={() => setTimeout(() => setRefOpen(false), 120)}
+                        className={cn(
+                          inputBase,
+                          errors.referencePlanNumber ? inputError : inputBorder,
+                          "pr-8"
+                        )}
+                        placeholder="Search for reference plan..."
+                        aria-invalid={!!errors.referencePlanNumber}
+                      />
+                      {refOpen && filteredRefOptions.length > 0 && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          <ul className="py-1">
+                            {filteredRefOptions.map((pn, i) => (
+                              <li
+                                key={pn + i}
+                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                onMouseDown={() => {
+                                  setField("referencePlanNumber", pn);
+                                  setRefQuery("");
+                                  setRefOpen(false);
+                                }}
+                              >
+                                {pn}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {errors.referencePlanNumber && (
+                      <p className={errorCls}>{errors.referencePlanNumber}</p>
+                    )}
+                  </div>
+                )}
+
+                {formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && (
+                  <div className="md:col-span-2">
+                    <label className={labelCls} htmlFor="reasonForWithdrawal">
+                      Reason for Withdrawal {reqBadge}
+                    </label>
+                    <textarea
+                      id="reasonForWithdrawal"
+                      rows={3}
+                      value={formData.reasonForWithdrawalAndResubmission ?? ""}
+                      onChange={(e) =>
+                        setField(
+                          "reasonForWithdrawalAndResubmission",
+                          e.target.value
+                        )
+                      }
+                      className={cn(
+                        inputBase,
+                        errors.reasonForWithdrawalAndResubmission
+                          ? inputError
+                          : inputBorder,
+                        "resize-none py-2"
+                      )}
+                      placeholder="Please specify the reason for withdrawal and resubmission..."
+                      aria-invalid={!!errors.reasonForWithdrawalAndResubmission}
+                    />
+                    {errors.reasonForWithdrawalAndResubmission && (
                       <p className={errorCls}>
-                        {errors.pillarTypeReferencePlanNumber}
+                        {errors.reasonForWithdrawalAndResubmission}
                       </p>
                     )}
                   </div>

@@ -472,7 +472,7 @@ export async function searchReferencePlanNumbers(
     select: { planNumber: true },
     where,
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: 5000,
   });
 
   return rows.map((r) => r.planNumber);
@@ -690,9 +690,7 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         locality: dto.locality || null,
         isLive: dto.isLive ?? false,
         status:
-          dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION
-            ? "LODGED"
-            : dto.certificateFilePaths?.length
+          dto.certificateFilePaths?.length
             ? "LODGED"
             : "PENDING",
         userId: user.id,
@@ -871,9 +869,8 @@ export async function updateSurfPlan(
         existing.certificateFilePaths.length) > 0;
     const statusChanged = !existing.certificateFilePaths.length && hasCert;
 
-    // Update status based on certificate availability or withdrawal status
-    const isResubmission = (dto.planType ?? existing.planType) === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION;
-    if (hasCert || isResubmission) {
+    // Update status based on certificate availability
+    if (hasCert) {
       data.status = "LODGED";
     } else {
       data.status = "PENDING";
