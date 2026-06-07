@@ -300,6 +300,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   northing: Number(p.northing) || 0,
                   pointIndex:
                     typeof p.pointIndex === "number" ? p.pointIndex : 0,
+                  polygonIndex:
+                    typeof p.polygonIndex === "number" ? p.polygonIndex : 0,
                 }))
             : [],
         });
@@ -998,7 +1000,20 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <p className="text-sm font-medium text-gray-500">
                       Survey Title
                     </p>
-                    <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                    {/* @ts-ignore */}
+                    {plan.parcels && Array.isArray(plan.parcels) && plan.parcels.length > 1 ? (
+                      <div className="mt-2 space-y-2">
+                        {/* @ts-ignore */}
+                        {plan.parcels.map((parcel: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
+                            <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
+                            <span className="text-gray-700">{parcel.surveyTitle || plan.surveyTitle}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

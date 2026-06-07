@@ -313,7 +313,20 @@ export default function OptimizedSinglePlanDetails({
                   <p className="text-sm font-medium text-gray-500">
                     Survey Title
                   </p>
-                  <p className="mt-1 text-gray-700">{planData.surveyTitle}</p>
+                  {/* @ts-ignore */}
+                  {planData.parcels && Array.isArray(planData.parcels) && planData.parcels.length > 1 ? (
+                    <div className="mt-2 space-y-2">
+                      {/* @ts-ignore */}
+                      {planData.parcels.map((parcel: any, idx: number) => (
+                        <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
+                          <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
+                          <span className="text-gray-700">{parcel.surveyTitle || planData.surveyTitle}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-gray-700">{planData.surveyTitle}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

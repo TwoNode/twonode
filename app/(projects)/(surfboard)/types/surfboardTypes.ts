@@ -107,6 +107,7 @@ export interface Plan {
   lcda: string | null;
   lga: string | null;
   state: string | null;
+  locality: string | null;
   pillars: Prisma.JsonValue | PillarData[] | null; // Using Prisma's JsonValue type
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;

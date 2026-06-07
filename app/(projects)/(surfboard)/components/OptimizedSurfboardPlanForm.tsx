@@ -52,13 +52,15 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     lcda: initial?.lcda || null,
     lga: initial?.lga || null,
     state: initial?.state || null,
+    locality: initial?.locality || "",
     status: initial?.status || "PENDING",
     isLive: initial?.isLive || false,
     referencePlanNumber: initial?.referencePlanNumber || "",
+    pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
+    parcels: initial?.parcels || [],
     dateLodged: initial?.dateLodged || null,
     id: initial?.id,
     userId: initial?.userId,
-    pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
     reasonForWithdrawalAndResubmission: initial?.reasonForWithdrawalAndResubmission || "",
   };
 };
