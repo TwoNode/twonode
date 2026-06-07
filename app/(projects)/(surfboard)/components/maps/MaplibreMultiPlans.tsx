@@ -291,6 +291,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
           lcda: null,
           lga: null,
           state: null,
+          locality: null,
           isLive: false,
           dateOnSurveyPlan: currentDate,
           dateLodged: null,
