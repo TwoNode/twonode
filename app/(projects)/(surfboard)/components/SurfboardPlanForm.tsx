@@ -82,33 +82,40 @@ const ConfirmationModal = ({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) => {
+  if (!isOpen) return null;
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-start gap-4">
-            <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
-            </div>
-            <div className="flex-1">
-              <AlertDialogTitle>{title}</AlertDialogTitle>
-              <AlertDialogDescription className="mt-2">
-                {message}
-              </AlertDialogDescription>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-400">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="flex items-start">
+          <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+          </div>
+          <div className="ml-4">
+            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">{message}</p>
             </div>
           </div>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
+        </div>
+        <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+          <button
+            type="button"
+            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
             onClick={onConfirm}
-            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
           >
             Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </button>
+          <button
+            type="button"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:col-start-1 sm:text-sm"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1057,7 +1064,11 @@ export default function SurfboardPlanForm({
 
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
-        await deleteSurfboardFileFromS3({ url: file });
+        try {
+          await deleteSurfboardFileFromS3({ url: file });
+        } catch (s3Error) {
+          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+        }
         await updateSurfPlan({
           ...INITIALS(initial),
           [field]: form[field].filter((f) => f !== file),

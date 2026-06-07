@@ -691,7 +691,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
-        await deleteSurfboardFileFromS3({ url: file });
+        try {
+          await deleteSurfboardFileFromS3({ url: file });
+        } catch (s3Error) {
+          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+        }
         await updateSurfPlan({
           ...INITIALS(plan),
           [field]: plan?.[field].filter((f) => f !== file),
