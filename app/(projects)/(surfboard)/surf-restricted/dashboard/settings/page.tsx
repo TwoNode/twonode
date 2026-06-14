@@ -42,9 +42,8 @@ interface AdminProfile {
   };
 }
 
-import { ZoneFeeRow } from "../../../utils/CoDFees";
-import { COD_FEES } from "../../../utils/CoDFees";
-import { nigerianStates } from "@/lib/constants";
+import { COD_FEES, type ZoneFeeRow } from "../../../utils/CoDFees";
+import { nigerianStates, DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 
 interface SettingsData {
   zoneFees: ZoneFeeRow[];
@@ -76,9 +75,7 @@ export default function SettingsPage() {
     codAcceptanceText: "",
     codPolicyContent: "",
     queryResponseFeePercent: 10,
-    coordinateShifts: {
-      lagos: { eastingShift: 3.051, northingShift: -6.999 },
-    },
+    coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
   });
   const [originalSettings, setOriginalSettings] = useState<SettingsData>({
     zoneFees: COD_FEES,
@@ -86,9 +83,7 @@ export default function SettingsPage() {
     codAcceptanceText: "",
     codPolicyContent: "",
     queryResponseFeePercent: 10,
-    coordinateShifts: {
-      lagos: { eastingShift: 3.051, northingShift: -6.999 },
-    },
+    coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);

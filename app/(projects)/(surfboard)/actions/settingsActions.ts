@@ -7,6 +7,7 @@ import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { COD_FEES, type ZoneFeeRow } from "../utils/CoDFees";
+import { DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 
 interface SurfboardSettingsData {
   zoneFees: ZoneFeeRow[];
@@ -23,9 +24,7 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
   codAcceptanceText: "I hereby affirm that the information provided in this submission is true, accurate, and complete to the best of my knowledge.",
   codPolicyContent: "Official CoD Submission Policy.\n\nBy clicking 'Submit', you agree to the terms and conditions outlined by the MDA.",
   queryResponseFeePercent: 10,
-  coordinateShifts: {
-    lagos: { eastingShift: 3.051, northingShift: -6.999 }
-  }
+  coordinateShifts: DEFAULT_COORDINATE_SHIFTS
 };
 
 /**
