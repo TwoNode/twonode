@@ -90,6 +90,38 @@ export function proratedAmount(
 // EXISTING mapping utilities
 // -----------------------------------------------------------------------------
 
+/**
+ * Applies on-the-fly coordinate shift to a list of pillars for visualization purposes.
+ * It uses the coordinateShifts configuration based on the state.
+ */
+export function applyVisualizationShift(
+  pillars: PillarData[],
+  state: string | null | undefined,
+  coordinateShifts: Record<string, { eastingShift: number; northingShift: number }>
+): PillarData[] {
+  if (!state || !coordinateShifts) return pillars;
+  
+  const key = state.toLowerCase();
+  const shift = coordinateShifts[key];
+  
+  if (!shift || (shift.eastingShift === 0 && shift.northingShift === 0)) {
+    // Even if no shift, preserve rawEasting and rawNorthing to ensure consistent popup behavior
+    return pillars.map(p => ({
+      ...p,
+      rawEasting: p.rawEasting ?? p.easting,
+      rawNorthing: p.rawNorthing ?? p.northing,
+    }));
+  }
+
+  return pillars.map(p => ({
+    ...p,
+    rawEasting: p.rawEasting ?? p.easting,
+    rawNorthing: p.rawNorthing ?? p.northing,
+    easting: p.easting + shift.eastingShift,
+    northing: p.northing + shift.northingShift,
+  }));
+}
+
 export async function ensureProjectionLoaded(): Promise<void> {
   // If already loaded, return immediately
   if (projectOperator.isLoaded()) {

@@ -3,7 +3,8 @@
 import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { convertCoordinates } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
+import { convertCoordinates, applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
+import { getCoordinateShifts } from "@/app/(projects)/(surfboard)/actions/settingsActions";
 import type { PillarData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
 // Fix for Leaflet marker icons in Next.js
@@ -21,12 +22,14 @@ interface MapPreviewProps {
   pillars: PillarData[];
   geometry?: string;
   className?: string;
+  state?: string;
 }
 
 export default function MapPreview({
   pillars,
   geometry,
   className = "",
+  state,
 }: MapPreviewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -49,9 +52,13 @@ export default function MapPreview({
           attribution: "© OpenStreetMap contributors",
         }).addTo(map);
 
+        // Fetch coordinate shifts and apply
+        const coordinateShifts = await getCoordinateShifts();
+        const visualPillars = applyVisualizationShift(pillars, state, coordinateShifts);
+
         // Convert all coordinates asynchronously
         const points = await Promise.all(
-          pillars.map((pillar) =>
+          visualPillars.map((pillar) =>
             convertCoordinates(pillar.easting, pillar.northing)
           )
         );
@@ -81,17 +88,19 @@ export default function MapPreview({
         }
 
         // Add pillar markers and tooltips
-        pillars.forEach((pillar, index) => {
+        visualPillars.forEach((pillar, index) => {
           const { lat, lng } = points[index];
+          const rawE = pillar.rawEasting ?? pillar.easting;
+          const rawN = pillar.rawNorthing ?? pillar.northing;
 
           // Create marker
           const marker = L.marker([lat, lng])
             .bindPopup(
               `<b>Pillar ${
                 pillar.pillarNumber
-              }</b><br>Index: ${index}<br>Easting: ${pillar.easting.toFixed(
-                2
-              )}<br>Northing: ${pillar.northing.toFixed(2)}`
+              }</b><br>Index: ${index}<br>Easting: ${rawE.toFixed(
+                3
+              )}<br>Northing: ${rawN.toFixed(3)}`
             )
             .addTo(map);
           markers.push(marker);

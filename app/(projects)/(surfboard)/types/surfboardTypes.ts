@@ -10,6 +10,8 @@ export interface PillarData {
   pointIndex: number;
   pillarNumber: string;
   polygonIndex?: number; // Which polygon (0-based) this pillar belongs to
+  rawEasting?: number; // Original unshifted easting
+  rawNorthing?: number; // Original unshifted northing
 }
 
 /** GeoJSON Point */

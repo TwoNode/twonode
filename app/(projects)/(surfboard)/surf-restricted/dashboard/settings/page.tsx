@@ -8,6 +8,7 @@ import {
   updateSettings,
   getSettingsHistory,
   revertToPreviousSettings,
+  resetToDefaultSettings,
 } from "../../../actions/settingsActions";
 
 interface AdminProfile {
@@ -43,6 +44,7 @@ interface AdminProfile {
 
 import { ZoneFeeRow } from "../../../utils/CoDFees";
 import { COD_FEES } from "../../../utils/CoDFees";
+import { nigerianStates } from "@/lib/constants";
 
 interface SettingsData {
   zoneFees: ZoneFeeRow[];
@@ -50,6 +52,10 @@ interface SettingsData {
   codAcceptanceText: string;
   codPolicyContent: string;
   queryResponseFeePercent: number;
+  coordinateShifts?: Record<
+    string,
+    { eastingShift: number; northingShift: number }
+  >;
 }
 
 export default function SettingsPage() {
@@ -70,6 +76,9 @@ export default function SettingsPage() {
     codAcceptanceText: "",
     codPolicyContent: "",
     queryResponseFeePercent: 10,
+    coordinateShifts: {
+      lagos: { eastingShift: 3.051, northingShift: -6.999 },
+    },
   });
   const [originalSettings, setOriginalSettings] = useState<SettingsData>({
     zoneFees: COD_FEES,
@@ -77,6 +86,9 @@ export default function SettingsPage() {
     codAcceptanceText: "",
     codPolicyContent: "",
     queryResponseFeePercent: 10,
+    coordinateShifts: {
+      lagos: { eastingShift: 3.051, northingShift: -6.999 },
+    },
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -205,7 +217,7 @@ export default function SettingsPage() {
   const handleUpdateZoneFee = (
     index: number,
     field: keyof ZoneFeeRow,
-    value: number
+    value: number,
   ) => {
     const updatedFees = [...settings.zoneFees];
     updatedFees[index] = {
@@ -218,9 +230,55 @@ export default function SettingsPage() {
     });
   };
 
+  const handleCoordinateShiftChange = (
+    stateName: string,
+    field: "eastingShift" | "northingShift",
+    value: string,
+  ) => {
+    const numValue = value === "" ? 0 : parseFloat(value);
+    const key = stateName.toLowerCase();
+
+    setSettings((prev) => {
+      const currentShifts = prev.coordinateShifts || {};
+      const stateShift = currentShifts[key] || {
+        eastingShift: 0,
+        northingShift: 0,
+      };
+
+      const updatedShifts = {
+        ...currentShifts,
+        [key]: {
+          ...stateShift,
+          [field]: isNaN(numValue) ? 0 : numValue,
+        },
+      };
+
+      // Clean up states with both 0 to keep the settings lean
+      if (
+        updatedShifts[key].eastingShift === 0 &&
+        updatedShifts[key].northingShift === 0 &&
+        key !== "lagos"
+      ) {
+        delete updatedShifts[key];
+      }
+
+      return {
+        ...prev,
+        coordinateShifts: updatedShifts,
+      };
+    });
+  };
+
   // Check if settings have changed
   const hasSettingsChanged = () => {
     if (settings.systemChargePercent !== originalSettings.systemChargePercent) {
+      return true;
+    }
+
+    if (
+      JSON.stringify(settings.coordinateShifts || {}) !==
+      JSON.stringify(originalSettings.coordinateShifts || {})
+    ) {
       return true;
     }
 
@@ -391,7 +449,7 @@ export default function SettingsPage() {
       link.setAttribute("href", url);
       link.setAttribute(
         "download",
-        `zone-fees-${new Date().toISOString().split("T")[0]}.csv`
+        `zone-fees-${new Date().toISOString().split("T")[0]}.csv`,
       );
       link.style.visibility = "hidden";
 
@@ -444,10 +502,40 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetToDefaults = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to reset all settings to their defaults? This action will create a backup, but it replaces all current configurations immediately.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setSettingsSaving(true);
+      const result = await resetToDefaultSettings();
+      if (result.success) {
+        toast.success("Settings reset to defaults successfully");
+        const settingsResult = await getCurrentSettings();
+        if (settingsResult.success && settingsResult.data) {
+          setSettings(settingsResult.data);
+          setOriginalSettings(settingsResult.data);
+        }
+      } else {
+        toast.error(result.error || "Failed to reset settings");
+      }
+    } catch (error) {
+      console.error("Error resetting settings:", error);
+      toast.error("An error occurred while resetting settings");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   const handlePreferenceChange = (
     category: string,
     setting: string,
-    value: any
+    value: any,
   ) => {
     if (!profile) return;
 
@@ -471,7 +559,7 @@ export default function SettingsPage() {
   const handlePasswordChange = async (
     currentPassword: string,
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ) => {
     if (newPassword !== confirmPassword) {
       alert("New passwords do not match!");
@@ -507,8 +595,9 @@ export default function SettingsPage() {
     setSaving(false);
     setShowTwoFactorModal(false);
     alert(
-      `Two-factor authentication ${profile.security.twoFactorEnabled ? "disabled" : "enabled"
-      } successfully!`
+      `Two-factor authentication ${
+        profile.security.twoFactorEnabled ? "disabled" : "enabled"
+      } successfully!`,
     );
   };
 
@@ -561,47 +650,52 @@ export default function SettingsPage() {
               <nav className="flex space-x-8 px-6">
                 <button
                   onClick={() => setActiveTab("profile")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "profile"
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "profile"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   Profile
                 </button>
                 <button
                   onClick={() => setActiveTab("preferences")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "preferences"
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "preferences"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   Preferences
                 </button>
                 <button
                   onClick={() => setActiveTab("security")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "security"
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "security"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   Security
                 </button>
                 <button
                   onClick={() => setActiveTab("notifications")}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "notifications"
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === "notifications"
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                  }`}
                 >
                   Notifications
                 </button>
                 {currentUserRole === "SUPERADMIN" && (
                   <button
                     onClick={() => setActiveTab("lga")}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "lga"
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "lga"
                         ? "border-blue-500 text-blue-600"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                    }`}
                   >
                     MDA Settings
                   </button>
@@ -627,7 +721,9 @@ export default function SettingsPage() {
                         value={profile.firstName}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, firstName: e.target.value } : null
+                            prev
+                              ? { ...prev, firstName: e.target.value }
+                              : null,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -643,7 +739,7 @@ export default function SettingsPage() {
                         value={profile.lastName}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, lastName: e.target.value } : null
+                            prev ? { ...prev, lastName: e.target.value } : null,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -659,7 +755,7 @@ export default function SettingsPage() {
                         value={profile.email}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, email: e.target.value } : null
+                            prev ? { ...prev, email: e.target.value } : null,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -675,7 +771,7 @@ export default function SettingsPage() {
                         value={profile.phone}
                         onChange={(e) =>
                           setProfile((prev) =>
-                            prev ? { ...prev, phone: e.target.value } : null
+                            prev ? { ...prev, phone: e.target.value } : null,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -693,7 +789,7 @@ export default function SettingsPage() {
                           setProfile((prev) =>
                             prev
                               ? { ...prev, department: e.target.value }
-                              : null
+                              : null,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -775,7 +871,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "theme",
                             "theme",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -796,7 +892,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "language",
                             "language",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -818,7 +914,7 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "timezone",
                             "timezone",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -864,7 +960,7 @@ export default function SettingsPage() {
                           <p className="text-sm text-gray-600">
                             Last changed:{" "}
                             {new Date(
-                              profile.security.lastPasswordChange
+                              profile.security.lastPasswordChange,
                             ).toLocaleDateString()}
                           </p>
                         </div>
@@ -889,10 +985,11 @@ export default function SettingsPage() {
                         </div>
                         <div className="flex items-center space-x-4">
                           <span
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${profile.security.twoFactorEnabled
+                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              profile.security.twoFactorEnabled
                                 ? "bg-green-100 text-green-800"
                                 : "bg-red-100 text-red-800"
-                              }`}
+                            }`}
                           >
                             {profile.security.twoFactorEnabled
                               ? "Enabled"
@@ -961,19 +1058,21 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "email",
-                            !profile.preferences.notifications.email
+                            !profile.preferences.notifications.email,
                           )
                         }
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${profile.preferences.notifications.email
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          profile.preferences.notifications.email
                             ? "bg-green-600"
                             : "bg-gray-200"
-                          }`}
+                        }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${profile.preferences.notifications.email
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            profile.preferences.notifications.email
                               ? "translate-x-6"
                               : "translate-x-1"
-                            }`}
+                          }`}
                         />
                       </button>
                     </div>
@@ -992,19 +1091,21 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "push",
-                            !profile.preferences.notifications.push
+                            !profile.preferences.notifications.push,
                           )
                         }
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${profile.preferences.notifications.push
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          profile.preferences.notifications.push
                             ? "bg-green-600"
                             : "bg-gray-200"
-                          }`}
+                        }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${profile.preferences.notifications.push
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            profile.preferences.notifications.push
                               ? "translate-x-6"
                               : "translate-x-1"
-                            }`}
+                          }`}
                         />
                       </button>
                     </div>
@@ -1023,19 +1124,21 @@ export default function SettingsPage() {
                           handlePreferenceChange(
                             "notifications",
                             "sms",
-                            !profile.preferences.notifications.sms
+                            !profile.preferences.notifications.sms,
                           )
                         }
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${profile.preferences.notifications.sms
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          profile.preferences.notifications.sms
                             ? "bg-green-600"
                             : "bg-gray-200"
-                          }`}
+                        }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${profile.preferences.notifications.sms
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            profile.preferences.notifications.sms
                               ? "translate-x-6"
                               : "translate-x-1"
-                            }`}
+                          }`}
                         />
                       </button>
                     </div>
@@ -1060,7 +1163,7 @@ export default function SettingsPage() {
                     <h2 className="text-xl font-semibold text-gray-900">
                       Lagos Zone Fee Settings
                     </h2>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                       <input
                         type="file"
                         ref={fileInputRef}
@@ -1068,6 +1171,27 @@ export default function SettingsPage() {
                         className="hidden"
                         accept=".csv"
                       />
+                      <button
+                        onClick={handleResetToDefaults}
+                        disabled={settingsSaving}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        title="Reset to Defaults"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        Reset Defaults
+                      </button>
                       <button
                         onClick={() => setShowCSVFormatHelp(true)}
                         className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
@@ -1131,8 +1255,9 @@ export default function SettingsPage() {
                       <button
                         onClick={handleSaveSettings}
                         disabled={settingsSaving || !hasSettingsChanged()}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${hasSettingsChanged() ? "animate-pulse" : ""
-                          }`}
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+                          hasSettingsChanged() ? "animate-pulse" : ""
+                        }`}
                       >
                         <svg
                           className="w-4 h-4"
@@ -1195,6 +1320,87 @@ export default function SettingsPage() {
                           maximumFractionDigits: 2,
                         })}
                       </p>
+                    </div>
+                  </div>
+                  {/* Coordinate Shifts */}
+                  <div className="bg-gray-50 rounded-lg p-6 mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      Coordinate Visualization Shifts
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Set Easting and Northing adjustments for map visualization
+                      per state.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2">
+                      {nigerianStates.map((stateObj) => {
+                        const state =
+                          stateObj.name === "Federal Capital Territory"
+                            ? "FCT"
+                            : stateObj.name;
+                        const key = state.toLowerCase();
+                        const shift = settings.coordinateShifts?.[key] || {
+                          eastingShift: 0,
+                          northingShift: 0,
+                        };
+                        return (
+                          <div
+                            key={state}
+                            className="p-4 border border-gray-200 rounded-lg bg-white"
+                          >
+                            <h4 className="font-semibold text-gray-800 mb-3">
+                              {state}
+                            </h4>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">
+                                  Easting Shift
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  value={
+                                    shift.eastingShift === 0
+                                      ? ""
+                                      : shift.eastingShift
+                                  }
+                                  placeholder="0.000"
+                                  onChange={(e) =>
+                                    handleCoordinateShiftChange(
+                                      state,
+                                      "eastingShift",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">
+                                  Northing Shift
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  value={
+                                    shift.northingShift === 0
+                                      ? ""
+                                      : shift.northingShift
+                                  }
+                                  placeholder="0.000"
+                                  onChange={(e) =>
+                                    handleCoordinateShiftChange(
+                                      state,
+                                      "northingShift",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1275,7 +1481,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneA",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1292,7 +1498,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneB",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1309,7 +1515,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneC",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1326,7 +1532,7 @@ export default function SettingsPage() {
                                     handleUpdateZoneFee(
                                       index,
                                       "lagosZoneD",
-                                      parseFloat(e.target.value) || 0
+                                      parseFloat(e.target.value) || 0,
                                     )
                                   }
                                   className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -1725,10 +1931,11 @@ export default function SettingsPage() {
                 <button
                   onClick={handleTwoFactorToggle}
                   disabled={saving}
-                  className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${profile.security.twoFactorEnabled
+                  className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                    profile.security.twoFactorEnabled
                       ? "bg-red-600 text-white hover:bg-red-700"
                       : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
+                  }`}
                 >
                   {saving
                     ? "Processing..."
