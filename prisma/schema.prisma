@@ -420,6 +420,11 @@ model SurfboardPlan {
   physicalCopySubmitted   Boolean   @default(false)
   physicalCopySubmittedAt DateTime?
 
+  // Record Copy Verification
+  recordCopyVerifiedAt       DateTime?
+  recordCopyVerdict          String?   // "VERIFIED", "REVIEW", "NOT_VERIFIED", "ERROR"
+  recordCopyVerificationData Json?
+
   // Approval tracking - Intake
   intakeApprovedBy     String?
   intakeApprovedByUser SurfboardUser?  @relation("IntakeApprover", fields: [intakeApprovedBy], references: [id])

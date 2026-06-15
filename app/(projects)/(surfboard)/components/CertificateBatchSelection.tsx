@@ -17,11 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
+import { FileText, Loader2, CheckCircle, AlertCircle, X, XCircle } from "lucide-react";
 import { RemitaPaymentModal } from "./RemitaPaymentModal";
 import { submitRedCopyBatch } from "../actions/codActions";
 import { getCodSubmissionSettings } from "../actions/settingsActions";
 import { useRouter } from "next/navigation";
+import { verifyPlanRecordCopy } from "../actions/verificationActions";
+import { VerificationResultModal } from "./VerificationResultModal";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Plan {
@@ -84,8 +86,77 @@ export function BatchSubmissionModal({
         setPolicyContent(settings.codPolicyContent);
       });
       setIsAccepted(false);
+      setVerificationData({});
     }
   }, [isOpen]);
+
+  const [verificationData, setVerificationData] = useState<
+    Record<
+      string,
+      {
+        status: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" | "ERROR";
+        data: any;
+        isLoading: boolean;
+      }
+    >
+  >({});
+
+  const [activeVerificationModal, setActiveVerificationModal] = useState<{
+    isOpen: boolean;
+    data: any;
+    planNumber: string;
+  }>({ isOpen: false, data: null, planNumber: "" });
+
+  const handleVerifyPlan = async (plan: Plan) => {
+    setVerificationData((prev) => ({
+      ...prev,
+      [plan.id]: { status: "ERROR", data: null, isLoading: true },
+    }));
+
+    const result = await verifyPlanRecordCopy(plan.id);
+    if (result.success && result.data) {
+      setVerificationData((prev) => ({
+        ...prev,
+        [plan.id]: {
+          status: result.data.overallVerdict,
+          data: result.data,
+          isLoading: false,
+        },
+      }));
+    } else {
+      setVerificationData((prev) => ({
+        ...prev,
+        [plan.id]: {
+          status: "ERROR",
+          data: { overallVerdict: "ERROR", error: result.error },
+          isLoading: false,
+        },
+      }));
+      toast.error(`Verification failed for ${plan.planNumber}: ${result.error}`);
+    }
+  };
+
+  const verifyAll = async () => {
+    for (const plan of selectedPlans) {
+      if (!verificationData[plan.id] || verificationData[plan.id].status === "ERROR") {
+        await handleVerifyPlan(plan);
+      }
+    }
+  };
+
+  const allVerifiedOrReviewed = selectedPlans.every((plan) => {
+    const vd = verificationData[plan.id];
+    return vd && (vd.status === "VERIFIED" || vd.status === "REVIEW");
+  });
+
+  const hasFailingPlan = selectedPlans.some((plan) => {
+    const vd = verificationData[plan.id];
+    return vd && (vd.status === "NOT_VERIFIED" || vd.status === "ERROR");
+  });
+
+  const isVerifyingAny = selectedPlans.some((plan) => {
+    return verificationData[plan.id]?.isLoading;
+  });
 
   const handleSubmit = async () => {
     try {
@@ -195,7 +266,7 @@ export function BatchSubmissionModal({
               {selectedPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 gap-3"
                 >
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">
@@ -208,8 +279,56 @@ export function BatchSubmissionModal({
                       </p>
                     )}
                   </div>
+                  
+                  {/* Verification Status */}
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    {verificationData[plan.id] ? (
+                      verificationData[plan.id].isLoading ? (
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Verifying
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={`text-xs ${
+                              verificationData[plan.id].status === "VERIFIED"
+                                ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                : verificationData[plan.id].status === "REVIEW"
+                                ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                                : "bg-red-100 text-red-800 hover:bg-red-100"
+                            }`}
+                          >
+                            {verificationData[plan.id].status}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-blue-600 p-1"
+                            onClick={() =>
+                              setActiveVerificationModal({
+                                isOpen: true,
+                                data: verificationData[plan.id].data,
+                                planNumber: plan.planNumber,
+                              })
+                            }
+                          >
+                            Results
+                          </Button>
+                        </div>
+                      )
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => handleVerifyPlan(plan)}
+                      >
+                        Verify Record Copy
+                      </Button>
+                    )}
+
+                    <div className="h-4 w-px bg-gray-300 mx-1"></div>
+
                     {onRemovePlan && (
                       <button
                         onClick={() => onRemovePlan(plan.id)}
@@ -245,38 +364,72 @@ export function BatchSubmissionModal({
             </div>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="policy-acceptance"
-                checked={isAccepted}
-                onCheckedChange={(checked) => setIsAccepted(!!checked)}
-                className="mt-1"
-              />
-              <div className="grid gap-1.5 leading-none">
-                <label
-                  htmlFor="policy-acceptance"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {acceptanceText}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPolicyModal(true)}
-                  className="text-xs text-blue-600 hover:underline text-left mt-1"
-                >
-                  View full policy
-                </button>
+          {hasFailingPlan && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+              <div className="flex gap-2">
+                <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-red-900">
+                    Verification Failed
+                  </p>
+                  <p className="text-xs text-red-800">
+                    One or more plans failed verification. You must remove these plans from your batch to proceed.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {allVerifiedOrReviewed ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="policy-acceptance"
+                  checked={isAccepted}
+                  onCheckedChange={(checked) => setIsAccepted(!!checked)}
+                  className="mt-1"
+                  disabled={hasFailingPlan}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="policy-acceptance"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {acceptanceText}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPolicyModal(true)}
+                    className="text-xs text-blue-600 hover:underline text-left mt-1"
+                  >
+                    View full policy
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 flex justify-between items-center">
+              <p className="text-sm text-blue-800">
+                You must verify all record copies before submitting.
+              </p>
+              <Button onClick={verifyAll} disabled={isVerifyingAny} size="sm">
+                {isVerifyingAny ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...
+                  </>
+                ) : (
+                  "Verify All"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting || isVerifyingAny}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !isAccepted}>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !isAccepted || !allVerifiedOrReviewed || hasFailingPlan}>
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -305,6 +458,15 @@ export function BatchSubmissionModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <VerificationResultModal
+        isOpen={activeVerificationModal.isOpen}
+        onClose={() =>
+          setActiveVerificationModal({ isOpen: false, data: null, planNumber: "" })
+        }
+        resultData={activeVerificationModal.data}
+        planNumber={activeVerificationModal.planNumber}
+      />
     </Dialog>
   );
 }

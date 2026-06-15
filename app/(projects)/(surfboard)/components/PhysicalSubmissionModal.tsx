@@ -22,6 +22,10 @@ export interface PhysicalSubmissionPlan {
   status: string;
   redCopyStatus: string;
   physicalCopySubmitted: boolean;
+  accountsStatus: string | null;
+  chartingStatus: string | null;
+  recordsIStatus: string | null;
+  surconStatus: string | null;
 }
 
 interface PhysicalSubmissionModalProps {
@@ -41,14 +45,15 @@ export function PhysicalSubmissionModal({
 }: PhysicalSubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Determine available plans (must be SUBMITTED and not yet physicalCopySubmitted)
-  const availablePlans = plans.filter(
-    (p) => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted,
-  );
+  const isEligible = (p: PhysicalSubmissionPlan) => 
+    p.accountsStatus === "APPROVED" &&
+    p.chartingStatus === "APPROVED" &&
+    p.recordsIStatus === "APPROVED" &&
+    p.surconStatus === "APPROVED";
 
-  // We auto-select all available plans by default. The user can uncheck them if they want.
+  // We auto-select all eligible plans by default.
   const [selectedPlanIds, setSelectedPlanIds] = useState<Set<string>>(
-    new Set(availablePlans.map((p) => p.id)),
+    new Set(plans.filter(p => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted && isEligible(p)).map((p) => p.id))
   );
 
   const handleTogglePlan = (planId: string) => {
@@ -105,7 +110,8 @@ export function PhysicalSubmissionModal({
               {plans.map((plan) => {
                 const isAlreadySubmitted = plan.physicalCopySubmitted;
                 const isQueried = plan.redCopyStatus === "QUERIED";
-                const isAvailable = plan.redCopyStatus === "SUBMITTED" && !isAlreadySubmitted;
+                const eligible = isEligible(plan);
+                const isAvailable = plan.redCopyStatus === "SUBMITTED" && !isAlreadySubmitted && eligible;
                 const isSelected = selectedPlanIds.has(plan.id);
 
                 return (
@@ -116,6 +122,8 @@ export function PhysicalSubmissionModal({
                         ? "bg-gray-50 border-gray-200 opacity-70"
                         : isQueried
                         ? "bg-red-50/50 border-red-100 opacity-60"
+                        : !eligible
+                        ? "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
                         : isSelected
                         ? "border-blue-500 bg-blue-50 cursor-pointer"
                         : "border-gray-200 hover:border-blue-300 cursor-pointer"
@@ -129,7 +137,7 @@ export function PhysicalSubmissionModal({
                     <div className="shrink-0 mt-0.5">
                       {isAlreadySubmitted ? (
                         <CheckCircle2 className="w-5 h-5 text-gray-400" />
-                      ) : isQueried ? (
+                      ) : isQueried || !eligible ? (
                         <Circle className="w-5 h-5 text-gray-300" />
                       ) : isSelected ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-600" />
@@ -148,6 +156,11 @@ export function PhysicalSubmissionModal({
                         {isQueried && (
                           <Badge variant="outline" className="text-xs bg-red-100 text-red-700">
                             Queried
+                          </Badge>
+                        )}
+                        {!eligible && !isAlreadySubmitted && !isQueried && (
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                            Awaiting Approvals
                           </Badge>
                         )}
                       </div>

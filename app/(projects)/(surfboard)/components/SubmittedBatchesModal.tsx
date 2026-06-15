@@ -79,6 +79,10 @@ interface Batch {
     redCopyStatus: string;
     physicalCopySubmitted: boolean;
     physicalCopySubmittedAt: Date | null;
+    accountsStatus: string | null;
+    chartingStatus: string | null;
+    recordsIStatus: string | null;
+    surconStatus: string | null;
   }>;
   submitter: {
     id: string;
@@ -537,7 +541,7 @@ export function SubmittedBatchesModal({
                               onClick={() => setPhysicalSubmittingBatchId(batch.id)}
                               disabled={
                                 !batch.plans.some(
-                                  (p) => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted
+                                  (p) => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted && p.accountsStatus === "APPROVED" && p.chartingStatus === "APPROVED" && p.recordsIStatus === "APPROVED" && p.surconStatus === "APPROVED"
                                 )
                               }
                               className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm transition-all duration-200 font-semibold"

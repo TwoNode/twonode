@@ -1835,6 +1835,10 @@ export async function getUserBatches(): Promise<
         redCopyStatus: string;
         physicalCopySubmitted: boolean;
         physicalCopySubmittedAt: Date | null;
+        accountsStatus: string | null;
+        chartingStatus: string | null;
+        recordsIStatus: string | null;
+        surconStatus: string | null;
       }>;
       submitter: {
         id: string;
@@ -1878,6 +1882,10 @@ export async function getUserBatches(): Promise<
             redCopyStatus: true,
             physicalCopySubmitted: true,
             physicalCopySubmittedAt: true,
+            accountsStatus: true,
+            chartingStatus: true,
+            recordsIStatus: true,
+            surconStatus: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -2003,8 +2011,14 @@ export async function getBatchPDFData(batchId: string): Promise<
 
     const totalPlansInBatch = batch.plans.length;
 
-    // Filter plans that are physically submitted
-    const eligiblePlans = batch.plans.filter((plan) => plan.physicalCopySubmitted);
+    // Filter plans that have all 4 approvals
+    const eligiblePlans = batch.plans.filter(
+      (plan) => 
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED"
+    );
 
     // Group by physicalCopySubmittedAt to determine "current" vs "previous" submissions
     let latestSubmissionTime = 0;
@@ -3095,6 +3109,7 @@ export async function getPendingCountByRole(): Promise<
               recordsIStatus: "APPROVED",
               recordsIIStatus: "PENDING",
               intakeStatus: "PENDING",
+              physicalCopySubmitted: true,
               deleted: false,
             }
           }
@@ -4573,6 +4588,10 @@ export async function getIntakeBatches() {
             deleted: false,
             physicalCopySubmitted: true,
             intakeStatus: "PENDING",
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           }
         },
         paymentStatus: {
@@ -4588,6 +4607,10 @@ export async function getIntakeBatches() {
             deleted: false,
             physicalCopySubmitted: true,
             intakeStatus: "PENDING",
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           },
           select: {
             id: true,
@@ -4630,7 +4653,11 @@ export async function getIntakeHistoryBatches() {
       where: {
         plans: {
           some: {
-            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+            intakeStatus: { in: ["APPROVED", "QUERIED"] },
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           }
         }
       },
@@ -4639,7 +4666,11 @@ export async function getIntakeHistoryBatches() {
         _count: { select: { plans: true } },
         plans: {
           where: {
-            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+            intakeStatus: { in: ["APPROVED", "QUERIED"] },
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           },
           include: {
             intakeApprovedByUser: { select: { id: true, firstName: true, lastName: true } }

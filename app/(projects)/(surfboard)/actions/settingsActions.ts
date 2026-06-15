@@ -9,6 +9,15 @@ import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { COD_FEES, type ZoneFeeRow } from "../utils/CoDFees";
 import { DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 
+export interface RecordCopyVerificationTolerances {
+  tolAnchor: number;
+  tolWCB: number;
+  tolDist: number;
+  tolArea: number;
+  tolPass: number;
+  tolWarn: number;
+}
+
 interface SurfboardSettingsData {
   zoneFees: ZoneFeeRow[];
   systemChargePercent: number;
@@ -16,6 +25,7 @@ interface SurfboardSettingsData {
   codPolicyContent: string;
   queryResponseFeePercent: number;
   coordinateShifts?: Record<string, { eastingShift: number; northingShift: number }>;
+  recordCopyTolerances?: RecordCopyVerificationTolerances;
 }
 
 const DEFAULT_SETTINGS: SurfboardSettingsData = {
@@ -24,7 +34,15 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
   codAcceptanceText: "I hereby affirm that the information provided in this submission is true, accurate, and complete to the best of my knowledge.",
   codPolicyContent: "Official CoD Submission Policy.\n\nBy clicking 'Submit', you agree to the terms and conditions outlined by the MDA.",
   queryResponseFeePercent: 10,
-  coordinateShifts: DEFAULT_COORDINATE_SHIFTS
+  coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
+  recordCopyTolerances: {
+    tolAnchor: 0.05,
+    tolWCB: 0.05,
+    tolDist: 0.05,
+    tolArea: 0.01,
+    tolPass: 95,
+    tolWarn: 80
+  }
 };
 
 /**

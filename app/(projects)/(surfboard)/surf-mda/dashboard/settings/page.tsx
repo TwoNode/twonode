@@ -23,6 +23,7 @@ import { getUserData } from "../../../actions/authActions";
 import {
   getCurrentSettings,
   updateSettings,
+  type RecordCopyVerificationTolerances,
 } from "../../../actions/settingsActions";
 
 interface UserProfile {
@@ -41,6 +42,7 @@ interface MDASettings {
   codAcceptanceText: string;
   codPolicyContent: string;
   queryResponseFeePercent: number;
+  recordCopyTolerances: RecordCopyVerificationTolerances;
   // Keep the full settings shape for save
   zoneFees: any[];
   systemChargePercent: number;
@@ -71,7 +73,8 @@ export default function SettingsPage() {
 
   // MDA Settings state
   const [mdaSettings, setMdaSettings] = useState<MDASettings | null>(null);
-  const [originalMdaSettings, setOriginalMdaSettings] = useState<MDASettings | null>(null);
+  const [originalMdaSettings, setOriginalMdaSettings] =
+    useState<MDASettings | null>(null);
   const [mdaSettingsLoading, setMdaSettingsLoading] = useState(false);
   const [mdaSettingsSaving, setMdaSettingsSaving] = useState(false);
   const [showPolicyPreview, setShowPolicyPreview] = useState(false);
@@ -118,6 +121,14 @@ export default function SettingsPage() {
           codAcceptanceText: result.data.codAcceptanceText,
           codPolicyContent: result.data.codPolicyContent,
           queryResponseFeePercent: result.data.queryResponseFeePercent,
+          recordCopyTolerances: result.data.recordCopyTolerances || {
+            tolAnchor: 0.05,
+            tolWCB: 0.05,
+            tolDist: 0.05,
+            tolArea: 0.01,
+            tolPass: 95,
+            tolWarn: 80,
+          },
           zoneFees: result.data.zoneFees,
           systemChargePercent: result.data.systemChargePercent,
         };
@@ -139,7 +150,10 @@ export default function SettingsPage() {
     return (
       mdaSettings.codAcceptanceText !== originalMdaSettings.codAcceptanceText ||
       mdaSettings.codPolicyContent !== originalMdaSettings.codPolicyContent ||
-      mdaSettings.queryResponseFeePercent !== originalMdaSettings.queryResponseFeePercent
+      mdaSettings.queryResponseFeePercent !==
+        originalMdaSettings.queryResponseFeePercent ||
+      JSON.stringify(mdaSettings.recordCopyTolerances) !==
+        JSON.stringify(originalMdaSettings.recordCopyTolerances)
     );
   };
 
@@ -153,6 +167,7 @@ export default function SettingsPage() {
         codAcceptanceText: mdaSettings.codAcceptanceText,
         codPolicyContent: mdaSettings.codPolicyContent,
         queryResponseFeePercent: mdaSettings.queryResponseFeePercent,
+        recordCopyTolerances: mdaSettings.recordCopyTolerances,
       });
       if (result.success) {
         toast.success("MDA settings updated successfully");
@@ -489,7 +504,8 @@ export default function SettingsPage() {
                     MDA Administration Settings
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Configure CoD submission policy, acceptance text, and query response fees
+                    Configure CoD submission policy, acceptance text, and query
+                    response fees
                   </p>
                 </div>
 
@@ -497,7 +513,9 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-center py-16">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                      <p className="mt-3 text-sm text-gray-500">Loading MDA settings...</p>
+                      <p className="mt-3 text-sm text-gray-500">
+                        Loading MDA settings...
+                      </p>
                     </div>
                   </div>
                 ) : mdaSettings ? (
@@ -511,8 +529,9 @@ export default function SettingsPage() {
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        This is the text surveyors must accept when submitting a CoD batch.
-                        It appears as a checkbox label in the submission modal.
+                        This is the text surveyors must accept when submitting a
+                        CoD batch. It appears as a checkbox label in the
+                        submission modal.
                       </p>
                       <textarea
                         value={mdaSettings.codAcceptanceText}
@@ -527,10 +546,19 @@ export default function SettingsPage() {
                         placeholder="I hereby affirm that the information provided..."
                       />
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 mb-1 font-medium">Preview:</p>
+                        <p className="text-xs text-gray-500 mb-1 font-medium">
+                          Preview:
+                        </p>
                         <label className="flex items-start gap-2 text-sm text-gray-700">
-                          <input type="checkbox" checked disabled className="mt-1 rounded" />
-                          <span>{mdaSettings.codAcceptanceText || "No text set"}</span>
+                          <input
+                            type="checkbox"
+                            checked
+                            disabled
+                            className="mt-1 rounded"
+                          />
+                          <span>
+                            {mdaSettings.codAcceptanceText || "No text set"}
+                          </span>
                         </label>
                       </div>
                     </div>
@@ -548,7 +576,9 @@ export default function SettingsPage() {
                           </label>
                         </div>
                         <button
-                          onClick={() => setShowPolicyPreview(!showPolicyPreview)}
+                          onClick={() =>
+                            setShowPolicyPreview(!showPolicyPreview)
+                          }
                           className="text-xs text-purple-600 hover:text-purple-700 flex items-center gap-1"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -577,7 +607,8 @@ export default function SettingsPage() {
                             Policy Preview (as seen by surveyors):
                           </p>
                           <div className="bg-white rounded-lg p-4 border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                            {mdaSettings.codPolicyContent || "No policy content set"}
+                            {mdaSettings.codPolicyContent ||
+                              "No policy content set"}
                           </div>
                         </div>
                       )}
@@ -595,7 +626,8 @@ export default function SettingsPage() {
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        Additional percentage charged when a surveyor responds to a query and resubmits.
+                        Additional percentage charged when a surveyor responds
+                        to a query and resubmits.
                       </p>
                       <div className="flex items-center gap-3">
                         <input
@@ -607,27 +639,177 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setMdaSettings({
                               ...mdaSettings,
-                              queryResponseFeePercent: parseFloat(e.target.value) || 0,
+                              queryResponseFeePercent:
+                                parseFloat(e.target.value) || 0,
                             })
                           }
                           className="w-32 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         />
-                        <span className="text-sm text-gray-600 font-medium">%</span>
+                        <span className="text-sm text-gray-600 font-medium">
+                          %
+                        </span>
                       </div>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <p className="text-xs text-blue-800">
-                          <strong>Example:</strong> If the original CoD fee was ₦10,000 and the
-                          query response fee is {mdaSettings.queryResponseFeePercent}%, the
-                          surveyor pays{" "}
+                          <strong>Example:</strong> If the original CoD fee was
+                          ₦10,000 and the query response fee is{" "}
+                          {mdaSettings.queryResponseFeePercent}%, the surveyor
+                          pays{" "}
                           <strong>
-                            ₦{(10000 * mdaSettings.queryResponseFeePercent / 100).toLocaleString(undefined, {
+                            ₦
+                            {(
+                              (10000 * mdaSettings.queryResponseFeePercent) /
+                              100
+                            ).toLocaleString(undefined, {
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
                             })}
                           </strong>{" "}
-                          to resubmit (i.e. {mdaSettings.queryResponseFeePercent}% of ₦10,000 — not the full CoD fee again
-                          ).
+                          to resubmit (i.e.{" "}
+                          {mdaSettings.queryResponseFeePercent}% of ₦10,000 —
+                          not the full CoD fee again ).
                         </p>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <hr className="border-gray-200" />
+
+                    {/* Record Copy Verification Tolerances */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-purple-600" />
+                        <label className="text-sm font-semibold text-gray-900">
+                          Record Copy Verification Tolerances
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        These tolerances dictate how strict the automated Record
+                        Copy validation is when comparing the PDF with the
+                        entered survey coordinates.
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Anchor Coord (m)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={mdaSettings.recordCopyTolerances.tolAnchor}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolAnchor: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Bearing WCB (°)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={mdaSettings.recordCopyTolerances.tolWCB}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolWCB: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Distance (m)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={mdaSettings.recordCopyTolerances.tolDist}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolDist: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Area (sq m)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={mdaSettings.recordCopyTolerances.tolArea}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolArea: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Pass Threshold (%)
+                          </label>
+                          <input
+                            type="number"
+                            step="1"
+                            value={mdaSettings.recordCopyTolerances.tolPass}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolPass: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Warn Threshold (%)
+                          </label>
+                          <input
+                            type="number"
+                            step="1"
+                            value={mdaSettings.recordCopyTolerances.tolWarn}
+                            onChange={(e) =>
+                              setMdaSettings({
+                                ...mdaSettings,
+                                recordCopyTolerances: {
+                                  ...mdaSettings.recordCopyTolerances,
+                                  tolWarn: parseFloat(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          />
+                        </div>
                       </div>
                     </div>
 
