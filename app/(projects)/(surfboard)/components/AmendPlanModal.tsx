@@ -704,7 +704,7 @@ export function AmendPlanModal({
                     Pillar Preview
                   </p>
                 </div>
-                <MaplibreMap processedPillars={pillars} />
+                <MaplibreMap processedPillars={pillars} state={state} />
               </div>
 
               {/* Map Instructions */}

@@ -2259,7 +2259,7 @@ export default function SurfboardPlanForm({
                     : "border border-gray-200",
                 )}
               >
-                <MaplibreMap processedPillars={pillars} />
+                <MaplibreMap processedPillars={pillars} state={form.state} />
               </div>
             </section>
           </div>

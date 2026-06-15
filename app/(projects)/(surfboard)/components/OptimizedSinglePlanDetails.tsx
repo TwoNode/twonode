@@ -236,7 +236,7 @@ export default function OptimizedSinglePlanDetails({
                 : "border"
             }`}
           >
-            <MaplibreMap processedPillars={planData?.pillars} />
+            <MaplibreMap processedPillars={planData?.pillars} state={planData?.state} />
           </div>
         </div>
       )}

@@ -328,6 +328,7 @@ function PlanDetails({ planId }: { planId: string }) {
                   <MaplibreMap
                     // processedPillars={mapPillars || []}
                     processedPillars={plan?.pillars}
+                    state={plan?.state}
                   />
                 </div>
               </div>

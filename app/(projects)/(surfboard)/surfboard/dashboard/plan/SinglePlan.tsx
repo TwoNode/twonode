@@ -922,7 +922,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   : "border"
               }`}
             >
-              <MaplibreMap processedPillars={plan?.pillars} />
+              <MaplibreMap processedPillars={plan?.pillars} state={plan?.state} />
             </div>
           </div>
         )}

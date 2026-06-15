@@ -1190,7 +1190,7 @@ export default function OptimizedSurfboardPlanForm({
                     : "border border-gray-200"
                 )}
               >
-                <MaplibreMap processedPillars={formData.pillars} />
+                <MaplibreMap processedPillars={formData.pillars} state={formData.state} />
               </div>
             </section>
           </div>
