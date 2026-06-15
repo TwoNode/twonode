@@ -3,7 +3,6 @@
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
-const pdfParse = require("pdf-parse");
 import { getCurrentSettings } from "./settingsActions";
 import {
   extractFromPDFText,
@@ -60,6 +59,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     // 3. Extract text using pdf-parse
     let pdfData;
     try {
+      const pdfParse = require("pdf-parse");
       pdfData = await pdfParse(buffer);
     } catch (err: any) {
       return { success: false, error: `Failed to parse PDF: ${err.message}` };
