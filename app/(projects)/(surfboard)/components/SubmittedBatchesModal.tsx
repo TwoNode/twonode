@@ -48,15 +48,14 @@ import {
   retryBatchPayment,
   getBatchPDFData,
 } from "../actions/codActions";
-import {
-  RedCopySubmissionPDF,
-  type RedCopyBatchPDFData,
+import type {
+  RedCopyBatchPDFData,
 } from "./RedCopySubmissionPDF";
 import { PhysicalSubmissionModal } from "./PhysicalSubmissionModal";
 
-// Dynamically import PDFDownloadLink to avoid SSR issues
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+// Dynamically import DownloadSubmissionLetterBtn to avoid SSR issues
+const DownloadSubmissionLetterBtn = dynamic(
+  () => import("./DownloadSubmissionLetterBtn"),
   { ssr: false, loading: () => <Loader2 className="w-4 h-4 animate-spin" /> },
 );
 
@@ -462,40 +461,10 @@ export function SubmittedBatchesModal({
                         {canDownloadLetter(batch.paymentStatus) && (
                           <>
                             {pdfDataMap[batch.id] ? (
-                              <PDFDownloadLink
-                                document={
-                                  <RedCopySubmissionPDF
-                                    data={pdfDataMap[batch.id]}
-                                  />
-                                }
-                                fileName={`RedCopy_Submission_${batch.batchCode}.pdf`}
-                              >
-                                {({ loading, error }: { loading: boolean; error: Error | null }) => (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={loading}
-                                    className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
-                                  >
-                                    {loading ? (
-                                      <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Generating...
-                                      </>
-                                    ) : error ? (
-                                      <>
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Error
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Download Letter
-                                      </>
-                                    )}
-                                  </Button>
-                                )}
-                              </PDFDownloadLink>
+                              <DownloadSubmissionLetterBtn
+                                batchCode={batch.batchCode}
+                                pdfData={pdfDataMap[batch.id]}
+                              />
                             ) : (
                               <Button
                                 size="sm"
