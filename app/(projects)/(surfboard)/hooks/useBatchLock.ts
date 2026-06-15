@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import {
   getAndLockBatchForRecordsII,
   releaseBatchLockForRecordsII,
+  getAndLockBatchForIntake,
+  releaseBatchLockForIntake,
 } from "../actions/codActions";
 
+export type BatchLockRole = "RECORDS_II" | "INTAKE";
+
 interface UseBatchLockProps {
+  role: BatchLockRole;
   onLockAcquired?: (batchId: string, batchCode: string, planCount: number) => void;
   onLockReleased?: () => void;
 }
@@ -30,10 +35,11 @@ interface UseBatchLockReturn {
 }
 
 /**
- * Hook for Records II batch-level locking.
- * Locks ALL plans in a batch with duration = 3min × planCount.
+ * Hook for batch-level locking (Records II or Intake).
+ * Locks ALL eligible plans in a batch with duration = 3min × planCount.
  */
 export function useBatchLock({
+  role,
   onLockAcquired,
   onLockReleased,
 }: UseBatchLockProps): UseBatchLockReturn {
@@ -57,7 +63,7 @@ export function useBatchLock({
     setLockError(null);
 
     try {
-      const result = await getAndLockBatchForRecordsII();
+      const result = await (role === "INTAKE" ? getAndLockBatchForIntake() : getAndLockBatchForRecordsII());
 
       if (result.success && result.data) {
         if (result.data.locked && result.data.batchId) {
@@ -99,7 +105,11 @@ export function useBatchLock({
     if (!lockedBatchId || !hasLock.current) return;
 
     try {
-      await releaseBatchLockForRecordsII();
+      if (role === "INTAKE") {
+        await releaseBatchLockForIntake();
+      } else {
+        await releaseBatchLockForRecordsII();
+      }
       setLockedBatchId(null);
       setLockedBatchCode(null);
       setLockedPlanCount(0);
@@ -114,7 +124,11 @@ export function useBatchLock({
   // Release all locks (called on page leave)
   const releaseAllLocks = useCallback(async () => {
     try {
-      await releaseBatchLockForRecordsII();
+      if (role === "INTAKE") {
+        await releaseBatchLockForIntake();
+      } else {
+        await releaseBatchLockForRecordsII();
+      }
       setLockedBatchId(null);
       setLockedBatchCode(null);
       setLockedPlanCount(0);

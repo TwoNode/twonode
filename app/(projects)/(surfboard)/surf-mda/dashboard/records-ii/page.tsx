@@ -132,6 +132,7 @@ export default function RecordsIIAdminPage() {
     confirmLeave,
     cancelLeave,
   } = useBatchLock({
+    role: "RECORDS_II",
     onLockAcquired: (batchId, batchCode, planCount) => {
       toast.success(
         `Batch ${batchCode} locked (${planCount} plan${planCount !== 1 ? "s" : ""}, ${planCount * 3}min)`

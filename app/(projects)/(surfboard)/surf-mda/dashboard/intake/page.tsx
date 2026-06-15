@@ -39,6 +39,7 @@ import {
   Package,
   ExternalLink,
   Image as ImageIcon,
+  Lock,
 } from "lucide-react";
 import {
   getIntakeBatches,
@@ -46,6 +47,8 @@ import {
   updateIntakeBatchStatus,
   updateIntakeStatus,
 } from "../../../actions/codActions";
+import { useBatchLock } from "../../../hooks/useBatchLock";
+import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 
 interface Plan {
   id: string;
@@ -62,6 +65,10 @@ interface Plan {
     firstName: string;
     lastName: string;
   } | null;
+  // Lock fields
+  isLocked?: boolean;
+  intakeLockedBy?: string | null;
+  intakeLockExpiresAt?: Date | null;
 }
 
 interface Batch {
@@ -100,9 +107,35 @@ export default function IntakeAdminPage() {
   const [actionType, setActionType] = useState<"approve" | "query">("approve");
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   // Track per-plan processing state (for inline loading indicators)
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
+
+  // Batch lock management
+  const {
+    lockedBatchId,
+    lockedBatchCode,
+    lockExpiresAt,
+    lockedPlanCount,
+    isLocking,
+    isBatchLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = useBatchLock({
+    role: "INTAKE",
+    onLockAcquired: (batchId, batchCode, planCount) => {
+      toast.success(
+        `Batch ${batchCode} locked (${planCount} plan${planCount !== 1 ? "s" : ""}, ${planCount * 3}min)`
+      );
+    },
+    onLockReleased: () => {
+      toast.info("Batch lock released");
+    },
+  });
 
   const filteredBatches = useMemo(() => {
     if (!searchQuery.trim()) return batches;
@@ -123,6 +156,16 @@ export default function IntakeAdminPage() {
       return matchesBatchCode || matchesUser;
     });
   }, [historyBatches, searchQuery]);
+
+  const handleUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      await releaseLock();
+      await fetchBatches();
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   useEffect(() => {
     fetchBatches();
@@ -302,6 +345,8 @@ export default function IntakeAdminPage() {
   }
 
   const renderBatchCard = (batch: Batch, isHistory: boolean = false) => {
+    const isBatchMine = !isHistory && isBatchLockedByMe(batch.id);
+    const isDisabled = !isHistory && !isBatchMine;
     const isQueried = isHistory && batch.plans.some(p => p.intakeStatus === "QUERIED");
     const isApproved = isHistory && !isQueried && batch.plans.every(p => p.intakeStatus === "APPROVED");
     const intakeTime = isHistory ? new Date(Math.max(...batch.plans.map(p => new Date(p.intakeApprovedAt || 0).getTime()))) : null;
@@ -309,16 +354,19 @@ export default function IntakeAdminPage() {
     return (
       <Card
         key={batch.id}
-        className={`transition-all duration-200 ${isHistory
+        className={`transition-all duration-200 ${
+          isHistory
             ? isQueried ? "border-l-4 border-l-red-400" : isApproved ? "border-l-4 border-l-green-400" : ""
-            : "border-l-4 border-l-orange-400 hover:shadow-md"
-          }`}
+            : isBatchMine
+              ? "border-2 border-blue-200 ring-2 ring-blue-100"
+              : "border-2 border-gray-200"
+        }`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-orange-600" />
+                <Package className={`w-5 h-5 ${isBatchMine ? "text-blue-600" : "text-gray-500"}`} />
                 <CardTitle className="text-xl">Batch {batch.batchCode}</CardTitle>
                 {isHistory && (
                   <Badge className={isQueried ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}>
@@ -326,7 +374,16 @@ export default function IntakeAdminPage() {
                   </Badge>
                 )}
                 {!isHistory && (
-                  <Badge className="bg-amber-100 text-amber-700">Pending Review</Badge>
+                  isBatchMine ? (
+                    <Badge className="bg-blue-100 text-blue-700">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Locked by you
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-gray-500">
+                      View Only
+                    </Badge>
+                  )
                 )}
               </div>
               <CardDescription className="mt-1">
@@ -350,10 +407,14 @@ export default function IntakeAdminPage() {
                   <p className="font-medium text-gray-700">{formatDate(intakeTime)}</p>
                </div>
             )}
+            {!isHistory && isBatchMine && (
+              <Button size="sm" variant="ghost" onClick={handleUnlock} disabled={isUnlocking}>
+                {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock"}
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Surveyor Information */}
           {batch.submitter && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -398,7 +459,6 @@ export default function IntakeAdminPage() {
             </div>
           )}
 
-          {/* Plan Summaries with Record Copy & Per-Plan Actions */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
               Plans in this Batch
@@ -419,7 +479,6 @@ export default function IntakeAdminPage() {
                          </Badge>
                       )}
                     </div>
-                    {/* Record Copy Document */}
                     <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mt-2">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="w-4 h-4 text-blue-600" />
@@ -464,28 +523,29 @@ export default function IntakeAdminPage() {
                       )}
                     </div>
 
-                    {/* Per-Plan Action Buttons */}
                     {!isHistory && (
                       <div className="flex gap-2 mt-3">
                         <Button
                           size="sm"
                           onClick={() => handlePlanActionClick(p, batch, "approve")}
                           className="bg-green-600 hover:bg-green-700 text-xs h-8"
-                          disabled={isPlanProcessing}
+                          disabled={isDisabled || isPlanProcessing}
                         >
                           {isPlanProcessing ? (
                             <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : isDisabled ? (
+                            <Lock className="w-3 h-3 mr-1" />
                           ) : (
                             <CheckCircle className="w-3 h-3 mr-1" />
                           )}
-                          Approve Plan
+                          {isDisabled ? "Locked" : "Approve Plan"}
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handlePlanActionClick(p, batch, "query")}
                           className="border-red-300 text-red-600 hover:bg-red-50 text-xs h-8"
-                          disabled={isPlanProcessing}
+                          disabled={isDisabled || isPlanProcessing}
                         >
                           <XCircle className="w-3 h-3 mr-1" />
                           Query Plan
@@ -498,23 +558,24 @@ export default function IntakeAdminPage() {
             </div>
           </div>
 
-          {/* Batch-Level Action Buttons (for pending only) */}
           {!isHistory && batch.plans.length > 1 && (
             <div className="flex gap-3 pt-2 border-t border-gray-200">
               <Button
                 onClick={() => handleBatchActionClick(batch, "approve")}
                 className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={isDisabled}
               >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Approve Entire Batch ({batch.plans.length} plans)
+                {isDisabled ? <Lock className="w-4 h-4 mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                {isDisabled ? "Locked" : `Approve Batch (${batch.plans.length} plans)`}
               </Button>
               <Button
                 onClick={() => handleBatchActionClick(batch, "query")}
                 variant="outline"
                 className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                disabled={isDisabled}
               >
                 <XCircle className="w-4 h-4 mr-2" />
-                Query Entire Batch
+                Query Batch
               </Button>
             </div>
           )}
@@ -523,13 +584,18 @@ export default function IntakeAdminPage() {
     );
   };
 
-  // Determine dialog labels based on mode
   const dialogTarget = dialogMode === "batch"
     ? `Batch ${selectedBatch?.batchCode}`
     : `Plan ${selectedPlan?.planNumber}`;
 
   return (
     <>
+      <PlanLockWarningDialog
+        isOpen={showLeaveWarning}
+        planNumber={lockedBatchCode ? `Batch ${lockedBatchCode}` : null}
+        onConfirmLeave={confirmLeave}
+        onCancel={cancelLeave}
+      />
       <div className="container mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Intake Admin Dashboard</h1>
@@ -538,7 +604,6 @@ export default function IntakeAdminPage() {
           </p>
         </div>
 
-        {/* Search Input */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input

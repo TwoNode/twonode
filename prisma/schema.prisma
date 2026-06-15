@@ -416,12 +416,19 @@ model SurfboardPlan {
   recordsILockedAt       DateTime? // When the lock was acquired
   recordsILockExpiresAt  DateTime? // When the lock expires
 
+  // Physical copy tracking
+  physicalCopySubmitted   Boolean   @default(false)
+  physicalCopySubmittedAt DateTime?
+
   // Approval tracking - Intake
   intakeApprovedBy     String?
   intakeApprovedByUser SurfboardUser?  @relation("IntakeApprover", fields: [intakeApprovedBy], references: [id])
   intakeApprovedAt     DateTime?
   intakeStatus         ApprovalStatus? @default(PENDING)
   intakeComment        String?
+  intakeLockedBy       String? // User ID who locked this plan for Intake review
+  intakeLockedAt       DateTime? // When the lock was acquired
+  intakeLockExpiresAt  DateTime? // When the lock expires
 
   // Approval tracking - Records II
   recordsIIApprovedBy     String?

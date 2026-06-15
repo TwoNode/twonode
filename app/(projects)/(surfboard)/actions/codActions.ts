@@ -37,6 +37,7 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
+  | "INTAKE"
   | "ARCHIVE"
   | "MDA_SUPERADMIN";
 
@@ -49,6 +50,7 @@ function getRoleFieldPrefix(role: MDARole): string {
     SURCON: "surcon",
     RECORDS_I: "recordsI",
     RECORDS_II: "recordsII",
+    INTAKE: "intake",
     ARCHIVE: "archive",
     MDA_SUPERADMIN: "mdaSuperadmin",
   };
@@ -181,8 +183,8 @@ export async function acquirePlanLock(
       };
     }
 
-    // Batch-level locking for RECORDS_II
-    if (role === "RECORDS_II" && plan.batchId) {
+    // Batch-level locking for INTAKE and RECORDS_II
+    if ((role === "INTAKE" || role === "RECORDS_II") && plan.batchId) {
       const batchPlans = await prisma.surfboardPlan.findMany({
         where: { batchId: plan.batchId, deleted: false },
         select: { id: true, [lockedByField]: true, [lockExpiresAtField]: true }
@@ -250,8 +252,8 @@ export async function releasePlanLock(
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
-    // Batch-level unlocking for RECORDS_II
-    if (role === "RECORDS_II") {
+    // Batch-level unlocking for INTAKE and RECORDS_II
+    if (role === "INTAKE" || role === "RECORDS_II") {
       const plan = await prisma.surfboardPlan.findUnique({
         where: { id: planId },
         select: { batchId: true }
@@ -349,6 +351,21 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
     // Build role-specific where clause to match what's displayed on each role's page
     const getRoleSpecificCriteria = (): any => {
       switch (role) {
+        case "INTAKE":
+          // Intake: Physical copies must be submitted
+          return {
+            physicalCopySubmitted: true,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
         case "RECORDS_II":
           // Records II: All 4 other approvals + intake must be complete
           return {
@@ -437,7 +454,7 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
         id: true,
         planNumber: true,
       },
-      orderBy: { redCopySubmittedAt: "asc" },
+      orderBy: role === "INTAKE" ? { physicalCopySubmittedAt: "asc" } : { redCopySubmittedAt: "asc" },
     });
 
     if (!availablePlan) {
@@ -1816,6 +1833,8 @@ export async function getUserBatches(): Promise<
         surveyTitle: string;
         status: string;
         redCopyStatus: string;
+        physicalCopySubmitted: boolean;
+        physicalCopySubmittedAt: Date | null;
       }>;
       submitter: {
         id: string;
@@ -1857,6 +1876,8 @@ export async function getUserBatches(): Promise<
             surveyTitle: true,
             status: true,
             redCopyStatus: true,
+            physicalCopySubmitted: true,
+            physicalCopySubmittedAt: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -1922,6 +1943,7 @@ export async function getBatchPDFData(batchId: string): Promise<
     };
     totalPlansInBatch: number;
     eligiblePlansCount: number;
+    previousSubmissionCount: number;
   }>
 > {
   try {
@@ -1953,6 +1975,8 @@ export async function getBatchPDFData(batchId: string): Promise<
             chartingStatus: true,
             surconStatus: true,
             recordsIStatus: true,
+            physicalCopySubmitted: true,
+            physicalCopySubmittedAt: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -1979,15 +2003,26 @@ export async function getBatchPDFData(batchId: string): Promise<
 
     const totalPlansInBatch = batch.plans.length;
 
-    // Filter plans that are fully approved
-    const eligiblePlans = batch.plans.filter((plan) => 
-      plan.accountsStatus === "APPROVED" &&
-      plan.chartingStatus === "APPROVED" &&
-      plan.surconStatus === "APPROVED" &&
-      plan.recordsIStatus === "APPROVED"
-    );
+    // Filter plans that are physically submitted
+    const eligiblePlans = batch.plans.filter((plan) => plan.physicalCopySubmitted);
 
-    const eligiblePlansCount = eligiblePlans.length;
+    // Group by physicalCopySubmittedAt to determine "current" vs "previous" submissions
+    let latestSubmissionTime = 0;
+    eligiblePlans.forEach(p => {
+      if (p.physicalCopySubmittedAt) {
+        const t = new Date(p.physicalCopySubmittedAt).getTime();
+        if (t > latestSubmissionTime) latestSubmissionTime = t;
+      }
+    });
+
+    // To group them within a ~5 minute tolerance to be considered the "same" submission
+    const currentSubmissionPlans = eligiblePlans.filter(p => {
+      if (!p.physicalCopySubmittedAt) return false;
+      return Math.abs(new Date(p.physicalCopySubmittedAt).getTime() - latestSubmissionTime) < 5 * 60 * 1000;
+    });
+
+    const previousSubmissionCount = eligiblePlans.length - currentSubmissionPlans.length;
+    const eligiblePlansCount = currentSubmissionPlans.length;
 
     // Map plans to include calculated pillar count (unique pillar numbers only)
     const plans = eligiblePlans.map((plan) => {
@@ -2029,10 +2064,13 @@ export async function getBatchPDFData(batchId: string): Promise<
       data: {
         batchCode: batch.batchCode,
         createdAt: batch.createdAt,
-        plans,
+        // plans,
         submitter: batch.submitter,
         totalPlansInBatch,
         eligiblePlansCount,
+        previousSubmissionCount,
+        // We only show the currently submitted plans in the table
+        plans: plans.filter(p => currentSubmissionPlans.some(csp => csp.planNumber === p.planNumber)),
       },
     };
   } catch (error) {
@@ -4533,14 +4571,13 @@ export async function getIntakeBatches() {
           some: {
             redCopyStatus: "SUBMITTED",
             deleted: false,
-            accountsStatus: "APPROVED",
-            chartingStatus: "APPROVED",
-            surconStatus: "APPROVED",
-            recordsIStatus: "APPROVED",
+            physicalCopySubmitted: true,
             intakeStatus: "PENDING",
-            recordsIIStatus: "PENDING",
           }
-        }
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
       },
       include: {
         submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
@@ -4549,12 +4586,24 @@ export async function getIntakeBatches() {
           where: {
             redCopyStatus: "SUBMITTED",
             deleted: false,
-            accountsStatus: "APPROVED",
-            chartingStatus: "APPROVED",
-            surconStatus: "APPROVED",
-            recordsIStatus: "APPROVED",
+            physicalCopySubmitted: true,
             intakeStatus: "PENDING",
-          }
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            deededArea: true,
+            redCopyFileUrl: true,
+            intakeStatus: true,
+            intakeLockedBy: true,
+            intakeLockExpiresAt: true,
+            physicalCopySubmittedAt: true,
+          },
+          orderBy: { physicalCopySubmittedAt: "asc" }
         }
       },
       orderBy: { createdAt: "asc" }
@@ -5118,6 +5167,238 @@ export async function releaseBatchLockForRecordsII(): Promise<
     return {
       success: false,
       error: handlePrismaError(error, "releaseBatchLockForRecordsII"),
+    };
+  }
+}
+
+/**
+ * Get and lock the oldest available batch for Intake
+ */
+export async function getAndLockBatchForIntake(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+
+    // First, check if user already has plans locked for INTAKE
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        intakeLockedBy: user.id,
+        intakeLockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        intakeLockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          intakeLockedBy: user.id,
+          intakeLockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.intakeLockExpiresAt,
+        },
+      };
+    }
+
+    // Find the oldest batch with plans ready for INTAKE (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
+            OR: [
+              { intakeLockedBy: null },
+              { intakeLockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
+            OR: [
+              { intakeLockedBy: null },
+              { intakeLockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true, physicalCopySubmittedAt: true },
+          orderBy: { physicalCopySubmittedAt: "asc" },
+        },
+      },
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Sort by oldest physicalCopySubmittedAt in the batch's eligible plans
+    availableBatch.plans.sort((a, b) => {
+      const dateA = a.physicalCopySubmittedAt ? new Date(a.physicalCopySubmittedAt).getTime() : 0;
+      const dateB = b.physicalCopySubmittedAt ? new Date(b.physicalCopySubmittedAt).getTime() : 0;
+      return dateA - dateB;
+    });
+
+    const planCount = availableBatch.plans.length;
+    // 3 minutes per plan in the batch
+    const lockDurationMinutes = planCount * 3;
+    const lockExpiresAt = new Date(now.getTime() + lockDurationMinutes * 60000);
+    const planIdsToLock = availableBatch.plans.map((p) => p.id);
+
+    // Lock all available plans in the batch
+    await prisma.surfboardPlan.updateMany({
+      where: { id: { in: planIdsToLock } },
+      data: {
+        intakeLockedBy: user.id,
+        intakeLockedAt: now,
+        intakeLockExpiresAt: lockExpiresAt,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount,
+        locked: true,
+        lockExpiresAt,
+      },
+    };
+  } catch (error) {
+    console.error("Error acquiring batch lock for INTAKE:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForIntake"),
+    };
+  }
+}
+
+/**
+ * Release lock for a batch currently locked by the user for Intake
+ */
+export async function releaseBatchLockForIntake(): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    await prisma.surfboardPlan.updateMany({
+      where: { intakeLockedBy: user.id },
+      data: {
+        intakeLockedBy: null,
+        intakeLockedAt: null,
+        intakeLockExpiresAt: null,
+      },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error releasing batch lock for INTAKE:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForIntake"),
+    };
+  }
+}
+
+/**
+ * Submit physical copies for a selection of plans within a batch
+ */
+export async function submitPhysicalCopies(
+  planIds: string[],
+): Promise<ApiResult<{ count: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        id: { in: planIds },
+        userId: user.id,
+        redCopyStatus: "SUBMITTED",
+        physicalCopySubmitted: false,
+        deleted: false,
+      },
+      select: { id: true },
+    });
+
+    if (plans.length === 0) {
+      return { success: false, error: "No eligible plans found to submit" };
+    }
+
+    const validPlanIds = plans.map((p) => p.id);
+    const now = new Date();
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: { id: { in: validPlanIds } },
+      data: {
+        physicalCopySubmitted: true,
+        physicalCopySubmittedAt: now,
+      },
+    });
+
+    return { success: true, data: { count: result.count } };
+  } catch (error) {
+    console.error("Error submitting physical copies:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "submitPhysicalCopies"),
     };
   }
 }
