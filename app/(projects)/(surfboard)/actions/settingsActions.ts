@@ -83,7 +83,7 @@ export async function getCurrentSettings(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !user.role || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !user.role) {
       return { success: false, error: "Unauthorized" };
     }
 

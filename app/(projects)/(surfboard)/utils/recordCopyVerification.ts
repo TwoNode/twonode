@@ -17,7 +17,7 @@ export function extractFromPDFText(allText: string, allItemsParam?: string[]) {
 
   // Bearings
   const bearings: ExtractedBearing[] = [];
-  const RE_BRG = /(\d{1,3})[°º°]\s*(\d{1,2})[''`’‘]?/g;
+  const RE_BRG = /(\d{1,3})\s*[^\d\s]{1,3}\s*(\d{1,2})\s*[^\d\s]{0,3}/g;
   let m;
   RE_BRG.lastIndex = 0;
   while ((m = RE_BRG.exec(allText)) !== null) {
@@ -311,8 +311,8 @@ export function scoreResults(
     const distPct = lr.accepted && lr.distResidual != null ? residualToPct(lr.distResidual, tolDist) : 0;
     const legPct = lr.accepted ? (wcbPct + distPct) / 2 : 0;
     return {
-      fromId: lr.fromVertex?.id ?? '?',
-      toId: lr.toVertex?.id ?? '?',
+      fromId: lr.fromVertex?.id || lr.fromVertex?.pillarNumber || lr.fromVertex?.pillar || lr.fromVertex?.point || lr.fromVertex?.no || '?',
+      toId: lr.toVertex?.id || lr.toVertex?.pillarNumber || lr.toVertex?.pillar || lr.toVertex?.point || lr.toVertex?.no || '?',
       computedWCB: lr.computedWCB,
       computedDist: lr.computedDist,
       extractedWCB: lr.extractedWCB,

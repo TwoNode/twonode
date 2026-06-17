@@ -37,18 +37,16 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       return { success: false, error: "No pillar data found for this plan." };
     }
 
-    // 1. Fetch settings to get tolerances
     const settingsRes = await getCurrentSettings();
-    const tolerances = settingsRes.success && settingsRes.data?.recordCopyTolerances
-      ? settingsRes.data.recordCopyTolerances
-      : {
-          tolAnchor: 0.05,
-          tolWCB: 0.05,
-          tolDist: 0.05,
-          tolArea: 0.01,
-          tolPass: 95,
-          tolWarn: 80,
-        };
+    const rawTol = ((settingsRes.success && settingsRes.data?.recordCopyTolerances) || {}) as any;
+    const tolerances = {
+      tolAnchor: Number(rawTol.tolAnchor ?? 0.05),
+      tolWCB: Number(rawTol.tolWCB ?? 0.05),
+      tolDist: Number(rawTol.tolDist ?? 0.05),
+      tolArea: Number(rawTol.tolArea ?? 0.01),
+      tolPass: Number(rawTol.tolPass ?? 95),
+      tolWarn: Number(rawTol.tolWarn ?? 80),
+    };
 
     // 2. Download the PDF
     const response = await fetch(plan.redCopyFileUrl);
@@ -78,7 +76,10 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       return { success: false, error: err.message || "Extraction failed." };
     }
 
-    const csvVertices = Array.isArray(plan.pillars) ? plan.pillars : [];
+    const csvVertices = (Array.isArray(plan.pillars) ? plan.pillars : []).map((v: any) => ({
+      ...v,
+      id: v.id || v.pillarNumber || v.pillar || v.point || v.no || "",
+    }));
 
     if (csvVertices.length === 0) {
       return { success: false, error: "CSV pillar data is empty." };
@@ -219,5 +220,50 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
   } catch (error: any) {
     console.error("Verification error:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+}
+
+export async function downloadPlanPdfAsBase64(planId: string): Promise<ApiResult<string>> {
+  try {
+    const plan = await prisma.surfboardPlan.findUnique({
+      where: { id: planId },
+    });
+    if (!plan || !plan.redCopyFileUrl) {
+      return { success: false, error: "No PDF URL found" };
+    }
+    const res = await fetch(plan.redCopyFileUrl);
+    if (!res.ok) {
+      return { success: false, error: `Failed to fetch PDF: ${res.statusText}` };
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    return { success: true, data: base64 };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to download PDF" };
+  }
+}
+
+export async function savePlanVerificationResult(
+  planId: string,
+  verdict: string,
+  score: number,
+  verificationData: any
+): Promise<ApiResult<any>> {
+  try {
+    await prisma.surfboardPlan.update({
+      where: { id: planId },
+      data: {
+        recordCopyVerifiedAt: new Date(),
+        recordCopyVerdict: verdict,
+        recordCopyVerificationData: verificationData as any,
+      },
+    });
+
+    revalidatePath("/surf-restricted/dashboard/intake");
+    revalidatePath("/surf-restricted/dashboard/records-ii");
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to save verification result" };
   }
 }
