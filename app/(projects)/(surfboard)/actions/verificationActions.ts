@@ -9,8 +9,10 @@ import {
   identifyAnchor,
   reconstructTraverse,
   scoreResults,
+  shoelaceArea,
 } from "../utils/recordCopyVerification";
 import { revalidatePath } from "next/cache";
+import { extractPdfTextAndItems } from "../utils/pdfUtils";
 
 export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<any>> {
   try {
@@ -56,34 +58,17 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 3. Extract text using pdf-parse with pagerender to get exact text items
-    let pdfData;
+    // 3. Extract text using modern pdfjs-dist
+    let allText = "";
     let allItems: string[] = [];
 
-    function render_page(pageData: any) {
-      const render_options = {
-        normalizeWhitespace: false,
-        disableCombineTextItems: false
-      };
-      return pageData.getTextContent(render_options).then(function(textContent: any) {
-        let pageText = '';
-        for (let item of textContent.items) {
-          const str = item.str || "";
-          if (str.trim()) allItems.push(str.trim());
-          pageText += str + " ";
-        }
-        return pageText;
-      });
-    }
-
     try {
-      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
-      pdfData = await pdfParse(buffer, { pagerender: render_page });
+      const extracted = await extractPdfTextAndItems(buffer);
+      allText = extracted.allText;
+      allItems = extracted.allItems;
     } catch (err: any) {
       return { success: false, error: `Failed to parse PDF: ${err.message}` };
     }
-
-    const allText = pdfData.text;
 
     // 4. Run Extraction Logic
     let extraction;
@@ -124,9 +109,21 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     let allHasError = false;
     let allHasAreaFail = false;
 
+    const usedRefCoords = new Set<string>();
+
     for (let i = 0; i < parcels.length; i++) {
       const vertices = parcels[i];
-      const anchor = identifyAnchor(extraction.refCoords, vertices, tolerances.tolAnchor);
+      
+      // Filter out ref coordinates already used by another parcel
+      const availableCoords = extraction.refCoords.filter(
+        r => !usedRefCoords.has(`${r.easting}|${r.northing}`)
+      );
+
+      const anchor = identifyAnchor(
+        availableCoords.length > 0 ? availableCoords : extraction.refCoords,
+        vertices,
+        tolerances.tolAnchor
+      );
       
       if (!anchor) {
         parcelResults.push({
@@ -138,6 +135,9 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
         continue;
       }
 
+      // Mark this anchor's ref coordinate as used
+      usedRefCoords.add(`${anchor.ref.easting}|${anchor.ref.northing}`);
+
       const traverse = reconstructTraverse(
         anchor,
         extraction.bearings,
@@ -147,7 +147,19 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
         tolerances.tolDist
       );
 
-      const score = scoreResults(traverse, tolerances, true, extraction.pdfArea);
+      // Area validation — match this parcel's CSV area against PDF areas
+      const csvArea = shoelaceArea(vertices);
+      let matchedPdfArea = null;
+      if (extraction.pdfAreas.length > 0) {
+        matchedPdfArea = extraction.pdfAreas.reduce((best: any, a: any) =>
+          Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best
+        );
+      }
+      const pdfAreaSqm = matchedPdfArea ? matchedPdfArea.sqm : null;
+      const areaDiff = pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
+      const areaMatch = areaDiff != null && areaDiff <= tolerances.tolArea;
+
+      const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm);
       
       if (score.hasLegErrors) allHasError = true;
       if (score.hasAreaFail) allHasAreaFail = true;
@@ -160,6 +172,10 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
         traverse: traverse,
         score: score,
         status: score.status,
+        csvArea,
+        pdfArea: pdfAreaSqm,
+        areaDiff,
+        areaMatch,
       });
     }
 
