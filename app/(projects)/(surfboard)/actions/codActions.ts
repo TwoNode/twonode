@@ -2020,20 +2020,26 @@ export async function getBatchPDFData(batchId: string): Promise<
         plan.surconStatus === "APPROVED"
     );
 
-    // Group by physicalCopySubmittedAt to determine "current" vs "previous" submissions
-    let latestSubmissionTime = 0;
-    eligiblePlans.forEach(p => {
-      if (p.physicalCopySubmittedAt) {
-        const t = new Date(p.physicalCopySubmittedAt).getTime();
-        if (t > latestSubmissionTime) latestSubmissionTime = t;
-      }
-    });
+    // Select eligible plans that are not yet physically submitted
+    let currentSubmissionPlans = eligiblePlans.filter(p => !p.physicalCopySubmitted);
 
-    // To group them within a ~5 minute tolerance to be considered the "same" submission
-    const currentSubmissionPlans = eligiblePlans.filter(p => {
-      if (!p.physicalCopySubmittedAt) return false;
-      return Math.abs(new Date(p.physicalCopySubmittedAt).getTime() - latestSubmissionTime) < 5 * 60 * 1000;
-    });
+    // If all eligible plans are already physically submitted, fallback to showing the latest submission
+    if (currentSubmissionPlans.length === 0 && eligiblePlans.length > 0) {
+      let latestSubmissionTime = 0;
+      eligiblePlans.forEach(p => {
+        if (p.physicalCopySubmittedAt) {
+          const t = new Date(p.physicalCopySubmittedAt).getTime();
+          if (t > latestSubmissionTime) latestSubmissionTime = t;
+        }
+      });
+
+      if (latestSubmissionTime > 0) {
+        currentSubmissionPlans = eligiblePlans.filter(p => {
+          if (!p.physicalCopySubmittedAt) return false;
+          return Math.abs(new Date(p.physicalCopySubmittedAt).getTime() - latestSubmissionTime) < 5 * 60 * 1000;
+        });
+      }
+    }
 
     const previousSubmissionCount = eligiblePlans.length - currentSubmissionPlans.length;
     const eligiblePlansCount = currentSubmissionPlans.length;
