@@ -12,7 +12,7 @@ export interface ExtractedBearing { degrees: number; raw: string; }
 export interface ExtractedDistance { metres: number; raw: string; }
 export interface RefCoord { easting: number; northing: number; }
 
-export function extractFromPDFText(allText: string) {
+export function extractFromPDFText(allText: string, allItemsParam?: string[]) {
   const warnings: string[] = [];
 
   // Bearings
@@ -28,8 +28,8 @@ export function extractFromPDFText(allText: string) {
 
   // Distances
   const distances: ExtractedDistance[] = [];
-  // Tokenize text to mimic PDF item structures
-  const allItems = allText.split(/\s+/);
+  // Use provided allItems from pagerender, or fallback to tokenizing text
+  const allItems = allItemsParam || allText.split(/\s+/);
   for (let i = 0; i < allItems.length; i++) {
     const item = allItems[i];
     if (/\d+\.\d+\s*m[EN]/i.test(item)) continue; // skip coords

@@ -1,28 +1,11 @@
 import axios from "axios";
-// Pre-load the pdfjs worker on globalThis so pdfjs-dist doesn't try to
-// dynamically import it (which fails on Vercel's serverless environment)
-// @ts-ignore — worker module has no type declarations
-import * as pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
-(globalThis as any).pdfjsWorker = pdfjsWorker;
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-
 /**
- * Extract text from a PDF buffer using pdfjs-dist (with pre-loaded worker)
+ * Extract text from a PDF buffer using pdf-parse
  */
 async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
-  const data = new Uint8Array(buffer);
-  const doc = await pdfjsLib.getDocument({ data, useSystemFonts: true })
-    .promise;
-  const textParts: string[] = [];
-
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items.map((item: any) => item.str).join(" ");
-    textParts.push(pageText);
-  }
-
-  return textParts.join("\n");
+  const pdfParse = require("pdf-parse");
+  const data = await pdfParse(buffer);
+  return data.text;
 }
 
 /**

@@ -56,11 +56,29 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 3. Extract text using pdf-parse
+    // 3. Extract text using pdf-parse with pagerender to get exact text items
     let pdfData;
+    let allItems: string[] = [];
+
+    function render_page(pageData: any) {
+      const render_options = {
+        normalizeWhitespace: false,
+        disableCombineTextItems: false
+      };
+      return pageData.getTextContent(render_options).then(function(textContent: any) {
+        let pageText = '';
+        for (let item of textContent.items) {
+          const str = item.str || "";
+          if (str.trim()) allItems.push(str.trim());
+          pageText += str + " ";
+        }
+        return pageText;
+      });
+    }
+
     try {
       const pdfParse = require("pdf-parse");
-      pdfData = await pdfParse(buffer);
+      pdfData = await pdfParse(buffer, { pagerender: render_page });
     } catch (err: any) {
       return { success: false, error: `Failed to parse PDF: ${err.message}` };
     }
@@ -70,7 +88,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     // 4. Run Extraction Logic
     let extraction;
     try {
-      extraction = extractFromPDFText(allText);
+      extraction = extractFromPDFText(allText, allItems);
     } catch (err: any) {
       return { success: false, error: err.message || "Extraction failed." };
     }
