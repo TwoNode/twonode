@@ -77,7 +77,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     }
 
     try {
-      const pdfParse = require("pdf-parse");
+      const pdfParse = require("pdf-parse/lib/pdf-parse.js");
       pdfData = await pdfParse(buffer, { pagerender: render_page });
     } catch (err: any) {
       return { success: false, error: `Failed to parse PDF: ${err.message}` };

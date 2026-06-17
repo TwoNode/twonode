@@ -3,7 +3,7 @@ import axios from "axios";
  * Extract text from a PDF buffer using pdf-parse
  */
 async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
-  const pdfParse = require("pdf-parse");
+  const pdfParse = require("pdf-parse/lib/pdf-parse.js");
   const data = await pdfParse(buffer);
   return data.text;
 }
