@@ -1,4 +1,6 @@
 import axios from "axios";
+import pdfParse from "pdf-parse";
+
 // Define polyfills for pdfjs-dist in Node environment
 function setupPdfJsPolyfills() {
   if (typeof global.DOMMatrix === "undefined") {
@@ -31,23 +33,40 @@ export async function extractPdfTextAndItems(
   buffer: Buffer,
 ): Promise<{ allText: string; allItems: string[] }> {
   setupPdfJsPolyfills();
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const data = new Uint8Array(buffer);
-  const loadingTask = pdfjsLib.getDocument({ data });
-  const pdf = await loadingTask.promise;
 
-  let allText = "";
-  const allItems: string[] = [];
+  const pagesData: { pageNumber: number; text: string; items: string[] }[] = [];
 
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const tc = await page.getTextContent({ includeMarkedContent: false });
-    tc.items.forEach((it: any) => {
-      if ((it.str || "").trim()) {
-        allItems.push(it.str.trim());
-      }
+  function renderPage(pageData: any) {
+    const pageNumber = pageData.pageNumber; // 1-indexed page number
+    return pageData.getTextContent({ includeMarkedContent: false }).then(function(textContent: any) {
+      const items: string[] = [];
+      textContent.items.forEach((it: any) => {
+        const str = it.str || "";
+        if (str.trim()) {
+          items.push(str.trim());
+        }
+      });
+      // Exactly match the original logic: join by space + trailing space
+      const pageText = textContent.items.map((it: any) => it.str || "").join(" ") + " ";
+      
+      pagesData.push({ pageNumber, text: pageText, items });
+      return pageText;
     });
-    allText += tc.items.map((it: any) => it.str).join(" ") + " ";
+  }
+
+  await pdfParse(buffer, {
+    pagerender: renderPage
+  });
+
+  // Sort pages by pageNumber to guarantee correct order
+  pagesData.sort((a, b) => a.pageNumber - b.pageNumber);
+
+  const allItems: string[] = [];
+  let allText = "";
+
+  for (const page of pagesData) {
+    allItems.push(...page.items);
+    allText += page.text;
   }
 
   return { allText, allItems };
