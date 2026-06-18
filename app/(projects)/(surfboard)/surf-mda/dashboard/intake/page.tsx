@@ -267,7 +267,8 @@ export default function IntakeAdminPage() {
             : `Batch ${selectedBatch.batchCode} queried successfully`
         );
         setShowDialog(false);
-        fetchBatches();
+        await fetchBatches();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }
@@ -306,7 +307,8 @@ export default function IntakeAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchBatches();
+        await fetchBatches();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }

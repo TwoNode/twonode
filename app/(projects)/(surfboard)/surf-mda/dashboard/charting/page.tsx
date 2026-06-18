@@ -262,7 +262,8 @@ export default function ChartingAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchPlans();
+        await fetchPlans();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }

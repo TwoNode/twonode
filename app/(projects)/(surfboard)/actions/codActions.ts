@@ -2333,7 +2333,7 @@ export async function updateAccountsApproval(
       },
     });
 
-    // Update accountsStatus on all plans in the batch
+    // Update accountsStatus on all plans in the batch and release locks
     await prisma.surfboardPlan.updateMany({
       where: { batchId: batchId },
       data: {
@@ -2341,6 +2341,9 @@ export async function updateAccountsApproval(
         accountsApprovedBy: user.id,
         accountsApprovedAt: new Date(),
         accountsComment: comment,
+        accountsLockedBy: null,
+        accountsLockedAt: null,
+        accountsLockExpiresAt: null,
       },
     });
 
@@ -2434,6 +2437,9 @@ export async function updateChartingStatus(
         chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
+        chartingLockedBy: null,
+        chartingLockedAt: null,
+        chartingLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2514,6 +2520,9 @@ export async function updateSurconStatus(
         surconApprovedBy: user.id,
         surconApprovedAt: new Date(),
         surconComment: comment,
+        surconLockedBy: null,
+        surconLockedAt: null,
+        surconLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2594,6 +2603,9 @@ export async function updateRecordsIStatus(
         recordsIApprovedBy: user.id,
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
+        recordsILockedBy: null,
+        recordsILockedAt: null,
+        recordsILockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2698,6 +2710,9 @@ export async function updateIntakeStatus(
         intakeApprovedBy: user.id,
         intakeApprovedAt: new Date(),
         intakeComment: comment,
+        intakeLockedBy: null,
+        intakeLockedAt: null,
+        intakeLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2801,6 +2816,9 @@ export async function updateRecordsIIStatus(
         recordsIIApprovedBy: user.id,
         recordsIIApprovedAt: new Date(),
         recordsIIComment: comment,
+        recordsIILockedBy: null,
+        recordsIILockedAt: null,
+        recordsIILockExpiresAt: null,
         // Nullify other roles + intake if queried
         ...(!approved ? {
           accountsStatus: "PENDING",
@@ -5436,6 +5454,193 @@ export async function submitPhysicalCopies(
     return {
       success: false,
       error: handlePrismaError(error, "submitPhysicalCopies"),
+    };
+  }
+}
+
+/**
+ * Get and lock the oldest available batch for Accounts
+ * Sorts by payment date (oldest first). Lock is fixed for 3 minutes.
+ */
+export async function getAndLockBatchForAccounts(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const lockExpiry = new Date(now.getTime() + 3 * 60000); // 3 minutes fixed lock
+
+    // 1. First, check if user already has plans locked for Accounts
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        accountsLockedBy: user.id,
+        accountsLockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        accountsLockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          accountsLockedBy: user.id,
+          accountsLockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.accountsLockExpiresAt,
+        },
+      };
+    }
+
+    // 2. Find the oldest batch with plans ready for Accounts (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            deleted: false,
+            accountsStatus: "PENDING",
+            OR: [
+              { accountsLockedBy: null },
+              { accountsLockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            deleted: false,
+            accountsStatus: "PENDING",
+            OR: [
+              { accountsLockedBy: null },
+              { accountsLockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true },
+        },
+      },
+      orderBy: [
+        { userPaymentDate: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    const planCount = availableBatch.plans.length;
+    const planIdsToLock = availableBatch.plans.map((p) => p.id);
+
+    // Lock all plans in the batch atomically
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: { in: planIdsToLock },
+        OR: [
+          { accountsLockedBy: null },
+          { accountsLockedBy: user.id },
+          { accountsLockExpiresAt: { lt: now } },
+        ],
+      },
+      data: {
+        accountsLockedBy: user.id,
+        accountsLockedAt: now,
+        accountsLockExpiresAt: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Retrying in case of race condition
+      return getAndLockBatchForAccounts();
+    }
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount: lockResult.count,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error locking batch for Accounts:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForAccounts"),
+    };
+  }
+}
+
+/**
+ * Release lock for a batch currently locked by the user for Accounts
+ */
+export async function releaseBatchLockForAccounts(): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    await prisma.surfboardPlan.updateMany({
+      where: { accountsLockedBy: user.id },
+      data: {
+        accountsLockedBy: null,
+        accountsLockedAt: null,
+        accountsLockExpiresAt: null,
+      },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error releasing batch lock for Accounts:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForAccounts"),
     };
   }
 }

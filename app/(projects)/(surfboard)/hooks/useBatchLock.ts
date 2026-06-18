@@ -7,9 +7,11 @@ import {
   releaseBatchLockForRecordsII,
   getAndLockBatchForIntake,
   releaseBatchLockForIntake,
+  getAndLockBatchForAccounts,
+  releaseBatchLockForAccounts,
 } from "../actions/codActions";
 
-export type BatchLockRole = "RECORDS_II" | "INTAKE";
+export type BatchLockRole = "RECORDS_II" | "INTAKE" | "ACCOUNTS";
 
 interface UseBatchLockProps {
   role: BatchLockRole;
@@ -35,8 +37,8 @@ interface UseBatchLockReturn {
 }
 
 /**
- * Hook for batch-level locking (Records II or Intake).
- * Locks ALL eligible plans in a batch with duration = 3min × planCount.
+ * Hook for batch-level locking (Records II, Intake, or Accounts).
+ * Locks ALL eligible plans in a batch.
  */
 export function useBatchLock({
   role,
@@ -63,7 +65,13 @@ export function useBatchLock({
     setLockError(null);
 
     try {
-      const result = await (role === "INTAKE" ? getAndLockBatchForIntake() : getAndLockBatchForRecordsII());
+      const result = await (
+        role === "INTAKE"
+          ? getAndLockBatchForIntake()
+          : role === "ACCOUNTS"
+          ? getAndLockBatchForAccounts()
+          : getAndLockBatchForRecordsII()
+      );
 
       if (result.success && result.data) {
         if (result.data.locked && result.data.batchId) {
@@ -98,7 +106,7 @@ export function useBatchLock({
     } finally {
       setIsLocking(false);
     }
-  }, [onLockAcquired]);
+  }, [role, onLockAcquired]);
 
   // Release the current lock
   const releaseLock = useCallback(async () => {
@@ -107,6 +115,8 @@ export function useBatchLock({
     try {
       if (role === "INTAKE") {
         await releaseBatchLockForIntake();
+      } else if (role === "ACCOUNTS") {
+        await releaseBatchLockForAccounts();
       } else {
         await releaseBatchLockForRecordsII();
       }
@@ -119,13 +129,15 @@ export function useBatchLock({
     } catch (error) {
       console.error("Error releasing batch lock:", error);
     }
-  }, [lockedBatchId, onLockReleased]);
+  }, [lockedBatchId, role, onLockReleased]);
 
   // Release all locks (called on page leave)
   const releaseAllLocks = useCallback(async () => {
     try {
       if (role === "INTAKE") {
         await releaseBatchLockForIntake();
+      } else if (role === "ACCOUNTS") {
+        await releaseBatchLockForAccounts();
       } else {
         await releaseBatchLockForRecordsII();
       }
@@ -137,7 +149,7 @@ export function useBatchLock({
     } catch (error) {
       console.error("Error releasing all batch locks:", error);
     }
-  }, []);
+  }, [role]);
 
   // Check if a specific batch is locked by the current user
   const isBatchLockedByMe = useCallback(

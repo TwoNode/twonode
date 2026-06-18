@@ -39,6 +39,7 @@ import {
   History,
   Clock,
   Search,
+  Lock,
 } from "lucide-react";
 import {
   getAccountsBatches,
@@ -46,6 +47,8 @@ import {
   getPendingCountByRole,
   getAccountsHistory,
 } from "../../../actions/codActions";
+import { useBatchLock } from "../../../hooks/useBatchLock";
+import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 
 interface Batch {
   id: string;
@@ -96,6 +99,42 @@ export default function AccountsAdminPage() {
   const [processing, setProcessing] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  // Batch lock management
+  const {
+    lockedBatchId,
+    lockedBatchCode,
+    lockExpiresAt,
+    lockedPlanCount,
+    isLocking,
+    isBatchLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = useBatchLock({
+    role: "ACCOUNTS",
+    onLockAcquired: (batchId, batchCode, planCount) => {
+      toast.success(
+        `Batch ${batchCode} locked for Accounts review (3 minutes)`
+      );
+    },
+    onLockReleased: () => {
+      toast.info("Accounts batch lock released");
+    },
+  });
+
+  const handleUnlock = async () => {
+    setIsUnlocking(true);
+    try {
+      await releaseLock();
+      await fetchBatches();
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   // Filter batches based on search query
   const filteredBatches = useMemo(() => {
@@ -231,7 +270,8 @@ export default function AccountsAdminPage() {
           } successfully`
         );
         setShowApprovalDialog(false);
-        fetchBatches(); // Refresh the list
+        await fetchBatches(); // Refresh the list
+        await acquireLock(); // Instantly lock next batch
         // Refresh history if on history tab
         if (activeTab === "history") {
           fetchHistory();
@@ -266,7 +306,14 @@ export default function AccountsAdminPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <>
+      <PlanLockWarningDialog
+        isOpen={showLeaveWarning}
+        planNumber={lockedBatchCode ? `Batch ${lockedBatchCode}` : null}
+        onConfirmLeave={confirmLeave}
+        onCancel={cancelLeave}
+      />
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Accounts Admin</h1>
@@ -324,20 +371,40 @@ export default function AccountsAdminPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredBatches.map((batch) => (
-                <Card key={batch.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-xl">
-                          Batch {batch.batchCode}
-                        </CardTitle>
-                        <CardDescription>
-                          Submitted by {batch.submitter.firstName}{" "}
-                          {batch.submitter.lastName} ({batch.submitter.email})
-                        </CardDescription>
-                      </div>
-                      <div className="text-right">
+              {filteredBatches.map((batch) => {
+                const isBatchMine = isBatchLockedByMe(batch.id);
+                const isDisabled = !isBatchMine;
+                return (
+                  <Card key={batch.id} className={isBatchMine ? "border-2 border-blue-200 ring-2 ring-blue-100" : "border-2 border-gray-200"}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-xl">
+                              Batch {batch.batchCode}
+                            </CardTitle>
+                            {isBatchMine ? (
+                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                                <Lock className="w-3 h-3 mr-1" />
+                                Locked by you
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-gray-500">
+                                View Only
+                              </Badge>
+                            )}
+                          </div>
+                          <CardDescription>
+                            Submitted by {batch.submitter.firstName}{" "}
+                            {batch.submitter.lastName} ({batch.submitter.email})
+                          </CardDescription>
+                        </div>
+                        {isBatchMine && (
+                          <Button size="sm" variant="ghost" onClick={handleUnlock} disabled={isUnlocking}>
+                            {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Unlock"}
+                          </Button>
+                        )}
+                        <div className="text-right">
                         <p className="text-2xl font-bold text-blue-600">
                           ₦{batch.totalAmount.toLocaleString()}
                         </p>
@@ -465,13 +532,15 @@ export default function AccountsAdminPage() {
                       <Button
                         onClick={() => handleApprovalClick(batch, "approve")}
                         className="bg-green-600 hover:bg-green-700"
+                        disabled={isDisabled}
                       >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Approve
+                        {isDisabled ? <Lock className="w-4 h-4 mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+                        {isDisabled ? "Locked" : "Approve"}
                       </Button>
                       <Button
                         onClick={() => handleApprovalClick(batch, "disapprove")}
                         variant="destructive"
+                        disabled={isDisabled}
                       >
                         <XCircle className="w-4 h-4 mr-2" />
                         Disapprove
@@ -479,7 +548,7 @@ export default function AccountsAdminPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
           )}
         </TabsContent>
@@ -706,6 +775,7 @@ export default function AccountsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

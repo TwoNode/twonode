@@ -299,7 +299,8 @@ export default function RecordsIIAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchBatches();
+        await fetchBatches();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }
@@ -356,7 +357,8 @@ export default function RecordsIIAdminPage() {
       }
 
       setShowDialog(false);
-      fetchBatches();
+      await fetchBatches();
+      await acquireLock();
       if (activeTab === "history") {
         fetchHistory();
       }

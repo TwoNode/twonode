@@ -243,7 +243,17 @@ export function BatchSubmissionModal({
           parcelResults.push({
             parcelIndex: i + 1,
             status: "NOT_VERIFIED",
-            error: "Could not identify an Anchor coordinate within tolerance.",
+            error: "Could not identify an Anchor coordinate.",
+          });
+          allHasError = true;
+          continue;
+        }
+
+        if (!anchor.withinTol) {
+          parcelResults.push({
+            parcelIndex: i + 1,
+            status: "NOT_VERIFIED",
+            error: `Anchor coordinate residual (${anchor.residual.toFixed(4)}m) exceeds tolerance of ${tolerances.tolAnchor}m.`,
           });
           allHasError = true;
           continue;
