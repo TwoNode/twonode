@@ -310,7 +310,7 @@ function getPillarDescription(pillarCount: number, pillarType: string): string {
  */
 function formatReferenceFromPlans(batchCode: string, eligible: number, previous: number, total: number): string {
   if (previous > 0) {
-    return `Batch No: ${batchCode} (${previous}✔️${eligible}/${total} ready)`;
+    return `Batch No: ${batchCode} (${previous} ok, ${eligible}/${total} ready)`;
   }
   return `Batch No: ${batchCode} (${eligible}/${total} ready)`;
 }
