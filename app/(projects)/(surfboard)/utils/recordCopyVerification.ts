@@ -4,7 +4,7 @@ import { RecordCopyVerificationTolerances } from "../actions/settingsActions";
 // PDF EXTRACTION LOGIC
 // ============================================================
 
-const RE_BEARING = /(\d{1,3})[^\d\s]{1,3}\s*(\d{1,2})[^\d\s]{0,3}/g;
+const RE_BEARING = /(\d{1,3})[°º\u00B0\u00BA\u0080-\uFFFF]\s*(\d{1,2})['\u2019\u2018`\u00B4\u0080-\uFFFF]?/g;
 const RE_EASTING  = /((?:\d+\s)*\d+\.\d+)\s*mE/gi;
 const RE_NORTHING = /((?:\d+\s)*\d+\.\d+)\s*mN/gi;
 
@@ -16,8 +16,14 @@ export function extractFromPDFText(allText: string, allItemsParam?: string[]) {
   const warnings: string[] = [];
 
   // Bearings
+  // The degree/minute separators in AutoCAD PDFs vary:
+  //   ° (U+00B0), º (U+00BA), or custom font glyphs (non-ASCII)
+  //   ' (U+0027), ` (U+0060), ' (U+2019), ' (U+2018), ´ (U+00B4)
+  // We match known symbols plus any non-ASCII char (\u0080-\uFFFF) to cover
+  // custom glyph substitutions, but exclude ASCII letters/digits/common
+  // punctuation to avoid false positives (which was the bug with [^\d\s]).
   const bearings: ExtractedBearing[] = [];
-  const RE_BRG = /(\d{1,3})\s*[^\d\s]{1,3}\s*(\d{1,2})\s*[^\d\s]{0,3}/g;
+  const RE_BRG = /(\d{1,3})[°º\u00B0\u00BA\u0080-\uFFFF]\s*(\d{1,2})['\u2019\u2018`\u00B4\u0080-\uFFFF]?/g;
   let m;
   RE_BRG.lastIndex = 0;
   while ((m = RE_BRG.exec(allText)) !== null) {

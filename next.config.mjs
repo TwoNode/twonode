@@ -14,7 +14,7 @@ const nextConfig = {
     ];
   },
 
-  serverExternalPackages: ["pdfjs-dist"],
+  serverExternalPackages: ["pdfjs-dist", "pdf-parse"],
 
   experimental: {
     serverActions: {

@@ -1,5 +1,4 @@
 import axios from "axios";
-import pdfParse from "pdf-parse";
 
 // Define polyfills for pdfjs-dist in Node environment
 function setupPdfJsPolyfills() {
@@ -27,46 +26,46 @@ function setupPdfJsPolyfills() {
 }
 
 /**
+ * Pre-register the pdfjs-dist worker on globalThis so that the fake worker
+ * setup in pdfjs-dist does NOT attempt a dynamic import("./pdf.worker.mjs")
+ * which fails on Vercel's serverless environment due to module resolution.
+ *
+ * pdfjs-dist checks `globalThis.pdfjsWorker?.WorkerMessageHandler` before
+ * trying the dynamic import. By loading the worker module eagerly here,
+ * we bypass the problematic import path entirely.
+ */
+async function ensurePdfjsWorker() {
+  if (!(globalThis as any).pdfjsWorker) {
+    const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+    (globalThis as any).pdfjsWorker = workerModule;
+  }
+}
+
+/**
  * Extract both full-text and trimmed items list using modern pdfjs-dist
  */
 export async function extractPdfTextAndItems(
   buffer: Buffer,
 ): Promise<{ allText: string; allItems: string[] }> {
   setupPdfJsPolyfills();
+  await ensurePdfjsWorker();
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const data = new Uint8Array(buffer);
+  const loadingTask = pdfjsLib.getDocument({ data });
+  const pdf = await loadingTask.promise;
 
-  const pagesData: { pageNumber: number; text: string; items: string[] }[] = [];
-
-  function renderPage(pageData: any) {
-    const pageNumber = pageData.pageNumber; // 1-indexed page number
-    return pageData.getTextContent({ includeMarkedContent: false }).then(function(textContent: any) {
-      const items: string[] = [];
-      textContent.items.forEach((it: any) => {
-        const str = it.str || "";
-        if (str.trim()) {
-          items.push(str.trim());
-        }
-      });
-      // Exactly match the original logic: join by space + trailing space
-      const pageText = textContent.items.map((it: any) => it.str || "").join(" ") + " ";
-      
-      pagesData.push({ pageNumber, text: pageText, items });
-      return pageText;
-    });
-  }
-
-  await pdfParse(buffer, {
-    pagerender: renderPage
-  });
-
-  // Sort pages by pageNumber to guarantee correct order
-  pagesData.sort((a, b) => a.pageNumber - b.pageNumber);
-
-  const allItems: string[] = [];
   let allText = "";
+  const allItems: string[] = [];
 
-  for (const page of pagesData) {
-    allItems.push(...page.items);
-    allText += page.text;
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent({ includeMarkedContent: false });
+    tc.items.forEach((it: any) => {
+      if ((it.str || "").trim()) {
+        allItems.push(it.str.trim());
+      }
+    });
+    allText += tc.items.map((it: any) => it.str).join(" ") + " ";
   }
 
   return { allText, allItems };
