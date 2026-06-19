@@ -1,9 +1,9 @@
 import axios from "axios";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import * as pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
-// Disable the worker — run pdf.js on the main thread in Node.
-// No DOMMatrix/ImageData/Path2D polyfills needed since we never call page.render().
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+// Bypass the broken dynamic import in Vercel by providing the worker statically
+(globalThis as any).pdfjsWorker = pdfjsWorker;
 
 /**
  * Extract both full-text and trimmed items list using pdfjs-dist (workerless).
