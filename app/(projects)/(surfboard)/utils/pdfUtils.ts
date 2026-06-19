@@ -41,6 +41,8 @@ async function ensurePdfjsWorker() {
   }
 }
 
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+
 /**
  * Extract both full-text and trimmed items list using modern pdfjs-dist
  */
@@ -49,9 +51,8 @@ export async function extractPdfTextAndItems(
 ): Promise<{ allText: string; allItems: string[] }> {
   setupPdfJsPolyfills();
   await ensurePdfjsWorker();
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const data = new Uint8Array(buffer);
-  const loadingTask = pdfjsLib.getDocument({ data });
+  const loadingTask = getDocument({ data });
   const pdf = await loadingTask.promise;
 
   let allText = "";
