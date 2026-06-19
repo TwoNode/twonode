@@ -1,4 +1,5 @@
-declare module "pdfjs-dist/legacy/build/pdf.worker.mjs";
 declare module "pdfjs-dist/legacy/build/pdf.mjs" {
-  export { getDocument } from "pdfjs-dist";
+  import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
+  export { GlobalWorkerOptions, getDocument };
 }
+declare module "pdfjs-dist/legacy/build/pdf.worker.mjs";

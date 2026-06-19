@@ -1,59 +1,24 @@
 import axios from "axios";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
-// Define polyfills for pdfjs-dist in Node environment
-function setupPdfJsPolyfills() {
-  if (typeof global.DOMMatrix === "undefined") {
-    global.DOMMatrix = class DOMMatrix {
-      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
-      constructor() {}
-    } as any;
-  }
-  if (typeof global.ImageData === "undefined") {
-    global.ImageData = class ImageData {
-      width: number;
-      height: number;
-      data: Uint8ClampedArray;
-      constructor(width: number, height: number) {
-        this.width = width;
-        this.height = height;
-        this.data = new Uint8ClampedArray(width * height * 4);
-      }
-    } as any;
-  }
-  if (typeof global.Path2D === "undefined") {
-    global.Path2D = class Path2D {} as any;
-  }
-}
+// Disable the worker — run pdf.js on the main thread in Node.
+// No DOMMatrix/ImageData/Path2D polyfills needed since we never call page.render().
+pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
 /**
- * Pre-register the pdfjs-dist worker on globalThis so that the fake worker
- * setup in pdfjs-dist does NOT attempt a dynamic import("./pdf.worker.mjs")
- * which fails on Vercel's serverless environment due to module resolution.
- *
- * pdfjs-dist checks `globalThis.pdfjsWorker?.WorkerMessageHandler` before
- * trying the dynamic import. By loading the worker module eagerly here,
- * we bypass the problematic import path entirely.
- */
-async function ensurePdfjsWorker() {
-  if (!(globalThis as any).pdfjsWorker) {
-    const workerModule = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-    (globalThis as any).pdfjsWorker = workerModule;
-  }
-}
-
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-
-/**
- * Extract both full-text and trimmed items list using modern pdfjs-dist
+ * Extract both full-text and trimmed items list using pdfjs-dist (workerless).
+ * Since we only use getTextContent() (not page.render()), no canvas polyfills
+ * or worker setup is needed — pdf.js runs single-threaded in Node just fine.
  */
 export async function extractPdfTextAndItems(
   buffer: Buffer,
 ): Promise<{ allText: string; allItems: string[] }> {
-  setupPdfJsPolyfills();
-  await ensurePdfjsWorker();
   const data = new Uint8Array(buffer);
-  const loadingTask = getDocument({ data });
-  const pdf = await loadingTask.promise;
+  const pdf = await pdfjsLib.getDocument({
+    data,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+  }).promise;
 
   let allText = "";
   const allItems: string[] = [];
@@ -61,11 +26,9 @@ export async function extractPdfTextAndItems(
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const tc = await page.getTextContent({ includeMarkedContent: false });
-    tc.items.forEach((it: any) => {
-      if ((it.str || "").trim()) {
-        allItems.push(it.str.trim());
-      }
-    });
+    for (const it of tc.items as any[]) {
+      if (it.str?.trim()) allItems.push(it.str.trim());
+    }
     allText += tc.items.map((it: any) => it.str).join(" ") + " ";
   }
 
