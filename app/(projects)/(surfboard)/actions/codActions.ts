@@ -4651,6 +4651,8 @@ export async function getIntakeBatches() {
             intakeLockedBy: true,
             intakeLockExpiresAt: true,
             physicalCopySubmittedAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
           },
           orderBy: { physicalCopySubmittedAt: "asc" }
         }
@@ -4886,6 +4888,8 @@ export async function getRecordsIIBatches() {
             intakeApprovedAt: true,
             recordsIILockedBy: true,
             recordsIILockExpiresAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
           },
         },
       },
@@ -4999,6 +5003,8 @@ export async function getRecordsIIHistoryBatches() {
             recordsIIStatus: true,
             recordsIIComment: true,
             recordsIIApprovedAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
             recordsIIApprovedByUser: {
               select: {
                 firstName: true,

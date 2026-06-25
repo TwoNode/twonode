@@ -49,6 +49,7 @@ import {
 } from "../../../actions/codActions";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
+import { VerificationResultModal } from "../../../components/VerificationResultModal";
 
 interface Plan {
   id: string;
@@ -69,6 +70,8 @@ interface Plan {
   isLocked?: boolean;
   intakeLockedBy?: string | null;
   intakeLockExpiresAt?: Date | null;
+  recordCopyVerdict?: string | null;
+  recordCopyVerificationData?: any;
 }
 
 interface Batch {
@@ -98,6 +101,11 @@ export default function IntakeAdminPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [activeVerificationModal, setActiveVerificationModal] = useState<{
+    isOpen: boolean;
+    data: any;
+    planNumber: string;
+  }>({ isOpen: false, data: null, planNumber: "" });
 
   // Dialog state - supports both batch-level and plan-level actions
   const [showDialog, setShowDialog] = useState(false);
@@ -138,14 +146,26 @@ export default function IntakeAdminPage() {
   });
 
   const filteredBatches = useMemo(() => {
-    if (!searchQuery.trim()) return batches;
-    const query = searchQuery.toLowerCase();
-    return batches.filter((b) => {
-      const matchesBatchCode = b.batchCode.toLowerCase().includes(query);
-      const matchesUser = b.submitter && (`${b.submitter.firstName} ${b.submitter.lastName}`.toLowerCase().includes(query) || b.submitter.surconRegNumber?.toLowerCase().includes(query));
-      return matchesBatchCode || matchesUser;
-    });
-  }, [batches, searchQuery]);
+    let result = batches;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = batches.filter((b) => {
+        const matchesBatchCode = b.batchCode.toLowerCase().includes(query);
+        const matchesUser = b.submitter && (`${b.submitter.firstName} ${b.submitter.lastName}`.toLowerCase().includes(query) || b.submitter.surconRegNumber?.toLowerCase().includes(query));
+        return matchesBatchCode || matchesUser;
+      });
+    }
+
+    if (lockedBatchId) {
+      result = [...result].sort((a, b) => {
+        if (a.id === lockedBatchId) return -1;
+        if (b.id === lockedBatchId) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [batches, searchQuery, lockedBatchId]);
 
   const filteredHistoryBatches = useMemo(() => {
     if (!searchQuery.trim()) return historyBatches;
@@ -519,6 +539,24 @@ export default function IntakeAdminPage() {
                             Open Record Copy
                             <ExternalLink className="w-3 h-3" />
                           </a>
+
+                          {p.recordCopyVerdict && p.recordCopyVerificationData && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="inline-flex items-center gap-1.5 ml-2 bg-white text-xs h-8"
+                              onClick={() =>
+                                setActiveVerificationModal({
+                                  isOpen: true,
+                                  data: p.recordCopyVerificationData,
+                                  planNumber: p.planNumber,
+                                })
+                              }
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Verification Results
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <p className="text-xs text-red-600">No record copy uploaded</p>
@@ -799,8 +837,17 @@ export default function IntakeAdminPage() {
               </div>
             )}
           </DialogContent>
-        </Dialog>
-      </div>
+      </Dialog>
+    </div>
+
+      <VerificationResultModal
+        isOpen={activeVerificationModal.isOpen}
+        onClose={() =>
+          setActiveVerificationModal({ isOpen: false, data: null, planNumber: "" })
+        }
+        resultData={activeVerificationModal.data}
+        planNumber={activeVerificationModal.planNumber}
+      />
     </>
   );
 }

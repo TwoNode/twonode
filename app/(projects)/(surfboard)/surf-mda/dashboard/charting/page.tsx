@@ -96,6 +96,28 @@ export default function ChartingAdminPage() {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "CHARTING",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
+
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {
     if (!searchQuery.trim()) return plans;
@@ -147,27 +169,7 @@ export default function ChartingAdminPage() {
     });
   }, [historyPlans, searchQuery]);
 
-  // Plan lock management
-  const {
-    lockedPlanId,
-    lockedPlanNumber,
-    lockExpiresAt,
-    isLocking,
-    isLockedByMe,
-    releaseLock,
-    acquireLock,
-    showLeaveWarning,
-    confirmLeave,
-    cancelLeave,
-  } = usePlanLock({
-    role: "CHARTING",
-    onLockAcquired: (planId, planNumber) => {
-      toast.success(`Plan ${planNumber} is now locked for you`);
-    },
-    onLockReleased: () => {
-      toast.info("Plan lock released");
-    },
-  });
+
 
   const handleUnlock = async () => {
     setIsUnlocking(true);

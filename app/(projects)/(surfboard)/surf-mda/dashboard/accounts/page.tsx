@@ -138,28 +138,40 @@ export default function AccountsAdminPage() {
 
   // Filter batches based on search query
   const filteredBatches = useMemo(() => {
-    if (!searchQuery.trim()) return batches;
-    const query = searchQuery.toLowerCase();
-    return batches.filter((batch) => {
-      const matchesBatchCode = batch.batchCode.toLowerCase().includes(query);
-      const matchesSubmitter =
-        `${batch.submitter.firstName} ${batch.submitter.lastName}`
-          .toLowerCase()
-          .includes(query);
-      const matchesEmail = batch.submitter.email.toLowerCase().includes(query);
-      const matchesPlanNumbers = batch.plans.some(
-        (plan) =>
-          plan.planNumber.toLowerCase().includes(query) ||
-          (plan.lga && plan.lga.toLowerCase().includes(query))
-      );
-      return (
-        matchesBatchCode ||
-        matchesSubmitter ||
-        matchesEmail ||
-        matchesPlanNumbers
-      );
-    });
-  }, [batches, searchQuery]);
+    let result = batches;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = batches.filter((batch) => {
+        const matchesBatchCode = batch.batchCode.toLowerCase().includes(query);
+        const matchesSubmitter =
+          `${batch.submitter.firstName} ${batch.submitter.lastName}`
+            .toLowerCase()
+            .includes(query);
+        const matchesEmail = batch.submitter.email.toLowerCase().includes(query);
+        const matchesPlanNumbers = batch.plans.some(
+          (plan) =>
+            plan.planNumber.toLowerCase().includes(query) ||
+            (plan.lga && plan.lga.toLowerCase().includes(query))
+        );
+        return (
+          matchesBatchCode ||
+          matchesSubmitter ||
+          matchesEmail ||
+          matchesPlanNumbers
+        );
+      });
+    }
+
+    if (lockedBatchId) {
+      result = [...result].sort((a, b) => {
+        if (a.id === lockedBatchId) return -1;
+        if (b.id === lockedBatchId) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [batches, searchQuery, lockedBatchId]);
 
   const filteredHistoryBatches = useMemo(() => {
     if (!searchQuery.trim()) return historyBatches;

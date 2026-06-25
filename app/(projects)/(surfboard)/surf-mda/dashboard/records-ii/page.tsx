@@ -50,6 +50,7 @@ import {
 } from "../../../actions/codActions";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
+import { VerificationResultModal } from "../../../components/VerificationResultModal";
 
 interface Plan {
   id: string;
@@ -73,9 +74,10 @@ interface Plan {
     firstName: string;
     lastName: string;
   } | null;
-  // Lock fields (from getRecordsIIBatches)
   isLocked?: boolean;
   isLockedByMe?: boolean;
+  recordCopyVerdict?: string | null;
+  recordCopyVerificationData?: any;
 }
 
 interface Batch {
@@ -117,6 +119,11 @@ export default function RecordsIIAdminPage() {
 
   // Image viewer
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [activeVerificationModal, setActiveVerificationModal] = useState<{
+    isOpen: boolean;
+    data: any;
+    planNumber: string;
+  }>({ isOpen: false, data: null, planNumber: "" });
 
   // Batch lock management
   const {
@@ -145,26 +152,43 @@ export default function RecordsIIAdminPage() {
 
   // Filter batches based on search query
   const filteredBatches = useMemo(() => {
-    if (!searchQuery.trim()) return batches;
-    const query = searchQuery.toLowerCase();
-    return batches.filter((b) => {
-      const matchesBatchCode = b.batchCode.toLowerCase().includes(query);
-      const matchesUser =
-        b.submitter &&
-        (`${b.submitter.firstName} ${b.submitter.lastName}`
-          .toLowerCase()
-          .includes(query) ||
-          b.submitter.surconRegNumber?.toLowerCase().includes(query));
-      const matchesPlan = b.plans.some(
-        (p) =>
-          p.planNumber.toLowerCase().includes(query) ||
-          p.surveyTitle.toLowerCase().includes(query) ||
-          p.lga?.toLowerCase().includes(query) ||
-          p.ward?.toLowerCase().includes(query)
+    let result = batches;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = batches.filter((b) => {
+        const matchesBatchCode = b.batchCode.toLowerCase().includes(query);
+        const matchesUser =
+          b.submitter &&
+          (`${b.submitter.firstName} ${b.submitter.lastName}`
+            .toLowerCase()
+            .includes(query) ||
+            b.submitter.surconRegNumber?.toLowerCase().includes(query));
+        const matchesPlan = b.plans.some(
+          (p) =>
+            p.planNumber.toLowerCase().includes(query) ||
+            p.surveyTitle.toLowerCase().includes(query) ||
+            p.lga?.toLowerCase().includes(query) ||
+            p.ward?.toLowerCase().includes(query)
+        );
+        return matchesBatchCode || matchesUser || matchesPlan;
+      });
+    }
+
+    if (lockedBatchId) {
+      const lockedBatchIndex = result.findIndex(
+        (b) => b.id === lockedBatchId
       );
-      return matchesBatchCode || matchesUser || matchesPlan;
-    });
-  }, [batches, searchQuery]);
+      if (lockedBatchIndex > -1) {
+        const lockedBatch = result[lockedBatchIndex];
+        result = [
+          lockedBatch,
+          ...result.slice(0, lockedBatchIndex),
+          ...result.slice(lockedBatchIndex + 1),
+        ];
+      }
+    }
+    return result;
+  }, [batches, searchQuery, lockedBatchId]);
 
   const filteredHistoryBatches = useMemo(() => {
     if (!searchQuery.trim()) return historyBatches;
@@ -671,6 +695,24 @@ export default function RecordsIIAdminPage() {
                             Open Record Copy
                             <ExternalLink className="w-3 h-3" />
                           </a>
+
+                          {p.recordCopyVerdict && p.recordCopyVerificationData && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="inline-flex items-center gap-1.5 ml-2 bg-white text-xs h-8"
+                              onClick={() =>
+                                setActiveVerificationModal({
+                                  isOpen: true,
+                                  data: p.recordCopyVerificationData,
+                                  planNumber: p.planNumber,
+                                })
+                              }
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Verification Results
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <p className="text-xs text-red-600">
@@ -1095,6 +1137,15 @@ export default function RecordsIIAdminPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <VerificationResultModal
+        isOpen={activeVerificationModal.isOpen}
+        onClose={() =>
+          setActiveVerificationModal({ isOpen: false, data: null, planNumber: "" })
+        }
+        resultData={activeVerificationModal.data}
+        planNumber={activeVerificationModal.planNumber}
+      />
     </>
   );
 }
