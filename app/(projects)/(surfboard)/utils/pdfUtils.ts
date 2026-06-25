@@ -49,43 +49,51 @@ async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
  */
 export async function fetchAndExtractTextFromUrl(
   url: string,
+  maxRetries = 3
 ): Promise<{ text: string; contentType: string }> {
-  try {
-    const response = await axios.get(url, {
-      responseType: "arraybuffer",
-      timeout: 30000, // 30s timeout
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-      validateStatus: (status) => status < 400,
-    });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await axios.get(url, {
+        responseType: "arraybuffer",
+        timeout: 45000, // Increased to 45s timeout to give LASG portal more time
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+        validateStatus: (status) => status < 400,
+      });
 
-    const contentType = response.headers["content-type"] || "";
-    const buffer = Buffer.from(response.data);
+      const contentType = response.headers["content-type"] || "";
+      const buffer = Buffer.from(response.data);
 
-    let text = "";
+      let text = "";
 
-    if (contentType.toLowerCase().includes("pdf")) {
-      // It's a PDF — use pdfjs-dist for text extraction
-      text = await extractTextFromPdfBuffer(buffer);
-    } else {
-      // Assume HTML or plain text
-      // Convert buffer to string
-      const rawText = buffer.toString("utf-8");
-      // Basic HTML tag stripping
-      text = rawText
-        .replace(/<[^>]*>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+      if (contentType.toLowerCase().includes("pdf")) {
+        // It's a PDF — use pdfjs-dist for text extraction
+        text = await extractTextFromPdfBuffer(buffer);
+      } else {
+        // Assume HTML or plain text
+        // Convert buffer to string
+        const rawText = buffer.toString("utf-8");
+        // Basic HTML tag stripping
+        text = rawText
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      return { text, contentType };
+    } catch (error: any) {
+      console.error(`Error fetching/extracting from URL (Attempt ${attempt}):`, error.message);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new Error("Document not found at the provided URL.");
+      }
+      if (attempt === maxRetries) {
+        throw new Error(`Failed to fetch document: ${error.message}`);
+      }
+      // Wait for 2 seconds before retrying
+      await new Promise(res => setTimeout(res, 2000));
     }
-
-    return { text, contentType };
-  } catch (error: any) {
-    console.error("Error fetching/extracting from URL:", error.message);
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      throw new Error("Document not found at the provided URL.");
-    }
-    throw new Error(`Failed to fetch document: ${error.message}`);
   }
+  throw new Error("Failed to fetch document");
 }

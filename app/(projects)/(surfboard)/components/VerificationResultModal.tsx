@@ -286,10 +286,10 @@ export function VerificationResultModal({
             }
             
             // Check reference coordinate is first vertex
-            const firstVertexId = parcel.traverse?.computedLegs?.[0]?.from?.id || parcel.traverse?.computedLegs?.[0]?.from?.pillarNumber;
-            const anchorVertexId = parcel.anchor?.vertex?.id || parcel.anchor?.vertex?.pillarNumber;
+            const firstVertexId = parcel.firstCsvVertexId;
+            const anchorVertexId = parcel.anchor?.vertex?.id || parcel.anchor?.vertex?.pillarNumber || parcel.anchor?.vertex?.pillar || parcel.anchor?.vertex?.point || parcel.anchor?.vertex?.no;
             if (anchorVertexId && firstVertexId && anchorVertexId !== firstVertexId) {
-              issues.push(`⚠️ Reference coordinate matched CSV vertex ${anchorVertexId}, which is not the first vertex (${firstVertexId}). Please reconfirm the quoted reference coordinate.`);
+              issues.push(`⚠️ The reference coordinate matched CSV vertex ${anchorVertexId} which is not the first coordinate in your CSV (first is ${firstVertexId}). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.`);
             }
 
             if (parcel.pdfArea === null || parcel.pdfArea === undefined) {
@@ -462,6 +462,18 @@ export function VerificationResultModal({
                         );
                       })}
                     </div>
+                  </div>
+                )}
+
+                {/* Reference Coordinate Warning Banner */}
+                {anchorVertexId && firstVertexId && anchorVertexId !== firstVertexId && (
+                  <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-amber-900 flex items-start gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                      <span>
+                        The reference coordinate matched CSV vertex <strong>{anchorVertexId}</strong> which is not the first coordinate in your CSV (first is <strong>{firstVertexId}</strong>). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.
+                      </span>
+                    </p>
                   </div>
                 )}
 

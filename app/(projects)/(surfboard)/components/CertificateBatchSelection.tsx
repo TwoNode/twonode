@@ -300,6 +300,7 @@ export function BatchSubmissionModal({
           pdfArea: pdfAreaSqm,
           areaDiff,
           areaMatch,
+          firstCsvVertexId: vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "",
         });
       }
 

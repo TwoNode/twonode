@@ -1,5 +1,5 @@
 "use server";
-
+export const maxDuration = 60;
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";
@@ -187,6 +187,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
         pdfArea: pdfAreaSqm,
         areaDiff,
         areaMatch,
+        firstCsvVertexId: vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "",
       });
     }
 
@@ -234,23 +235,32 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
 }
 
 export async function downloadPlanPdfAsBase64(planId: string): Promise<ApiResult<string>> {
-  try {
-    const plan = await prisma.surfboardPlan.findUnique({
-      where: { id: planId },
-    });
-    if (!plan || !plan.redCopyFileUrl) {
-      return { success: false, error: "No PDF URL found" };
+  let lastError = "Failed to download PDF";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const plan = await prisma.surfboardPlan.findUnique({
+        where: { id: planId },
+      });
+      if (!plan || !plan.redCopyFileUrl) {
+        return { success: false, error: "No PDF URL found" };
+      }
+      const res = await fetch(plan.redCopyFileUrl);
+      if (!res.ok) {
+        lastError = `Failed to fetch PDF: ${res.statusText}`;
+        throw new Error(lastError);
+      }
+      const arrayBuffer = await res.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      return { success: true, data: base64 };
+    } catch (error: any) {
+      lastError = error.message || "Failed to download PDF";
+      if (attempt === 3) {
+        return { success: false, error: lastError };
+      }
+      await new Promise(res => setTimeout(res, 2000));
     }
-    const res = await fetch(plan.redCopyFileUrl);
-    if (!res.ok) {
-      return { success: false, error: `Failed to fetch PDF: ${res.statusText}` };
-    }
-    const arrayBuffer = await res.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    return { success: true, data: base64 };
-  } catch (error: any) {
-    return { success: false, error: error.message || "Failed to download PDF" };
   }
+  return { success: false, error: lastError };
 }
 
 export async function savePlanVerificationResult(

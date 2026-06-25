@@ -1,5 +1,5 @@
 "use server";
-
+export const maxDuration = 60;
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
@@ -2944,6 +2944,7 @@ export async function getAccountsBatches() {
           select: {
             id: true,
             planNumber: true,
+            planType: true,
             lga: true,
             deededArea: true,
             queryLasgReceiptUrls: true,
@@ -2951,7 +2952,7 @@ export async function getAccountsBatches() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
 
     console.log("\n\n\n\n\n\n\n\n Accounts batches:", batches);
@@ -4108,6 +4109,7 @@ export async function getAccountsHistory() {
           select: {
             id: true,
             planNumber: true,
+            planType: true,
             lga: true,
             deededArea: true,
             queryLasgReceiptUrls: true,
