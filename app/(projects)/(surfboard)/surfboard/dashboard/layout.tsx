@@ -1,6 +1,8 @@
 import SurfboardUserPanelLayout from "@/components/layouts/surfboardUserPanelLayout";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+export const maxDuration = 60;
+
 export default function DashboardLayout({
   children,
 }: {

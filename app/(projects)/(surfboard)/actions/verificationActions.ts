@@ -1,5 +1,4 @@
 "use server";
-export const maxDuration = 60;
 import prisma from "@/lib/prisma";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import type { ApiResult } from "../types/surfboardTypes";

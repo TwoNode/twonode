@@ -2,6 +2,8 @@ import SurfboardMDAPanelLayout from "@/components/layouts/surfboardMDAPanelLayou
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
+export const maxDuration = 60;
+
 export default async function MDADashboardLayout({
   children,
 }: {

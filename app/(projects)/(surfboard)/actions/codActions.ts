@@ -1,5 +1,4 @@
 "use server";
-export const maxDuration = 60;
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
