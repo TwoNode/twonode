@@ -108,6 +108,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     let overallSum = 0;
     let allHasError = false;
     let allHasAreaFail = false;
+    let allHasWarnings = false;
 
     const usedRefCoords = new Set<string>();
 
@@ -173,6 +174,13 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       
       if (score.hasLegErrors) allHasError = true;
       if (score.hasAreaFail) allHasAreaFail = true;
+
+      const firstCsvVertexId = vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "";
+      const anchorVertexId = anchor?.vertex?.id || anchor?.vertex?.pillarNumber || anchor?.vertex?.pillar || anchor?.vertex?.point || anchor?.vertex?.no;
+      
+      if (traverse.warnings && traverse.warnings.length > 0) allHasWarnings = true;
+      if (anchorVertexId && firstCsvVertexId && anchorVertexId !== firstCsvVertexId) allHasWarnings = true;
+      if (pdfAreaSqm == null) allHasWarnings = true;
       
       overallSum += score.overall;
 
@@ -195,9 +203,9 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     
     if (allHasError || allHasAreaFail) {
       finalStatus = "NOT_VERIFIED";
-    } else if (finalOverall >= tolerances.tolPass) {
+    } else if (finalOverall >= tolerances.tolPass && !allHasWarnings) {
       finalStatus = "VERIFIED";
-    } else if (finalOverall >= tolerances.tolWarn) {
+    } else if (finalOverall >= tolerances.tolWarn || (finalOverall >= tolerances.tolPass && allHasWarnings)) {
       finalStatus = "REVIEW";
     }
 
