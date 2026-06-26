@@ -284,15 +284,29 @@ export function RemitaPaymentModal({
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Email</span>
-                    <span className="font-medium truncate" title={batchData.submitter?.email}>
-                      {batchData.submitter?.email}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {batchData.submitter?.email || "N/A"}
+                      </span>
+                      {batchData.submitter?.email && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.email?.toString() || "", "Email")} title="Copy Email">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Phone</span>
-                    <span className="font-medium">
-                      {batchData.submitter?.phoneNumber || "N/A"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {batchData.submitter?.phoneNumber || "N/A"}
+                      </span>
+                      {batchData.submitter?.phoneNumber && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.phoneNumber?.toString() || "", "Phone")} title="Copy Phone">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -327,9 +341,14 @@ export function RemitaPaymentModal({
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Period</span>
-                    <span className="font-medium flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {today}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {today}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

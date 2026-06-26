@@ -760,11 +760,25 @@ export function AmendPlanModal({
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs text-gray-500">Email</label>
-                    <p className="font-medium truncate">{payer?.email || "N/A"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{payer?.email || "N/A"}</p>
+                      {payer?.email && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.email, "Email")} title="Copy Email">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="col-span-2">
                     <label className="text-xs text-gray-500">Phone</label>
-                    <p className="font-medium">{payer?.phoneNumber || "N/A"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{payer?.phoneNumber || "N/A"}</p>
+                      {payer?.phoneNumber && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.phoneNumber, "Phone")} title="Copy Phone">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -799,9 +813,14 @@ export function AmendPlanModal({
                   </div>
                   <div>
                     <span className="text-gray-500 block">Period</span>
-                    <span className="font-medium text-gray-900 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" /> {today}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-900 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" /> {today}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
