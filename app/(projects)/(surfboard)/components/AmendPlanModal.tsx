@@ -129,6 +129,11 @@ export function AmendPlanModal({
     }
   };
 
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
   const feeAmount = plan.codFee ? (plan.codFee * feePercent) / 100 : 0;
   const today = new Date().toLocaleDateString("en-GB");
 
@@ -377,9 +382,9 @@ export function AmendPlanModal({
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
-                <div className="flex items-center gap-2 justify-end group">
+                <div className="flex items-center gap-2 justify-end">
                   <p className="text-2xl font-bold text-green-700">₦{feeAmount.toLocaleString()}</p>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" onClick={handleCopyAmount} title="Copy Amount">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -736,7 +741,14 @@ export function AmendPlanModal({
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <label className="text-xs text-gray-500">Payer ID</label>
-                    <p className="font-medium">{payer?.payerID || "Not Set"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{payer?.payerID || "Not Set"}</p>
+                      {payer?.payerID && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.payerID.toString(), "Payer ID")} title="Copy Payer ID">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500">Payer Type</label>
@@ -765,15 +777,25 @@ export function AmendPlanModal({
                 <div className="space-y-2 text-xs">
                   <div>
                     <span className="text-gray-500 block">Agency Name</span>
-                    <span className="font-medium text-gray-900 border-b border-gray-100 pb-1 block">
-                      4830000 -- 61004 -- Office of Surveyor General
-                    </span>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                      <span className="font-medium text-gray-900">
+                        4830000 -- 61004 -- Office of Surveyor General
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Revenue Name</span>
-                    <span className="font-medium text-gray-900 border-b border-gray-100 pb-1 block">
-                      4020002 -- 32202 -- Lands Registry Transactions
-                    </span>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                      <span className="font-medium text-gray-900">
+                        4020002 -- 32202 -- Lands Registry Transactions
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <span className="text-gray-500 block">Period</span>
@@ -821,6 +843,11 @@ export function AmendPlanModal({
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   <span>Use <strong>{payer?.payerID || "YOUR_PAYER_ID"}</strong> when requested on the payment portal.</span>
+                  {payer?.payerID && (
+                    <Button variant="ghost" size="icon" className="h-5 w-5 text-yellow-700 hover:bg-yellow-100 hover:text-yellow-900" onClick={() => handleCopyText(payer.payerID.toString(), "Payer ID")} title="Copy Payer ID">
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIframeKey((k) => k + 1)} className="h-7 text-xs bg-white">
                   Refresh Portal
