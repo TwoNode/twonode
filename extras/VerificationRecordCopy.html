@@ -1099,7 +1099,7 @@ function residualToPct(res, tolerance) {
   return Math.max(0, 100 * (1 - res / (tolerance * 2)));
 }
 
-function scoreResults(traverse, passThreshold, warnThreshold, areaMatch=true, pdfArea=null) {
+function scoreResults(traverse, passThreshold, warnThreshold, areaMatch=true, pdfArea=null, hasWarnings=false) {
   const { legResults, errors, unusedBrg, unusedDist } = traverse;
 
   // Tolerances used for scoring — read from UI so score reflects actual settings
@@ -1135,10 +1135,8 @@ function scoreResults(traverse, passThreshold, warnThreshold, areaMatch=true, pd
   const hasAnyIssue  = hasLegErrors || hasAreaFail;
 
   let status;
-  if (hasAnyIssue)                   status = 'NOT VERIFIED';
-  else if (overall >= passThreshold) status = 'VERIFIED';
-  else if (overall >= warnThreshold) status = 'REVIEW';
-  else                               status = 'NOT VERIFIED';
+  if (overall >= passThreshold && !hasAnyIssue && !hasWarnings) status = 'VERIFIED';
+  else status = 'REVIEW';
 
   return {
     scores, overall, matched, status,
@@ -1287,7 +1285,8 @@ document.getElementById('runBtn').addEventListener('click', async () => {
 
       // Module 4 — Score
       log('── MODULE 4: SCORING ──', 'info');
-      const scoring = scoreResults(traverse, passThresh, warnThresh, areaMatch, pdfAreaSqm);
+      const hasWarnings = (traverse.warnings && traverse.warnings.length > 0) || !anchorIsFirst || pdfAreaSqm == null;
+      const scoring = scoreResults(traverse, passThresh, warnThresh, areaMatch, pdfAreaSqm, hasWarnings);
       log(`Parcel ${parcelLabel}: ${scoring.overall.toFixed(2)}% → ${scoring.status}`,
           scoring.status==='VERIFIED'?'ok':'warn');
 

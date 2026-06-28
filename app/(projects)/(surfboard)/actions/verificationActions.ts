@@ -129,7 +129,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       if (!anchor) {
         parcelResults.push({
           parcelIndex: i + 1,
-          status: "NOT_VERIFIED",
+          status: "REVIEW",
           error: "Could not identify an Anchor coordinate.",
         });
         allHasError = true;
@@ -139,7 +139,7 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       if (!anchor.withinTol) {
         parcelResults.push({
           parcelIndex: i + 1,
-          status: "NOT_VERIFIED",
+          status: "REVIEW",
           error: `Anchor coordinate residual (${anchor.residual.toFixed(4)}m) exceeds tolerance of ${tolerances.tolAnchor}m.`,
         });
         allHasError = true;
@@ -170,17 +170,18 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       const areaDiff = pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
       const areaMatch = areaDiff != null && areaDiff <= tolerances.tolArea;
 
-      const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm);
-      
-      if (score.hasLegErrors) allHasError = true;
-      if (score.hasAreaFail) allHasAreaFail = true;
-
       const firstCsvVertexId = vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "";
       const anchorVertexId = anchor?.vertex?.id || anchor?.vertex?.pillarNumber || anchor?.vertex?.pillar || anchor?.vertex?.point || anchor?.vertex?.no;
       
-      if (traverse.warnings && traverse.warnings.length > 0) allHasWarnings = true;
-      if (anchorVertexId && firstCsvVertexId && anchorVertexId !== firstCsvVertexId) allHasWarnings = true;
-      if (pdfAreaSqm == null) allHasWarnings = true;
+      let hasWarnings = false;
+      if (traverse.warnings && traverse.warnings.length > 0) { allHasWarnings = true; hasWarnings = true; }
+      if (anchorVertexId && firstCsvVertexId && anchorVertexId !== firstCsvVertexId) { allHasWarnings = true; hasWarnings = true; }
+      if (pdfAreaSqm == null) { allHasWarnings = true; hasWarnings = true; }
+
+      const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm, hasWarnings);
+      
+      if (score.hasLegErrors) allHasError = true;
+      if (score.hasAreaFail) allHasAreaFail = true;
       
       overallSum += score.overall;
 
@@ -199,14 +200,10 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
     }
 
     const finalOverall = parcels.length > 0 ? overallSum / parcels.length : 0;
-    let finalStatus = "NOT_VERIFIED";
+    let finalStatus = "REVIEW";
     
-    if (allHasError || allHasAreaFail) {
-      finalStatus = "NOT_VERIFIED";
-    } else if (finalOverall >= tolerances.tolPass && !allHasWarnings) {
+    if (finalOverall >= tolerances.tolPass && !allHasWarnings && !allHasError && !allHasAreaFail) {
       finalStatus = "VERIFIED";
-    } else if (finalOverall >= tolerances.tolWarn || (finalOverall >= tolerances.tolPass && allHasWarnings)) {
-      finalStatus = "REVIEW";
     }
 
     const verificationData = {

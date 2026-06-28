@@ -307,7 +307,8 @@ export function scoreResults(
   traverse: any,
   tolerances: RecordCopyVerificationTolerances,
   areaMatch = true,
-  pdfArea: number | null = null
+  pdfArea: number | null = null,
+  hasWarnings: boolean = false
 ) {
   const { legResults, errors } = traverse;
   const { tolWCB, tolDist, tolPass, tolWarn } = tolerances;
@@ -338,10 +339,8 @@ export function scoreResults(
   const hasAnyIssue = hasLegErrors || hasAreaFail;
 
   let status: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" | "ERROR";
-  if (hasAnyIssue) status = 'NOT_VERIFIED';
-  else if (overall >= tolPass) status = 'VERIFIED';
-  else if (overall >= tolWarn) status = 'REVIEW';
-  else status = 'NOT_VERIFIED';
+  if (overall >= tolPass && !hasAnyIssue && !hasWarnings) status = 'VERIFIED';
+  else status = 'REVIEW';
 
   return {
     scores, overall, matched, status,
