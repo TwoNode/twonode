@@ -47,7 +47,9 @@ import {
   getPendingCountByRole,
   getAccountsHistory,
 } from "../../../actions/codActions";
+import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
 import { useBatchLock } from "../../../hooks/useBatchLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 
 interface Batch {
@@ -100,6 +102,7 @@ export default function AccountsAdminPage() {
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
 
   // Batch lock management
   const {
@@ -200,7 +203,19 @@ export default function AccountsAdminPage() {
   useEffect(() => {
     fetchBatches();
     fetchPendingCount();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const res = await getUniqueQueryReasons();
+      if (res.success && res.data) {
+        setUniqueQueryReasons(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyBatches.length === 0) {
@@ -738,6 +753,14 @@ export default function AccountsAdminPage() {
                 <label className="text-sm font-medium text-gray-700">
                   Reason for Disapproval *
                 </label>
+                <div className="mb-2 mt-2">
+                  <RemarkSelector
+                    options={uniqueQueryReasons}
+                    onSelect={(val) => setComment(val)}
+                    placeholder="Search previous query reasons..."
+                    buttonText="Select from previous query reasons..."
+                  />
+                </div>
                 <Textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}

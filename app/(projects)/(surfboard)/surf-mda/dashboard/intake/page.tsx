@@ -47,7 +47,9 @@ import {
   updateIntakeBatchStatus,
   updateIntakeStatus,
 } from "../../../actions/codActions";
+import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
 import { useBatchLock } from "../../../hooks/useBatchLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
 import { VerificationResultModal } from "../../../components/VerificationResultModal";
 
@@ -116,6 +118,7 @@ export default function IntakeAdminPage() {
   const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
 
   // Track per-plan processing state (for inline loading indicators)
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
@@ -189,7 +192,19 @@ export default function IntakeAdminPage() {
 
   useEffect(() => {
     fetchBatches();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const res = await getUniqueQueryReasons();
+      if (res.success && res.data) {
+        setUniqueQueryReasons(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyBatches.length === 0) {
@@ -761,6 +776,14 @@ export default function IntakeAdminPage() {
                   <label className="text-sm font-medium text-gray-700">
                     Query Reason *
                   </label>
+                  <div className="mb-2 mt-2">
+                    <RemarkSelector
+                      options={uniqueQueryReasons}
+                      onSelect={(val) => setComment(val)}
+                      placeholder="Search previous query reasons..."
+                      buttonText="Select from previous query reasons..."
+                    />
+                  </div>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}

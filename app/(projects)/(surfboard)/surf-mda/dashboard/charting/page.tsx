@@ -41,7 +41,12 @@ import {
   updateChartingStatus,
   getChartingHistory,
 } from "../../../actions/codActions";
+import {
+  getUniqueChartingRemarks,
+  getUniqueQueryReasons,
+} from "../../../actions/mdaRemarkActions";
 import { usePlanLock } from "../../../hooks/usePlanLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
   PlanLockIndicator,
   LockedPlanBadge,
@@ -95,6 +100,8 @@ export default function ChartingAdminPage() {
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [uniqueChartingRemarks, setUniqueChartingRemarks] = useState<string[]>([]);
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
 
   // Plan lock management
   const {
@@ -185,7 +192,25 @@ export default function ChartingAdminPage() {
 
   useEffect(() => {
     fetchPlans();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const [chartingRes, queryRes] = await Promise.all([
+        getUniqueChartingRemarks(),
+        getUniqueQueryReasons(),
+      ]);
+      if (chartingRes.success && chartingRes.data) {
+        setUniqueChartingRemarks(chartingRes.data);
+      }
+      if (queryRes.success && queryRes.data) {
+        setUniqueQueryReasons(queryRes.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyPlans.length === 0) {
@@ -804,6 +829,16 @@ export default function ChartingAdminPage() {
                     </Button>
                   )}
                 </div>
+                
+                <div className="mb-2 mt-2">
+                  <RemarkSelector
+                    options={actionType === "approve" ? uniqueChartingRemarks : uniqueQueryReasons}
+                    onSelect={(val) => setChartingRemarks(val)}
+                    placeholder={actionType === "approve" ? "Search previous charting remarks..." : "Search previous query reasons..."}
+                    buttonText={actionType === "approve" ? "Select from previous charting remarks..." : "Select from previous query reasons..."}
+                  />
+                </div>
+
                 <Textarea
                   value={chartingRemarks}
                   onChange={(e) => setChartingRemarks(e.target.value)}
