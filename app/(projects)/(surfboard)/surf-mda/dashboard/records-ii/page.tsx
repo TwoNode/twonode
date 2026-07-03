@@ -230,7 +230,7 @@ export default function RecordsIIAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons();
+      const res = await getUniqueQueryReasons("records-ii");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

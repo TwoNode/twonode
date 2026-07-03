@@ -218,7 +218,7 @@ export default function SurconAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons();
+      const res = await getUniqueQueryReasons("surcon");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

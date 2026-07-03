@@ -199,7 +199,7 @@ export default function ChartingAdminPage() {
     try {
       const [chartingRes, queryRes] = await Promise.all([
         getUniqueChartingRemarks(),
-        getUniqueQueryReasons(),
+        getUniqueQueryReasons("charting"),
       ]);
       if (chartingRes.success && chartingRes.data) {
         setUniqueChartingRemarks(chartingRes.data);

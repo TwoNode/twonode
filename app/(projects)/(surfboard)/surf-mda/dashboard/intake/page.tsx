@@ -197,7 +197,7 @@ export default function IntakeAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons();
+      const res = await getUniqueQueryReasons("intake");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

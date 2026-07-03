@@ -208,7 +208,7 @@ export default function AccountsAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons();
+      const res = await getUniqueQueryReasons("accounts");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }
