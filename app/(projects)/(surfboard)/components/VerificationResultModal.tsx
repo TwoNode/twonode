@@ -288,7 +288,7 @@ export function VerificationResultModal({
             // Check reference coordinate is first vertex
             const firstVertexId = parcel.firstCsvVertexId;
             const anchorVertexId = parcel.anchor?.vertex?.id || parcel.anchor?.vertex?.pillarNumber || parcel.anchor?.vertex?.pillar || parcel.anchor?.vertex?.point || parcel.anchor?.vertex?.no;
-            if (anchorVertexId && firstVertexId && anchorVertexId !== firstVertexId) {
+            if (anchorVertexId && firstVertexId && String(anchorVertexId).trim() !== String(firstVertexId).trim()) {
               issues.push(`⚠️ The reference coordinate matched CSV vertex ${anchorVertexId} which is not the first coordinate in your CSV (first is ${firstVertexId}). Please reconfirm you have quoted the correct reference coordinate to avoid query from the MDA.`);
             }
 

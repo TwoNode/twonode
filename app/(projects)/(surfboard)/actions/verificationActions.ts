@@ -175,7 +175,10 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       
       let hasWarnings = false;
       if (traverse.warnings && traverse.warnings.length > 0) { allHasWarnings = true; hasWarnings = true; }
-      if (anchorVertexId && firstCsvVertexId && anchorVertexId !== firstCsvVertexId) { allHasWarnings = true; hasWarnings = true; }
+      if (anchorVertexId && firstCsvVertexId && String(anchorVertexId).trim() !== String(firstCsvVertexId).trim()) { 
+        allHasWarnings = true; 
+        hasWarnings = true; 
+      }
       if (pdfAreaSqm == null) { allHasWarnings = true; hasWarnings = true; }
 
       const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm, hasWarnings);
