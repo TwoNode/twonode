@@ -538,3 +538,90 @@ export async function verifyEmailConfig(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Send Certificate of Attendance email
+ */
+export async function sendGBCCertificateEmail(
+  name: string,
+  email: string,
+  ticketNumber: string,
+  customMessage: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.twonodetechnologies.com"}/gbc/certificate/${ticketNumber}`;
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px 20px; text-align: center; }
+          .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+          .content { padding: 40px 30px; text-align: center; }
+          .message-box { background: #f8f9fa; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: left; white-space: pre-wrap; word-wrap: break-word; color: #4b5563; }
+          .button { display: inline-block; background: #10b981; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 30px 0; font-size: 16px; }
+          .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; font-size: 14px; }
+          .footer a { color: #10b981; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>GBC 2.0 - Certificate of Attendance</h1>
+          </div>
+          <div class="content">
+            <p style="font-size: 18px;">Dear <strong>${name}</strong>,</p>
+            
+            <div class="message-box">
+              ${customMessage.replace(/\n/g, "<br>")}
+            </div>
+            
+            <p>You can view and download your official Certificate of Attendance using the button below:</p>
+            
+            <a href="${certificateUrl}" class="button" style="color: #ffffff;">View & Download Certificate</a>
+            
+            <p style="margin-top: 30px; text-align: left;">
+              Best regards,<br>
+              <strong>The GBC Team</strong><br>
+              Two Node Technologies
+            </p>
+          </div>
+          <div class="footer">
+            <p><strong>Contact Us</strong></p>
+            <p>
+              📧 <a href="mailto:info@twonodetechnologies.com">info@twonodetechnologies.com</a><br>
+              📞 +234-916-0002-740<br>
+              📍 No. 58 Kudirat Abiola Way, Oregun, Ikeja, Lagos State
+            </p>
+            <p style="margin-top: 20px; font-size: 12px;">
+              #GBC2.0 | Theme: "Geospatial Capital: A Catalyst for Inclusive Growth"
+            </p>
+            <p style="margin-top: 15px; font-size: 12px;">
+              © 2025 Two Node Technologies. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: '"GBC 2.0" <' + FROM_EMAIL + '>',
+      to: email,
+      subject: "Your GBC 2.0 Certificate of Attendance",
+      html,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send certificate email:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
