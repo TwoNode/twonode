@@ -42,15 +42,28 @@ interface QueriedPlan {
   } | null;
 }
 
-export default function QueriedPlans() {
-  const [plans, setPlans] = useState<QueriedPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+interface QueriedPlansProps {
+  initialPlans?: QueriedPlan[] | null;
+  onPlansChange?: () => void;
+}
+
+export default function QueriedPlans({
+  initialPlans,
+  onPlansChange,
+}: QueriedPlansProps = {}) {
+  const [plans, setPlans] = useState<QueriedPlan[]>(initialPlans || []);
+  const [loading, setLoading] = useState(initialPlans ? false : true);
   const [selectedPlan, setSelectedPlan] = useState<QueriedPlan | null>(null);
   const [amendModalOpen, setAmendModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchQueriedPlans();
-  }, []);
+    if (initialPlans !== undefined && initialPlans !== null) {
+      setPlans(initialPlans);
+      setLoading(false);
+    } else {
+      fetchQueriedPlans();
+    }
+  }, [initialPlans]);
 
   const fetchQueriedPlans = async () => {
     try {
@@ -77,7 +90,11 @@ export default function QueriedPlans() {
   const handleAmendSuccess = () => {
     setAmendModalOpen(false);
     setSelectedPlan(null);
-    fetchQueriedPlans();
+    if (onPlansChange) {
+      onPlansChange();
+    } else {
+      fetchQueriedPlans();
+    }
   };
 
   // Determine which role(s) queried the plan
@@ -93,7 +110,7 @@ export default function QueriedPlans() {
 
   // Get query comments from all querying roles
   const getQueryComments = (
-    plan: QueriedPlan
+    plan: QueriedPlan,
   ): Array<{ role: string; comment: string }> => {
     const comments: Array<{ role: string; comment: string }> = [];
     if (plan.accountsStatus === "QUERIED" && plan.accountsComment) {

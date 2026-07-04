@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListChecks, Share2, AlertCircle } from "lucide-react";
 import AllPlans from "./AllPlans";
 import SharedPlans from "../shared/SharedPlans";
 import QueriedPlans from "./QueriedPlans";
+import { getQueriedPlansForUser } from "../../../actions/codActions";
 
 const VALID_TABS = ["all", "shared", "queried"] as const;
 type TabValue = (typeof VALID_TABS)[number];
@@ -19,6 +20,24 @@ export default function PlansPage() {
     : "all";
 
   const [activeTab, setActiveTab] = useState<TabValue>(defaultTab);
+  const [queriedCount, setQueriedCount] = useState<number>(0);
+  const [queriedPlans, setQueriedPlans] = useState<any[] | null>(null);
+
+  const fetchQueriedData = async () => {
+    try {
+      const result = await getQueriedPlansForUser();
+      if (result.success && result.data && result.data.plans) {
+        setQueriedCount(result.data.plans.length);
+        setQueriedPlans(result.data.plans);
+      }
+    } catch (error) {
+      console.error("Error fetching queried data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchQueriedData();
+  }, []);
 
   const handleTabChange = (value: string) => {
     if (VALID_TABS.includes(value as TabValue)) {
@@ -58,6 +77,11 @@ export default function PlansPage() {
               <AlertCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Queried Plans</span>
               <span className="sm:hidden">Queried</span>
+              {queriedCount > 0 && (
+                <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-medium text-white">
+                  {queriedCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -71,7 +95,7 @@ export default function PlansPage() {
         </TabsContent>
 
         <TabsContent value="queried" className="mt-0">
-          <QueriedPlans />
+          <QueriedPlans initialPlans={queriedPlans} onPlansChange={fetchQueriedData} />
         </TabsContent>
       </Tabs>
     </div>
