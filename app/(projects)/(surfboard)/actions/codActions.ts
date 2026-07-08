@@ -1547,27 +1547,7 @@ export async function verifyBatchPaymentWithLinks(
       userPromise
     ]);
 
-    // 6. Cross-check PayerID + PayerType against user profile
-    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
-    if (isLegacyUrl && fullUser?.payerID) {
-      const urlPayerIdNum = parseInt(payerId, 10);
-      if (urlPayerIdNum !== fullUser.payerID) {
-        return {
-          success: false,
-          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt has Payer ID "${payerId}" but your profile has Payer ID "${fullUser.payerID}". Please ensure you are using a receipt linked to your account.`,
-        };
-      }
-
-      const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
-      if (payerType.toLowerCase() !== expectedType) {
-        return {
-          success: false,
-          error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
-        };
-      }
-    }
-
-    // 7. Handle fetching errors
+    // 6. Handle fetching errors
     if (lasgResultPromise.status === "rejected") {
       return { success: false, error: lasgResultPromise.reason?.message || "Unknown error parsing LASG receipt" };
     }
@@ -1577,6 +1557,40 @@ export async function verifyBatchPaymentWithLinks(
       return { success: false, error: remitaResultPromise.reason?.message || "Unknown error parsing Remita receipt" };
     }
     const remitaData = remitaResultPromise.value;
+
+    // 7. Cross-check PayerID + PayerType against user profile
+    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
+    
+    const finalPayerId = isLegacyUrl ? payerId : lasgData.payerId?.replace(/\\D/g, "");
+    const finalPayerType = isLegacyUrl ? payerType : lasgData.payerType;
+
+    if (finalPayerId) {
+      if (!fullUser?.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] You cannot verify a payment because your profile does not have a Payer ID set. Please update your profile settings first.`
+        };
+      }
+      
+      const urlPayerIdNum = parseInt(finalPayerId, 10);
+      if (urlPayerIdNum !== fullUser.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt belongs to Payer ID "${finalPayerId}" but your profile has Payer ID "${fullUser.payerID}". You cannot use another user's receipt.`,
+        };
+      }
+
+      if (finalPayerType) {
+        const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
+        const incomingType = finalPayerType.toLowerCase().charAt(0);
+        if (incomingType !== expectedType) {
+          return {
+            success: false,
+            error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${finalPayerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
+          };
+        }
+      }
+    }
 
     // 8. Cross-validation (all deterministic)
 

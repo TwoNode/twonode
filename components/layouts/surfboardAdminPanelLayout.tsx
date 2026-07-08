@@ -101,6 +101,11 @@ export default function SurfboardAdminPanelLayout({
       url: `${dashboardUrl}/user-management`,
     },
     {
+      icon: Shield,
+      label: "Surveyor's KYC",
+      url: `${dashboardUrl}/kyc`,
+    },
+    {
       icon: Bell,
       label: "Notifications",
       url: `${dashboardUrl}/notifications`,

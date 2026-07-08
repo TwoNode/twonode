@@ -16,9 +16,11 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
+import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
 import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { InquiryModal } from "./InquiryModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +36,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("personal");
   const [profileCompletion, setProfileCompletion] = useState(0);
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [inquiryText, setInquiryText] = useState("");
+  const [isSendingInquiry, setIsSendingInquiry] = useState(false);
 
   const {
     userData,
@@ -44,6 +49,8 @@ export default function SettingsPage() {
     handleRemoveFile,
     saveProfile,
   } = useSurfUserProfile();
+
+  const isLocked = userData?.isKycValidated === true;
 
   // Calculate profile completion percentage
   useEffect(() => {
@@ -87,6 +94,18 @@ export default function SettingsPage() {
       toast.error("An unexpected error occurred. Please try again later.", {
         id: toastId,
       });
+    }
+  };
+
+  const handleSendInquiry = async (details: string) => {
+    setIsSendingInquiry(true);
+    const res = await sendAccountUpdateInquiry(details);
+    setIsSendingInquiry(false);
+    if (res.success) {
+      toast.success("Request sent to admin.");
+      setInquiryModalOpen(false);
+    } else {
+      toast.error("Failed to send request.");
     }
   };
 
@@ -164,6 +183,15 @@ export default function SettingsPage() {
                     className="h-full bg-linear-to-r from-blue-500 to-indigo-600 rounded-full"
                   />
                 </div>
+                {isLocked && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                    onClick={() => setInquiryModalOpen(true)}
+                  >
+                    Account Update Inquiry
+                  </Button>
+                )}
               </div>
             </Card>
           </motion.div>
@@ -224,7 +252,7 @@ export default function SettingsPage() {
                           value={userData.prefix || ""}
                           onChange={handleInputChange}
                           className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                         >
                           <option value="">Select prefix</option>
                           <option value="Mr.">Mr.</option>
@@ -252,7 +280,7 @@ export default function SettingsPage() {
                           value={userData.firstName || ""}
                           onChange={handleInputChange}
                           required
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -270,7 +298,7 @@ export default function SettingsPage() {
                           value={userData.lastName || ""}
                           onChange={handleInputChange}
                           required
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -288,7 +316,7 @@ export default function SettingsPage() {
                           value={userData.suffix || ""}
                           onChange={handleInputChange}
                           placeholder="e.g. Jr., Sr., III"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -325,7 +353,7 @@ export default function SettingsPage() {
                           value={userData.residenceState || ""}
                           onChange={handleInputChange}
                           className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                         >
                           <option value="">Select state</option>
                           {nigerianStates.map((state) => (
@@ -350,7 +378,7 @@ export default function SettingsPage() {
                           value={userData.phoneNumber || ""}
                           onChange={handleInputChange}
                           placeholder="e.g. +234 800 000 0000"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -368,7 +396,7 @@ export default function SettingsPage() {
                           value={userData.address || ""}
                           onChange={handleInputChange}
                           placeholder="Enter your address"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -398,7 +426,7 @@ export default function SettingsPage() {
                             } as any);
                           }}
                           placeholder="Enter payer ID"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -416,7 +444,7 @@ export default function SettingsPage() {
                           value={userData.payerIDType || ""}
                           onChange={handleInputChange}
                           className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                         >
                           <option value="">Select type</option>
                           <option value="Individual">Individual</option>
@@ -452,7 +480,7 @@ export default function SettingsPage() {
                           name="companyName"
                           value={userData.companyName || ""}
                           onChange={handleInputChange}
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -469,7 +497,7 @@ export default function SettingsPage() {
                           name="surconRegNumber"
                           value={userData.surconRegNumber || ""}
                           onChange={handleInputChange}
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           placeholder="e.g. SURCON/RN/0000"
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
@@ -487,7 +515,7 @@ export default function SettingsPage() {
                           name="surconRegName"
                           value={userData.surconRegName || ""}
                           onChange={handleInputChange}
-                          disabled={isSaving}
+                          disabled={isSaving || isLocked}
                           className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -574,7 +602,7 @@ export default function SettingsPage() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveFile("signature")}
-                                disabled={isSaving}
+                                disabled={isSaving || isLocked}
                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
                                 aria-label="Remove signature"
                               >
@@ -601,7 +629,7 @@ export default function SettingsPage() {
                             accept="image/*"
                             onChange={(e) => handleFileSelect(e, "signature")}
                             className="hidden"
-                            disabled={isSaving}
+                            disabled={isSaving || isLocked}
                           />
                           <Button
                             type="button"
@@ -609,7 +637,7 @@ export default function SettingsPage() {
                             onClick={() =>
                               document.getElementById("signature")?.click()
                             }
-                            disabled={isSaving}
+                            disabled={isSaving || isLocked}
                             className="w-full sm:w-auto border-gray-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
                           >
                             {userData.signature ? "Change" : "Upload"} Signature
@@ -634,14 +662,14 @@ export default function SettingsPage() {
                   type="button"
                   variant="outline"
                   onClick={() => window.location.reload()}
-                  disabled={isSaving}
+                  disabled={isSaving || isLocked}
                   className="w-full sm:w-auto border-gray-300 hover:bg-gray-100 transition-colors"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isLocked}
                   className="w-full sm:w-auto min-w-[140px] bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all"
                 >
                   {isSaving ? (
@@ -661,6 +689,12 @@ export default function SettingsPage() {
           </Tabs>
         </motion.div>
       </div>
+      <InquiryModal
+        open={inquiryModalOpen}
+        onOpenChange={setInquiryModalOpen}
+        onSend={handleSendInquiry}
+        isSending={isSendingInquiry}
+      />
     </div>
   );
 }

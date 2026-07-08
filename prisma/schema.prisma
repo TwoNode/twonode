@@ -213,6 +213,7 @@ model SurfboardUser {
   emailVerificationExpires DateTime?
 
   isActive Boolean @default(true)
+  isKycValidated Boolean @default(false)
 
   // New fields
   logo            String? // URL to the user's logo
