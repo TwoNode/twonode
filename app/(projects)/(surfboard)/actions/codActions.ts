@@ -4233,12 +4233,12 @@ async function verifyQueryPaymentLinks(
       fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } }),
       prisma.surfboardUser.findUnique({
         where: { id: user.id },
-        select: { payerID: true },
+        select: { payerID: true, payerIDType: true },
       })
     ]);
 
     // 2. Parse LASG URL parameters (locally)
-    let transId: string = "", transCode: string = "", payerId: string = "";
+    let transId: string = "", transCode: string = "", payerId: string = "", payerType: string = "";
     let isLegacyUrl = false;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
@@ -4250,6 +4250,7 @@ async function verifyQueryPaymentLinks(
       transId = lasgUrl.searchParams.get("transid") || "";
       transCode = lasgUrl.searchParams.get("transcode") || "";
       payerId = lasgUrl.searchParams.get("payerid") || "";
+      payerType = lasgUrl.searchParams.get("payertype") || "n";
 
       if (transId && transCode && payerId) {
         isLegacyUrl = true;
@@ -4266,6 +4267,17 @@ async function verifyQueryPaymentLinks(
           success: false,
           error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${dbPayerID}.`,
         };
+      }
+
+      if (payerType) {
+        const expectedType = fullUserResult.value.payerIDType === "Commercial" ? "c" : "n";
+        const incomingType = payerType.toLowerCase().charAt(0);
+        if (incomingType !== expectedType) {
+          return {
+            success: false,
+            error: `Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUserResult.value.payerIDType || "Individual"}". Please check your profile settings.`,
+          };
+        }
       }
     }
 

@@ -225,6 +225,8 @@ export function BatchSubmissionModal({
 
       const usedRefCoords = new Set<string>();
 
+      let allHasWarnings = false;
+
       for (let i = 0; i < parcels.length; i++) {
         const vertices = parcels[i];
         
@@ -283,7 +285,23 @@ export function BatchSubmissionModal({
         const areaDiff = pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
         const areaMatch = areaDiff != null && areaDiff <= tolerances.tolArea;
 
-        const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm);
+        let hasWarnings = false;
+        if (traverse.warnings && traverse.warnings.length > 0) {
+          hasWarnings = true;
+          allHasWarnings = true;
+        }
+        const firstCsvVertexId = vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "";
+        const anchorVertexId = anchor?.vertex?.id || anchor?.vertex?.pillarNumber || anchor?.vertex?.pillar || anchor?.vertex?.point || anchor?.vertex?.no;
+        if (anchorVertexId && firstCsvVertexId && String(anchorVertexId).trim() !== String(firstCsvVertexId).trim()) {
+          hasWarnings = true;
+          allHasWarnings = true;
+        }
+        if (pdfAreaSqm == null) {
+          hasWarnings = true;
+          allHasWarnings = true;
+        }
+
+        const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm, hasWarnings);
         
         if (score.hasLegErrors) allHasError = true;
         if (score.hasAreaFail) allHasAreaFail = true;
@@ -305,14 +323,13 @@ export function BatchSubmissionModal({
       }
 
       const finalOverall = parcels.length > 0 ? overallSum / parcels.length : 0;
-      let finalStatus: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" = "NOT_VERIFIED";
+      let finalStatus: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" = "REVIEW";
       
+      if (finalOverall >= tolerances.tolPass && !allHasWarnings && !allHasError && !allHasAreaFail) {
+        finalStatus = "VERIFIED";
+      }
       if (allHasError || allHasAreaFail) {
         finalStatus = "NOT_VERIFIED";
-      } else if (finalOverall >= tolerances.tolPass) {
-        finalStatus = "VERIFIED";
-      } else if (finalOverall >= tolerances.tolWarn) {
-        finalStatus = "REVIEW";
       }
 
       const verificationDataPayload = {
