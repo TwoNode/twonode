@@ -229,7 +229,7 @@ export default function SurfboardLandingPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             {/* Replace with a product screenshot */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
+            <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
               <div className="absolute inset-0 grid place-items-center">
                 <Image
                   src="/surfboard/map_screenshot.png"
@@ -319,7 +319,7 @@ export default function SurfboardLandingPage() {
             {steps.map((s, index) => (
               <li
                 key={s.title}
-                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/[0.02] p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
+                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/2 p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
               >
                 <div className="absolute -right-6 -top-6 text-7xl font-bold text-white/5 transition-all duration-300 group-hover:text-white/10">
                   {index + 1}
@@ -477,7 +477,7 @@ export default function SurfboardLandingPage() {
 
 function FAQ({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group rounded-xl border border-white/10 bg-white/[0.03] p-4 open:bg-white/[0.05]">
+    <details className="group rounded-xl border border-white/10 bg-white/3 p-4 open:bg-white/5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
         <span className="text-sm font-medium">{q}</span>
         <ArrowRight className="h-4 w-4 transition group-open:rotate-90" />

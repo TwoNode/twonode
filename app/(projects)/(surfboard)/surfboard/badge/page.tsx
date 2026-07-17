@@ -60,7 +60,7 @@ export default function SurfboardBadgePage() {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] p-2 sm:p-4 backdrop-blur-md shadow-2xl shadow-cyan-900/20"
+          className="w-full max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/2 p-2 sm:p-4 backdrop-blur-md shadow-2xl shadow-cyan-900/20"
         >
           <div className="relative w-full flex justify-center overflow-hidden rounded-2xl bg-black/50 ring-1 ring-white/10">
             <video
