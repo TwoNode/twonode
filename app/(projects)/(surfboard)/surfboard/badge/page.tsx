@@ -51,18 +51,6 @@ export default function SurfboardBadgePage() {
                 FAQ
               </Link>
             </nav>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/surfboard/login"
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 hover:opacity-90"
-                style={{
-                  backgroundColor: SURF_COLORS.brand.primary,
-                  color: "#0b0f19",
-                }}
-              >
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
           </div>
         </div>
       </header>
@@ -91,23 +79,25 @@ export default function SurfboardBadgePage() {
               <ShieldCheck className="h-4 w-4" /> Official Surfboard Badge
             </div>
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">
-              Geospatial Intelligence for Survey Plans
+              Your Survey Plan is Protected
             </h1>
-            <p className="text-slate-300 text-sm sm:text-base max-w-md mb-8">
-              Unlock the value of cadastral and geospatial data. Surfboard
-              empowers surveyors and land administrators with actionable insights.
-            </p>
+            <div className="text-slate-300 text-sm sm:text-base max-w-md mb-8">
+              <p className="mb-3">
+                Scan the QR Code on the survey plan in the envelope to:
+              </p>
+              <ul className="list-none space-y-2 text-left mx-auto w-fit">
+                <li className="flex items-start gap-2">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                  <span>View the property location on a map</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                  <span>Verify its authenticity instantly</span>
+                </li>
+              </ul>
+            </div>
             
-            <Link
-              href="/surfboard"
-              className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
-              style={{
-                backgroundColor: SURF_COLORS.brand.primary,
-                color: "#0b0f19",
-              }}
-            >
-              Explore Surfboard <ArrowRight className="h-4 w-4" />
-            </Link>
+
           </div>
         </motion.div>
       </main>
