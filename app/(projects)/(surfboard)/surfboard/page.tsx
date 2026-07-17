@@ -155,6 +155,9 @@ export default function SurfboardLandingPage() {
               <Link href="#faq" className="hover:text-white transition-colors">
                 FAQ
               </Link>
+              <Link href="/surfboard/badge" className="hover:text-white transition-colors">
+                Badge Video
+              </Link>
             </nav>
             <div className="flex items-center gap-3">
               <Link
@@ -198,6 +201,12 @@ export default function SurfboardLandingPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               >
                 Get Started Now <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/surfboard/badge"
+                className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              >
+                View Badge Video
               </Link>
             </div>
             <div className="mt-6 flex items-center gap-5 text-xs text-slate-400">
@@ -450,6 +459,9 @@ export default function SurfboardLandingPage() {
               </Link>
               <Link href="#faq" className="hover:text-white">
                 FAQ
+              </Link>
+              <Link href="/surfboard/badge" className="hover:text-white">
+                Badge Video
               </Link>
             </nav>
           </div>
