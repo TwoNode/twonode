@@ -74,10 +74,10 @@ export default function SurfboardBadgePage() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="w-full max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/[0.02] p-2 sm:p-4 backdrop-blur-md shadow-2xl shadow-cyan-900/20"
         >
-          <div className="relative aspect-[9/16] sm:aspect-video w-full overflow-hidden rounded-2xl bg-black/50 ring-1 ring-white/10">
+          <div className="relative w-full flex justify-center overflow-hidden rounded-2xl bg-black/50 ring-1 ring-white/10">
             <video
               src="/surfboard/videos/SurfboardBadge.mp4"
-              className="absolute inset-0 h-full w-full object-contain sm:object-cover bg-black"
+              className="w-full h-auto max-h-[75vh] object-contain bg-black"
               autoPlay
               loop
               muted
