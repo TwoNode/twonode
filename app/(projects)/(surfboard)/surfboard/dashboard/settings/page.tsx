@@ -21,8 +21,10 @@ import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { InquiryModal } from "./InquiryModal";
+import { SurveyorBankSettings } from "./SurveyorProfileSettings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CreditCard } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -207,7 +209,7 @@ export default function SettingsPage() {
             className="space-y-6"
             onValueChange={setActiveTab}
           >
-            <TabsList className="grid w-full grid-cols-2 max-w-md h-12 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg h-12 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
               <TabsTrigger
                 value="personal"
                 className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all"
@@ -223,6 +225,14 @@ export default function SettingsPage() {
                 <Briefcase className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Professional</span>
                 <span className="sm:hidden">Pro</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="bank"
+                className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Bank Details</span>
+                <span className="sm:hidden">Bank</span>
               </TabsTrigger>
             </TabsList>
 
@@ -650,6 +660,9 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+              <TabsContent value="bank" className="space-y-6">
+                <SurveyorBankSettings />
               </TabsContent>
 
               <motion.div

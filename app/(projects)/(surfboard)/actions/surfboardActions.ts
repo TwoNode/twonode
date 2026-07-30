@@ -2013,6 +2013,14 @@ export async function getPublicSurfPlanByIdWithSurveyor(
       return { success: false, error: "Plan not found or access denied" };
     }
 
+    // Increment scan counter in background
+    try {
+      const { incrementPlanQRScanCount } = await import("./qrEarningsActions");
+      incrementPlanQRScanCount(plan.id);
+    } catch (e) {
+      // Ignore scan count increment errors silently
+    }
+
     // Add area and centroid to the plan
     let planWithGeometry: Plan = { ...plan };
 
