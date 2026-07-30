@@ -155,6 +155,9 @@ export default function SurfboardLandingPage() {
               <Link href="#faq" className="hover:text-white transition-colors">
                 FAQ
               </Link>
+              <Link href="/surfboard/badge" className="hover:text-white transition-colors">
+                Badge Video
+              </Link>
             </nav>
             <div className="flex items-center gap-3">
               <Link
@@ -199,6 +202,12 @@ export default function SurfboardLandingPage() {
               >
                 Get Started Now <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link
+                href="/surfboard/badge"
+                className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              >
+                View Badge Video
+              </Link>
             </div>
             <div className="mt-6 flex items-center gap-5 text-xs text-slate-400">
               <span className="inline-flex items-center gap-2">
@@ -220,7 +229,7 @@ export default function SurfboardLandingPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             {/* Replace with a product screenshot */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
+            <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-sky-900/30 via-cyan-900/20 to-blue-900/30 shadow-2xl">
               <div className="absolute inset-0 grid place-items-center">
                 <Image
                   src="/surfboard/map_screenshot.png"
@@ -310,7 +319,7 @@ export default function SurfboardLandingPage() {
             {steps.map((s, index) => (
               <li
                 key={s.title}
-                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/[0.02] p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
+                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/2 p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
               >
                 <div className="absolute -right-6 -top-6 text-7xl font-bold text-white/5 transition-all duration-300 group-hover:text-white/10">
                   {index + 1}
@@ -451,6 +460,9 @@ export default function SurfboardLandingPage() {
               <Link href="#faq" className="hover:text-white">
                 FAQ
               </Link>
+              <Link href="/surfboard/badge" className="hover:text-white">
+                Badge Video
+              </Link>
             </nav>
           </div>
           <p className="mt-6 text-center text-xs text-slate-400">
@@ -465,7 +477,7 @@ export default function SurfboardLandingPage() {
 
 function FAQ({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group rounded-xl border border-white/10 bg-white/[0.03] p-4 open:bg-white/[0.05]">
+    <details className="group rounded-xl border border-white/10 bg-white/3 p-4 open:bg-white/5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
         <span className="text-sm font-medium">{q}</span>
         <ArrowRight className="h-4 w-4 transition group-open:rotate-90" />

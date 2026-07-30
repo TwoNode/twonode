@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
+import { PLAN_TYPES } from "../types/surfboardTypes";
 import type {
   Plan,
   ApiResult,
@@ -471,7 +472,7 @@ export async function searchReferencePlanNumbers(
     select: { planNumber: true },
     where,
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: 5000,
   });
 
   return rows.map((r) => r.planNumber);
@@ -591,6 +592,13 @@ export async function _updatePlan(
     data.status = "PENDING";
   }
 
+  if (dto.withdrawalAndResubmissionStatus !== undefined)
+    data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+  if (dto.pillarTypeReferencePlanNumber !== undefined)
+    data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
+  if (dto.parcels !== undefined)
+    data.parcels = dto.parcels as any;
+
   if (enforceLock) {
     // Validate we didn't try to modify locked fields
     const triedToChangeLocked =
@@ -681,13 +689,35 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
         state: dto.state || null,
         locality: dto.locality || null,
         isLive: dto.isLive ?? false,
-        status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
+        status:
+          dto.certificateFilePaths?.length
+            ? "LODGED"
+            : "PENDING",
         userId: user.id,
         personCount: dto.personCount || 1,
         personCountVerified: false,
+        withdrawalAndResubmissionStatus:
+          dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION
+            ? "Resubmitted"
+            : "No_Action",
+        reasonForWithdrawalAndResubmission: dto.reasonForWithdrawalAndResubmission || null,
+        pillarTypeReferencePlanNumber: dto.pillarTypeReferencePlanNumber || null,
+        parcels: (dto.parcels as any) || null,
       },
-      select: { id: true, planNumber: true },
+      select: { id: true, planNumber: true, referencePlanNumber: true, planType: true },
     });
+
+    // If it's a withdrawal, flip the status of the original plan
+    if (rec.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && rec.referencePlanNumber) {
+      try {
+        await prisma.surfboardPlan.update({
+          where: { planNumber: rec.referencePlanNumber },
+          data: { withdrawalAndResubmissionStatus: "Withdrawn" }
+        });
+      } catch (e) {
+        console.warn("Could not find/update referenced plan for withdrawal status:", rec.referencePlanNumber);
+      }
+    }
 
     // Send notification to user about new plan creation
     try {
@@ -799,6 +829,14 @@ export async function updateSurfPlan(
       if (dto.pillarType) data.pillarType = dto.pillarType;
       if (dto.geometry) data.geometry = geometry;
       if (dto.pillars) data.pillars = dto.pillars;
+      if (dto.withdrawalAndResubmissionStatus)
+        data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+      if (dto.reasonForWithdrawalAndResubmission !== undefined)
+        data.reasonForWithdrawalAndResubmission = dto.reasonForWithdrawalAndResubmission || null;
+      if (dto.pillarTypeReferencePlanNumber !== undefined)
+        data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
+      if (dto.parcels) data.parcels = dto.parcels;
+      if (dto.pillars) data.pillars = dto.pillars;
 
       data.ward = dto.ward ?? null;
       data.lcda = dto.lcda ?? null;
@@ -867,6 +905,24 @@ export async function updateSurfPlan(
         where: { id: dto.id, userId: user.id },
         data,
       });
+
+      // If it's a withdrawal, flip the status of the original plan
+      if (
+        data.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
+        data.referencePlanNumber
+      ) {
+        try {
+          await prisma.surfboardPlan.update({
+            where: { planNumber: data.referencePlanNumber },
+            data: { withdrawalAndResubmissionStatus: "Withdrawn" },
+          });
+        } catch (e) {
+          console.warn(
+            "Could not find/update referenced plan for withdrawal status:",
+            data.referencePlanNumber
+          );
+        }
+      }
     } catch (error) {
       return {
         success: false,
@@ -981,6 +1037,9 @@ export async function getAllSurfPlans(): Promise<ApiResult<{ plans: Plan[] }>> {
             lcda: true,
             lga: true,
             state: true,
+            locality: true,
+            pillarTypeReferencePlanNumber: true,
+            parcels: true,
             pillars: true,
             status: true,
             isLive: true,
@@ -1159,6 +1218,9 @@ export async function getPaginatedSurfPlans({
           lcda: true,
           lga: true,
           state: true,
+          locality: true,
+          pillarTypeReferencePlanNumber: true,
+          parcels: true,
           pillars: true,
           status: true,
           isLive: true,
@@ -1525,6 +1587,9 @@ export async function getAllSharedSurfPlans(
           lcda: true,
           lga: true,
           state: true,
+          locality: true,
+          pillarTypeReferencePlanNumber: true,
+          parcels: true,
           pillars: true,
           status: true,
           isLive: true,
@@ -1673,6 +1738,9 @@ export async function getSharedWithMeSurfPlans(
           lcda: true,
           lga: true,
           state: true,
+          locality: true,
+          pillarTypeReferencePlanNumber: true,
+          parcels: true,
           pillars: true,
           status: true,
           isLive: true,
@@ -1943,6 +2011,14 @@ export async function getPublicSurfPlanByIdWithSurveyor(
 
     if (!plan) {
       return { success: false, error: "Plan not found or access denied" };
+    }
+
+    // Increment scan counter in background
+    try {
+      const { incrementPlanQRScanCount } = await import("./qrEarningsActions");
+      incrementPlanQRScanCount(plan.id);
+    } catch (e) {
+      // Ignore scan count increment errors silently
     }
 
     // Add area and centroid to the plan
@@ -2412,6 +2488,9 @@ export async function getDeletedSurfPlans({
           lcda: true,
           lga: true,
           state: true,
+          locality: true,
+          pillarTypeReferencePlanNumber: true,
+          parcels: true,
           pillars: true,
           status: true,
           isLive: true,

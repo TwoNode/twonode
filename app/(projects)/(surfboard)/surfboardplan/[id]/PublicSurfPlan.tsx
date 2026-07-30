@@ -1,13 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { getPublicSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getPlanQRAccessState } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import QRPaywallModal from "@/app/(projects)/(surfboard)/components/QRPaywallModal";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   MapPin,
   Ruler,
@@ -24,6 +28,10 @@ import {
   Map,
   CalendarDays,
   X,
+  Clock,
+  Lock,
+  ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 import { PillarData } from "../../types/surfboardTypes";
 import MaplibreMap from "../../components/maps/MaplibreMap";
@@ -167,6 +175,14 @@ function PlanDetails({ planId }: { planId: string }) {
     return [sum[0] / pillars.length, sum[1] / pillars.length];
   };
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token") || searchParams.get("access_token") || "";
+
+  const [qrAccessInfo, setQrAccessInfo] = useState<any>(null);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchPlanData = async () => {
       try {
@@ -176,6 +192,25 @@ function PlanDetails({ planId }: { planId: string }) {
           return;
         }
         setPlanData(res.data);
+
+        // Fetch QR Access State
+        const accessRes = await getPlanQRAccessState(planId, token);
+        if (accessRes.success) {
+          setQrAccessInfo(accessRes);
+          if (
+            accessRes.accessState === "PAYWALL_REQUIRED" ||
+            accessRes.accessState === "EXPIRED"
+          ) {
+            setIsPaywallOpen(true);
+          }
+
+          if (accessRes.accessState === "PAID_ACTIVE" && accessRes.expiresAt) {
+            const expMs = new Date(accessRes.expiresAt).getTime();
+            const nowMs = Date.now();
+            const diffSec = Math.max(0, Math.floor((expMs - nowMs) / 1000));
+            setSessionSecondsLeft(diffSec);
+          }
+        }
 
         // Process pillars for the map
         const pillars =
@@ -210,7 +245,27 @@ function PlanDetails({ planId }: { planId: string }) {
     };
 
     fetchPlanData();
-  }, [planId]);
+  }, [planId, token]);
+
+  // Session Timer Interval
+  useEffect(() => {
+    if (sessionSecondsLeft === null || sessionSecondsLeft <= 0) return;
+    const interval = setInterval(() => {
+      setSessionSecondsLeft((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setQrAccessInfo((prevInfo: any) => ({
+            ...prevInfo,
+            accessState: "EXPIRED",
+          }));
+          setIsPaywallOpen(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [sessionSecondsLeft]);
 
   if (loading) return <LoadingSkeleton />;
   if (error || !planData) return <SurfPageNotFound />;
@@ -236,9 +291,55 @@ function PlanDetails({ planId }: { planId: string }) {
     console.error("Error parsing pillars:", e);
   }
 
+  const handlePaymentSuccess = (newToken: string) => {
+    setIsPaywallOpen(false);
+    router.push(`/surfboardplan/${planId}?token=${newToken}`);
+  };
+
+  const formatTimer = (totalSec: number) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-cyan-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Active Session / Expired Session Banners */}
+        {qrAccessInfo?.accessState === "PAID_ACTIVE" && (
+          <div className="bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-200" />
+              <span className="font-semibold text-sm">
+                Active Paid Session ({qrAccessInfo.serviceType === "LOCATION_AUTHENTICITY" ? "Service 1: Location Verification" : "Service 2: Certificate of Deposit"})
+              </span>
+            </div>
+            {sessionSecondsLeft !== null && (
+              <div className="flex items-center gap-1.5 bg-emerald-700/80 px-3 py-1 rounded-lg text-xs font-mono font-bold">
+                <Clock className="h-4 w-4 text-emerald-300" />
+                Access Expires In: {formatTimer(sessionSecondsLeft)}
+              </div>
+            )}
+          </div>
+        )}
+
+        {qrAccessInfo?.accessState === "EXPIRED" && (
+          <div className="bg-amber-600 text-white px-4 py-3 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-200" />
+              <span className="font-semibold text-sm">
+                Your 1-Hour Access Has Expired
+              </span>
+            </div>
+            <Button
+              onClick={() => setIsPaywallOpen(true)}
+              size="sm"
+              className="bg-white text-amber-900 hover:bg-amber-100 font-bold"
+            >
+              Re-Purchase Access
+            </Button>
+          </div>
+        )}
         {/* Header */}
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -328,6 +429,7 @@ function PlanDetails({ planId }: { planId: string }) {
                   <MaplibreMap
                     // processedPillars={mapPillars || []}
                     processedPillars={plan?.pillars}
+                    state={plan?.state}
                   />
                 </div>
               </div>
@@ -364,6 +466,25 @@ function PlanDetails({ planId }: { planId: string }) {
                         icon={FileText}
                         label="Reference Plan"
                         value={plan.referencePlanNumber}
+                        className="border-b pb-3"
+                      />
+                    )}
+                  {plan.withdrawalAndResubmissionStatus &&
+                    plan.withdrawalAndResubmissionStatus !== "No_Action" && (
+                      <DetailItem
+                        icon={FileText}
+                        label="Withdrawal Status"
+                        value={
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                              plan.withdrawalAndResubmissionStatus === "Withdrawn"
+                                ? "bg-red-100 text-red-800 border-red-200"
+                                : "bg-blue-100 text-blue-800 border-blue-200"
+                            }`}
+                          >
+                            {plan.withdrawalAndResubmissionStatus}
+                          </span>
+                        }
                         className="border-b pb-3"
                       />
                     )}
@@ -590,6 +711,17 @@ function PlanDetails({ planId }: { planId: string }) {
             </Card>
           </div>
         </div>
+
+        {/* QR Code Paywall Modal */}
+        <QRPaywallModal
+          isOpen={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          planId={plan.id}
+          planNumber={plan.planNumber}
+          isCoDAvailable={qrAccessInfo?.isCoDAvailable ?? false}
+          pricing={qrAccessInfo?.pricing}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       </div>
     </div>
   );

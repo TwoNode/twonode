@@ -17,6 +17,8 @@ import type { Feature, FeatureCollection, Polygon, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Plan, PillarData } from "../../types/surfboardTypes";
 import proj4 from "proj4";
+import { getCoordinateShifts } from "../../actions/settingsActions";
+import { applyVisualizationShift } from "../../utils/surfboardUtils";
 
 interface AllPlansMapProps {
   plans: Plan[];
@@ -31,7 +33,7 @@ interface TempPlan extends Omit<Plan, "status"> {
 // Define the coordinate reference system for pillar conversion
 proj4.defs(
   "EPSG:26331",
-  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
+  "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs",
 );
 
 // Helper to generate a unique signature from pillar data to detect duplicates
@@ -39,10 +41,10 @@ const generatePlanSignature = (pillars: PillarData[]): string => {
   if (!pillars || pillars.length === 0) return "";
   // Sort by pillar number to ensure consistent order, then create a string
   const sortedPillars = [...pillars].sort((a, b) =>
-    a.pillarNumber.localeCompare(b.pillarNumber)
+    a.pillarNumber.localeCompare(b.pillarNumber),
   );
   return JSON.stringify(
-    sortedPillars.map((p) => [p.easting.toFixed(2), p.northing.toFixed(2)])
+    sortedPillars.map((p) => [p.easting.toFixed(2), p.northing.toFixed(2)]),
   );
 };
 
@@ -104,7 +106,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
     () => [...plans, ...tempPlans],
-    [plans, tempPlans]
+    [plans, tempPlans],
   );
 
   const dbPlanSignatures = useMemo(() => {
@@ -156,10 +158,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
   useEffect(() => {
     setVisiblePlanIds(
-      filteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id)
+      filteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id),
     );
     setVisibleTempPlanIds(
-      filteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id)
+      filteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id),
     );
   }, [filteredPlans]);
 
@@ -188,11 +190,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         });
       }
     },
-    [combinedPlans]
+    [combinedPlans],
   );
 
   const handleCsvUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     if (!files) return;
@@ -221,7 +223,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             pointIndex: index,
           }))
           .filter(
-            (p) => p.pillarNumber && !isNaN(p.easting) && !isNaN(p.northing)
+            (p) => p.pillarNumber && !isNaN(p.easting) && !isNaN(p.northing),
           );
 
         if (pillars.length < 3) continue;
@@ -242,7 +244,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         const existingTempPlanId = tempPlanSignatures.get(signature);
         if (existingTempPlanId) {
           const existingTempPlan = tempPlans.find(
-            (p) => p.id === existingTempPlanId
+            (p) => p.id === existingTempPlanId,
           );
           setNotification({
             message: `This CSV content is already uploaded as "${existingTempPlan?.planNumber}". Zooming.`,
@@ -291,6 +293,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
           lcda: null,
           lga: null,
           state: null,
+          locality: null,
           isLive: false,
           dateOnSurveyPlan: currentDate,
           dateLodged: null,
@@ -428,7 +431,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       const showPopup = (
         e: maplibregl.MapMouseEvent & {
           features?: maplibregl.MapGeoJSONFeature[];
-        }
+        },
       ) => {
         const properties = e.features?.[0].properties;
         if (!properties || !map.current) return;
@@ -439,9 +442,17 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
           }</h3><ul class="text-xs text-gray-600 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
             properties.pointIndex ?? "N/A"
           }</li><li><strong>Easting:</strong> ${
-            properties.easting ?? "N/A"
+            properties.rawEasting !== undefined
+              ? properties.rawEasting.toFixed(3)
+              : properties.easting !== undefined
+                ? properties.easting.toFixed(3)
+                : "N/A"
           }</li><li><strong>Northing:</strong> ${
-            properties.northing ?? "N/A"
+            properties.rawNorthing !== undefined
+              ? properties.rawNorthing.toFixed(3)
+              : properties.northing !== undefined
+                ? properties.northing.toFixed(3)
+                : "N/A"
           }</li></ul></div>`;
         } else {
           popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600">${properties.surveyTitle}</p><p class="text-xs text-gray-500 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">${properties.status}</span></div>`;
@@ -472,71 +483,138 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
   useEffect(() => {
     if (!isReady || !map.current) return;
-    const allVisibleIds = [...visiblePlanIds, ...visibleTempPlanIds];
-    const polygonFeatures: Feature<Polygon>[] = [];
-    const pillarFeatures: Feature<Point>[] = [];
-    filteredPlans.forEach((plan) => {
-      const color = generateColor(plan.id);
-      if (
-        plan.geometry &&
-        typeof plan.geometry === "object" &&
-        "type" in plan.geometry
-      ) {
-        polygonFeatures.push({
-          type: "Feature",
-          geometry: plan.geometry as Polygon,
-          properties: { ...plan, color },
-        });
-      }
-      if (Array.isArray(plan.pillars)) {
-        (plan.pillars as PillarData[]).forEach((p) => {
-          const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
-            p.easting,
-            p.northing,
-          ]);
-          pillarFeatures.push(
-            turf.point([lon, lat], { ...p, planId: plan.id })
+
+    const fetchAndRender = async () => {
+      const allVisibleIds = [...visiblePlanIds, ...visibleTempPlanIds];
+      const polygonFeatures: Feature<
+        Polygon | import("geojson").MultiPolygon
+      >[] = [];
+      const pillarFeatures: Feature<Point>[] = [];
+
+      const shifts = await getCoordinateShifts();
+
+      filteredPlans.forEach((plan) => {
+        const color = generateColor(plan.id);
+        const stateName = plan.state;
+
+        let hasPillars = false;
+
+        if (Array.isArray(plan.pillars) && plan.pillars.length >= 3) {
+          hasPillars = true;
+          const shiftedPillars = applyVisualizationShift(
+            plan.pillars as PillarData[],
+            stateName,
+            shifts,
           );
-        });
+
+          const groups: Record<number, any[]> = {};
+          shiftedPillars.forEach((p) => {
+            const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+              p.easting,
+              p.northing,
+            ]);
+            pillarFeatures.push(
+              turf.point([lon, lat], {
+                ...p,
+                planId: plan.id,
+                rawEasting: p.rawEasting ?? p.easting,
+                rawNorthing: p.rawNorthing ?? p.northing,
+              }),
+            );
+
+            const idx = p.polygonIndex ?? 0;
+            if (!groups[idx]) groups[idx] = [];
+            groups[idx].push([lon, lat]);
+          });
+
+          const polygonRings = Object.values(groups).map((coords) => {
+            const closedCoords = [...coords];
+            if (
+              turf.booleanEqual(
+                turf.point(closedCoords[0]),
+                turf.point(closedCoords.at(-1)!),
+              ) === false
+            ) {
+              closedCoords.push(closedCoords[0]);
+            }
+            return closedCoords;
+          });
+
+          if (polygonRings.length === 1) {
+            polygonFeatures.push({
+              type: "Feature",
+              geometry: { type: "Polygon", coordinates: polygonRings },
+              properties: { ...plan, color },
+            });
+          } else if (polygonRings.length > 1) {
+            polygonFeatures.push({
+              type: "Feature",
+              geometry: {
+                type: "MultiPolygon",
+                coordinates: polygonRings.map((r) => [r]),
+              },
+              properties: { ...plan, color },
+            });
+          }
+        }
+
+        if (
+          !hasPillars &&
+          plan.geometry &&
+          typeof plan.geometry === "object" &&
+          "type" in plan.geometry
+        ) {
+          polygonFeatures.push({
+            type: "Feature",
+            geometry: plan.geometry as Polygon,
+            properties: { ...plan, color },
+          });
+        }
+      });
+
+      (map.current?.getSource("plansLayer") as GeoJSONSource)?.setData({
+        type: "FeatureCollection",
+        features: polygonFeatures as Feature<Polygon>[],
+      });
+      (map.current?.getSource("pillarsLayer") as GeoJSONSource)?.setData({
+        type: "FeatureCollection",
+        features: pillarFeatures,
+      });
+
+      const filter = (
+        allVisibleIds.length > 0
+          ? ["in", ["get", "id"], ["literal", allVisibleIds]]
+          : ["==", true, false]
+      ) as FilterSpecification;
+      const pillarFilter = (
+        allVisibleIds.length > 0
+          ? ["in", ["get", "planId"], ["literal", allVisibleIds]]
+          : ["==", true, false]
+      ) as FilterSpecification;
+
+      map.current?.setFilter("plans-fill", filter);
+      map.current?.setFilter("plans-labels", filter);
+      map.current?.setFilter("pillars-symbol", pillarFilter);
+
+      if (polygonFeatures.length > 0 && allVisibleIds.length > 0) {
+        const visibleFeatures = polygonFeatures.filter((f) =>
+          allVisibleIds.includes(f.properties?.id),
+        );
+        if (visibleFeatures.length > 0) {
+          const bounds = turf.bbox({
+            type: "FeatureCollection",
+            features: visibleFeatures as any,
+          });
+          map.current?.fitBounds(bounds as [number, number, number, number], {
+            padding: 80,
+            duration: 500,
+            maxZoom: 16,
+          });
+        }
       }
-    });
-    (map.current.getSource("plansLayer") as GeoJSONSource)?.setData({
-      type: "FeatureCollection",
-      features: polygonFeatures,
-    });
-    (map.current.getSource("pillarsLayer") as GeoJSONSource)?.setData({
-      type: "FeatureCollection",
-      features: pillarFeatures,
-    });
-    const filter = (
-      allVisibleIds.length > 0
-        ? ["in", ["get", "id"], ["literal", allVisibleIds]]
-        : ["==", true, false]
-    ) as FilterSpecification;
-    const pillarFilter = (
-      allVisibleIds.length > 0
-        ? ["in", ["get", "planId"], ["literal", allVisibleIds]]
-        : ["==", true, false]
-    ) as FilterSpecification;
-    map.current.setFilter("plans-fill", filter);
-    map.current.setFilter("plans-labels", filter);
-    map.current.setFilter("pillars-symbol", pillarFilter);
-    if (polygonFeatures.length > 0 && allVisibleIds.length > 0) {
-      const visibleFeatures = polygonFeatures.filter((f) =>
-        allVisibleIds.includes(f.properties?.id)
-      );
-      if (visibleFeatures.length > 0) {
-        const bounds = turf.bbox({
-          type: "FeatureCollection",
-          features: visibleFeatures,
-        });
-        map.current.fitBounds(bounds as [number, number, number, number], {
-          padding: 80,
-          duration: 500,
-          maxZoom: 16,
-        });
-      }
-    }
+    };
+
+    fetchAndRender();
   }, [filteredPlans, isReady, visiblePlanIds, visibleTempPlanIds]);
 
   useEffect(() => {
@@ -547,7 +625,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         map.current.setLayoutProperty(
           layerId,
           "visibility",
-          activeBasemap === bm ? "visible" : "none"
+          activeBasemap === bm ? "visible" : "none",
         );
       }
     });
@@ -563,8 +641,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            locQuery
-          )}&countrycodes=ng`
+            locQuery,
+          )}&countrycodes=ng`,
         );
         const data = await res.json();
         setLocResults(
@@ -572,7 +650,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             name: item.display_name,
             lat: parseFloat(item.lat),
             lon: parseFloat(item.lon),
-          }))
+          })),
         );
       } catch (error) {
         console.error("Failed to fetch location:", error);
@@ -709,7 +787,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   key={s}
                   onClick={() =>
                     setStatusFilter((p) =>
-                      p.includes(s) ? p.filter((x) => x !== s) : [...p, s]
+                      p.includes(s) ? p.filter((x) => x !== s) : [...p, s],
                     )
                   }
                   className={`px-2 py-0.5 rounded-full text-xs border ${
@@ -733,7 +811,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   key={t}
                   onClick={() =>
                     setTypeFilter((p) =>
-                      p.includes(t) ? p.filter((x) => x !== t) : [...p, t]
+                      p.includes(t) ? p.filter((x) => x !== t) : [...p, t],
                     )
                   }
                   className={`px-2 py-0.5 rounded-full text-xs border ${
@@ -768,7 +846,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               />{" "}
               <span className="capitalize">{k}</span>
             </label>
-          )
+          ),
         )}
         <hr className="my-2" />
         <div className="text-sm font-semibold mb-1">
@@ -789,7 +867,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                     setVisiblePlanIds((prev) =>
                       e.target.checked
                         ? [...prev, p.id]
-                        : prev.filter((x) => x !== p.id)
+                        : prev.filter((x) => x !== p.id),
                     )
                   }
                 />{" "}
@@ -832,7 +910,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                         setVisibleTempPlanIds((prev) =>
                           e.target.checked
                             ? [...prev, p.id]
-                            : prev.filter((x) => x !== p.id)
+                            : prev.filter((x) => x !== p.id),
                         )
                       }
                     />{" "}

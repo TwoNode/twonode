@@ -1039,6 +1039,8 @@ export interface LASGReceiptFields {
   transactionAnchor: string; // e.g., "169767640-8154445-175"
   amountPaid: number;
   payerName: string;
+  payerId?: string;
+  payerType?: string;
   transactionDate: string; // YYYY-MM-DD if possible
 }
 
@@ -1102,7 +1104,13 @@ LASG EBS Revenue Receipts typically contain:
 3. **payerName**: The name of the payer
    - Usually found near payer details section
 
-4. **transactionDate**: The date of the transaction
+4. **payerId**: The payer's ID
+   - LOOK FOR: "<N-16976764>" or "Payer ID". Extract just the digits.
+
+5. **payerType**: The payer type
+   - E.g., 'N' for Individual, 'C' for Corporate/Commercial
+
+6. **transactionDate**: The date of the transaction
    - Return in YYYY-MM-DD format if possible
 
 === OUTPUT FORMAT ===
@@ -1216,6 +1224,8 @@ export interface RemitaReceiptFields {
   status: string; // "PAID" expected
   transactionAnchor: string; // from BILLER REQUIRED INFO "Lasg" field
   payerName: string;
+  payerId?: string;
+  payerType?: string;
   payerEmail: string;
 }
 

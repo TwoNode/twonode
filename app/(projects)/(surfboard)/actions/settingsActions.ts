@@ -7,6 +7,16 @@ import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { COD_FEES, type ZoneFeeRow } from "../utils/CoDFees";
+import { DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
+
+export interface RecordCopyVerificationTolerances {
+  tolAnchor: number;
+  tolWCB: number;
+  tolDist: number;
+  tolArea: number;
+  tolPass: number;
+  tolWarn: number;
+}
 
 interface SurfboardSettingsData {
   zoneFees: ZoneFeeRow[];
@@ -14,6 +24,8 @@ interface SurfboardSettingsData {
   codAcceptanceText: string;
   codPolicyContent: string;
   queryResponseFeePercent: number;
+  coordinateShifts?: Record<string, { eastingShift: number; northingShift: number }>;
+  recordCopyTolerances?: RecordCopyVerificationTolerances;
 }
 
 const DEFAULT_SETTINGS: SurfboardSettingsData = {
@@ -22,7 +34,46 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
   codAcceptanceText: "I hereby affirm that the information provided in this submission is true, accurate, and complete to the best of my knowledge.",
   codPolicyContent: "Official CoD Submission Policy.\n\nBy clicking 'Submit', you agree to the terms and conditions outlined by the MDA.",
   queryResponseFeePercent: 10,
+  coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
+  recordCopyTolerances: {
+    tolAnchor: 0.05,
+    tolWCB: 0.05,
+    tolDist: 0.05,
+    tolArea: 0.01,
+    tolPass: 95,
+    tolWarn: 80
+  }
 };
+
+/**
+ * Merges default settings with database settings to ensure new fields
+ * are available without overriding existing configurations.
+ */
+function mergeSettings(dbSettings: any, defaults: SurfboardSettingsData): SurfboardSettingsData {
+  if (!dbSettings || typeof dbSettings !== "object") {
+    return { ...defaults };
+  }
+
+  const result: any = { ...dbSettings };
+
+  for (const key of Object.keys(defaults) as (keyof SurfboardSettingsData)[]) {
+    if (result[key] === undefined) {
+      result[key] = defaults[key];
+    } else if (
+      typeof defaults[key] === "object" &&
+      defaults[key] !== null &&
+      !Array.isArray(defaults[key]) &&
+      typeof result[key] === "object" &&
+      result[key] !== null &&
+      !Array.isArray(result[key])
+    ) {
+      // Shallow merge for objects like coordinateShifts
+      result[key] = { ...defaults[key], ...result[key] };
+    }
+  }
+
+  return result as SurfboardSettingsData;
+}
 
 /**
  * Get current settings
@@ -32,7 +83,7 @@ export async function getCurrentSettings(): Promise<
 > {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || !user.role || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+    if (!user || !user.role) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -57,16 +108,10 @@ export async function getCurrentSettings(): Promise<
       };
     }
 
-    const settingsData = settings.settings as any;
+    const mergedSettings = mergeSettings(settings.settings, DEFAULT_SETTINGS);
     return {
       success: true,
-      data: {
-        zoneFees: settingsData.zoneFees || COD_FEES,
-        systemChargePercent: settingsData.systemChargePercent || 10,
-        codAcceptanceText: settingsData.codAcceptanceText || DEFAULT_SETTINGS.codAcceptanceText,
-        codPolicyContent: settingsData.codPolicyContent || DEFAULT_SETTINGS.codPolicyContent,
-        queryResponseFeePercent: settingsData.queryResponseFeePercent || DEFAULT_SETTINGS.queryResponseFeePercent,
-      },
+      data: mergedSettings,
     };
   } catch (error) {
     console.error("Error fetching settings:", error);
@@ -90,8 +135,8 @@ export async function getZoneFees(): Promise<ZoneFeeRow[]> {
       return COD_FEES;
     }
 
-    const settingsData = settings.settings as any;
-    return settingsData.zoneFees || COD_FEES;
+    const mergedSettings = mergeSettings(settings.settings, DEFAULT_SETTINGS);
+    return mergedSettings.zoneFees;
   } catch (err) {
     console.error("Error fetching zone fees:", err);
     return COD_FEES;
@@ -111,8 +156,8 @@ export async function getSystemChargePercent(): Promise<number> {
       return 10; // Default 10%
     }
 
-    const settingsData = settings.settings as any;
-    return settingsData.systemChargePercent || 10;
+    const mergedSettings = mergeSettings(settings.settings, DEFAULT_SETTINGS);
+    return mergedSettings.systemChargePercent;
   } catch (err) {
     console.error("Error fetching system charge:", err);
     return 10;
@@ -140,11 +185,11 @@ export async function getCodSubmissionSettings(): Promise<{
       };
     }
 
-    const s = settings.settings as any;
+    const s = mergeSettings(settings.settings, DEFAULT_SETTINGS);
     return {
-      codAcceptanceText: s.codAcceptanceText || DEFAULT_SETTINGS.codAcceptanceText,
-      codPolicyContent: s.codPolicyContent || DEFAULT_SETTINGS.codPolicyContent,
-      queryResponseFeePercent: s.queryResponseFeePercent || DEFAULT_SETTINGS.queryResponseFeePercent,
+      codAcceptanceText: s.codAcceptanceText,
+      codPolicyContent: s.codPolicyContent,
+      queryResponseFeePercent: s.queryResponseFeePercent,
     };
   } catch (error) {
     console.error("Error fetching CoD submission settings:", error);
@@ -153,6 +198,27 @@ export async function getCodSubmissionSettings(): Promise<{
       codPolicyContent: DEFAULT_SETTINGS.codPolicyContent,
       queryResponseFeePercent: DEFAULT_SETTINGS.queryResponseFeePercent,
     };
+  }
+}
+
+/**
+ * Get Coordinate Shifts for all states
+ */
+export async function getCoordinateShifts(): Promise<Record<string, { eastingShift: number; northingShift: number }>> {
+  try {
+    const settings = await prisma.surfboardSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (!settings || !settings.settings) {
+      return DEFAULT_SETTINGS.coordinateShifts || {};
+    }
+
+    const s = mergeSettings(settings.settings, DEFAULT_SETTINGS);
+    return s.coordinateShifts || {};
+  } catch (error) {
+    console.error("Error fetching coordinate shifts:", error);
+    return DEFAULT_SETTINGS.coordinateShifts || {};
   }
 }
 
@@ -191,6 +257,7 @@ export async function updateSettings(
       changes: createChangeLog({
         zoneFees: `${newSettings.zoneFees.length} fee ranges`,
         systemChargePercent: newSettings.systemChargePercent,
+        coordinateShifts: newSettings.coordinateShifts ? Object.keys(newSettings.coordinateShifts).length + " states configured" : "None",
       }),
     });
 
@@ -309,5 +376,154 @@ export async function revertToPreviousSettings(
       success: false,
       error: handlePrismaError(error, "revertToPreviousSettings"),
     };
+  }
+}
+
+/**
+ * Reset settings to default
+ */
+export async function resetToDefaultSettings(): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !user.role || !["ADMIN", "SUPERADMIN"].includes(user.role)) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const currentSettings = await prisma.surfboardSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const newSettingsRecord = await prisma.surfboardSettings.create({
+      data: {
+        settings: DEFAULT_SETTINGS as any,
+        previousSettings: currentSettings?.settings || {},
+        updatedById: user.id,
+      },
+    });
+
+    await logAuditAction({
+      userId: user.id,
+      action: "RESET_SETTINGS",
+      entity: "SurfboardSettings",
+      entityId: newSettingsRecord.id,
+      changes: createChangeLog({
+        status: "Reset to default settings",
+      }),
+    });
+
+    revalidatePath("/surf-restricted/dashboard/cod-settings");
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error resetting settings:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "resetToDefaultSettings"),
+    };
+  }
+}
+
+
+// ============================================================
+// Surveyor KYC Actions
+// ============================================================
+
+export async function getSurveyorsForKyc(): Promise<ApiResult<any[]>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized access" };
+    }
+
+    const surveyors = await prisma.surfboardUser.findMany({
+      where: { role: "USER" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        surconRegNumber: true,
+        payerID: true,
+        payerIDType: true,
+        isKycValidated: true,
+        createdAt: true,
+      },
+    });
+
+    return { success: true, data: surveyors };
+  } catch (error) {
+    console.error("Error fetching surveyors for KYC:", error);
+    return { success: false, error: "Failed to fetch surveyors" };
+  }
+}
+
+export async function toggleUserKycValidation(
+  userId: string,
+  status: boolean
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized access" };
+    }
+
+    await prisma.surfboardUser.update({
+      where: { id: userId },
+      data: { isKycValidated: status },
+    });
+
+    revalidatePath("/surf-restricted/dashboard/kyc");
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error toggling KYC validation:", error);
+    return { success: false, error: "Failed to update KYC status" };
+  }
+}
+
+export async function sendAccountUpdateInquiry(
+  details: string
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || !user.email) {
+      return { success: false, error: "Unauthorized access" };
+    }
+
+    const dbUser = await prisma.surfboardUser.findUnique({
+      where: { id: user.id },
+      select: { firstName: true, lastName: true, email: true, surconRegNumber: true },
+    });
+
+    if (!dbUser) return { success: false, error: "User not found" };
+
+    const nodemailer = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+      service: "Zoho",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
+    const adminEmail = "info@twonodetechnologies.com";
+
+    const emailHtml = `
+      <h3>Surveyor Account Update Request</h3>
+      <p><strong>Name:</strong> ${dbUser.firstName} ${dbUser.lastName}</p>
+      <p><strong>Email:</strong> ${dbUser.email}</p>
+      <p><strong>SURCON Number:</strong> ${dbUser.surconRegNumber}</p>
+      <hr />
+      <h4>Requested Changes:</h4>
+      <p>${details.replace(/\n/g, "<br/>")}</p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER || "info@twonodetechnologies.com",
+      to: adminEmail,
+      subject: "Action Required: Surveyor Account Update Request",
+      html: emailHtml,
+    });
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error sending update inquiry:", error);
+    return { success: false, error: "Failed to send request" };
   }
 }

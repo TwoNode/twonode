@@ -62,6 +62,7 @@ export interface RedCopyBatchPDFData {
   submitter: RedCopySubmitterData;
   totalPlansInBatch: number;
   eligiblePlansCount: number;
+  previousSubmissionCount: number;
 }
 
 // ============================================================================
@@ -305,9 +306,12 @@ function getPillarDescription(pillarCount: number, pillarType: string): string {
 
 /**
  * Format the reference line from batch code and plan counts
- * e.g. "Batch No: SurfCoD_ABCD (7/8 ready)"
+ * e.g. "Batch No: SurfCoD_ABCD (7/8 ready)" or "(6✔️2/8 ready)"
  */
-function formatReferenceFromPlans(batchCode: string, eligible: number, total: number): string {
+function formatReferenceFromPlans(batchCode: string, eligible: number, previous: number, total: number): string {
+  if (previous > 0) {
+    return `Batch No: ${batchCode} (${previous} ok, ${eligible}/${total} ready)`;
+  }
   return `Batch No: ${batchCode} (${eligible}/${total} ready)`;
 }
 
@@ -346,10 +350,10 @@ function getFullName(submitter: RedCopySubmitterData): string {
 // ============================================================================
 
 export function RedCopySubmissionPDF({ data }: { data: RedCopyBatchPDFData }) {
-  const { plans, submitter, createdAt, batchCode, eligiblePlansCount, totalPlansInBatch } = data;
+  const { plans, submitter, createdAt, batchCode, eligiblePlansCount, previousSubmissionCount, totalPlansInBatch } = data;
 
   const formattedDate = format(new Date(createdAt), "dd-MM-yyyy");
-  const referenceText = formatReferenceFromPlans(batchCode, eligiblePlansCount, totalPlansInBatch);
+  const referenceText = formatReferenceFromPlans(batchCode, eligiblePlansCount, previousSubmissionCount, totalPlansInBatch);
   const fullName = getFullName(submitter);
 
   return (

@@ -2,6 +2,8 @@ import SurfboardAdminPanelLayout from "@/components/layouts/surfboardAdminPanelL
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 
+export const maxDuration = 60;
+
 export default async function RestrictedDashboardLayout({
   children,
 }: {

@@ -48,14 +48,14 @@ import {
   retryBatchPayment,
   getBatchPDFData,
 } from "../actions/codActions";
-import {
-  RedCopySubmissionPDF,
-  type RedCopyBatchPDFData,
+import type {
+  RedCopyBatchPDFData,
 } from "./RedCopySubmissionPDF";
+import { PhysicalSubmissionModal } from "./PhysicalSubmissionModal";
 
-// Dynamically import PDFDownloadLink to avoid SSR issues
-const PDFDownloadLink = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+// Dynamically import DownloadSubmissionLetterBtn to avoid SSR issues
+const DownloadSubmissionLetterBtn = dynamic(
+  () => import("./DownloadSubmissionLetterBtn"),
   { ssr: false, loading: () => <Loader2 className="w-4 h-4 animate-spin" /> },
 );
 
@@ -76,6 +76,12 @@ interface Batch {
     surveyTitle: string;
     status: string;
     redCopyStatus: string;
+    physicalCopySubmitted: boolean;
+    physicalCopySubmittedAt: Date | null;
+    accountsStatus: string | null;
+    chartingStatus: string | null;
+    recordsIStatus: string | null;
+    surconStatus: string | null;
   }>;
   submitter: {
     id: string;
@@ -104,6 +110,7 @@ export function SubmittedBatchesModal({
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [physicalSubmittingBatchId, setPhysicalSubmittingBatchId] = useState<string | null>(null);
 
   // PDF generation state: stores fetched PDF data keyed by batchId
   const [pdfDataMap, setPdfDataMap] = useState<Record<string, RedCopyBatchPDFData>>({});
@@ -454,40 +461,10 @@ export function SubmittedBatchesModal({
                         {canDownloadLetter(batch.paymentStatus) && (
                           <>
                             {pdfDataMap[batch.id] ? (
-                              <PDFDownloadLink
-                                document={
-                                  <RedCopySubmissionPDF
-                                    data={pdfDataMap[batch.id]}
-                                  />
-                                }
-                                fileName={`RedCopy_Submission_${batch.batchCode}.pdf`}
-                              >
-                                {({ loading, error }: { loading: boolean; error: Error | null }) => (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={loading}
-                                    className="border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
-                                  >
-                                    {loading ? (
-                                      <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Generating...
-                                      </>
-                                    ) : error ? (
-                                      <>
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Error
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Download className="w-4 h-4 mr-2" />
-                                        Download Letter
-                                      </>
-                                    )}
-                                  </Button>
-                                )}
-                              </PDFDownloadLink>
+                              <DownloadSubmissionLetterBtn
+                                batchCode={batch.batchCode}
+                                pdfData={pdfDataMap[batch.id]}
+                              />
                             ) : (
                               <Button
                                 size="sm"
@@ -516,12 +493,32 @@ export function SubmittedBatchesModal({
 
                     <AccordionContent className="pt-1">
                       <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="h-1 w-1 bg-blue-500 rounded-full"></div>
-                          <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-                            Survey Plans in this Batch
-                          </h4>
-                          <div className="h-px flex-1 bg-linear-to-r from-gray-200 to-transparent"></div>
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1 w-1 bg-blue-500 rounded-full"></div>
+                            <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                              Survey Plans in this Batch
+                            </h4>
+                            <div className="h-px flex-1 bg-linear-to-r from-gray-200 to-transparent"></div>
+                          </div>
+                          
+                          {/* Physical Copies Submitted Button */}
+                          {canDownloadLetter(batch.paymentStatus) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPhysicalSubmittingBatchId(batch.id)}
+                              disabled={
+                                !batch.plans.some(
+                                  (p) => p.redCopyStatus === "SUBMITTED" && !p.physicalCopySubmitted && p.accountsStatus === "APPROVED" && p.chartingStatus === "APPROVED" && p.recordsIStatus === "APPROVED" && p.surconStatus === "APPROVED"
+                                )
+                              }
+                              className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm transition-all duration-200 font-semibold"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Physical copies submitted
+                            </Button>
+                          )}
                         </div>
                         <div className="space-y-2.5">
                           {batch.plans.map((plan, planIndex) => (
@@ -578,6 +575,20 @@ export function SubmittedBatchesModal({
           isOpen={showPaymentView}
           onClose={handleClosePayment}
           batchData={paymentBatch}
+          onSuccess={async () => {
+            await loadBatches();
+            if (onSuccess) onSuccess();
+          }}
+        />
+      )}
+
+      {/* Physical Submission Modal */}
+      {physicalSubmittingBatchId && (
+        <PhysicalSubmissionModal
+          isOpen={true}
+          onClose={() => setPhysicalSubmittingBatchId(null)}
+          batchCode={batches.find((b) => b.id === physicalSubmittingBatchId)?.batchCode || ""}
+          plans={batches.find((b) => b.id === physicalSubmittingBatchId)?.plans || []}
           onSuccess={async () => {
             await loadBatches();
             if (onSuccess) onSuccess();

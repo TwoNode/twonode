@@ -44,7 +44,9 @@ import {
   updateSurconStatus,
   getSurconHistory,
 } from "../../../actions/codActions";
+import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
 import { usePlanLock } from "../../../hooks/usePlanLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
   PlanLockIndicator,
   LockedPlanBadge,
@@ -101,36 +103,71 @@ export default function SurconAdminPage() {
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
+
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "SURCON",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {
-    if (!searchQuery.trim()) return plans;
-    const query = searchQuery.toLowerCase();
-    return plans.filter((plan) => {
-      const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
-      const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
-      const matchesLga = plan.lga?.toLowerCase().includes(query);
-      const matchesWard = plan.ward?.toLowerCase().includes(query);
-      const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
-      const matchesUser =
-        plan.user &&
-        `${plan.user.firstName} ${plan.user.lastName}`
-          .toLowerCase()
+    let result = plans;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = plans.filter((plan) => {
+        const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
+        const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+        const matchesLga = plan.lga?.toLowerCase().includes(query);
+        const matchesWard = plan.ward?.toLowerCase().includes(query);
+        const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+        const matchesUser =
+          plan.user &&
+          `${plan.user.firstName} ${plan.user.lastName}`
+            .toLowerCase()
+            .includes(query);
+        const matchesSurconNumber = plan.user?.surconRegNumber
+          ?.toLowerCase()
           .includes(query);
-      const matchesSurconNumber = plan.user?.surconRegNumber
-        ?.toLowerCase()
-        .includes(query);
-      return (
-        matchesPlanNumber ||
-        matchesSurveyTitle ||
-        matchesLga ||
-        matchesWard ||
-        matchesBatch ||
-        matchesUser ||
-        matchesSurconNumber
-      );
-    });
-  }, [plans, searchQuery]);
+        return (
+          matchesPlanNumber ||
+          matchesSurveyTitle ||
+          matchesLga ||
+          matchesWard ||
+          matchesBatch ||
+          matchesUser ||
+          matchesSurconNumber
+        );
+      });
+    }
+
+    if (lockedPlanId) {
+      result = [...result].sort((a, b) => {
+        if (a.id === lockedPlanId) return -1;
+        if (b.id === lockedPlanId) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [plans, searchQuery, lockedPlanId]);
 
   const filteredHistoryPlans = useMemo(() => {
     if (!searchQuery.trim()) return historyPlans;
@@ -161,27 +198,7 @@ export default function SurconAdminPage() {
     });
   }, [historyPlans, searchQuery]);
 
-  // Plan lock management
-  const {
-    lockedPlanId,
-    lockedPlanNumber,
-    lockExpiresAt,
-    isLocking,
-    isLockedByMe,
-    releaseLock,
-    acquireLock,
-    showLeaveWarning,
-    confirmLeave,
-    cancelLeave,
-  } = usePlanLock({
-    role: "SURCON",
-    onLockAcquired: (planId, planNumber) => {
-      toast.success(`Plan ${planNumber} is now locked for you`);
-    },
-    onLockReleased: () => {
-      toast.info("Plan lock released");
-    },
-  });
+
 
   const handleUnlock = async () => {
     setIsUnlocking(true);
@@ -196,7 +213,19 @@ export default function SurconAdminPage() {
 
   useEffect(() => {
     fetchPlans();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const res = await getUniqueQueryReasons("surcon");
+      if (res.success && res.data) {
+        setUniqueQueryReasons(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyPlans.length === 0) {
@@ -268,7 +297,8 @@ export default function SurconAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchPlans();
+        await fetchPlans();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }
@@ -289,15 +319,35 @@ export default function SurconAdminPage() {
       const pillarsArray = Array.isArray(pillars)
         ? pillars
         : JSON.parse(pillars);
-      const lines: string[] = [];
-      for (const p of pillarsArray) {
-        const easting = p.easting ?? p.lng ?? "";
-        const northing = p.northing ?? p.lat ?? "";
-        if (easting && northing) {
-          lines.push(`${easting},${northing}`);
+
+      // Group by polygonIndex if available
+      const groups: Record<number, any[]> = {};
+      pillarsArray.forEach((p: any) => {
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push(p);
+      });
+
+      const output: string[] = [];
+      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+      
+      for (const key of groupKeys) {
+        const group = groups[Number(key)];
+        if (groupKeys.length > 1) {
+          output.push(`PL Parcel ${Number(key) + 1}`);
+        } else {
+          output.push("PL");
+        }
+        for (const p of group) {
+          const easting = p.easting ?? p.lng ?? "";
+          const northing = p.northing ?? p.lat ?? "";
+          if (easting && northing) {
+            output.push(`${easting},${northing}`);
+          }
         }
       }
-      return `PL\n${lines.join("\n")}`;
+
+      return output.join("\n");
     } catch {
       return "";
     }
@@ -524,14 +574,6 @@ export default function SurconAdminPage() {
                   Pillar Coordinates {!isHistory && "(Verify Against Database)"}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => copyPillarsToClipboard(plan.pillars)}
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
             </div>
             {(() => {
               const pillarsArray = getPillarsArray(plan.pillars);
@@ -542,45 +584,92 @@ export default function SurconAdminPage() {
                   </div>
                 );
               }
+
+              // Group by polygonIndex if available
+              const groups: Record<number, any[]> = {};
+              pillarsArray.forEach((p: any) => {
+                const idx = p.polygonIndex ?? 0;
+                if (!groups[idx]) groups[idx] = [];
+                groups[idx].push(p);
+              });
+
+              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+
               return (
                 <div className="overflow-x-auto">
-                  <div className="px-4 py-2 bg-blue-100 border-b border-blue-200">
-                    <span className="text-lg font-bold text-blue-800">PL</span>
-                  </div>
-                  <table className="min-w-full divide-y divide-blue-200">
-                    <thead className="bg-blue-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Pillar #
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Easting
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                          Northing
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-blue-100">
-                      {pillarsArray.map((pillar: any, index: number) => (
-                        <tr key={index} className="hover:bg-blue-50">
-                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {pillar.pillarNumber ||
-                              pillar.name ||
-                              `P${index + 1}`}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
-                            {(pillar.easting ?? pillar.lng)?.toFixed(3) ||
-                              "N/A"}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
-                            {(pillar.northing ?? pillar.lat)?.toFixed(3) ||
-                              "N/A"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {groupKeys.map((key) => {
+                    const group = groups[Number(key)];
+                    return (
+                      <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-blue-200" : ""}>
+                        <div className="px-4 py-2 bg-blue-100 border-b border-blue-200 flex justify-between items-center">
+                          <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">
+                            Parcel {String.fromCharCode(65 + Number(key))}
+                          </span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-xs text-blue-600 font-medium">
+                              {group.length} pillars
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs bg-white"
+                              onClick={() => {
+                                const groupText = [
+                                  "PL",
+                                  ...group.map((p: any) => {
+                                    const easting = p.easting ?? p.lng ?? "";
+                                    const northing = p.northing ?? p.lat ?? "";
+                                    return easting && northing ? `${easting},${northing}` : null;
+                                  }).filter(Boolean)
+                                ].join("\n");
+                                const isMulti = groupKeys.length > 1;
+                                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
+                                navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
+                                toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                              }}
+                            >
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copy
+                            </Button>
+                          </div>
+                        </div>
+                        <table className="min-w-full divide-y divide-blue-200">
+                          <thead className="bg-blue-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Pillar #
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Easting
+                              </th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                                Northing
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-blue-100">
+                            {group.map((pillar: any, index: number) => (
+                              <tr key={index} className="hover:bg-blue-50">
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {pillar.pillarNumber ||
+                                    pillar.name ||
+                                    `P${index + 1}`}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.easting ?? pillar.lng)?.toFixed(3) ||
+                                    "N/A"}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                  {(pillar.northing ?? pillar.lat)?.toFixed(3) ||
+                                    "N/A"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -784,6 +873,14 @@ export default function SurconAdminPage() {
                   <label className="text-sm font-medium text-gray-700">
                     Query Reason *
                   </label>
+                  <div className="mb-2 mt-2">
+                    <RemarkSelector
+                      options={uniqueQueryReasons}
+                      onSelect={(val) => setComment(val)}
+                      placeholder="Search previous query reasons..."
+                      buttonText="Select from previous query reasons..."
+                    />
+                  </div>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}

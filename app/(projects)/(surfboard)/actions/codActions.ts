@@ -1,5 +1,4 @@
 "use server";
-
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
@@ -25,7 +24,7 @@ import {
   extractEBSReceiptFields,
 } from "./aiExtractionActions";
 import { transmitToOSSG } from "./ossgActions";
-
+import area from "@turf/area";
 
 
 // Lock duration in minutes
@@ -37,6 +36,7 @@ type MDARole =
   | "SURCON"
   | "RECORDS_I"
   | "RECORDS_II"
+  | "INTAKE"
   | "ARCHIVE"
   | "MDA_SUPERADMIN";
 
@@ -49,6 +49,7 @@ function getRoleFieldPrefix(role: MDARole): string {
     SURCON: "surcon",
     RECORDS_I: "recordsI",
     RECORDS_II: "recordsII",
+    INTAKE: "intake",
     ARCHIVE: "archive",
     MDA_SUPERADMIN: "mdaSuperadmin",
   };
@@ -181,8 +182,8 @@ export async function acquirePlanLock(
       };
     }
 
-    // Batch-level locking for RECORDS_II
-    if (role === "RECORDS_II" && plan.batchId) {
+    // Batch-level locking for INTAKE and RECORDS_II
+    if ((role === "INTAKE" || role === "RECORDS_II") && plan.batchId) {
       const batchPlans = await prisma.surfboardPlan.findMany({
         where: { batchId: plan.batchId, deleted: false },
         select: { id: true, [lockedByField]: true, [lockExpiresAtField]: true }
@@ -250,8 +251,8 @@ export async function releasePlanLock(
     const lockedAtField = `${rolePrefix}LockedAt` as any;
     const lockExpiresAtField = `${rolePrefix}LockExpiresAt` as any;
 
-    // Batch-level unlocking for RECORDS_II
-    if (role === "RECORDS_II") {
+    // Batch-level unlocking for INTAKE and RECORDS_II
+    if (role === "INTAKE" || role === "RECORDS_II") {
       const plan = await prisma.surfboardPlan.findUnique({
         where: { id: planId },
         select: { batchId: true }
@@ -349,6 +350,21 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
     // Build role-specific where clause to match what's displayed on each role's page
     const getRoleSpecificCriteria = (): any => {
       switch (role) {
+        case "INTAKE":
+          // Intake: Physical copies must be submitted
+          return {
+            physicalCopySubmitted: true,
+            batch: {
+              paymentStatus: {
+                in: [
+                  "LASG_PAID",
+                  "ACCOUNTS_APPROVED",
+                  "ACCOUNTS_DISAPPROVED",
+                  "COMPLETED",
+                ] as const,
+              },
+            },
+          };
         case "RECORDS_II":
           // Records II: All 4 other approvals + intake must be complete
           return {
@@ -437,7 +453,7 @@ export async function getAndLockOldestAvailablePlan(role: MDARole): Promise<
         id: true,
         planNumber: true,
       },
-      orderBy: { redCopySubmittedAt: "asc" },
+      orderBy: role === "INTAKE" ? { physicalCopySubmittedAt: "asc" } : { redCopySubmittedAt: "asc" },
     });
 
     if (!availablePlan) {
@@ -687,9 +703,30 @@ export async function getChartingInterpretation(
   geometry: any,
 ): Promise<string | null> {
   try {
-    const geometryString =
-      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+    const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
+    
+    if (geom.type === "MultiPolygon") {
+      const interpretations = new Set<string>();
+      for (let i = 0; i < geom.coordinates.length; i++) {
+        const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
+        const polyString = JSON.stringify(poly);
+        const result = await prisma.$queryRaw<Array<{ interpretation: string }>>`
+          SELECT interpretation
+          FROM "LASG_charting_interpretation"
+          WHERE ST_Intersects(
+            geom,
+            ST_SetSRID(ST_GeomFromGeoJSON(${polyString}), 4326)
+          )
+          LIMIT 1;
+        `;
+        if (result?.length && result[0].interpretation) {
+          interpretations.add(result[0].interpretation);
+        }
+      }
+      return interpretations.size > 0 ? Array.from(interpretations).join(", ") : null;
+    }
 
+    const geometryString = JSON.stringify(geom);
     const result = await prisma.$queryRaw<Array<{ interpretation: string }>>`
       SELECT interpretation
       FROM "LASG_charting_interpretation"
@@ -718,8 +755,15 @@ export async function getZoneFromGeometry(
   geometry: any,
 ): Promise<string | null> {
   try {
-    const geometryString =
-      typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+    const geom = typeof geometry === "string" ? JSON.parse(geometry) : geometry;
+    
+    // For MultiPolygon, we take the zone of the first parcel for plan-level storage,
+    // but the actual fee calculation will iterate through all parcels.
+    const geometryToUse = geom.type === "MultiPolygon" 
+      ? { type: "Polygon", coordinates: geom.coordinates[0] }
+      : geom;
+
+    const geometryString = JSON.stringify(geometryToUse);
 
     const result = await prisma.$queryRaw<Array<{ Zone: string }>>`
       SELECT "Zone"
@@ -988,34 +1032,78 @@ export async function submitRedCopyBatch(
     const plansWithNoZone: string[] = [];
 
     for (const plan of plans) {
-      // Get zone from geometry via spatial intersection
-      const zone = await getZoneFromGeometry(plan.geometry);
+      const geom = typeof plan.geometry === "string" ? JSON.parse(plan.geometry) : plan.geometry;
+      let planTotalFee = 0;
+      let primaryZone = "";
+      let anyDoubleFee = false;
 
-      if (!zone) {
-        plansWithNoZone.push(plan.planNumber);
-        continue;
+      if (geom.type === "MultiPolygon") {
+        // Multi-parcel fee calculation
+        for (let i = 0; i < geom.coordinates.length; i++) {
+          const poly = { type: "Polygon", coordinates: geom.coordinates[i] };
+          const polyString = JSON.stringify(poly);
+          
+          // 1. Get zone for this specific parcel
+          const zoneResult = await prisma.$queryRaw<Array<{ Zone: string }>>`
+            SELECT "Zone" FROM "Scale_of_fees"
+            WHERE ST_Intersects(geom, ST_SetSRID(ST_GeomFromGeoJSON(${polyString}), 4326))
+            LIMIT 1;
+          `;
+          const parcelZone = zoneResult?.[0]?.Zone;
+          if (!parcelZone) {
+            plansWithNoZone.push(`${plan.planNumber} (Parcel ${i + 1})`);
+            continue;
+          }
+          if (!primaryZone) primaryZone = parcelZone;
+
+          // 2. Get area for this specific parcel
+          const parcelArea = area(poly as any);
+          
+          // 3. Get title for this parcel if available, otherwise use plan title
+          const parcelInfo = (plan as any).parcels?.find((p: any) => p.polygonIndex === i);
+          const titleToUse = parcelInfo?.surveyTitle || plan.surveyTitle;
+
+          // 4. Calculate fee for this parcel
+          const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+            parcelZone,
+            parcelArea,
+            titleToUse,
+            zoneFees,
+            plan.ethnicity,
+          );
+          planTotalFee += fee;
+          if (isDoubleFee) anyDoubleFee = true;
+        }
+      } else {
+        // Single parcel fee calculation (existing logic)
+        const zone = await getZoneFromGeometry(plan.geometry);
+        if (!zone) {
+          plansWithNoZone.push(plan.planNumber);
+          continue;
+        }
+        primaryZone = zone;
+
+        let areaSqM = 0;
+        try {
+          const details = computeGeometryDetails(plan.geometry as any);
+          areaSqM = details.areaSqM;
+        } catch (error) {
+          console.error("Error computing area for plan:", plan.planNumber, error);
+        }
+
+        const { fee, isDoubleFee } = await calculatePlanFeeByZone(
+          zone,
+          areaSqM,
+          plan.surveyTitle,
+          zoneFees,
+          plan.ethnicity,
+        );
+        planTotalFee = fee;
+        anyDoubleFee = isDoubleFee;
       }
 
-      // Compute area from geometry
-      let areaSqM = 0;
-      try {
-        const details = computeGeometryDetails(plan.geometry as any);
-        areaSqM = details.areaSqM;
-      } catch (error) {
-        console.error("Error computing area for plan:", plan.planNumber, error);
-      }
-
-      // Calculate fee using zone and area
-      const { fee, isDoubleFee } = await calculatePlanFeeByZone(
-        zone,
-        areaSqM,
-        plan.surveyTitle,
-        zoneFees,
-        plan.ethnicity,
-      );
-
-      planFeeData.set(plan.id, { fee, zone, isDoubleFee });
-      totalFees += fee;
+      planFeeData.set(plan.id, { fee: planTotalFee, zone: primaryZone, isDoubleFee: anyDoubleFee });
+      totalFees += planTotalFee;
     }
 
     // Block submission if any plan has no zone
@@ -1330,20 +1418,26 @@ export async function verifyBatchPaymentWithLinks(
     }
 
     // 3. Parse LASG URL parameters (deterministic — no AI needed)
-    let transId: string, transCode: string, payerId: string, payerType: string;
+    let transId: string = "", transCode: string = "", payerId: string = "", payerType: string = "n";
+    let isLegacyUrl = false;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
+      
+      if (lasgUrl.hostname !== "printreceipt.ebs-rcm.com" && !lasgUrl.hostname.includes("ebs-rcm.com")) {
+        return {
+          success: false,
+          error:
+            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL. Please paste a valid URL from ebs-rcm.com.",
+        };
+      }
+
       transId = lasgUrl.searchParams.get("transid") || "";
       transCode = lasgUrl.searchParams.get("transcode") || "";
       payerId = lasgUrl.searchParams.get("payerid") || "";
       payerType = lasgUrl.searchParams.get("payertype") || "n";
 
-      if (!transId || !transCode || !payerId) {
-        return {
-          success: false,
-          error:
-            "[Step 2: LASG URL Parsing] Invalid LASG receipt URL: missing required parameters (transid, transcode, or payerid). Please paste the full LASG receipt URL from your email.",
-        };
+      if (transId && transCode && payerId) {
+        isLegacyUrl = true;
       }
     } catch {
       return {
@@ -1453,27 +1547,7 @@ export async function verifyBatchPaymentWithLinks(
       userPromise
     ]);
 
-    // 6. Cross-check PayerID + PayerType against user profile
-    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
-    if (fullUser?.payerID) {
-      const urlPayerIdNum = parseInt(payerId, 10);
-      if (urlPayerIdNum !== fullUser.payerID) {
-        return {
-          success: false,
-          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt has Payer ID "${payerId}" but your profile has Payer ID "${fullUser.payerID}". Please ensure you are using a receipt linked to your account.`,
-        };
-      }
-
-      const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
-      if (payerType.toLowerCase() !== expectedType) {
-        return {
-          success: false,
-          error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
-        };
-      }
-    }
-
-    // 7. Handle fetching errors
+    // 6. Handle fetching errors
     if (lasgResultPromise.status === "rejected") {
       return { success: false, error: lasgResultPromise.reason?.message || "Unknown error parsing LASG receipt" };
     }
@@ -1483,6 +1557,40 @@ export async function verifyBatchPaymentWithLinks(
       return { success: false, error: remitaResultPromise.reason?.message || "Unknown error parsing Remita receipt" };
     }
     const remitaData = remitaResultPromise.value;
+
+    // 7. Cross-check PayerID + PayerType against user profile
+    const fullUser = userResultPromise.status === "fulfilled" ? userResultPromise.value : null;
+    
+    const finalPayerId = isLegacyUrl ? payerId : lasgData.payerId?.replace(/\\D/g, "");
+    const finalPayerType = isLegacyUrl ? payerType : lasgData.payerType;
+
+    if (finalPayerId) {
+      if (!fullUser?.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] You cannot verify a payment because your profile does not have a Payer ID set. Please update your profile settings first.`
+        };
+      }
+      
+      const urlPayerIdNum = parseInt(finalPayerId, 10);
+      if (urlPayerIdNum !== fullUser.payerID) {
+        return {
+          success: false,
+          error: `[Step 3: Payer ID Check] Payer ID mismatch: The LASG receipt belongs to Payer ID "${finalPayerId}" but your profile has Payer ID "${fullUser.payerID}". You cannot use another user's receipt.`,
+        };
+      }
+
+      if (finalPayerType) {
+        const expectedType = fullUser.payerIDType === "Commercial" ? "c" : "n";
+        const incomingType = finalPayerType.toLowerCase().charAt(0);
+        if (incomingType !== expectedType) {
+          return {
+            success: false,
+            error: `[Step 3: Payer Type Check] Payer Type mismatch: The LASG receipt has Payer Type "${finalPayerType.toUpperCase()}" but your profile has Payer Type "${fullUser.payerIDType || "Individual"}". Please check your profile settings.`,
+          };
+        }
+      }
+    }
 
     // 8. Cross-validation (all deterministic)
 
@@ -1535,7 +1643,9 @@ export async function verifyBatchPaymentWithLinks(
     }
 
     // 8. Construct the EBS URL from parsed LASG URL params
-    const ebsUrl = `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`;
+    const ebsUrl = isLegacyUrl
+      ? `https://printreceipt.ebs-rcm.com/Listen/printreceipt?dbName=LASG&payertype=${payerType}&payerid=${payerId}&transid=${transId}&transcode=${transCode}`
+      : lasgReceiptUrl;
     console.log("Constructed EBS URL:", ebsUrl);
 
     // 9. Update Batch — store URLs, skip S3
@@ -1736,6 +1846,12 @@ export async function getUserBatches(): Promise<
         surveyTitle: string;
         status: string;
         redCopyStatus: string;
+        physicalCopySubmitted: boolean;
+        physicalCopySubmittedAt: Date | null;
+        accountsStatus: string | null;
+        chartingStatus: string | null;
+        recordsIStatus: string | null;
+        surconStatus: string | null;
       }>;
       submitter: {
         id: string;
@@ -1777,6 +1893,12 @@ export async function getUserBatches(): Promise<
             surveyTitle: true,
             status: true,
             redCopyStatus: true,
+            physicalCopySubmitted: true,
+            physicalCopySubmittedAt: true,
+            accountsStatus: true,
+            chartingStatus: true,
+            recordsIStatus: true,
+            surconStatus: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -1842,6 +1964,7 @@ export async function getBatchPDFData(batchId: string): Promise<
     };
     totalPlansInBatch: number;
     eligiblePlansCount: number;
+    previousSubmissionCount: number;
   }>
 > {
   try {
@@ -1873,6 +1996,8 @@ export async function getBatchPDFData(batchId: string): Promise<
             chartingStatus: true,
             surconStatus: true,
             recordsIStatus: true,
+            physicalCopySubmitted: true,
+            physicalCopySubmittedAt: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -1899,15 +2024,38 @@ export async function getBatchPDFData(batchId: string): Promise<
 
     const totalPlansInBatch = batch.plans.length;
 
-    // Filter plans that are fully approved
-    const eligiblePlans = batch.plans.filter((plan) => 
-      plan.accountsStatus === "APPROVED" &&
-      plan.chartingStatus === "APPROVED" &&
-      plan.surconStatus === "APPROVED" &&
-      plan.recordsIStatus === "APPROVED"
+    // Filter plans that have all 4 approvals
+    const eligiblePlans = batch.plans.filter(
+      (plan) => 
+        plan.accountsStatus === "APPROVED" &&
+        plan.chartingStatus === "APPROVED" &&
+        plan.recordsIStatus === "APPROVED" &&
+        plan.surconStatus === "APPROVED"
     );
 
-    const eligiblePlansCount = eligiblePlans.length;
+    // Select eligible plans that are not yet physically submitted
+    let currentSubmissionPlans = eligiblePlans.filter(p => !p.physicalCopySubmitted);
+
+    // If all eligible plans are already physically submitted, fallback to showing the latest submission
+    if (currentSubmissionPlans.length === 0 && eligiblePlans.length > 0) {
+      let latestSubmissionTime = 0;
+      eligiblePlans.forEach(p => {
+        if (p.physicalCopySubmittedAt) {
+          const t = new Date(p.physicalCopySubmittedAt).getTime();
+          if (t > latestSubmissionTime) latestSubmissionTime = t;
+        }
+      });
+
+      if (latestSubmissionTime > 0) {
+        currentSubmissionPlans = eligiblePlans.filter(p => {
+          if (!p.physicalCopySubmittedAt) return false;
+          return Math.abs(new Date(p.physicalCopySubmittedAt).getTime() - latestSubmissionTime) < 5 * 60 * 1000;
+        });
+      }
+    }
+
+    const previousSubmissionCount = eligiblePlans.length - currentSubmissionPlans.length;
+    const eligiblePlansCount = currentSubmissionPlans.length;
 
     // Map plans to include calculated pillar count (unique pillar numbers only)
     const plans = eligiblePlans.map((plan) => {
@@ -1949,10 +2097,13 @@ export async function getBatchPDFData(batchId: string): Promise<
       data: {
         batchCode: batch.batchCode,
         createdAt: batch.createdAt,
-        plans,
+        // plans,
         submitter: batch.submitter,
         totalPlansInBatch,
         eligiblePlansCount,
+        previousSubmissionCount,
+        // We only show the currently submitted plans in the table
+        plans: plans.filter(p => currentSubmissionPlans.some(csp => csp.planNumber === p.planNumber)),
       },
     };
   } catch (error) {
@@ -2195,7 +2346,7 @@ export async function updateAccountsApproval(
       },
     });
 
-    // Update accountsStatus on all plans in the batch
+    // Update accountsStatus on all plans in the batch and release locks
     await prisma.surfboardPlan.updateMany({
       where: { batchId: batchId },
       data: {
@@ -2203,6 +2354,9 @@ export async function updateAccountsApproval(
         accountsApprovedBy: user.id,
         accountsApprovedAt: new Date(),
         accountsComment: comment,
+        accountsLockedBy: null,
+        accountsLockedAt: null,
+        accountsLockExpiresAt: null,
       },
     });
 
@@ -2296,6 +2450,9 @@ export async function updateChartingStatus(
         chartingStatus: approved ? "APPROVED" : "QUERIED",
         chartingApprovedBy: user.id,
         chartingApprovedAt: new Date(),
+        chartingLockedBy: null,
+        chartingLockedAt: null,
+        chartingLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2376,6 +2533,9 @@ export async function updateSurconStatus(
         surconApprovedBy: user.id,
         surconApprovedAt: new Date(),
         surconComment: comment,
+        surconLockedBy: null,
+        surconLockedAt: null,
+        surconLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2456,6 +2616,9 @@ export async function updateRecordsIStatus(
         recordsIApprovedBy: user.id,
         recordsIApprovedAt: new Date(),
         recordsIComment: comment,
+        recordsILockedBy: null,
+        recordsILockedAt: null,
+        recordsILockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2560,6 +2723,9 @@ export async function updateIntakeStatus(
         intakeApprovedBy: user.id,
         intakeApprovedAt: new Date(),
         intakeComment: comment,
+        intakeLockedBy: null,
+        intakeLockedAt: null,
+        intakeLockExpiresAt: null,
       },
       select: {
         userId: true,
@@ -2663,6 +2829,9 @@ export async function updateRecordsIIStatus(
         recordsIIApprovedBy: user.id,
         recordsIIApprovedAt: new Date(),
         recordsIIComment: comment,
+        recordsIILockedBy: null,
+        recordsIILockedAt: null,
+        recordsIILockExpiresAt: null,
         // Nullify other roles + intake if queried
         ...(!approved ? {
           accountsStatus: "PENDING",
@@ -2788,6 +2957,7 @@ export async function getAccountsBatches() {
           select: {
             id: true,
             planNumber: true,
+            planType: true,
             lga: true,
             deededArea: true,
             queryLasgReceiptUrls: true,
@@ -2795,7 +2965,7 @@ export async function getAccountsBatches() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
 
     console.log("\n\n\n\n\n\n\n\n Accounts batches:", batches);
@@ -2977,6 +3147,7 @@ export async function getPendingCountByRole(): Promise<
               recordsIStatus: "APPROVED",
               recordsIIStatus: "PENDING",
               intakeStatus: "PENDING",
+              physicalCopySubmitted: true,
               deleted: false,
             }
           }
@@ -3951,6 +4122,7 @@ export async function getAccountsHistory() {
           select: {
             id: true,
             planNumber: true,
+            planType: true,
             lga: true,
             deededArea: true,
             queryLasgReceiptUrls: true,
@@ -4061,33 +4233,51 @@ async function verifyQueryPaymentLinks(
       fetch(remitaApiUrl, { headers: { "User-Agent": "Mozilla/5.0" } }),
       prisma.surfboardUser.findUnique({
         where: { id: user.id },
-        select: { payerID: true },
+        select: { payerID: true, payerIDType: true },
       })
     ]);
 
     // 2. Parse LASG URL parameters (locally)
-    let transId: string, transCode: string, payerId: string;
+    let transId: string = "", transCode: string = "", payerId: string = "", payerType: string = "";
+    let isLegacyUrl = false;
     try {
       const lasgUrl = new URL(lasgReceiptUrl);
+      
+      if (lasgUrl.hostname !== "printreceipt.ebs-rcm.com" && !lasgUrl.hostname.includes("ebs-rcm.com")) {
+        return { success: false, error: "Invalid LASG receipt URL. Please paste a valid URL from ebs-rcm.com." };
+      }
+
       transId = lasgUrl.searchParams.get("transid") || "";
       transCode = lasgUrl.searchParams.get("transcode") || "";
       payerId = lasgUrl.searchParams.get("payerid") || "";
+      payerType = lasgUrl.searchParams.get("payertype") || "n";
 
-      if (!transId || !transCode || !payerId) {
-        return { success: false, error: "Invalid LASG receipt URL parameters." };
+      if (transId && transCode && payerId) {
+        isLegacyUrl = true;
       }
     } catch {
       return { success: false, error: "Invalid LASG receipt URL format." };
     }
 
     // 3. Verify PayerID
-    if (fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
+    if (isLegacyUrl && fullUserResult.status === "fulfilled" && fullUserResult.value?.payerID) {
       const dbPayerID = fullUserResult.value.payerID;
       if (parseInt(payerId, 10) !== dbPayerID) {
         return {
           success: false,
           error: `Payer ID mismatch: Receipt has ${payerId}, profile has ${dbPayerID}.`,
         };
+      }
+
+      if (payerType) {
+        const expectedType = fullUserResult.value.payerIDType === "Commercial" ? "c" : "n";
+        const incomingType = payerType.toLowerCase().charAt(0);
+        if (incomingType !== expectedType) {
+          return {
+            success: false,
+            error: `Payer Type mismatch: The LASG receipt has Payer Type "${payerType.toUpperCase()}" but your profile has Payer Type "${fullUserResult.value.payerIDType || "Individual"}". Please check your profile settings.`,
+          };
+        }
       }
     }
 
@@ -4447,14 +4637,17 @@ export async function getIntakeBatches() {
           some: {
             redCopyStatus: "SUBMITTED",
             deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
             accountsStatus: "APPROVED",
             chartingStatus: "APPROVED",
-            surconStatus: "APPROVED",
             recordsIStatus: "APPROVED",
-            intakeStatus: "PENDING",
-            recordsIIStatus: "PENDING",
+            surconStatus: "APPROVED",
           }
-        }
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
       },
       include: {
         submitter: { select: { firstName: true, lastName: true, email: true, surconRegNumber: true, companyName: true, phoneNumber: true } },
@@ -4463,12 +4656,30 @@ export async function getIntakeBatches() {
           where: {
             redCopyStatus: "SUBMITTED",
             deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
             accountsStatus: "APPROVED",
             chartingStatus: "APPROVED",
-            surconStatus: "APPROVED",
             recordsIStatus: "APPROVED",
-            intakeStatus: "PENDING",
-          }
+            surconStatus: "APPROVED",
+          },
+          select: {
+            id: true,
+            planNumber: true,
+            surveyTitle: true,
+            lga: true,
+            ward: true,
+            lcda: true,
+            deededArea: true,
+            redCopyFileUrl: true,
+            intakeStatus: true,
+            intakeLockedBy: true,
+            intakeLockExpiresAt: true,
+            physicalCopySubmittedAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
+          },
+          orderBy: { physicalCopySubmittedAt: "asc" }
         }
       },
       orderBy: { createdAt: "asc" }
@@ -4495,7 +4706,11 @@ export async function getIntakeHistoryBatches() {
       where: {
         plans: {
           some: {
-            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+            intakeStatus: { in: ["APPROVED", "QUERIED"] },
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           }
         }
       },
@@ -4504,7 +4719,11 @@ export async function getIntakeHistoryBatches() {
         _count: { select: { plans: true } },
         plans: {
           where: {
-            intakeStatus: { in: ["APPROVED", "QUERIED"] }
+            intakeStatus: { in: ["APPROVED", "QUERIED"] },
+            accountsStatus: "APPROVED",
+            chartingStatus: "APPROVED",
+            recordsIStatus: "APPROVED",
+            surconStatus: "APPROVED",
           },
           include: {
             intakeApprovedByUser: { select: { id: true, firstName: true, lastName: true } }
@@ -4694,6 +4913,8 @@ export async function getRecordsIIBatches() {
             intakeApprovedAt: true,
             recordsIILockedBy: true,
             recordsIILockExpiresAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
           },
         },
       },
@@ -4807,6 +5028,8 @@ export async function getRecordsIIHistoryBatches() {
             recordsIIStatus: true,
             recordsIIComment: true,
             recordsIIApprovedAt: true,
+            recordCopyVerdict: true,
+            recordCopyVerificationData: true,
             recordsIIApprovedByUser: {
               select: {
                 firstName: true,
@@ -5032,6 +5255,425 @@ export async function releaseBatchLockForRecordsII(): Promise<
     return {
       success: false,
       error: handlePrismaError(error, "releaseBatchLockForRecordsII"),
+    };
+  }
+}
+
+/**
+ * Get and lock the oldest available batch for Intake
+ */
+export async function getAndLockBatchForIntake(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+
+    // First, check if user already has plans locked for INTAKE
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        intakeLockedBy: user.id,
+        intakeLockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        intakeLockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          intakeLockedBy: user.id,
+          intakeLockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.intakeLockExpiresAt,
+        },
+      };
+    }
+
+    // Find the oldest batch with plans ready for INTAKE (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
+            OR: [
+              { intakeLockedBy: null },
+              { intakeLockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            redCopyStatus: "SUBMITTED",
+            deleted: false,
+            physicalCopySubmitted: true,
+            intakeStatus: "PENDING",
+            OR: [
+              { intakeLockedBy: null },
+              { intakeLockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true, physicalCopySubmittedAt: true },
+          orderBy: { physicalCopySubmittedAt: "asc" },
+        },
+      },
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    // Sort by oldest physicalCopySubmittedAt in the batch's eligible plans
+    availableBatch.plans.sort((a, b) => {
+      const dateA = a.physicalCopySubmittedAt ? new Date(a.physicalCopySubmittedAt).getTime() : 0;
+      const dateB = b.physicalCopySubmittedAt ? new Date(b.physicalCopySubmittedAt).getTime() : 0;
+      return dateA - dateB;
+    });
+
+    const planCount = availableBatch.plans.length;
+    // 3 minutes per plan in the batch
+    const lockDurationMinutes = planCount * 3;
+    const lockExpiresAt = new Date(now.getTime() + lockDurationMinutes * 60000);
+    const planIdsToLock = availableBatch.plans.map((p) => p.id);
+
+    // Lock all available plans in the batch
+    await prisma.surfboardPlan.updateMany({
+      where: { id: { in: planIdsToLock } },
+      data: {
+        intakeLockedBy: user.id,
+        intakeLockedAt: now,
+        intakeLockExpiresAt: lockExpiresAt,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount,
+        locked: true,
+        lockExpiresAt,
+      },
+    };
+  } catch (error) {
+    console.error("Error acquiring batch lock for INTAKE:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForIntake"),
+    };
+  }
+}
+
+/**
+ * Release lock for a batch currently locked by the user for Intake
+ */
+export async function releaseBatchLockForIntake(): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    await prisma.surfboardPlan.updateMany({
+      where: { intakeLockedBy: user.id },
+      data: {
+        intakeLockedBy: null,
+        intakeLockedAt: null,
+        intakeLockExpiresAt: null,
+      },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error releasing batch lock for INTAKE:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForIntake"),
+    };
+  }
+}
+
+/**
+ * Submit physical copies for a selection of plans within a batch
+ */
+export async function submitPhysicalCopies(
+  planIds: string[],
+): Promise<ApiResult<{ count: number }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const plans = await prisma.surfboardPlan.findMany({
+      where: {
+        id: { in: planIds },
+        userId: user.id,
+        redCopyStatus: "SUBMITTED",
+        physicalCopySubmitted: false,
+        deleted: false,
+      },
+      select: { id: true },
+    });
+
+    if (plans.length === 0) {
+      return { success: false, error: "No eligible plans found to submit" };
+    }
+
+    const validPlanIds = plans.map((p) => p.id);
+    const now = new Date();
+
+    const result = await prisma.surfboardPlan.updateMany({
+      where: { id: { in: validPlanIds } },
+      data: {
+        physicalCopySubmitted: true,
+        physicalCopySubmittedAt: now,
+      },
+    });
+
+    return { success: true, data: { count: result.count } };
+  } catch (error) {
+    console.error("Error submitting physical copies:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "submitPhysicalCopies"),
+    };
+  }
+}
+
+/**
+ * Get and lock the oldest available batch for Accounts
+ * Sorts by payment date (oldest first). Lock is fixed for 3 minutes.
+ */
+export async function getAndLockBatchForAccounts(): Promise<
+  ApiResult<{
+    batchId: string | null;
+    batchCode: string | null;
+    planCount: number;
+    locked: boolean;
+    lockExpiresAt: Date | null;
+  }>
+> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const now = new Date();
+    const lockExpiry = new Date(now.getTime() + 3 * 60000); // 3 minutes fixed lock
+
+    // 1. First, check if user already has plans locked for Accounts
+    const existingLock = await prisma.surfboardPlan.findFirst({
+      where: {
+        accountsLockedBy: user.id,
+        accountsLockExpiresAt: { gt: now },
+        deleted: false,
+      },
+      select: {
+        id: true,
+        batchId: true,
+        accountsLockExpiresAt: true,
+        batch: {
+          select: {
+            id: true,
+            batchCode: true,
+          },
+        },
+      },
+    });
+
+    if (existingLock && existingLock.batch) {
+      // Count how many plans in this batch are locked by the user
+      const lockedCount = await prisma.surfboardPlan.count({
+        where: {
+          batchId: existingLock.batchId!,
+          accountsLockedBy: user.id,
+          accountsLockExpiresAt: { gt: now },
+          deleted: false,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          batchId: existingLock.batch.id,
+          batchCode: existingLock.batch.batchCode,
+          planCount: lockedCount,
+          locked: true,
+          lockExpiresAt: existingLock.accountsLockExpiresAt,
+        },
+      };
+    }
+
+    // 2. Find the oldest batch with plans ready for Accounts (not locked by anyone else)
+    const availableBatch = await prisma.certificateOfDepositBatch.findFirst({
+      where: {
+        plans: {
+          some: {
+            deleted: false,
+            accountsStatus: "PENDING",
+            OR: [
+              { accountsLockedBy: null },
+              { accountsLockExpiresAt: { lt: now } },
+            ],
+          },
+        },
+        paymentStatus: {
+          in: ["LASG_PAID", "ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"],
+        },
+      },
+      include: {
+        plans: {
+          where: {
+            deleted: false,
+            accountsStatus: "PENDING",
+            OR: [
+              { accountsLockedBy: null },
+              { accountsLockExpiresAt: { lt: now } },
+            ],
+          },
+          select: { id: true },
+        },
+      },
+      orderBy: [
+        { userPaymentDate: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+
+    if (!availableBatch || availableBatch.plans.length === 0) {
+      return {
+        success: true,
+        data: {
+          batchId: null,
+          batchCode: null,
+          planCount: 0,
+          locked: false,
+          lockExpiresAt: null,
+        },
+      };
+    }
+
+    const planCount = availableBatch.plans.length;
+    const planIdsToLock = availableBatch.plans.map((p) => p.id);
+
+    // Lock all plans in the batch atomically
+    const lockResult = await prisma.surfboardPlan.updateMany({
+      where: {
+        id: { in: planIdsToLock },
+        OR: [
+          { accountsLockedBy: null },
+          { accountsLockedBy: user.id },
+          { accountsLockExpiresAt: { lt: now } },
+        ],
+      },
+      data: {
+        accountsLockedBy: user.id,
+        accountsLockedAt: now,
+        accountsLockExpiresAt: lockExpiry,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Retrying in case of race condition
+      return getAndLockBatchForAccounts();
+    }
+
+    return {
+      success: true,
+      data: {
+        batchId: availableBatch.id,
+        batchCode: availableBatch.batchCode,
+        planCount: lockResult.count,
+        locked: true,
+        lockExpiresAt: lockExpiry,
+      },
+    };
+  } catch (error) {
+    console.error("Error locking batch for Accounts:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "getAndLockBatchForAccounts"),
+    };
+  }
+}
+
+/**
+ * Release lock for a batch currently locked by the user for Accounts
+ */
+export async function releaseBatchLockForAccounts(): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    await prisma.surfboardPlan.updateMany({
+      where: { accountsLockedBy: user.id },
+      data: {
+        accountsLockedBy: null,
+        accountsLockedAt: null,
+        accountsLockExpiresAt: null,
+      },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error releasing batch lock for Accounts:", error);
+    return {
+      success: false,
+      error: handlePrismaError(error, "releaseBatchLockForAccounts"),
     };
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   PillarData,
@@ -8,11 +8,15 @@ import {
   PlanType,
   SurfboardPlanDTO,
   MAX_FILE_BYTES,
+  PILLAR_TYPES,
+  PILLAR_TYPE_ADJOINING_FILTERS,
+  REFERENCE_FILTERS,
 } from "../types/surfboardTypes";
 import {
   createSurfPlan,
   updateSurfPlan,
   checkPlanNumberExists,
+  searchReferencePlanNumbers,
 } from "../actions/surfboardActions";
 import { uploadSurfboardFileWithAuth } from "../actions/awsActions";
 import { Badge } from "@/components/ui/badge";
@@ -48,12 +52,16 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
     lcda: initial?.lcda || null,
     lga: initial?.lga || null,
     state: initial?.state || null,
+    locality: initial?.locality || "",
     status: initial?.status || "PENDING",
     isLive: initial?.isLive || false,
-    referencePlanNumber: initial?.referencePlanNumber || null,
+    referencePlanNumber: initial?.referencePlanNumber || "",
+    pillarTypeReferencePlanNumber: initial?.pillarTypeReferencePlanNumber || "",
+    parcels: initial?.parcels || [],
     dateLodged: initial?.dateLodged || null,
     id: initial?.id,
     userId: initial?.userId,
+    reasonForWithdrawalAndResubmission: initial?.reasonForWithdrawalAndResubmission || "",
   };
 };
 
@@ -166,6 +174,71 @@ export default function OptimizedSurfboardPlanForm({
   const [cadFiles, setCadFiles] = useState<File[]>([]);
   const [certFiles, setCertFiles] = useState<File[]>([]);
 
+  // Adjoining Pillar logic
+  const adjoiningFilterConf = PILLAR_TYPE_ADJOINING_FILTERS[formData.pillarType];
+  const showAdjoiningField = adjoiningFilterConf?.showReferenceField;
+  const isAdjoiningRequired = adjoiningFilterConf?.required;
+
+  // Adjoining Ref Plan search state
+  const [adjOptions, setAdjOptions] = useState<string[]>([]);
+  const [adjQuery, setAdjQuery] = useState("");
+  const [adjOpen, setAdjOpen] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED);
+        setAdjOptions(list || []);
+      } catch (e) {
+        console.error(e);
+        setAdjOptions([]);
+      }
+    };
+    if (showAdjoiningField) {
+      load();
+      setAdjQuery("");
+    }
+  }, [showAdjoiningField]);
+
+  const filteredAdjOptions = useMemo(() => {
+    if (!adjQuery.trim()) return adjOptions;
+    const q = adjQuery.toLowerCase();
+    return adjOptions.filter((o) => o.toLowerCase().includes(q));
+  }, [adjOptions, adjQuery]);
+
+  // Reference Plan Logic
+  const refFilterConf = formData.planType ? REFERENCE_FILTERS[formData.planType] : null;
+  const showReferenceField = refFilterConf?.showField;
+  const isReferenceRequired = refFilterConf?.required;
+
+  // Reference Plan search state
+  const [refOptions, setRefOptions] = useState<string[]>([]);
+  const [refQuery, setRefQuery] = useState("");
+  const [refOpen, setRefOpen] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!formData.planType) return;
+      try {
+        const list = await searchReferencePlanNumbers(formData.planType);
+        setRefOptions(list || []);
+      } catch (e) {
+        console.error(e);
+        setRefOptions([]);
+      }
+    };
+    if (showReferenceField) {
+      load();
+      setRefQuery("");
+    }
+  }, [formData.planType, showReferenceField]);
+
+  const filteredRefOptions = useMemo(() => {
+    if (!refQuery.trim()) return refOptions;
+    const q = refQuery.toLowerCase();
+    return refOptions.filter((o) => o.toLowerCase().includes(q));
+  }, [refOptions, refQuery]);
+
   // Update form data when initialData changes
   useEffect(() => {
     if (initialData) {
@@ -211,6 +284,29 @@ export default function OptimizedSurfboardPlanForm({
     }
     if (!formData.dateOnSurveyPlan) {
       newErrors.dateOnSurveyPlan = "Date on survey plan is required";
+    }
+
+    if (showAdjoiningField && isAdjoiningRequired && !formData.pillarTypeReferencePlanNumber?.trim()) {
+      newErrors.pillarTypeReferencePlanNumber = "Adjoining reference plan number is required";
+    }
+
+    if (showReferenceField) {
+      if (!formData.referencePlanNumber?.trim()) {
+        newErrors.referencePlanNumber = "Reference plan number is required";
+      } else if (
+        refFilterConf &&
+        !refFilterConf.allowFreeText &&
+        !refOptions.includes(formData.referencePlanNumber)
+      ) {
+        newErrors.referencePlanNumber = "Must select a valid plan number from the list";
+      }
+    }
+
+    if (
+      formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
+      !formData.reasonForWithdrawalAndResubmission?.trim()
+    ) {
+      newErrors.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
     }
 
     // File validation for create mode
@@ -556,13 +652,156 @@ export default function OptimizedSurfboardPlanForm({
                     )}
                   >
                     <option value="">-- Select Pillar Type --</option>
-                    <option value="REGULAR">REGULAR</option>
-                    <option value="SPECIAL">SPECIAL</option>
+                    {Object.values(PILLAR_TYPES).map((pt) => (
+                      <option key={pt} value={pt}>
+                        {pt}
+                      </option>
+                    ))}
                   </select>
                   {errors.pillarType && (
                     <p className={errorCls}>{errors.pillarType}</p>
                   )}
                 </div>
+
+                {showAdjoiningField && (
+                  <div>
+                    <label
+                      className={labelCls}
+                      htmlFor="pillarTypeReferencePlan"
+                    >
+                      Adjoining Reference Plan No.{" "}
+                      {isAdjoiningRequired && reqBadge}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="pillarTypeReferencePlan"
+                        type="text"
+                        value={formData.pillarTypeReferencePlanNumber ?? ""}
+                        onChange={(e) => {
+                          setAdjQuery(e.target.value);
+                          setField(
+                            "pillarTypeReferencePlanNumber",
+                            e.target.value
+                          );
+                        }}
+                        onFocus={() => setAdjOpen(true)}
+                        onBlur={() => setTimeout(() => setAdjOpen(false), 120)}
+                        className={cn(
+                          inputBase,
+                          errors.pillarTypeReferencePlanNumber
+                            ? inputError
+                            : inputBorder,
+                          "pr-8"
+                        )}
+                        placeholder="Search for reference plan..."
+                        aria-invalid={!!errors.pillarTypeReferencePlanNumber}
+                      />
+                      {adjOpen && filteredAdjOptions.length > 0 && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          <ul className="py-1">
+                            {filteredAdjOptions.map((pn, i) => (
+                              <li
+                                key={pn + i}
+                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                onMouseDown={() => {
+                                  setField("pillarTypeReferencePlanNumber", pn);
+                                  setAdjQuery("");
+                                  setAdjOpen(false);
+                                }}
+                              >
+                                {pn}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {showReferenceField && (
+                  <div>
+                    <label className={labelCls} htmlFor="referencePlan">
+                      Reference Plan No.{" "}
+                      {isReferenceRequired && reqBadge}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="referencePlan"
+                        type="text"
+                        value={formData.referencePlanNumber ?? ""}
+                        onChange={(e) => {
+                          setRefQuery(e.target.value);
+                          setField("referencePlanNumber", e.target.value);
+                        }}
+                        onFocus={() => setRefOpen(true)}
+                        onBlur={() => setTimeout(() => setRefOpen(false), 120)}
+                        className={cn(
+                          inputBase,
+                          errors.referencePlanNumber ? inputError : inputBorder,
+                          "pr-8"
+                        )}
+                        placeholder="Search for reference plan..."
+                        aria-invalid={!!errors.referencePlanNumber}
+                      />
+                      {refOpen && filteredRefOptions.length > 0 && (
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                          <ul className="py-1">
+                            {filteredRefOptions.map((pn, i) => (
+                              <li
+                                key={pn + i}
+                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                onMouseDown={() => {
+                                  setField("referencePlanNumber", pn);
+                                  setRefQuery("");
+                                  setRefOpen(false);
+                                }}
+                              >
+                                {pn}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {errors.referencePlanNumber && (
+                      <p className={errorCls}>{errors.referencePlanNumber}</p>
+                    )}
+                  </div>
+                )}
+
+                {formData.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && (
+                  <div className="md:col-span-2">
+                    <label className={labelCls} htmlFor="reasonForWithdrawal">
+                      Reason for Withdrawal {reqBadge}
+                    </label>
+                    <textarea
+                      id="reasonForWithdrawal"
+                      rows={3}
+                      value={formData.reasonForWithdrawalAndResubmission ?? ""}
+                      onChange={(e) =>
+                        setField(
+                          "reasonForWithdrawalAndResubmission",
+                          e.target.value
+                        )
+                      }
+                      className={cn(
+                        inputBase,
+                        errors.reasonForWithdrawalAndResubmission
+                          ? inputError
+                          : inputBorder,
+                        "resize-none py-2"
+                      )}
+                      placeholder="Please specify the reason for withdrawal and resubmission..."
+                      aria-invalid={!!errors.reasonForWithdrawalAndResubmission}
+                    />
+                    {errors.reasonForWithdrawalAndResubmission && (
+                      <p className={errorCls}>
+                        {errors.reasonForWithdrawalAndResubmission}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </Section>
 
@@ -951,7 +1190,7 @@ export default function OptimizedSurfboardPlanForm({
                     : "border border-gray-200"
                 )}
               >
-                <MaplibreMap processedPillars={formData.pillars} />
+                <MaplibreMap processedPillars={formData.pillars} state={formData.state} />
               </div>
             </section>
           </div>

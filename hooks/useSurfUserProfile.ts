@@ -27,6 +27,7 @@ export function useSurfUserProfile() {
     address: "",
     payerID: null,
     payerIDType: "",
+    isKycValidated: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +62,7 @@ export function useSurfUserProfile() {
             address: data.address || "",
             payerID: data.payerID ?? null,
             payerIDType: data.payerIDType || "",
+            isKycValidated: data.isKycValidated ?? false,
           });
         }
       } catch (error) {
@@ -221,6 +223,7 @@ export function useSurfUserProfile() {
           address: data.address || "",
           payerID: data.payerID ?? null,
           payerIDType: data.payerIDType || "",
+            isKycValidated: data.isKycValidated ?? false,
         };
 
         setUserData(updatedData);

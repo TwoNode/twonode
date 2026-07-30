@@ -213,6 +213,7 @@ model SurfboardUser {
   emailVerificationExpires DateTime?
 
   isActive Boolean @default(true)
+  isKycValidated Boolean @default(false)
 
   // New fields
   logo            String? // URL to the user's logo
@@ -236,6 +237,10 @@ model SurfboardUser {
   subscriptionHistory SubscriptionHistory[]
   batches             CertificateOfDepositBatch[]
   settingsUpdates     SurfboardSettings[]
+  wallet              SurveyorWallet?
+  bankDetails         SurveyorBankDetails?
+  withdrawalRequests  WithdrawalRequest[]
+  qrTransactions      QREarningsTransaction[]     @relation("SurveyorQREarnings")
 
   // MDA Approval Relations (reverse)
   plansApprovedAsAccounts   SurfboardPlan[]             @relation("AccountsApprover")
@@ -416,12 +421,24 @@ model SurfboardPlan {
   recordsILockedAt       DateTime? // When the lock was acquired
   recordsILockExpiresAt  DateTime? // When the lock expires
 
+  // Physical copy tracking
+  physicalCopySubmitted   Boolean   @default(false)
+  physicalCopySubmittedAt DateTime?
+
+  // Record Copy Verification
+  recordCopyVerifiedAt       DateTime?
+  recordCopyVerdict          String?   // "VERIFIED", "REVIEW", "NOT_VERIFIED", "ERROR"
+  recordCopyVerificationData Json?
+
   // Approval tracking - Intake
   intakeApprovedBy     String?
   intakeApprovedByUser SurfboardUser?  @relation("IntakeApprover", fields: [intakeApprovedBy], references: [id])
   intakeApprovedAt     DateTime?
   intakeStatus         ApprovalStatus? @default(PENDING)
   intakeComment        String?
+  intakeLockedBy       String? // User ID who locked this plan for Intake review
+  intakeLockedAt       DateTime? // When the lock was acquired
+  intakeLockExpiresAt  DateTime? // When the lock expires
 
   // Approval tracking - Records II
   recordsIIApprovedBy     String?
@@ -459,6 +476,16 @@ model SurfboardPlan {
   /// Reason required when planType is "Withdrawal and Resubmission"
   reasonForWithdrawalAndResubmission String?
 
+  /// Withdrawal and Resubmission status tracking
+  /// Values: "No_Action" (default), "Withdrawn", "Resubmitted"
+  withdrawalAndResubmissionStatus String? @default("No_Action")
+
+  /// Reference plan triggered by adjoining pillar type (REGULAR+ADJOINING, SPECIAL+ADJOINING)
+  pillarTypeReferencePlanNumber String?
+
+  /// Per-parcel metadata for MultiPolygon plans (survey titles, locations)
+  parcels Json? // Array of ParcelInfo objects
+
   /// Workflow status (default PENDING)
   status SurfboardPlanStatus @default(PENDING)
 
@@ -483,6 +510,10 @@ model SurfboardPlan {
   // Query Fee Receipts
   queryLasgReceiptUrls   String[] @default([])
   queryRemitaReceiptUrls String[] @default([])
+
+  // QR Code Earnings tracking
+  qrScanCount    Int                     @default(0)
+  qrTransactions QREarningsTransaction[]
 
   /// Creation & update timestamps
   createdAt DateTime @default(now())
@@ -640,6 +671,110 @@ model SurfboardSettings {
 }
 
 // --------------------------------------------------------------------------------
+// QR Code Earnings Models
+// --------------------------------------------------------------------------------
+
+enum QRServiceType {
+  LOCATION_AUTHENTICITY
+  CERTIFICATE_OF_DEPOSIT
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+model QREarningsTransaction {
+  id              String        @id @default(uuid())
+  reference       String        @unique
+  planId          String        @db.Uuid
+  plan            SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  surveyorId      String
+  surveyor        SurfboardUser @relation("SurveyorQREarnings", fields: [surveyorId], references: [id])
+
+  serviceType     QRServiceType
+  verificationFee Float
+  serviceFee      Float
+  mdaFee          Float         @default(0)
+  totalAmount     Float
+  surveyorEarned  Float
+
+  payerEmail      String?
+  payerName       String?
+  paymentStatus   String        @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentRef      String?
+
+  accessToken     String        @unique @default(uuid())
+  expiresAt       DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([planId])
+  @@index([surveyorId])
+  @@index([reference])
+  @@index([accessToken])
+  @@map("qr_earnings_transactions")
+}
+
+model SurveyorWallet {
+  id                String        @id @default(uuid())
+  userId            String        @unique
+  user              SurfboardUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance  Float         @default(0)
+  pendingWithdrawal Float         @default(0)
+  totalWithdrawn    Float         @default(0)
+  totalEarned       Float         @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("surveyor_wallets")
+}
+
+model SurveyorBankDetails {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          SurfboardUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  recipientCode String? // Paystack Transfer Recipient Code (e.g. RCP_12345)
+  isVerified    Boolean       @default(false)
+  verifiedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("surveyor_bank_details")
+}
+
+model WithdrawalRequest {
+  id            String           @id @default(uuid())
+  requestRef    String           @unique @default(dbgenerated("concat('WD_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
+  userId        String
+  user          SurfboardUser    @relation(fields: [userId], references: [id])
+  amount        Float
+  status        WithdrawalStatus @default(PENDING)
+  bankName      String
+  accountNumber String
+  accountName   String
+  recipientCode String?
+  transferCode  String? // Paystack transfer code e.g. TRF_xxx
+  adminComment  String?
+  processedAt   DateTime?
+  processedBy   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("withdrawal_requests")
+}
+
+// --------------------------------------------------------------------------------
 // Prisma schema for the Surfboard mapping application.
 // Defines the PostGIS‐enabled Postgres schema for storing survey plans,
 // with pillars stored as JSONB, and a simple status/isLive workflow.
@@ -774,6 +909,7 @@ model GBCTicket {
   checkedIn      Boolean          @default(false)
   checkedInAt    DateTime?
   checkedInBy    String?
+  certificateSentCount Int      @default(0)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 

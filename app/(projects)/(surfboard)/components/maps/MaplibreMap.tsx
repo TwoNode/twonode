@@ -6,6 +6,8 @@ import * as turf from "@turf/turf";
 import { Feature, GeoJsonProperties, Point } from "geojson";
 import proj4 from "proj4";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { getCoordinateShifts } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import { applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
 
 // Define the updated structure of pillar data passed as props
 export interface PillarData {
@@ -13,10 +15,12 @@ export interface PillarData {
   northing: number;
   pointIndex: number;
   pillarNumber: string;
+  polygonIndex?: number;
 }
 
 interface MaplibreMapProps {
   processedPillars: PillarData[];
+  state?: string | null;
 }
 
 // Define the coordinate reference system
@@ -25,7 +29,7 @@ proj4.defs(
   "+proj=utm +zone=31 +ellps=clrk80 +towgs84=-92,-93,122,0,0,0,0 +units=m +no_defs"
 );
 
-const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
+const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -143,8 +147,10 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
           feature?.geometry?.type === "Point" &&
           feature.geometry.coordinates
         ) {
-          const { easting, northing, pointIndex, pillarNumber } =
+          const { easting, northing, pointIndex, pillarNumber, rawEasting, rawNorthing } =
             feature.properties || {};
+          const displayEasting = rawEasting ?? easting;
+          const displayNorthing = rawNorthing ?? northing;
           popup
             .setLngLat(feature.geometry.coordinates as LngLatLike)
             .setHTML(
@@ -155,10 +161,10 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
                 }</div>
                 <div><strong>Index:</strong> ${pointIndex ?? "N/A"}</div>
                 <div><strong>Easting:</strong> ${
-                  easting ? easting.toFixed(3) : "N/A"
+                  displayEasting ? displayEasting.toFixed(3) : "N/A"
                 }</div>
                 <div><strong>Northing:</strong> ${
-                  northing ? northing.toFixed(3) : "N/A"
+                  displayNorthing ? displayNorthing.toFixed(3) : "N/A"
                 }</div>
               </div>
             `
@@ -187,8 +193,38 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
       return;
     }
 
-    const mapInstance = map.current;
-    const pointFeatures = processedPillars.map((p) => {
+    const fetchAndRender = async () => {
+      const shifts = await getCoordinateShifts();
+      const visualPillars = applyVisualizationShift(processedPillars, state, shifts);
+
+      const mapInstance = map.current;
+      if (!mapInstance) return;
+
+      const groups: Record<number, any[]> = {};
+      visualPillars.forEach((p) => {
+      const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
+        p.easting,
+        p.northing,
+      ]);
+      const idx = p.polygonIndex ?? 0;
+      if (!groups[idx]) groups[idx] = [];
+      groups[idx].push([lon, lat]);
+    });
+
+    const polygonFeatures = Object.values(groups).map((coords) => {
+      const closedCoords = [...coords];
+      if (
+        turf.booleanEqual(
+          turf.point(closedCoords[0]),
+          turf.point(closedCoords.at(-1)!)
+        ) === false
+      ) {
+        closedCoords.push(closedCoords[0]);
+      }
+      return turf.polygon([closedCoords]);
+    });
+
+    const pointFeatures = visualPillars.map((p) => {
       const [lon, lat] = proj4("EPSG:26331", "EPSG:4326", [
         p.easting,
         p.northing,
@@ -198,27 +234,28 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars }) => {
         easting: p.easting,
         northing: p.northing,
         pointIndex: p.pointIndex,
+        polygonIndex: p.polygonIndex,
+        rawEasting: p.rawEasting ?? p.easting,
+        rawNorthing: p.rawNorthing ?? p.northing,
       });
     });
-    const coords = pointFeatures.map((f) => f.geometry.coordinates);
-    if (
-      turf.booleanEqual(turf.point(coords[0]), turf.point(coords.at(-1)!)) ===
-      false
-    ) {
-      coords.push(coords[0]);
-    }
-    const polygonFeature = turf.polygon([coords]);
+
     (mapInstance.getSource("pointLayer") as GeoJSONSource)?.setData(
       turf.featureCollection(pointFeatures)
     );
     (mapInstance.getSource("polygonLayer") as GeoJSONSource)?.setData(
-      turf.featureCollection([polygonFeature])
+      turf.featureCollection(polygonFeatures)
     );
+
+    const fullCollection = turf.featureCollection(polygonFeatures);
     mapInstance.fitBounds(
-      turf.bbox(polygonFeature) as [number, number, number, number],
+      turf.bbox(fullCollection) as [number, number, number, number],
       { padding: 40 }
     );
-  }, [processedPillars, isReady]);
+    };
+    
+    fetchAndRender();
+  }, [processedPillars, isReady, state]);
 
   const handleBasemapChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = `${e.target.value}-base`;

@@ -44,7 +44,9 @@ import {
   updateRecordsIStatus,
   getRecordsIHistory,
 } from "../../../actions/codActions";
+import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
 import { usePlanLock } from "../../../hooks/usePlanLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
   PlanLockIndicator,
   LockedPlanBadge,
@@ -104,38 +106,72 @@ export default function RecordsIAdminPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
+
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "RECORDS_I",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {
-    if (!searchQuery.trim()) return plans;
-    const query = searchQuery.toLowerCase();
-
-    return plans.filter((plan) => {
-      const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
-      const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
-      const matchesLga = plan.lga?.toLowerCase().includes(query);
-      const matchesWard = plan.ward?.toLowerCase().includes(query);
-      const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
-      const matchesUser =
-        plan.user &&
-        `${plan.user.firstName} ${plan.user.lastName}`
-          .toLowerCase()
+    let result = plans;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = plans.filter((plan) => {
+        const matchesPlanNumber = plan.planNumber.toLowerCase().includes(query);
+        const matchesSurveyTitle = plan.surveyTitle.toLowerCase().includes(query);
+        const matchesLga = plan.lga?.toLowerCase().includes(query);
+        const matchesWard = plan.ward?.toLowerCase().includes(query);
+        const matchesBatch = plan.batch?.batchCode.toLowerCase().includes(query);
+        const matchesUser =
+          plan.user &&
+          `${plan.user.firstName} ${plan.user.lastName}`
+            .toLowerCase()
+            .includes(query);
+        const matchesSurconNumber = plan.user?.surconRegNumber
+          ?.toLowerCase()
           .includes(query);
-      const matchesSurconNumber = plan.user?.surconRegNumber
-        ?.toLowerCase()
-        .includes(query);
 
-      return (
-        matchesPlanNumber ||
-        matchesSurveyTitle ||
-        matchesLga ||
-        matchesWard ||
-        matchesBatch ||
-        matchesUser ||
-        matchesSurconNumber
-      );
-    });
-  }, [plans, searchQuery]);
+        return (
+          matchesPlanNumber ||
+          matchesSurveyTitle ||
+          matchesLga ||
+          matchesWard ||
+          matchesBatch ||
+          matchesUser ||
+          matchesSurconNumber
+        );
+      });
+    }
+
+    if (lockedPlanId) {
+      result = [...result].sort((a, b) => {
+        if (a.id === lockedPlanId) return -1;
+        if (b.id === lockedPlanId) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [plans, searchQuery, lockedPlanId]);
 
   const filteredHistoryPlans = useMemo(() => {
     if (!searchQuery.trim()) return historyPlans;
@@ -168,27 +204,7 @@ export default function RecordsIAdminPage() {
     });
   }, [historyPlans, searchQuery]);
 
-  // Plan lock management
-  const {
-    lockedPlanId,
-    lockedPlanNumber,
-    lockExpiresAt,
-    isLocking,
-    isLockedByMe,
-    releaseLock,
-    acquireLock,
-    showLeaveWarning,
-    confirmLeave,
-    cancelLeave,
-  } = usePlanLock({
-    role: "RECORDS_I",
-    onLockAcquired: (planId, planNumber) => {
-      toast.success(`Plan ${planNumber} is now locked for you`);
-    },
-    onLockReleased: () => {
-      toast.info("Plan lock released");
-    },
-  });
+
 
   const handleUnlock = async () => {
     setIsUnlocking(true);
@@ -203,7 +219,19 @@ export default function RecordsIAdminPage() {
 
   useEffect(() => {
     fetchPlans();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const res = await getUniqueQueryReasons("records-i");
+      if (res.success && res.data) {
+        setUniqueQueryReasons(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyPlans.length === 0) {
@@ -275,7 +303,8 @@ export default function RecordsIAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchPlans();
+        await fetchPlans();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }
@@ -727,6 +756,14 @@ export default function RecordsIAdminPage() {
                   <label className="text-sm font-medium text-gray-700">
                     Query Reason *
                   </label>
+                  <div className="mb-2 mt-2">
+                    <RemarkSelector
+                      options={uniqueQueryReasons}
+                      onSelect={(val) => setComment(val)}
+                      placeholder="Search previous query reasons..."
+                      buttonText="Select from previous query reasons..."
+                    />
+                  </div>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}

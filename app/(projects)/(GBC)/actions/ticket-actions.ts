@@ -1265,3 +1265,20 @@ export async function generateGBCTicketQRCode(ticketId: string) {
     };
   }
 }
+
+export async function getGBCTicketByNumber(ticketNumber: string) {
+  try {
+    const ticket = await prisma.gBCTicket.findFirst({
+      where: { ticketNumber },
+    });
+
+    if (!ticket) {
+      return { success: false, error: "Ticket not found" };
+    }
+
+    return { success: true, data: ticket };
+  } catch (error) {
+    console.error("Error fetching ticket:", error);
+    return { success: false, error: "Failed to fetch ticket" };
+  }
+}

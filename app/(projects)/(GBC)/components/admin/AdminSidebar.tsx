@@ -14,6 +14,7 @@ import {
   MessageSquare,
   X,
   Mic,
+  FileText,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Dashboard", href: "/gbc/restricted", icon: LayoutDashboard },
   { name: "Tickets", href: "/gbc/restricted/tickets", icon: Ticket },
   { name: "Check-In", href: "/gbc/restricted/check-in", icon: QrCode },
+  { name: "Certificates", href: "/gbc/restricted/certificates", icon: FileText },
   { name: "Sponsors", href: "/gbc/restricted/sponsors", icon: Building2 },
   { name: "Speakers", href: "/gbc/restricted/speakers", icon: Mic },
   { name: "Gallery", href: "/gbc/restricted/gallery", icon: Images },
@@ -76,7 +78,7 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
         })}
 
         <LogoutLink
-          postLogoutRedirectURL="/api/auth/logout_redirect?from=gbc"
+          postLogoutRedirectURL="/api/auth/logout_redirect"
           className={cn(
             "mt-5 flex items-center gap-3",
             "rounded-lg transition text-sm sm:text-base",

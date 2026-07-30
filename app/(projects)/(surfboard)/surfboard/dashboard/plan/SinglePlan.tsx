@@ -292,7 +292,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           pillars: Array.isArray(data.pillars)
             ? data.pillars
                 .filter(
-                  (p: any) => p && typeof p === "object" && "pillarNumber" in p
+                  (p: any) => p && typeof p === "object" && "pillarNumber" in p,
                 )
                 .map((p: any) => ({
                   pillarNumber: String(p.pillarNumber || ""),
@@ -300,6 +300,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   northing: Number(p.northing) || 0,
                   pointIndex:
                     typeof p.pointIndex === "number" ? p.pointIndex : 0,
+                  polygonIndex:
+                    typeof p.polygonIndex === "number" ? p.polygonIndex : 0,
                 }))
             : [],
         });
@@ -351,7 +353,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
     if (
       !confirm(
-        "Are you sure you want to delete this plan? This action cannot be undone."
+        "Are you sure you want to delete this plan? This action cannot be undone.",
       )
     ) {
       return;
@@ -392,7 +394,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           acc[1] + (pillar.northing || 0),
         ];
       },
-      [0, 0]
+      [0, 0],
     );
 
     return [sum[0] / pillars.length, sum[1] / pillars.length];
@@ -534,7 +536,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         ...p,
                         minLightAlpha: Math.max(
                           0,
-                          Math.min(1, Number(e.target.value))
+                          Math.min(1, Number(e.target.value)),
                         ),
                       }))
                     }
@@ -655,7 +657,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   const handleDeleteFile = async (
     file: string | File,
-    fileType: "cad" | "pdf" | "certificate"
+    fileType: "cad" | "pdf" | "certificate",
   ) => {
     const INITIALS = (initial: any) => ({
       planNumber: initial?.planNumber ?? "",
@@ -689,7 +691,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
-        await deleteSurfboardFileFromS3({ url: file });
+        try {
+          await deleteSurfboardFileFromS3({ url: file });
+        } catch (s3Error) {
+          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+        }
         await updateSurfPlan({
           ...INITIALS(plan),
           [field]: plan?.[field].filter((f) => f !== file),
@@ -916,7 +922,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   : "border"
               }`}
             >
-              <MaplibreMap processedPillars={plan?.pillars} />
+              <MaplibreMap processedPillars={plan?.pillars} state={plan?.state} />
             </div>
           </div>
         )}
@@ -963,6 +969,30 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         </p>
                       </div>
                     )}
+                    {plan.withdrawalAndResubmissionStatus && plan.withdrawalAndResubmissionStatus !== "No_Action" && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-500">
+                          Withdrawal Status
+                        </p>
+                        <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          plan.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {plan.withdrawalAndResubmissionStatus}
+                        </span>
+                      </div>
+                    )}
+                    {/* @ts-ignore - reasonForWithdrawalAndResubmission may not be in PlanWithPillars type yet */}
+                    {plan.reasonForWithdrawalAndResubmission && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-500">
+                          Reason for Withdrawal
+                        </p>
+                        <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                          {/* @ts-ignore */}
+                          {plan.reasonForWithdrawalAndResubmission}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
                     {plan.status.replace("_", " ")}
@@ -974,7 +1004,20 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     <p className="text-sm font-medium text-gray-500">
                       Survey Title
                     </p>
-                    <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                    {/* @ts-ignore */}
+                    {plan.parcels && Array.isArray(plan.parcels) && plan.parcels.length > 1 ? (
+                      <div className="mt-2 space-y-2">
+                        {/* @ts-ignore */}
+                        {plan.parcels.map((parcel: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
+                            <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
+                            <span className="text-gray-700">{parcel.surveyTitle || plan.surveyTitle}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1084,7 +1127,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                               })} m²`
                             : `${(plan.areaSqM / 10000).toLocaleString(
                                 undefined,
-                                { maximumFractionDigits: 2 }
+                                { maximumFractionDigits: 2 },
                               )} ha`
                           : "N/A"}
                       </p>
@@ -1106,9 +1149,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                           Centroid Coordinates
                         </p>
                         <p className="mt-1 text-gray-700 font-mono text-sm">
-                          {`${plan.centroid[1].toFixed(
-                            6
-                          )}°N, ${plan.centroid[0].toFixed(6)}°E`}
+                          {`${typeof plan.centroid[1] === "number" ? plan.centroid[1].toFixed(6) : plan.centroid[1]}°N, ${typeof plan.centroid[0] === "number" ? plan.centroid[0].toFixed(6) : plan.centroid[0]}°E`}
                         </p>
                         <button
                           onClick={() => {
@@ -1116,7 +1157,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                             const [lng, lat] = plan.centroid;
                             window.open(
                               `https://www.google.com/maps?q=${lat},${lng}`,
-                              "_blank"
+                              "_blank",
                             );
                           }}
                           className="mt-2 inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
@@ -1325,23 +1366,81 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     );
                   }
 
-                  return geometry.coordinates.map(
-                    (coordSet: [number, number][], i: number) => (
-                      <div key={i} className="space-y-2">
-                        <div className="flex items-center text-sm font-medium text-gray-700">
-                          <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-mono mr-2">
-                            {i + 1}
-                          </span>
-                          Boundary{" "}
-                          {geometry.coordinates.length > 1 ? i + 1 : ""}
-                          <span className="ml-2 text-xs text-gray-500 font-normal">
-                            ({coordSet.length} points)
-                          </span>
-                        </div>
+                  const boundaries: {
+                    label: string;
+                    points: [number, number][];
+                  }[] = [];
 
-                        <div className="ml-7 bg-white border border-gray-200 rounded-md p-2 max-h-40 overflow-y-auto">
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
-                            {coordSet.map(([x, y], j) => (
+                  if (geometry.type === "Polygon") {
+                    geometry.coordinates.forEach(
+                      (ring: [number, number][], ringIndex: number) => {
+                        if (Array.isArray(ring) && ring.length > 0) {
+                          boundaries.push({
+                            label:
+                              geometry.coordinates.length > 1
+                                ? `Boundary Ring ${ringIndex + 1}`
+                                : "Boundary",
+                            points: ring,
+                          });
+                        }
+                      },
+                    );
+                  } else if (geometry.type === "MultiPolygon") {
+                    geometry.coordinates.forEach(
+                      (polygon: [number, number][][], polyIndex: number) => {
+                        if (Array.isArray(polygon)) {
+                          polygon.forEach(
+                            (ring: [number, number][], ringIndex: number) => {
+                              if (Array.isArray(ring) && ring.length > 0) {
+                                boundaries.push({
+                                  label:
+                                    polygon.length > 1
+                                      ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
+                                      : `Polygon ${polyIndex + 1}`,
+                                  points: ring,
+                                });
+                              }
+                            },
+                          );
+                        }
+                      },
+                    );
+                  } else {
+                    return (
+                      <div className="text-gray-500 italic">
+                        Unsupported geometry type: {geometry.type}
+                      </div>
+                    );
+                  }
+
+                  if (boundaries.length === 0) {
+                    return (
+                      <div className="text-gray-500 italic">
+                        No valid coordinates found
+                      </div>
+                    );
+                  }
+
+                  return boundaries.map((boundary, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="flex items-center text-sm font-medium text-gray-700">
+                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-mono mr-2">
+                          {i + 1}
+                        </span>
+                        {boundary.label}
+                        <span className="ml-2 text-xs text-gray-500 font-normal">
+                          ({boundary.points.length} points)
+                        </span>
+                      </div>
+
+                      <div className="ml-7 bg-white border border-gray-200 rounded-md p-2 max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+                          {boundary.points.map((coord, j) => {
+                            if (!Array.isArray(coord) || coord.length < 2)
+                              return null;
+                            const [x, y] = coord;
+
+                            return (
                               <div
                                 key={j}
                                 className="flex items-center py-1 px-2 hover:bg-gray-50 rounded"
@@ -1350,15 +1449,21 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                                   {j + 1}.
                                 </span>
                                 <span className="text-gray-700">
-                                  {x.toFixed(6)}, {y.toFixed(6)}
+                                  {typeof x === "number"
+                                    ? x.toFixed(6)
+                                    : String(x)}
+                                  ,{" "}
+                                  {typeof y === "number"
+                                    ? y.toFixed(6)
+                                    : String(y)}
                                 </span>
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )
-                  );
+                    </div>
+                  ));
                 })()}
               </div>
             ) : (

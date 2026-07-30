@@ -101,6 +101,11 @@ export default function SurfboardAdminPanelLayout({
       url: `${dashboardUrl}/user-management`,
     },
     {
+      icon: Shield,
+      label: "Surveyor's KYC",
+      url: `${dashboardUrl}/kyc`,
+    },
+    {
       icon: Bell,
       label: "Notifications",
       url: `${dashboardUrl}/notifications`,
@@ -134,7 +139,7 @@ export default function SurfboardAdminPanelLayout({
       element: (
         <LogoutLink
           key={"logout"}
-          postLogoutRedirectURL="/api/auth/logout_redirect?from=surfboard"
+          postLogoutRedirectURL="/api/auth/logout_redirect"
           className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{ backgroundColor: "transparent" }}
         >

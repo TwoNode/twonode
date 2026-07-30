@@ -11,6 +11,7 @@ import {
   permanentlyDeleteSurfPlan,
   generatePlanQRCode,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getProfile } from "@/app/(projects)/(surfboard)/actions/profile";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -164,6 +165,9 @@ export default function AllPlans() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [showBatchesModal, setShowBatchesModal] = useState(false);
 
+  // User Profile Data
+  const [isKycValidated, setIsKycValidated] = useState<boolean>(true); // Default to true to prevent flash
+
   const loadPlans = async (
     page = pagination.page,
     pageSize = pagination.pageSize
@@ -209,6 +213,12 @@ export default function AllPlans() {
 
   useEffect(() => {
     loadPlans(1, pagination.pageSize);
+    // Load profile to check KYC validation status
+    getProfile().then((res) => {
+      if (res.data) {
+        setIsKycValidated(res.data.isKycValidated);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -491,6 +501,11 @@ export default function AllPlans() {
   };
 
   const handleBatchSubmit = () => {
+    if (!isKycValidated) {
+      toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+      return;
+    }
+
     // Get the selected plan objects
     const selectedPlanObjects = plans.filter((p) =>
       selectedPlans.includes(p.id)
@@ -837,9 +852,20 @@ export default function AllPlans() {
     <div className="min-h-full w-full max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Survey Plans</h1>
+            {!isKycValidated && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-start gap-3 mt-4">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+                <div>
+                  <p className="font-medium text-sm">Action Required: Surveyor KYC Validation</p>
+                  <p className="text-xs opacity-90 mt-1">
+                    Your profile is pending validation. You will not be able to submit plans for CoD until an administrator has reviewed and validated your profile. Please ensure all your details are correctly set in the Settings page.
+                  </p>
+                </div>
+              </div>
+            )}
             <p className="text-gray-600 mt-1">
               Manage and review all survey plan submissions
             </p>
@@ -1683,33 +1709,12 @@ export default function AllPlans() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
-                                  // Check if plan is eligible for certificate submission
-                                  const eligibilityMessage =
-                                    getPlanEligibilityMessage(plan);
-
-                                  if (
-                                    eligibilityMessage?.code == "no_record_copy"
-                                  ) {
-                                    // Select this plan
-                                    setSelectedPlans([plan.id]);
-                                    setUploadModalOpen(true);
+                                  if (!isKycValidated) {
+                                    toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
                                     return;
                                   }
-
-                                  if (eligibilityMessage) {
-                                    toast.error(eligibilityMessage.message);
-                                    return;
-                                  }
-
-                                  // Select this plan
                                   setSelectedPlans([plan.id]);
-
-                                  // Check if record copy is uploaded
-                                  if (!plan.redCopyFileUrl) {
-                                    setUploadModalOpen(true);
-                                  } else {
-                                    setBatchModalOpen(true);
-                                  }
+                                  setBatchModalOpen(true);
                                 }}
                               >
                                 <CheckCircle className="w-4 h-4 mr-2" />
@@ -2021,36 +2026,12 @@ export default function AllPlans() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              // Check if plan is eligible for certificate submission
-                              const eligibilityMessage =
-                                getPlanEligibilityMessage(plan);
-
-                              if (
-                                eligibilityMessage?.code == "no_record_copy"
-                              ) {
-                                // Select this plan
-                                setSelectedPlans([plan.id]);
-                                setUploadModalOpen(true);
+                              if (!isKycValidated) {
+                                toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
                                 return;
                               }
-
-                              if (eligibilityMessage) {
-                                toast.error(
-                                  eligibilityMessage?.message ||
-                                  "Something went wrong"
-                                );
-                                return;
-                              }
-
-                              // Select this plan
                               setSelectedPlans([plan.id]);
-
-                              // Check if record copy is uploaded
-                              if (!plan.redCopyFileUrl) {
-                                setUploadModalOpen(true);
-                              } else {
-                                setBatchModalOpen(true);
-                              }
+                              setBatchModalOpen(true);
                             }}
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />

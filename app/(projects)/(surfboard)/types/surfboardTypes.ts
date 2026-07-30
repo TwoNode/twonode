@@ -9,6 +9,9 @@ export interface PillarData {
   northing: number;
   pointIndex: number;
   pillarNumber: string;
+  polygonIndex?: number; // Which polygon (0-based) this pillar belongs to
+  rawEasting?: number; // Original unshifted easting
+  rawNorthing?: number; // Original unshifted northing
 }
 
 /** GeoJSON Point */
@@ -20,7 +23,13 @@ export type GeoJSONPoint = {
 /** GeoJSON Polygon */
 export type GeoJSONPolygon = {
   type: "Polygon";
-  coordinates: [[number, number][]];
+  coordinates: [number, number][][];
+};
+
+/** GeoJSON MultiPolygon */
+export type GeoJSONMultiPolygon = {
+  type: "MultiPolygon";
+  coordinates: [number, number][][][];
 };
 
 /**
@@ -50,6 +59,10 @@ export interface CreatePlanData {
   pillars: PillarData[] | any;
   certificateReady?: boolean;
   dateOnSurveyPlan?: string | Date | null;
+  withdrawalAndResubmissionStatus?: string;
+  pillarTypeReferencePlanNumber?: string;
+  parcels?: ParcelInfo[];
+  personCount?: number;
   reasonForWithdrawalAndResubmission?: string;
 }
 
@@ -58,6 +71,17 @@ export interface FileUploadData {
   pdfFiles?: File;
   cadFiles?: File;
   certificateFiles?: File;
+}
+
+/** Per-parcel metadata for MultiPolygon plans */
+export interface ParcelInfo {
+  polygonIndex: number;
+  surveyTitle?: string;
+  ward?: string | null;
+  lcda?: string | null;
+  lga?: string | null;
+  state?: string | null;
+  pillarCount: number;
 }
 
 /**
@@ -85,6 +109,7 @@ export interface Plan {
   lcda: string | null;
   lga: string | null;
   state: string | null;
+  locality: string | null;
   pillars: Prisma.JsonValue | PillarData[] | null; // Using Prisma's JsonValue type
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"; // Matches SurfboardPlanStatus enum
   isLive: boolean;
@@ -102,6 +127,9 @@ export interface Plan {
   redCopyStatus?: string | null;
   personCount?: number;
   personCountVerified?: boolean;
+  withdrawalAndResubmissionStatus?: string | null;
+  pillarTypeReferencePlanNumber?: string | null;
+  parcels?: Prisma.JsonValue | ParcelInfo[] | null;
 }
 
 /** Standard envelope for API results */
@@ -256,6 +284,14 @@ export type SurfboardRole =
   | "MDA_SUPERADMIN"
   | "ARCHIVE";
 
+export const PILLAR_TYPES = [
+  "REGULAR",
+  "SPECIAL",
+  "REGULAR + ADJOINING",
+  "SPECIAL + ADJOINING",
+  "RE-ESTABLISHMENT",
+] as const;
+
 export const PLAN_TYPES = {
   APPROVED_LAYOUT: "APPROVED LAYOUT",
   DEED: "DEED",
@@ -274,6 +310,35 @@ export const PLAN_TYPES_2 = {
 
 export type PlanType = (typeof PLAN_TYPES)[keyof typeof PLAN_TYPES];
 export type PlanType2 = (typeof PLAN_TYPES_2)[keyof typeof PLAN_TYPES_2];
+
+export type PillarType = (typeof PILLAR_TYPES)[number];
+
+export const PILLAR_TYPE_ADJOINING_FILTERS: Record<
+  string,
+  {
+    showReferenceField: boolean;
+    required: boolean;
+    allowFreeText: boolean;
+    excludeTypes?: PlanType[];
+  }
+> = {
+  REGULAR: { showReferenceField: false, required: false, allowFreeText: false },
+  SPECIAL: { showReferenceField: false, required: false, allowFreeText: false },
+  "REGULAR + ADJOINING": {
+    showReferenceField: true,
+    required: true,
+    allowFreeText: false,
+    excludeTypes: [PLAN_TYPES.PROVISIONAL, PLAN_TYPES.PROVISIONAL_LAYOUT],
+  },
+  "SPECIAL + ADJOINING": {
+    showReferenceField: true,
+    required: true,
+    allowFreeText: false,
+    excludeTypes: [PLAN_TYPES.PROVISIONAL, PLAN_TYPES.PROVISIONAL_LAYOUT],
+  },
+};
+
+
 
 export const REFERENCE_FILTERS: Record<
   PlanType,
@@ -355,6 +420,10 @@ export interface SurfboardPlanDTO {
   pillars?: PillarData[] | any;
   personCount?: number;
   personCountVerified?: boolean;
+  withdrawalAndResubmissionStatus?: string | null;
+  reasonForWithdrawalAndResubmission?: string | null;
+  pillarTypeReferencePlanNumber?: string | null;
+  parcels?: ParcelInfo[] | null;
 }
 
 export const MAX_FILE_MB = 50;

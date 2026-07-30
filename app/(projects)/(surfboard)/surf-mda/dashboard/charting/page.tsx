@@ -41,7 +41,12 @@ import {
   updateChartingStatus,
   getChartingHistory,
 } from "../../../actions/codActions";
+import {
+  getUniqueChartingRemarks,
+  getUniqueQueryReasons,
+} from "../../../actions/mdaRemarkActions";
 import { usePlanLock } from "../../../hooks/usePlanLock";
+import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
   PlanLockIndicator,
   LockedPlanBadge,
@@ -95,6 +100,30 @@ export default function ChartingAdminPage() {
   const [processing, setProcessing] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [uniqueChartingRemarks, setUniqueChartingRemarks] = useState<string[]>([]);
+  const [uniqueQueryReasons, setUniqueQueryReasons] = useState<string[]>([]);
+
+  // Plan lock management
+  const {
+    lockedPlanId,
+    lockedPlanNumber,
+    lockExpiresAt,
+    isLocking,
+    isLockedByMe,
+    releaseLock,
+    acquireLock,
+    showLeaveWarning,
+    confirmLeave,
+    cancelLeave,
+  } = usePlanLock({
+    role: "CHARTING",
+    onLockAcquired: (planId, planNumber) => {
+      toast.success(`Plan ${planNumber} is now locked for you`);
+    },
+    onLockReleased: () => {
+      toast.info("Plan lock released");
+    },
+  });
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {
@@ -147,27 +176,7 @@ export default function ChartingAdminPage() {
     });
   }, [historyPlans, searchQuery]);
 
-  // Plan lock management
-  const {
-    lockedPlanId,
-    lockedPlanNumber,
-    lockExpiresAt,
-    isLocking,
-    isLockedByMe,
-    releaseLock,
-    acquireLock,
-    showLeaveWarning,
-    confirmLeave,
-    cancelLeave,
-  } = usePlanLock({
-    role: "CHARTING",
-    onLockAcquired: (planId, planNumber) => {
-      toast.success(`Plan ${planNumber} is now locked for you`);
-    },
-    onLockReleased: () => {
-      toast.info("Plan lock released");
-    },
-  });
+
 
   const handleUnlock = async () => {
     setIsUnlocking(true);
@@ -183,7 +192,25 @@ export default function ChartingAdminPage() {
 
   useEffect(() => {
     fetchPlans();
+    fetchUniqueRemarks();
   }, []);
+
+  const fetchUniqueRemarks = async () => {
+    try {
+      const [chartingRes, queryRes] = await Promise.all([
+        getUniqueChartingRemarks(),
+        getUniqueQueryReasons("charting"),
+      ]);
+      if (chartingRes.success && chartingRes.data) {
+        setUniqueChartingRemarks(chartingRes.data);
+      }
+      if (queryRes.success && queryRes.data) {
+        setUniqueQueryReasons(queryRes.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unique remarks", error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "history" && historyPlans.length === 0) {
@@ -262,7 +289,8 @@ export default function ChartingAdminPage() {
             : `Plan ${selectedPlan.planNumber} has been queried`
         );
         setShowDialog(false);
-        fetchPlans();
+        await fetchPlans();
+        await acquireLock();
         if (activeTab === "history") {
           fetchHistory();
         }
@@ -284,16 +312,34 @@ export default function ChartingAdminPage() {
         ? pillars
         : JSON.parse(pillars);
 
-      const lines: string[] = [];
-      for (const p of pillarsArray) {
-        const easting = p.easting ?? p.lng ?? "";
-        const northing = p.northing ?? p.lat ?? "";
-        if (easting && northing) {
-          lines.push(`${easting},${northing}`);
+      // Group by polygonIndex if available
+      const groups: Record<number, any[]> = {};
+      pillarsArray.forEach((p: any) => {
+        const idx = p.polygonIndex ?? 0;
+        if (!groups[idx]) groups[idx] = [];
+        groups[idx].push(p);
+      });
+
+      const output: string[] = [];
+      const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+      
+      for (const key of groupKeys) {
+        const group = groups[Number(key)];
+        if (groupKeys.length > 1) {
+          output.push(`PL Parcel ${Number(key) + 1}`);
+        } else {
+          output.push("PL");
+        }
+        for (const p of group) {
+          const easting = p.easting ?? p.lng ?? "";
+          const northing = p.northing ?? p.lat ?? "";
+          if (easting && northing) {
+            output.push(`${easting},${northing}`);
+          }
         }
       }
 
-      return `PL\n${lines.join("\n")}`;
+      return output.join("\n");
     } catch {
       return "";
     }
@@ -447,32 +493,76 @@ export default function ChartingAdminPage() {
 
           {/* Pillars */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-700">
-                Pillar Coordinates
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => copyPillarsToClipboard(plan.pillars)}
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Copy
-              </Button>
-            </div>
-            <div className="px-4 py-2 bg-blue-50 border-b border-gray-200">
-              <span className="text-lg font-bold text-blue-800">PL</span>
-            </div>
-            <pre className="text-xs bg-white p-3 overflow-x-auto">
-              {(() => {
-                const text = getPillarsText(plan.pillars);
-                const lines = text.split("\n");
-                if (lines[0] === "PL" || lines[0]?.length === 2) {
-                  return lines.slice(1).join("\n") || "No pillars data";
-                }
-                return text || "No pillars data";
-              })()}
-            </pre>
+            {(() => {
+              let pillarsArray: any[] = [];
+              try {
+                pillarsArray = Array.isArray(plan.pillars)
+                  ? plan.pillars
+                  : JSON.parse(plan.pillars || "[]");
+              } catch {
+                pillarsArray = [];
+              }
+
+              if (pillarsArray.length === 0) {
+                return (
+                  <div className="p-3 text-center text-sm text-gray-500">
+                    No pillars data
+                  </div>
+                );
+              }
+
+              const groups: Record<number, any[]> = {};
+              pillarsArray.forEach((p: any) => {
+                const idx = p.polygonIndex ?? 0;
+                if (!groups[idx]) groups[idx] = [];
+                groups[idx].push(p);
+              });
+
+              const groupKeys = Object.keys(groups).sort((a, b) => Number(a) - Number(b));
+
+              return groupKeys.map((key, index) => {
+                const group = groups[Number(key)];
+                const isMulti = groupKeys.length > 1;
+                const parcelLabel = isMulti ? `Parcel ${String.fromCharCode(65 + Number(key))}` : "Parcel";
+                
+                const groupText = [
+                  "PL",
+                  ...group.map((p) => {
+                    const easting = p.easting ?? p.lng ?? "";
+                    const northing = p.northing ?? p.lat ?? "";
+                    return easting && northing ? `${easting},${northing}` : null;
+                  }).filter(Boolean)
+                ].join("\n");
+
+                return (
+                  <div key={key} className={index > 0 ? "border-t border-gray-200" : ""}>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-700">
+                        {isMulti ? `Pillar Coordinates - ${parcelLabel}` : "Pillar Coordinates"}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${isMulti ? parcelLabel + "\n\n" : ""}PL\n${groupText.substring(3)}`);
+                          toast.success(`${parcelLabel} coordinates copied to clipboard`);
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="px-4 py-2 bg-blue-50 border-b border-gray-200">
+                      <span className="text-lg font-bold text-blue-800">{isMulti ? parcelLabel : "PL"}</span>
+                    </div>
+                    <pre className="text-xs bg-white p-3 overflow-x-auto">
+                      {isMulti && <span className="font-bold text-blue-800">PL{"\n"}</span>}
+                      {groupText.substring(3) || "No valid coordinates"}
+                    </pre>
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           {/* Record Copy */}
@@ -739,6 +829,16 @@ export default function ChartingAdminPage() {
                     </Button>
                   )}
                 </div>
+                
+                <div className="mb-2 mt-2">
+                  <RemarkSelector
+                    options={actionType === "approve" ? uniqueChartingRemarks : uniqueQueryReasons}
+                    onSelect={(val) => setChartingRemarks(val)}
+                    placeholder={actionType === "approve" ? "Search previous charting remarks..." : "Search previous query reasons..."}
+                    buttonText={actionType === "approve" ? "Select from previous charting remarks..." : "Select from previous query reasons..."}
+                  />
+                </div>
+
                 <Textarea
                   value={chartingRemarks}
                   onChange={(e) => setChartingRemarks(e.target.value)}

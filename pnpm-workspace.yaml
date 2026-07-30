@@ -1,0 +1,13 @@
+packages:
+  - '.'
+
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@vaadin/vaadin-usage-statistics": true
+  bcrypt: true
+  core-js: true
+  esbuild: true
+  prisma: true
+  sharp: true
+

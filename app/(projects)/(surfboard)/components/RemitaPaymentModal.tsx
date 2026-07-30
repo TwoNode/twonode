@@ -82,6 +82,11 @@ export function RemitaPaymentModal({
     }
   };
 
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
   // Client-side URL format validation
   const isValidLasgUrl = (url: string) => {
     try {
@@ -216,14 +221,14 @@ export function RemitaPaymentModal({
                 <p className="text-xs text-gray-500 uppercase font-semibold">
                   Total Amount
                 </p>
-                <div className="flex items-center gap-2 justify-end group">
+                <div className="flex items-center gap-2 justify-end">
                   <p className="text-2xl font-bold text-green-700">
                     ₦{batchData.totalAmount.toLocaleString()}
                   </p>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     onClick={handleCopyAmount}
                     title="Copy Amount"
                   >
@@ -253,9 +258,16 @@ export function RemitaPaymentModal({
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div>
                     <span className="text-xs text-gray-500 block">Payer ID</span>
-                    <span className="font-mono font-medium">
-                      {batchData.submitter?.payerID || "N/A"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-medium">
+                        {batchData.submitter?.payerID || "N/A"}
+                      </span>
+                      {batchData.submitter?.payerID && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.payerID?.toString() || "", "Payer ID")} title="Copy Payer ID">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Payer ID Type</span>
@@ -272,15 +284,29 @@ export function RemitaPaymentModal({
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Email</span>
-                    <span className="font-medium truncate" title={batchData.submitter?.email}>
-                      {batchData.submitter?.email}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {batchData.submitter?.email || "N/A"}
+                      </span>
+                      {batchData.submitter?.email && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.email?.toString() || "", "Email")} title="Copy Email">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Phone</span>
-                    <span className="font-medium">
-                      {batchData.submitter?.phoneNumber || "N/A"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {batchData.submitter?.phoneNumber || "N/A"}
+                      </span>
+                      {batchData.submitter?.phoneNumber && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.phoneNumber?.toString() || "", "Phone")} title="Copy Phone">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -293,21 +319,36 @@ export function RemitaPaymentModal({
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-xs text-gray-500 block">Agency Name</span>
-                    <span className="font-medium">
-                      4830000 -- 61004 -- Office of Surveyor General
-                    </span>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                      <span className="font-medium">
+                        4830000 -- 61004 -- Office of Surveyor General
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Revenue Name</span>
-                    <span className="font-medium">
-                      4020002 -- 32202 -- Lands Registry Transactions
-                    </span>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                      <span className="font-medium">
+                        4020002 -- 32202 -- Lands Registry Transactions
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500 block">Period</span>
-                    <span className="font-medium flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> {today}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {today}
+                      </span>
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -332,7 +373,7 @@ export function RemitaPaymentModal({
                   </label>
                   <input
                     type="url"
-                    placeholder="https://printreceipt.ebs-rcm.com/Listen/..."
+                    placeholder="https://printreceipt.ebs-rcm.com/..."
                     className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${lasgReceiptUrl && !isValidLasgUrl(lasgReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
                         : "border-gray-300 focus:border-blue-500"

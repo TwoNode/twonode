@@ -23,6 +23,7 @@ export type ProfileData = {
   address: string | null;
   payerID: number | null;
   payerIDType: string | null;
+  isKycValidated: boolean;
 };
 
 export async function getProfile(): Promise<{
@@ -55,6 +56,7 @@ export async function getProfile(): Promise<{
         address: true,
         payerID: true,
         payerIDType: true,
+        isKycValidated: true,
       },
     });
 
@@ -81,6 +83,13 @@ export async function updateProfile(
 
     const updates: Record<string, any> = {};
 
+    const currentDbUser = await prisma.surfboardUser.findUnique({
+      where: { email: user.email as string },
+      select: { isKycValidated: true },
+    });
+
+    const isLocked = currentDbUser?.isKycValidated === true;
+
     // Handle text fields
     const textFields = [
       "firstName",
@@ -98,14 +107,14 @@ export async function updateProfile(
 
     textFields.forEach((field) => {
       const value = formData.get(field);
-      if (value !== null) {
+      if (value !== null && !isLocked) {
         updates[field] = value === "" ? null : value;
       }
     });
 
     // Handle payerID (integer)
     const payerIDValue = formData.get("payerID");
-    if (payerIDValue !== null) {
+    if (payerIDValue !== null && !isLocked) {
       updates.payerID =
         payerIDValue === "" ? null : parseInt(payerIDValue as string, 10);
     }
@@ -114,6 +123,9 @@ export async function updateProfile(
     const fileFields = ["logo", "signature"] as const;
 
     for (const field of fileFields) {
+      // Signature is locked if validated, Logo is always editable
+      if (isLocked && field === "signature") continue;
+
       // In profile.ts, replace the file upload section with:
       const file = formData.get(field) as File | null;
       if (file && file.size > 0) {
@@ -152,6 +164,7 @@ export async function updateProfile(
         address: true,
         payerID: true,
         payerIDType: true,
+        isKycValidated: true,
       },
     });
 

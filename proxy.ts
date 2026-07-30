@@ -300,10 +300,12 @@ const proxyWithLogic = withDynamicAuth(
                 hasAccess = false;
               } else if (pathname.includes("/surcon") && role !== "SURCON") {
                 hasAccess = false;
-              } else if (pathname.includes("/records-i")) {
-                if (pathname.includes("/records-ii") && role !== "RECORDS_II") {
+              } else if (pathname.includes("/records-ii")) {
+                if (role !== "RECORDS_II") {
                   hasAccess = false;
-                } else if (role !== "RECORDS_I") {
+                }
+              } else if (pathname.includes("/records-i")) {
+                if (role !== "RECORDS_I") {
                   hasAccess = false;
                 }
               } else if (pathname.includes("/intake") && role !== "INTAKE") {
