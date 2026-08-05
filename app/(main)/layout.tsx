@@ -104,21 +104,21 @@ export default function RootLayout({
         {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
         )}
-        <div className="h-[70px] w-full bg-slate-900">
-          <div className="fixed top-0 right-0 left-0 z-30 w-full h-[65px] px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">
+        <div className="h-17.5 w-full bg-slate-900">
+          <div className="fixed top-0 right-0 left-0 z-30 w-full h-16.25 px-2.5 py-4 bg-sky-950 justify-center items-center gap-1 flex-col flex">
             <div className="text-center">
-              <span className="text-white text-[10px] lg:text-[13px] font-normal leading-[8px] lg:leading-[20px]">
+              <span className="text-white text-[10px] lg:text-[13px] font-normal leading-2 lg:leading-5">
                 Reach out on: Call - (+234) 706-9227-677 || Email:
                 info@twonodetechnologies.com{" "}
               </span>
               <Link
                 href={"/contact"}
-                className="text-white text-[8px] lg:text-[12px] font-semibold underline leading-[8px] lg:leading-[20px] whitespace-nowrap"
+                className="text-white text-[8px] lg:text-[12px] font-semibold underline leading-2 lg:leading-5 whitespace-nowrap"
               >
                 Contact Us
               </Link>
             </div>
-            <p className="text-white text-[8px] lg:text-[12px] font-normal leading-[8px] lg:leading-[30px]">
+            <p className="text-white text-[8px] lg:text-[12px] font-normal leading-2 lg:leading-7.5">
               RC NO.: 7742902
             </p>
           </div>

@@ -393,7 +393,7 @@ function PlanDetails({ planId }: { planId: string }) {
 
         {/* Map Section */}
         {showMap && (
-          <Card className="overflow-hidden border-cyan-200 shadow-md h-[800px] flex flex-col">
+          <Card className="overflow-hidden border-cyan-200 shadow-md h-200 flex flex-col">
             <CardHeader className="bg-linear-to-r from-cyan-50 to-blue-50 border-b border-cyan-100 p-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
@@ -411,7 +411,7 @@ function PlanDetails({ planId }: { planId: string }) {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 p-0 relative h-[800px] overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
+            <CardContent className="flex-1 p-0 relative h-200 overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
               {/* Map Section */}
 
               <div className="bg-white rounded-2xl shadow p-6">

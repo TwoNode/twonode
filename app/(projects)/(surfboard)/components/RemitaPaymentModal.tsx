@@ -205,7 +205,7 @@ export function RemitaPaymentModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="max-w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50">
+        <DialogContent className="max-w-350 h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50">
           <DialogHeader className="p-6 pb-2 border-b bg-white">
             <div className="flex justify-between items-start">
               <div>

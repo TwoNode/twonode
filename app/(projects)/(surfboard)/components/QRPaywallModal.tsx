@@ -155,7 +155,7 @@ export default function QRPaywallModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-slate-900 border-slate-800 text-white shadow-2xl">
+      <DialogContent className="sm:max-w-137.5 p-0 overflow-hidden bg-slate-900 border-slate-800 text-white shadow-2xl">
         {/* Modal Header */}
         <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />

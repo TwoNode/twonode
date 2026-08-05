@@ -421,7 +421,7 @@ export default function QREarningsPage() {
 
       {/* Withdrawal Request Modal */}
       <Dialog open={withdrawalModalOpen} onOpenChange={setWithdrawalModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-112.5">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               Request Earnings Withdrawal

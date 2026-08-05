@@ -395,7 +395,7 @@ export default function AdminQREarningsPage() {
 
       {/* Reject Modal */}
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">
               Reject Withdrawal Request
