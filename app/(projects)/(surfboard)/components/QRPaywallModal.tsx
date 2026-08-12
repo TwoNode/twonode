@@ -126,22 +126,26 @@ export default function QRPaywallModal({
           setLoading(false);
           toast.info("Payment popup closed");
         },
-        callback: async (response: any) => {
+        callback: function (response: any) {
           toast.loading("Verifying payment...");
-          const verifyRes = await verifyQRServicePayment(
-            reference,
-            response.reference
-          );
-
-          if (verifyRes.success && verifyRes.accessToken) {
-            toast.dismiss();
-            toast.success("Payment successful! Unlocking 1-hour access.");
-            onPaymentSuccess(verifyRes.accessToken);
-          } else {
-            toast.dismiss();
-            toast.error(verifyRes.error || "Payment verification failed");
-          }
-          setLoading(false);
+          verifyQRServicePayment(reference, response.reference)
+            .then((verifyRes) => {
+              if (verifyRes.success && verifyRes.accessToken) {
+                toast.dismiss();
+                toast.success("Payment successful! Unlocking 1-hour access.");
+                onPaymentSuccess(verifyRes.accessToken);
+              } else {
+                toast.dismiss();
+                toast.error(verifyRes.error || "Payment verification failed");
+              }
+              setLoading(false);
+            })
+            .catch((err) => {
+              console.error("Verification error:", err);
+              toast.dismiss();
+              toast.error("Payment verification failed");
+              setLoading(false);
+            });
         },
       });
 
