@@ -319,7 +319,7 @@ export default function SurfboardLandingPage() {
             {steps.map((s, index) => (
               <li
                 key={s.title}
-                className="group basis-1/4 min-w-[200px] relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/2 p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
+                className="group basis-1/4 min-w-50 relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-white/5 to-white/2 p-5 text-center transition-all duration-300 hover:border-white/20 hover:shadow-lg hover:shadow-white/5"
               >
                 <div className="absolute -right-6 -top-6 text-7xl font-bold text-white/5 transition-all duration-300 group-hover:text-white/10">
                   {index + 1}

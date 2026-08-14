@@ -47,7 +47,7 @@ function SurfboardMDADashboardNavbar({
         </button>
 
         <img
-          src="/surfboard/surf_logo.png"
+          src="/surfboard/surf_logo.svg"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-purple-100 bg-white object-contain"
         />

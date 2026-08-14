@@ -54,22 +54,22 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="h-[90px] w-full" />
-      <div className="absolute top-0 right-0 left-0 z-999 inline-flex w-full h-[90px] px-[1%] pt-[19px] pb-5 bg-white justify-center items-center">
-        <div className="w-full hidden lg:flex h-[54px] justify-between items-center gap-[80px]">
-          <div className="w-full h-[84px] px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
+      <div className="h-22.5 w-full" />
+      <div className="absolute top-0 right-0 left-0 z-999 inline-flex w-full h-22.5 px-[1%] pt-4.75 pb-5 bg-white justify-center items-center">
+        <div className="w-full hidden lg:flex h-13.5 justify-between items-center gap-20">
+          <div className="w-full h-21 px-[3%] md:px-[4%] lg:px-[8%] py-5 bg-white flex-col justify-center items-center gap-2.5 inline-flex">
             <div className="w-full justify-between items-center inline-flex">
               <Link href={"/"} className="justify-start items-center flex">
                 <img alt="" className="" src="/logo.svg" />
               </Link>
-              <div className="justify-start items-center xl:gap-[25px] gap-[15px] flex transition-all duration-300 ease-in-out">
+              <div className="justify-start items-center xl:gap-6.25 gap-3.75 flex transition-all duration-300 ease-in-out">
                 {navbarItems.links.map((item) => renderNavItem(item))}
               </div>
 
               <div className="hidden 2xl:flex items-center justify-end gap-3">
                 <Link
                   href={"/signup"}
-                  className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
+                  className="cursor-pointer w-30 h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
                   <div className="text-center text-sky-950 text-base font-semibold  leading-7">
                     Sign Up
@@ -77,7 +77,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   href={"/login"}
-                  className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
+                  className="cursor-pointer w-30 h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                 >
                   <div className="text-center text-white text-base font-semibold  leading-7">
                     Login
@@ -95,7 +95,7 @@ const Navbar = () => {
                     <DropdownMenuItem>
                       <Link
                         href={"/signup"}
-                        className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
+                        className="cursor-pointer w-30 h-11 px-5 py-2 bg-white text-sky-950 border border-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                       >
                         <div className="text-center text-sky-950 text-base font-semibold  leading-7">
                           Sign Up
@@ -105,7 +105,7 @@ const Navbar = () => {
                     <DropdownMenuItem>
                       <Link
                         href={"/login"}
-                        className="cursor-pointer w-[120px] h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
+                        className="cursor-pointer w-30 h-11 px-5 py-2 bg-sky-950 rounded-[30px] justify-center items-center gap-2.5 inline-flex"
                       >
                         <div className="text-center text-white text-base font-semibold  leading-7">
                           Login

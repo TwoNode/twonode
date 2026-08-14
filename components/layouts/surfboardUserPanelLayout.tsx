@@ -56,7 +56,7 @@ function SurfboardUserDashboardNavbar({
         </button>
 
         <img
-          src="/surfboard/surf_logo.png"
+          src="/surfboard/surf_logo.svg"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
         />
@@ -270,7 +270,7 @@ export default function SurfboardUserPanelLayout({
       <div className="flex items-center justify-center h-screen bg-blue-200">
         <div className="h-20 w-20 relative">
           <img
-            src="/surfboard/surf_logo.png"
+            src="/surfboard/surf_logo.svg"
             alt="Surfboard Logo"
             className="w-8/12 h-8/12 m-auto object-contain absolute inset-0"
           />
