@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { getPublicSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getGatedPublicSurfPlan } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { getPlanQRAccessState } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
 import QRPaywallModal from "@/app/(projects)/(surfboard)/components/QRPaywallModal";
 import { Suspense } from "react";
@@ -186,16 +186,16 @@ function PlanDetails({ planId }: { planId: string }) {
   useEffect(() => {
     const fetchPlanData = async () => {
       try {
-        const res = await getPublicSurfPlanByIdWithSurveyor(planId);
+        const res = await getGatedPublicSurfPlan(planId, token);
         if (!res.success || !res.data) {
           setError("Plan not found");
           return;
         }
         setPlanData(res.data);
 
-        // Fetch QR Access State
-        const accessRes = await getPlanQRAccessState(planId, token);
-        if (accessRes.success) {
+        // Fetch QR Access State from the gated response
+        const accessRes = (res as any).accessInfo;
+        if (accessRes && accessRes.success) {
           setQrAccessInfo(accessRes);
           if (
             accessRes.accessState === "PAYWALL_REQUIRED" ||
@@ -302,6 +302,8 @@ function PlanDetails({ planId }: { planId: string }) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  const isAccessDenied = qrAccessInfo?.accessState !== "PAID_ACTIVE" && qrAccessInfo?.accessState !== "FREE";
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-cyan-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -390,6 +392,19 @@ function PlanDetails({ planId }: { planId: string }) {
             </div>
           </div>
         </div>
+
+        {/* Masked Content if Access Denied */}
+        <div className={`transition-all duration-500 relative ${isAccessDenied ? "opacity-40 blur-[6px] pointer-events-none select-none" : ""}`}>
+          
+          {isAccessDenied && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center">
+              <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg border border-slate-200 text-center">
+                <Lock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold text-slate-800">Content Locked</h3>
+                <p className="text-sm text-slate-500">Purchase access to view details</p>
+              </div>
+            </div>
+          )}
 
         {/* Map Section */}
         {showMap && (
@@ -711,6 +726,8 @@ function PlanDetails({ planId }: { planId: string }) {
             </Card>
           </div>
         </div>
+        
+        </div> {/* End Masked Content */}
 
         {/* QR Code Paywall Modal */}
         <QRPaywallModal

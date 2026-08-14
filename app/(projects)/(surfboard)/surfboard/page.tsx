@@ -132,7 +132,7 @@ export default function SurfboardLandingPage() {
           <div className="flex h-16 items-center justify-between">
             <Link href="#" className="group inline-flex items-center gap-2">
               <Image
-                src="/surfboard/surf_logo.png"
+                src="/surfboard/surf_logo.svg"
                 alt="Surfboard"
                 width={64}
                 height={64}
@@ -435,7 +435,7 @@ export default function SurfboardLandingPage() {
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="inline-flex items-center gap-2 text-sm text-white/80">
               <Image
-                src="/surfboard/surf_light_logo.png"
+                src="/surfboard/surf_light_logo.svg"
                 alt="Surfboard"
                 width={64}
                 height={64}

@@ -54,6 +54,8 @@ export default function QRPaywallModal({
   const [payerEmail, setPayerEmail] = useState("");
   const [payerName, setPayerName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
 
   // Default fee fallbacks if pricing prop is pending
   const service1Price = pricing?.service1?.verificationFee || 1000;
@@ -157,9 +159,30 @@ export default function QRPaywallModal({
     }
   };
 
+  const handleCodeSubmit = () => {
+    if (!accessCode.trim()) {
+      toast.error("Please enter a valid access code");
+      return;
+    }
+    toast.loading("Verifying access code...");
+    // Just pass it to onPaymentSuccess to let the parent handle the verification redirect
+    toast.dismiss();
+    onPaymentSuccess(accessCode.trim());
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-137.5 p-0 overflow-hidden bg-slate-900 border-slate-800 text-white shadow-2xl">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Prevent closing if we are intentionally keeping it open
+      if (!open) {
+        // We only allow close if they've paid. Since this modal only shows when paywall is required,
+        // we ignore external close attempts.
+      }
+    }}>
+      <DialogContent 
+        onInteractOutside={(e) => e.preventDefault()} 
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        className="sm:max-w-137.5 p-0 overflow-hidden bg-slate-900 border-slate-800 text-white shadow-2xl [&>button]:hidden"
+      >
         {/* Modal Header */}
         <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
@@ -326,6 +349,42 @@ export default function QRPaywallModal({
               </>
             )}
           </Button>
+
+          {/* Already Paid? Enter Access Code */}
+          <div className="pt-2 border-t border-slate-800 mt-4 text-center">
+            {!showCodeInput ? (
+              <button
+                onClick={() => setShowCodeInput(true)}
+                className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+              >
+                Already paid? Enter Access Code
+              </button>
+            ) : (
+              <div className="space-y-3 mt-2">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Paste access code here"
+                    value={accessCode}
+                    onChange={(e) => setAccessCode(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+                  />
+                  <Button 
+                    onClick={handleCodeSubmit}
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-medium"
+                  >
+                    Verify
+                  </Button>
+                </div>
+                <button
+                  onClick={() => setShowCodeInput(false)}
+                  className="text-xs text-slate-400 hover:text-slate-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -2063,6 +2063,47 @@ export async function getPublicSurfPlanByIdWithSurveyor(
 }
 
 /**
+ * Server-side gating for public survey plans.
+ * Returns redacted data if the user does not have a valid PAID_ACTIVE or FREE session.
+ */
+export async function getGatedPublicSurfPlan(
+  id: string,
+  token?: string
+): Promise<ApiResult<any> & { accessInfo?: any }> {
+  try {
+    const res = await getPublicSurfPlanByIdWithSurveyor(id);
+    if (!res.success || !res.data) {
+      return res;
+    }
+
+    const { getPlanQRAccessState } = await import("./qrEarningsActions");
+    const accessRes = await getPlanQRAccessState(res.data.id, token);
+
+    if (
+      accessRes.success &&
+      (accessRes.accessState === "PAID_ACTIVE" || accessRes.accessState === "FREE")
+    ) {
+      return { success: true, data: res.data, accessInfo: accessRes } as ApiResult<any> & { accessInfo?: any };
+    }
+
+    // Redact sensitive data for unauthorized viewers
+    const redactedPlan = {
+      ...res.data,
+      pillars: null,
+      centroid: null,
+      geometry: null,
+      areaSqM: 0,
+      user: null,
+    };
+
+    return { success: true, data: redactedPlan, accessInfo: accessRes } as ApiResult<any> & { accessInfo?: any };
+  } catch (err) {
+    console.error("getGatedPublicSurfPlan error:", err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+/**
  * Updates a plan's status.
  */
 export async function updateSurfPlanStatus(

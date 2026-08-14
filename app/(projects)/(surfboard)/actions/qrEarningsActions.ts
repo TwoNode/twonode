@@ -350,6 +350,31 @@ export async function verifyQRServicePayment(
 
     revalidatePath("/surfboard/dashboard/qr-earnings");
 
+    // 4. Send Email to Payer with Access Token and Link
+    if (transaction.payerEmail) {
+      try {
+        const { sendNotificationMail } = await import("@/utils/email");
+        const accessUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://surfboard.twonodes.com"}/surfboardplan/${transaction.plan.planNumber}?token=${updatedTransaction.accessToken}`;
+        
+        await sendNotificationMail({
+          to: transaction.payerEmail,
+          subject: `Access Granted: Survey Plan ${transaction.plan.planNumber}`,
+          html: `
+            <h2>Your Survey Plan Access is Ready</h2>
+            <p>You have successfully purchased a 1-hour access pass for <strong>${serviceName}</strong> on Survey Plan <strong>${transaction.plan.planNumber}</strong>.</p>
+            <p>Click the secure link below to access your session immediately:</p>
+            <p><a href="${accessUrl}" style="padding: 10px 20px; background-color: #0284c7; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">Access Survey Plan</a></p>
+            <p><strong>Or use this Access Code if you are already on the page:</strong></p>
+            <p style="font-family: monospace; font-size: 1.2em; background-color: #f1f5f9; padding: 10px; border-radius: 5px;">${updatedTransaction.accessToken}</p>
+            <p><small>This access will expire 1 hour from the time of purchase.</small></p>
+          `,
+        });
+        console.log(`Access email sent to ${transaction.payerEmail}`);
+      } catch (err) {
+        console.error("Failed to send access email to payer:", err);
+      }
+    }
+
     return {
       success: true,
       accessToken: updatedTransaction.accessToken,
