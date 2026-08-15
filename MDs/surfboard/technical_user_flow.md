@@ -204,3 +204,29 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 30 minutes 
 *   **Internal Archiving**
     *   **Function**: `markPlanArchived(planId, userId)`
     *   **Logic**: Updates `archiveReceivedBy` and `archiveReceivedAt` for physical plan tracking. (Status-Neutral).
+
+---
+
+## 7. Public Plan View & QR Paywall
+
+### User Flow
+#### Page 1: Public Survey Plan Page (`/surfboardplan/[id]`)
+*   **Display**: The public view of a survey plan accessed via URL or QR scan.
+*   **Access Check**: If the user has not reached their free scan limit or has an active paid session, they see the full plan details, map preview, and surveyor info.
+*   **Paywall Required**: If access is denied, the page displays a **Blurred Premium Skeleton** (Google-Meet style waiting room) and a fixed, non-dismissible **QR Paywall Overlay**.
+*   **Payment**: 
+    1. The user selects a service (e.g., Location Authenticity or CoD).
+    2. Enters their email.
+    3. Pays via Paystack in the overlay.
+    4. Upon success, they are granted a 1-hour access token, sent to their email along with an access link.
+
+### Technical Flow
+*   **Server-Side Gating**: 
+    *   **Function**: `getGatedPublicSurfPlan(id, token)`
+    *   **Logic**: Checks the QR scan limit and transaction history using `getPlanQRAccessState`. If unauthorized, it redacts sensitive fields (geometry, pillars, user info, centroid, area) before sending to the client.
+*   **Client-Side Protection**:
+    *   **UI State**: Renders a `<LoadingSkeleton />` with a backdrop blur when `isAccessDenied` is true to prevent leaking empty layouts.
+    *   **Fixed Overlay**: The `QRPaywallModal` is a fixed, non-dismissible `motion.div` overlay rendered at `z-9999` to ensure users cannot bypass the payment required state.
+*   **Payment Verification**:
+    *   **Function**: `verifyQRServicePayment(reference, paystackRef)`
+    *   **Logic**: Verifies payment, creates a 1-hour session token, credits the surveyor's wallet, and uses `sendNotificationMail` to email the access link to the payer.

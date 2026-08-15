@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,30 +165,27 @@ export default function QRPaywallModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      // Prevent closing if we are intentionally keeping it open
-      if (!open) {
-        // We only allow close if they've paid. Since this modal only shows when paywall is required,
-        // we ignore external close attempts.
-      }
-    }}>
-      <DialogContent 
-        onInteractOutside={(e) => e.preventDefault()} 
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        className="sm:max-w-137.5 p-0 overflow-hidden bg-slate-900 border-slate-800 text-white shadow-2xl [&>button]:hidden"
-      >
-        {/* Modal Header */}
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/60 backdrop-blur-xl p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="w-full max-w-xl overflow-hidden bg-slate-900 border border-slate-800 text-white shadow-2xl rounded-2xl"
+          >
+            {/* Modal Header */}
         <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="inline-flex items-center justify-center p-3 bg-white/10 rounded-2xl backdrop-blur-md mb-3">
             <Lock className="w-6 h-6 text-white" />
           </div>
-          <DialogTitle className="text-2xl font-bold text-white">
-            Unlock Survey Plan Access
-          </DialogTitle>
-          <DialogDescription className="text-blue-100 mt-1 text-sm">
-            Survey Plan #{planNumber} • Free scan quota reached
-          </DialogDescription>
+            <div className="text-2xl font-bold text-white">
+              Unlock Survey Plan Access
+            </div>
+            <div className="text-blue-100 mt-1 text-sm">
+              Survey Plan #{planNumber} • Free scan quota reached
+            </div>
         </div>
 
         {/* Service Options */}
@@ -386,7 +377,9 @@ export default function QRPaywallModal({
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

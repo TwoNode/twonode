@@ -169,7 +169,7 @@ function PlanDetails({ planId }: { planId: string }) {
           acc[1] + (pillar.northing || 0),
         ];
       },
-      [0, 0]
+      [0, 0],
     );
 
     return [sum[0] / pillars.length, sum[1] / pillars.length];
@@ -177,11 +177,14 @@ function PlanDetails({ planId }: { planId: string }) {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token") || searchParams.get("access_token") || "";
+  const token =
+    searchParams.get("token") || searchParams.get("access_token") || "";
 
   const [qrAccessInfo, setQrAccessInfo] = useState<any>(null);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(null);
+  const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -224,7 +227,7 @@ function PlanDetails({ planId }: { planId: string }) {
             : res.data.geometry;
 
         // Set initial center from first pillar or use centroid if available
-        if (geometry[0]?.coordinates) {
+        if (geometry && geometry[0]?.coordinates) {
           setInitialCenter([
             geometry[0].coordinates[1],
             geometry[0].coordinates[0],
@@ -302,7 +305,9 @@ function PlanDetails({ planId }: { planId: string }) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const isAccessDenied = qrAccessInfo?.accessState !== "PAID_ACTIVE" && qrAccessInfo?.accessState !== "FREE";
+  const isAccessDenied =
+    qrAccessInfo?.accessState !== "PAID_ACTIVE" &&
+    qrAccessInfo?.accessState !== "FREE";
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-cyan-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -313,7 +318,11 @@ function PlanDetails({ planId }: { planId: string }) {
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-emerald-200" />
               <span className="font-semibold text-sm">
-                Active Paid Session ({qrAccessInfo.serviceType === "LOCATION_AUTHENTICITY" ? "Service 1: Location Verification" : "Service 2: Certificate of Deposit"})
+                Active Paid Session (
+                {qrAccessInfo.serviceType === "LOCATION_AUTHENTICITY"
+                  ? "Service 1: Location Verification"
+                  : "Service 2: Certificate of Deposit"}
+                )
               </span>
             </div>
             {sessionSecondsLeft !== null && (
@@ -324,7 +333,6 @@ function PlanDetails({ planId }: { planId: string }) {
             )}
           </div>
         )}
-
         {qrAccessInfo?.accessState === "EXPIRED" && (
           <div className="bg-amber-600 text-white px-4 py-3 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -392,126 +400,158 @@ function PlanDetails({ planId }: { planId: string }) {
             </div>
           </div>
         </div>
-
         {/* Masked Content if Access Denied */}
-        <div className={`transition-all duration-500 relative ${isAccessDenied ? "opacity-40 blur-[6px] pointer-events-none select-none" : ""}`}>
-          
-          {isAccessDenied && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center">
-              <div className="bg-white/80 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg border border-slate-200 text-center">
-                <Lock className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <h3 className="text-lg font-semibold text-slate-800">Content Locked</h3>
-                <p className="text-sm text-slate-500">Purchase access to view details</p>
+        <div
+          className={`transition-all duration-500 relative ${isAccessDenied ? "opacity-30 blur-md pointer-events-none select-none" : ""}`}
+        >
+          {isAccessDenied ? (
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                {[1, 2].map((i) => (
+                  <Card key={i} className="overflow-hidden border-slate-200">
+                    <CardHeader className="bg-slate-50 border-b border-slate-100">
+                      <Skeleton className="h-6 w-48" />
+                    </CardHeader>
+                    <CardContent className="p-6 grid grid-cols-2 gap-6">
+                      {[1, 2, 3, 4].map((j) => (
+                        <div key={j} className="space-y-2">
+                          <Skeleton className="h-4 w-24 bg-slate-200" />
+                          <Skeleton className="h-5 w-full bg-slate-100" />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="space-y-6">
+                <Card className="overflow-hidden border-slate-200">
+                  <CardHeader className="bg-slate-50 border-b border-slate-100">
+                    <Skeleton className="h-6 w-32" />
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <Skeleton className="h-4 w-16 bg-slate-200" />
+                        <Skeleton className="h-4 w-24 bg-slate-100" />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          )}
-
-        {/* Map Section */}
-        {showMap && (
-          <Card className="overflow-hidden border-cyan-200 shadow-md h-200 flex flex-col">
-            <CardHeader className="bg-linear-to-r from-cyan-50 to-blue-50 border-b border-cyan-100 p-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
-                  <MapPin className="h-5 w-5" />
-                  Survey Plan Location
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowMap(false)}
-                  className="text-slate-500 hover:text-slate-700"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Close Map
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 relative h-200 overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
+          ) : (
+            <>
               {/* Map Section */}
+              {showMap && (
+                <Card className="overflow-hidden border-cyan-200 shadow-md h-200 flex flex-col">
+                  <CardHeader className="bg-linear-to-r from-cyan-50 to-blue-50 border-b border-cyan-100 p-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
+                        <MapPin className="h-5 w-5" />
+                        Survey Plan Location
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowMap(false)}
+                        className="text-slate-500 hover:text-slate-700"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Close Map
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 p-0 relative h-200 overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
+                    {/* Map Section */}
 
-              <div className="bg-white rounded-2xl shadow p-6">
-                <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                  Map Preview
-                </h2>
+                    <div className="bg-white rounded-2xl shadow p-6">
+                      <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                        Map Preview
+                      </h2>
 
-                <div
-                  className={`h-160 w-full rounded overflow-auto ${
-                    plan?.pillars?.length > 0
-                      ? "border-4 border-blue-400"
-                      : "border"
-                  }`}
-                >
-                  <MaplibreMap
-                    // processedPillars={mapPillars || []}
-                    processedPillars={plan?.pillars}
-                    state={plan?.state}
-                  />
-                </div>
-              </div>
+                      <div
+                        className={`h-160 w-full rounded overflow-auto ${
+                          plan?.pillars?.length > 0
+                            ? "border-4 border-blue-400"
+                            : "border"
+                        }`}
+                      >
+                        <MaplibreMap
+                          // processedPillars={mapPillars || []}
+                          processedPillars={plan?.pillars}
+                          state={plan?.state}
+                        />
+                      </div>
+                    </div>
 
-              {/* <div className="absolute inset-0">
+                    {/* <div className="absolute inset-0">
     
               </div> */}
-            </CardContent>
-          </Card>
-        )}
+                  </CardContent>
+                </Card>
+              )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Plan Overview */}
-            <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                  <Layers className="h-5 w-5 text-cyan-600" />
-                  Plan Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <DetailItem
-                    icon={Hash}
-                    label="Plan Number"
-                    value={plan.planNumber}
-                    className="border-b pb-3"
-                  />
-                  {plan.referencePlanNumber &&
-                    plan.referencePlanNumber !== "N/A" && (
-                      <DetailItem
-                        icon={FileText}
-                        label="Reference Plan"
-                        value={plan.referencePlanNumber}
-                        className="border-b pb-3"
-                      />
-                    )}
-                  {plan.withdrawalAndResubmissionStatus &&
-                    plan.withdrawalAndResubmissionStatus !== "No_Action" && (
-                      <DetailItem
-                        icon={FileText}
-                        label="Withdrawal Status"
-                        value={
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                              plan.withdrawalAndResubmissionStatus === "Withdrawn"
-                                ? "bg-red-100 text-red-800 border-red-200"
-                                : "bg-blue-100 text-blue-800 border-blue-200"
-                            }`}
-                          >
-                            {plan.withdrawalAndResubmissionStatus}
-                          </span>
-                        }
-                        className="border-b pb-3"
-                      />
-                    )}
-                  <DetailItem
-                    icon={Layers}
-                    label="Plan Type"
-                    value={plan.planType || "N/A"}
-                    className="border-b pb-3"
-                  />
-                </div>
-                <div className="space-y-4">
-                  {/* <DetailItem
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Plan Overview */}
+                  <Card className="overflow-hidden border border-slate-200 shadow-sm">
+                    <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                        <Layers className="h-5 w-5 text-cyan-600" />
+                        Plan Overview
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <DetailItem
+                          icon={Hash}
+                          label="Plan Number"
+                          value={plan.planNumber}
+                          className="border-b pb-3"
+                        />
+                        {plan.referencePlanNumber &&
+                          plan.referencePlanNumber !== "N/A" && (
+                            <DetailItem
+                              icon={FileText}
+                              label="Reference Plan"
+                              value={plan.referencePlanNumber}
+                              className="border-b pb-3"
+                            />
+                          )}
+                        {plan.withdrawalAndResubmissionStatus &&
+                          plan.withdrawalAndResubmissionStatus !==
+                            "No_Action" && (
+                            <DetailItem
+                              icon={FileText}
+                              label="Withdrawal Status"
+                              value={
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                    plan.withdrawalAndResubmissionStatus ===
+                                    "Withdrawn"
+                                      ? "bg-red-100 text-red-800 border-red-200"
+                                      : "bg-blue-100 text-blue-800 border-blue-200"
+                                  }`}
+                                >
+                                  {plan.withdrawalAndResubmissionStatus}
+                                </span>
+                              }
+                              className="border-b pb-3"
+                            />
+                          )}
+                        <DetailItem
+                          icon={Layers}
+                          label="Plan Type"
+                          value={plan.planType || "N/A"}
+                          className="border-b pb-3"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        {/* <DetailItem
                     icon={Ruler}
                     label="Area"
                     value={
@@ -521,214 +561,215 @@ function PlanDetails({ planId }: { planId: string }) {
                     }
                     className="border-b pb-3"
                   /> */}
-                  <DetailItem
-                    icon={Ruler}
-                    label="Deeded Area"
-                    value={plan.deededArea || "N/A"}
-                    className="border-b pb-3"
-                  />
-                  <DetailItem
-                    icon={Layers}
-                    label="Pillar Type"
-                    value={plan.pillarType || "N/A"}
-                    className="border-b pb-3"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pillars Overview */}
-            <PillarsOverview pillars={pillars} />
-
-            {/* Location Details */}
-            <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                  <MapPin className="h-5 w-5 text-cyan-600" />
-                  Location Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <DetailItem
-                  icon={MapPin}
-                  label="LGA"
-                  value={plan.lga || "N/A"}
-                />
-                <DetailItem
-                  icon={MapPin}
-                  label="Ward"
-                  value={plan.ward || "N/A"}
-                />
-                {coordinates && (
-                  <DetailItem
-                    icon={MapPin}
-                    label="Coordinates"
-                    value={
-                      <div className="flex flex-col">
-                        <span>{coordinates}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!plan.centroid) return;
-                            const [lng, lat] = plan.centroid;
-                            window.open(
-                              `https://www.google.com/maps?q=${lat},${lng}`,
-                              "_blank"
-                            );
-                          }}
-                          className="mt-1 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline self-start"
-                        >
-                          View on Google Maps
-                          <svg
-                            className="w-3 h-3 ml-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                            />
-                          </svg>
-                        </button>
+                        <DetailItem
+                          icon={Ruler}
+                          label="Deeded Area"
+                          value={plan.deededArea || "N/A"}
+                          className="border-b pb-3"
+                        />
+                        <DetailItem
+                          icon={Layers}
+                          label="Pillar Type"
+                          value={plan.pillarType || "N/A"}
+                          className="border-b pb-3"
+                        />
                       </div>
-                    }
-                    className="md:col-span-2"
-                  />
-                )}
-              </CardContent>
-            </Card>
+                    </CardContent>
+                  </Card>
 
-            {/* Surveyor Information */}
-            {user && (
-              <Card className="overflow-hidden border border-slate-200 shadow-sm">
-                <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
-                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                    <User className="h-5 w-5 text-cyan-600" />
-                    Surveyor Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <DetailItem
-                    icon={User}
-                    label="Surveyor"
-                    value={`${user.firstName} ${user.lastName}`}
-                  />
-                  <DetailItem
-                    icon={Briefcase}
-                    label="Company"
-                    value={user.companyName || "N/A"}
-                  />
-                  <DetailItem
-                    icon={Hash}
-                    label="SURCON Number"
-                    value={user.surconRegNumber || "N/A"}
-                  />
-                  <DetailItem
-                    icon={FileText}
-                    label="SURCON Name"
-                    value={user.surconRegName || "N/A"}
-                  />
-                </CardContent>
-              </Card>
-            )}
+                  {/* Pillars Overview */}
+                  <PillarsOverview pillars={pillars} />
 
-            {/* Additional Notes */}
-            {plan.reasonForWithdrawalAndResubmission && (
-              <Card className="overflow-hidden border-destructive/20">
-                <CardHeader className="bg-destructive/5 border-b border-destructive/20">
-                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-destructive">
-                    <FileText className="h-5 w-5" />
-                    Reason for Withdrawal and Resubmission
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <p className="text-foreground">
-                    {plan.reasonForWithdrawalAndResubmission}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  {/* Location Details */}
+                  <Card className="overflow-hidden border border-slate-200 shadow-sm">
+                    <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                        <MapPin className="h-5 w-5 text-cyan-600" />
+                        Location Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <DetailItem
+                        icon={MapPin}
+                        label="LGA"
+                        value={plan.lga || "N/A"}
+                      />
+                      <DetailItem
+                        icon={MapPin}
+                        label="Ward"
+                        value={plan.ward || "N/A"}
+                      />
+                      {coordinates && (
+                        <DetailItem
+                          icon={MapPin}
+                          label="Coordinates"
+                          value={
+                            <div className="flex flex-col">
+                              <span>{coordinates}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!plan.centroid) return;
+                                  const [lng, lat] = plan.centroid;
+                                  window.open(
+                                    `https://www.google.com/maps?q=${lat},${lng}`,
+                                    "_blank",
+                                  );
+                                }}
+                                className="mt-1 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline self-start"
+                              >
+                                View on Google Maps
+                                <svg
+                                  className="w-3 h-3 ml-1"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          }
+                          className="md:col-span-2"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Plan Summary */}
-            <Card className="overflow-hidden border border-cyan-100 shadow-sm">
-              <CardHeader className="bg-linear-to-b from-cyan-50 to-white border-b border-cyan-100">
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
-                  <FileText className="h-5 w-5" />
-                  Plan Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4 bg-white">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-500">
-                    Status
-                  </span>
-                  <StatusBadge status={plan.status} />
+                  {/* Surveyor Information */}
+                  {user && (
+                    <Card className="overflow-hidden border border-slate-200 shadow-sm">
+                      <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                          <User className="h-5 w-5 text-cyan-600" />
+                          Surveyor Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <DetailItem
+                          icon={User}
+                          label="Surveyor"
+                          value={`${user.firstName} ${user.lastName}`}
+                        />
+                        <DetailItem
+                          icon={Briefcase}
+                          label="Company"
+                          value={user.companyName || "N/A"}
+                        />
+                        <DetailItem
+                          icon={Hash}
+                          label="SURCON Number"
+                          value={user.surconRegNumber || "N/A"}
+                        />
+                        <DetailItem
+                          icon={FileText}
+                          label="SURCON Name"
+                          value={user.surconRegName || "N/A"}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Additional Notes */}
+                  {plan.reasonForWithdrawalAndResubmission && (
+                    <Card className="overflow-hidden border-destructive/20">
+                      <CardHeader className="bg-destructive/5 border-b border-destructive/20">
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-destructive">
+                          <FileText className="h-5 w-5" />
+                          Reason for Withdrawal and Resubmission
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <p className="text-foreground">
+                          {plan.reasonForWithdrawalAndResubmission}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-500">
-                    Signed On
-                  </span>
-                  <span className="text-sm font-medium text-slate-700">
-                    {formattedDate}
-                  </span>
+
+                {/* Sidebar */}
+                <div className="space-y-6">
+                  {/* Plan Summary */}
+                  <Card className="overflow-hidden border border-cyan-100 shadow-sm">
+                    <CardHeader className="bg-linear-to-b from-cyan-50 to-white border-b border-cyan-100">
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold text-cyan-800">
+                        <FileText className="h-5 w-5" />
+                        Plan Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-4 bg-white">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-500">
+                          Status
+                        </span>
+                        <StatusBadge status={plan.status} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-500">
+                          Signed On
+                        </span>
+                        <span className="text-sm font-medium text-slate-700">
+                          {formattedDate}
+                        </span>
+                      </div>
+                      {plan.updatedAt && plan.updatedAt !== plan.createdAt && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-500">
+                            Last Updated
+                          </span>
+                          <span className="text-sm font-medium text-slate-700">
+                            {format(new Date(plan.updatedAt), "MMM d, yyyy")}
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Actions */}
+                  <Card className="overflow-hidden border border-slate-200 shadow-sm">
+                    <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
+                      <CardTitle className="text-lg font-semibold text-slate-800">
+                        Quick Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-2 bg-white">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
+                        disabled
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Plan PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
+                      >
+                        <Printer className="h-4 w-4" />
+                        Print Plan
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Share Plan
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-                {plan.updatedAt && plan.updatedAt !== plan.createdAt && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-500">
-                      Last Updated
-                    </span>
-                    <span className="text-sm font-medium text-slate-700">
-                      {format(new Date(plan.updatedAt), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="overflow-hidden border border-slate-200 shadow-sm">
-              <CardHeader className="bg-linear-to-r from-blue-50 to-cyan-50 border-b border-slate-100">
-                <CardTitle className="text-lg font-semibold text-slate-800">
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2 bg-white">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
-                  disabled
-                >
-                  <Download className="h-4 w-4" />
-                  Download Plan PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
-                >
-                  <Printer className="h-4 w-4" />
-                  Print Plan
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share Plan
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        
-        </div> {/* End Masked Content */}
-
+              </div>
+            </>
+          )}
+        </div>{" "}
+        {/* End Masked Content */}
         {/* QR Code Paywall Modal */}
         <QRPaywallModal
           isOpen={isPaywallOpen}
