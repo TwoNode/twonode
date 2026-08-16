@@ -31,7 +31,7 @@ function SurfboardMDADashboardNavbar({
 }) {
   return (
     <header
-      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-purple-100"
+      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-purple-100"
       style={{
         background: "linear-gradient(135deg, #6B21A8 0%, #7C3AED 100%)",
       }}
@@ -172,7 +172,7 @@ export default function SurfboardMDAPanelLayout({
         <LogoutLink
           key={"logout"}
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          className="group flex flex-col items-center justify-center gap-2.5 w-full h-15 rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{ backgroundColor: "transparent" }}
         >
           <span className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200 bg-purple-50 border border-purple-100">
