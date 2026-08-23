@@ -1,0 +1,96 @@
+// --------------------------------------------------------------------------------
+// REVA — Lagos property due-diligence and valuation platform.
+// --------------------------------------------------------------------------------
+
+model Property {
+  id          String   @id @default(uuid())
+  reference   String   @unique @default(dbgenerated("concat('REVA_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
+  references  String[] // Other references for a transaction
+  title       String? // Nullable
+  description String? // Nullable
+
+  status        String?
+  paymentStatus String?
+
+  paymentLink String? // Nullable
+
+  statusMessage String? // Nullable
+  error         String? // Nullable
+
+  userId String
+  user   RevaUser @relation(fields: [userId], references: [id])
+
+  address  String
+  lat      Float?
+  lng      Float?
+  lga      String
+  parcelId String? // Optional
+
+  totalCost     Float
+  documentsUrls String[] // Array of URLs
+  site_images   String[] // Array of site image URLs
+  comments      String? // Optional
+  deleted       Boolean  @default(false) // Optional field to indicate if the property is deleted
+  isLive        Boolean  @default(false) // Track if this is a live or test transaction
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report Json? // report from reva
+}
+
+model OneTimeUserProperty {
+  id          String  @id @default(uuid())
+  reference   String  @unique @default(dbgenerated("concat('reva_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 12))")) // Optional DB default if supported
+  requester   String? // Nullable (default "")
+  description String? // Nullable
+
+  status        String?
+  paymentStatus String?
+
+  statusMessage String? // Nullable
+  error         String? // Nullable
+
+  email           String
+  userPhoneNumber String? // Optional
+
+  address  String
+  lat      Float?
+  lng      Float?
+  lga      String
+  parcelId String? // Optional
+
+  totalCost     Float
+  documentsUrls String[] // Array of URLs
+  site_images   String[] // Array of site image URLs
+  comments      String? // Optional
+  isLive        Boolean  @default(false) // Track if this is a live or test transaction
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report Json? // report from reva
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+// Placeholder User model for relation
+model RevaUser {
+  id      String @id @default(uuid()) // Unique identifier
+  kindeId String @unique
+  email   String @unique
+
+  firstName String
+  lastName  String
+
+  role          Role       @default(USER)
+  emailVerified Boolean    @default(false)
+  is_active     Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  properties    Property[]
+}

@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // Relative to this file's own location (prisma/schema/), not the schema
+  // folder's parent — resolves back to prisma/generated, matching every
+  // existing `@/prisma/generated` import across the codebase unchanged.
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------------------------------
+// Genuinely cross-product models — used by more than one of REVA/Surfboard/GBC.
+// See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.3.
+// --------------------------------------------------------------------------------
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  PAYMENT
+  PROPERTY
+}
+
+enum NotificationAudience {
+  SPECIFIC_USERS // Targeted to specific userIds
+  GENERAL_USERS // General notification for regular users
+  GENERAL_ADMINS // General notification for admins
+  SUPERADMIN // General notification for superadmins
+  ALL_USERS // Everyone (users + admins + superadmins)
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  readBy      String[]             @default([]) // List of userIds who read it
+  dismissedBy String[]             @default([]) // List of userIds who dismissed it
+  userIds     String[]             @default([]) // If null/empty => general
+  audience    NotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  signature   String    @unique // x-paystack-signature; uniquely identifies a delivery payload
+  event       String
+  platform    String
+  entityKey   String? // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  status      String // "pending" | "ok" | "error"
+  error       String?
+
+  @@index([event, platform])
+  @@index([entityKey])
+  @@index([receivedAt])
+}
