@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
-import prisma from "@/lib/prisma";
-import { signAccessToken } from "@/lib/auth/jwt";
-import { setAuthCookies } from "@/lib/auth/cookies";
+import { issueSession } from "@/lib/auth/session";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
@@ -50,25 +47,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Account is inactive" }, { status: 403 });
     }
 
-    const familyId = crypto.randomUUID();
-    const rawRefreshToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawRefreshToken).digest("hex");
-
     const refreshDays = rememberMe ? 30 : 1;
     const refreshMaxAgeSeconds = refreshDays * 24 * 60 * 60;
 
-    await prisma.refreshToken.create({
-      data: {
-        userId: user!.id,
-        platform,
-        tokenHash,
-        familyId,
-        expiresAt: new Date(Date.now() + refreshMaxAgeSeconds * 1000),
-      },
-    });
-
-    const accessToken = await signAccessToken({ sub: user!.id, role: user!.role, platform });
-    await setAuthCookies(platform, accessToken, rawRefreshToken, refreshMaxAgeSeconds);
+    await issueSession(user!.id, user!.role, platform, refreshMaxAgeSeconds);
 
     return NextResponse.json({
       success: true,

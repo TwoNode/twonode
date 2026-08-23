@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, GBCRole } from "@/utils/platform";
 
 export async function GET(request: NextRequest) {
@@ -51,6 +52,14 @@ export async function GET(request: NextRequest) {
       throw new Error(
         "Access denied: Your admin account has been deactivated. Please contact a super admin."
       );
+    }
+
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.GBC);
+    } catch (err) {
+      console.error("issueSession failed for gbc-restricted callback:", err);
     }
 
     // Create encrypted user data
