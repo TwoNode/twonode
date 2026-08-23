@@ -306,7 +306,7 @@ export default function QRPaywallModal({
                     <ServiceInfoButton
                       title="Service 1: Know Actual Location"
                       illustration={<Service1Illustration />}
-                      description="Unlocks an interactive map of the exact survey location, GPS-ready directions, and an on-the-spot authenticity check confirming this plan matches what was lodged."
+                      description="Unlocks an interactive map of the exact survey location, GPS-ready directions, and an on-the-spot authenticity check."
                     />
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -353,7 +353,7 @@ export default function QRPaywallModal({
                     <ServiceInfoButton
                       title="Service 2: Access Certificate of Deposit"
                       illustration={<Service2Illustration />}
-                      description="Unlocks the official Certificate of Deposit for this plan, issued by OSSG, available to download once the plan has a lodged certificate on file."
+                      description="Unlocks the official Certificate of Deposit for this plan, issued by office of the State Surveyor General (OSSG), available to download once the plan has been lodged."
                     />
                     {isCoDAvailable ? (
                       <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
