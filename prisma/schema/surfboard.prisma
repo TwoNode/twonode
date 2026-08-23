@@ -37,6 +37,11 @@ model SurfboardUser {
   isActive Boolean @default(true)
   isKycValidated Boolean @default(false)
 
+  /// Native email+password auth (§4.2) — null if this account has never set
+  /// a password (Kinde-only). authProviders lets one account have both.
+  passwordHash  String?
+  authProviders AuthProvider[] @default([KINDE])
+
   // New fields
   logo            String? // URL to the user's logo
   companyName     String? // User's company name

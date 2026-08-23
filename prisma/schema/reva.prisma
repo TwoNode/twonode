@@ -90,6 +90,12 @@ model RevaUser {
   role          Role       @default(USER)
   emailVerified Boolean    @default(false)
   is_active     Boolean    @default(true)
+
+  /// Native email+password auth (§4.2) — null if this account has never set
+  /// a password (Kinde-only). authProviders lets one account have both.
+  passwordHash  String?
+  authProviders AuthProvider[] @default([KINDE])
+
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   properties    Property[]

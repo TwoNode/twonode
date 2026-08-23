@@ -58,6 +58,50 @@ model Notification {
   @@index([audience])
 }
 
+// --------------------------------------------------------------------------------
+// Native email+password auth (MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.2), running
+// alongside Kinde rather than replacing it. Shared across all products (one
+// RefreshToken/LoginAttempt table, not one per product — proposal §6.1) since a
+// user can already be simultaneously signed into REVA/Surfboard/GBC today via the
+// existing multi-platform session cookie, and revocation/rotation logic is
+// simpler in one place. `platform` is a plain String (not a Prisma enum) —
+// validated against the single canonical Platform enum in utils/platform.ts,
+// deliberately not duplicating it here with different casing.
+// --------------------------------------------------------------------------------
+
+enum AuthProvider {
+  KINDE
+  PASSWORD
+}
+
+/// No `user User @relation(...)` here: "User" isn't one model in this schema,
+/// it's RevaUser/SurfboardUser/GBCUser — Prisma has no polymorphic relations,
+/// so userId is a plain reference, scoped by `platform` to know which table
+/// it points into.
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  platform   String
+  tokenHash  String    @unique
+  familyId   String
+  revokedAt  DateTime?
+  replacedBy String?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId, platform])
+}
+
+model LoginAttempt {
+  id         String   @id @default(uuid())
+  identifier String
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+}
+
 model WebhookEvent {
   id          String    @id @default(cuid())
   signature   String    @unique // x-paystack-signature; uniquely identifies a delivery payload
