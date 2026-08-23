@@ -32,6 +32,8 @@ import {
   Lock,
   ShieldCheck,
   AlertCircle,
+  FileCheck,
+  Award,
 } from "lucide-react";
 import { PillarData } from "../../types/surfboardTypes";
 import MaplibreMap from "../../components/maps/MaplibreMap";
@@ -148,6 +150,74 @@ function PillarsOverview({ pillars }: { pillars: any }) {
   );
 }
 
+/** Service 2 content: shown only when the active session was paid for
+ * CERTIFICATE_OF_DEPOSIT. Distinct from the generic Service 1 plan-detail
+ * view so a CoD purchase actually surfaces the certificate, not the map. */
+function CoDAccessPanel({
+  plan,
+  isCoDAvailable,
+}: {
+  plan: any;
+  isCoDAvailable: boolean;
+}) {
+  const certificateFilePaths: string[] = Array.isArray(
+    plan.certificateFilePaths,
+  )
+    ? plan.certificateFilePaths
+    : [];
+
+  return (
+    <div className="mt-6 max-w-2xl mx-auto">
+      <Card className="overflow-hidden border-indigo-200 shadow-md">
+        <CardHeader className="bg-linear-to-r from-indigo-50 to-blue-50 border-b border-indigo-100">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-indigo-800">
+            <Award className="h-5 w-5" />
+            Certificate of Deposit
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge status={plan.status} />
+            <span className="text-sm text-slate-600">
+              {plan.surveyTitle || `Survey Plan ${plan.planNumber}`} &middot;
+              #{plan.planNumber}
+            </span>
+          </div>
+
+          {isCoDAvailable && certificateFilePaths.length > 0 ? (
+            <div className="space-y-3">
+              {certificateFilePaths.map((url, i) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 transition-colors"
+                >
+                  <FileCheck className="h-5 w-5 text-indigo-600 shrink-0" />
+                  <span className="flex-1 text-sm font-medium text-indigo-900">
+                    Certificate of Deposit
+                    {certificateFilePaths.length > 1 ? ` #${i + 1}` : ""}
+                  </span>
+                  <Download className="h-4 w-4 text-indigo-500" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span className="text-sm">
+                No Certificate of Deposit has been lodged for this plan yet.
+                Check back once OSSG lodging is complete.
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function PlanDetails({ planId }: { planId: string }) {
   const [showMap, setShowMap] = useState(true);
   const [planData, setPlanData] = useState<any>(null);
@@ -185,6 +255,9 @@ function PlanDetails({ planId }: { planId: string }) {
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(
     null,
   );
+  const [paywallDefaultService, setPaywallDefaultService] = useState<
+    "LOCATION_AUTHENTICITY" | "CERTIFICATE_OF_DEPOSIT" | undefined
+  >(undefined);
 
   useEffect(() => {
     const fetchPlanData = async () => {
@@ -325,12 +398,27 @@ function PlanDetails({ planId }: { planId: string }) {
                 )
               </span>
             </div>
-            {sessionSecondsLeft !== null && (
-              <div className="flex items-center gap-1.5 bg-emerald-700/80 px-3 py-1 rounded-lg text-xs font-mono font-bold">
-                <Clock className="h-4 w-4 text-emerald-300" />
-                Access Expires In: {formatTimer(sessionSecondsLeft)}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {qrAccessInfo.serviceType === "LOCATION_AUTHENTICITY" && (
+                <Button
+                  onClick={() => {
+                    setPaywallDefaultService("CERTIFICATE_OF_DEPOSIT");
+                    setIsPaywallOpen(true);
+                  }}
+                  size="sm"
+                  className="bg-white text-emerald-800 hover:bg-emerald-50 font-bold gap-1.5"
+                >
+                  <Award className="h-4 w-4" />
+                  Unlock Certificate of Deposit
+                </Button>
+              )}
+              {sessionSecondsLeft !== null && (
+                <div className="flex items-center gap-1.5 bg-emerald-700/80 px-3 py-1 rounded-lg text-xs font-mono font-bold">
+                  <Clock className="h-4 w-4 text-emerald-300" />
+                  Access Expires In: {formatTimer(sessionSecondsLeft)}
+                </div>
+              )}
+            </div>
           </div>
         )}
         {qrAccessInfo?.accessState === "EXPIRED" && (
@@ -342,7 +430,10 @@ function PlanDetails({ planId }: { planId: string }) {
               </span>
             </div>
             <Button
-              onClick={() => setIsPaywallOpen(true)}
+              onClick={() => {
+                setPaywallDefaultService(qrAccessInfo?.serviceType);
+                setIsPaywallOpen(true);
+              }}
               size="sm"
               className="bg-white text-amber-900 hover:bg-amber-100 font-bold"
             >
@@ -442,6 +533,11 @@ function PlanDetails({ planId }: { planId: string }) {
                 </Card>
               </div>
             </div>
+          ) : qrAccessInfo?.serviceType === "CERTIFICATE_OF_DEPOSIT" ? (
+            <CoDAccessPanel
+              plan={plan}
+              isCoDAvailable={qrAccessInfo?.isCoDAvailable ?? false}
+            />
           ) : (
             <>
               {/* Map Section */}
@@ -779,6 +875,7 @@ function PlanDetails({ planId }: { planId: string }) {
           isCoDAvailable={qrAccessInfo?.isCoDAvailable ?? false}
           pricing={qrAccessInfo?.pricing}
           onPaymentSuccess={handlePaymentSuccess}
+          defaultService={paywallDefaultService}
         />
       </div>
     </div>

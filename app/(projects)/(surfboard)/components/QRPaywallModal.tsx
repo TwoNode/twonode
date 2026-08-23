@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   MapPin,
   FileCheck,
   CheckCircle2,
@@ -16,12 +21,18 @@ import {
   Clock,
   AlertCircle,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import {
   initiateQRServicePayment,
   verifyQRServicePayment,
+  getPlanQRAccessState,
 } from "../actions/qrEarningsActions";
 import { toast } from "sonner";
+import {
+  Service1Illustration,
+  Service2Illustration,
+} from "./QRServiceIllustrations";
 
 interface QRPaywallModalProps {
   isOpen: boolean;
@@ -31,6 +42,47 @@ interface QRPaywallModalProps {
   isCoDAvailable: boolean;
   pricing?: any;
   onPaymentSuccess: (token: string) => void;
+  /** Preselect a service whenever the modal opens (e.g. "unlock CoD" button on an already-unlocked Service 1 session). */
+  defaultService?: "LOCATION_AUTHENTICITY" | "CERTIFICATE_OF_DEPOSIT";
+}
+
+function ServiceInfoButton({
+  title,
+  illustration,
+  description,
+}: {
+  title: string;
+  illustration: React.ReactNode;
+  description: string;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`More info about ${title}`}
+          className="relative shrink-0 rounded-full p-1 text-blue-300 hover:text-white transition-colors"
+        >
+          <span className="absolute inset-0 rounded-full bg-blue-400/40 animate-ping" />
+          <Info className="relative w-4 h-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        onClick={(e) => e.stopPropagation()}
+        className="w-72 bg-slate-900 border-slate-700 text-white p-4 space-y-3"
+      >
+        <div className="w-full flex items-center justify-center py-2">
+          {illustration}
+        </div>
+        <h5 className="font-semibold text-sm">{title}</h5>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {description}
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export default function QRPaywallModal({
@@ -41,15 +93,25 @@ export default function QRPaywallModal({
   isCoDAvailable,
   pricing,
   onPaymentSuccess,
+  defaultService,
 }: QRPaywallModalProps) {
   const [selectedService, setSelectedService] = useState<
     "LOCATION_AUTHENTICITY" | "CERTIFICATE_OF_DEPOSIT"
-  >("LOCATION_AUTHENTICITY");
+  >(defaultService || "LOCATION_AUTHENTICITY");
   const [payerEmail, setPayerEmail] = useState("");
   const [payerName, setPayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [accessCode, setAccessCode] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
+
+  // Re-apply the requested default service every time the modal is (re)opened,
+  // e.g. when a "Purchase CoD Access" button on an active Service 1 session opens it.
+  useEffect(() => {
+    if (isOpen && defaultService) {
+      setSelectedService(defaultService);
+    }
+  }, [isOpen, defaultService]);
 
   // Default fee fallbacks if pricing prop is pending
   const service1Price = pricing?.service1?.verificationFee || 1000;
@@ -153,15 +215,37 @@ export default function QRPaywallModal({
     }
   };
 
-  const handleCodeSubmit = () => {
-    if (!accessCode.trim()) {
+  const handleCodeSubmit = async () => {
+    const code = accessCode.trim();
+    if (!code) {
       toast.error("Please enter a valid access code");
       return;
     }
-    toast.loading("Verifying access code...");
-    // Just pass it to onPaymentSuccess to let the parent handle the verification redirect
-    toast.dismiss();
-    onPaymentSuccess(accessCode.trim());
+
+    setVerifyingCode(true);
+    const toastId = toast.loading("Verifying access code...");
+
+    try {
+      const res = await getPlanQRAccessState(planId, code);
+
+      if (res.success && res.accessState === "PAID_ACTIVE") {
+        toast.success("Access code verified!", { id: toastId });
+        onPaymentSuccess(code);
+      } else if (res.success && res.accessState === "EXPIRED") {
+        toast.error("This access code has expired. Please purchase access again.", {
+          id: toastId,
+        });
+      } else {
+        toast.error("Invalid access code. Please check and try again.", {
+          id: toastId,
+        });
+      }
+    } catch (err) {
+      console.error("Access code verification error:", err);
+      toast.error("Failed to verify access code", { id: toastId });
+    } finally {
+      setVerifyingCode(false);
+    }
   };
 
   return (
@@ -215,9 +299,16 @@ export default function QRPaywallModal({
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-white text-base">
-                    Service 1: Know Actual Location
-                  </h4>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-semibold text-white text-base">
+                      Service 1: Know Actual Location
+                    </h4>
+                    <ServiceInfoButton
+                      title="Service 1: Know Actual Location"
+                      illustration={<Service1Illustration />}
+                      description="Unlocks an interactive map of the exact survey location, GPS-ready directions, and an on-the-spot authenticity check confirming this plan matches what was lodged."
+                    />
+                  </div>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Interactive map, GPS directions & authenticity check
                   </p>
@@ -259,6 +350,11 @@ export default function QRPaywallModal({
                     <h4 className="font-semibold text-white text-base">
                       Service 2: Access CoD
                     </h4>
+                    <ServiceInfoButton
+                      title="Service 2: Access Certificate of Deposit"
+                      illustration={<Service2Illustration />}
+                      description="Unlocks the official Certificate of Deposit for this plan, issued by OSSG, available to download once the plan has a lodged certificate on file."
+                    />
                     {isCoDAvailable ? (
                       <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
                         Available Now
@@ -358,17 +454,24 @@ export default function QRPaywallModal({
                     placeholder="Paste access code here"
                     value={accessCode}
                     onChange={(e) => setAccessCode(e.target.value)}
+                    disabled={verifyingCode}
                     className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   />
-                  <Button 
+                  <Button
                     onClick={handleCodeSubmit}
+                    disabled={verifyingCode}
                     className="bg-blue-600 hover:bg-blue-500 text-white font-medium"
                   >
-                    Verify
+                    {verifyingCode ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Verify"
+                    )}
                   </Button>
                 </div>
                 <button
                   onClick={() => setShowCodeInput(false)}
+                  disabled={verifyingCode}
                   className="text-xs text-slate-400 hover:text-slate-300"
                 >
                   Cancel

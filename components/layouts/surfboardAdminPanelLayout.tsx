@@ -20,6 +20,8 @@ import {
   Receipt,
   FileText,
   Menu,
+  QrCode,
+  Cog,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -121,6 +123,21 @@ export default function SurfboardAdminPanelLayout({
       url: `${dashboardUrl}/cod/batches`,
     },
     { icon: Settings, label: "Analytics", url: `${dashboardUrl}/analytics` },
+    {
+      icon: QrCode,
+      label: "QR Earnings",
+      url: `${dashboardUrl}/qr-earnings`,
+    },
+    {
+      icon: Cog,
+      label: "QR Earnings Settings",
+      url: `${dashboardUrl}/qr-earnings/settings`,
+    },
+    {
+      icon: Cog,
+      label: "Settings",
+      url: `${dashboardUrl}/settings`,
+    },
     ...(userData?.role === "SUPERADMIN"
       ? [
           // {

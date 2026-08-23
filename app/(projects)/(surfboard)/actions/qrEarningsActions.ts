@@ -83,6 +83,7 @@ export async function getPlanQRAccessState(
         redCopyStatus: true,
         recordsIIStatus: true,
         qrScanCount: true,
+        certificateFilePaths: true,
       },
     });
 
@@ -91,8 +92,10 @@ export async function getPlanQRAccessState(
     }
 
     const settings = await getQREarningsSettings();
-    const isCoDAvailable =
-      plan.redCopyStatus === "APPROVED" && plan.recordsIIStatus === "APPROVED";
+    // CoD is available whenever a certificate file exists on the plan,
+    // regardless of whether it arrived via the full MDA approval chain,
+    // a direct admin upload, or legacy CSV migration.
+    const isCoDAvailable = (plan.certificateFilePaths?.length ?? 0) > 0;
 
     // 1. Check if token is provided and valid (active within 1 hour)
     if (accessToken) {
@@ -287,7 +290,7 @@ export async function verifyQRServicePayment(
       where: { reference },
       include: {
         plan: {
-          select: { planNumber: true },
+          select: { id: true, planNumber: true },
         },
       },
     });
@@ -354,7 +357,10 @@ export async function verifyQRServicePayment(
     if (transaction.payerEmail) {
       try {
         const { sendNotificationMail } = await import("@/utils/email");
-        const accessUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://surfboard.twonodes.com"}/surfboardplan/${transaction.plan.planNumber}?token=${updatedTransaction.accessToken}`;
+        // Use the plan's UUID, not its plan number: plan numbers contain
+        // slashes (e.g. "NNN/1457/A/004/2026/LA") which break the single
+        // dynamic route segment at /surfboardplan/[id].
+        const accessUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://surfboard.twonodes.com"}/surfboardplan/${transaction.plan.id}?token=${updatedTransaction.accessToken}`;
         
         await sendNotificationMail({
           to: transaction.payerEmail,

@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
+import { getSurveyorEarningsOverview } from "../../../actions/qrEarningsActions";
 import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,15 @@ export default function SettingsPage() {
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [inquiryText, setInquiryText] = useState("");
   const [isSendingInquiry, setIsSendingInquiry] = useState(false);
+  const [bankDetails, setBankDetails] = useState<any>(null);
+
+  useEffect(() => {
+    getSurveyorEarningsOverview().then((res) => {
+      if (res.success && res.data) {
+        setBankDetails(res.data.bankDetails);
+      }
+    });
+  }, []);
 
   const {
     userData,
@@ -662,7 +672,7 @@ export default function SettingsPage() {
                 </Card>
               </TabsContent>
               <TabsContent value="bank" className="space-y-6">
-                <SurveyorBankSettings />
+                <SurveyorBankSettings initialBankDetails={bankDetails} />
               </TabsContent>
 
               <motion.div

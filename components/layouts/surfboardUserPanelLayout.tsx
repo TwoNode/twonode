@@ -17,6 +17,7 @@ import {
   Plus,
   Bell,
   Menu,
+  QrCode,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -228,6 +229,12 @@ export default function SurfboardUserPanelLayout({
       icon: Bell,
       label: "Notifications",
       url: "/surfboard/dashboard/notifications",
+      requiresSubscription: false,
+    },
+    {
+      icon: QrCode,
+      label: "QR Earnings",
+      url: `${dashboardUrl}/qr-earnings`,
       requiresSubscription: false,
     },
     {
