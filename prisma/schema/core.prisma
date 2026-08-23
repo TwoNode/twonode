@@ -71,7 +71,7 @@ model Notification {
 
 enum AuthProvider {
   KINDE
-  PASSWORD
+  NATIVE
 }
 
 /// No `user User @relation(...)` here: "User" isn't one model in this schema,

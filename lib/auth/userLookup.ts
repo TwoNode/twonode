@@ -97,7 +97,7 @@ export async function createNativeUser(
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
-          authProviders: ["PASSWORD"],
+          authProviders: ["NATIVE"],
           kindeId: `native:${crypto.randomUUID()}`, // kindeId is required+unique; native-only accounts get a placeholder, never a real Kinde id
         },
       });
@@ -110,7 +110,7 @@ export async function createNativeUser(
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
-          authProviders: ["PASSWORD"],
+          authProviders: ["NATIVE"],
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
@@ -123,7 +123,7 @@ export async function createNativeUser(
           passwordHash: data.passwordHash,
           firstName: data.firstName,
           lastName: data.lastName,
-          authProviders: ["PASSWORD"],
+          authProviders: ["NATIVE"],
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
