@@ -118,6 +118,7 @@ export async function getPlanQRAccessState(
             isCoDAvailable,
             planId: plan.id,
             planNumber: plan.planNumber,
+            pricing: settings,
           };
         } else {
           return {
@@ -126,6 +127,7 @@ export async function getPlanQRAccessState(
             isCoDAvailable,
             planId: plan.id,
             planNumber: plan.planNumber,
+            pricing: settings,
           };
         }
       }
@@ -141,6 +143,7 @@ export async function getPlanQRAccessState(
         isCoDAvailable,
         planId: plan.id,
         planNumber: plan.planNumber,
+        pricing: settings,
       };
     }
 

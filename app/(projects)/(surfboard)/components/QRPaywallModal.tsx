@@ -71,7 +71,7 @@ function ServiceInfoButton({
       <PopoverContent
         side="top"
         onClick={(e) => e.stopPropagation()}
-        className="w-72 bg-slate-900 border-slate-700 text-white p-4 space-y-3"
+        className="z-10050 w-72 bg-slate-900 border-slate-700 text-white p-4 space-y-3"
       >
         <div className="w-full flex items-center justify-center py-2">
           {illustration}

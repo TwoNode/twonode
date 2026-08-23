@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { toggleUserKycValidation } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import {
+  toggleUserKycValidation,
+  toggleBankVerification,
+} from "@/app/(projects)/(surfboard)/actions/settingsActions";
 
 interface SurveyorRow {
   id: string;
@@ -21,6 +24,13 @@ interface SurveyorRow {
   payerIDType: string | null;
   isKycValidated: boolean;
   createdAt: Date;
+  bankDetails: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+    isVerified: boolean;
+    verifiedAt: Date | null;
+  } | null;
 }
 
 export default function KycClient({
@@ -31,6 +41,7 @@ export default function KycClient({
   const [surveyors, setSurveyors] = useState(initialSurveyors);
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [loadingBankId, setLoadingBankId] = useState<string | null>(null);
 
   const filteredSurveyors = surveyors.filter((s) => {
     const searchStr = searchTerm.toLowerCase();
@@ -58,6 +69,33 @@ export default function KycClient({
       toast.error(res.error || "Failed to update KYC status.");
     }
     setLoadingId(null);
+  };
+
+  const handleToggleBankVerification = async (id: string, currentStatus: boolean) => {
+    setLoadingBankId(id);
+    const newStatus = !currentStatus;
+
+    const res = await toggleBankVerification(id, newStatus);
+    if (res.success) {
+      setSurveyors((prev) =>
+        prev.map((s) =>
+          s.id === id && s.bankDetails
+            ? {
+                ...s,
+                bankDetails: {
+                  ...s.bankDetails,
+                  isVerified: newStatus,
+                  verifiedAt: newStatus ? new Date() : null,
+                },
+              }
+            : s
+        )
+      );
+      toast.success(`Bank account ${newStatus ? "verified" : "unverified"} successfully.`);
+    } else {
+      toast.error(res.error || "Failed to update bank verification status.");
+    }
+    setLoadingBankId(null);
   };
 
   return (
@@ -90,6 +128,7 @@ export default function KycClient({
                 <th className="px-4 py-3 font-medium">Surveyor</th>
                 <th className="px-4 py-3 font-medium">SURCON Reg No</th>
                 <th className="px-4 py-3 font-medium">Payer Details</th>
+                <th className="px-4 py-3 font-medium">Bank Account</th>
                 <th className="px-4 py-3 font-medium">Joined Date</th>
                 <th className="px-4 py-3 font-medium text-center">Status</th>
                 <th className="px-4 py-3 font-medium text-right">Action</th>
@@ -99,7 +138,7 @@ export default function KycClient({
               {filteredSurveyors.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     No surveyors found.
@@ -128,6 +167,34 @@ export default function KycClient({
                           <Badge variant="outline" className="w-fit text-xs border-[#444] text-gray-400">
                             {s.payerIDType || "Unknown Type"}
                           </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-gray-600 italic">Not set</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">
+                      {s.bankDetails ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col">
+                            <span className="text-white">
+                              {s.bankDetails.accountName}
+                            </span>
+                            <span className="text-gray-400 text-xs">
+                              {s.bankDetails.bankName} •{" "}
+                              {s.bankDetails.accountNumber}
+                            </span>
+                          </div>
+                          <Switch
+                            checked={s.bankDetails.isVerified}
+                            disabled={loadingBankId === s.id}
+                            onCheckedChange={() =>
+                              handleToggleBankVerification(
+                                s.id,
+                                s.bankDetails!.isVerified
+                              )
+                            }
+                            className="data-[state=checked]:bg-green-500"
+                          />
                         </div>
                       ) : (
                         <span className="text-gray-600 italic">Not set</span>
