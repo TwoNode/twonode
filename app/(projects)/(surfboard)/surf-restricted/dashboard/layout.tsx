@@ -1,6 +1,7 @@
-import SurfboardAdminPanelLayout from "@/components/layouts/surfboardAdminPanelLayout";
+import { DashboardShell } from "@/components/admin-panel/DashboardShell";
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { SURFBOARD_COLORS } from "@/surfboard-colors";
 
 export const maxDuration = 60;
 
@@ -36,8 +37,15 @@ export default async function RestrictedDashboardLayout({
     : undefined;
 
   return (
-    <SurfboardAdminPanelLayout user={user} userData={userData}>
+    <DashboardShell
+      title="Surfboard Admin"
+      logoSrc="/surfboard/surf_logo.svg"
+      colorPalette={SURFBOARD_COLORS}
+      role={userData?.role}
+      group="admin"
+      user={user?.name || userData?.name ? { picture: user?.picture, name: user?.name || userData?.name } : undefined}
+    >
       {children}
-    </SurfboardAdminPanelLayout>
+    </DashboardShell>
   );
 }
