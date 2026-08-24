@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getSurveyorsForKyc } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import { getSurveyorsForKyc } from "@/surfboard/services/qrEarningsService";
 import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { redirect } from "next/navigation";
 import KycClient from "./KycClient";
@@ -20,8 +20,7 @@ export default async function KycPage() {
     redirect("/surf-restricted/dashboard");
   }
 
-  const res = await getSurveyorsForKyc();
-  const surveyors = res.success && res.data ? res.data : [];
+  const surveyors = await getSurveyorsForKyc();
 
   return (
     <div className="container mx-auto py-8">

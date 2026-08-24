@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { getGatedPublicSurfPlan } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getPlanQRAccessState } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
 import QRPaywallModal from "@/app/(projects)/(surfboard)/components/QRPaywallModal";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";

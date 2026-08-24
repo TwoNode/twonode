@@ -13,10 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getQREarningsSettings,
-  QREarningsSettingsData,
-} from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { updateQREarningsSettings } from "@/app/(projects)/(surfboard)/actions/qrAdminActions";
 import { toast } from "sonner";
 
@@ -34,8 +32,11 @@ export default function QREarningsSettingsPage() {
     useState<QREarningsSettingsData>(EMPTY_SETTINGS);
 
   useEffect(() => {
-    getQREarningsSettings()
-      .then((data) => setSettings(data))
+    surfboardApi.qr
+      .settings()
+      .then((res) => {
+        if (res.success) setSettings(res.data);
+      })
       .finally(() => setLoading(false));
   }, []);
 

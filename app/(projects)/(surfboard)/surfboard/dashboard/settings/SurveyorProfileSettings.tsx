@@ -21,7 +21,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
-import { saveSurveyorBankDetails } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 export const NIGERIAN_BANKS = [
   { code: "044", name: "Access Bank" },
@@ -88,13 +88,13 @@ export function SurveyorBankSettings({
     const toastId = toast.loading("Resolving bank account with Paystack...");
 
     try {
-      const res = await saveSurveyorBankDetails({
+      const res = await surfboardApi.qr.saveBankDetails({
         bankCode: selectedBank.code,
         bankName: selectedBank.name,
         accountNumber,
       });
 
-      if (res.success && res.data) {
+      if (res.success) {
         toast.success(`Verified: ${res.data.accountName}`, { id: toastId });
         setBankDetails(res.data);
       } else {

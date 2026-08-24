@@ -427,45 +427,9 @@ export async function resetToDefaultSettings(): Promise<ApiResult<{ success: boo
 // ============================================================
 // Surveyor KYC Actions
 // ============================================================
-
-export async function getSurveyorsForKyc(): Promise<ApiResult<any[]>> {
-  try {
-    const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
-      return { success: false, error: "Unauthorized access" };
-    }
-
-    const surveyors = await prisma.surfboardUser.findMany({
-      where: { role: "USER" },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        surconRegNumber: true,
-        payerID: true,
-        payerIDType: true,
-        isKycValidated: true,
-        createdAt: true,
-        bankDetails: {
-          select: {
-            bankName: true,
-            accountNumber: true,
-            accountName: true,
-            isVerified: true,
-            verifiedAt: true,
-          },
-        },
-      },
-    });
-
-    return { success: true, data: surveyors };
-  } catch (error) {
-    console.error("Error fetching surveyors for KYC:", error);
-    return { success: false, error: "Failed to fetch surveyors" };
-  }
-}
+// getSurveyorsForKyc / toggleBankVerification moved to
+// surfboard/services/qrEarningsService.ts (Phase 1 Step 9) — same
+// SurveyorBankDetails subsystem as the rest of that service.
 
 export async function toggleUserKycValidation(
   userId: string,
@@ -488,40 +452,6 @@ export async function toggleUserKycValidation(
   } catch (error) {
     console.error("Error toggling KYC validation:", error);
     return { success: false, error: "Failed to update KYC status" };
-  }
-}
-
-export async function toggleBankVerification(
-  userId: string,
-  status: boolean
-): Promise<ApiResult<{ success: boolean }>> {
-  try {
-    const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role !== "SUPERADMIN") {
-      return { success: false, error: "Unauthorized access" };
-    }
-
-    const bankDetails = await prisma.surveyorBankDetails.findUnique({
-      where: { userId },
-    });
-    if (!bankDetails) {
-      return { success: false, error: "This surveyor has not added bank details yet" };
-    }
-
-    await prisma.surveyorBankDetails.update({
-      where: { userId },
-      data: {
-        isVerified: status,
-        verifiedAt: status ? new Date() : null,
-      },
-    });
-
-    revalidatePath("/surf-restricted/dashboard/kyc");
-
-    return { success: true, data: { success: true } };
-  } catch (error) {
-    console.error("Error toggling bank verification:", error);
-    return { success: false, error: "Failed to update bank verification status" };
   }
 }
 

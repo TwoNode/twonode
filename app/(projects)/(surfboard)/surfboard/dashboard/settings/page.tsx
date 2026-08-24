@@ -17,7 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
-import { getSurveyorEarningsOverview } from "../../../actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ export default function SettingsPage() {
   const [bankDetails, setBankDetails] = useState<any>(null);
 
   useEffect(() => {
-    getSurveyorEarningsOverview().then((res) => {
+    surfboardApi.qr.earningsOverview().then((res) => {
       if (res.success && res.data) {
         setBankDetails(res.data.bankDetails);
       }

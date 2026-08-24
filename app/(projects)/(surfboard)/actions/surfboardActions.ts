@@ -2015,7 +2015,7 @@ export async function getPublicSurfPlanByIdWithSurveyor(
 
     // Increment scan counter in background
     try {
-      const { incrementPlanQRScanCount } = await import("./qrEarningsActions");
+      const { incrementPlanQRScanCount } = await import("@/surfboard/services/qrEarningsService");
       incrementPlanQRScanCount(plan.id);
     } catch (e) {
       // Ignore scan count increment errors silently
@@ -2076,8 +2076,16 @@ export async function getGatedPublicSurfPlan(
       return res;
     }
 
-    const { getPlanQRAccessState } = await import("./qrEarningsActions");
-    const accessRes = await getPlanQRAccessState(res.data.id, token);
+    // The service throws (NotFoundError) instead of returning a failure
+    // shape — preserve the { success, ...data } shape PublicSurfPlan.tsx
+    // still expects on accessInfo, since that consumer isn't migrated yet.
+    const { getPlanQRAccessState } = await import("@/surfboard/services/qrEarningsService");
+    let accessRes: any;
+    try {
+      accessRes = { success: true, ...(await getPlanQRAccessState(res.data.id, token)) };
+    } catch {
+      accessRes = { success: false };
+    }
 
     if (
       accessRes.success &&

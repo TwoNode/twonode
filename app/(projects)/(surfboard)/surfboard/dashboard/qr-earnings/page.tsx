@@ -44,10 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  getSurveyorEarningsOverview,
-  requestWithdrawal,
-} from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -62,8 +59,8 @@ export default function QREarningsPage() {
   const fetchOverview = async () => {
     setLoading(true);
     try {
-      const res = await getSurveyorEarningsOverview();
-      if (res.success && res.data) {
+      const res = await surfboardApi.qr.earningsOverview();
+      if (res.success) {
         setData(res.data);
       } else {
         toast.error(res.error || "Failed to load earnings overview");
@@ -94,7 +91,7 @@ export default function QREarningsPage() {
 
     setSubmittingWithdrawal(true);
     try {
-      const res = await requestWithdrawal(amountNum);
+      const res = await surfboardApi.qr.requestWithdrawal(amountNum);
       if (res.success) {
         toast.success("Withdrawal request submitted successfully!");
         setWithdrawalModalOpen(false);

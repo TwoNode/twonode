@@ -5,7 +5,7 @@ import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
 import { createNotification } from "./notificationActions";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { revalidatePath } from "next/cache";
-import { QREarningsSettingsData } from "./qrEarningsActions";
+import { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 
 const PAYSTACK_SECRET_KEY = getPaystackSecretForWebhook();
 
