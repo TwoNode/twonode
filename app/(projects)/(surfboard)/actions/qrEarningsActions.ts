@@ -6,7 +6,11 @@ import { createNotification } from "./notificationActions";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { revalidatePath } from "next/cache";
 
-const PAYSTACK_SECRET_KEY = getPaystackSecretForWebhook();
+// getPaystackSecretForWebhook() is async — caching its return value at
+// module scope (as this used to) binds a Promise, not a string, so every
+// `Authorization: Bearer ${PAYSTACK_SECRET_KEY}` header silently sent the
+// literal text "Bearer [object Promise]". Call it fresh inside each
+// function that needs the key instead.
 
 export type QREarningsSettingsData = {
   freeScanLimit: number;
@@ -310,6 +314,39 @@ export async function verifyQRServicePayment(
       };
     }
 
+    // Confirm directly with Paystack before trusting this call at all — a
+    // reference alone proves nothing (it's handed out for free by
+    // initiateQRServicePayment, before any payment happens), so this used to
+    // let anyone mark any transaction SUCCESS and pull real money into the
+    // surveyor's wallet without ever paying.
+    const verifyRef = paystackRef || reference;
+    const paystackSecretKey = await getPaystackSecretForWebhook();
+    const verifyRes = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(verifyRef)}`,
+      { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
+    );
+    const verifyData = await verifyRes.json();
+    const expectedAmountKobo = Math.round(transaction.totalAmount * 100);
+
+    if (
+      !verifyRes.ok ||
+      !verifyData.status ||
+      verifyData.data?.status !== "success" ||
+      verifyData.data?.amount < expectedAmountKobo
+    ) {
+      console.error("QR payment verification failed with Paystack:", {
+        reference,
+        verifyRef,
+        paystackStatus: verifyData?.data?.status,
+        paystackAmount: verifyData?.data?.amount,
+        expectedAmountKobo,
+      });
+      return {
+        success: false,
+        error: "Payment could not be verified. If you were charged, contact support with your reference.",
+      };
+    }
+
     // Set 1 hour expiration from now
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
@@ -469,12 +506,14 @@ export async function saveSurveyorBankDetails(input: {
       return { success: false, error: "Not authenticated" };
     }
 
+    const paystackSecretKey = await getPaystackSecretForWebhook();
+
     // 1. Resolve Bank Account Name with Paystack API
     const resolveRes = await fetch(
       `https://api.paystack.co/bank/resolve?account_number=${input.accountNumber}&bank_code=${input.bankCode}`,
       {
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${paystackSecretKey}`,
         },
       }
     );
@@ -499,7 +538,7 @@ export async function saveSurveyorBankDetails(input: {
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            Authorization: `Bearer ${paystackSecretKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
