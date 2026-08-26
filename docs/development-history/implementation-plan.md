@@ -1,13 +1,13 @@
 # Twonodes — Architecture Rebuild: Full Step-by-Step Plan
 
-> Companion to `docs/architecture-rebuild/progress.md`. This is the executable, file-by-file version of `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md`, which stays the source of truth for *why* — this document is only the *how* and *in what order*.
+> Companion to `docs/development-history/progress.md`. This is the executable, file-by-file version of `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md`, which stays the source of truth for *why* — this document is only the *how* and *in what order*.
 
 ## Context
 
 Grounded against the real repo as of this writing, not assumed from the proposal:
 
 1. **Working tree is clean** except `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md` itself (untracked). No in-flight uncommitted work to close out first, unlike a typical mid-project checkpoint — this plan starts from a known-clean baseline. Current branch: `main`.
-2. **No `docs/architecture-rebuild/` directory existed before this file.** This mirrors proplity's own `out/` convention: one master plan, one rolling `progress.md`, and a `phases/` folder that fills in with one completion report per phase *as each phase actually ships* — not written in advance.
+2. **No `docs/development-history/` directory existed before this file.** This mirrors proplity's own `out/` convention: one master plan, one rolling `progress.md`, and a `phases/` folder that fills in with one completion report per phase *as each phase actually ships* — not written in advance.
 3. Every file path, line count, and model name below was confirmed by reading the actual files during the architecture review this plan is based on (see `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md` §2 for the full inventory with citations) — nothing here is inferred from the proposal's prose alone.
 4. Five open decisions in the proposal (§6) affect specific steps below. Where a step depends on one, it's called out inline; those steps block on your answer, everything else doesn't.
 
@@ -177,13 +177,13 @@ The module debugged and fixed earlier this session — small, self-contained, be
 `npx @sentry/wizard@latest -i nextjs`, then one line in `lib/api/errors.ts`'s `handleApiError` before the generic-500 fallback: `Sentry.captureException(err)`.
 
 ### Step 12 — Commit
-Stays on `rebuild/foundations` for your review — not merged to `main` yet (confirm if you want per-phase merges instead of one review at the end of Phase 1). Write the completion report to `docs/architecture-rebuild/phases/phase-1-foundations.md` once this step's verification is actually done, following the proplity phase-report format (Status/Date, What was built, any real judgment calls hit during implementation, Verification performed, Next up).
+Stays on `rebuild/foundations` for your review — not merged to `main` yet (confirm if you want per-phase merges instead of one review at the end of Phase 1). Write the completion report to `docs/development-history/phases/phase-1-foundations.md` once this step's verification is actually done, following the proplity phase-report format (Status/Date, What was built, any real judgment calls hit during implementation, Verification performed, Next up).
 
 ---
 
 ## Phase 2 — Surfboard (full migration)
 
-Everything not already moved in Phase 1's pilot. Full per-route Zod-schema-level detail gets written into `docs/architecture-rebuild/phases/phase-2-surfboard.md` *before this phase starts executing* (not now) — once Phase 1's real patterns exist to mirror exactly, the same sequencing proplity used for its own later phases. What's already certain:
+Everything not already moved in Phase 1's pilot. Full per-route Zod-schema-level detail gets written into `docs/development-history/phases/phase-2-surfboard.md` *before this phase starts executing* (not now) — once Phase 1's real patterns exist to mirror exactly, the same sequencing proplity used for its own later phases. What's already certain:
 
 **Service extraction from `codActions.ts`** (~5,700 lines) into `surfboard/services/`:
 - `planLockService.ts` — `acquirePlanLock`/`releasePlanLock`/`canWorkOnPlan`, the FIFO-gated optimistic locking.
@@ -224,7 +224,7 @@ This also ties into the per-role analytics from Step 9-adjacent work: each MDA r
 
 ## Phase 3 — REVA (full migration)
 
-Full detail written into `docs/architecture-rebuild/phases/phase-3-reva.md` before this phase starts.
+Full detail written into `docs/development-history/phases/phase-3-reva.md` before this phase starts.
 
 **Service extraction** from `revaActions.ts` (1,488 lines, the UI-facing implementation — authoritative) into `reva/services/`: `propertyRequestService.ts`, `paymentService.ts`, `reportService.ts`. `revaActions2.ts` (the webhook-only, drifted duplicate) gets diffed line-by-line against `revaActions.ts` *before* deletion — any behavior in `revaActions2.ts` not present in `revaActions.ts` needs an explicit decision (intentional divergence vs. bug) rather than silently picking one.
 
@@ -238,7 +238,7 @@ Full detail written into `docs/architecture-rebuild/phases/phase-3-reva.md` befo
 
 ## Phase 4 — GBC (full migration)
 
-Full detail written into `docs/architecture-rebuild/phases/phase-4-gbc.md` before this phase starts.
+Full detail written into `docs/development-history/phases/phase-4-gbc.md` before this phase starts.
 
 **New: multi-edition architecture** *(added 2026-08-24, from the design-overview review)*. GBC has run as 1.0, 2.0, and will keep running as an annual event, but nothing in the schema reflects that — confirmed by reading `prisma/schema/gbc.prisma`, not assumed. Every GBC model (`GBCTicket`, `GBCSponsor`, `GBCPartner`, `GBCSpeaker`, `GBCPage`, `GBCSettings`, `GBCEventStats`) is flat and implicitly single-conference. Concretely: `GBCTicket.ticketNumber`'s database default hardcodes `'GBC2_'` as a literal prefix (`concat('GBC2_', ...)`), and `GBCSettings` is a singleton JSON blob (event name/theme/date/venue) — the next edition would overwrite it rather than extend it, with no record of what "2.0" looked like left behind.
 
@@ -280,6 +280,6 @@ Once confirmed unreferenced: `revaActions.ts`, `revaActions2.ts`, `surfboardActi
 
 ---
 
-## `docs/architecture-rebuild/phases/` convention going forward
+## `docs/development-history/phases/` convention going forward
 
-Empty right now. As each phase actually ships (starting with Phase 0), a completion report gets written — `phase-0-housekeeping.md`, `phase-1-foundations.md`, etc. — following the exact shape proplity's own phase reports use: **Status/Date**, **Why**, **What was built** (exact files/behavior, not the plan's intent), **Judgment calls made during implementation** (anywhere reality differed from what this plan predicted), **Verification performed** (real commands/manual-test results, not hypothetical), **Next up**. `docs/architecture-rebuild/progress.md` gets its checkboxes updated in the same commit.
+Empty right now. As each phase actually ships (starting with Phase 0), a completion report gets written — `phase-0-housekeeping.md`, `phase-1-foundations.md`, etc. — following the exact shape proplity's own phase reports use: **Status/Date**, **Why**, **What was built** (exact files/behavior, not the plan's intent), **Judgment calls made during implementation** (anywhere reality differed from what this plan predicted), **Verification performed** (real commands/manual-test results, not hypothetical), **Next up**. `docs/development-history/progress.md` gets its checkboxes updated in the same commit.

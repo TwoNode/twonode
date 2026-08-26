@@ -1,6 +1,6 @@
 # Twonodes — Full Route Inventory
 
-**Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus shared/marketing — kept current as the rebuild progresses. This is a living document: every phase that adds, renames, or retires a route updates its entry here in the same commit/session that makes the change, the same discipline `docs/architecture-rebuild/progress.md` already follows for phase checklists.
+**Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus shared/marketing — kept current as the rebuild progresses. This is a living document: every phase that adds, renames, or retires a route updates its entry here in the same commit/session that makes the change, the same discipline `docs/development-history/progress.md` already follows for phase checklists.
 
 **Last Updated:** 2026-08-26 (generated from a full `find app -name "page.tsx" -o -name "route.ts"` pass against `rebuild/foundations`, cross-referenced with the Phase 1/2 specs for planned renames; updated same-day as Phase 2's execution landed 54 new `/api/v1/surfboard/*` routes, the MDA route/nav registry + `proxy.ts` migration, and the `surf-restricted`/`surf-mda` → `surfboard-restricted`/`surfboard-mda` naming standardization).
 
@@ -158,4 +158,4 @@
 
 ## Maintenance note
 
-This file is generated/updated by hand alongside each phase's spec and completion report — not by a script. When a phase renames, adds, or retires routes: update the relevant table's `Status` column (and add new rows for genuinely new routes) in the same session that ships the change, mirroring how `docs/architecture-rebuild/progress.md`'s checkboxes get updated. Phase 3 (REVA) and Phase 4 (GBC) don't have their own route-by-route API spec yet (only Phase 1 and Phase 2 do) — their `/api/v1/*` rows above are placeholders until those specs are written.
+This file is generated/updated by hand alongside each phase's spec and completion report — not by a script. When a phase renames, adds, or retires routes: update the relevant table's `Status` column (and add new rows for genuinely new routes) in the same session that ships the change, mirroring how `docs/development-history/progress.md`'s checkboxes get updated. Phase 3 (REVA) and Phase 4 (GBC) don't have their own route-by-route API spec yet (only Phase 1 and Phase 2 do) — their `/api/v1/*` rows above are placeholders until those specs are written.
