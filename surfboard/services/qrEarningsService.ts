@@ -14,9 +14,14 @@ import { NotFoundError, ValidationError } from "@/lib/api/errors";
  * Phase 2 territory); importing createNotification from it here works
  * because Next treats "use server" exports as plain async functions when
  * imported from other server-side code, same as the original file did.
+ *
+ * getPaystackSecretForWebhook() is async — it must be awaited fresh inside
+ * each function that needs it, never cached at module scope (that binds a
+ * Promise, not a string, silently sending "Bearer [object Promise]" as the
+ * Authorization header — a real bug caught and fixed live on main in
+ * hotfix/qr-payment-verification, ported here so this migrated copy
+ * doesn't reintroduce it once this branch merges).
  */
-
-const PAYSTACK_SECRET_KEY = getPaystackSecretForWebhook();
 
 export type QREarningsSettingsData = {
   freeScanLimit: number;
@@ -203,6 +208,36 @@ export async function verifyQRServicePayment(reference: string, paystackRef?: st
     return { accessToken: transaction.accessToken, expiresAt: transaction.expiresAt?.toISOString() };
   }
 
+  // Confirm directly with Paystack before trusting this call at all — a
+  // reference alone proves nothing (it's handed out for free by
+  // initiateQRServicePayment, before any payment happens).
+  const verifyRef = paystackRef || reference;
+  const paystackSecretKey = await getPaystackSecretForWebhook();
+  const verifyRes = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(verifyRef)}`,
+    { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
+  );
+  const verifyData = await verifyRes.json();
+  const expectedAmountKobo = Math.round(transaction.totalAmount * 100);
+
+  if (
+    !verifyRes.ok ||
+    !verifyData.status ||
+    verifyData.data?.status !== "success" ||
+    verifyData.data?.amount < expectedAmountKobo
+  ) {
+    console.error("QR payment verification failed with Paystack:", {
+      reference,
+      verifyRef,
+      paystackStatus: verifyData?.data?.status,
+      paystackAmount: verifyData?.data?.amount,
+      expectedAmountKobo,
+    });
+    throw new ValidationError({
+      payment: "Payment could not be verified. If you were charged, contact support with your reference.",
+    });
+  }
+
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
 
@@ -293,9 +328,11 @@ export async function saveSurveyorBankDetails(
   surveyorId: string,
   input: { bankCode: string; bankName: string; accountNumber: string }
 ) {
+  const paystackSecretKey = await getPaystackSecretForWebhook();
+
   const resolveRes = await fetch(
     `https://api.paystack.co/bank/resolve?account_number=${input.accountNumber}&bank_code=${input.bankCode}`,
-    { headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` } }
+    { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
   );
 
   const resolveData = await resolveRes.json();
@@ -311,7 +348,7 @@ export async function saveSurveyorBankDetails(
   try {
     const recipientRes = await fetch("https://api.paystack.co/transferrecipient", {
       method: "POST",
-      headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${paystackSecretKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "nuban",
         name: accountName,
