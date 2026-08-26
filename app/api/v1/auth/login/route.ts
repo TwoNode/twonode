@@ -57,6 +57,6 @@ export async function POST(req: NextRequest) {
       data: { id: user!.id, email: user!.email, role: user!.role.toLowerCase() },
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
 }

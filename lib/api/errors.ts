@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "../../prisma/generated";
 import type { ApiFailure } from "@/lib/api/types";
+import { logger, type LogContext } from "@/lib/observability/logger";
 
 /**
  * Base class for anything a service or route handler intentionally throws
@@ -103,10 +104,20 @@ function prismaStatusFor(code: string): number {
 
 /**
  * Route-level wrapper — every route's error path funnels through this
- * (directly, or via withAuth's built-in try/catch).
+ * (directly, or via withAuth's built-in try/catch), which is also why this
+ * is the one place §6.6's structured-logging decision is wired in: every
+ * caller gets logging for free, none of them need their own logger.error()
+ * calls. `context` is optional so existing callers keep working unchanged;
+ * withAuth passes route/method/user context automatically.
  */
-export function handleApiError(err: unknown): NextResponse<ApiFailure> {
+export function handleApiError(err: unknown, context?: LogContext): NextResponse<ApiFailure> {
   if (err instanceof ApiError) {
+    // 4xx ApiErrors (validation, not-found, unauthenticated, ...) are
+    // expected control flow, not failures — logged at warn so they don't
+    // drown out real 5xx errors, but still visible if you're debugging a
+    // specific route or user.
+    const level = err.status >= 500 ? "error" : "warn";
+    logger[level](err.message, { ...context, code: err.code, status: err.status });
     return NextResponse.json(
       { success: false, error: err.message, code: err.code, details: err.details },
       { status: err.status }
@@ -114,6 +125,7 @@ export function handleApiError(err: unknown): NextResponse<ApiFailure> {
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    logger.error("Unhandled Prisma error", { ...context, code: err.code }, err);
     return NextResponse.json(
       {
         success: false,
@@ -125,6 +137,7 @@ export function handleApiError(err: unknown): NextResponse<ApiFailure> {
   }
 
   if (err instanceof Prisma.PrismaClientValidationError) {
+    logger.error("Prisma validation error", context, err);
     return NextResponse.json(
       { success: false, error: "Invalid data provided", code: "PRISMA_VALIDATION_ERROR" },
       { status: 400 }
@@ -132,9 +145,7 @@ export function handleApiError(err: unknown): NextResponse<ApiFailure> {
   }
 
   // Unknown/unexpected — log server-side, never leak internals to the client.
-  // See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §6.6 for the error-observability
-  // decision (Sentry/structured-logging/none) this hook is meant to wire into.
-  console.error(err);
+  logger.error("Unhandled error in API route", context, err);
   return NextResponse.json(
     { success: false, error: "Internal server error" },
     { status: 500 }

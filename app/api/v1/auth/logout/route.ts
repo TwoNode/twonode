@@ -34,6 +34,6 @@ export async function POST(req: NextRequest) {
     await clearAuthCookies(platform);
     return NextResponse.json({ success: true, data: {} });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
 }

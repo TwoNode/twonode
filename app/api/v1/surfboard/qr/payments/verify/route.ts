@@ -16,6 +16,6 @@ export async function POST(req: NextRequest) {
     const data = await verifyQRServicePayment(reference, paystackRef);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
 }

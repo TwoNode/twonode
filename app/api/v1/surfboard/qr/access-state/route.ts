@@ -17,6 +17,6 @@ export async function GET(req: NextRequest) {
     const data = await getPlanQRAccessState(planId, token);
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
 }

@@ -22,6 +22,10 @@ export function withAuth<TRole extends string>(
   opts: { platform: Platform; roles?: TRole[] }
 ) {
   return async (req: NextRequest, routeCtx?: any) => {
+    const context: Record<string, unknown> = {
+      route: req.nextUrl.pathname,
+      method: req.method,
+    };
     try {
       const jwtSession = await getServerSession(opts.platform);
       if (!jwtSession) throw new UnauthenticatedError();
@@ -31,6 +35,9 @@ export function withAuth<TRole extends string>(
         role: jwtSession.role as TRole,
         platform: jwtSession.platform,
       };
+      context.userId = session.sub;
+      context.role = session.role;
+      context.platform = session.platform;
 
       if (opts.roles && !opts.roles.includes(session.role)) {
         throw new ForbiddenError();
@@ -38,7 +45,7 @@ export function withAuth<TRole extends string>(
 
       return await handler(req, { session }, routeCtx);
     } catch (err) {
-      return handleApiError(err);
+      return handleApiError(err, context);
     }
   };
 }

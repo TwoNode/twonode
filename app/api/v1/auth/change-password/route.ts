@@ -45,6 +45,6 @@ export async function POST(req: NextRequest) {
       data: { message: "Password updated. Please log in again." },
     });
   } catch (err) {
-    return handleApiError(err);
+    return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
 }
