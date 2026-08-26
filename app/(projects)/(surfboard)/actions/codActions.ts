@@ -1213,7 +1213,7 @@ export async function submitRedCopyBatch(
       // Don't fail the batch submission if notification fails
     }
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard-restricted/dashboard/surf-plans");
     revalidatePath("/surfboard/dashboard/plans");
 
     return {
@@ -1332,9 +1332,9 @@ export async function verifyBatchPayment(
         }),
       });
 
-      revalidatePath("/surf-restricted/dashboard/surf-plans");
+      revalidatePath("/surfboard-restricted/dashboard/surf-plans");
       revalidatePath("/surfboard/dashboard/plans");
-      revalidatePath("/surf-mda/dashboard");
+      revalidatePath("/surfboard-mda/dashboard");
 
       return {
         success: true,
@@ -2291,7 +2291,7 @@ export async function uploadLASGReceipt(
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard-restricted/dashboard/surf-plans");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -2370,12 +2370,12 @@ export async function updateAccountsApproval(
       });
     }
 
-    revalidatePath("/surf-mda/dashboard/accounts");
-    revalidatePath("/surf-mda/dashboard/charting");
-    revalidatePath("/surf-mda/dashboard/surcon");
-    revalidatePath("/surf-mda/dashboard/records-i");
-    revalidatePath("/surf-mda/dashboard/records-ii");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
+    revalidatePath("/surfboard-mda/dashboard/accounts");
+    revalidatePath("/surfboard-mda/dashboard/charting");
+    revalidatePath("/surfboard-mda/dashboard/surcon");
+    revalidatePath("/surfboard-mda/dashboard/records-i");
+    revalidatePath("/surfboard-mda/dashboard/records-ii");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -2391,7 +2391,7 @@ export async function updateAccountsApproval(
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard-restricted/dashboard/surf-plans");
 
     // Check if all four MDA approvals are complete for each plan
     // Accounts is now APPROVED, check the other three using already-fetched data
@@ -2464,8 +2464,8 @@ export async function updateChartingStatus(
       },
     });
 
-    revalidatePath("/surf-mda/dashboard/charting");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
+    revalidatePath("/surfboard-mda/dashboard/charting");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -2547,8 +2547,8 @@ export async function updateSurconStatus(
       },
     });
 
-    revalidatePath("/surf-mda/dashboard/surcon");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
+    revalidatePath("/surfboard-mda/dashboard/surcon");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -2630,8 +2630,8 @@ export async function updateRecordsIStatus(
       },
     });
 
-    revalidatePath("/surf-mda/dashboard/records-i");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
+    revalidatePath("/surfboard-mda/dashboard/records-i");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -2734,8 +2734,8 @@ export async function updateIntakeStatus(
       },
     });
 
-    revalidatePath("/surf-mda/dashboard/intake");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard
+    revalidatePath("/surfboard-mda/dashboard/intake");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard
 
     // Log audit action
     await logAuditAction({
@@ -2882,8 +2882,8 @@ export async function updateRecordsIIStatus(
       }
     }
 
-    revalidatePath("/surf-mda/dashboard/records-ii");
-    revalidatePath("/surf-mda/dashboard"); // Main MDA dashboard for pending counts
+    revalidatePath("/surfboard-mda/dashboard/records-ii");
+    revalidatePath("/surfboard-mda/dashboard"); // Main MDA dashboard for pending counts
 
     // Log audit action
     await logAuditAction({
@@ -3553,8 +3553,8 @@ export async function deleteAllBatches(): Promise<
     // Delete all batches
     const result = await prisma.certificateOfDepositBatch.deleteMany({});
 
-    revalidatePath("/surf-restricted/dashboard/surf-plans");
-    revalidatePath("/surf-restricted/dashboard/cod");
+    revalidatePath("/surfboard-restricted/dashboard/surf-plans");
+    revalidatePath("/surfboard-restricted/dashboard/cod");
     revalidatePath("/surfboard/dashboard/plans");
 
     return {
@@ -3802,10 +3802,10 @@ export async function resubmitQueriedPlan(
     // Revalidate relevant paths
     revalidatePath("/surfboard/dashboard/queried-plans");
     revalidatePath("/surfboard/dashboard/plans");
-    revalidatePath("/surf-mda/dashboard/surcon");
-    revalidatePath("/surf-mda/dashboard/records-i");
-    revalidatePath("/surf-mda/dashboard/records-ii");
-    revalidatePath("/surf-mda/dashboard");
+    revalidatePath("/surfboard-mda/dashboard/surcon");
+    revalidatePath("/surfboard-mda/dashboard/records-i");
+    revalidatePath("/surfboard-mda/dashboard/records-ii");
+    revalidatePath("/surfboard-mda/dashboard");
 
     // Log audit action
     await logAuditAction({
@@ -4565,8 +4565,8 @@ export async function markPlanArchived(planId: string, notes?: string) {
       }
     });
 
-    revalidatePath("/surf-mda/dashboard/archive");
-    revalidatePath("/surf-mda/dashboard");
+    revalidatePath("/surfboard-mda/dashboard/archive");
+    revalidatePath("/surfboard-mda/dashboard");
 
     await logAuditAction({
       userId: user.id,
@@ -4809,8 +4809,8 @@ export async function updateIntakeBatchStatus(
       }
     });
 
-    revalidatePath("/surf-mda/dashboard/intake");
-    revalidatePath("/surf-mda/dashboard"); 
+    revalidatePath("/surfboard-mda/dashboard/intake");
+    revalidatePath("/surfboard-mda/dashboard"); 
 
     // Dispatch notifications if queried
     if (!approved && batch.submittedBy) {

@@ -33,10 +33,12 @@ import { SurfboardRole } from "@/utils/platform";
  * scope (admin + QR-earnings only) to the full product — user panel and
  * MDA tree included — now that proxy.ts itself reads this registry instead
  * of its own hand-rolled path/role matching (see proxy.ts's Surfboard
- * branch). Base paths (`/surf-restricted`, `/surf-mda`) still use their
- * current names — the `surf-restricted`→`surfboard-restricted` /
- * `surf-mda`→`surfboard-mda` rename is a separate step (redirects + Kinde
- * URI updates have their own blast radius, kept out of this change).
+ * branch). Base paths renamed per proposal §4.8 (`surf-restricted` ->
+ * `surfboard-restricted`, `surf-mda` -> `surfboard-mda`); the Kinde OAuth
+ * callback routes (`/api/auth/success/surf-restricted`, `/surf-mda`) keep
+ * their old names deliberately — those are registered redirect URIs in
+ * Kinde's own dashboard, which only the account owner can update, so
+ * renaming those folders would break login until that manual step happens.
  */
 
 export type SurfboardRouteGroup = "admin" | "user" | "mda";
@@ -64,13 +66,13 @@ const MDA_STAGE_ROLES = [
   SurfboardRole.RECORDS_II,
   SurfboardRole.ARCHIVE,
 ];
-/** Both supervisory roles see every MDA stage — matches proxy.ts's source logic, which lets plain platform SUPERADMIN into every /surf-mda page unconditionally, not just MDA_SUPERADMIN. */
+/** Both supervisory roles see every MDA stage — matches proxy.ts's source logic, which lets plain platform SUPERADMIN into every /surfboard-mda page unconditionally, not just MDA_SUPERADMIN. */
 const MDA_SUPERVISORS = [SurfboardRole.MDA_SUPERADMIN, SurfboardRole.SUPERADMIN];
 const ALL_MDA_ROLES = [...MDA_STAGE_ROLES, ...MDA_SUPERVISORS];
 
-const ADMIN_BASE = "/surf-restricted/dashboard";
+const ADMIN_BASE = "/surfboard-restricted/dashboard";
 const USER_BASE = "/surfboard/dashboard";
-const MDA_BASE = "/surf-mda/dashboard";
+const MDA_BASE = "/surfboard-mda/dashboard";
 
 export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   // --- Admin panel (ADMIN/SUPERADMIN) ---

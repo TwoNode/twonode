@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/surf-restricted/dashboard";
+    const fallbackUrl = "/surfboard-restricted/dashboard";
 
     const redirectUrl = (() => {
       if (
         postLoginRaw &&
-        postLoginRaw.startsWith("/surf-restricted/dashboard")
+        postLoginRaw.startsWith("/surfboard-restricted/dashboard")
       ) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
-    console.error("Error in GET /auth/success/surf-restricted:", error);
-    return NextResponse.redirect(addBaseUrl("/surf-restricted/error-login"));
+    console.error("Error in GET /auth/success/surfboard-restricted:", error);
+    return NextResponse.redirect(addBaseUrl("/surfboard-restricted/error-login"));
   }
 }

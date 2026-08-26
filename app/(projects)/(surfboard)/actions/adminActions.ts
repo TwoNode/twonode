@@ -239,7 +239,7 @@ export async function updateUserRole({ userId, newRole }: UpdateUserRoleInput) {
       changes: formatChanges({ role: targetUser.role }, { role: newRole }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -308,7 +308,7 @@ export async function updateUserStatus({
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -384,7 +384,7 @@ export async function updateUserSubscription(input: UpdateSubscriptionInput) {
       });
     }
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -424,7 +424,7 @@ export async function cancelUserSubscription(userId: string) {
       },
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -460,7 +460,7 @@ export async function promoteToAdmin(userId: string) {
       },
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -564,7 +564,7 @@ export async function deleteUser(userId: string) {
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,
@@ -627,7 +627,7 @@ export async function createAdmin(input: CreateAdminInput) {
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/user-management");
+    revalidatePath("/surfboard-restricted/dashboard/user-management");
 
     return {
       success: true,

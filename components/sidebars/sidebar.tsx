@@ -24,7 +24,7 @@ export function Sidebar({
   const isSurfboard =
     typeof window !== "undefined" &&
     (window.location.pathname.includes("/surfboard") ||
-      window.location.pathname.includes("/surf-restricted"));
+      window.location.pathname.includes("/surfboard-restricted"));
 
   return (
     <aside

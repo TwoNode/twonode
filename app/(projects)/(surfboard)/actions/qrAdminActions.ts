@@ -210,7 +210,7 @@ export async function processAdminWithdrawalRequest(
         sendEmail: true,
       });
 
-      revalidatePath("/surf-restricted/dashboard/qr-earnings");
+      revalidatePath("/surfboard-restricted/dashboard/qr-earnings");
       revalidatePath("/surfboard/dashboard/qr-earnings");
 
       return { success: true, message: "Withdrawal request rejected" };
@@ -290,7 +290,7 @@ export async function processAdminWithdrawalRequest(
       sendEmail: true,
     });
 
-    revalidatePath("/surf-restricted/dashboard/qr-earnings");
+    revalidatePath("/surfboard-restricted/dashboard/qr-earnings");
     revalidatePath("/surfboard/dashboard/qr-earnings");
 
     return { success: true, message: "Withdrawal approved and paid successfully" };
@@ -338,7 +338,7 @@ export async function updateQREarningsSettings(settingsData: QREarningsSettingsD
       });
     }
 
-    revalidatePath("/surf-restricted/dashboard/settings");
+    revalidatePath("/surfboard-restricted/dashboard/settings");
 
     return { success: true, message: "QR Code Earnings settings updated successfully" };
   } catch (error) {

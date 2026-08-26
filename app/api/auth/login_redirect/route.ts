@@ -37,11 +37,11 @@ export async function GET() {
     }
   } else if (userData.platform === Platform.SURFBOARD) {
     if (canAccessSurfSuperAdminPanel(userData.role)) {
-      redirectUrl = "/surf-restricted/superadmin";
+      redirectUrl = "/surfboard-restricted/superadmin";
     } else if (canAccessSurfAdminPanel(userData.role)) {
-      redirectUrl = "/surf-restricted/dashboard";
+      redirectUrl = "/surfboard-restricted/dashboard";
     } else if (isMDARole(userData.role)) {
-      redirectUrl = "/surf-mda/dashboard";
+      redirectUrl = "/surfboard-mda/dashboard";
     } else if (canAccessSurfUserPanel(userData.role)) {
       redirectUrl = "/surfboard/dashboard";
     }

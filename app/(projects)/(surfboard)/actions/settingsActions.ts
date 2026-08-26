@@ -101,7 +101,7 @@ export async function getCurrentSettings(): Promise<
         },
       });
 
-      revalidatePath("/surf-restricted/dashboard/cod-settings");
+      revalidatePath("/surfboard-restricted/dashboard/cod-settings");
       return {
         success: true,
         data: DEFAULT_SETTINGS,
@@ -261,7 +261,7 @@ export async function updateSettings(
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/cod-settings");
+    revalidatePath("/surfboard-restricted/dashboard/cod-settings");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -367,7 +367,7 @@ export async function revertToPreviousSettings(
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/cod-settings");
+    revalidatePath("/surfboard-restricted/dashboard/cod-settings");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -411,7 +411,7 @@ export async function resetToDefaultSettings(): Promise<ApiResult<{ success: boo
       }),
     });
 
-    revalidatePath("/surf-restricted/dashboard/cod-settings");
+    revalidatePath("/surfboard-restricted/dashboard/cod-settings");
 
     return { success: true, data: { success: true } };
   } catch (error) {
@@ -446,7 +446,7 @@ export async function toggleUserKycValidation(
       data: { isKycValidated: status },
     });
 
-    revalidatePath("/surf-restricted/dashboard/kyc");
+    revalidatePath("/surfboard-restricted/dashboard/kyc");
 
     return { success: true, data: { success: true } };
   } catch (error) {

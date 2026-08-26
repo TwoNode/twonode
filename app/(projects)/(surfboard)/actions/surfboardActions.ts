@@ -3687,7 +3687,7 @@ export async function verifyPersonCount(planId: string, count: number) {
       }
     });
 
-    revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+    revalidatePath(`/surfboard-restricted/dashboard/surf-plans`);
     return { success: true };
   } catch (error) {
     return { success: false, error: handlePrismaError(error, "verifyPersonCount") };
@@ -3709,7 +3709,7 @@ export async function queryPlan(planId: string) {
       }
     });
 
-    revalidatePath(`/surf-restricted/dashboard/surf-plans`);
+    revalidatePath(`/surfboard-restricted/dashboard/surf-plans`);
     return { success: true };
   } catch (error) {
     return { success: false, error: handlePrismaError(error, "queryPlan") };

@@ -458,7 +458,7 @@ export async function deleteNotification(
     });
 
     revalidatePath("/surfboard/dashboard/notifications");
-    revalidatePath("/surf-restricted/dashboard/notifications");
+    revalidatePath("/surfboard-restricted/dashboard/notifications");
     return { success: true, data: { success: true } };
   } catch (error) {
     console.error("Error deleting notification:", error);
@@ -549,7 +549,7 @@ export async function notifyBatchSubmitted(params: {
       title: "New Batch Submitted",
       message: `${params.submittedBy.firstName} ${params.submittedBy.lastName} submitted batch ${params.batchCode} with ${params.planCount} plan(s).`,
       audience: "GENERAL_ADMINS",
-      link: `/surf-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod`,
       metadata: {
         batchId: params.batchId,
         batchCode: params.batchCode,
@@ -579,7 +579,7 @@ export async function notifyPaymentReceived(params: {
       message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${params.batchCode
         } from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
       audience: "GENERAL_ADMINS",
-      link: `/surf-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod`,
       metadata: {
         batchId: params.batchId,
         batchCode: params.batchCode,
@@ -620,7 +620,7 @@ export async function notifyLASGReceiptUploaded(params: {
         message: `LASG payment receipt uploaded for batch ${params.batchCode} with ${params.planCount} plan(s). Ready for review.`,
         audience: "SPECIFIC_USERS",
         userIds: mdaUsers.map((u) => u.id),
-        link: `/surf-mda/dashboard`,
+        link: `/surfboard-mda/dashboard`,
         metadata: {
           batchId: params.batchId,
           batchCode: params.batchCode,
@@ -650,7 +650,7 @@ export async function notifyAccountsDisapproval(params: {
       message: `Batch ${params.batchCode} was disapproved by Accounts. ${params.comment ? `Reason: ${params.comment}` : ""
         }`,
       audience: "GENERAL_ADMINS",
-      link: `/surf-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod`,
       metadata: {
         batchId: params.batchId,
         batchCode: params.batchCode,
@@ -784,7 +784,7 @@ export async function notifyMDAApproval(params: {
       message: `Plan ${params.planNumber} was ${params.approved ? "approved" : "queried"
         } by ${params.role}. ${params.comment || ""}`,
       audience: "GENERAL_ADMINS",
-      link: `/surf-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod`,
       metadata: {
         planId: params.planId,
         planNumber: params.planNumber,

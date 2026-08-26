@@ -26,9 +26,9 @@ const protectedRoutes = [
   "/reva-restricted/dashboard",
   "/reva-restricted/superadmin",
   "/surfboard/dashboard",
-  "/surf-restricted/dashboard",
-  "/surf-restricted/superadmin",
-  "/surf-mda/dashboard",
+  "/surfboard-restricted/dashboard",
+  "/surfboard-restricted/superadmin",
+  "/surfboard-mda/dashboard",
   "/gbc/restricted",
 ]; 
 
@@ -88,8 +88,8 @@ function getActivePlatform(pathname: string): Platform | null {
   if (pathname.startsWith("/reva")) return Platform.REVA;
   if (
     pathname.startsWith("/surfboard") ||
-    pathname.startsWith("/surf-restricted") ||
-    pathname.startsWith("/surf-mda")
+    pathname.startsWith("/surfboard-restricted") ||
+    pathname.startsWith("/surfboard-mda")
   ) return Platform.SURFBOARD;
   if (pathname.startsWith("/gbc")) return Platform.GBC;
   if (pathname.startsWith("/scram")) return Platform.SCRAM;
@@ -105,9 +105,9 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         return "/reva-restricted/login";
       if (pathname.startsWith("/reva")) return "/reva/login";
-      if (pathname.startsWith("/surf-mda")) return "/surf-mda/login";
-      if (pathname.startsWith("/surf-restricted"))
-        return "/surf-restricted/login";
+      if (pathname.startsWith("/surfboard-mda")) return "/surfboard-mda/login";
+      if (pathname.startsWith("/surfboard-restricted"))
+        return "/surfboard-restricted/login";
       if (pathname.startsWith("/surfboard")) return "/surfboard/login";
       if (pathname.startsWith("/gbc/restricted"))
         return "/gbc/restricted-login";
@@ -145,10 +145,10 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         redirectPath = "/reva-restricted/login";
       else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-      else if (pathname.startsWith("/surf-mda"))
-        redirectPath = "/surf-mda/login";
-      else if (pathname.startsWith("/surf-restricted"))
-        redirectPath = "/surf-restricted/login";
+      else if (pathname.startsWith("/surfboard-mda"))
+        redirectPath = "/surfboard-mda/login";
+      else if (pathname.startsWith("/surfboard-restricted"))
+        redirectPath = "/surfboard-restricted/login";
       else if (pathname.startsWith("/surfboard"))
         redirectPath = "/surfboard/login";
       else if (pathname.startsWith("/gbc/restricted"))
@@ -175,10 +175,10 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
         else if (pathname.startsWith("/gbc/restricted"))
@@ -207,10 +207,10 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
         else if (pathname.startsWith("/gbc/restricted"))
@@ -271,15 +271,15 @@ const proxyWithLogic = withDynamicAuth(
             return createRedirectResponse(req, "/surfboard/dashboard/subscription");
           }
         }
-      } else if (pathname.startsWith("/surf-restricted/dashboard")) {
+      } else if (pathname.startsWith("/surfboard-restricted/dashboard")) {
         hasAccess = canAccessSurfboardRoute(pathname, role);
-      } else if (pathname.startsWith("/surf-restricted/superadmin")) {
+      } else if (pathname.startsWith("/surfboard-restricted/superadmin")) {
         // Not a registry entry — no real page lives at this exact path
-        // (only /surf-restricted/dashboard/superadmin does); kept as a
+        // (only /surfboard-restricted/dashboard/superadmin does); kept as a
         // direct role check since it's in the matcher/protectedRoutes list
         // and this migration isn't the place to decide it's dead.
         hasAccess = role === SurfboardRole.SUPERADMIN;
-      } else if (pathname.startsWith("/surf-mda/dashboard")) {
+      } else if (pathname.startsWith("/surfboard-mda/dashboard")) {
         // Real gap closed here: the source's hand-rolled `pathname.includes`
         // checks are replaced by the same registry — every MDA stage role
         // now maps to exactly the pages its `roles` array in
@@ -301,10 +301,10 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
         else if (pathname.startsWith("/gbc/restricted"))
@@ -331,9 +331,9 @@ export const config = {
     "/reva-restricted/dashboard/:path*",
     "/reva-restricted/superadmin/:path*",
     "/surfboard/dashboard/:path*",
-    "/surf-restricted/dashboard/:path*",
-    "/surf-restricted/superadmin/:path*",
-    "/surf-mda/dashboard/:path*",
+    "/surfboard-restricted/dashboard/:path*",
+    "/surfboard-restricted/superadmin/:path*",
+    "/surfboard-mda/dashboard/:path*",
     "/gbc/restricted/:path*",
   ],
 };

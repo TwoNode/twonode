@@ -13,23 +13,23 @@ import { SurfboardRole } from "@/utils/platform";
 
 describe("canAccessRoute — admin panel", () => {
   it("allows ADMIN and SUPERADMIN into the admin home and sub-pages", () => {
-    expect(canAccessRoute("/surf-restricted/dashboard", SurfboardRole.ADMIN)).toBe(true);
-    expect(canAccessRoute("/surf-restricted/dashboard/surf-plans", SurfboardRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute("/surfboard-restricted/dashboard", SurfboardRole.ADMIN)).toBe(true);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/surf-plans", SurfboardRole.SUPERADMIN)).toBe(true);
   });
 
   it("rejects a plain surveyor from the admin panel", () => {
-    expect(canAccessRoute("/surf-restricted/dashboard", SurfboardRole.USER)).toBe(false);
+    expect(canAccessRoute("/surfboard-restricted/dashboard", SurfboardRole.USER)).toBe(false);
   });
 
   it("restricts /superadmin and /audit-logs to SUPERADMIN only, even though the longer path shares the /dashboard prefix with ADMIN-accessible pages", () => {
-    expect(canAccessRoute("/surf-restricted/dashboard/superadmin", SurfboardRole.SUPERADMIN)).toBe(true);
-    expect(canAccessRoute("/surf-restricted/dashboard/superadmin", SurfboardRole.ADMIN)).toBe(false);
-    expect(canAccessRoute("/surf-restricted/dashboard/audit-logs", SurfboardRole.ADMIN)).toBe(false);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/superadmin", SurfboardRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/superadmin", SurfboardRole.ADMIN)).toBe(false);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/audit-logs", SurfboardRole.ADMIN)).toBe(false);
   });
 
   it("resolves a nested id page (.../surf-plans/update/[id]) to its parent entry's role requirement", () => {
-    expect(canAccessRoute("/surf-restricted/dashboard/surf-plans/update/abc123", SurfboardRole.ADMIN)).toBe(true);
-    expect(canAccessRoute("/surf-restricted/dashboard/surf-plans/update/abc123", SurfboardRole.USER)).toBe(false);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/surf-plans/update/abc123", SurfboardRole.ADMIN)).toBe(true);
+    expect(canAccessRoute("/surfboard-restricted/dashboard/surf-plans/update/abc123", SurfboardRole.USER)).toBe(false);
   });
 });
 
@@ -47,27 +47,27 @@ describe("canAccessRoute — user (surveyor) panel", () => {
 
 describe("canAccessRoute — MDA panel (the real gap this registry closes)", () => {
   it("lets a stage role reach only its own stage page", () => {
-    expect(canAccessRoute("/surf-mda/dashboard/charting", SurfboardRole.CHARTING)).toBe(true);
-    expect(canAccessRoute("/surf-mda/dashboard/accounts", SurfboardRole.CHARTING)).toBe(false);
-    expect(canAccessRoute("/surf-mda/dashboard/surcon", SurfboardRole.CHARTING)).toBe(false);
+    expect(canAccessRoute("/surfboard-mda/dashboard/charting", SurfboardRole.CHARTING)).toBe(true);
+    expect(canAccessRoute("/surfboard-mda/dashboard/accounts", SurfboardRole.CHARTING)).toBe(false);
+    expect(canAccessRoute("/surfboard-mda/dashboard/surcon", SurfboardRole.CHARTING)).toBe(false);
   });
 
   it("lets every stage role reach the shared home/profile/settings pages", () => {
-    expect(canAccessRoute("/surf-mda/dashboard", SurfboardRole.ARCHIVE)).toBe(true);
-    expect(canAccessRoute("/surf-mda/dashboard/profile", SurfboardRole.INTAKE)).toBe(true);
-    expect(canAccessRoute("/surf-mda/dashboard/settings", SurfboardRole.RECORDS_I)).toBe(true);
+    expect(canAccessRoute("/surfboard-mda/dashboard", SurfboardRole.ARCHIVE)).toBe(true);
+    expect(canAccessRoute("/surfboard-mda/dashboard/profile", SurfboardRole.INTAKE)).toBe(true);
+    expect(canAccessRoute("/surfboard-mda/dashboard/settings", SurfboardRole.RECORDS_I)).toBe(true);
   });
 
   it("lets MDA_SUPERADMIN and platform SUPERADMIN reach every stage — matches the source's supervisory override, not just the stage-holder", () => {
     for (const stage of ["accounts", "charting", "surcon", "intake", "records-i", "records-ii", "archive"]) {
-      expect(canAccessRoute(`/surf-mda/dashboard/${stage}`, SurfboardRole.MDA_SUPERADMIN)).toBe(true);
-      expect(canAccessRoute(`/surf-mda/dashboard/${stage}`, SurfboardRole.SUPERADMIN)).toBe(true);
+      expect(canAccessRoute(`/surfboard-mda/dashboard/${stage}`, SurfboardRole.MDA_SUPERADMIN)).toBe(true);
+      expect(canAccessRoute(`/surfboard-mda/dashboard/${stage}`, SurfboardRole.SUPERADMIN)).toBe(true);
     }
   });
 
   it("rejects a plain ADMIN (not SUPERADMIN) and a surveyor from every MDA page", () => {
-    expect(canAccessRoute("/surf-mda/dashboard/accounts", SurfboardRole.ADMIN)).toBe(false);
-    expect(canAccessRoute("/surf-mda/dashboard", SurfboardRole.USER)).toBe(false);
+    expect(canAccessRoute("/surfboard-mda/dashboard/accounts", SurfboardRole.ADMIN)).toBe(false);
+    expect(canAccessRoute("/surfboard-mda/dashboard", SurfboardRole.USER)).toBe(false);
   });
 });
 
@@ -86,16 +86,16 @@ describe("canAccessRoute — unmatched paths", () => {
 describe("getNavItemsForRole", () => {
   it("a Charting officer's MDA nav includes their own stage plus the shared pages, and excludes every other stage", () => {
     const items = getNavItemsForRole(SurfboardRole.CHARTING, "mda").map((r) => r.path);
-    expect(items).toContain("/surf-mda/dashboard/charting");
-    expect(items).toContain("/surf-mda/dashboard/profile");
-    expect(items).not.toContain("/surf-mda/dashboard/accounts");
-    expect(items).not.toContain("/surf-mda/dashboard/surcon");
+    expect(items).toContain("/surfboard-mda/dashboard/charting");
+    expect(items).toContain("/surfboard-mda/dashboard/profile");
+    expect(items).not.toContain("/surfboard-mda/dashboard/accounts");
+    expect(items).not.toContain("/surfboard-mda/dashboard/surcon");
   });
 
   it("MDA_SUPERADMIN's nav includes every stage", () => {
     const items = getNavItemsForRole(SurfboardRole.MDA_SUPERADMIN, "mda").map((r) => r.path);
     for (const stage of ["accounts", "charting", "surcon", "intake", "records-i", "records-ii", "archive"]) {
-      expect(items).toContain(`/surf-mda/dashboard/${stage}`);
+      expect(items).toContain(`/surfboard-mda/dashboard/${stage}`);
     }
   });
 

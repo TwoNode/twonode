@@ -231,8 +231,8 @@ export async function verifyPlanRecordCopy(planId: string): Promise<ApiResult<an
       },
     });
 
-    revalidatePath("/surf-restricted/dashboard/intake");
-    revalidatePath("/surf-restricted/dashboard/records-ii");
+    revalidatePath("/surfboard-restricted/dashboard/intake");
+    revalidatePath("/surfboard-restricted/dashboard/records-ii");
 
     return { success: true, data: verificationData };
   } catch (error: any) {
@@ -286,8 +286,8 @@ export async function savePlanVerificationResult(
       },
     });
 
-    revalidatePath("/surf-restricted/dashboard/intake");
-    revalidatePath("/surf-restricted/dashboard/records-ii");
+    revalidatePath("/surfboard-restricted/dashboard/intake");
+    revalidatePath("/surfboard-restricted/dashboard/records-ii");
 
     return { success: true };
   } catch (error: any) {

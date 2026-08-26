@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
         }
       } else if (activePlatform === Platform.SURFBOARD) {
         if (canAccessSurfSuperAdminPanel(role)) {
-          redirectUrl = "/surf-restricted/login";
+          redirectUrl = "/surfboard-restricted/login";
         } else if (canAccessSurfAdminPanel(role)) {
-          redirectUrl = "/surf-restricted/login";
+          redirectUrl = "/surfboard-restricted/login";
         } else if (isMDARole(role)) {
-          redirectUrl = "/surf-mda/login";
+          redirectUrl = "/surfboard-mda/login";
         } else {
           redirectUrl = "/surfboard/login";
         }

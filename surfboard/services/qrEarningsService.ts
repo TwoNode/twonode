@@ -433,7 +433,7 @@ export async function requestWithdrawal(surveyorId: string, amount: number) {
     message: `${surveyor?.firstName ?? ""} ${surveyor?.lastName ?? ""}`.trim() +
       ` requested a withdrawal of ₦${amount.toLocaleString()}.`,
     audience: "GENERAL_ADMINS",
-    link: "/surf-restricted/dashboard/qr-earnings",
+    link: "/surfboard-restricted/dashboard/qr-earnings",
     sendEmail: true,
   });
 
