@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import type { ZoneFeeRow } from "@/app/(projects)/(surfboard)/utils/CoDFees";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/codActions.ts — pure
@@ -11,17 +12,14 @@ import prisma from "@/lib/prisma";
  * caveat as the schema-split work in Phase 1 (temporarily remove gis.prisma
  * before `db push` locally; these two functions themselves can't be
  * exercised locally either way without real PostGIS data loaded).
+ *
+ * ZoneFeeRow is re-exported from utils/CoDFees.ts (not redeclared here) so
+ * every caller — this file, remitaVerificationService.ts, and the
+ * fee-preview route — shares the one canonical shape settingsActions.ts's
+ * getZoneFees() already returns.
  */
 
-export type ZoneFeeRow = {
-  range: string;
-  start: number;
-  end: number;
-  lagosZoneA: number;
-  lagosZoneB: number;
-  lagosZoneC: number;
-  lagosZoneD: number;
-};
+export type { ZoneFeeRow };
 
 export async function getChartingInterpretation(geometry: any): Promise<string | null> {
   try {
