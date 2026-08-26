@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { SurfboardRole } from "@/utils/platform";
+import { getRoleFieldPrefix } from "@/surfboard/services/planLockService";
 
 /**
  * New for Phase 2 (2026-08-24 request) — role/platform-scoped analytics.
@@ -170,7 +171,7 @@ export async function getTimeTrend(scope: AnalyticsScope): Promise<TimeTrendPoin
   const rows = await prisma.$queryRaw<{ month: string; count: number }[]>`
     SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month, COUNT(*)::integer as count
     FROM "SurfboardPlan"
-    WHERE "planType" NOT IN ('PROVISIONAL', 'PROVISIONAL_LAYOUT') AND "createdAt" >= ${twelveMonthsAgo}
+    WHERE "planType" NOT IN (${Prisma.join(PROVISIONAL_TYPES)}) AND "createdAt" >= ${twelveMonthsAgo}
     ${userFilter}
     GROUP BY DATE_TRUNC('month', "createdAt")
     ORDER BY month ASC
@@ -191,6 +192,10 @@ interface StageConfig {
 }
 
 /**
+ * Field names are derived from planLockService.ts's ROLE_FIELD_PREFIX (the
+ * same role -> "accounts"/"charting"/... table it uses to build lock field
+ * names) rather than a second hand-written copy of the same mapping.
+ *
  * ACCOUNTS/CHARTING/SURCON/RECORDS_I run in parallel and all start at
  * redCopySubmittedAt (confirmed — batchApprovalService's chain runs these
  * four independently before Intake). RECORDS_II starts once Intake clears.
@@ -200,14 +205,18 @@ interface StageConfig {
  * this means Intake's avgTimeInStageDays reads slightly high (it includes
  * the parallel stages' own time), documented rather than hidden.
  */
-const STAGE_CONFIG: Record<Exclude<MdaStageRole, "ARCHIVE">, StageConfig> = {
-  ACCOUNTS: { statusField: "accountsStatus", approvedAtField: "accountsApprovedAt", startAtField: "redCopySubmittedAt" },
-  CHARTING: { statusField: "chartingStatus", approvedAtField: "chartingApprovedAt", startAtField: "redCopySubmittedAt" },
-  SURCON: { statusField: "surconStatus", approvedAtField: "surconApprovedAt", startAtField: "redCopySubmittedAt" },
-  RECORDS_I: { statusField: "recordsIStatus", approvedAtField: "recordsIApprovedAt", startAtField: "redCopySubmittedAt" },
-  INTAKE: { statusField: "intakeStatus", approvedAtField: "intakeApprovedAt", startAtField: "redCopySubmittedAt" },
-  RECORDS_II: { statusField: "recordsIIStatus", approvedAtField: "recordsIIApprovedAt", startAtField: "intakeApprovedAt" },
+const STAGE_START_OVERRIDE: Partial<Record<Exclude<MdaStageRole, "ARCHIVE">, string>> = {
+  RECORDS_II: "intakeApprovedAt",
 };
+
+function stageConfigFor(role: Exclude<MdaStageRole, "ARCHIVE">): StageConfig {
+  const prefix = getRoleFieldPrefix(role);
+  return {
+    statusField: `${prefix}Status`,
+    approvedAtField: `${prefix}ApprovedAt`,
+    startAtField: STAGE_START_OVERRIDE[role] ?? "redCopySubmittedAt",
+  };
+}
 
 export interface MdaStageStats {
   queueDepth: number;
@@ -240,7 +249,7 @@ export async function getMdaStageStats(role: MdaStageRole): Promise<MdaStageStat
     return { queueDepth, avgTimeInStageDays: rows[0]?.avgDays ?? null };
   }
 
-  const cfg = STAGE_CONFIG[role];
+  const cfg = stageConfigFor(role);
   const [queueDepth, rows] = await Promise.all([
     prisma.surfboardPlan.count({ where: { deleted: false, [cfg.statusField]: "PENDING" } as any }),
     prisma.$queryRaw<{ avgDays: number | null }[]>`

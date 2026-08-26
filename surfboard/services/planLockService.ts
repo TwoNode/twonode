@@ -36,7 +36,8 @@ const RECORDS_II_LOCK_MINUTES_PER_PLAN = 3;
 // supervisory role, never a workflow participant that acquires a lock) —
 // this entry is preserved from the source for type completeness but is
 // never actually reachable through acquirePlanLock/etc. in practice.
-const ROLE_FIELD_PREFIX: Record<MDARole, string> = {
+/** Exported — analyticsService.ts derives its own per-stage field names (statusField/approvedAtField) from this same table instead of duplicating it. */
+export const ROLE_FIELD_PREFIX: Record<MDARole, string> = {
   ACCOUNTS: "accounts",
   CHARTING: "charting",
   SURCON: "surcon",
@@ -47,7 +48,7 @@ const ROLE_FIELD_PREFIX: Record<MDARole, string> = {
   MDA_SUPERADMIN: "mdaSuperadmin",
 };
 
-function getRoleFieldPrefix(role: MDARole): string {
+export function getRoleFieldPrefix(role: MDARole): string {
   return ROLE_FIELD_PREFIX[role];
 }
 

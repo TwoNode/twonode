@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { getMdaStageStats, type MdaStageRole } from "@/surfboard/services/analyticsService";
+import { MDA_ROLES } from "@/surfboard/services/planLockService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
-const STAGE_ROLES: MdaStageRole[] = [
-  SurfboardRole.ACCOUNTS,
-  SurfboardRole.CHARTING,
-  SurfboardRole.SURCON,
-  SurfboardRole.RECORDS_I,
-  SurfboardRole.INTAKE,
-  SurfboardRole.RECORDS_II,
-  SurfboardRole.ARCHIVE,
-] as MdaStageRole[];
+// The 7 actual stage roles — derived from planLockService's MDA_ROLES (the
+// canonical "role can hold a lock" list) rather than a second hand-written
+// copy; MDA_SUPERADMIN is in that list too but isn't itself a stage.
+const STAGE_ROLES = MDA_ROLES.filter((r) => r !== SurfboardRole.MDA_SUPERADMIN) as MdaStageRole[];
 
 /**
  * A stage role sees only its own stage's queue depth/time-in-stage.
