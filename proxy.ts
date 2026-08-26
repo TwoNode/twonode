@@ -6,9 +6,6 @@ import {
   canAccessRevaAdminPanel,
   canAccessRevaUserPanel,
   canAccessRevaSuperAdminPanel,
-  canAccessSurfAdminPanel,
-  canAccessSurfUserPanel,
-  canAccessSurfSuperAdminPanel,
   canAccessGBCAdminPanel,
   canAccessGBCUserPanel,
   canAccessGBCSuperAdminPanel,
@@ -16,8 +13,9 @@ import {
 import {
   getAndRefreshUserSession,
 } from "@/utils/encryptedCookies";
-import { Platform } from "@/utils/platform";
+import { Platform, SurfboardRole } from "@/utils/platform";
 import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
+import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -38,9 +36,6 @@ const protectedRoutes = [
 const publicRoutes = [
   "/surfboardplan/", // This will match /surfboardplan/[id]
 ];
-
-// Define superadmin-only pages for Surfboard (surf-restricted)
-const surfboardSuperadminPages = ["/surf-restricted/dashboard/superadmin"];
 
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
@@ -241,81 +236,56 @@ const proxyWithLogic = withDynamicAuth(
       } else if (pathname.startsWith("/reva-restricted/superadmin")) {
         hasAccess = canAccessRevaSuperAdminPanel(role);
       } else if (pathname.startsWith("/surfboard/dashboard")) {
+        // Nav/role access now comes from surfboard/access/routes.ts (the
+        // same registry DashboardShell reads) instead of a single blanket
+        // canAccessSurfUserPanel check repeated per-branch — subscription
+        // gating (unrelated to role/nav) stays its own step below.
+        const hasRoleAccess = canAccessSurfboardRoute(pathname, role);
         if (
           pathname == "/surfboard/dashboard" ||
           pathname == "/surfboard/dashboard/settings" ||
           pathname == "/surfboard/dashboard/subscription"
         ) {
-          hasAccess = canAccessSurfUserPanel(role);
+          hasAccess = hasRoleAccess;
+        } else if (!hasRoleAccess) {
+          hasAccess = false;
         } else {
-          const hasRoleAccess = canAccessSurfUserPanel(role);
-          if (!hasRoleAccess) {
-            hasAccess = false;
-          } else {
-            try {
-              // Note: getUserAndActiveSub uses cookies() which is fine in middleware context if handled correctly,
-              // but we should ideally use the subscription data from the cookie if available
-              const subData = platformSession.subscription;
+          try {
+            // Note: getUserAndActiveSub uses cookies() which is fine in middleware context if handled correctly,
+            // but we should ideally use the subscription data from the cookie if available
+            const subData = platformSession.subscription;
 
-              if (!subData || subData.status !== "active") {
-                // Check if it's canceled but still valid
-                const isGracePeriod = subData?.status === "canceled" && subData.expiresAt && new Date(subData.expiresAt) >= new Date();
+            if (!subData || subData.status !== "active") {
+              // Check if it's canceled but still valid
+              const isGracePeriod = subData?.status === "canceled" && subData.expiresAt && new Date(subData.expiresAt) >= new Date();
 
-                if (!isGracePeriod) {
-                    console.log("🛡️ Proxy - No valid subscription in cookie, redirecting to sub page");
-                    return createRedirectResponse(req, "/surfboard/dashboard/subscription");
-                }
+              if (!isGracePeriod) {
+                  console.log("🛡️ Proxy - No valid subscription in cookie, redirecting to sub page");
+                  return createRedirectResponse(req, "/surfboard/dashboard/subscription");
               }
-              hasAccess = true;
-            } catch (error) {
-              console.log("🛡️ Proxy - Error processing sub in proxy:", error);
-              hasAccess = false;
-              return createRedirectResponse(req, "/surfboard/dashboard/subscription");
             }
+            hasAccess = true;
+          } catch (error) {
+            console.log("🛡️ Proxy - Error processing sub in proxy:", error);
+            hasAccess = false;
+            return createRedirectResponse(req, "/surfboard/dashboard/subscription");
           }
         }
       } else if (pathname.startsWith("/surf-restricted/dashboard")) {
-        const isSuperadminPage = surfboardSuperadminPages.some((page) => pathname.startsWith(page));
-        if (isSuperadminPage) {
-          hasAccess = canAccessSurfSuperAdminPanel(role);
-        } else {
-          hasAccess = canAccessSurfAdminPanel(role);
-        }
+        hasAccess = canAccessSurfboardRoute(pathname, role);
       } else if (pathname.startsWith("/surf-restricted/superadmin")) {
-        hasAccess = canAccessSurfSuperAdminPanel(role);
+        // Not a registry entry — no real page lives at this exact path
+        // (only /surf-restricted/dashboard/superadmin does); kept as a
+        // direct role check since it's in the matcher/protectedRoutes list
+        // and this migration isn't the place to decide it's dead.
+        hasAccess = role === SurfboardRole.SUPERADMIN;
       } else if (pathname.startsWith("/surf-mda/dashboard")) {
-        if (canAccessSurfSuperAdminPanel(role)) {
-          hasAccess = true;
-        } else {
-          const mdaRoles = ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II", "MDA_SUPERADMIN", "INTAKE", "ARCHIVE"];
-          hasAccess = mdaRoles.includes(role);
-
-          if (hasAccess) {
-            if (role === "MDA_SUPERADMIN") {
-              hasAccess = true;
-            } else {
-              if (pathname.includes("/accounts") && role !== "ACCOUNTS") {
-                hasAccess = false;
-              } else if (pathname.includes("/charting") && role !== "CHARTING") {
-                hasAccess = false;
-              } else if (pathname.includes("/surcon") && role !== "SURCON") {
-                hasAccess = false;
-              } else if (pathname.includes("/records-ii")) {
-                if (role !== "RECORDS_II") {
-                  hasAccess = false;
-                }
-              } else if (pathname.includes("/records-i")) {
-                if (role !== "RECORDS_I") {
-                  hasAccess = false;
-                }
-              } else if (pathname.includes("/intake") && role !== "INTAKE") {
-                hasAccess = false;
-              } else if (pathname.includes("/archive") && role !== "ARCHIVE") {
-                hasAccess = false;
-              }
-            }
-          }
-        }
+        // Real gap closed here: the source's hand-rolled `pathname.includes`
+        // checks are replaced by the same registry — every MDA stage role
+        // now maps to exactly the pages its `roles` array in
+        // surfboard/access/routes.ts allows, instead of a parallel,
+        // easy-to-drift string-matching table.
+        hasAccess = canAccessSurfboardRoute(pathname, role);
       } else if (pathname.startsWith("/gbc/restricted")) {
         if (pathname.startsWith("/gbc/restricted/superadmin")) {
           hasAccess = canAccessGBCSuperAdminPanel(role);

@@ -1,6 +1,7 @@
-import SurfboardMDAPanelLayout from "@/components/layouts/surfboardMDAPanelLayout";
+import { DashboardShell } from "@/components/admin-panel/DashboardShell";
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { SURFBOARD_COLORS } from "@/surfboard-colors";
 
 export const maxDuration = 60;
 
@@ -36,8 +37,15 @@ export default async function MDADashboardLayout({
     : undefined;
 
   return (
-    <SurfboardMDAPanelLayout user={user} userData={userData}>
+    <DashboardShell
+      title="Surfboard MDA"
+      logoSrc="/surfboard/surf_logo.svg"
+      colorPalette={SURFBOARD_COLORS}
+      role={userData?.role}
+      group="mda"
+      user={user?.name || userData?.name ? { picture: user?.picture, name: user?.name || userData?.name } : undefined}
+    >
       {children}
-    </SurfboardMDAPanelLayout>
+    </DashboardShell>
   );
 }
