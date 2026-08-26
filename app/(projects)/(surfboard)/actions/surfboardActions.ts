@@ -18,7 +18,7 @@ import {
   deleteMultipleSurfboardFilesFromS3WithUrl,
   deleteSurfboardFileFromS3,
 } from "./awsActions";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { computeGeometryDetails, type GeometryInput } from "../utils/dbUtils";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 

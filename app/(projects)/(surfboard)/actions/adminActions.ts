@@ -4,7 +4,7 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import prisma from "@/lib/prisma";
 import { Prisma, SurfboardRole } from "@/prisma/generated";
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import {

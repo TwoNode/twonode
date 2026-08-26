@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 
 type SubscriptionAnalytics = {
   activeCount: number;

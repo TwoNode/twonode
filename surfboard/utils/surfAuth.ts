@@ -2,9 +2,9 @@
 import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { canAccessSurfAdminPanel, canAccessSurfUserPanel } from "@/permissions";
-import { getAndRefreshUserSession } from "./encryptedCookies";
+import { getAndRefreshUserSession } from "@/utils/encryptedCookies";
 import { cache } from "react";
-import { Platform } from "./platform";
+import { Platform } from "@/utils/platform";
 
 export async function getUserFromSurfDB(userId: string) {
   try {

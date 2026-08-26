@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { SUBSCRIPTION_PLANS } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import { createOrUpdateSubscription } from "./subscriptionActions";
 import {

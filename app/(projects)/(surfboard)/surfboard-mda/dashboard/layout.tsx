@@ -1,7 +1,7 @@
 import { DashboardShell } from "@/components/admin-panel/DashboardShell";
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { SURFBOARD_COLORS } from "@/surfboard-colors";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 export const maxDuration = 60;
 

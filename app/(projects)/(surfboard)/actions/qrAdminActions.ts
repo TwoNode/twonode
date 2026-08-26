@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { createNotification } from "./notificationActions";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { revalidatePath } from "next/cache";

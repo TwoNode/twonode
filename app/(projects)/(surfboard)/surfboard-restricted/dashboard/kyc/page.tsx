@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getSurveyorsForKyc } from "@/surfboard/services/qrEarningsService";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { redirect } from "next/navigation";
 import KycClient from "./KycClient";
 

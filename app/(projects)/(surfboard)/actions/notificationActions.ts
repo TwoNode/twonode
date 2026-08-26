@@ -2,7 +2,7 @@
 
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { sendNotificationMail } from "@/utils/email";
 import { revalidatePath } from "next/cache";
 import {

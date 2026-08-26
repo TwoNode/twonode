@@ -408,7 +408,7 @@ async function getPresignedPutUrl({
 //
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getAuthenticatedSurfUserFromCookie } from "@/utils/surfAuth";
+import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
 import { Readable } from "stream";
 import { ApiResult } from "../types/surfboardTypes";
 

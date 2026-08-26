@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
+import { useSurfUserProfile } from "@/surfboard/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { InquiryModal } from "./InquiryModal";
