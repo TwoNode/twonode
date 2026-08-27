@@ -4,8 +4,8 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { AuthLinks } from "@/components/reva/shared/AuthLinks";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { AuthLinks } from "@/reva/components/shared/AuthLinks";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 interface RevaHeroSectionProps {
   showRequestButton?: boolean;

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { getUnreadNotificationCount } from "@/app/(projects)/reva/actions/revaActions";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 
 interface NotificationBellProps {
   href: string;

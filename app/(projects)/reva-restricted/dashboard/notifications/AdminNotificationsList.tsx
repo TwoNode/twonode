@@ -40,8 +40,8 @@ import {
   markNotificationAsRead,
   dismissNotification,
 } from "../../../reva/actions/revaActions";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 
 type NotificationType =
   | "INFO"

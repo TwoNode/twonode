@@ -1,3 +1,3 @@
-import { Welcome } from "@/components/reva/shared";
+import { Welcome } from "@/reva/components/shared";
 
 export default Welcome;

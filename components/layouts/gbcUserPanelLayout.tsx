@@ -16,7 +16,7 @@ import {
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useGBCUserAccess } from "@/hooks/useGBCUserAccess";
 import { GBC_COLORS } from "@/gbc-colors";
-import { sideBarWidthClass } from "./revaAdminPanelLayout";
+import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 
 // GBC dashboard navbar with logo and username
 function GBCUserDashboardNavbar({
@@ -26,7 +26,7 @@ function GBCUserDashboardNavbar({
 }) {
   return (
     <header
-      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-purple-100"
+      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-purple-100"
       style={{
         background: `linear-gradient(90deg, ${GBC_COLORS.primary.main} 60%, ${GBC_COLORS.secondary.main} 100%)`,
       }}

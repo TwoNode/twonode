@@ -1,5 +1,5 @@
 import React from "react";
-import { REVA_COLORS } from "@/reva-colors";
+import { REVA_COLORS } from "@/reva/colors";
 
 export const ProgressComponent = () => {
   return (

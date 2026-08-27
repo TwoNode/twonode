@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/lib/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 export default function RevaLoading() {
   return (

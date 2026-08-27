@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { GBC_COLORS } from "@/gbc-colors";
-import { sideBarWidthClass } from "./revaAdminPanelLayout";
+import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import { useGBCAdminAccess } from "@/hooks/useGBCAdminAccess";
 import { canAccessGBCSuperAdminPanel } from "@/permissions";
 
@@ -37,7 +37,7 @@ function GBCAdminDashboardNavbar({
 }) {
   return (
     <header
-      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-purple-100"
+      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-purple-100"
       style={{ background: GBC_COLORS.primary.dark }}
     >
       <div className="flex items-center gap-3">

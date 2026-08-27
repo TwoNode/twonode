@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ComingSoon } from "@/components/reva/shared/ComingSoon";
+import { ComingSoon } from "@/reva/components/shared/ComingSoon";
 
 const Settings = () => {
   return (

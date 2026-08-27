@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React from "react";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 interface ComingSoonProps {
   dashboardType?: "user" | "admin";

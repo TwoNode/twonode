@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import { REVA_COLORS } from "@/reva-colors";
+import { REVA_COLORS } from "@/reva/colors";
 
 interface RevaFooterSectionProps {
   dashboardType?: 'user' | 'admin';

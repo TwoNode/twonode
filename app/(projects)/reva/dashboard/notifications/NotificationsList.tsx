@@ -35,8 +35,8 @@ import {
   dismissNotification,
   getUnreadNotificationCount,
 } from "../../actions/revaActions";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 type NotificationType =
   | "INFO"

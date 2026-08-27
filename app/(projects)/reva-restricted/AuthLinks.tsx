@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AuthLinks } from "@/components/reva/shared";
+import { AuthLinks } from "@/reva/components/shared";
 
 export default function AdminAuthLinks() {
   return (

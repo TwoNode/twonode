@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { LoginLink, RegisterLink } from "@kinde-oss/kinde-auth-nextjs";
-import { REVA_COLORS } from "@/reva-colors";
+import { REVA_COLORS } from "@/reva/colors";
 
 interface AuthLinksProps {
   dashboardType?: "user" | "admin";

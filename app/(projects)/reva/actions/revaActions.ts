@@ -13,7 +13,7 @@ import {
   NotificationType,
   Role,
 } from "@/prisma/generated";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 import prisma from "@/lib/prisma";
 import { sendEmailToAdmin } from "@/utils/email";
 import { sendEmailToAllAdmins } from "@/app/(projects)/reva-restricted/actions/adminDbActions";

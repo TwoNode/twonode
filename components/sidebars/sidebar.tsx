@@ -4,7 +4,7 @@ import { Menu, MenuProps } from "@/components/sidebars/menu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 export interface SidebarProps extends MenuProps {

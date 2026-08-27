@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
-import { sideBarWidthClass } from "@/components/layouts/revaAdminPanelLayout";
+import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getUserAndActiveSub } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";

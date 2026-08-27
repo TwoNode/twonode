@@ -7,7 +7,7 @@ import RevaFooterSection from "./RevaFooterSection";
 
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 import { Carousel } from "react-responsive-carousel";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 const RevaLandingPage: FC = () => {
   const coreFeatures: string[] = [

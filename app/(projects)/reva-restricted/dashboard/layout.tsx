@@ -1,4 +1,4 @@
-import RevaAdminPanelLayout from "@/components/layouts/revaAdminPanelLayout";
+import RevaAdminPanelLayout from "@/reva/layouts/revaAdminPanelLayout";
 // import ServerProtectedAdminRoute from "@/components/middlewares/ServerProtectedAdminRoute";
 import type { Metadata } from "next";
 

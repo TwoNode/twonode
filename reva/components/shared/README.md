@@ -16,7 +16,7 @@ A beautiful welcome component with user avatar, personalized greeting, and custo
 **Usage:**
 ```tsx
 // User Dashboard
-import { Welcome } from "@/components/reva/shared";
+import { Welcome } from "@/reva/components/shared";
 <Welcome />
 
 // Admin Dashboard
@@ -47,7 +47,7 @@ A hero section component with logo, title, description, and call-to-action butto
 **Usage:**
 ```tsx
 // User Dashboard
-import { RevaHeroSection } from "@/components/reva/shared";
+import { RevaHeroSection } from "@/reva/components/shared";
 <RevaHeroSection />
 
 // Admin Dashboard
@@ -70,7 +70,7 @@ Authentication links component with sign-in and register buttons.
 **Usage:**
 ```tsx
 // User Dashboard
-import { AuthLinks } from "@/components/reva/shared";
+import { AuthLinks } from "@/reva/components/shared";
 <AuthLinks />
 
 // Admin Dashboard
@@ -93,7 +93,7 @@ Footer section component with logo and copyright information.
 **Usage:**
 ```tsx
 // User Dashboard
-import { RevaFooterSection } from "@/components/reva/shared";
+import { RevaFooterSection } from "@/reva/components/shared";
 <RevaFooterSection />
 
 // Admin Dashboard
@@ -116,7 +116,7 @@ A coming soon page component with customizable content and navigation.
 **Usage:**
 ```tsx
 // User Dashboard
-import { ComingSoon } from "@/components/reva/shared";
+import { ComingSoon } from "@/reva/components/shared";
 <ComingSoon />
 
 // Admin Dashboard
@@ -128,7 +128,7 @@ import { ComingSoon } from "@/components/reva/shared";
 
 ## Color System
 
-All components use the REVA color palette defined in `@/reva-colors`:
+All components use the REVA color palette defined in `@/reva/colors`:
 - `REVA_COLORS` - Color constants
 - `REVA_GRADIENTS` - Gradient definitions
 
@@ -151,7 +151,7 @@ To migrate from individual components to shared ones:
    import { Welcome } from "./components/Welcome";
    
    // New
-   import { Welcome } from "@/components/reva/shared";
+   import { Welcome } from "@/reva/components/shared";
    ```
 
 2. **Update component usage:**

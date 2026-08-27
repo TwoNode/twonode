@@ -4,12 +4,12 @@ import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { RevaAdminDashboardNavbar } from "@/components/headers/RevaAdminDashboardHeader";
+import { RevaAdminDashboardNavbar } from "@/reva/components/RevaAdminDashboardHeader";
 import { LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
-import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
-import RevaLoading from "@/components/admin-panel/RevaLoading";
-import { REVA_COLORS } from "@/reva-colors";
+import { useRevaAdminAccess } from "@/reva/hooks/useRevaAdminAccess";
+import RevaLoading from "@/reva/components/RevaLoading";
+import { REVA_COLORS } from "@/reva/colors";
 import { getNavItemsForRole } from "@/reva/access/routes";
 
 export const sideBarWidthClass = " lg:w-[130px] ";

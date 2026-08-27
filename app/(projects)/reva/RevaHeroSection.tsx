@@ -1,3 +1,3 @@
-import { RevaHeroSection } from "@/components/reva/shared";
+import { RevaHeroSection } from "@/reva/components/shared";
 
 export default RevaHeroSection;

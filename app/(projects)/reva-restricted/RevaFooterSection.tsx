@@ -1,4 +1,4 @@
-import { RevaFooterSection } from "@/components/reva/shared";
+import { RevaFooterSection } from "@/reva/components/shared";
 
 export default function AdminRevaFooterSection() {
   return (

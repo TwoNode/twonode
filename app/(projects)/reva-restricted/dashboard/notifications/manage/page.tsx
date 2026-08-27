@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, Plus, Settings, Users, Shield } from "lucide-react";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import AdminNotificationsList from "../AdminNotificationsList";
 
 const ManageNotificationsPage = () => {

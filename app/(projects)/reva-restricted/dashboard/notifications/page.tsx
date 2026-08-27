@@ -1,6 +1,6 @@
 import React from "react";
 import { redirect } from "next/navigation";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 import AdminNotificationsList from "./AdminNotificationsList";
 
 const NotificationsPage = async () => {

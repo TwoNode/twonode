@@ -2,7 +2,7 @@
 
 import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import React from "react";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import Image from "next/image";
 import { User } from "lucide-react";
 

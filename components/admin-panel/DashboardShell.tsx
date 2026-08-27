@@ -7,7 +7,7 @@ import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import { Menu, LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
-import { sideBarWidthClass } from "@/components/layouts/revaAdminPanelLayout";
+import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import type { MenuItem } from "@/components/sidebars/menu";
 import {
   getNavItemsForRole,

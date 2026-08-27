@@ -1,4 +1,4 @@
-import RevaUserPanelLayout from "@/components/layouts/revaUserPanelLayout";
+import RevaUserPanelLayout from "@/reva/layouts/revaUserPanelLayout";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

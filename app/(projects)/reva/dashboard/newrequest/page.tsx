@@ -1,6 +1,6 @@
 import { Metadata, Viewport } from "next";
 import { FC } from "react";
-import { REVA_COLORS } from "@/reva-colors";
+import { REVA_COLORS } from "@/reva/colors";
 
 import RevaDueDiligenceForm from "./RevaDueDiligenceForm";
 // import { notFound } from "next/navigation";

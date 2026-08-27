@@ -1,5 +1,5 @@
 import React from "react";
-import { getAuthenticatedRevaUser } from "@/utils/revaAuth";
+import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 import UserProfile from "./UserProfile";
 
 const Settings = async () => {
