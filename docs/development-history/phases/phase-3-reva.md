@@ -179,7 +179,7 @@ Broader than the plan originally named, since the cataloging pass found more sca
 
 5. **`/one-time-properties/:id` route** — **add the email-match check**, closing the inconsistency with every other guest-data route in this product.
 
-6. **Email-helper consolidation** — no decision needed yet; left as an implementation-time call when `reportService.ts`/`adminUserService.ts` are actually built (check for real overlap then, not worth deciding in the abstract).
+6. **Email-helper consolidation** — resolved: confirmed genuine duplication, not just overlap. `adminDbActions.ts`'s `sendMail` is functionally identical (same Zoho transport, same options shape) to `utils/email.ts`'s existing `sendMail` — a real duplicate, not a variant. Plan: `reportService.ts`/`adminUserService.ts` call `utils/email.ts`'s `sendMail` directly; `sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` (genuinely new bulk-recipient behavior, not duplicated in `utils/email.ts`) move into `utils/email.ts` as siblings to `sendMail`, so there's one email utility file instead of two.
 
 7. ~~`SpatialRecordMap.tsx` vs `.jsx`~~ — resolved above, `.tsx` is live, `.jsx` is a dead stub.
 
