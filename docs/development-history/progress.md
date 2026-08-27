@@ -18,7 +18,7 @@ See also: `docs/development-history/route-inventory.md` — the full list of eve
 - **Phase 0 — Housekeeping**: ~85% done — dead code/deps removed, verified clean, [PR #27](https://github.com/roji-tech/twonodes/pull/27) open. Only the credential rotation (your action) and the resulting `test.js` deletion remain.
 - **Phase 1 — Foundations**: Complete — all 12 steps done and verified live (local Postgres, real headless-browser render, full paywall flow end-to-end, structured-logging smoke test), not just `tsc`/`build`. Full-repo production build clean, 45/45 vitest passing. `docs/development-history/phases/phase-1-foundations.md` has the full writeup. Branch (`rebuild/foundations`) stays open for review, not merged to `main`.
 - **Phase 2 — Surfboard**: Complete. All 6 open questions resolved, both source action files fully migrated (`codActions.ts` → 4 services, `surfboardActions.ts` → `planService.ts`), plus the new `analyticsService.ts` — 54 API routes total. Route/nav registry extended to the full product and `proxy.ts` migrated onto it (the MDA nav-filtering gap closed), naming standardized, folder move done, final integration pass verified live. `docs/development-history/phases/phase-2-surfboard.md` has the full writeup. Two items carried forward (not blockers): your optional Kinde-dashboard update for the callback URL rename, and a decision on porting `surfboardUserPanelLayout.tsx`'s subscription/notification logic into `DashboardShell`.
-- **Phase 3 — REVA**: Not started.
+- **Phase 3 — REVA**: Spec complete, execution not started — 6 open questions, none blocking the first two services. See "Open Decisions" below.
 - **Phase 4 — GBC**: Not started, but scope grew (2026-08-24): a real `GBCEvent`/edition model, Past Editions archive, admin event-switcher, and `My Ticket`/checkout screens are now part of this phase — see details below.
 - **Phase 5 — Retirement**: Not started.
 
@@ -65,12 +65,13 @@ See also: `docs/development-history/route-inventory.md` — the full list of eve
 - [x] Final integration verification pass — fresh seed (1 surveyor, 1 SUPERADMIN, 1 ACCOUNTS user, 1 plan) confirmed `planService.ts`'s plan list, `analyticsService.ts`'s stats, `codFeeService.ts`'s Zod validation, `cod/batches`' ADMIN-scoped list, and a cross-role 403 all work correctly together post-registry/naming/folder-move — the individually-verified pieces integrate cleanly, not just in isolation. All three renamed page routes resolve through `proxy.ts` correctly. Full writeup, including what wasn't independently re-verified (real Kinde-authenticated per-role page rendering, external to automate — covered instead by the 14 registry unit tests + Step 8's earlier headless-render precedent), in `docs/development-history/phases/phase-2-surfboard.md`'s Completion Report section. **Phase 2 is complete.**
 
 ### Phase 3 — REVA
-- [ ] Full route-by-route spec written (before execution starts)
-- [ ] `revaActions.ts`/`revaActions2.ts` diffed and drift resolved
-- [ ] Service extraction (`propertyRequestService`, `paymentService`, `reportService`)
-- [ ] Full route/nav registry
-- [ ] Folder move to `reva/`, color-file fork resolved
-- [ ] One-time-request flow gap addressed or explicitly scoped out
+- [x] Full route-by-route spec written — `docs/development-history/phases/phase-3-reva.md`. Built from a complete function-by-function catalog of `revaActions.ts` (1,488 lines) and `reva-restricted/actions/adminDbActions.ts` (47KB) — REVA's real migration surface, confirmed by reading both in full. Corrects two of the plan's own assumptions, one of them caught only after an initial pass got it wrong: `revaActions2.ts` was first reported dead, but a follow-up check found `app/api/webhooks/paystack/route.ts` (the shared multi-product webhook, not the REVA-specific one) imports 5 of its functions live on every successful REVA charge — it's a real dependency that needs repointing to the new services before it can be deleted, not a standalone cleanup. Second correction: the guest tracking page (`reva/onetimerequest`) **already exists** (the plan assumed it didn't) — the real, smaller gap is that only the approval email links to it, not the payment-confirmation email. Also resolved outright during spec-writing: `SpatialRecordMap.jsx` confirmed dead (a 6-line stub next to the real 35-line `.tsx`), and the `reva-colors.ts`/`lib/reva-colors.ts` fork's one real difference (`sidebar.itemBorderLeft`) confirmed to not affect either of the 2 files pinned to the `lib/` copy. 6 open questions remain, none blocking the first sequencing steps.
+- [ ] `propertyRequestService.ts` + `paymentService.ts` (from `revaActions.ts`)
+- [ ] `notificationService.ts` (new — not in the plan's original 3-service list; REVA's notification CRUD is substantial enough to warrant its own service)
+- [ ] `reportService.ts` + `adminUserService.ts` (from `adminDbActions.ts` — `adminUserService.ts` is also new-found scope, the plan didn't know this file had full user-management functionality until it was read)
+- [ ] `reva/access/routes.ts` registry (greenfield — no Phase-1-style pilot exists for REVA yet), replacing inline nav lists + a redundant local `canAccessRevaUserPanel` redeclaration found in `hooks/useRevaAdminAccess.ts`
+- [ ] Folder move to `reva/`, color-file fork resolved (root `reva-colors.ts` is canonical — 17 importers vs. `lib/reva-colors.ts`'s 2, differing by one 5-line block)
+- [ ] `OneTimeUserProperty` notification gap — decision needed (build an email-keyed notification path, or confirm email-only is intentional) before `reportService.ts` migrates `approveOneTimeDueDiligenceReport`
 
 ### Phase 4 — GBC
 - [ ] Full route-by-route spec written (before execution starts)
@@ -103,7 +104,17 @@ From `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md` §6 — resolved items removed as th
 - **§6.6** — Resolved: structured-logging-only, no external service (see Phase 1 Step 11 for the implementation).
 - **§6.7** — Resolved: standardized `{product}-restricted` naming, folded into Phases 2 and 4.
 
-**From the Phase 2 (Surfboard) spec, 2026-08-26** — all 6 resolved same-day. 4 by a repo-wide grep (call-site facts): dead-code confirmed (3 generations of plan-create/2 of plan-update/duplicate share-unshare pairs — the unreferenced ones are dropped, `createSurfPlan`/`updateSurfPlan`/`sharePlanWithUser`/`unsharePlanWithUser` migrate), the access-control gap is moot (the ungated functions are the confirmed-dead ones), `verifyBatchPayment` is confirmed still live (called from `payment/callback/page.tsx`, migrates), `importDbDataFromCsv` is confirmed dead (dropped). 2 by your decision: pending-certificates ships as **two** stat cards (`CertificateOfDepositBatch.paymentStatus !== COMPLETED` batch-level + `SurfboardPlan.redCopyStatus NOT IN (APPROVED, FAILED)` plan-level, not one-or-the-other), and **Recharts** is the chart library. Nothing blocks Phase 2 execution starting.
+**From the Phase 2 (Surfboard) spec, 2026-08-26** — all 6 resolved same-day. 4 by a repo-wide grep (call-site facts): dead-code confirmed (3 generations of plan-create/2 of plan-update/duplicate share-unshare pairs — the unreferenced ones are dropped, `createSurfPlan`/`updateSurfPlan`/`sharePlanWithUser`/`unsharePlanWithUser` migrate), the access-control gap is moot (the ungated functions are the confirmed-dead ones), `verifyBatchPayment` is confirmed still live (called from `payment/callback/page.tsx`, migrates), `importDbDataFromCsv` is confirmed dead (dropped). 2 by your decision: pending-certificates ships as **two** stat cards (`CertificateOfDepositBatch.paymentStatus !== COMPLETED` batch-level + `SurfboardPlan.redCopyStatus NOT IN (APPROVED, FAILED)` plan-level, not one-or-the-other), and **Recharts** is the chart library. Nothing blocks Phase 2 execution starting (it since shipped in full).
+
+**From the Phase 3 (REVA) spec, 2026-08-27 — none block the first sequencing steps, but each affects what specifically gets built where:**
+
+- **`OneTimeUserProperty` notification gap** — `approveOneTimeDueDiligenceReport`'s notification-trigger block is commented out (guest has no `user` relation to key `notifyReportReady` off of; email still fires independently). Build an email-keyed notification path, or confirm the email-only behavior is intentional and just delete the dead code?
+- **`profileActions.ts` stubs** — `updateUserProfile`/`updateUserPassword` do nothing today (TODO stubs). Implement for real this phase, or explicitly scope out?
+- **Two parallel guest/authenticated route trees** (`reva/{verifypayment,viewdetails}` vs. `reva/dashboard/{verifypayment,viewdetails}`) — register both as-is in the new registry, or collapse into one route with conditional rendering while we're in there?
+- **`/one-time-properties/:id` route** — the source has no email-match check here, unlike the reference+email pattern used everywhere else for guest data. Add one for consistency, or match the source exactly?
+- **Email-helper consolidation** — does `adminDbActions.ts`'s `sendMail`/`sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` overlap enough with the existing `utils/email.ts` to merge, or stay separate (bulk vs. single-recipient)?
+
+Resolved during spec-writing, not left open: `revaActions2.ts` (real dependency via the shared Paystack webhook — repoint then delete, a required sequencing step not a judgment call), `SpatialRecordMap.jsx` (confirmed dead stub), the `reva-colors.ts` fork (confirmed safe to consolidate).
 
 ---
 
@@ -111,4 +122,4 @@ From `MDs/ARCHITECTURE_REBUILD_PROPOSAL.md` §6 — resolved items removed as th
 
 - Waiting on you to rotate the leaked RDS credential (Phase 0 Step 1) — once done, `test.js` gets deleted and Phase 0 is complete pending PR #27's review/merge.
 - **Phase 2 (Surfboard) is complete.** Two carried-forward items, neither blocking: (1) your optional action — update Kinde's dashboard redirect URIs if you want the OAuth callback routes' names to match the new page-route naming; (2) a decision on whether/when to port `surfboardUserPanelLayout.tsx`'s subscription-badge/notification-count logic into `DashboardShell` so all three Surfboard layouts share one component.
-- Phase 3 (REVA) is next: its own full route-by-route spec needs writing before execution starts, per the same discipline Phase 2 followed — the natural next step whenever you're ready.
+- Phase 3 (REVA)'s spec is written (`docs/development-history/phases/phase-3-reva.md`). 6 open questions remain, but the first two sequencing steps (`propertyRequestService.ts`, `paymentService.ts`) don't depend on any of them and can start regardless. Waiting on your answers, or your go-ahead to start those two services now.

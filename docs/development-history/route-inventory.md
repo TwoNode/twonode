@@ -2,7 +2,7 @@
 
 **Purpose:** one place that lists every route in the app — pages and API routes, across all three products plus shared/marketing — kept current as the rebuild progresses. This is a living document: every phase that adds, renames, or retires a route updates its entry here in the same commit/session that makes the change, the same discipline `docs/development-history/progress.md` already follows for phase checklists.
 
-**Last Updated:** 2026-08-26 (generated from a full `find app -name "page.tsx" -o -name "route.ts"` pass against `rebuild/foundations`, cross-referenced with the Phase 1/2 specs for planned renames; updated same-day as Phase 2's execution landed 54 new `/api/v1/surfboard/*` routes, the MDA route/nav registry + `proxy.ts` migration, and the `surf-restricted`/`surf-mda` → `surfboard-restricted`/`surfboard-mda` naming standardization).
+**Last Updated:** 2026-08-27 (generated from a full `find app -name "page.tsx" -o -name "route.ts"` pass against `rebuild/foundations`, cross-referenced with the Phase 1/2 specs for planned renames; updated as Phase 2's execution landed 54 new `/api/v1/surfboard/*` routes, the MDA route/nav registry + `proxy.ts` migration, and the naming standardization; updated again once Phase 3's spec corrected the REVA row and the guest-tracking-page status below).
 
 **Status column key:** `live` = exists today, unchanged. `renaming (Phase N)` = exists today, will move per that phase's spec. `planned (Phase N)` = doesn't exist yet, scoped into that phase. `legacy` = old pre-`/api/v1` pattern, superseded but still in use until its consumers migrate.
 
@@ -82,7 +82,7 @@
 | `/api/v1/surfboard/users/lookup` | GET | Surfboard | USER | live |
 | `/api/v1/surfboard/analytics` | GET | Surfboard | USER, ADMIN, SUPERADMIN | live — `?section=stats\|dimension\|lodgement-trend\|time-trend` |
 | `/api/v1/surfboard/mda/stage-stats` | GET | Surfboard | 7 MDA stage roles, MDA_SUPERADMIN, SUPERADMIN | live — own stage only, except MDA_SUPERADMIN/SUPERADMIN (all 7 combined) |
-| `/api/v1/reva/*` | — | REVA | varies | planned (Phase 3, not yet spec'd) |
+| `/api/v1/reva/{properties,one-time-properties,payments,notifications,admin/*}` (~24 routes, full list in the Phase 3 spec) | GET/POST/PATCH/DELETE | REVA | varies | planned (Phase 3) |
 | `/api/v1/gbc/*` | — | GBC | varies | planned (Phase 4, not yet spec'd) |
 
 ### Legacy / pre-`/api/v1`
@@ -127,7 +127,7 @@
 | `/reva-restricted`, `/reva-restricted/(auth)/login` | live |
 | `/reva-restricted/dashboard`, `/dashboard/{alluserrequests,payment-verification,review,settings,spatial-record,superadmin,viewdetails}` | live |
 | `/reva-restricted/dashboard/notifications`, `/notifications/{create,manage}` | live |
-| *(known gap, Phase 3)* guest/one-time-request client view page (track/download reports) | planned (Phase 3) |
+| `/reva/onetimerequest` | live — the guest tracking/report-download page; an earlier plan note assumed this didn't exist, corrected during Phase 3's spec-writing |
 
 ## Pages — Surfboard
 
