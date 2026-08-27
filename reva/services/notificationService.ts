@@ -1,11 +1,6 @@
 import prisma from "@/lib/prisma";
 import { NotificationAudience, NotificationType, Role } from "@/prisma/generated";
-import { sendEmailToAdmin } from "@/utils/email";
-// sendEmailToAllAdmins still lives in adminDbActions.ts today — the
-// consolidation into utils/email.ts (resolved decision, see the Phase 3
-// spec) happens when reportService.ts/adminUserService.ts are built, not
-// here, to keep this commit's scope to propertyRequestService/paymentService.
-import { sendEmailToAllAdmins } from "@/app/(projects)/reva-restricted/actions/adminDbActions";
+import { sendEmailToAdmin, sendEmailToAllAdmins } from "@/utils/email";
 
 /**
  * Migrated from revaActions.ts's notification CRUD + trigger functions.
@@ -115,8 +110,15 @@ export async function getUnreadNotificationCount(userId: string, role: Role) {
 
 // ===== Notification triggers =====
 
+/**
+ * `"requester" in propertyData` (not `!!propertyData?.requester`) — `requester`
+ * is a nullable OneTimeUserProperty column, so an object literally lacking the
+ * key means Property; a guest who left the name field blank still has the key
+ * (null), and truthiness would have wrongly routed them down the Property
+ * branch.
+ */
 export async function notifyNewPropertyRequest(propertyData: any, userId?: string) {
-  const isOneTimeRequest = !!propertyData?.requester;
+  const isOneTimeRequest = "requester" in propertyData;
   let requesterName = propertyData?.requester || propertyData?.email || "Unknown";
 
   if (!isOneTimeRequest && propertyData?.userId) {
@@ -204,7 +206,7 @@ export async function notifyPaymentReceived(propertyData: any, userId?: string) 
  * regular-Property path's notifyReportReady + notifySystemAlert pair.
  */
 export async function notifyReportReady(propertyData: any, userId?: string) {
-  const isOneTimeRequest = !!propertyData?.requester;
+  const isOneTimeRequest = "requester" in propertyData;
 
   if (userId && !isOneTimeRequest) {
     await createNotification({

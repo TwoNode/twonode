@@ -1,4 +1,5 @@
 import { createTransport } from "nodemailer";
+import prisma from "@/lib/prisma";
 
 export const sendEmailToAdmin = async ({
   to,
@@ -75,6 +76,65 @@ export const sendMail = async ({
     console.error("Error sending email:", error);
     return { success: false, error: "Failed to send email" };
   }
+};
+
+/**
+ * Moved from reva-restricted/actions/adminDbActions.ts (resolved Phase 3
+ * decision — its own `sendMail` was a byte-for-byte duplicate of the one
+ * above; these two bulk-recipient helpers were the only genuinely new
+ * behavior, so they moved here instead of the duplicate coming along).
+ * REVA-specific (query prisma.revaUser directly) the same way
+ * sendNotificationMail below is Surfboard-specific — this file holds the
+ * shared sendMail plus each product's own recipient-resolution helpers.
+ */
+async function getAllRevaAdminEmails(): Promise<string[]> {
+  const admins = await prisma.revaUser.findMany({
+    where: { role: { in: ["ADMIN", "SUPERADMIN"] }, is_active: true },
+    select: { email: true },
+  });
+  return admins.map((u) => u.email);
+}
+
+async function getAllRevaSuperAdminEmails(): Promise<string[]> {
+  const superadmins = await prisma.revaUser.findMany({
+    where: { role: "SUPERADMIN", is_active: true },
+    select: { email: true },
+  });
+  return superadmins.map((u) => u.email);
+}
+
+export const sendEmailToAllAdmins = async ({
+  subject,
+  text,
+  html,
+}: {
+  subject: string;
+  text: string;
+  html: string;
+}) => {
+  const adminEmails = await getAllRevaAdminEmails();
+  if (adminEmails.length === 0) {
+    return { success: false, error: "No admin emails found" };
+  }
+  const result = await sendMail({ to: adminEmails.join(","), subject, text, html });
+  return { success: result.success, data: result, recipientCount: adminEmails.length };
+};
+
+export const sendEmailToAllSuperAdmins = async ({
+  subject,
+  text,
+  html,
+}: {
+  subject: string;
+  text: string;
+  html: string;
+}) => {
+  const superadminEmails = await getAllRevaSuperAdminEmails();
+  if (superadminEmails.length === 0) {
+    return { success: false, error: "No superadmin emails found" };
+  }
+  const result = await sendMail({ to: superadminEmails.join(","), subject, text, html });
+  return { success: result.success, data: result, recipientCount: superadminEmails.length };
 };
 
 /**

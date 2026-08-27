@@ -14,8 +14,7 @@ const mockPrisma = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/utils/email", () => ({ sendEmailToAdmin: vi.fn() }));
-vi.mock("@/app/(projects)/reva-restricted/actions/adminDbActions", () => ({ sendEmailToAllAdmins: vi.fn() }));
+vi.mock("@/utils/email", () => ({ sendEmailToAdmin: vi.fn(), sendEmailToAllAdmins: vi.fn() }));
 
 const { notifyReportReady, notifySystemAlert, createNotification } = await import("@/reva/services/notificationService");
 
