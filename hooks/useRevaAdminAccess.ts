@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
 import { Platform } from "@/utils/platform";
+import { canAccessRoute } from "@/reva/access/routes";
 
 interface UserData {
   platform: string;
@@ -12,11 +13,6 @@ interface UserData {
   email: string;
   firstName: string;
   lastName: string;
-}
-
-// Helper function for user access (if not already defined)
-function canAccessRevaUserPanel(role: UserData["role"]): boolean {
-  return role === "USER" || role === "ADMIN" || role === "SUPERADMIN";
 }
 
 export function useRevaAdminAccess() {
@@ -99,10 +95,10 @@ export function useRevaAdminAccess() {
             role: revaSession.role
         });
 
-        // 7. Admin Role Check
-        const hasAdminRole =
-          revaSession.role === "ADMIN" ||
-          revaSession.role === "SUPERADMIN";
+        // 7. Admin Role Check — reva/access/routes.ts is the single source
+        // of truth for who can reach the admin panel, same registry
+        // proxy.ts and the layout's nav now read from.
+        const hasAdminRole = canAccessRoute("/reva-restricted/dashboard", revaSession.role);
 
         if (isMounted) {
           setIsAdmin(hasAdminRole);

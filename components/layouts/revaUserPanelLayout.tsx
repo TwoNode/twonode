@@ -5,19 +5,13 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import { RevaUserDashboardNavbar } from "@/components/headers/RevaUserDashboardHeader";
-import {
-  Home,
-  ListChecks,
-  Map,
-  FilePlus,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaUserAccess } from "@/hooks/useRevaUserAccess";
 import RevaLoading from "@/components/admin-panel/RevaLoading";
 import { REVA_COLORS } from "@/reva-colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
+import { getNavItemsForRole } from "@/reva/access/routes";
 
 export default function RevaUserPanelLayout({
   children,
@@ -25,19 +19,16 @@ export default function RevaUserPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const dashboardUrl = "/reva/dashboard";
-  const { user, isUser, isLoading } = useRevaUserAccess();
+  const { user, isUser, isLoading, userData } = useRevaUserAccess();
 
   const menuList = [
-    { icon: Home, label: "Home", url: dashboardUrl },
-    {
-      icon: ListChecks,
-      label: "All Requests",
-      url: `${dashboardUrl}/allrequests`,
-    },
-    { icon: Map, label: "View Map", url: `${dashboardUrl}/viewmap` },
-    { icon: FilePlus, label: "New Request", url: `${dashboardUrl}/newrequest` },
-    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
+    // reva/access/routes.ts is the single source of truth for which nav
+    // items render per role — replaces the hand-written array.
+    ...getNavItemsForRole(userData?.role ?? null, "user").map((r) => ({
+      icon: r.icon,
+      label: r.label,
+      url: r.path,
+    })),
     {
       element: (
         <LogoutLink

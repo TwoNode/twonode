@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { canAccessRevaUserPanel } from "@/permissions";
+import { canAccessRoute } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
 import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
 
@@ -81,7 +81,10 @@ export function useRevaUserAccess() {
             role: revaSession.role
         });
 
-        const canAccess = canAccessRevaUserPanel(revaSession.role);
+        // reva/access/routes.ts is the single source of truth for who can
+        // reach the user panel, same registry proxy.ts and the layout's
+        // nav now read from.
+        const canAccess = canAccessRoute("/reva/dashboard", revaSession.role);
         if (isMounted) {
           setIsUser(canAccess);
         }

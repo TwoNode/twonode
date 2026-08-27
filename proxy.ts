@@ -3,9 +3,6 @@ import type { NextRequest } from "next/server";
 import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import {
-  canAccessRevaAdminPanel,
-  canAccessRevaUserPanel,
-  canAccessRevaSuperAdminPanel,
   canAccessGBCAdminPanel,
   canAccessGBCUserPanel,
   canAccessGBCSuperAdminPanel,
@@ -13,9 +10,10 @@ import {
 import {
   getAndRefreshUserSession,
 } from "@/utils/encryptedCookies";
-import { Platform, SurfboardRole } from "@/utils/platform";
+import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
 import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
 import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
+import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -225,16 +223,18 @@ const proxyWithLogic = withDynamicAuth(
       // Check route-specific permissions
       let hasAccess = false;
 
-      if (pathname.startsWith("/reva/dashboard")) {
-        hasAccess = canAccessRevaUserPanel(role);
-      } else if (pathname.startsWith("/reva-restricted/dashboard")) {
-        if (pathname.startsWith("/reva-restricted/dashboard/superadmin")) {
-          hasAccess = canAccessRevaSuperAdminPanel(role);
-        } else {
-          hasAccess = canAccessRevaAdminPanel(role);
-        }
+      if (pathname.startsWith("/reva/dashboard") || pathname.startsWith("/reva-restricted/dashboard")) {
+        // Nav/role access now comes from reva/access/routes.ts (the same
+        // registry the sidebar layouts read) instead of separate
+        // canAccessReva*Panel calls per branch — closes the same
+        // single-source-of-truth gap Phase 2 closed for Surfboard.
+        hasAccess = canAccessRevaRoute(pathname, role);
       } else if (pathname.startsWith("/reva-restricted/superadmin")) {
-        hasAccess = canAccessRevaSuperAdminPanel(role);
+        // Not a registry entry — no real page lives at this exact path
+        // (only /reva-restricted/dashboard/superadmin does); kept as a
+        // direct role check, same treatment as surfboard-restricted's
+        // analogous dead branch below.
+        hasAccess = role === RevaRole.SUPERADMIN;
       } else if (pathname.startsWith("/surfboard/dashboard")) {
         // Nav/role access now comes from surfboard/access/routes.ts (the
         // same registry DashboardShell reads) instead of a single blanket

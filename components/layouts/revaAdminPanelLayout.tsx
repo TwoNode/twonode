@@ -5,21 +5,12 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
 import { RevaAdminDashboardNavbar } from "@/components/headers/RevaAdminDashboardHeader";
-import {
-  Home,
-  ListChecks,
-  Map,
-  Settings,
-  LogOut,
-  Shield,
-  Bell,
-  CreditCard,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaAdminAccess } from "@/hooks/useRevaAdminAccess";
 import RevaLoading from "@/components/admin-panel/RevaLoading";
 import { REVA_COLORS } from "@/reva-colors";
-import { canAccessRevaSuperAdminPanel } from "@/permissions";
+import { getNavItemsForRole } from "@/reva/access/routes";
 
 export const sideBarWidthClass = " lg:w-[130px] ";
 
@@ -29,47 +20,18 @@ export default function RevaAdminPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const dashboardUrl = "/reva-restricted/dashboard";
   const { user, isAdmin, isLoading, userData } = useRevaAdminAccess();
 
   const sidebarItems = [
-    { icon: Home, label: "Home", url: dashboardUrl },
-    {
-      icon: ListChecks,
-      label: "All Requests",
-      url: `${dashboardUrl}/alluserrequests`,
-    },
-    {
-      icon: ListChecks,
-      label: "Review",
-      url: `${dashboardUrl}/review`,
-    },
-    {
-      icon: CreditCard,
-      label: "Payment Verification",
-      url: `${dashboardUrl}/payment-verification`,
-    },
-    {
-      icon: Map,
-      label: "Spatial Record",
-      url: `${dashboardUrl}/spatial-record`,
-    },
-    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
-    // Only show Superadmin menu item for SUPERADMIN users
-    ...(userData?.role && canAccessRevaSuperAdminPanel(userData.role)
-      ? [
-          {
-            icon: Shield,
-            label: "Superadmin",
-            url: `${dashboardUrl}/superadmin`,
-          },
-          {
-            icon: Bell,
-            label: "Notifications",
-            url: `${dashboardUrl}/notifications`,
-          },
-        ]
-      : []),
+    // reva/access/routes.ts is the single source of truth for which nav
+    // items render per role — replaces the hand-written array + the
+    // separate canAccessRevaSuperAdminPanel conditional that used to gate
+    // just the last two items.
+    ...getNavItemsForRole(userData?.role ?? null, "admin").map((r) => ({
+      icon: r.icon,
+      label: r.label,
+      url: r.path,
+    })),
     {
       element: (
         <LogoutLink
