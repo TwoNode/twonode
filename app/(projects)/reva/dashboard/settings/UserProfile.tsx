@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +25,6 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  updateUserProfile,
-  updateUserPassword,
-} from "@/app/(projects)/reva/actions/profileActions";
 
 interface UserProfileProps {
   user: {
@@ -45,12 +42,15 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState(user);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
+    firstName: currentUser.firstName,
+    lastName: currentUser.lastName,
+    email: currentUser.email,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -69,19 +69,36 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
 
   const handleSaveProfile = async () => {
     setIsLoading(true);
-    // try {
-    //   const result = await updateUserProfile(formData);
-    //   if (result.success) {
-    //     toast.success("Profile updated successfully");
-    //     setIsEditing(false);
-    //   } else {
-    //     toast.error(result.error || "Failed to update profile");
-    //   }
-    // } catch (error) {
-    //   toast.error("An error occurred while updating profile");
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    try {
+      const changes: Record<string, string> = {};
+      if (formData.firstName !== currentUser.firstName) changes.firstName = formData.firstName;
+      if (formData.lastName !== currentUser.lastName) changes.lastName = formData.lastName;
+      if (formData.email !== currentUser.email) changes.email = formData.email;
+
+      if (Object.keys(changes).length === 0) {
+        setIsEditing(false);
+        return;
+      }
+
+      const res = await fetch("/api/v1/reva/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(changes),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        setCurrentUser(result.data);
+        toast.success("Profile updated successfully");
+        setIsEditing(false);
+      } else {
+        toast.error(result.error || "Failed to update profile");
+      }
+    } catch (error) {
+      toast.error("An error occurred while updating profile");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -95,24 +112,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
       return;
     }
 
-    // setIsLoading(true);
-    // try {
-    //   const result = await updateUserPassword(passwordData);
-    //   if (result.success) {
-    //     toast.success("Password updated successfully");
-    //     setPasswordData({
-    //       currentPassword: "",
-    //       newPassword: "",
-    //       confirmPassword: "",
-    //     });
-    //   } else {
-    //     toast.error(result.error || "Failed to update password");
-    //   }
-    // } catch (error) {
-    //   toast.error("An error occurred while updating password");
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    setIsChangingPassword(true);
+    try {
+      const res = await fetch("/api/v1/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: "reva",
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        toast.success("Password updated. Please log in again.");
+        router.push("/reva/login");
+      } else {
+        toast.error(result.error || "Failed to update password");
+      }
+    } catch (error) {
+      toast.error("An error occurred while updating password");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -143,15 +166,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          {/* <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger value="security" className="flex items-center gap-2">
             <Lock className="h-4 w-4" />
             Security
-          </TabsTrigger> */}
+          </TabsTrigger>
           <TabsTrigger value="activity" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Activity
@@ -167,7 +190,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                   <User className="h-5 w-5" />
                   Personal Information
                 </CardTitle>
-                {/* {!isEditing ? (
+                {!isEditing ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -184,7 +207,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       disabled={isLoading}
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save
+                      {isLoading ? "Saving..." : "Save"}
                     </Button>
                     <Button
                       variant="outline"
@@ -192,9 +215,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       onClick={() => {
                         setIsEditing(false);
                         setFormData({
-                          firstName: user.firstName,
-                          lastName: user.lastName,
-                          email: user.email,
+                          firstName: currentUser.firstName,
+                          lastName: currentUser.lastName,
+                          email: currentUser.email,
                         });
                       }}
                     >
@@ -202,7 +225,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       Cancel
                     </Button>
                   </div>
-                )} */}
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -220,7 +243,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     />
                   ) : (
                     <p className="text-gray-900 font-medium">
-                      {user.firstName}
+                      {currentUser.firstName}
                     </p>
                   )}
                 </div>
@@ -236,7 +259,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       placeholder="Enter your last name"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{user.lastName}</p>
+                    <p className="text-gray-900 font-medium">{currentUser.lastName}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -253,8 +276,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-900 font-medium">{user.email}</p>
-                      {user.emailVerified && (
+                      <p className="text-gray-900 font-medium">{currentUser.email}</p>
+                      {currentUser.emailVerified && (
                         <Badge variant="outline" className="text-green-600">
                           Verified
                         </Badge>
@@ -264,7 +287,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                 </div>
                 <div className="space-y-2">
                   <Label>User ID</Label>
-                  <p className="text-gray-500 text-sm font-mono">{user.id}</p>
+                  <p className="text-gray-500 text-sm font-mono">{currentUser.id}</p>
                 </div>
               </div>
 
@@ -273,26 +296,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Account Role</Label>
-                  <Badge className={getRoleBadgeColor(user.role)}>
-                    {user.role}
+                  <Badge className={getRoleBadgeColor(currentUser.role)}>
+                    {currentUser.role}
                   </Badge>
                 </div>
                 <div className="space-y-2">
                   <Label>Account Status</Label>
-                  <Badge className={getStatusBadgeColor(user.is_active)}>
-                    {user.is_active ? "Active" : "Inactive"}
+                  <Badge className={getStatusBadgeColor(currentUser.is_active)}>
+                    {currentUser.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <div className="space-y-2">
                   <Label>Member Since</Label>
                   <p className="text-gray-900">
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {new Date(currentUser.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Last Updated</Label>
                   <p className="text-gray-900">
-                    {new Date(user.updatedAt).toLocaleDateString()}
+                    {new Date(currentUser.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -300,7 +323,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
           </Card>
         </TabsContent>
 
-        {/* Security Tab
+        {/* Security Tab */}
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
@@ -349,13 +372,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
               <Button
                 onClick={handleChangePassword}
                 disabled={
-                  isLoading ||
+                  isChangingPassword ||
                   !passwordData.currentPassword ||
                   !passwordData.newPassword ||
                   !passwordData.confirmPassword
                 }
               >
-                {isLoading ? "Updating..." : "Update Password"}
+                {isChangingPassword ? "Updating..." : "Update Password"}
               </Button>
             </CardContent>
           </Card>
@@ -374,19 +397,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                   <div>
                     <p className="font-medium">Email Verification</p>
                     <p className="text-sm text-gray-600">
-                      {user.emailVerified
+                      {currentUser.emailVerified
                         ? "Email is verified"
                         : "Email not verified"}
                     </p>
                   </div>
                 </div>
-                <Badge variant={user.emailVerified ? "default" : "secondary"}>
-                  {user.emailVerified ? "Verified" : "Not Verified"}
+                <Badge variant={currentUser.emailVerified ? "default" : "secondary"}>
+                  {currentUser.emailVerified ? "Verified" : "Not Verified"}
                 </Badge>
               </div>
             </CardContent>
           </Card>
-        </TabsContent> */}
+        </TabsContent>
 
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-6">
@@ -405,7 +428,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     <span className="font-medium">Account Created</span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {new Date(user.createdAt).toLocaleString()}
+                    {new Date(currentUser.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
@@ -414,7 +437,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     <span className="font-medium">Last Updated</span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {new Date(user.updatedAt).toLocaleString()}
+                    {new Date(currentUser.updatedAt).toLocaleString()}
                   </p>
                 </div>
               </div>
