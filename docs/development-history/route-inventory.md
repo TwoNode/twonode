@@ -82,7 +82,8 @@
 | `/api/v1/surfboard/users/lookup` | GET | Surfboard | USER | live |
 | `/api/v1/surfboard/analytics` | GET | Surfboard | USER, ADMIN, SUPERADMIN | live — `?section=stats\|dimension\|lodgement-trend\|time-trend` |
 | `/api/v1/surfboard/mda/stage-stats` | GET | Surfboard | 7 MDA stage roles, MDA_SUPERADMIN, SUPERADMIN | live — own stage only, except MDA_SUPERADMIN/SUPERADMIN (all 7 combined) |
-| `/api/v1/reva/{properties,one-time-properties,payments,notifications,admin/*}` (~24 routes, full list in the Phase 3 spec) | GET/POST/PATCH/DELETE | REVA | varies | planned (Phase 3) |
+| `/api/v1/reva/{properties,one-time-properties,payments,notifications}/*` (14 routes) | GET/POST/PATCH | REVA | varies | live |
+| `/api/v1/reva/admin/*`, `/api/v1/reva/profile` (~10 routes, full list in the Phase 3 spec) | GET/POST/PATCH/DELETE | REVA | varies | planned (Phase 3) |
 | `/api/v1/gbc/*` | — | GBC | varies | planned (Phase 4, not yet spec'd) |
 
 ### Legacy / pre-`/api/v1`
