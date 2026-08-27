@@ -6,6 +6,9 @@ import { GalleryFilters } from "../../../components/admin/GalleryFilters";
 import { GalleryItem } from "../../../types/gallery";
 import { Card } from "@/components/ui/card";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminGalleryPage() {
   await requireAdmin();
 

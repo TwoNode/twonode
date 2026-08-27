@@ -1116,9 +1116,51 @@ export async function exportGBCTickets() {
   }
 }
 
+/**
+ * Public capacity info only (no revenue/payment breakdown) — for the
+ * homepage's and ticket-purchase page's "Only N tickets remaining!"
+ * banners, which called getGBCTicketStats() directly before this split.
+ * That function returns totalRevenue and a full payment-status breakdown
+ * alongside the capacity numbers, so gating it (see below, part of the
+ * requireAdmin() security hotfix) would have broken these two public
+ * pages if they'd kept calling it — this gives them just the fields they
+ * actually use instead.
+ */
+export async function getGBCTicketAvailability() {
+  try {
+    const [completedTickets, soldEarlyBirdTickets] = await Promise.all([
+      prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED" } }),
+      prisma.gBCTicket.count({
+        where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD" },
+      }),
+    ]);
+
+    const settingsResult = await getAllGBCSettings();
+    const maxTickets =
+      settingsResult.success && settingsResult.data
+        ? settingsResult.data.tickets.maxCapacity
+        : 1000;
+
+    return {
+      success: true,
+      data: {
+        availableTickets: maxTickets - completedTickets,
+        maxTickets,
+        soldEarlyBirdTickets,
+      },
+    };
+  } catch (error) {
+    console.error("Get ticket availability error:", error);
+    return {
+      success: false,
+      error: "Failed to fetch ticket availability",
+    };
+  }
+}
+
 export async function getGBCTicketStats() {
   try {
-    // await requireAdmin();
+    await requireAdmin();
 
     // Optimize queries by combining related operations
     // Query 1: Get aggregated stats by payment status in a single query

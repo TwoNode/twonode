@@ -2,6 +2,9 @@ import { getGBCTickets } from "../../../actions/ticket-actions";
 import { Card } from "@/components/ui/card";
 import { Users, CheckCircle, Clock } from "lucide-react";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminAttendeesPage() {
   const ticketsResult = await getGBCTickets({ status: "COMPLETED" });
   const tickets = ticketsResult.success ? ticketsResult.data : [];

@@ -5,6 +5,9 @@ import { SpeakersManager } from "../../../components/admin/SpeakersManager";
 import { Speaker } from "../../../types/speaker";
 import { Card } from "@/components/ui/card";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminSpeakersPage() {
   await requireAdmin();
 

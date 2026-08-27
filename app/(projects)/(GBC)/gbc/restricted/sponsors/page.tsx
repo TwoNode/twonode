@@ -5,6 +5,9 @@ import { SponsorsManager } from "../../../components/admin/SponsorsManager";
 import { Sponsor } from "../../../types/sponsor";
 import { Card } from "@/components/ui/card";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminSponsorsPage() {
   await requireAdmin();
 

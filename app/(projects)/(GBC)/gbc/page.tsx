@@ -13,7 +13,7 @@ import {
   Zap,
   AlertCircle,
 } from "lucide-react";
-import { getGBCTicketStats } from "../actions/ticket-actions";
+import { getGBCTicketAvailability } from "../actions/ticket-actions";
 import { getSponsors } from "../actions/sponsor-actions";
 import { getAllGBCSettings } from "../actions/settings-actions";
 
@@ -90,7 +90,7 @@ export default function HomePage() {
       setIsLoading(true);
       try {
         const [statsResult, settingsResult] = await Promise.all([
-          getGBCTicketStats(),
+          getGBCTicketAvailability(),
           getAllGBCSettings(),
         ]);
 

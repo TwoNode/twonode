@@ -16,6 +16,9 @@ import { GallerySettings } from "../../../components/admin/GallerySettings";
 import { SocialLinksSettings } from "../../../components/admin/SocialLinksSettings";
 import { getAllGBCSettings } from "../../../actions/settings-actions";
 
+// Admin page — never safe to statically prerender alongside the other restricted pages.
+export const dynamic = "force-dynamic";
+
 export default async function AdminSettingsPage() {
   const settingsResult = await getAllGBCSettings();
   const settings = settingsResult.success ? settingsResult.data : null;

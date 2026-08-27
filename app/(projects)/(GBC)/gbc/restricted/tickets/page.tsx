@@ -7,6 +7,9 @@ import { ExportButton } from "../../../components/admin/ExportButton";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminTicketsPage({
   searchParams,
 }: {

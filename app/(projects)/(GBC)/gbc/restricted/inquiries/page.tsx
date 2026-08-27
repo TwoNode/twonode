@@ -5,6 +5,9 @@ import { MessageSquare, Clock, CheckCircle } from "lucide-react";
 import { InquiriesTable } from "../../../components/admin/InquiriesTable";
 import { InquiriesFilters } from "../../../components/admin/InquiriesFilters";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminInquiriesPage({
   searchParams,
 }: {

@@ -6,6 +6,9 @@ import { StatsCard } from "../../components/admin/StatsCard";
 import { RecentTickets } from "../../components/admin/RecentTickets";
 import Link from "next/link";
 
+// Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const user = {
     name: "John Doe",
