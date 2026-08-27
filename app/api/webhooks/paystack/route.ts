@@ -2,7 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import * as mailer from "@/utils/email";
-import * as reva from "@/app/(projects)/reva/actions/revaActions2";
+import {
+  updatePropertyTransactionStatus,
+  updateOneTimeTransactionStatus,
+} from "@/reva/services/propertyRequestService";
+import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 
 export const runtime = "nodejs";
@@ -752,37 +756,81 @@ async function onInvoiceInformational(event: string, data: InvoiceData) {
 }
 
 // ─────────────────────────── Reva (one‑time) ───────────────────────────
-async function handleReva(event: string, data: ChargeSuccessData) {
+/**
+ * Migrated off revaActions2.ts (which was dead everywhere else in the repo
+ * but live here — see docs/development-history/phases/phase-3-reva.md's
+ * "corrections" section) onto propertyRequestService.ts/notificationService.ts.
+ * Rewritten more defensively than the version it replaces, in the same
+ * spirit as this file's own onCertificatePaymentSuccess (the Surfboard
+ * equivalent) rather than just swapping imports 1:1 — this file processes
+ * three products' webhooks, so a REVA-specific bug here has historically
+ * been easy to miss:
+ *  - Uses normalizeMetadata() (the same helper detectPlatform() above
+ *    already relies on) instead of reading data.metadata directly — the
+ *    source read it raw, so a stringified metadata payload would have
+ *    routed correctly but then failed to parse here.
+ *  - Looks the record up first and returns cleanly (no throw, no retry)
+ *    if it's missing or already Paid, instead of letting a bare
+ *    optional-chained call silently no-op on a missing function — a real
+ *    misconfiguration (e.g. a bad import) now surfaces as a thrown error
+ *    the outer handler logs and Paystack retries, not silence.
+ *  - Reconciles the paid amount against the record's totalCost the same
+ *    way onCertificatePaymentSuccess already does for Surfboard — logs a
+ *    mismatch rather than failing, since Paystack's signature already
+ *    guarantees the payload is authentic and a stuck payer is worse than
+ *    a flagged-for-review one.
+ *  - Passes the already-updated row straight into notifyPaymentReceived
+ *    instead of the source's separate re-fetch call.
+ */
+/** Exported for direct unit testing (see app/api/webhooks/__tests__/) — not called from outside this file otherwise. */
+export async function handleReva(event: string, data: ChargeSuccessData) {
   if (event !== "charge.success") return onUnhandled(event, data as any);
-  const m = data.metadata ?? {};
-  const ref = (m.reference ||
-    getField(m.custom_fields, "reference") ||
+
+  const meta = normalizeMetadata(data.metadata);
+  const reference = (meta.reference ||
+    getField(meta.custom_fields, "reference") ||
     data.reference) as string | undefined;
-  const isAuth = Boolean(
-    m.isAuthenticated || getField(m.custom_fields, "isAuthenticated")
+  const isAuthenticated = Boolean(
+    meta.isAuthenticated || getField(meta.custom_fields, "isAuthenticated") === "true"
   );
-  if (!ref) {
-    console.warn("[reva] missing reference");
+
+  if (!reference) {
+    console.warn("[reva-webhook] charge.success missing reference", { event });
     return;
   }
 
-  const updateFn = isAuth
-    ? reva?.updatePropertyTransactionStatus
-    : reva?.updateOneTimeTransactionStatus;
-  await updateFn?.(ref, "Completed", "Paid", "Payment confirmed", null);
+  const existing = isAuthenticated
+    ? await prisma.property.findUnique({ where: { reference } })
+    : await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
 
-  try {
-    const tx = await (isAuth
-      ? reva?.authGetTransactionData?.(ref)
-      : reva?.getTransactionData?.(ref));
-    const dataObj = tx?.data ?? tx;
-    if ((tx?.success || dataObj) && reva?.notifyPaymentReceived)
-      await reva.notifyPaymentReceived(dataObj, undefined);
-  } catch (e) {
-    console.warn("[reva] notifyPaymentReceived failed", e);
+  if (!existing) {
+    console.warn(
+      `[reva-webhook] no ${isAuthenticated ? "Property" : "OneTimeUserProperty"} found for reference ${reference} — nothing to update`
+    );
+    return;
   }
 
-  console.log(`✅ reva charge.success: ${ref}`);
+  if (existing.paymentStatus === "Paid") {
+    console.log(`[reva-webhook] ${reference} already marked Paid (idempotent, likely already confirmed client-side)`);
+    return;
+  }
+
+  const expectedKobo = Math.round((existing.totalCost ?? 0) * 100);
+  const paidKobo = data.amount ?? 0;
+  if (Math.abs(expectedKobo - paidKobo) > 1) {
+    console.error(`[reva-webhook] amount mismatch for ${reference}`, { expectedKobo, paidKobo });
+    // Log but don't fail — matches onCertificatePaymentSuccess's own choice
+    // for the same situation: still confirm the payment for manual review
+    // rather than leaving a real payer stuck.
+  }
+
+  const updated = isAuthenticated
+    ? await updatePropertyTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null)
+    : await updateOneTimeTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null);
+
+  await notifyRevaPaymentReceived(updated, isAuthenticated ? (updated as any).userId ?? undefined : undefined);
+
+  console.log(`✅ [reva-webhook] charge.success confirmed: ${reference}`);
 }
 
 // ─────────────────────────── Certificate of Deposit (one-time) ───────────────────────────
@@ -880,8 +928,20 @@ function normalizeMetadata(input: unknown): Record<string, any> {
   return {};
 }
 
-function escapeHtml(str: string) {
-  return str.replace(
+/**
+ * Pre-existing bug found while live-verifying the REVA repoint (unrelated
+ * to REVA specifically — hits every platform's diagnostic email): diffToHtml
+ * passes JSON.stringify(before/after) straight through, but
+ * JSON.stringify(undefined) returns undefined (not the string "undefined")
+ * whenever a diffed field is new/removed between events — the very common
+ * case of a first-ever webhook for an entity, where every field is "new".
+ * escapeHtml(undefined).replace(...) then threw, caught by the caller's own
+ * try/catch so it never broke webhook processing, but silently dropped the
+ * diagnostic email's diff table. Coercing to a string here fixes it at the
+ * one shared choke point instead of at each of escapeHtml's 6 call sites.
+ */
+function escapeHtml(str: unknown) {
+  return String(str ?? "").replace(
     /[&<>"']/g,
     (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
