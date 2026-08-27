@@ -193,7 +193,7 @@ Same discipline as Phase 2 — plumbing before consumers, live-verified at each 
 5. `notificationService.ts` (independent of 2-4 otherwise, but needed for step 4 above and for the email-keyed guest-notification path from Decision 1).
 6. ~~`reportService.ts`~~ — done (depended on `propertyRequestService.ts` for the underlying data, and on `notificationService.ts`'s email-keyed path for `approveOneTimeDueDiligenceReport`, both already in place).
 7. ~~`adminUserService.ts`~~ — done.
-8. `profileService.ts` (independent of everything above — real `getProfile`/`updateProfile`, plus re-enabling `UserProfile.tsx`'s disabled edit UI and Security tab, the latter wired to the existing `/api/v1/auth/change-password` route).
+8. ~~`profileService.ts`~~ — done (real `getProfile`/`updateProfile`, plus re-enabling `UserProfile.tsx`'s disabled edit UI and Security tab, the latter wired to the existing `/api/v1/auth/change-password` route rather than a new function).
 9. `reva/access/routes.ts` registry, replacing the inline nav lists and the redundant `useRevaAdminAccess.ts` role check.
 10. Folder move (color-file fork resolution included — confirmed safe, see above; includes the `viewdetails` → `details` rename across both route trees, with a permanent redirect for the old path, same mechanics as Phase 2's naming standardization).
 11. ~~`revaActions2.ts` deletion~~ — done (step 4 confirmed zero remaining references).

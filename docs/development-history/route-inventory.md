@@ -85,7 +85,7 @@
 | `/api/v1/reva/{properties,one-time-properties,payments,notifications}/*` (14 routes) | GET/POST/PATCH | REVA | varies | live |
 | `/api/v1/reva/admin/requests`, `/admin/requests/[reference]`, `/admin/requests/[reference]/report`, `/admin/requests/[reference]/approve` | GET/POST | REVA | ADMIN, SUPERADMIN | live |
 | `/api/v1/reva/admin/users`, `/admin/users/[id]`, `/admin/users/[id]/role`, `/admin/users/[id]/status` | GET/POST/PATCH/DELETE | REVA | ADMIN and/or SUPERADMIN, varies per route (see Phase 3 spec's route table) | live |
-| `/api/v1/reva/profile` | GET/PATCH | REVA | USER, ADMIN, SUPERADMIN | planned (Phase 3) |
+| `/api/v1/reva/profile` | GET/PATCH | REVA | USER, ADMIN, SUPERADMIN | live |
 | `/api/v1/gbc/*` | — | GBC | varies | planned (Phase 4, not yet spec'd) |
 
 ### Legacy / pre-`/api/v1`
