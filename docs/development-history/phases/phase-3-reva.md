@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 3 — REVA (full migration)
 
-**Status:** Spec written, all open questions resolved, execution starting. **Date:** 2026-08-27.
+**Status:** Complete. **Date:** 2026-08-27.
 
 ## Why
 
@@ -197,4 +197,51 @@ Same discipline as Phase 2 — plumbing before consumers, live-verified at each 
 9. ~~`reva/access/routes.ts` registry~~ — done, replacing the inline nav lists and the redundant `useRevaAdminAccess.ts` role check. Found and closed a real access/nav mismatch while wiring `proxy.ts` to it: the source already let a plain ADMIN reach `/reva-restricted/dashboard/notifications` directly, only the sidebar link was SUPERADMIN-only — the registry now shows the link to ADMIN too, matching what was already reachable.
 10. ~~Folder move~~ — done, in two commits (color-fork resolution + component/hook/util/layout moves, then the `viewdetails` → `details` rename across all three route trees with permanent redirects for the old paths). Two extra dead files found and deleted rather than moved: `components/pageNotFound/RevaPageNotFound.tsx` (zero references anywhere) and `styles/reva-colors.css` (zero imports, superseded by `reva-colors.ts` long ago) — same treatment Phase 2 gave `SurfboardNotificationBell.tsx`.
 11. ~~`revaActions2.ts` deletion~~ — done (step 4 confirmed zero remaining references).
-12. Live verification pass: full guest flow (submit → pay → track via `onetimerequest` → admin approves → guest sees approved status, now with a real notification), full authenticated flow (submit → pay → admin review → report delivered), admin user-management actions, profile edit + password change through the settings page, the repointed webhook with a real test charge, plus this report's own completion update.
+12. ~~Live verification pass~~ — done, see Completion Report below.
+
+## Completion Report
+
+### What was built
+
+Steps 2-12 above executed in the order laid out, each committed and pushed separately on `rebuild/foundations`:
+
+1. **`propertyRequestService.ts` + `paymentService.ts` + `notificationService.ts`** (`47d4e74`) — property/`OneTimeUserProperty` CRUD, guest report download, both Paystack submit/verify flows, and the full notification CRUD + trigger surface. 14 new routes. Two resolved decisions implemented for real here: `getUserPropertyById` now requires an email match (the one guest-data route missing the reference+email pattern used everywhere else), and `notifyReportReady`'s `OneTimeUserProperty` branch — entirely commented out in the source — now creates a real email-keyed `Notification` plus an admin-facing `notifySystemAlert` echo.
+
+2. **Paystack webhook repoint + hardening** (`9ff429e`) — `app/api/webhooks/paystack/route.ts`'s REVA branch moved off the (still-live, previously mis-reported-dead) `revaActions2.ts` onto the new services, at your explicit request to treat this shared multi-product webhook with real care rather than a 1:1 import swap: `normalizeMetadata()` for consistent parsing, a real idempotency check the source lacked, amount reconciliation matching Surfboard's own pattern. Found and fixed a genuinely pre-existing bug along the way, unrelated to REVA but affecting every platform's diagnostic webhook email: `escapeHtml` threw on `JSON.stringify(undefined)` for a field new/removed between events, silently dropping the diff table.
+
+3. **`reportService.ts` + `adminUserService.ts`** (`4ae7c8c`) — admin request listing/lookup (including a new `getAnyRequestByReferenceForAdmin` that resolves `Property` vs `OneTimeUserProperty` server-side), report upload/approval for both tables, and full admin user-management. 8 new routes. Wires `approveOneTimeDueDiligenceReport`'s notification path for real (the source had it entirely commented out) and completes the email-helper consolidation (`sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` moved into `utils/email.ts`, the duplicate `sendMail` dropped). Found and fixed a real discriminator bug in `notificationService.ts` while wiring this in: `isOneTimeRequest` was `!!propertyData?.requester`, which misroutes a guest who left the name field blank — changed to `"requester" in propertyData`, checking column presence instead of truthiness.
+
+4. **`profileService.ts`** (`bacdadc`) — a real implementation, not a port: the source's `profileActions.ts` functions were TODO stubs that always returned success without touching the database, so REVA's settings page was silently read-only (its edit UI and password-change tab were both disabled client-side too, not just stubbed server-side). 2 new routes; re-enables `UserProfile.tsx`'s Edit button and Security tab. Password change needed no new backend function — `/api/v1/auth/change-password` already supports `Platform.REVA`.
+
+5. **`reva/access/routes.ts` registry** (`9aeabf9`) — replaces hand-written nav arrays in both layout components and separate `canAccessReva*Panel` calls scattered across `proxy.ts` and two client hooks with one source of truth. Adds a `"guest"` group for the top-level public pages (empty `roles` array = accessible to any caller, including anonymous). Found and closed a real access/nav mismatch while wiring `proxy.ts`: the source already let a plain ADMIN reach `/reva-restricted/dashboard/notifications` directly, only the sidebar link was SUPERADMIN-only.
+
+6. **Folder move + color-fork resolution** (`021ccea`) — REVA's dashboard-adjacent components/hooks/utils/layouts moved into `reva/`, mirroring Surfboard's Phase 2 precedent. `lib/reva-colors.ts` deleted (confirmed a strict subset of the canonical file, differing only in one key its 2 importers never touched). Two more dead files found and deleted rather than moved: `components/pageNotFound/RevaPageNotFound.tsx` and `styles/reva-colors.css`, both confirmed to have zero references anywhere — same treatment Phase 2 gave `SurfboardNotificationBell.tsx`.
+
+7. **`viewdetails` → `details` rename** (`8bc437a`) — all three route trees renamed (authenticated user, authenticated admin, top-level guest), every literal reference across the app repointed, 3 permanent redirects added to `next.config.mjs`.
+
+8. **Final integration pass** (this report) — see below. `revaActions2.ts`'s deletion was folded into step 2 above rather than its own step, since the webhook repoint was the one thing keeping it alive.
+
+### Judgment calls made during implementation
+
+- **`getUserPropertyById` gated on email match, not just id** — the one guest-data route in REVA missing the reference+email pattern used everywhere else in the product; closing it matches the product's own established convention rather than introducing a new one.
+- **`isOneTimeRequest` discriminated by key presence, not truthiness** (`"requester" in propertyData` vs `!!propertyData?.requester`) — `requester` is a nullable `OneTimeUserProperty` column, so a guest who left the name field blank still has the key; truthiness would have wrongly routed them down the `Property` branch. Found while wiring the `approveOneTimeDueDiligenceReport` notification path for real, since that's exactly the code path this bug would have silently broken.
+- **REVA's Paystack webhook branch rewritten defensively, not import-swapped** — your explicit instruction, given this file dispatches Surfboard/REVA/GBC events from one entry point. Added an idempotency check and amount reconciliation the source lacked entirely, both verified live.
+- **`/reva-restricted/dashboard/notifications` access widened to ADMIN, not left SUPERADMIN-only** — the source's own `proxy.ts` already let a plain ADMIN reach this page directly (only `/superadmin` got the stricter gate), and the backend already serves an ADMIN-scoped notification set (`getAdminNotifications`, distinct from `getSuperAdminNotifications`). The registry closes the mismatch by matching the *access* boundary that already existed, rather than encoding the sidebar's narrower *link visibility* as if it were the real gate.
+- **Three files deleted rather than migrated**, each confirmed dead by a zero-references grep rather than assumed: `revaActions2.ts` (only after its one real dependency — the shared webhook — was repointed), `components/pageNotFound/RevaPageNotFound.tsx`, `styles/reva-colors.css`.
+- **`adminDbActions.ts` (the legacy admin action file) was left in place, not deleted**, unlike `revaActions2.ts` — its frontend consumers (several still-live admin components) were never repointed to the new `/api/v1/reva/admin/*` routes in this phase, so deleting it would break real pages. Its literal path strings were still updated during the `viewdetails` → `details` rename (a link staying correct is different from the function it lives in being migrated) — repointing its actual callers to the new routes is frontend-cutover work, out of this phase's scope, same as `revaActions.ts`.
+
+### Verification performed
+
+- `tsc --noEmit` clean and a full production build clean after every commit in the sequence above, not just at the end.
+- 136/136 vitest passing (117 from services/webhook/registry across the phase, 19 more from `profileService.ts`).
+- Each service was live-verified against real seeded data in local Postgres as it was built (documented per-commit in `progress.md`): guest submission through to a real `Notification` row, the webhook's idempotency check (a second delivery for an already-paid reference correctly no-op'd), report approval for both `Property` and `OneTimeUserProperty` (confirming the guest notification gap is closed), every admin-user mutation's role gates and conflict guards, profile edit's email-uniqueness/`emailVerified` logic, and the `viewdetails`→`details` redirects with query strings intact.
+- **This report's own final integration pass** (2026-08-27, fresh seed — 1 SUPERADMIN, 1 ADMIN, 1 USER with a paid `Property`): confirmed `propertyRequestService.ts`'s property list, `profileService.ts`'s profile GET, `reportService.ts`'s admin request list and report approval, `adminUserService.ts`'s `scope=admins` cross-role check (ADMIN correctly 403's, SUPERADMIN succeeds), and a plain-USER 403 on an admin-only route all work correctly *together*, post-registry-extension, post-folder-move, post-rename. Specifically confirmed the resulting `Notification.link` reads `/reva/dashboard/details?reference=...` (the renamed path, not the old `/viewdetails`) — the one place the report-approval flow and the folder-move/rename work actually intersect. Both the renamed route's proxy gate (307 unauthenticated) and the old path's redirect (308 → new path, query string intact) reconfirmed live.
+- **Not independently re-verified this pass**: real Kinde-authenticated page rendering per role (requires an actual Kinde login, external to automate) — covered instead by the registry's 14 unit tests plus repeated production-server smoke tests confirming the pages compile and serve without runtime errors.
+- **A pre-existing bug, not a regression**: `/reva/requestform` 500s (`window is not defined`, a client-side library evaluated during SSR) — isolated via a stash-and-rebuild A/B test during the folder-move step to predate all of this phase's work. Flagged here, not fixed — out of Phase 3's scope.
+
+### Next up
+
+Phase 3 is complete. One item carried forward, not blocking anything:
+- **`adminDbActions.ts`/`revaActions.ts`'s remaining frontend consumers** (several admin components, the guest tracking/report-upload pages) still call the legacy `"use server"` actions directly rather than the new `/api/v1/reva/*` routes — repointing them is real work with its own testing surface, deliberately not bundled into this phase (matches Phase 2's precedent of leaving Surfboard's frontend cutover for a later, dedicated pass). Both legacy files stay in place, still fully functional, until that happens.
+
+Phase 4 (GBC) is next — its own full route-by-route spec gets written before it starts executing, per the same discipline this phase followed.
