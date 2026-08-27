@@ -55,7 +55,7 @@ Generates multi-page due diligence reports with dynamic sections based on availa
 #### Usage:
 
 ```tsx
-import { RevaReportPDF } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/RevaReportPDF";
+import { RevaReportPDF } from "@/app/(projects)/reva-restricted/dashboard/details/components/RevaReportPDF";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
 <PDFDownloadLink
@@ -92,7 +92,7 @@ Generates professional payment receipts with company branding.
 #### Usage:
 
 ```tsx
-import { RevaReceiptPDF } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/RevaReceiptPDF";
+import { RevaReceiptPDF } from "@/app/(projects)/reva-restricted/dashboard/details/components/RevaReceiptPDF";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
 <PDFDownloadLink
@@ -128,7 +128,7 @@ interface PDFDownloadButtonProps {
 #### Usage:
 
 ```tsx
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/PDFDownloadButton";
+import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 // Download Report
 <PDFDownloadButton
@@ -253,7 +253,7 @@ Here's a complete example of integrating the PDF system into a page:
 "use client";
 
 import React from "react";
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/PDFDownloadButton";
+import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 export default function PropertyDetailsPage({ property }: { property: any }) {
   const isReportReady = () => {

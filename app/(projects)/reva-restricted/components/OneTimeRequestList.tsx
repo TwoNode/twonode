@@ -127,7 +127,7 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
                 </Badge>
               )}
               <Link
-                href={`/reva-restricted/dashboard/viewdetails?reference=${req?.reference}`}
+                href={`/reva-restricted/dashboard/details?reference=${req?.reference}`}
               >
                 <Button size="sm" variant="secondary">
                   View Request

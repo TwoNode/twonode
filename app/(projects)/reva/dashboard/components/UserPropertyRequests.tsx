@@ -177,7 +177,7 @@ export default function UserPropertyRequests({
         property.reference
       }&email=${encodeURIComponent(property.email || "")}`;
     }
-    return `/reva/dashboard/viewdetails?reference=${property.reference}`;
+    return `/reva/dashboard/details?reference=${property.reference}`;
   };
 
   const getRequesterInfo = (property: Property) => {

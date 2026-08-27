@@ -369,7 +369,7 @@ export async function approveDueDiligenceReport(reference: string, isApproved: b
         greeting: `<p style='font-size: 16px;'>Hello <strong>Super Admin</strong>,</p>`,
         body: `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
         reference,
-        path: `/reva-restricted/dashboard/viewdetails?reference=${reference}`,
+        path: `/reva-restricted/dashboard/details?reference=${reference}`,
       }),
     });
 
@@ -381,7 +381,7 @@ export async function approveDueDiligenceReport(reference: string, isApproved: b
         greeting: `<p style='font-size: 16px;'>Hello <strong>Admin</strong>,</p>`,
         body: `The due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
         reference,
-        path: `/reva-restricted/dashboard/viewdetails?reference=${reference}`,
+        path: `/reva-restricted/dashboard/details?reference=${reference}`,
       }),
     });
 
@@ -395,7 +395,7 @@ export async function approveDueDiligenceReport(reference: string, isApproved: b
           greeting: `<p style='font-size: 16px;'>Hello <strong>${property.user.firstName || "User"}</strong>,</p>`,
           body: `Your due diligence report for <strong>property #${reference}</strong> has been successfully approved.`,
           reference,
-          path: `/reva/dashboard/viewdetails?reference=${reference}`,
+          path: `/reva/dashboard/details?reference=${reference}`,
         }),
       });
     }
@@ -468,7 +468,7 @@ export async function approveOneTimeDueDiligenceReport(reference: string, isAppr
         greeting: `<p style='font-size: 16px;'>Hello <strong>Super Admin</strong>,</p>`,
         body: `The OneTime due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
         reference,
-        path: `/reva-restricted/dashboard/viewdetails?reference=${reference}`,
+        path: `/reva-restricted/dashboard/details?reference=${reference}`,
       }),
     });
 
@@ -480,7 +480,7 @@ export async function approveOneTimeDueDiligenceReport(reference: string, isAppr
         greeting: `<p style='font-size: 16px;'>Hello <strong>Admin</strong>,</p>`,
         body: `The OneTime due diligence report for property <strong>${reference}</strong> has been <strong>${statusText}</strong>.`,
         reference,
-        path: `/reva-restricted/dashboard/viewdetails?reference=${reference}`,
+        path: `/reva-restricted/dashboard/details?reference=${reference}`,
       }),
     });
 

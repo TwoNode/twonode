@@ -36,7 +36,7 @@ A reusable download button component that:
 ### Basic Usage
 
 ```tsx
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components";
+import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components";
 
 // Download Report
 <PDFDownloadButton
@@ -59,7 +59,7 @@ import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/vi
 import { 
   RevaReportPDF, 
   RevaReceiptPDF 
-} from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components";
+} from "@/app/(projects)/reva-restricted/dashboard/details/components";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
 // Custom implementation
@@ -82,7 +82,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 The `SingleRequestPage.tsx` has already been updated to use the new components:
 
 ```tsx
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/viewdetails/components/PDFDownloadButton";
+import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 // In your component:
 <PDFDownloadButton
@@ -137,7 +137,7 @@ const propertyData = {
 ## File Locations
 
 ```
-app/(projects)/reva-restricted/dashboard/viewdetails/components/
+app/(projects)/reva-restricted/dashboard/details/components/
 ├── RevaReportPDF.tsx          # Report PDF generator
 ├── RevaReceiptPDF.tsx         # Receipt PDF generator
 ├── PDFDownloadButton.tsx      # Reusable download button

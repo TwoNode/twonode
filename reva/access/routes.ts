@@ -24,7 +24,7 @@ import { RevaRole } from "@/utils/platform";
  *
  * `showInNav` (default true) exists because several real pages here are
  * detail/redirect targets, not persistent nav destinations — the current
- * layouts don't link to them from the sidebar (viewdetails is reached by
+ * layouts don't link to them from the sidebar (details is reached by
  * clicking into a specific request row; verifypayment is a Paystack
  * redirect target; notifications is reached via the header bell, except
  * the admin panel's existing SUPERADMIN-only sidebar shortcut, preserved
@@ -75,7 +75,7 @@ export const REVA_ROUTES: RevaRouteEntry[] = [
   // narrower visibility as if it were the access boundary.
   { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin" },
   // Reached by clicking into a specific request row, not a sidebar destination — not in the source's inventory list either (found reading the actual folder tree while building this registry).
-  { path: `${ADMIN_BASE}/viewdetails`, label: "Request Details", icon: FileText, roles: ADMIN_ROLES, group: "admin", showInNav: false },
+  { path: `${ADMIN_BASE}/details`, label: "Request Details", icon: FileText, roles: ADMIN_ROLES, group: "admin", showInNav: false },
 
   // --- User panel (USER, plus ADMIN/SUPERADMIN who can also reach it) ---
   { path: USER_BASE, label: "Home", icon: Home, roles: USER_PANEL_ROLES, group: "user" },
@@ -88,11 +88,11 @@ export const REVA_ROUTES: RevaRouteEntry[] = [
   // Paystack redirect target, not a sidebar destination.
   { path: `${USER_BASE}/verifypayment`, label: "Verify Payment", icon: CreditCard, roles: USER_PANEL_ROLES, group: "user", showInNav: false },
   // Reached by clicking into a specific request row, not a sidebar destination.
-  { path: `${USER_BASE}/viewdetails`, label: "Request Details", icon: FileText, roles: USER_PANEL_ROLES, group: "user", showInNav: false },
+  { path: `${USER_BASE}/details`, label: "Request Details", icon: FileText, roles: USER_PANEL_ROLES, group: "user", showInNav: false },
 
   // --- Guest-facing (public — reference+email is the auth, not a role) ---
   { path: "/reva/verifypayment", label: "Verify Payment", icon: CreditCard, roles: PUBLIC, group: "guest", showInNav: false },
-  { path: "/reva/viewdetails", label: "Request Details", icon: FileText, roles: PUBLIC, group: "guest", showInNav: false },
+  { path: "/reva/details", label: "Request Details", icon: FileText, roles: PUBLIC, group: "guest", showInNav: false },
   { path: "/reva/onetimerequest", label: "Track Request", icon: FileCheck2, roles: PUBLIC, group: "guest", showInNav: false },
   { path: "/reva/requestform", label: "New Request", icon: FilePlus, roles: PUBLIC, group: "guest", showInNav: false },
 ];

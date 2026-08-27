@@ -33,9 +33,9 @@ describe("canAccessRoute — admin panel", () => {
     expect(canAccessRoute("/reva-restricted/dashboard/notifications", RevaRole.USER)).toBe(false);
   });
 
-  it("resolves a nested reference page (.../viewdetails?reference=...) to its parent entry's role requirement", () => {
-    expect(canAccessRoute("/reva-restricted/dashboard/viewdetails", RevaRole.ADMIN)).toBe(true);
-    expect(canAccessRoute("/reva-restricted/dashboard/viewdetails", RevaRole.USER)).toBe(false);
+  it("resolves a nested reference page (.../details?reference=...) to its parent entry's role requirement", () => {
+    expect(canAccessRoute("/reva-restricted/dashboard/details", RevaRole.ADMIN)).toBe(true);
+    expect(canAccessRoute("/reva-restricted/dashboard/details", RevaRole.USER)).toBe(false);
   });
 });
 
@@ -54,12 +54,12 @@ describe("canAccessRoute — guest-facing (public)", () => {
     expect(canAccessRoute("/reva/verifypayment", RevaRole.USER)).toBe(true);
   });
 
-  it("a nested query-string-bearing page (viewdetails?reference=&email=) still resolves via prefix match", () => {
-    expect(canAccessRoute("/reva/viewdetails", null)).toBe(true);
+  it("a nested query-string-bearing page (details?reference=&email=) still resolves via prefix match", () => {
+    expect(canAccessRoute("/reva/details", null)).toBe(true);
   });
 
-  it("stays distinct from the same-named authenticated /reva/dashboard/viewdetails entry — a guest role must not unlock the user-panel page", () => {
-    expect(canAccessRoute("/reva/dashboard/viewdetails", null)).toBe(false);
+  it("stays distinct from the same-named authenticated /reva/dashboard/details entry — a guest role must not unlock the user-panel page", () => {
+    expect(canAccessRoute("/reva/dashboard/details", null)).toBe(false);
   });
 });
 
@@ -76,7 +76,7 @@ describe("canAccessRoute — unmatched paths", () => {
 describe("getNavItemsForRole", () => {
   it("excludes showInNav: false entries even when the role would otherwise have access", () => {
     const items = getNavItemsForRole(RevaRole.ADMIN, "admin");
-    expect(items.some((r) => r.path.endsWith("/viewdetails"))).toBe(false);
+    expect(items.some((r) => r.path.endsWith("/details"))).toBe(false);
   });
 
   it("ADMIN now sees the Notifications shortcut too (a real UI gap this registry closes — see routes.ts's comment), but not the SUPERADMIN-only Superadmin shortcut", () => {

@@ -166,7 +166,7 @@ const Home = async () => {
                     </span>
                   </div>
                   <Link
-                    href={`/reva-restricted/dashboard/viewdetails?reference=${property.reference}`}
+                    href={`/reva-restricted/dashboard/details?reference=${property.reference}`}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium group flex items-center"
                   >
                     View Details
@@ -299,7 +299,7 @@ const Home = async () => {
                     </span>
                   </div>
                   <Link
-                    href={`/reva-restricted/dashboard/viewdetails?reference=${property.reference}`}
+                    href={`/reva-restricted/dashboard/details?reference=${property.reference}`}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium group flex items-center"
                   >
                     View Details

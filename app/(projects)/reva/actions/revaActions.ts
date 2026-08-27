@@ -959,7 +959,7 @@ export const notifyNewPropertyRequest = async (
       type: "PROPERTY",
       title: `New ${isOneTimeRequest ? "OneTime " : ""} Property Request`,
       message: `New due diligence request received for ${propertyData.address}`,
-      link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      link: `/reva-restricted/dashboard/details?reference=${propertyData.reference}`,
       audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
         propertyReference: propertyData.reference,
@@ -976,7 +976,7 @@ export const notifyNewPropertyRequest = async (
         title: "Request Submitted Successfully",
         message: `Your due diligence request for ${propertyData.address} has been submitted and is being processed.`,
         userIds: [userId],
-        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        link: `/reva/dashboard/details?reference=${propertyData.reference}`,
         metadata: {
           propertyReference: propertyData.reference,
           address: propertyData.address,
@@ -1039,7 +1039,7 @@ export const notifyPaymentReceived = async (
       title: "Payment Received",
       message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${propertyData.reference
         }`,
-      link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+      link: `/reva-restricted/dashboard/details?reference=${propertyData.reference}`,
       audience: NotificationAudience.GENERAL_ADMINS,
       metadata: {
         propertyReference: propertyData.reference,
@@ -1055,7 +1055,7 @@ export const notifyPaymentReceived = async (
         message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${propertyData.reference
           } has been confirmed.`,
         userIds: [userId],
-        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        link: `/reva/dashboard/details?reference=${propertyData.reference}`,
         metadata: {
           propertyReference: propertyData.reference,
           amount: propertyData.totalCost,
@@ -1081,7 +1081,7 @@ export const notifyReportReady = async (propertyData: any, userId?: string) => {
         title: "Report Ready",
         message: `Your due diligence report for property ${propertyData.reference} is now available.`,
         userIds: [userId],
-        link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+        link: `/reva/dashboard/details?reference=${propertyData.reference}`,
         metadata: {
           propertyReference: propertyData.reference,
           address: propertyData.address,

@@ -523,7 +523,7 @@ const RequestList = ({
 
                     <Button asChild size="sm" variant="secondary">
                       <Link
-                        href={`/reva-restricted/dashboard/viewdetails?reference=${request.reference}`}
+                        href={`/reva-restricted/dashboard/details?reference=${request.reference}`}
                       >
                         <EyeIcon className="h-4 w-4 mr-2" />
                         View Details

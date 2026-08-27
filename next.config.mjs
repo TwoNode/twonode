@@ -31,6 +31,15 @@ const nextConfig = {
       { source: "/surf-restricted/:path*", destination: "/surfboard-restricted/:path*", permanent: true },
       { source: "/surf-mda", destination: "/surfboard-mda", permanent: true },
       { source: "/surf-mda/:path*", destination: "/surfboard-mda/:path*", permanent: true },
+      // REVA naming standardization (Phase 3): viewdetails -> details, across
+      // all three route trees (authenticated user, authenticated admin, and
+      // the top-level guest page) — same reasoning as Surfboard's rename
+      // above, keeps existing bookmarks/emailed notification links working.
+      // None of these three routes have nested sub-paths of their own
+      // (query strings only), so no :path* wildcard is needed.
+      { source: "/reva/dashboard/viewdetails", destination: "/reva/dashboard/details", permanent: true },
+      { source: "/reva-restricted/dashboard/viewdetails", destination: "/reva-restricted/dashboard/details", permanent: true },
+      { source: "/reva/viewdetails", destination: "/reva/details", permanent: true },
     ];
   },
 

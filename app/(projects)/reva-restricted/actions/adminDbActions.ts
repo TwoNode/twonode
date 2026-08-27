@@ -475,7 +475,7 @@ export const uploadDueDiligenceReport = async (formData: FormData) => {
     }
 
     revalidatePath(
-      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+      `/reva-restricted/dashboard/details?reference=${reference}`
     );
 
     // Trigger notification for report upload
@@ -600,7 +600,7 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
       }
 
       revalidatePath(
-        `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+        `/reva-restricted/dashboard/details?reference=${reference}`
       );
 
       // Trigger notification for direct link report upload
@@ -686,7 +686,7 @@ export const uploadDirectLinkReport = async (formData: FormData) => {
     }
 
     revalidatePath(
-      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+      `/reva-restricted/dashboard/details?reference=${reference}`
     );
 
     // Trigger notification for direct link report upload
@@ -864,7 +864,7 @@ export const approveDueDiligenceReport = async (
             <p>${body}</p>
 
             <div style="margin: 30px 0; text-align: center;">
-              <a href="${process.env.ONLINE_BASE_URL}${normalizedLink}/dashboard/viewdetails?reference=${reference}"
+              <a href="${process.env.ONLINE_BASE_URL}${normalizedLink}/dashboard/details?reference=${reference}"
                 target="_blank"
                 style="
                   display: inline-block;
@@ -935,7 +935,7 @@ export const approveDueDiligenceReport = async (
     }
 
     revalidatePath(
-      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+      `/reva-restricted/dashboard/details?reference=${reference}`
     );
 
     // Trigger notifications
@@ -1166,7 +1166,7 @@ export const approveOneTimeDueDiligenceReport = async (
     }
 
     revalidatePath(
-      `/reva-restricted/dashboard/viewdetails?reference=${reference}`
+      `/reva-restricted/dashboard/details?reference=${reference}`
     );
 
     // Trigger notifications

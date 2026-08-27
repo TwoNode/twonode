@@ -133,7 +133,7 @@ export async function notifyNewPropertyRequest(propertyData: any, userId?: strin
     type: "PROPERTY" as NotificationType,
     title: `New ${isOneTimeRequest ? "OneTime " : ""}Property Request`,
     message: `New due diligence request received for ${propertyData.address}`,
-    link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+    link: `/reva-restricted/dashboard/details?reference=${propertyData.reference}`,
     audience: NotificationAudience.GENERAL_ADMINS,
     metadata: {
       propertyReference: propertyData.reference,
@@ -149,7 +149,7 @@ export async function notifyNewPropertyRequest(propertyData: any, userId?: strin
       title: "Request Submitted Successfully",
       message: `Your due diligence request for ${propertyData.address} has been submitted and is being processed.`,
       userIds: [userId],
-      link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+      link: `/reva/dashboard/details?reference=${propertyData.reference}`,
       metadata: { propertyReference: propertyData.reference, address: propertyData.address, oneTimeRequest: isOneTimeRequest },
     });
   }
@@ -178,7 +178,7 @@ export async function notifyPaymentReceived(propertyData: any, userId?: string) 
     type: "PAYMENT" as NotificationType,
     title: "Payment Received",
     message: `Payment of ₦${propertyData.totalCost?.toLocaleString()} received for property ${propertyData.reference}`,
-    link: `/reva-restricted/dashboard/viewdetails?reference=${propertyData.reference}`,
+    link: `/reva-restricted/dashboard/details?reference=${propertyData.reference}`,
     audience: NotificationAudience.GENERAL_ADMINS,
     metadata: { propertyReference: propertyData.reference, amount: propertyData.totalCost, address: propertyData.address },
   });
@@ -189,7 +189,7 @@ export async function notifyPaymentReceived(propertyData: any, userId?: string) 
       title: "Payment Confirmed",
       message: `Your payment of ₦${propertyData.totalCost?.toLocaleString()} for property ${propertyData.reference} has been confirmed.`,
       userIds: [userId],
-      link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+      link: `/reva/dashboard/details?reference=${propertyData.reference}`,
       metadata: { propertyReference: propertyData.reference, amount: propertyData.totalCost },
     });
   }
@@ -214,7 +214,7 @@ export async function notifyReportReady(propertyData: any, userId?: string) {
       title: "Report Ready",
       message: `Your due diligence report for property ${propertyData.reference} is now available.`,
       userIds: [userId],
-      link: `/reva/dashboard/viewdetails?reference=${propertyData.reference}`,
+      link: `/reva/dashboard/details?reference=${propertyData.reference}`,
       metadata: { propertyReference: propertyData.reference, address: propertyData.address, oneTimeRequest: false },
     });
   } else if (isOneTimeRequest && propertyData?.email) {
