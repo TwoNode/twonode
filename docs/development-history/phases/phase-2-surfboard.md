@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 2 — Surfboard (full migration)
 
-**Status:** Spec complete, all open questions resolved, not yet executing. **Date:** 2026-08-26.
+**Status:** Complete — spec written and fully executed. **Date:** 2026-08-26 (spec) / 2026-08-27 (execution complete).
 
 ## Why
 
@@ -267,3 +267,53 @@ Mirrors Phase 1's own order — plumbing before consumers, always live-verified,
 7. Registry extension + `proxy.ts` migration + naming standardization together (the registry is what `proxy.ts`'s migration needs to read from, and the naming rename touches the same routing surface — one coordinated pass, not three).
 8. Folder move (last — cosmetic, easiest to get a clean diff on once nothing else in this phase is still moving).
 9. Live verification pass (full CoD workflow end-to-end: batch submit → payment verify → 4-way parallel approval → intake → records II → archive; plus the MDA nav-filtering fix, confirmed via headless-browser render per role, same method Phase 1's Step 8 used) + this report's own completion update.
+
+---
+
+## Completion Report
+
+### What was built
+
+Steps 1-9 above executed in the order laid out, each committed and pushed separately on `rebuild/foundations`:
+
+1. **`planLockService.ts` + `codFeeService.ts`** (`0eab865`) — the FIFO-gated optimistic locking subsystem (plan- and batch-level) and zone/fee calculation, migrated with zero logic changes. Closed a real gap along the way: the source lock functions took no role parameter and trusted whatever page happened to be loaded client-side — the new routes validate the requested role against the caller's actual session role. 7 new routes.
+
+2. **`remitaVerificationService.ts`** (`85e2b9c`) — batch submission through Remita/AI-extraction payment verification. The legacy single-reference `verifyBatchPayment` path was confirmed still live (via grep, called from `payment/callback/page.tsx`) and migrated rather than dropped, per the spec's open question. 8 new routes.
+
+3. **`batchApprovalService.ts`** (`52306a4`) — the full approval chain, every per-role queue/history read, query/resubmission handling, physical-copy submission. `codActions.ts`'s migration complete at this point. 13 new routes. Verified live end-to-end with a real audit trail: `APPROVE_CHARTING → APPROVE_SURCON → RESUBMIT_QUERIED_PLAN → MARK_PLAN_ARCHIVED`.
+
+4. **`planService.ts`** (`426c9cf`) — plan CRUD, QR/public access, sharing, attachments, geo lookups. Dead-code questions resolved by grep: `_createSurfPlan`/`_createPlan`/`_updatePlan`/`_getAllSurfPlans`/`_deletePlanAttachment`/`addSurfUserToSharedSurfPlan`/`removeSurfUserFromSharedSurfPlan`/`importDbDataFromCsv` all confirmed zero external call sites, none migrated. `surfboardActions.ts`'s migration complete. 24 new routes.
+
+5. **`analyticsService.ts`** (`2dc53b6`) — extends the source's `getDashboardAnalytics` (surveyor-only) with an ADMIN/SUPERADMIN full-population view and new MDA stage stats (queue depth + avg time-in-stage). Pending-certificate ambiguity resolved as two separate stat cards (batch-level + plan-level). 2 new routes — **54 API routes total across the phase.**
+
+   A follow-up refactor (`b42a69f`) deduplicated a role→field-name mapping this service had hand-copied from `planLockService.ts`'s `ROLE_FIELD_PREFIX`, and a stage-role array duplicated from its `MDA_ROLES` — both now derive from the one source instead of a second hand-written copy, caught during a deliberate reuse/redundancy check.
+
+6. **Route/nav registry + `proxy.ts` migration** (`1376b4d`) — `surfboard/access/routes.ts` extended from 13 admin-only entries to the full product (4 previously-missing admin routes, 14 user-panel routes, a new `"mda"` group). `proxy.ts`'s three Surfboard branches now all call `canAccessRoute()` instead of separate hand-rolled matching — **this is what actually closes the confirmed MDA nav-filtering gap** from the earlier audit. Two real behavior differences caught and fixed *before* wiring, not after: `canAccessSurfUserPanel` allows ADMIN/SUPERADMIN into the surveyor panel too (not just USER), and the source lets plain SUPERADMIN into every MDA stage unconditionally (not just MDA_SUPERADMIN). `surfboardMDAPanelLayout.tsx` retired in favor of `DashboardShell`. New `surfboard/access/__tests__/routes.test.ts` (14 cases).
+
+7. **Naming standardization** (`332222d`) — `surf-restricted`/`surf-mda` → `surfboard-restricted`/`surfboard-mda`, 34 files renamed, `next.config.mjs` gained permanent redirects for the old prefixes. Deliberately **not** renamed: the two Kinde OAuth callback routes (`/api/auth/success/surf-restricted`, `/surf-mda`) — those are redirect URIs registered in Kinde's own dashboard; renaming them would break login until a manual config update happens there, so only their internal destination-redirect strings were updated, not the callback URLs themselves.
+
+8. **Folder move** (`78d92f2`) — `utils/surfAuth.ts`, `hooks/useSurfUserProfile.ts`, root `surfboard-colors.ts`, and `components/layouts/surfboardUserPanelLayout.tsx` moved into `surfboard/{utils,hooks,colors.ts,layouts}`. The moved layout's 2 relative imports (which would have silently broken at the new directory depth) were converted to absolute imports; 18 external consumers updated. `components/surfboard/SurfboardNotificationBell.tsx` deleted rather than moved — grep-confirmed zero consumers anywhere, pre-existing dead code unrelated to this phase's changes.
+
+9. **Final verification pass** (this report) — see below.
+
+### Judgment calls made during implementation
+
+- **`surfboardUserPanelLayout.tsx` was *not* swapped to `DashboardShell`** during the folder move, unlike the admin and MDA layouts. Those two were already thin wrappers; this one carries real business logic `DashboardShell` doesn't replicate — a subscription-required badge, live unread-notification-count polling (30s interval), and a cross-import from `revaAdminPanelLayout` for a CSS class. Retiring it would be a functional redesign requiring that logic to be ported first, not a mechanical move — flagged to you as a deliberate, separate follow-up rather than done incidentally here.
+- **Shared decision endpoints for the 4 parallel MDA stages** (`/mda/[role]/plans/[planId]/decision` for Charting/SURCON/Records I/Intake) collapse what the source implemented as 4 near-identical functions into one parametrized route — Records II was kept as its own separate route since its approval triggers materially different side effects (OSSG transmission, `LODGED` status) that warrant a distinct, more carefully reviewed handler rather than folding it into the shared one.
+- **`getMdaStageStats`'s Intake timing is a documented approximation**: its true "time in stage" starts once all 4 parallel stages clear, which needs a `GREATEST()` over 4 nullable columns — approximated instead as time-since-`redCopySubmittedAt` (same start point as the parallel stages themselves), meaning Intake's reported average reads slightly high. Documented in the code comment rather than silently accepted.
+
+### Verification performed
+
+- `tsc --noEmit` clean and a full production build (`npm run build`) clean after every commit in the sequence above, not just at the end.
+- `73/73 vitest` passing (58 from services + 15 new: `surfboard/access/__tests__/routes.test.ts`).
+- Each service was live-verified against real seeded data in local Postgres as it was built (documented per-commit in `progress.md`): full lock lifecycle with wrong-role 403, batch payment retry/upload, the full CoD approval chain with a real audit trail, plan CRUD composing correctly with Phase 1's QR-paywall gating (geometry visible for 5 free scans, then redacted), analytics numbers hand-checked against seed data (catching a real Postgres `AVG()`-returns-string bug, fixed with `::float8`), and the naming rename's redirects (old URLs 308 → new, Kinde callbacks unaffected).
+- **This report's own final integration pass** (2026-08-27, fresh seed — 1 surveyor, 1 SUPERADMIN, 1 ACCOUNTS user, 1 plan): confirmed `planService.ts`'s plan list, `analyticsService.ts`'s stats, `codFeeService.ts`'s Zod validation, `cod/batches`' ADMIN-scoped list, and a cross-role 403 (ACCOUNTS against a SUPERADMIN-only route) all work correctly *together*, post-registry-extension, post-naming-rename, post-folder-move — confirming the individually-verified pieces integrate cleanly, not just in isolation. All three renamed page routes (`surfboard/dashboard`, `surfboard-restricted/dashboard`, `surfboard-mda/dashboard/accounts`) resolve through `proxy.ts` correctly (307 redirect for unauthenticated, matching expected behavior).
+- **Not independently re-verified this pass**: real Kinde-authenticated page rendering per MDA role (requires an actual Kinde login, external to automate) — the registry logic `proxy.ts` and `DashboardShell` both depend on is covered by the 14 unit tests plus Step 8's earlier headless-browser render precedent for the admin panel; not repeated here since nothing about that rendering path changed in this phase beyond reading a bigger registry.
+
+### Next up
+
+Phase 2 is complete. Two items outside this phase's own scope, carried forward:
+- **Your optional action**: update the `surf-restricted`/`surf-mda` platforms' redirect URIs in Kinde's dashboard if you want the OAuth callback routes renamed to match too — not required for anything to work.
+- **Your decision needed**: whether/when to port `surfboardUserPanelLayout.tsx`'s subscription-badge and notification-count logic into `DashboardShell` so all three Surfboard layouts share one component, or leave it as its own maintained layout.
+
+Phase 3 (REVA) is next — its own full route-by-route spec gets written before it starts executing, per the same discipline this phase followed.
