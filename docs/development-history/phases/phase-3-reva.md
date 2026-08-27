@@ -179,7 +179,7 @@ Broader than the plan originally named, since the cataloging pass found more sca
 
 5. **`/one-time-properties/:id` route** — **add the email-match check**, closing the inconsistency with every other guest-data route in this product.
 
-6. **Email-helper consolidation** — resolved: confirmed genuine duplication, not just overlap. `adminDbActions.ts`'s `sendMail` is functionally identical (same Zoho transport, same options shape) to `utils/email.ts`'s existing `sendMail` — a real duplicate, not a variant. Plan: `reportService.ts`/`adminUserService.ts` call `utils/email.ts`'s `sendMail` directly; `sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` (genuinely new bulk-recipient behavior, not duplicated in `utils/email.ts`) move into `utils/email.ts` as siblings to `sendMail`, so there's one email utility file instead of two.
+6. ~~**Email-helper consolidation**~~ — done. `sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` moved into `utils/email.ts` as siblings to `sendMail` (querying `prisma.revaUser` directly, the same "shared file, per-product recipient-resolution helper" pattern `sendNotificationMail` already established there for Surfboard); `reportService.ts`/`adminUserService.ts` call `utils/email.ts`'s `sendMail` directly instead of the now-dropped duplicate. `notificationService.ts`'s temporary import (added when it was built, before this step existed) repointed from `adminDbActions.ts` to `utils/email.ts`.
 
 7. ~~`SpatialRecordMap.tsx` vs `.jsx`~~ — resolved above, `.tsx` is live, `.jsx` is a dead stub.
 
@@ -191,10 +191,10 @@ Same discipline as Phase 2 — plumbing before consumers, live-verified at each 
 3. `paymentService.ts`.
 4. **Repoint `app/api/webhooks/paystack/route.ts`'s REVA branch** from `revaActions2.ts` to the new `propertyRequestService.ts`/`paymentService.ts`/`notificationService.ts` — required before `revaActions2.ts` can be deleted, and worth doing right after `paymentService.ts` lands rather than at the end, so this real dependency doesn't get forgotten. Live-verify this specific change carefully (a real payment webhook, shared across products) before moving on.
 5. `notificationService.ts` (independent of 2-4 otherwise, but needed for step 4 above and for the email-keyed guest-notification path from Decision 1).
-6. `reportService.ts` (depends on `propertyRequestService.ts` for the underlying data, and on `notificationService.ts`'s email-keyed path for `approveOneTimeDueDiligenceReport`).
-7. `adminUserService.ts` (independent of everything above).
+6. ~~`reportService.ts`~~ — done (depended on `propertyRequestService.ts` for the underlying data, and on `notificationService.ts`'s email-keyed path for `approveOneTimeDueDiligenceReport`, both already in place).
+7. ~~`adminUserService.ts`~~ — done.
 8. `profileService.ts` (independent of everything above — real `getProfile`/`updateProfile`, plus re-enabling `UserProfile.tsx`'s disabled edit UI and Security tab, the latter wired to the existing `/api/v1/auth/change-password` route).
 9. `reva/access/routes.ts` registry, replacing the inline nav lists and the redundant `useRevaAdminAccess.ts` role check.
 10. Folder move (color-file fork resolution included — confirmed safe, see above; includes the `viewdetails` → `details` rename across both route trees, with a permanent redirect for the old path, same mechanics as Phase 2's naming standardization).
-11. `revaActions2.ts` deletion — only after step 4 confirms zero remaining references (webhook repointed, `authPaymentSuccessful`/`getUserProperties` confirmed to have no other call sites either).
+11. ~~`revaActions2.ts` deletion~~ — done (step 4 confirmed zero remaining references).
 12. Live verification pass: full guest flow (submit → pay → track via `onetimerequest` → admin approves → guest sees approved status, now with a real notification), full authenticated flow (submit → pay → admin review → report delivered), admin user-management actions, profile edit + password change through the settings page, the repointed webhook with a real test charge, plus this report's own completion update.
