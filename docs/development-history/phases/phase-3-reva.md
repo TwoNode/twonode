@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 3 — REVA (full migration)
 
-**Status:** Spec written, not yet executing. **Date:** 2026-08-27.
+**Status:** Spec written, all open questions resolved, execution starting. **Date:** 2026-08-27.
 
 ## Why
 
@@ -52,7 +52,9 @@ Much simpler than Surfboard: `Role` enum (`prisma/schema/reva.prisma`) is `USER 
 - `verifyRevaAdminPermissions`/`verifyRevaSuperAdminPermissions` fold into `withAuth`'s role check at the route layer, same as every other product — not migrated as standalone functions.
 - `sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins`/`sendMail` (email helpers currently living in `adminDbActions.ts`) — check for overlap with the existing `utils/email.ts` (`sendEmailToAdmin`) before deciding whether these become internal helpers inside the two services above or get promoted to a shared `reva/utils/email.ts`. Not a blocking decision, just don't duplicate an email-sending utility that already exists.
 
-**Not migrated, stays a server action**: `otherActions.ts` (both the user-side cookie helper and the admin-side `getSecureHtml`), `authActions.ts`, `awsActions.ts`, `paystackActions.ts`, `profileActions.ts` — thin utility layers, same reasoning as Surfboard's untouched 17.
+**`profileService.ts`** (new — resolved from an open question, not in the plan's original scope): `getProfile`/`updateProfile` against `RevaUser` (`firstName`/`lastName`/`email`), replacing `profileActions.ts`'s dead stubs and the disabled UI in `UserProfile.tsx`. Password change needs no new function — it calls the existing `/api/v1/auth/change-password` route (already supports `Platform.REVA`), so this service is profile-fields-only.
+
+**Not migrated, stays a server action**: `otherActions.ts` (both the user-side cookie helper and the admin-side `getSecureHtml`), `authActions.ts`, `awsActions.ts`, `paystackActions.ts` — thin utility layers, same reasoning as Surfboard's untouched 17. `profileActions.ts` itself gets its two functions replaced by real implementations in `profileService.ts` (see above) rather than staying a stub file.
 
 ## API route inventory
 
@@ -141,6 +143,8 @@ const createAdminUserSchema = z.object({
 | `/admin/users/:id/role` | PATCH | `makeUserAdmin` / `removeAdminPrivileges` | SUPERADMIN | body: `{action: "promote"\|"demote"}` |
 | `/admin/users/:id/status` | PATCH | `deactivateUser` / `reactivateUser` | SUPERADMIN | body: `{active: boolean}` |
 | `/admin/users/:id` | DELETE | `deleteUser` | SUPERADMIN | |
+| `/profile` | GET | `getProfile` | USER, ADMIN, SUPERADMIN | own profile |
+| `/profile` | PATCH | `updateProfile` | USER, ADMIN, SUPERADMIN | body: `{firstName?, lastName?, email?}` — password change goes through the existing `/api/v1/auth/change-password` instead, not a route in this table |
 
 ## Route/nav registry
 
@@ -160,27 +164,37 @@ Broader than the plan originally named, since the cataloging pass found more sca
 
 **Also found, now resolved**: `reva-restricted/dashboard/spatial-record/` has both `SpatialRecordMap.tsx` (35 lines, a real implementation — extracts and executes script tags from injected HTML) and `SpatialRecordMap.jsx` (6 lines, a bare stub). Next.js's module resolution prefers `.tsx` in a TypeScript project when both exist with the same basename, and `page.tsx`'s own `import SpatialRecordMap from "./SpatialRecordMap"` confirms the `.tsx` file is what's actually live. The `.jsx` stub is dead; delete it during the folder move.
 
-## Open questions requiring your decision before or during execution
+## Decisions (resolved 2026-08-27)
 
-1. **`OneTimeUserProperty` notification gap** — build an email-keyed (not `user.id`-keyed) notification path for `approveOneTimeDueDiligenceReport`, or leave it as intentional email-only and just delete the dead commented-out code?
-2. **`profileActions.ts` stubs** — `updateUserProfile`/`updateUserPassword` do nothing today. Implement for real in this phase, or explicitly scope out?
-3. **`revaActions2.ts`** — not a decision, but a required sequencing step: `app/api/webhooks/paystack/route.ts`'s REVA branch imports 5 functions from it live (confirmed by reading the webhook handler directly). Repointing that import to the new services is part of this phase's own work (see Sequencing step 4 below), not something to defer to Phase 5.
-4. **Two parallel guest/authenticated route trees** (`reva/{verifypayment,viewdetails}` vs. `reva/dashboard/{verifypayment,viewdetails}`) — register both as-is, or is this the moment to collapse them into one route with conditional rendering?
-5. **`/one-time-properties/:id` route** (from `getUserPropertyById`) — the source has no email-match check on this path, unlike the reference+email pattern used everywhere else for guest data. Add one for consistency, or leave matching the source exactly?
-6. **Email-helper consolidation** — does `adminDbActions.ts`'s `sendMail`/`sendEmailToAllAdmins`/`sendEmailToAllSuperAdmins` overlap enough with the existing `utils/email.ts` (`sendEmailToAdmin`) to warrant merging into one shared utility, or are they different enough (bulk vs. single-recipient) to stay separate?
+1. **`OneTimeUserProperty` notification gap** — **build the email-keyed path.** `notificationService.ts` extends `notifyReportReady`/`notifySystemAlert` to accept an email-keyed guest identity alongside the existing `user.id`-keyed one, so admins get the same system-alert echo for one-time-request approvals that they already get for regular `Property` ones. Replaces the dead commented-out block in `approveOneTimeDueDiligenceReport` with a real implementation instead of just deleting it.
+
+2. **`profileActions.ts` stubs — real functions needed, not scope-out, per a closer look at the actual call site.** Read `UserProfile.tsx` (the REVA settings page) directly: the `updateUserProfile`/`updateUserPassword` calls are themselves commented out in the component, and so is the entire Edit/Save button UI and the whole password-change tab — meaning today's REVA settings page is silently **read-only**, with half-finished scaffolding for editing that was disabled at both the UI and action layer rather than completed. This needs fixing for real:
+   - **Profile fields** (`firstName`/`lastName`/`email`): new `reva/services/profileService.ts` with `getProfile`/`updateProfile` against `RevaUser`, mirroring Surfboard's own working `app/(projects)/(surfboard)/actions/profile.ts` pattern (confirmed by reading it) — simpler than Surfboard's version since `RevaUser` has no KYC/company fields to edit, just the 3 above.
+   - **Password change**: **no new function needed at all.** `/api/v1/auth/change-password` (built in Phase 1) already fully supports `Platform.REVA` — confirmed by reading `lib/auth/userLookup.ts`, which already branches on `Platform.REVA` for lookup/update. The REVA settings page's Security tab just needs re-enabling to call this existing shared endpoint (`{platform: "reva", currentPassword, newPassword}`), not a REVA-specific password function.
+   - Added as its own service in the plan below (`profileService.ts`), not folded into an existing one — it's a distinct concern (account settings, not property/payment data).
+
+3. **`revaActions2.ts`** — not a decision, a required sequencing step (unchanged from the correction above): repoint the shared webhook's import, then delete.
+
+4. **Two parallel guest/authenticated route trees** — **register both as-is** in the registry (no collapse). Additionally: rename `viewdetails` → `details` in both trees as part of the folder-move step (a naming cleanup alongside the registry work, same mechanics as Phase 2's `surf-restricted` → `surfboard-restricted` rename — physical folder rename + a permanent redirect from the old path, not a silent break).
+
+5. **`/one-time-properties/:id` route** — **add the email-match check**, closing the inconsistency with every other guest-data route in this product.
+
+6. **Email-helper consolidation** — no decision needed yet; left as an implementation-time call when `reportService.ts`/`adminUserService.ts` are actually built (check for real overlap then, not worth deciding in the abstract).
+
 7. ~~`SpatialRecordMap.tsx` vs `.jsx`~~ — resolved above, `.tsx` is live, `.jsx` is a dead stub.
 
 ## Sequencing
 
 Same discipline as Phase 2 — plumbing before consumers, live-verified at each step, not just `tsc`/`build`:
-1. Answer the open questions above (or explicitly defer with a stated default, matching this project's own pattern for unanswered §6 items).
+1. ~~Answer the open questions above~~ — done, see Decisions section.
 2. `propertyRequestService.ts` (foundational — `paymentService.ts` depends on it).
 3. `paymentService.ts`.
 4. **Repoint `app/api/webhooks/paystack/route.ts`'s REVA branch** from `revaActions2.ts` to the new `propertyRequestService.ts`/`paymentService.ts`/`notificationService.ts` — required before `revaActions2.ts` can be deleted, and worth doing right after `paymentService.ts` lands rather than at the end, so this real dependency doesn't get forgotten. Live-verify this specific change carefully (a real payment webhook, shared across products) before moving on.
-5. `notificationService.ts` (independent of 2-4 otherwise, but needed for step 4 above).
-6. `reportService.ts` (depends on `propertyRequestService.ts` for the underlying data, and on the OneTimeUserProperty notification decision from Q1).
+5. `notificationService.ts` (independent of 2-4 otherwise, but needed for step 4 above and for the email-keyed guest-notification path from Decision 1).
+6. `reportService.ts` (depends on `propertyRequestService.ts` for the underlying data, and on `notificationService.ts`'s email-keyed path for `approveOneTimeDueDiligenceReport`).
 7. `adminUserService.ts` (independent of everything above).
-8. `reva/access/routes.ts` registry, replacing the inline nav lists and the redundant `useRevaAdminAccess.ts` role check.
-9. Folder move (color-file fork resolution included — confirmed safe, see above).
-10. `revaActions2.ts` deletion — only after step 4 confirms zero remaining references (webhook repointed, `authPaymentSuccessful`/`getUserProperties` confirmed to have no other call sites either).
-11. Live verification pass: full guest flow (submit → pay → track via `onetimerequest` → admin approves → guest sees approved status), full authenticated flow (submit → pay → admin review → report delivered), admin user-management actions, the repointed webhook with a real test charge, plus this report's own completion update.
+8. `profileService.ts` (independent of everything above — real `getProfile`/`updateProfile`, plus re-enabling `UserProfile.tsx`'s disabled edit UI and Security tab, the latter wired to the existing `/api/v1/auth/change-password` route).
+9. `reva/access/routes.ts` registry, replacing the inline nav lists and the redundant `useRevaAdminAccess.ts` role check.
+10. Folder move (color-file fork resolution included — confirmed safe, see above; includes the `viewdetails` → `details` rename across both route trees, with a permanent redirect for the old path, same mechanics as Phase 2's naming standardization).
+11. `revaActions2.ts` deletion — only after step 4 confirms zero remaining references (webhook repointed, `authPaymentSuccessful`/`getUserProperties` confirmed to have no other call sites either).
+12. Live verification pass: full guest flow (submit → pay → track via `onetimerequest` → admin approves → guest sees approved status, now with a real notification), full authenticated flow (submit → pay → admin review → report delivered), admin user-management actions, profile edit + password change through the settings page, the repointed webhook with a real test charge, plus this report's own completion update.
