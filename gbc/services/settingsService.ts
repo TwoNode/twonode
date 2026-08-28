@@ -29,6 +29,7 @@ function mergeWithDefaults(saved: Partial<GBCSettingsData>): GBCSettingsData {
     notifications: { ...defaultSettings.notifications, ...(saved.notifications || {}) },
     gallery: { ...defaultSettings.gallery, ...(saved.gallery || {}) },
     system: { ...defaultSettings.system, ...(saved.system || {}) },
+    editions: saved.editions ?? defaultSettings.editions,
   };
 }
 

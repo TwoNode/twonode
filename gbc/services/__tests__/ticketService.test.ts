@@ -21,16 +21,14 @@ const mockPrisma = vi.hoisted(() => ({
   gBCUser: { findUnique: vi.fn() },
 }));
 
-const mockSettings = vi.hoisted(() => ({
-  getAllGBCSettings: vi.fn().mockResolvedValue({
-    success: true,
-    data: {
-      tickets: { pauseTicketReg: false, maxCapacity: 1000, maxEarlyBirdCapacity: 500 },
-      event: { date: null, venue: null },
-      contact: { city: null },
-    },
-  }),
-}));
+const baseSettings = {
+  tickets: { pauseTicketReg: false, maxCapacity: 1000, maxEarlyBirdCapacity: 500 },
+  event: { date: null, venue: null },
+  contact: { city: null },
+  editions: [{ key: "2.0", status: "ACTIVE", ticketPrefix: "GBC2" }],
+};
+
+const mockSettingsService = vi.hoisted(() => ({ getSettings: vi.fn() }));
 
 const mockPaystack = vi.hoisted(() => ({
   initializeTicketPayment: vi.fn().mockResolvedValue({
@@ -50,7 +48,7 @@ const mockUtils = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/app/(projects)/(GBC)/actions/settings-actions", () => mockSettings);
+vi.mock("@/gbc/services/settingsService", () => mockSettingsService);
 vi.mock("@/app/(projects)/(GBC)/utils/paystack", () => mockPaystack);
 vi.mock("@/app/(projects)/(GBC)/utils/aws-s3", () => mockAwsS3);
 vi.mock("@/app/(projects)/(GBC)/utils/qr_code", () => mockQr);
@@ -81,14 +79,7 @@ const attendee = (overrides: Partial<AttendeeInput> = {}): AttendeeInput => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSettings.getAllGBCSettings.mockResolvedValue({
-    success: true,
-    data: {
-      tickets: { pauseTicketReg: false, maxCapacity: 1000, maxEarlyBirdCapacity: 500 },
-      event: { date: null, venue: null },
-      contact: { city: null },
-    },
-  });
+  mockSettingsService.getSettings.mockResolvedValue(baseSettings);
   mockUtils.isTicketTypeAvailable.mockReturnValue({ available: true });
   mockPaystack.initializeTicketPayment.mockResolvedValue({
     data: { reference: "ref_1", authorization_url: "https://paystack.test/pay" },
@@ -97,9 +88,9 @@ beforeEach(() => {
 
 describe("createTicket", () => {
   it("throws ConflictError when registration is paused", async () => {
-    mockSettings.getAllGBCSettings.mockResolvedValue({
-      success: true,
-      data: { tickets: { pauseTicketReg: true, maxCapacity: 1000 }, event: {}, contact: {} },
+    mockSettingsService.getSettings.mockResolvedValue({
+      ...baseSettings,
+      tickets: { pauseTicketReg: true, maxCapacity: 1000 },
     });
     await expect(
       createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any)
@@ -131,6 +122,41 @@ describe("createTicket", () => {
     expect(mockPrisma.gBCTicket.update).toHaveBeenCalledWith({
       where: { id: "t1" },
       data: { paymentRef: "ref_1" },
+    });
+  });
+
+  it("generates the ticket number from the active edition's prefix, tagged with that edition's key", async () => {
+    mockSettingsService.getSettings.mockResolvedValue({
+      ...baseSettings,
+      editions: [
+        { key: "2.0", status: "PAST", ticketPrefix: "GBC2" },
+        { key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" },
+      ],
+    });
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_abc123" });
+    mockPrisma.gBCTicket.update.mockResolvedValue({});
+
+    await createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "X", ticketType: "EARLY_BIRD" } as any);
+
+    expect(mockPrisma.gBCTicket.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        ticketNumber: expect.stringMatching(/^GBC3_[0-9a-f]{6}$/),
+        edition: "3.0",
+      }),
+    });
+  });
+
+  it("falls back to GBC2 when no edition is marked ACTIVE (defensive)", async () => {
+    mockSettingsService.getSettings.mockResolvedValue({ ...baseSettings, editions: [] });
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC2_abc123" });
+    mockPrisma.gBCTicket.update.mockResolvedValue({});
+
+    await createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "X", ticketType: "EARLY_BIRD" } as any);
+
+    expect(mockPrisma.gBCTicket.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ ticketNumber: expect.stringMatching(/^GBC2_[0-9a-f]{6}$/), edition: "2.0" }),
     });
   });
 });

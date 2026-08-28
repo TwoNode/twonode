@@ -1,6 +1,7 @@
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
-import { getAllGBCSettings } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { getSettings as fetchGBCSettings } from "@/gbc/services/settingsService";
 import {
   initializeTicketPayment,
   koboToNaira,
@@ -17,8 +18,9 @@ import type { TicketPurchaseInput } from "@/app/(projects)/(GBC)/utils/validatio
  * Migrated from app/(projects)/(GBC)/actions/ticket-actions.ts. Pure Prisma,
  * throws typed errors instead of {success:false} — see
  * docs/development-history/phases/phase-4-gbc.md. Ticket-number generation
- * stays on the Prisma dbgenerated default for now; the edition-metadata
- * migration (spec step 8) moves it here reading the active edition's prefix.
+ * moved here (spec step 8) from the Prisma dbgenerated SQL default, which
+ * hardcoded the "GBC2_" prefix — now reads it off the active edition instead,
+ * so a future edition's tickets get its own prefix without a schema change.
  */
 
 type TicketType = "EARLY_BIRD" | "REGULAR" | "COMPANY" | "VIP" | "STUDENT";
@@ -35,12 +37,26 @@ export type AttendeeInput = {
 };
 
 async function getSettings() {
-  const result = await getAllGBCSettings();
-  return result.success ? result.data ?? null : null;
+  return fetchGBCSettings();
 }
 
 function resolveProfession(profession: string, otherProfession?: string): string {
   return profession === "OTHER" && otherProfession ? `Other: ${otherProfession}` : profession;
+}
+
+/** Falls back to "GBC2" (the previous hardcoded prefix) if no edition is marked ACTIVE — defensive, shouldn't happen once editions are seeded. */
+function getActiveTicketPrefix(settings: Awaited<ReturnType<typeof getSettings>>): string {
+  return settings.editions?.find((e) => e.status === "ACTIVE")?.ticketPrefix ?? "GBC2";
+}
+
+function getActiveEditionKey(settings: Awaited<ReturnType<typeof getSettings>>): string {
+  return settings.editions?.find((e) => e.status === "ACTIVE")?.key ?? "2.0";
+}
+
+/** Same shape as the old dbgenerated default (prefix + 6 hex chars), just computed in application code so the prefix can vary per edition. */
+function generateTicketNumber(prefix: string): string {
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 6);
+  return `${prefix}_${suffix}`;
 }
 
 /**
@@ -129,6 +145,8 @@ export async function createTicket(data: TicketPurchaseInput) {
 
   const ticket = await prisma.gBCTicket.create({
     data: {
+      ticketNumber: generateTicketNumber(getActiveTicketPrefix(settings)),
+      edition: getActiveEditionKey(settings),
       name: data.name,
       email: data.email,
       phone: data.phone,
@@ -167,11 +185,15 @@ async function createMultiTicket(attendeesData: AttendeeInput[], count: number, 
   await assertCapacityAvailable(count, settings);
 
   const price = calculateTicketPrice(ticketType, settings?.tickets);
+  const ticketPrefix = getActiveTicketPrefix(settings);
+  const edition = getActiveEditionKey(settings);
 
   const tickets = await Promise.all(
     attendeesData.map((attendee) =>
       prisma.gBCTicket.create({
         data: {
+          ticketNumber: generateTicketNumber(ticketPrefix),
+          edition,
           name: attendee.name,
           email: attendee.email,
           phone: attendee.phone || undefined,

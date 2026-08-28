@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { uploadQRCode } from "../utils/aws-s3";
 import { checkInSchema, ticketPurchaseSchema } from "../utils/validations";
@@ -15,6 +16,18 @@ import { sendGBCTicketSMS } from "../utils/sms";
 import { generateQRCodeBuffer } from "../utils/qr_code";
 import { getAllGBCSettings } from "./settings-actions";
 import { sendGBCTicketConfirmation } from "../utils/email";
+
+/**
+ * The Prisma dbgenerated default for ticketNumber was removed in the
+ * edition-metadata migration (gbc/services/ticketService.ts now generates
+ * it, reading the active edition's prefix) — this file is superseded by
+ * that service but still has live page/component consumers pending a
+ * dedicated repointing pass, so it needs its own generator to keep working.
+ * Hardcodes "GBC2" (not edition-aware) since this file is transitional.
+ */
+function generateLegacyTicketNumber(): string {
+  return `GBC2_${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
+}
 
 export async function createGBCTicket(formData: FormData) {
   try {
@@ -89,12 +102,10 @@ export async function createGBCTicket(formData: FormData) {
     // Calculate price using settings
     const price = calculateTicketPrice(validated.ticketType, settings?.tickets);
 
-    // Generate a temporary ticket number (will be replaced by database default)
-    // const tempTicketNumber = `TEMP_${Date.now()}`;
-
     // Create ticket record first to get the real ticketNumber
     const ticket = await prisma.gBCTicket.create({
       data: {
+        ticketNumber: generateLegacyTicketNumber(),
         name: validated.name,
         email: validated.email,
         phone: validated.phone,
@@ -106,8 +117,6 @@ export async function createGBCTicket(formData: FormData) {
         ticketType: validated.ticketType,
         price,
         paymentStatus: "PENDING",
-        // Use the temporary ticket number that will be replaced by the database default
-        // ticketNumber: tempTicketNumber,
       },
     });
 
@@ -334,6 +343,7 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
 
       return prisma.gBCTicket.create({
         data: {
+          ticketNumber: generateLegacyTicketNumber(),
           name: attendee.name,
           email: attendee.email,
           phone: attendee.phone || undefined,
@@ -548,6 +558,7 @@ export async function createGBCPairTicket(attendeesData: any[]) {
 
       return prisma.gBCTicket.create({
         data: {
+          ticketNumber: generateLegacyTicketNumber(),
           name: attendee.name,
           email: attendee.email,
           phone: attendee.phone || undefined,

@@ -74,6 +74,7 @@ export async function getAllGBCSettings(): Promise<{
       },
       gallery: { ...defaultSettings.gallery, ...(savedSettings.gallery || {}) },
       system: { ...defaultSettings.system, ...(savedSettings.system || {}) },
+      editions: savedSettings.editions ?? defaultSettings.editions,
     };
 
     return {
