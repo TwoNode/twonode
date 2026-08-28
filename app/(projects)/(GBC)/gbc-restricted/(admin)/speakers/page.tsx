@@ -1,8 +1,7 @@
 import { requireAdmin } from "@/gbc/utils/auth";
-import { getAllSpeakers } from "../../../actions/speaker-actions";
+import { getAllSpeakers } from "@/gbc/services/cmsService";
 import { AddSpeakerButton } from "@/gbc/components/admin/AddSpeakerButton";
 import { SpeakersManager } from "@/gbc/components/admin/SpeakersManager";
-import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
@@ -11,10 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSpeakersPage() {
   await requireAdmin();
 
-  const speakersResult = await getAllSpeakers();
-  const speakers: Speaker[] = speakersResult.success
-    ? speakersResult.data || []
-    : [];
+  const speakers = await getAllSpeakers();
 
   return (
     <div className="space-y-6">

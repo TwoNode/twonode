@@ -74,6 +74,9 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export const sponsorSchema = z.object({
   name: z.string().min(2, "Name is required").max(100),
   logo: z.string().url("Must be a valid URL"),
+  // Not user-entered — set from the upload response so deleteSponsor's S3
+  // cleanup has a key to act on. See gallerySchema's mediaS3Key comment.
+  logoS3Key: z.string().optional(),
   tier: z.enum(["HEADLINE", "IMPACT", "SUPPORTING"]),
   description: z.string().optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
@@ -87,6 +90,7 @@ export type SponsorInput = z.infer<typeof sponsorSchema>;
 export const partnerSchema = z.object({
   name: z.string().min(2, "Name is required").max(100),
   logo: z.string().url("Must be a valid URL"),
+  logoS3Key: z.string().optional(),
   description: z.string().optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),
@@ -121,6 +125,7 @@ export const speakerSchema = z.object({
   title: z.string().min(2, "Title is required").max(200),
   bio: z.string().min(10, "Bio must be at least 10 characters"),
   photo: z.string().url("Must be a valid URL"),
+  photoS3Key: z.string().optional(),
   tier: z.enum(["KEYNOTE", "PANELIST", "FIRESIDE_CHAT"]),
   company: z.string().optional().or(z.literal("")),
   linkedin: z.string().url("Must be a valid URL").optional().or(z.literal("")),

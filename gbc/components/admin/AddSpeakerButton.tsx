@@ -20,8 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { createGBCSpeaker } from "@/app/(projects)/(GBC)/actions/speaker-actions";
-import { uploadGBCSpeakerPhoto } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Plus, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,10 +54,7 @@ export function AddSpeakerButton() {
       let photoS3Key = "";
 
       if (photoFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", photoFile);
-
-        const uploadResult = await uploadGBCSpeakerPhoto(uploadFormData);
+        const uploadResult = await gbcApi.uploads.file("speaker-photo", photoFile);
 
         if (uploadResult.success && uploadResult.data) {
           photoUrl = uploadResult.data.url;
@@ -72,11 +68,23 @@ export function AddSpeakerButton() {
         return;
       }
 
-      // Add photo URL to form data
-      formData.set("photo", photoUrl);
-      formData.set("photoS3Key", photoS3Key);
-
-      const result = await createGBCSpeaker(formData);
+      const result = await gbcApi.speakers.create({
+        name: formData.get("name") as string,
+        title: formData.get("title") as string,
+        bio: formData.get("bio") as string,
+        photo: photoUrl,
+        photoS3Key,
+        tier: formData.get("tier") as "KEYNOTE" | "PANELIST" | "FIRESIDE_CHAT",
+        company: (formData.get("company") as string) || undefined,
+        linkedin: (formData.get("linkedin") as string) || undefined,
+        twitter: (formData.get("twitter") as string) || undefined,
+        order: parseInt(formData.get("order") as string) || 0,
+        // Matches the source action's own `=== "true"` check against a plain
+        // checkbox with no value="true" — always false regardless of the
+        // checkbox, a pre-existing bug kept as-is (see Phase 5 notes).
+        visible: formData.get("visible") === "true",
+        featured: formData.get("featured") === "true",
+      });
 
       if (result.success) {
         toast.success("Speaker added successfully");

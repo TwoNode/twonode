@@ -20,8 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { updateGBCSpeaker } from "@/app/(projects)/(GBC)/actions/speaker-actions";
-import { uploadGBCSpeakerPhoto } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Speaker } from "@/gbc/types/speaker";
@@ -55,27 +54,37 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
     try {
       const formData = new FormData(e.currentTarget);
 
+      let photo = speaker.photo;
+      let photoS3Key = speaker.photoS3Key ?? undefined;
+
       // Handle photo upload if a new file is selected
       if (photoFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", photoFile);
-
-        const uploadResult = await uploadGBCSpeakerPhoto(uploadFormData);
+        const uploadResult = await gbcApi.uploads.file("speaker-photo", photoFile);
 
         if (uploadResult.success && uploadResult.data) {
-          formData.set("photo", uploadResult.data.url);
-          formData.set("photoS3Key", uploadResult.data.key);
+          photo = uploadResult.data.url;
+          photoS3Key = uploadResult.data.key;
         } else {
           toast.error("Failed to upload new photo");
           setIsSubmitting(false);
           return;
         }
-      } else {
-        // Keep existing photo
-        formData.set("photo", speaker.photo);
       }
 
-      const result = await updateGBCSpeaker(speaker.id, formData);
+      const result = await gbcApi.speakers.update(speaker.id, {
+        name: formData.get("name") as string,
+        title: formData.get("title") as string,
+        bio: formData.get("bio") as string,
+        photo,
+        photoS3Key,
+        tier: formData.get("tier") as "KEYNOTE" | "PANELIST" | "FIRESIDE_CHAT",
+        company: (formData.get("company") as string) || undefined,
+        linkedin: (formData.get("linkedin") as string) || undefined,
+        twitter: (formData.get("twitter") as string) || undefined,
+        order: parseInt(formData.get("order") as string) || 0,
+        visible: formData.get("visible") === "true",
+        featured: formData.get("featured") === "true",
+      });
 
       if (result.success) {
         toast.success("Speaker updated successfully");

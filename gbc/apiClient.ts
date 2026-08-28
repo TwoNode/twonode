@@ -1,6 +1,7 @@
 import type { ApiResult } from "@/lib/api/types";
 import type { GBCEdition } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
+import type { Speaker } from "@/gbc/types/speaker";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
@@ -73,6 +74,21 @@ export type GalleryInput = {
   year: number;
   order?: number;
   visible?: boolean;
+};
+
+export type SpeakerInput = {
+  name: string;
+  title: string;
+  bio: string;
+  photo: string;
+  photoS3Key?: string;
+  tier: "KEYNOTE" | "PANELIST" | "FIRESIDE_CHAT";
+  company?: string;
+  linkedin?: string;
+  twitter?: string;
+  order?: number;
+  visible?: boolean;
+  featured?: boolean;
 };
 
 export const gbcApi = {
@@ -149,5 +165,23 @@ export const gbcApi = {
 
     remove: (id: string) =>
       jsonFetch<undefined>(`${BASE}/admin/gallery/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  speakers: {
+    list: () => jsonFetch<Speaker[]>(`${BASE}/speakers`),
+
+    listAll: () => jsonFetch<Speaker[]>(`${BASE}/admin/speakers`),
+
+    create: (input: SpeakerInput) =>
+      jsonFetch<Speaker>(`${BASE}/admin/speakers`, { method: "POST", body: JSON.stringify(input) }),
+
+    update: (id: string, input: Partial<SpeakerInput>) =>
+      jsonFetch<Speaker>(`${BASE}/admin/speakers/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+
+    remove: (id: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/speakers/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
 };

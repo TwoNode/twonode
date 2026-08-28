@@ -13,8 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteGBCSpeaker } from "@/app/(projects)/(GBC)/actions/speaker-actions";
-import { deleteGBCFile } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Trash2, ExternalLink, Eye, EyeOff, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Speaker } from "@/gbc/types/speaker";
@@ -28,7 +27,6 @@ type SpeakerTier = "KEYNOTE" | "PANELIST" | "FIRESIDE_CHAT";
 
 export function SpeakersList({ speakers }: SpeakersListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteKey, setDeleteKey] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Group speakers by tier with proper typing
@@ -46,15 +44,11 @@ export function SpeakersList({ speakers }: SpeakersListProps) {
 
   const tiers: SpeakerTier[] = ["KEYNOTE", "PANELIST", "FIRESIDE_CHAT"];
 
-  async function handleDelete(id: string, photoS3Key?: string) {
+  async function handleDelete(id: string) {
     setIsDeleting(true);
     try {
-      // Delete photo from S3 if exists
-      if (photoS3Key) {
-        await deleteGBCFile(photoS3Key);
-      }
-
-      const result = await deleteGBCSpeaker(id);
+      // gbcApi.speakers.remove already cleans up the photo from S3 server-side.
+      const result = await gbcApi.speakers.remove(id);
       if (result.success) {
         toast.success("Speaker deleted successfully");
         setDeleteId(null);
@@ -105,12 +99,7 @@ export function SpeakersList({ speakers }: SpeakersListProps) {
                   <SpeakerCard
                     key={speaker.id}
                     speaker={speaker}
-                    onDelete={() => {
-                      setDeleteId(speaker.id);
-                      if (speaker.photoS3Key) {
-                        setDeleteKey(speaker.photoS3Key);
-                      }
-                    }}
+                    onDelete={() => setDeleteId(speaker.id)}
                   />
                 ))}
               </div>
@@ -134,9 +123,7 @@ export function SpeakersList({ speakers }: SpeakersListProps) {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                deleteId && handleDelete(deleteId, deleteKey || undefined)
-              }
+              onClick={() => deleteId && handleDelete(deleteId)}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700"
             >

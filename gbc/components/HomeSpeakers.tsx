@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
-import { getSpeakers } from "@/app/(projects)/(GBC)/actions/speaker-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Speaker } from "@/gbc/types/speaker";
 
 export default function HomeSpeakers() {
@@ -14,7 +14,7 @@ export default function HomeSpeakers() {
     const fetchSpeakers = async () => {
       setIsLoading(true);
       try {
-        const speakersResult = await getSpeakers();
+        const speakersResult = await gbcApi.speakers.list();
         if (speakersResult.success) {
           setAllSpeakers(speakersResult.data || []);
         }
