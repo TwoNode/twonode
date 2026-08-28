@@ -5,22 +5,13 @@ import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import {
-  Home,
-  Ticket,
-  CheckSquare,
-  QrCode,
-  Settings,
-  LogOut,
-  Shield,
-  Users,
-  Calendar,
-} from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { GBC_COLORS } from "@/gbc-colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import { useGBCAdminAccess } from "@/hooks/useGBCAdminAccess";
 import { canAccessGBCSuperAdminPanel } from "@/permissions";
+import { getNavItemsForRole } from "@/gbc/access/routes";
 
 // GBC admin dashboard navbar with logo and username
 function GBCAdminDashboardNavbar({
@@ -69,29 +60,16 @@ export default function GBCAdminPanelLayout({
   const { user, isAdmin, isLoading, userData } = useGBCAdminAccess();
 
   const sidebarItems = [
-    { icon: Home, label: "Home", url: dashboardUrl },
-    {
-      icon: Ticket,
-      label: "Tickets",
-      url: `${dashboardUrl}/tickets`,
-    },
-    {
-      icon: CheckSquare,
-      label: "Check In",
-      url: `${dashboardUrl}/check-in`,
-    },
-    {
-      icon: QrCode,
-      label: "QR Codes",
-      url: `${dashboardUrl}/qr-code`,
-    },
-    {
-      icon: Users,
-      label: "Attendees",
-      url: `${dashboardUrl}/attendees`,
-    },
-    { icon: Calendar, label: "Editions", url: `${dashboardUrl}/editions` },
-    { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
+    // gbc/access/routes.ts is the single source of truth for which nav
+    // items render per role — replaces the hand-written array (which was
+    // missing Gallery/Speakers/Sponsors/Inquiries/Certificates/Admin Users
+    // despite those pages existing, and linked a dead /qr-code page under
+    // "QR Codes" — both found while wiring this up).
+    ...getNavItemsForRole(userData?.role ?? null, "admin").map((r) => ({
+      icon: r.icon,
+      label: r.label,
+      url: r.path,
+    })),
     ...(userData?.role && canAccessGBCSuperAdminPanel(userData.role)
       ? [
           {

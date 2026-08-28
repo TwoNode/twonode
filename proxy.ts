@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import {
-  canAccessGBCAdminPanel,
-  canAccessGBCUserPanel,
-  canAccessGBCSuperAdminPanel,
-} from "@/permissions";
+import { canAccessGBCSuperAdminPanel } from "@/permissions";
 import {
   getAndRefreshUserSession,
 } from "@/utils/encryptedCookies";
@@ -14,6 +10,7 @@ import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
 import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
 import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
 import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
+import { canAccessRoute as canAccessGBCRoute } from "@/gbc/access/routes";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -288,9 +285,18 @@ const proxyWithLogic = withDynamicAuth(
         hasAccess = canAccessSurfboardRoute(pathname, role);
       } else if (pathname.startsWith("/gbc/restricted")) {
         if (pathname.startsWith("/gbc/restricted/superadmin")) {
+          // Not a registry entry — no real page lives at this exact path
+          // (confirmed by reading the folder tree while building
+          // gbc/access/routes.ts); kept as a direct role check, same
+          // treatment as REVA's and Surfboard's equivalent dead branches.
           hasAccess = canAccessGBCSuperAdminPanel(role);
         } else {
-          hasAccess = canAccessGBCAdminPanel(role);
+          // Nav/role access now comes from gbc/access/routes.ts (the same
+          // registry gbcAdminPanelLayout.tsx's sidebar reads) instead of a
+          // single blanket canAccessGBCAdminPanel check — closes the same
+          // single-source-of-truth gap Phase 2/3 closed for
+          // Surfboard/REVA.
+          hasAccess = canAccessGBCRoute(pathname, role);
         }
       }
 
