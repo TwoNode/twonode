@@ -68,7 +68,9 @@ const {
   checkInTicket,
 } = await import("@/gbc/services/ticketService");
 
-const attendee = (overrides: Partial<Record<string, any>> = {}) => ({
+type AttendeeInput = Parameters<typeof createPairTicket>[0][number];
+
+const attendee = (overrides: Partial<AttendeeInput> = {}): AttendeeInput => ({
   name: "Jane Doe",
   email: "jane@test.com",
   gender: "FEMALE",
