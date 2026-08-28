@@ -11,7 +11,7 @@ import type { ContactFormInput } from "@/app/(projects)/(GBC)/utils/validations"
 /**
  * Migrated from contact-actions.ts — inquiry functions only. Its "USER
  * MANAGEMENT" tail (getGBCUsers/updateGBCUserRole) is dead — zero real
- * importers, the live /gbc/restricted/users page uses admin-actions.ts
+ * importers, the live /gbc-restricted/users page uses admin-actions.ts
  * instead — not migrated, per phase-4-gbc.md.
  */
 

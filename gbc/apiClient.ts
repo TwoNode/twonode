@@ -3,7 +3,7 @@ import type { GBCEdition } from "@/app/(projects)/(GBC)/utils/settings";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
- * surface, for the admin event-switcher (gbc/restricted/editions). Same-origin
+ * surface, for the admin event-switcher (gbc-restricted/editions). Same-origin
  * fetch already sends cookies, so no credentials option is needed. Extend as
  * more admin pages get repointed off their legacy "use server" actions.
  */

@@ -56,7 +56,7 @@ export default function GBCAdminPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const dashboardUrl = "/gbc/restricted";
+  const dashboardUrl = "/gbc-restricted";
   const { user, isAdmin, isLoading, userData } = useGBCAdminAccess();
 
   const sidebarItems = [

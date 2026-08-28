@@ -40,6 +40,15 @@ const nextConfig = {
       { source: "/reva/dashboard/viewdetails", destination: "/reva/dashboard/details", permanent: true },
       { source: "/reva-restricted/dashboard/viewdetails", destination: "/reva-restricted/dashboard/details", permanent: true },
       { source: "/reva/viewdetails", destination: "/reva/details", permanent: true },
+      // GBC naming standardization (Phase 4, step 14): gbc/restricted ->
+      // gbc-restricted, flattened to match reva-restricted/surfboard-restricted's
+      // convention. Simpler than Surfboard's/REVA's rename — the Kinde OAuth
+      // callback (/api/auth/success/gbc-restricted) was already hyphenated
+      // ahead of the page routes catching up, so no callback exclusion is
+      // needed here.
+      { source: "/gbc/restricted", destination: "/gbc-restricted", permanent: true },
+      { source: "/gbc/restricted/:path*", destination: "/gbc-restricted/:path*", permanent: true },
+      { source: "/gbc/restricted-login", destination: "/gbc-restricted/login", permanent: true },
     ];
   },
 

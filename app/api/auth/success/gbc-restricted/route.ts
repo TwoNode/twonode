@@ -77,10 +77,10 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/gbc/restricted";
+    const fallbackUrl = "/gbc-restricted";
 
     const redirectUrl = (() => {
-      if (postLoginRaw && postLoginRaw.startsWith("/gbc/restricted")) {
+      if (postLoginRaw && postLoginRaw.startsWith("/gbc-restricted")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
       }

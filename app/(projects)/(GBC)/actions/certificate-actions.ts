@@ -46,7 +46,7 @@ export async function sendBulkCertificates(ticketNumbers: string[], emailBody: s
       }
     }
 
-    revalidatePath("/gbc/restricted/certificates");
+    revalidatePath("/gbc-restricted/certificates");
 
     return { 
       success: true, 

@@ -48,7 +48,7 @@ export async function createGBCPartner(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc-restricted/partners");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, data: partner };
@@ -69,7 +69,7 @@ export async function deleteGBCPartner(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc-restricted/partners");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, message: "Partner deleted successfully" };

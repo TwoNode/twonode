@@ -72,7 +72,7 @@ export async function createGBCSponsor(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc/restricted/sponsors");
+    revalidatePath("/gbc-restricted/sponsors");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, data: sponsor };
@@ -124,7 +124,7 @@ export async function updateGBCSponsor(id: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc/restricted/sponsors");
+    revalidatePath("/gbc-restricted/sponsors");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, data: sponsor };
@@ -145,7 +145,7 @@ export async function deleteGBCSponsor(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc/restricted/sponsors");
+    revalidatePath("/gbc-restricted/sponsors");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, message: "Sponsor deleted successfully" };
@@ -200,7 +200,7 @@ export async function createGBCPartner(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc-restricted/partners");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, data: partner };
@@ -221,7 +221,7 @@ export async function deleteGBCPartner(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc/restricted/partners");
+    revalidatePath("/gbc-restricted/partners");
     revalidatePath("/gbc/sponsors");
 
     return { success: true, message: "Partner deleted successfully" };

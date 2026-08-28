@@ -27,7 +27,7 @@ import { GBCRole } from "@/utils/platform";
  * roles can reach them, and (via canAccessRoute) what proxy.ts gates on.
  * Same shape as reva/access/routes.ts, minus a "user" group — GBC ticket
  * holders never get an account (GBCTicket has no relation to GBCUser), so
- * the public site itself is the "user" experience. `/gbc/restricted/{...}`
+ * the public site itself is the "user" experience. `/gbc-restricted/{...}`
  * is a single flat admin tier here (ADMIN and SUPERADMIN both reach every
  * page below it) — unlike REVA/Surfboard, proxy.ts's current GBC branch
  * never special-cases a sub-path other than /superadmin, which has no real
@@ -36,12 +36,12 @@ import { GBCRole } from "@/utils/platform";
  * and Surfboard's equivalent dead branches.
  *
  * The nav side of this backs `AdminSidebar.tsx` (the real, live admin
- * sidebar rendered by `gbc/restricted/layout.tsx`) — not
+ * sidebar rendered by `gbc-restricted/layout.tsx`) — not
  * `components/layouts/gbcAdminPanelLayout.tsx`, which turned out to be
  * unused scaffolding never imported anywhere (confirmed by a repo-wide
  * grep) despite being the one the Phase 4 spec's step 13 language
  * describes. Wiring the real sidebar to this registry surfaced two
- * genuine gaps: `/gbc/restricted/attendees` and `/gbc/restricted/editions`
+ * genuine gaps: `/gbc-restricted/attendees` and `/gbc-restricted/editions`
  * both have working pages that were never in `AdminSidebar.tsx`'s
  * hand-written array, so nothing linked to them at all. Both are fixed
  * here by registering them as real nav items.
@@ -62,7 +62,7 @@ const ADMIN_ROLES = [GBCRole.ADMIN, GBCRole.SUPERADMIN];
 /** Guest pages need no role at all — the public site itself is the "user" experience. */
 const PUBLIC: GBCRole[] = [];
 
-const ADMIN_BASE = "/gbc/restricted";
+const ADMIN_BASE = "/gbc-restricted";
 
 export const GBC_ROUTES: GBCRouteEntry[] = [
   // --- Admin panel (ADMIN/SUPERADMIN — proxy.ts's current gate treats the whole tree as one flat role check) ---

@@ -47,7 +47,7 @@ export function useGBCAdminAccess() {
         if (isMounted) {
           setIsAdmin(false);
           setIsLoading(false);
-          router.push("/gbc/restricted/login");
+          router.push("/gbc-restricted/login");
         }
         return;
       }
@@ -77,7 +77,7 @@ export function useGBCAdminAccess() {
           console.log("❌ No active GBC session found in current multi-platform login");
           if (isMounted) {
             setIsAdmin(false);
-            router.push("/gbc/restricted/login");
+            router.push("/gbc-restricted/login");
           }
           return;
         }
@@ -105,7 +105,7 @@ export function useGBCAdminAccess() {
         console.error("❌ Error checking GBC admin access:", error);
         if (isMounted) {
           setIsAdmin(false);
-          router.push("/gbc/restricted/login");
+          router.push("/gbc-restricted/login");
         }
       } finally {
         if (isMounted) {

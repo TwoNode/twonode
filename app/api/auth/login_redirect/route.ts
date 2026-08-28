@@ -47,7 +47,7 @@ export async function GET() {
     }
   } else if (userData.platform === Platform.GBC) {
     if (canAccessGBCAdminPanel(userData.role)) {
-      redirectUrl = "/gbc/restricted";
+      redirectUrl = "/gbc-restricted";
     } else if (canAccessGBCUserPanel(userData.role)) {
       redirectUrl = "/gbc";
     }

@@ -72,7 +72,7 @@ export async function createGBCSpeaker(formData: FormData) {
       },
     });
 
-    revalidatePath("/gbc/restricted/speakers");
+    revalidatePath("/gbc-restricted/speakers");
     revalidatePath("/gbc/speakers");
 
     return { success: true, data: speaker };
@@ -111,7 +111,7 @@ export async function updateGBCSpeaker(id: string, formData: FormData) {
       data: validated,
     });
 
-    revalidatePath("/gbc/restricted/speakers");
+    revalidatePath("/gbc-restricted/speakers");
     revalidatePath("/gbc/speakers");
 
     return { success: true, data: speaker };
@@ -148,7 +148,7 @@ export async function deleteGBCSpeaker(id: string) {
       }
     }
 
-    revalidatePath("/gbc/restricted/speakers");
+    revalidatePath("/gbc-restricted/speakers");
     revalidatePath("/gbc/speakers");
 
     return { success: true, message: "Speaker deleted successfully" };

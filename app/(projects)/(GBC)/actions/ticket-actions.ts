@@ -172,7 +172,7 @@ export async function createGBCTicket(formData: FormData) {
       data: { paymentRef: paymentResponse.data.reference },
     });
 
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/tickets");
     revalidatePath("/gbc/tickets");
 
     return {
@@ -389,7 +389,7 @@ export async function createGBCGroupTicket(attendeesData: any[]) {
       )
     );
 
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/tickets");
     revalidatePath("/gbc/tickets");
 
     return {
@@ -602,7 +602,7 @@ export async function createGBCPairTicket(attendeesData: any[]) {
       )
     );
 
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/tickets");
     revalidatePath("/gbc/tickets");
 
     return {
@@ -1022,8 +1022,8 @@ export async function checkInGBCTicket(ticketNumber: string) {
       }
     }
 
-    revalidatePath("/gbc/restricted/check-in");
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/check-in");
+    revalidatePath("/gbc-restricted/tickets");
 
     return {
       success: true,
@@ -1263,7 +1263,7 @@ export async function deleteGBCTicket(id: string) {
       where: { id },
     });
 
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/tickets");
 
     return { success: true, message: "Ticket deleted successfully" };
   } catch (error) {
@@ -1307,7 +1307,7 @@ export async function generateGBCTicketQRCode(ticketId: string) {
       },
     });
 
-    revalidatePath("/gbc/restricted/tickets");
+    revalidatePath("/gbc-restricted/tickets");
 
     return { success: true, data: { url, key } };
   } catch (error) {

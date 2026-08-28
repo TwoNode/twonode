@@ -24,7 +24,7 @@ const protectedRoutes = [
   "/surfboard-restricted/dashboard",
   "/surfboard-restricted/superadmin",
   "/surfboard-mda/dashboard",
-  "/gbc/restricted",
+  "/gbc-restricted",
 ]; 
 
 // Define public routes that bypass authentication
@@ -104,8 +104,8 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/surfboard-restricted"))
         return "/surfboard-restricted/login";
       if (pathname.startsWith("/surfboard")) return "/surfboard/login";
-      if (pathname.startsWith("/gbc/restricted"))
-        return "/gbc/restricted-login";
+      if (pathname.startsWith("/gbc-restricted"))
+        return "/gbc-restricted/login";
       if (pathname.startsWith("/gbc")) return "/gbc/login";
 
       return "/reva/login"; // Default fallback
@@ -146,8 +146,8 @@ const proxyWithLogic = withDynamicAuth(
         redirectPath = "/surfboard-restricted/login";
       else if (pathname.startsWith("/surfboard"))
         redirectPath = "/surfboard/login";
-      else if (pathname.startsWith("/gbc/restricted"))
-        redirectPath = "/gbc/restricted-login";
+      else if (pathname.startsWith("/gbc-restricted"))
+        redirectPath = "/gbc-restricted/login";
       else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
       console.log(
         "🛡️ Proxy - User not authenticated, redirecting to:",
@@ -176,8 +176,8 @@ const proxyWithLogic = withDynamicAuth(
           redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - No session data found, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -208,8 +208,8 @@ const proxyWithLogic = withDynamicAuth(
           redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - Missing platform session, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -283,8 +283,8 @@ const proxyWithLogic = withDynamicAuth(
         // surfboard/access/routes.ts allows, instead of a parallel,
         // easy-to-drift string-matching table.
         hasAccess = canAccessSurfboardRoute(pathname, role);
-      } else if (pathname.startsWith("/gbc/restricted")) {
-        if (pathname.startsWith("/gbc/restricted/superadmin")) {
+      } else if (pathname.startsWith("/gbc-restricted")) {
+        if (pathname.startsWith("/gbc-restricted/superadmin")) {
           // Not a registry entry — no real page lives at this exact path
           // (confirmed by reading the folder tree while building
           // gbc/access/routes.ts); kept as a direct role check, same
@@ -292,8 +292,8 @@ const proxyWithLogic = withDynamicAuth(
           hasAccess = canAccessGBCSuperAdminPanel(role);
         } else {
           // Nav/role access now comes from gbc/access/routes.ts (the same
-          // registry gbcAdminPanelLayout.tsx's sidebar reads) instead of a
-          // single blanket canAccessGBCAdminPanel check — closes the same
+          // registry AdminSidebar.tsx's nav reads) instead of a single
+          // blanket canAccessGBCAdminPanel check — closes the same
           // single-source-of-truth gap Phase 2/3 closed for
           // Surfboard/REVA.
           hasAccess = canAccessGBCRoute(pathname, role);
@@ -313,8 +313,8 @@ const proxyWithLogic = withDynamicAuth(
           redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - User does not have required role, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -340,6 +340,6 @@ export const config = {
     "/surfboard-restricted/dashboard/:path*",
     "/surfboard-restricted/superadmin/:path*",
     "/surfboard-mda/dashboard/:path*",
-    "/gbc/restricted/:path*",
+    "/gbc-restricted/:path*",
   ],
 };
