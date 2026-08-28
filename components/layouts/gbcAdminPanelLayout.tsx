@@ -14,6 +14,7 @@ import {
   LogOut,
   Shield,
   Users,
+  Calendar,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { GBC_COLORS } from "@/gbc-colors";
@@ -89,6 +90,7 @@ export default function GBCAdminPanelLayout({
       label: "Attendees",
       url: `${dashboardUrl}/attendees`,
     },
+    { icon: Calendar, label: "Editions", url: `${dashboardUrl}/editions` },
     { icon: Settings, label: "Settings", url: `${dashboardUrl}/settings` },
     ...(userData?.role && canAccessGBCSuperAdminPanel(userData.role)
       ? [
