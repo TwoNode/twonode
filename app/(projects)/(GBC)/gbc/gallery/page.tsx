@@ -3,7 +3,7 @@ import { Play, Image as ImageIcon } from "lucide-react";
 import { getGalleryItems } from "../../actions/gallery-actions";
 import { getAllGBCSettings } from "../../actions/settings-actions";
 import Link from "next/link";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function GalleryPage() {
   const galleryResult = await getGalleryItems();

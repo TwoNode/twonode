@@ -1,8 +1,8 @@
 "use client";
 
-import { QRScanner } from "../../../components/admin/QRScanner";
-import { QRImageUpload } from "../../../components/admin/QRImageUpload";
-import { ManualCheckIn } from "../../../components/admin/ManualCheckIn";
+import { QRScanner } from "@/gbc/components/admin/QRScanner";
+import { QRImageUpload } from "@/gbc/components/admin/QRImageUpload";
+import { ManualCheckIn } from "@/gbc/components/admin/ManualCheckIn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/card";

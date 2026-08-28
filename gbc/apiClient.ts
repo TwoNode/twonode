@@ -1,5 +1,5 @@
 import type { ApiResult } from "@/lib/api/types";
-import type { GBCEdition } from "@/app/(projects)/(GBC)/utils/settings";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions

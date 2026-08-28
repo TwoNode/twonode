@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { revalidatePath } from "next/cache";
-import { GBCSettingsData, defaultSettings } from "../utils/settings";
+import { GBCSettingsData, defaultSettings } from "@/gbc/utils/settings";
 
 // Get the current user and check authorization
 async function checkAuthorization(requireSuperAdmin = false) {

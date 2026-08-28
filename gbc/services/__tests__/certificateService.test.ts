@@ -7,7 +7,7 @@ const mockPrisma = vi.hoisted(() => ({
 const mockEmail = vi.hoisted(() => ({ sendGBCCertificateEmail: vi.fn() }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/app/(projects)/(GBC)/utils/email", () => mockEmail);
+vi.mock("@/gbc/utils/email", () => mockEmail);
 
 const { sendBulkCertificates } = await import("@/gbc/services/certificateService");
 

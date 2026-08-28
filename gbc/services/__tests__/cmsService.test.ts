@@ -24,7 +24,7 @@ const mockAwsS3 = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/app/(projects)/(GBC)/utils/aws-s3", () => mockAwsS3);
+vi.mock("@/gbc/utils/aws-s3", () => mockAwsS3);
 
 const {
   deleteGalleryItem,

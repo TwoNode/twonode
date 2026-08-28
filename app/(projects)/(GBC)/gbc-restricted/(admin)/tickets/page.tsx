@@ -2,8 +2,8 @@ import { getGBCTickets } from "../../../actions/ticket-actions";
 import {
   AdminTicketsTable,
   type Ticket,
-} from "../../../components/admin/TicketsTable";
-import { ExportButton } from "../../../components/admin/ExportButton";
+} from "@/gbc/components/admin/TicketsTable";
+import { ExportButton } from "@/gbc/components/admin/ExportButton";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 

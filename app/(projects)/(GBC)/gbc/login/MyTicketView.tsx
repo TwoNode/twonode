@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, Clock, Calendar, MapPin } from "lucide-react";
 import type { GBCTicket } from "@/prisma/generated";
-import type { GBCEdition } from "@/app/(projects)/(GBC)/utils/settings";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 const TICKET_TYPE_LABEL: Record<string, string> = {
   EARLY_BIRD: "Early Bird",

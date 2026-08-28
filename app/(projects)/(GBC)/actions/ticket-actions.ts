@@ -2,20 +2,20 @@
 
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { uploadQRCode } from "../utils/aws-s3";
-import { checkInSchema, ticketPurchaseSchema } from "../utils/validations";
+import { uploadQRCode } from "@/gbc/utils/aws-s3";
+import { checkInSchema, ticketPurchaseSchema } from "@/gbc/utils/validations";
 import prisma from "@/lib/prisma";
 import {
   initializeTicketPayment,
   koboToNaira,
   verifyPayment,
-} from "../utils/paystack";
-import { requireAdmin } from "../utils/auth";
-import { calculateTicketPrice } from "../utils";
-import { sendGBCTicketSMS } from "../utils/sms";
-import { generateQRCodeBuffer } from "../utils/qr_code";
+} from "@/gbc/utils/paystack";
+import { requireAdmin } from "@/gbc/utils/auth";
+import { calculateTicketPrice } from "@/gbc/utils";
+import { sendGBCTicketSMS } from "@/gbc/utils/sms";
+import { generateQRCodeBuffer } from "@/gbc/utils/qr_code";
 import { getAllGBCSettings } from "./settings-actions";
-import { sendGBCTicketConfirmation } from "../utils/email";
+import { sendGBCTicketConfirmation } from "@/gbc/utils/email";
 
 /**
  * The Prisma dbgenerated default for ticketNumber was removed in the
@@ -82,7 +82,7 @@ export async function createGBCTicket(formData: FormData) {
     }
 
     // Check if the selected ticket type is available
-    const { isTicketTypeAvailable } = await import("../utils");
+    const { isTicketTypeAvailable } = await import("@/gbc/utils");
     const ticketAvailability = isTicketTypeAvailable(
       validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
       soldEarlyBirdTickets,

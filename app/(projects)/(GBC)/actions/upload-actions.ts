@@ -1,14 +1,14 @@
 // src/actions/upload-actions.ts
 "use server";
 
-import { requireAdmin } from "../utils/auth";
+import { requireAdmin } from "@/gbc/utils/auth";
 
 import {
   uploadLogo,
   uploadSpeakerPhoto,
   uploadGalleryMedia,
   deleteFromS3,
-} from "../utils/aws-s3";
+} from "@/gbc/utils/aws-s3";
 /**
  * Upload sponsor logo
  */

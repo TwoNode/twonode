@@ -2,14 +2,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "../utils/auth";
+import { requireAdmin } from "@/gbc/utils/auth";
 import {
   gallerySchema,
   partnerSchema,
   sponsorSchema,
-} from "../utils/validations";
+} from "@/gbc/utils/validations";
 import prisma from "@/lib/prisma";
-import { deleteFromS3 } from "../utils/aws-s3";
+import { deleteFromS3 } from "@/gbc/utils/aws-s3";
 
 // ============ SPONSORS ============
 

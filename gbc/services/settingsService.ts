@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import { GBCSettingsData, defaultSettings } from "@/app/(projects)/(GBC)/utils/settings";
+import { GBCSettingsData, defaultSettings } from "@/gbc/utils/settings";
 
 /**
  * Migrated from settings-actions.ts. checkAuthorization() is superseded

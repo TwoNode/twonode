@@ -2,8 +2,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "../utils/auth";
-import { partnerSchema } from "../utils/validations";
+import { requireAdmin } from "@/gbc/utils/auth";
+import { partnerSchema } from "@/gbc/utils/validations";
 import prisma from "@/lib/prisma";
 
 // ============ PARTNERS ============

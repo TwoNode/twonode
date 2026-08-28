@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 // import { getSponsors, getPartners } from "@/actions/sponsor-actions";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
 import { getPartners, getSponsors } from "../../actions/sponsor-actions";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function SponsorsPage() {
   const sponsorsResult = await getSponsors();

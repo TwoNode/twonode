@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { speakerSchema } from "@/app/(projects)/(GBC)/utils/validations";
+import { speakerSchema } from "@/gbc/utils/validations";
 import { getAllSpeakers, createSpeaker } from "@/gbc/services/cmsService";
 import { Platform, GBCRole } from "@/utils/platform";
 

@@ -2,10 +2,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "../utils/auth";
-import { speakerSchema } from "../utils/validations";
+import { requireAdmin } from "@/gbc/utils/auth";
+import { speakerSchema } from "@/gbc/utils/validations";
 import prisma from "@/lib/prisma";
-import { deleteFromS3 } from "../utils/aws-s3";
+import { deleteFromS3 } from "@/gbc/utils/aws-s3";
 
 // ============ SPEAKERS ============
 

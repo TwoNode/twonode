@@ -3,7 +3,7 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { sponsorSchema } from "@/app/(projects)/(GBC)/utils/validations";
+import { sponsorSchema } from "@/gbc/utils/validations";
 import { updateSponsor, deleteSponsor } from "@/gbc/services/cmsService";
 import { Platform, GBCRole } from "@/utils/platform";
 

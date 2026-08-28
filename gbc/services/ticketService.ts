@@ -6,13 +6,13 @@ import {
   initializeTicketPayment,
   koboToNaira,
   verifyPayment as verifyPaystackPayment,
-} from "@/app/(projects)/(GBC)/utils/paystack";
-import { uploadQRCode } from "@/app/(projects)/(GBC)/utils/aws-s3";
-import { generateQRCodeBuffer } from "@/app/(projects)/(GBC)/utils/qr_code";
-import { sendGBCTicketConfirmation } from "@/app/(projects)/(GBC)/utils/email";
-import { sendGBCTicketSMS } from "@/app/(projects)/(GBC)/utils/sms";
-import { calculateTicketPrice, isTicketTypeAvailable } from "@/app/(projects)/(GBC)/utils";
-import type { TicketPurchaseInput } from "@/app/(projects)/(GBC)/utils/validations";
+} from "@/gbc/utils/paystack";
+import { uploadQRCode } from "@/gbc/utils/aws-s3";
+import { generateQRCodeBuffer } from "@/gbc/utils/qr_code";
+import { sendGBCTicketConfirmation } from "@/gbc/utils/email";
+import { sendGBCTicketSMS } from "@/gbc/utils/sms";
+import { calculateTicketPrice, isTicketTypeAvailable } from "@/gbc/utils";
+import type { TicketPurchaseInput } from "@/gbc/utils/validations";
 
 /**
  * Migrated from app/(projects)/(GBC)/actions/ticket-actions.ts. Pure Prisma,

@@ -10,7 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { getAllGBCSettings } from "../../actions/settings-actions";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function AboutPage() {
   // Fetch settings for dynamic event information

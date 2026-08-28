@@ -2,8 +2,8 @@
 import { getGBCContactInquiries } from "../../../actions/contact-actions";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
-import { InquiriesTable } from "../../../components/admin/InquiriesTable";
-import { InquiriesFilters } from "../../../components/admin/InquiriesFilters";
+import { InquiriesTable } from "@/gbc/components/admin/InquiriesTable";
+import { InquiriesFilters } from "@/gbc/components/admin/InquiriesFilters";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";

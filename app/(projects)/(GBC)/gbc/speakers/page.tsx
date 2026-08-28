@@ -1,6 +1,6 @@
 import { getSpeakers } from "../../actions/speaker-actions";
-import GBC2Navbar from "../../components/Navbar";
-import { Speaker } from "../../types/speaker";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
 

@@ -1,9 +1,9 @@
-import { requireAdmin } from "../../../utils/auth";
+import { requireAdmin } from "@/gbc/utils/auth";
 import { getAllGalleryItems } from "../../../actions/gallery-actions";
-import { AddGalleryButton } from "../../../components/admin/AddGalleryButton";
-import { GalleryGrid } from "../../../components/admin/GalleryGrid";
-import { GalleryFilters } from "../../../components/admin/GalleryFilters";
-import { GalleryItem } from "../../../types/gallery";
+import { AddGalleryButton } from "@/gbc/components/admin/AddGalleryButton";
+import { GalleryGrid } from "@/gbc/components/admin/GalleryGrid";
+import { GalleryFilters } from "@/gbc/components/admin/GalleryFilters";
+import { GalleryItem } from "@/gbc/types/gallery";
 import { Card } from "@/components/ui/card";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.

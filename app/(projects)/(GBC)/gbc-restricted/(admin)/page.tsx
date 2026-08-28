@@ -1,9 +1,9 @@
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { getGBCTicketStats } from "../../actions/ticket-actions";
-import { requireAdmin } from "../../utils/auth";
-import { StatsCard } from "../../components/admin/StatsCard";
-import { RecentTickets } from "../../components/admin/RecentTickets";
+import { requireAdmin } from "@/gbc/utils/auth";
+import { StatsCard } from "@/gbc/components/admin/StatsCard";
+import { RecentTickets } from "@/gbc/components/admin/RecentTickets";
 import Link from "next/link";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.

@@ -2,9 +2,9 @@
 
 import { Card } from "@/components/ui/card";
 import { Users, Shield, Search } from "lucide-react";
-import { AdminUsersList } from "../../../components/admin/AdminUsersList";
-import { AddAdminModal } from "../../../components/admin/AddAdminModal";
-import { AdminFilter } from "../../../components/admin/AdminFilter";
+import { AdminUsersList } from "@/gbc/components/admin/AdminUsersList";
+import { AddAdminModal } from "@/gbc/components/admin/AddAdminModal";
+import { AdminFilter } from "@/gbc/components/admin/AdminFilter";
 import { useEffect, useState } from "react";
 import { getAllAdmins } from "../../../actions/admin-actions";
 

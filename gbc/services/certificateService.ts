@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { ValidationError } from "@/lib/api/errors";
-import { sendGBCCertificateEmail } from "@/app/(projects)/(GBC)/utils/email";
+import { sendGBCCertificateEmail } from "@/gbc/utils/email";
 
 /**
  * Migrated from certificate-actions.ts. Note: the source `sendBulkCertificates`

@@ -1,8 +1,8 @@
-import { requireAdmin } from "../../../utils/auth";
+import { requireAdmin } from "@/gbc/utils/auth";
 import { getAllSpeakers } from "../../../actions/speaker-actions";
-import { AddSpeakerButton } from "../../../components/admin/AddSpeakerButton";
-import { SpeakersManager } from "../../../components/admin/SpeakersManager";
-import { Speaker } from "../../../types/speaker";
+import { AddSpeakerButton } from "@/gbc/components/admin/AddSpeakerButton";
+import { SpeakersManager } from "@/gbc/components/admin/SpeakersManager";
+import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.

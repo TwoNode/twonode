@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Ticket, CheckCircle2, Wallet, Plus } from "lucide-react";
 import { gbcApi, type EditionAdminStats } from "@/gbc/apiClient";
-import type { GBCEdition } from "@/app/(projects)/(GBC)/utils/settings";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 const STATUS_VARIANT: Record<GBCEdition["status"], "default" | "secondary" | "outline"> = {
   ACTIVE: "default",

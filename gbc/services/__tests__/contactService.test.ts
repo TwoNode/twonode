@@ -11,7 +11,7 @@ const mockEmail = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/app/(projects)/(GBC)/utils/email", () => mockEmail);
+vi.mock("@/gbc/utils/email", () => mockEmail);
 
 const { submitContactForm, replyToInquiry } = await import("@/gbc/services/contactService");
 

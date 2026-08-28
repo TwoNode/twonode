@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
 import { getSettings, replaceEditions } from "@/gbc/services/settingsService";
-import type { GBCEdition } from "@/app/(projects)/(GBC)/utils/settings";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 /**
  * New service (spec step 9) — editions live inside GBCSettings.settings

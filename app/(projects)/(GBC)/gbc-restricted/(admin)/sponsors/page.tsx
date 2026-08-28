@@ -1,8 +1,8 @@
-import { requireAdmin } from "../../../utils/auth";
+import { requireAdmin } from "@/gbc/utils/auth";
 import { getAllSponsors } from "../../../actions/sponsor-actions";
-import { AddSponsorButton } from "../../../components/admin/AddSponsorButton";
-import { SponsorsManager } from "../../../components/admin/SponsorsManager";
-import { Sponsor } from "../../../types/sponsor";
+import { AddSponsorButton } from "@/gbc/components/admin/AddSponsorButton";
+import { SponsorsManager } from "@/gbc/components/admin/SponsorsManager";
+import { Sponsor } from "@/gbc/types/sponsor";
 import { Card } from "@/components/ui/card";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.

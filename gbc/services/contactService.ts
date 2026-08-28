@@ -5,8 +5,8 @@ import {
   sendGBCAdminNotification,
   sendGBCContactConfirmation,
   sendGBCInquiryReply,
-} from "@/app/(projects)/(GBC)/utils/email";
-import type { ContactFormInput } from "@/app/(projects)/(GBC)/utils/validations";
+} from "@/gbc/utils/email";
+import type { ContactFormInput } from "@/gbc/utils/validations";
 
 /**
  * Migrated from contact-actions.ts — inquiry functions only. Its "USER

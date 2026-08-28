@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { contactFormSchema } from "../utils/validations";
-import { requireAdmin } from "../utils/auth";
+import { contactFormSchema } from "@/gbc/utils/validations";
+import { requireAdmin } from "@/gbc/utils/auth";
 import {
   sendGBCAdminNotification,
   sendGBCContactConfirmation,
-} from "../utils/email";
+} from "@/gbc/utils/email";
 
 export async function submitGBCContactForm(formData: FormData) {
   try {
@@ -152,7 +152,7 @@ export async function replyToGBCInquiry(
     }
 
     // Send the reply email
-    const { sendGBCInquiryReply } = await import("../utils/email");
+    const { sendGBCInquiryReply } = await import("@/gbc/utils/email");
     const emailResult = await sendGBCInquiryReply(
       inquiry.email,
       inquiry.name,

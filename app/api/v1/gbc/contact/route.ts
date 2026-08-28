@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleApiError } from "@/lib/api/errors";
 import { validateBody } from "@/lib/api/validate";
-import { contactFormSchema } from "@/app/(projects)/(GBC)/utils/validations";
+import { contactFormSchema } from "@/gbc/utils/validations";
 import { submitContactForm } from "@/gbc/services/contactService";
 
 export async function POST(req: NextRequest) {

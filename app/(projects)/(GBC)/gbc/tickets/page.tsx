@@ -1,11 +1,11 @@
 import { AlertCircle } from "lucide-react";
 import { getGBCTicketAvailability } from "../../actions/ticket-actions";
-import { GBCTicketPurchaseForm } from "../../components/TicketPurchaseForm";
+import { GBCTicketPurchaseForm } from "@/gbc/components/TicketPurchaseForm";
 import { getAllGBCSettings } from "../../actions/settings-actions";
-import { TicketCards } from "../../components/admin/TicketCards";
+import { TicketCards } from "@/gbc/components/admin/TicketCards";
 import Link from "next/link";
 import { Suspense } from "react";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 // Force dynamic rendering - prevents static generation and caching
 export const dynamic = "force-dynamic";

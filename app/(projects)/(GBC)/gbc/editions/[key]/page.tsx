@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Calendar, MapPin, Users, Mic, Award } from "lucide-react";
 import { getEditionPublicRecap } from "@/gbc/services/editionService";
-import GBC2Navbar from "../../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 type PageProps = { params: Promise<{ key: string }> };
 

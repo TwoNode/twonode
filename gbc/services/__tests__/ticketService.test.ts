@@ -49,12 +49,12 @@ const mockUtils = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/gbc/services/settingsService", () => mockSettingsService);
-vi.mock("@/app/(projects)/(GBC)/utils/paystack", () => mockPaystack);
-vi.mock("@/app/(projects)/(GBC)/utils/aws-s3", () => mockAwsS3);
-vi.mock("@/app/(projects)/(GBC)/utils/qr_code", () => mockQr);
-vi.mock("@/app/(projects)/(GBC)/utils/email", () => mockEmail);
-vi.mock("@/app/(projects)/(GBC)/utils/sms", () => mockSms);
-vi.mock("@/app/(projects)/(GBC)/utils", () => mockUtils);
+vi.mock("@/gbc/utils/paystack", () => mockPaystack);
+vi.mock("@/gbc/utils/aws-s3", () => mockAwsS3);
+vi.mock("@/gbc/utils/qr_code", () => mockQr);
+vi.mock("@/gbc/utils/email", () => mockEmail);
+vi.mock("@/gbc/utils/sms", () => mockSms);
+vi.mock("@/gbc/utils", () => mockUtils);
 
 const {
   createTicket,

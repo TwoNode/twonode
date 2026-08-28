@@ -8,12 +8,12 @@ import {
   Image,
   Share2,
 } from "lucide-react";
-import { NotificationSettings } from "../../../components/admin/NotificationSettings";
-import { TicketPricingDisplay } from "../../../components/admin/TicketPricingDisplay";
-import { EventConfigForm } from "../../../components/admin/EventConfigForm";
-import { SystemSettings } from "../../../components/admin/SystemSettings";
-import { GallerySettings } from "../../../components/admin/GallerySettings";
-import { SocialLinksSettings } from "../../../components/admin/SocialLinksSettings";
+import { NotificationSettings } from "@/gbc/components/admin/NotificationSettings";
+import { TicketPricingDisplay } from "@/gbc/components/admin/TicketPricingDisplay";
+import { EventConfigForm } from "@/gbc/components/admin/EventConfigForm";
+import { SystemSettings } from "@/gbc/components/admin/SystemSettings";
+import { GallerySettings } from "@/gbc/components/admin/GallerySettings";
+import { SocialLinksSettings } from "@/gbc/components/admin/SocialLinksSettings";
 import { getAllGBCSettings } from "../../../actions/settings-actions";
 
 // Admin page — never safe to statically prerender alongside the other restricted pages.

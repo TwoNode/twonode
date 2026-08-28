@@ -18,10 +18,10 @@ import { getSponsors } from "../actions/sponsor-actions";
 import { getAllGBCSettings } from "../actions/settings-actions";
 
 // Import new components
-import HomeSpeakers from "@/app/(projects)/(GBC)/components/HomeSpeakers";
-import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
-import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
-import GBC2Navbar from "../components/Navbar";
+import HomeSpeakers from "@/gbc/components/HomeSpeakers";
+import HomeSponsors from "@/gbc/components/HomeSponsors";
+import HomeGallery from "@/gbc/components/HomeGallery";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 // Loading skeleton component
 const TextSkeleton = ({ className }: { className?: string }) => (

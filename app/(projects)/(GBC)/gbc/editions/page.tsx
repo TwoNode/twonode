@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 import { getEditions } from "@/gbc/services/editionService";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export const metadata = {
   title: "Past Editions - GBC",

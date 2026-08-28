@@ -1,7 +1,7 @@
 "use client";
 
-import { AdminMobileNav } from "../../components/admin/AdminMobileNav";
-import { AdminSidebar } from "../../components/admin/AdminSidebar";
+import { AdminMobileNav } from "@/gbc/components/admin/AdminMobileNav";
+import { AdminSidebar } from "@/gbc/components/admin/AdminSidebar";
 import { useState } from "react";
 
 export default function AdminLayout({

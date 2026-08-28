@@ -17,7 +17,7 @@ vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 const { getSettings, updateSettings, resetToDefaults, rollback, getPreviousSettings } = await import(
   "@/gbc/services/settingsService"
 );
-const { defaultSettings } = await import("@/app/(projects)/(GBC)/utils/settings");
+const { defaultSettings } = await import("@/gbc/utils/settings");
 
 beforeEach(() => {
   vi.clearAllMocks();

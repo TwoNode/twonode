@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { sendGBCCertificateEmail } from "../utils/email";
+import { sendGBCCertificateEmail } from "@/gbc/utils/email";
 import { revalidatePath } from "next/cache";
 
 export async function sendBulkCertificates(ticketNumbers: string[], emailBody: string) {

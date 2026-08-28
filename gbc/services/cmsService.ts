@@ -7,7 +7,7 @@ import {
   uploadLogo,
   uploadSpeakerPhoto,
   uploadGalleryMedia as uploadGalleryMediaToS3,
-} from "@/app/(projects)/(GBC)/utils/aws-s3";
+} from "@/gbc/utils/aws-s3";
 
 /**
  * Migrated from gallery-actions.ts + sponsor-actions.ts + speaker-actions.ts
