@@ -159,7 +159,7 @@
 | `/gbc/restricted`, `/restricted/{attendees,certificates,check-in,gallery,inquiries,settings,speakers,sponsors,tickets,users}` | renaming (Phase 4) → flattens to `/gbc-restricted/*` |
 | `/gbc/restricted/editions` — admin event-switcher | live (Phase 4 step 9) — also renames to `/gbc-restricted/editions` in the naming step |
 | `/gbc/error-login` | live |
-| *(planned, Phase 4)* `/gbc/login` repurposed as My Ticket's entry point (ticket number + email lookup, REVA-`onetimerequest` pattern) | planned (Phase 4) |
+| `/gbc/login` repurposed as My Ticket's entry point (ticket number + email lookup, REVA-`onetimerequest` pattern) — old Kinde login form deleted | live (Phase 4 step 12) — guest route, not under `/restricted`, unaffected by the `/gbc-restricted` flatten above |
 | `/gbc/editions` (list) + `/gbc/editions/[key]` (recap) — public "Past Editions" pages | live (Phase 4 step 9) |
 
 ---
