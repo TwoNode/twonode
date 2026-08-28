@@ -8,6 +8,7 @@ import {
 } from "@/reva/services/propertyRequestService";
 import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
+import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,8 +151,7 @@ export async function POST(req: NextRequest) {
     } else if (platform === "reva") {
       await handleReva(event, data as any);
     } else if (platform === "gbc") {
-      // For now, GBC events are logged but not processed here
-      await onUnhandled(event, data);
+      await handleGBC(event, data as any);
     } else {
       await onUnhandled(event, data);
     }
@@ -831,6 +831,44 @@ export async function handleReva(event: string, data: ChargeSuccessData) {
   await notifyRevaPaymentReceived(updated, isAuthenticated ? (updated as any).userId ?? undefined : undefined);
 
   console.log(`✅ [reva-webhook] charge.success confirmed: ${reference}`);
+}
+
+/**
+ * Closes the gap this file's platform dispatch had for GBC — events used to
+ * just fall through to onUnhandled(), so a ticket's only path from PENDING
+ * to COMPLETED was the success page's client-side redirect actually
+ * reaching the browser; if that redirect never happened (closed tab,
+ * network failure mid-redirect, abandoned after paying), the ticket sat
+ * PENDING forever with no fallback. Wired onto ticketService.verifyPayment
+ * (spec step 11) — the same function the success page calls, so this is a
+ * safety net using the identical verification logic, not a second
+ * implementation to keep in sync.
+ *
+ * The success page (gbc/tickets/success/page.tsx) itself still calls the
+ * old verifyGBCPayment from ticket-actions.ts, not repointed here — matches
+ * this phase's established scope (unmigrated consumers stay on the legacy
+ * action file until their own dedicated repointing pass). Both paths are
+ * individually idempotent (Paystack's own verify call, plus the
+ * already-COMPLETED check below), so having two call sites during the
+ * transition is safe.
+ */
+export async function handleGBC(event: string, data: ChargeSuccessData) {
+  if (event !== "charge.success") return onUnhandled(event, data as any);
+
+  const reference = data.reference;
+  if (!reference) {
+    console.warn("[gbc-webhook] charge.success missing reference", { event });
+    return;
+  }
+
+  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference } });
+  if (tickets.length > 0 && tickets.every((t) => t.paymentStatus === "COMPLETED")) {
+    console.log(`[gbc-webhook] ${reference} already fully COMPLETED (idempotent) — skipping re-verify`);
+    return;
+  }
+
+  await verifyGBCTicketPayment(reference);
+  console.log(`✅ [gbc-webhook] charge.success confirmed: ${reference}`);
 }
 
 // ─────────────────────────── Certificate of Deposit (one-time) ───────────────────────────
