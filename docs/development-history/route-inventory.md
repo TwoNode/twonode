@@ -86,7 +86,7 @@
 | `/api/v1/reva/admin/requests`, `/admin/requests/[reference]`, `/admin/requests/[reference]/report`, `/admin/requests/[reference]/approve` | GET/POST | REVA | ADMIN, SUPERADMIN | live |
 | `/api/v1/reva/admin/users`, `/admin/users/[id]`, `/admin/users/[id]/role`, `/admin/users/[id]/status` | GET/POST/PATCH/DELETE | REVA | ADMIN and/or SUPERADMIN, varies per route (see Phase 3 spec's route table) | live |
 | `/api/v1/reva/profile` | GET/PATCH | REVA | USER, ADMIN, SUPERADMIN | live |
-| `/api/v1/gbc/*` | — | GBC | varies | planned (Phase 4, not yet spec'd) |
+| `/api/v1/gbc/*` (~46 routes, full table in the Phase 4 spec) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution starting) |
 
 ### Legacy / pre-`/api/v1`
 
@@ -153,12 +153,11 @@
 | `/gbc/restricted-login` | renaming (Phase 4) → naming variant gets folded into the flatten below |
 | `/gbc/restricted`, `/restricted/{attendees,certificates,check-in,gallery,inquiries,settings,speakers,sponsors,tickets,users}` | renaming (Phase 4) → flattens to `/gbc-restricted/*` |
 | `/gbc/error-login` | live |
-| *(planned, Phase 4)* `/gbc/my-ticket` (or similar — reference+email lookup, REVA-one-time-request pattern) | planned (Phase 4) |
-| *(planned, Phase 4)* public "Past Editions" page | planned (Phase 4) |
-| *(planned, Phase 4)* ticket purchase/checkout flow | planned (Phase 4) |
+| *(planned, Phase 4)* `/gbc/login` repurposed as My Ticket's entry point (ticket number + email lookup, REVA-`onetimerequest` pattern) | planned (Phase 4) |
+| *(planned, Phase 4)* `/gbc/editions` — public "Past Editions" page | planned (Phase 4) |
 
 ---
 
 ## Maintenance note
 
-This file is generated/updated by hand alongside each phase's spec and completion report — not by a script. When a phase renames, adds, or retires routes: update the relevant table's `Status` column (and add new rows for genuinely new routes) in the same session that ships the change, mirroring how `docs/development-history/progress.md`'s checkboxes get updated. Phase 3 (REVA) and Phase 4 (GBC) don't have their own route-by-route API spec yet (only Phase 1 and Phase 2 do) — their `/api/v1/*` rows above are placeholders until those specs are written.
+This file is generated/updated by hand alongside each phase's spec and completion report — not by a script. When a phase renames, adds, or retires routes: update the relevant table's `Status` column (and add new rows for genuinely new routes) in the same session that ships the change, mirroring how `docs/development-history/progress.md`'s checkboxes get updated. All four phases now have their own route-by-route API spec (`docs/development-history/phases/phase-{1,2,3,4}-*.md`) — Phase 4's rows above list route counts and point at its spec's full table rather than repeating ~46 rows here; they'll flip to "live" as each service ships, same as every other phase.
