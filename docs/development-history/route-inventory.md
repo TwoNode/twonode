@@ -110,7 +110,7 @@
 | `/api/auth/success/scram` | GET | SCRAM | live — same dual-write; note SCRAM has **no pages built yet**, only this callback exists (platform stub) |
 | `/api/reva/users` | GET/POST? | REVA | legacy — candidate for Phase 3's service extraction |
 | `/api/reva/webhooks/paystack` | POST | REVA | legacy — candidate for Phase 3 |
-| `/api/webhooks/paystack` | POST | shared (Surfboard/GBC) | legacy — GBC events logged but not processed here yet, confirmed gap, closes in Phase 4 |
+| `/api/webhooks/paystack` | POST | shared (Surfboard/REVA/GBC) | live for all three — GBC's `handleGBC` branch repointed onto `ticketService.verifyPayment` in Phase 4 step 11 (previously logged but not processed) |
 | `/api/webhooks/redcopy` | POST | Surfboard | legacy — external Red Copy API's callback target |
 
 ---
