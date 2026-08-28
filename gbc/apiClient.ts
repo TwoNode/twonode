@@ -31,6 +31,27 @@ export type CreateEditionInput = Omit<GBCEdition, "status"> & { status?: GBCEdit
 
 export type SendCertificatesResult = { sent: number; failed: number; message: string };
 
+export type AdminSummary = {
+  id: string;
+  kindeId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+  role: "ADMIN" | "SUPERADMIN";
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AddAdminInput = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: "ADMIN" | "SUPERADMIN";
+};
+
 export const gbcApi = {
   editions: {
     list: () => jsonFetch<GBCEdition[]>(`${BASE}/editions`),
@@ -53,5 +74,27 @@ export const gbcApi = {
         method: "POST",
         body: JSON.stringify({ ticketNumbers, emailBody }),
       }),
+  },
+
+  users: {
+    list: () => jsonFetch<AdminSummary[]>(`${BASE}/admin/users`),
+
+    add: (input: AddAdminInput) =>
+      jsonFetch<AdminSummary>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),
+
+    updateRole: (id: string, role: "USER" | "ADMIN" | "SUPERADMIN") =>
+      jsonFetch<AdminSummary>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      }),
+
+    toggleStatus: (id: string, isActive: boolean) =>
+      jsonFetch<AdminSummary>(`${BASE}/admin/users/${encodeURIComponent(id)}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
+
+    remove: (id: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
 };

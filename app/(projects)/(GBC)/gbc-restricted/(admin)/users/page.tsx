@@ -6,7 +6,7 @@ import { AdminUsersList } from "@/gbc/components/admin/AdminUsersList";
 import { AddAdminModal } from "@/gbc/components/admin/AddAdminModal";
 import { AdminFilter } from "@/gbc/components/admin/AdminFilter";
 import { useEffect, useState } from "react";
-import { getAllAdmins } from "../../../actions/admin-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 interface Admin {
   id: string;
@@ -35,7 +35,7 @@ export default function AdminUsersPage() {
   // Fetch admins on mount
   useEffect(() => {
     const fetchAdmins = async () => {
-      const result = await getAllAdmins();
+      const result = await gbcApi.users.list();
       if (result.success && result.data) {
         setAllAdmins(result.data as Admin[]);
         setFilteredAdmins(result.data as Admin[]);

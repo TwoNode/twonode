@@ -11,11 +11,7 @@ import {
   Power,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  deleteAdmin,
-  updateAdminRole,
-  toggleAdminStatus,
-} from "@/app/(projects)/(GBC)/actions/admin-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GBCRole } from "@/prisma/generated";
 import { DeleteAdminModal } from "./DeleteAdminModal";
 import { ConfirmToggleModal } from "./ConfirmToggleModal";
@@ -78,7 +74,7 @@ export function AdminUsersList({ admins: initialAdmins }: Props) {
   ) => {
     setIsLoading(adminId);
     try {
-      const result = await updateAdminRole(adminId, newRole);
+      const result = await gbcApi.users.updateRole(adminId, newRole);
       if (result.success) {
         setAdmins(
           admins.map((admin) =>
@@ -111,7 +107,7 @@ export function AdminUsersList({ admins: initialAdmins }: Props) {
 
     setIsLoading(adminToDelete.id);
     try {
-      const result = await deleteAdmin(adminToDelete.id);
+      const result = await gbcApi.users.remove(adminToDelete.id);
       if (result.success) {
         setAdmins(admins.filter((admin) => admin.id !== adminToDelete.id));
         toast.success("Admin removed successfully");
@@ -133,7 +129,7 @@ export function AdminUsersList({ admins: initialAdmins }: Props) {
   ) => {
     setIsLoading(adminId);
     try {
-      const result = await toggleAdminStatus(adminId, !currentStatus);
+      const result = await gbcApi.users.toggleStatus(adminId, !currentStatus);
       if (result.success) {
         setAdmins(
           admins.map((admin) =>

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
-import { addNewAdmin } from "@/app/(projects)/(GBC)/actions/admin-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 export function AddAdminModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +22,7 @@ export function AddAdminModal() {
     setIsLoading(true);
 
     try {
-      const result = await addNewAdmin(formData);
+      const result = await gbcApi.users.add(formData);
       if (result.success) {
         toast.success("Admin added successfully");
         setIsOpen(false);
