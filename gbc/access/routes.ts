@@ -1,17 +1,21 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Home,
+  LayoutDashboard,
   Ticket,
-  CheckSquare,
+  QrCode,
+  UserCheck,
   Users,
-  UserCog,
   Calendar,
   Settings,
   Image,
+  Images,
   Mic,
   Award,
+  Building2,
   MessageSquare,
   FileCheck2,
+  FileText,
   Info,
   Mail,
   Search,
@@ -31,13 +35,16 @@ import { GBCRole } from "@/utils/platform";
  * role check below rather than a registry entry, same treatment as REVA's
  * and Surfboard's equivalent dead branches.
  *
- * Wiring this up surfaced two real gaps the old hand-written sidebar array
- * had: gallery/speakers/sponsors/inquiries/certificates/users all have
- * working admin pages that were simply never added to the sidebar list,
- * and "QR Codes" linked to `/gbc/restricted/qr-code`, a page that doesn't
- * exist (QR scanning lives inside /check-in, via qrCheckinService). The
- * former are fixed here by registering them as real nav items; the latter
- * is fixed by dropping the dead link — it's not in the registry at all.
+ * The nav side of this backs `AdminSidebar.tsx` (the real, live admin
+ * sidebar rendered by `gbc/restricted/layout.tsx`) — not
+ * `components/layouts/gbcAdminPanelLayout.tsx`, which turned out to be
+ * unused scaffolding never imported anywhere (confirmed by a repo-wide
+ * grep) despite being the one the Phase 4 spec's step 13 language
+ * describes. Wiring the real sidebar to this registry surfaced two
+ * genuine gaps: `/gbc/restricted/attendees` and `/gbc/restricted/editions`
+ * both have working pages that were never in `AdminSidebar.tsx`'s
+ * hand-written array, so nothing linked to them at all. Both are fixed
+ * here by registering them as real nav items.
  */
 
 export type GBCRouteGroup = "admin" | "guest";
@@ -59,18 +66,24 @@ const ADMIN_BASE = "/gbc/restricted";
 
 export const GBC_ROUTES: GBCRouteEntry[] = [
   // --- Admin panel (ADMIN/SUPERADMIN — proxy.ts's current gate treats the whole tree as one flat role check) ---
-  { path: ADMIN_BASE, label: "Home", icon: Home, roles: ADMIN_ROLES, group: "admin" },
+  // Labels/icons below match what AdminSidebar.tsx already had live for
+  // the 8 pages it already linked (Dashboard/Tickets/Check-In/
+  // Certificates/Sponsors/Speakers/Gallery/Inquiries/Users/Settings) —
+  // this registry replaces that hand-written array, not its established
+  // visual choices. Attendees and Editions are the two real gaps found
+  // while wiring this up: both have working pages but were never in that
+  // array, so they get fresh icons (no prior live choice to preserve).
+  { path: ADMIN_BASE, label: "Dashboard", icon: LayoutDashboard, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/tickets`, label: "Tickets", roles: ADMIN_ROLES, icon: Ticket, group: "admin" },
-  { path: `${ADMIN_BASE}/check-in`, label: "Check In", icon: CheckSquare, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/attendees`, label: "Attendees", icon: Users, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/check-in`, label: "Check-In", icon: QrCode, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/attendees`, label: "Attendees", icon: UserCheck, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/editions`, label: "Editions", icon: Calendar, roles: ADMIN_ROLES, group: "admin" },
-  // Real pages, working but never linked from the old hand-written sidebar array — found while building this registry.
-  { path: `${ADMIN_BASE}/gallery`, label: "Gallery", icon: Image, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/gallery`, label: "Gallery", icon: Images, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/speakers`, label: "Speakers", icon: Mic, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/sponsors`, label: "Sponsors", icon: Award, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/sponsors`, label: "Sponsors", icon: Building2, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: FileCheck2, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/users`, label: "Admin Users", icon: UserCog, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: FileText, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/users`, label: "Users", icon: Users, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings, roles: ADMIN_ROLES, group: "admin" },
 
   // --- Guest-facing (public — GBCTicket has no relation to GBCUser, there's no session to check) ---

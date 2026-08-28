@@ -4,18 +4,20 @@ import { Button } from "@/components/ui/button";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { GBC_ROUTES } from "@/gbc/access/routes";
 
-const routeTitles: Record<string, string> = {
-  "/gbc/restricted": "Dashboard",
-  "/gbc/restricted/tickets": "Tickets Management",
-  "/gbc/restricted/check-in": "Check-In",
-  "/gbc/restricted/attendees": "Attendees",
-  "/gbc/restricted/sponsors": "Sponsors",
-  "/gbc/restricted/gallery": "Gallery",
-  "/gbc/restricted/inquiries": "Inquiries",
-  "/gbc/restricted/users": "Users",
-  "/gbc/restricted/settings": "Settings",
-};
+/**
+ * Sourced from the same registry as AdminSidebar.tsx instead of a second,
+ * separately hand-maintained title map — the old one had already drifted
+ * (missing Certificates, Speakers, and Editions, so those pages' mobile
+ * header silently fell back to the generic "Admin" title). Tickets'
+ * title changes from "Tickets Management" to "Tickets" to match the
+ * sidebar label exactly, rather than keeping two different names for
+ * the same page.
+ */
+const routeTitles: Record<string, string> = Object.fromEntries(
+  GBC_ROUTES.filter((r) => r.group === "admin").map((r) => [r.path, r.label])
+);
 
 export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname();

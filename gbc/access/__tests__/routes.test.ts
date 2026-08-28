@@ -72,19 +72,26 @@ describe("canAccessRoute — unmatched paths", () => {
 });
 
 describe("getNavItemsForRole", () => {
-  it("returns every admin page for ADMIN — including the ones the old hand-written sidebar array never linked", () => {
+  it("returns every admin page for ADMIN, including the two AdminSidebar.tsx never linked (Attendees, Editions)", () => {
     const items = getNavItemsForRole(GBCRole.ADMIN, "admin");
-    expect(items.some((r) => r.label === "Gallery")).toBe(true);
-    expect(items.some((r) => r.label === "Speakers")).toBe(true);
-    expect(items.some((r) => r.label === "Sponsors")).toBe(true);
-    expect(items.some((r) => r.label === "Inquiries")).toBe(true);
-    expect(items.some((r) => r.label === "Certificates")).toBe(true);
-    expect(items.some((r) => r.label === "Admin Users")).toBe(true);
-  });
-
-  it("excludes a dead QR Codes link — no such registry entry exists", () => {
-    const items = getNavItemsForRole(GBCRole.ADMIN, "admin");
-    expect(items.some((r) => r.label === "QR Codes")).toBe(false);
+    expect(items.some((r) => r.label === "Attendees")).toBe(true);
+    expect(items.some((r) => r.label === "Editions")).toBe(true);
+    // Pages AdminSidebar.tsx already linked before this registry existed —
+    // confirms the migration didn't drop any of them.
+    for (const label of [
+      "Dashboard",
+      "Tickets",
+      "Check-In",
+      "Certificates",
+      "Sponsors",
+      "Speakers",
+      "Gallery",
+      "Inquiries",
+      "Users",
+      "Settings",
+    ]) {
+      expect(items.some((r) => r.label === label)).toBe(true);
+    }
   });
 
   it("guest group entries are all showInNav: false — registered for canAccessRoute, not rendered as persistent nav", () => {

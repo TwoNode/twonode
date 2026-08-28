@@ -3,38 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Ticket,
-  Users,
-  Building2,
-  Images,
-  Settings,
-  QrCode,
-  MessageSquare,
-  X,
-  Mic,
-  FileText,
-} from "lucide-react";
+import { X } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
 import { Button } from "@/components/ui/button";
+import { GBC_ROUTES } from "@/gbc/access/routes";
 
-const navigation = [
-  { name: "Dashboard", href: "/gbc/restricted", icon: LayoutDashboard },
-  { name: "Tickets", href: "/gbc/restricted/tickets", icon: Ticket },
-  { name: "Check-In", href: "/gbc/restricted/check-in", icon: QrCode },
-  { name: "Certificates", href: "/gbc/restricted/certificates", icon: FileText },
-  { name: "Sponsors", href: "/gbc/restricted/sponsors", icon: Building2 },
-  { name: "Speakers", href: "/gbc/restricted/speakers", icon: Mic },
-  { name: "Gallery", href: "/gbc/restricted/gallery", icon: Images },
-  {
-    name: "Inquiries",
-    href: "/gbc/restricted/inquiries",
-    icon: MessageSquare,
-  },
-  { name: "Users", href: "/gbc/restricted/users", icon: Users },
-  { name: "Settings", href: "/gbc/restricted/settings", icon: Settings },
-];
+/**
+ * Sourced from gbc/access/routes.ts's "admin" group instead of a
+ * hand-written array — this is the real, live admin sidebar (unlike
+ * components/layouts/gbcAdminPanelLayout.tsx, which is unused scaffolding
+ * never imported anywhere). Every admin registry entry currently shares
+ * the same ADMIN/SUPERADMIN role gate, and this component is only ever
+ * rendered inside gbc/restricted/layout.tsx, which proxy.ts's middleware
+ * has already role-gated before the page renders — so no role prop is
+ * needed here, same as the array it replaces never branched on role
+ * either. Fixes a real gap found while wiring this up: the old array had
+ * no link to /gbc/restricted/editions (built in step 9, never added
+ * here).
+ */
+const navigation = GBC_ROUTES.filter(
+  (r) => r.group === "admin" && r.showInNav !== false
+).map((r) => ({ name: r.label, href: r.path, icon: r.icon }));
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
