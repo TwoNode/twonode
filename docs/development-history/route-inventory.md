@@ -88,7 +88,8 @@
 | `/api/v1/reva/profile` | GET/PATCH | REVA | USER, ADMIN, SUPERADMIN | live |
 | `/api/v1/gbc/{tickets,payments/verify}/*` (7 public routes), `/api/v1/gbc/admin/tickets/*` (6 routes), `/api/v1/gbc/admin/qr/verify` | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 steps 3–4, `ticketService.ts`/`qrCheckinService.ts`) |
 | `/api/v1/gbc/{gallery,sponsors,partners,speakers}` (4 public routes), `/api/v1/gbc/admin/{gallery,sponsors,speakers}/*`, `/admin/partners{,/[id]}`, `/admin/uploads/*` (17 routes) | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 step 5, `cmsService.ts`) |
-| `/api/v1/gbc/*` remaining (~16 routes, full table in the Phase 4 spec) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution continuing) |
+| `/api/v1/gbc/contact`, `/api/v1/gbc/admin/inquiries/*` (5 routes), `/api/v1/gbc/admin/certificates/send` | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 step 6, `contactService.ts`/`certificateService.ts`) |
+| `/api/v1/gbc/*` remaining (~10 routes: settings, admin users, editions) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution continuing) |
 
 ### Legacy / pre-`/api/v1`
 
