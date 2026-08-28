@@ -86,8 +86,9 @@
 | `/api/v1/reva/admin/requests`, `/admin/requests/[reference]`, `/admin/requests/[reference]/report`, `/admin/requests/[reference]/approve` | GET/POST | REVA | ADMIN, SUPERADMIN | live |
 | `/api/v1/reva/admin/users`, `/admin/users/[id]`, `/admin/users/[id]/role`, `/admin/users/[id]/status` | GET/POST/PATCH/DELETE | REVA | ADMIN and/or SUPERADMIN, varies per route (see Phase 3 spec's route table) | live |
 | `/api/v1/reva/profile` | GET/PATCH | REVA | USER, ADMIN, SUPERADMIN | live |
-| `/api/v1/gbc/{tickets,payments/verify}/*` (7 public routes), `/api/v1/gbc/admin/tickets/*` (6 routes) | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 step 3, `ticketService.ts`) |
-| `/api/v1/gbc/*` remaining (~33 routes, full table in the Phase 4 spec) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution continuing) |
+| `/api/v1/gbc/{tickets,payments/verify}/*` (7 public routes), `/api/v1/gbc/admin/tickets/*` (6 routes), `/api/v1/gbc/admin/qr/verify` | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 steps 3–4, `ticketService.ts`/`qrCheckinService.ts`) |
+| `/api/v1/gbc/{gallery,sponsors,partners,speakers}` (4 public routes), `/api/v1/gbc/admin/{gallery,sponsors,speakers}/*`, `/admin/partners{,/[id]}`, `/admin/uploads/*` (17 routes) | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 step 5, `cmsService.ts`) |
+| `/api/v1/gbc/*` remaining (~16 routes, full table in the Phase 4 spec) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution continuing) |
 
 ### Legacy / pre-`/api/v1`
 
