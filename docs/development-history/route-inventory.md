@@ -91,7 +91,7 @@
 | `/api/v1/gbc/contact`, `/api/v1/gbc/admin/inquiries/*` (5 routes), `/api/v1/gbc/admin/certificates/send` | GET/POST/PATCH/DELETE | GBC | public and ADMIN/SUPERADMIN, per route | live (Phase 4 step 6, `contactService.ts`/`certificateService.ts`) |
 | `/api/v1/gbc/settings`, `/api/v1/gbc/admin/settings/*` (5 routes) | GET/PATCH/POST | GBC | public (read) and ADMIN/SUPERADMIN, per route | live (Phase 4 step 7, `settingsService.ts`) |
 | `/api/v1/gbc/editions`, `/api/v1/gbc/editions/[key]/recap`, `/api/v1/gbc/admin/editions/*` (4 routes) | GET/POST/PATCH | GBC | public (read) and SUPERADMIN (write) | live (Phase 4 step 9, `editionService.ts`) |
-| `/api/v1/gbc/*` remaining (~2 routes: admin users) | GET/POST/PATCH/DELETE | GBC | varies | planned (Phase 4, spec written 2026-08-28, execution continuing) |
+| `/api/v1/gbc/admin/users/*` (4 routes) | GET/POST/PATCH/DELETE | GBC | ADMIN (read) and SUPERADMIN (write) | live (Phase 4 step 10, `adminUserService.ts`) — **all 53 `/api/v1/gbc/*` routes now live**, service extraction complete |
 
 ### Legacy / pre-`/api/v1`
 
