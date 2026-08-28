@@ -1,5 +1,6 @@
 import type { ApiResult } from "@/lib/api/types";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import type { GalleryItem } from "@/gbc/types/gallery";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
@@ -15,6 +16,12 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<ApiResult<
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
+  return res.json();
+}
+
+/** No Content-Type header — the browser sets the multipart boundary itself for a FormData body. */
+async function formFetch<T>(url: string, formData: FormData): Promise<ApiResult<T>> {
+  const res = await fetch(url, { method: "POST", body: formData });
   return res.json();
 }
 
@@ -50,6 +57,22 @@ export type AddAdminInput = {
   lastName: string;
   phone: string;
   role: "ADMIN" | "SUPERADMIN";
+};
+
+export type UploadResult = { key: string; url: string; thumbnailKey?: string; thumbnailUrl?: string };
+export type UploadKind = "sponsor-logo" | "partner-logo" | "speaker-photo" | "gallery-media";
+
+export type GalleryInput = {
+  title: string;
+  description?: string;
+  mediaType: "IMAGE" | "VIDEO";
+  mediaUrl: string;
+  mediaS3Key?: string;
+  thumbnailUrl?: string;
+  thumbnailS3Key?: string;
+  year: number;
+  order?: number;
+  visible?: boolean;
 };
 
 export const gbcApi = {
@@ -96,5 +119,35 @@ export const gbcApi = {
 
     remove: (id: string) =>
       jsonFetch<undefined>(`${BASE}/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  uploads: {
+    file: (kind: UploadKind, file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return formFetch<UploadResult>(`${BASE}/admin/uploads/${kind}`, formData);
+    },
+
+    deleteFile: (key: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/uploads`, { method: "DELETE", body: JSON.stringify({ key }) }),
+  },
+
+  gallery: {
+    list: (year?: number) =>
+      jsonFetch<GalleryItem[]>(`${BASE}/gallery${year ? `?year=${year}` : ""}`),
+
+    listAll: () => jsonFetch<GalleryItem[]>(`${BASE}/admin/gallery`),
+
+    create: (input: GalleryInput) =>
+      jsonFetch<GalleryItem>(`${BASE}/admin/gallery`, { method: "POST", body: JSON.stringify(input) }),
+
+    update: (id: string, input: Partial<GalleryInput>) =>
+      jsonFetch<GalleryItem>(`${BASE}/admin/gallery/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+
+    remove: (id: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/gallery/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
 };

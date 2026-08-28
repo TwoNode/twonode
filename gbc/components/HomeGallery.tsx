@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Play, Image as ImageIcon } from "lucide-react";
-import { getGalleryItems } from "@/app/(projects)/(GBC)/actions/gallery-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 export default function HomeGallery() {
   const [items, setItems] = useState<any[]>([]);
@@ -13,7 +13,7 @@ export default function HomeGallery() {
     const fetchGalleryItems = async () => {
       setIsLoading(true);
       try {
-        const galleryResult = await getGalleryItems();
+        const galleryResult = await gbcApi.gallery.list();
         if (galleryResult.success) {
           setItems(galleryResult.data?.slice(0, 6) ?? []);
         }

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, Eye, EyeOff, Play, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { deleteGBCGalleryItem } from "@/app/(projects)/(GBC)/actions/gallery-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GalleryItem, GBCMediaType } from "@/gbc/types/gallery";
 import { EditGalleryModal } from "./EditGalleryModal";
 
@@ -25,7 +25,6 @@ interface GalleryGridProps {
 
 export function GalleryGrid({ items }: GalleryGridProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteKeys, setDeleteKeys] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Group by year
@@ -44,29 +43,13 @@ export function GalleryGrid({ items }: GalleryGridProps) {
     .map(Number)
     .sort((a, b) => b - a); // Sort years in descending order
 
-  async function handleDelete(id: string, mediaS3Key: string | null) {
-    if (!mediaS3Key) {
-      toast.error("Cannot delete: Missing media reference");
-      return;
-    }
-
+  async function handleDelete(id: string) {
     setIsDeleting(true);
     try {
-      // Delete the media from S3
-      const deleteResult = await fetch("/api/upload/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ key: mediaS3Key }),
-      });
-
-      if (!deleteResult.ok) {
-        throw new Error("Failed to delete media from storage");
-      }
-
-      // Delete the gallery item from the database
-      const result = await deleteGBCGalleryItem(id);
+      // gbcApi.gallery.remove already cleans up S3 (mediaS3Key/thumbnailS3Key)
+      // server-side, including gracefully skipping items that never had one
+      // (externally-hosted media) — no separate client-side S3 delete needed.
+      const result = await gbcApi.gallery.remove(id);
 
       if (result.success) {
         toast.success("Gallery item deleted successfully");
@@ -101,10 +84,7 @@ export function GalleryGrid({ items }: GalleryGridProps) {
               <GalleryItemCard
                 key={item.id}
                 item={item}
-                onDelete={() => {
-                  setDeleteId(item.id);
-                  setDeleteKeys([item.mediaS3Key || ""]);
-                }}
+                onDelete={() => setDeleteId(item.id)}
               />
             ))}
           </div>
@@ -120,15 +100,13 @@ export function GalleryGrid({ items }: GalleryGridProps) {
             <AlertDialogTitle>Delete Gallery Item?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              {deleteKeys.length > 1 ? " selected items" : " gallery item"} and
-              remove {deleteKeys.length > 1 ? "their" : "its"} associated media
-              from storage.
+              gallery item and remove its associated media from storage.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteId && handleDelete(deleteId, deleteKeys[0])}
+              onClick={() => deleteId && handleDelete(deleteId)}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700"
             >

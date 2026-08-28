@@ -101,6 +101,13 @@ export const gallerySchema = z.object({
   description: z.string().optional(),
   mediaType: z.enum(["IMAGE", "VIDEO"]),
   mediaUrl: z.string().url("Must be a valid URL"),
+  // Not user-entered — set from the upload response so deleteGalleryItem
+  // can clean up S3 later. Optional since these fields didn't exist on
+  // this schema until Phase 5's client repointing surfaced that they were
+  // being silently stripped before reaching the database.
+  mediaS3Key: z.string().optional(),
+  thumbnailUrl: z.string().url().optional(),
+  thumbnailS3Key: z.string().optional(),
   year: z.number().int().min(2020).max(2030),
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),

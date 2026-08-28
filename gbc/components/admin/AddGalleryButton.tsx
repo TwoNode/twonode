@@ -22,8 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Loader2, Image, Video } from "lucide-react";
 import { toast } from "sonner";
-import { uploadGBCGalleryMedia } from "@/app/(projects)/(GBC)/actions/upload-actions";
-import { createGBCGalleryItem } from "@/app/(projects)/(GBC)/actions/gallery-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Switch } from "@/components/ui/switch";
 
 export function AddGalleryButton() {
@@ -67,30 +66,25 @@ export function AddGalleryButton() {
         return;
       }
 
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", mediaFile);
-
-      const uploadResult = await uploadGBCGalleryMedia(uploadFormData);
+      const uploadResult = await gbcApi.uploads.file("gallery-media", mediaFile);
 
       if (!uploadResult.success || !uploadResult.data) {
         toast.error("Failed to upload media");
         return;
       }
 
-      // Add media URLs to form data
-      formData.set("mediaUrl", uploadResult.data.url);
-      formData.set("mediaS3Key", uploadResult.data.key);
-      formData.set("mediaType", mediaType);
-      formData.set("visible", visible.toString());
-
-      if (uploadResult.data.thumbnailUrl) {
-        formData.set("thumbnailUrl", uploadResult.data.thumbnailUrl);
-      }
-      if (uploadResult.data.thumbnailKey) {
-        formData.set("thumbnailS3Key", uploadResult.data.thumbnailKey);
-      }
-
-      const result = await createGBCGalleryItem(formData);
+      const result = await gbcApi.gallery.create({
+        title: formData.get("title") as string,
+        description: (formData.get("description") as string) || undefined,
+        mediaType,
+        mediaUrl: uploadResult.data.url,
+        mediaS3Key: uploadResult.data.key,
+        thumbnailUrl: uploadResult.data.thumbnailUrl,
+        thumbnailS3Key: uploadResult.data.thumbnailKey,
+        year: parseInt(formData.get("year") as string),
+        order: parseInt(formData.get("order") as string) || 0,
+        visible,
+      });
 
       if (result.success) {
         toast.success("Media added successfully");

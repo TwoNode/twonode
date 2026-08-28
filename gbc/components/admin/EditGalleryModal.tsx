@@ -22,11 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Image, Video, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import {
-  uploadGBCGalleryMedia,
-  deleteGBCFile,
-} from "@/app/(projects)/(GBC)/actions/upload-actions";
-import { updateGBCGalleryItem } from "@/app/(projects)/(GBC)/actions/gallery-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GalleryItem } from "@/gbc/types/gallery";
 import { Switch } from "@/components/ui/switch";
 
@@ -77,12 +73,14 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
     try {
       const formData = new FormData(e.currentTarget);
 
+      let mediaUrl = item.mediaUrl;
+      let mediaS3Key = item.mediaS3Key ?? undefined;
+      let thumbnailUrl = item.thumbnailUrl ?? undefined;
+      let thumbnailS3Key = item.thumbnailS3Key ?? undefined;
+
       // If a new file is uploaded, handle it
       if (mediaFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", mediaFile);
-
-        const uploadResult = await uploadGBCGalleryMedia(uploadFormData);
+        const uploadResult = await gbcApi.uploads.file("gallery-media", mediaFile);
 
         if (!uploadResult.success || !uploadResult.data) {
           toast.error("Failed to upload new media");
@@ -90,37 +88,33 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
           return;
         }
 
-        // Add new media URLs to form data
-        formData.set("mediaUrl", uploadResult.data.url);
-        formData.set("mediaS3Key", uploadResult.data.key);
-        formData.set("mediaType", mediaType);
-
-        if (uploadResult.data.thumbnailUrl) {
-          formData.set("thumbnailUrl", uploadResult.data.thumbnailUrl);
-        }
-        if (uploadResult.data.thumbnailKey) {
-          formData.set("thumbnailS3Key", uploadResult.data.thumbnailKey);
-        }
-      } else {
-        // Keep existing media data
-        formData.set("mediaUrl", item.mediaUrl);
-        formData.set("mediaType", item.mediaType);
-        if (item.mediaS3Key) formData.set("mediaS3Key", item.mediaS3Key);
-        if (item.thumbnailUrl) formData.set("thumbnailUrl", item.thumbnailUrl);
-        if (item.thumbnailS3Key)
-          formData.set("thumbnailS3Key", item.thumbnailS3Key);
+        mediaUrl = uploadResult.data.url;
+        mediaS3Key = uploadResult.data.key;
+        thumbnailUrl = uploadResult.data.thumbnailUrl;
+        thumbnailS3Key = uploadResult.data.thumbnailKey;
       }
 
-      const result = await updateGBCGalleryItem(item.id, formData);
+      const result = await gbcApi.gallery.update(item.id, {
+        title: formData.get("title") as string,
+        description: (formData.get("description") as string) || undefined,
+        mediaType,
+        mediaUrl,
+        mediaS3Key,
+        thumbnailUrl,
+        thumbnailS3Key,
+        year: parseInt(formData.get("year") as string),
+        order: parseInt(formData.get("order") as string) || 0,
+        visible: formData.get("visible") === "true",
+      });
 
       if (result.success) {
         // If we uploaded a new file, delete the old one from S3
         if (mediaFile) {
           if (item.mediaS3Key) {
-            await deleteGBCFile(item.mediaS3Key);
+            await gbcApi.uploads.deleteFile(item.mediaS3Key);
           }
           if (item.thumbnailS3Key) {
-            await deleteGBCFile(item.thumbnailS3Key);
+            await gbcApi.uploads.deleteFile(item.thumbnailS3Key);
           }
         }
 
