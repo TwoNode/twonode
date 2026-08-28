@@ -155,9 +155,8 @@
 | Route | Status |
 |---|---|
 | `/gbc`, `/gbc/about`, `/gbc/contact`, `/gbc/gallery`, `/gbc/speakers`, `/gbc/sponsors`, `/gbc/tickets`, `/gbc/tickets/success`, `/gbc/certificate/[ticketNumber]` | live |
-| `/gbc/restricted-login` | renaming (Phase 4) → naming variant gets folded into the flatten below |
-| `/gbc/restricted`, `/restricted/{attendees,certificates,check-in,gallery,inquiries,settings,speakers,sponsors,tickets,users}` | renaming (Phase 4) → flattens to `/gbc-restricted/*` |
-| `/gbc/restricted/editions` — admin event-switcher | live (Phase 4 step 9) — also renames to `/gbc-restricted/editions` in the naming step |
+| `/gbc-restricted`, `/gbc-restricted/{attendees,certificates,check-in,editions,gallery,inquiries,settings,speakers,sponsors,tickets,users}` | live (Phase 4 step 14) — flattened from `/gbc/restricted/*`; old prefix 308-redirects. The 13 admin pages sit inside a `(admin)` route group (invisible in the URL) so `/gbc-restricted/login` can escape the admin sidebar layout |
+| `/gbc-restricted/login` | live (Phase 4 step 14) — flattened from `/gbc/restricted-login`; old prefix 308-redirects |
 | `/gbc/error-login` | live |
 | `/gbc/login` repurposed as My Ticket's entry point (ticket number + email lookup, REVA-`onetimerequest` pattern) — old Kinde login form deleted | live (Phase 4 step 12) — guest route, not under `/restricted`, unaffected by the `/gbc-restricted` flatten above |
 | `/gbc/editions` (list) + `/gbc/editions/[key]` (recap) — public "Past Editions" pages | live (Phase 4 step 9) |
