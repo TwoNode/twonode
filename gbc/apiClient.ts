@@ -29,6 +29,8 @@ export type EditionAdminStats = {
 
 export type CreateEditionInput = Omit<GBCEdition, "status"> & { status?: GBCEdition["status"] };
 
+export type SendCertificatesResult = { sent: number; failed: number; message: string };
+
 export const gbcApi = {
   editions: {
     list: () => jsonFetch<GBCEdition[]>(`${BASE}/editions`),
@@ -43,5 +45,13 @@ export const gbcApi = {
 
     archive: (key: string) =>
       jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/archive`, { method: "PATCH" }),
+  },
+
+  certificates: {
+    sendBulk: (ticketNumbers: string[], emailBody: string) =>
+      jsonFetch<SendCertificatesResult>(`${BASE}/admin/certificates/send`, {
+        method: "POST",
+        body: JSON.stringify({ ticketNumbers, emailBody }),
+      }),
   },
 };

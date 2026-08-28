@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Clock, Mail, CheckSquare, Square, Loader2 } from "lucide-react";
-import { sendBulkCertificates } from "../../../actions/certificate-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 
 export default function CertificatesClient({ initialTickets }: { initialTickets: any[] }) {
@@ -61,9 +61,9 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
     setIsSending(true);
     try {
       const selected = Array.from(selectedTickets);
-      const res = await sendBulkCertificates(selected, emailBody);
+      const res = await gbcApi.certificates.sendBulk(selected, emailBody);
       if (res.success) {
-        toast.success(res.message);
+        toast.success(res.data.message);
         setSelectedTickets(new Set());
         // Update local state to reflect sent count implicitly (or refetch if we wanted to)
         const updatedTickets = tickets.map(t => {

@@ -14,8 +14,8 @@ export const POST = withAuth<GBCRole>(
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const { ticketNumbers, emailBody } = await validateBody(req, bodySchema);
-    const result = await sendBulkCertificates(ticketNumbers, emailBody);
-    return NextResponse.json({ success: true, ...result });
+    const data = await sendBulkCertificates(ticketNumbers, emailBody);
+    return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }
 );
