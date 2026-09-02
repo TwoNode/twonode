@@ -28,10 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  makeUserAdmin,
-  removeAdminPrivileges,
-} from "../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 
 const formSchema = z.object({
   userId: z.string().min(1, { message: "Please select a user" }),
@@ -74,24 +71,18 @@ export default function UserRoleManagementForm({
     setIsLoading(true);
     try {
       if (data.action === "make-admin" && data.role) {
-        const result = await makeUserAdmin(data.userId, data.role);
+        const result = await revaApi.admin.users.promote(data.userId, data.role);
         if (result.success) {
-          toast.success(
-            result.message || "User upgraded to admin successfully!"
-          );
+          toast.success("User upgraded to admin successfully!");
           form.reset();
-          // fetchUsers(); // Refresh the user list
         } else {
           toast.error(result.error || "Failed to make user admin");
         }
       } else if (data.action === "remove-admin") {
-        const result = await removeAdminPrivileges(data.userId);
+        const result = await revaApi.admin.users.demote(data.userId);
         if (result.success) {
-          toast.success(
-            result.message || "Admin privileges removed successfully!"
-          );
+          toast.success("Admin privileges removed successfully!");
           form.reset();
-          // fetchUsers(); // Refresh the user list
         } else {
           toast.error(result.error || "Failed to remove admin privileges");
         }

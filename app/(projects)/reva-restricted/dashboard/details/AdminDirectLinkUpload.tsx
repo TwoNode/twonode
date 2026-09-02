@@ -6,11 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
-import {
-  approveDueDiligenceReport,
-  uploadDirectLinkReport,
-  approveOneTimeDueDiligenceReport,
-} from "../../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 
 import {
   AlertDialog,
@@ -123,17 +119,14 @@ export function AdminDirectLinkUpload({
 
       formData.append("directLink", file);
 
-      const response = await uploadDirectLinkReport(formData);
+      const response = await revaApi.admin.requests.uploadReport(
+        property.reference,
+        formData
+      );
 
-      if (response?.error || !response?.success) {
+      if (!response.success) {
         console.error("Upload error:", response.error);
-        const errorMessage =
-          typeof response.error === "string"
-            ? response.error
-            : response.error instanceof Error
-            ? response.error.message
-            : "Upload failed. Please try again.";
-        throw new Error(errorMessage);
+        throw new Error(response.error || "Upload failed. Please try again.");
       }
 
       notifySuccess("File uploaded successfully!");
@@ -161,18 +154,14 @@ export function AdminDirectLinkUpload({
         return;
       }
 
-      // Use appropriate approval function based on request type
-      const approvalFunction = property?.isOneTimeRequest
-        ? approveOneTimeDueDiligenceReport
-        : approveDueDiligenceReport;
-
-      const response = await approvalFunction(
+      // The route itself picks approveDueDiligenceReport/approveOneTimeDueDiligenceReport by request type
+      const response = await revaApi.admin.requests.approve(
         property?.reference || "",
         !property?.report?.isApproved
       );
 
-      if (response?.error) {
-        throw response?.error || new Error("An error occurred");
+      if (!response.success) {
+        throw new Error(response.error);
       }
 
       notifySuccess(

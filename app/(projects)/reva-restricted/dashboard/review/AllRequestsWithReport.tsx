@@ -1,15 +1,21 @@
 import React from "react";
-import { getAllRequestsWithUserByAdmin } from "../../actions/adminDbActions";
+import { getAllRequestsWithUserByAdmin } from "@/reva/services/reportService";
 import AllRequestsWithReportClient from "./AllRequestsWithReportClient";
 
 export async function AllRequestsWithReport() {
-  const { data, success, oneTimeRequests } =
-    await getAllRequestsWithUserByAdmin({
+  try {
+    const { properties, oneTimeRequests } = await getAllRequestsWithUserByAdmin({
       onlyWithReport: true,
       includeOneTimeRequests: true,
     });
 
-  if (!success) {
+    return (
+      <AllRequestsWithReportClient
+        initialData={properties || []}
+        initialOneTimeRequests={oneTimeRequests || []}
+      />
+    );
+  } catch {
     return (
       <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
         <div className="text-center py-8 text-red-500">
@@ -18,11 +24,4 @@ export async function AllRequestsWithReport() {
       </div>
     );
   }
-
-  return (
-    <AllRequestsWithReportClient
-      initialData={data || []}
-      initialOneTimeRequests={oneTimeRequests || []}
-    />
-  );
 }

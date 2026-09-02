@@ -24,11 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon, ClockIcon, Search } from "lucide-react";
-import {
-  deactivateUser,
-  reactivateUser,
-  removeAdminPrivileges,
-} from "../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 
 interface AdminUser {
   id: string;
@@ -84,10 +80,9 @@ AdminUsersListProps) {
     setActionUserId(userId);
     setActionType("deactivate");
     try {
-      const result = await deactivateUser(userId);
+      const result = await revaApi.admin.users.setActive(userId, false);
       if (result.success) {
-        toast.success(result.message || "User deactivated successfully");
-        // fetchUsers(); // Refresh the list
+        toast.success("User deactivated successfully");
       } else {
         toast.error(result.error || "Failed to deactivate user");
       }
@@ -104,10 +99,9 @@ AdminUsersListProps) {
     setActionUserId(userId);
     setActionType("reactivate");
     try {
-      const result = await reactivateUser(userId);
+      const result = await revaApi.admin.users.setActive(userId, true);
       if (result.success) {
-        toast.success(result.message || "User reactivated successfully");
-        // fetchUsers(); // Refresh the list
+        toast.success("User reactivated successfully");
       } else {
         toast.error(result.error || "Failed to reactivate user");
       }
@@ -124,12 +118,9 @@ AdminUsersListProps) {
     setActionUserId(userId);
     setActionType("remove-admin");
     try {
-      const result = await removeAdminPrivileges(userId);
+      const result = await revaApi.admin.users.demote(userId);
       if (result.success) {
-        toast.success(
-          result.message || "Admin privileges removed successfully"
-        );
-        // fetchUsers(); // Refresh the list
+        toast.success("Admin privileges removed successfully");
       } else {
         toast.error(result.error || "Failed to remove admin privileges");
       }

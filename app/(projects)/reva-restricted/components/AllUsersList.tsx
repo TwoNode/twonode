@@ -30,12 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  makeUserAdmin,
-  deactivateUser,
-  reactivateUser,
-  deleteUser,
-} from "../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 import { CalendarIcon, ClockIcon, Search } from "lucide-react";
 
 interface User {
@@ -105,10 +100,9 @@ export default function AllUsersList({ users }: AllUsersListProps) {
     setActionUserId(userId);
     setActionType("make-admin");
     try {
-      const result = await makeUserAdmin(userId, role);
+      const result = await revaApi.admin.users.promote(userId, role);
       if (result.success) {
-        toast.success(result.message || "User upgraded to admin successfully");
-        //   fetchUsers(); // Refresh the list
+        toast.success("User upgraded to admin successfully");
       } else {
         toast.error(result.error || "Failed to make user admin");
       }
@@ -125,10 +119,9 @@ export default function AllUsersList({ users }: AllUsersListProps) {
     setActionUserId(userId);
     setActionType("deactivate");
     try {
-      const result = await deactivateUser(userId);
+      const result = await revaApi.admin.users.setActive(userId, false);
       if (result.success) {
-        toast.success(result.message || "User deactivated successfully");
-        //   fetchUsers(); // Refresh the list
+        toast.success("User deactivated successfully");
       } else {
         toast.error(result.error || "Failed to deactivate user");
       }
@@ -145,10 +138,9 @@ export default function AllUsersList({ users }: AllUsersListProps) {
     setActionUserId(userId);
     setActionType("reactivate");
     try {
-      const result = await reactivateUser(userId);
+      const result = await revaApi.admin.users.setActive(userId, true);
       if (result.success) {
-        toast.success(result.message || "User reactivated successfully");
-        //   fetchUsers(); // Refresh the list
+        toast.success("User reactivated successfully");
       } else {
         toast.error(result.error || "Failed to reactivate user");
       }
@@ -165,10 +157,9 @@ export default function AllUsersList({ users }: AllUsersListProps) {
     setActionUserId(userId);
     setActionType("delete");
     try {
-      const result = await deleteUser(userId);
+      const result = await revaApi.admin.users.remove(userId);
       if (result.success) {
-        toast.success(result.message || "User deleted successfully");
-        //   fetchUsers(); // Refresh the list
+        toast.success("User deleted successfully");
       } else {
         toast.error(result.error || "Failed to delete user");
       }

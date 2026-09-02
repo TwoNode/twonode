@@ -1,9 +1,6 @@
 import { Metadata } from "next";
 import { FC } from "react";
-import {
-  getRequestByReferenceByAdmin,
-  getOneTimeRequestByReferenceByAdmin,
-} from "../../actions/adminDbActions";
+import { getAnyRequestByReferenceForAdmin } from "@/reva/services/reportService";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 import UserRequestDataView from "./UserRequestDataView";
 import { AdminMiniHeader } from "../../components/AdminMiniHeader";
@@ -25,26 +22,9 @@ const ViewDetailsPage = async ({
   }
 
   try {
-    let request = await getRequestByReferenceByAdmin(reference);
-    let isOneTimeRequest = false;
-
-    if (!request.success) {
-      const oneTimeRequest = await getOneTimeRequestByReferenceByAdmin(
-        reference
-      );
-
-      if (oneTimeRequest.success) {
-        request = oneTimeRequest as any;
-        isOneTimeRequest = true;
-      }
-    }
-
-    console.log(
-      "\n\n\n\n\n\nRequest: ",
-      request,
-      isOneTimeRequest,
-      "\n\n\n\n\n\n"
-    );
+    const request = await getAnyRequestByReferenceForAdmin(reference);
+    const isOneTimeRequest = request.type === "oneTime";
+    const user = request.type === "property" ? request.data.user : undefined;
 
     if (isOneTimeRequest) {
       const transformedProperty = {
@@ -65,7 +45,7 @@ const ViewDetailsPage = async ({
           </div>
 
           <div className="mt-8">
-            <AdminReport property={transformedProperty} user={request?.user} />
+            <AdminReport property={transformedProperty} user={user} />
           </div>
 
           <div className="mt-8 bg-gray-50 p-6 rounded-lg">
@@ -74,7 +54,7 @@ const ViewDetailsPage = async ({
             <div className="mt-4">
               <AdminReportUpload
                 property={transformedProperty}
-                user={request?.user}
+                user={user}
               />
             </div>
           </div>
@@ -82,31 +62,27 @@ const ViewDetailsPage = async ({
       );
     }
 
-    if (request?.success) {
-      const transformedProperty = {
-        ...request.data,
-        isOneTimeRequest,
-      };
+    const transformedProperty = {
+      ...request.data,
+      isOneTimeRequest,
+    };
 
-      return (
-        <div className="container mx-auto p-4 md:p-8 max-w-6xl">
-          <AdminMiniHeader title="User Request Details" />
-          <div>{JSON.stringify(transformedProperty)}</div>
+    return (
+      <div className="container mx-auto p-4 md:p-8 max-w-6xl">
+        <AdminMiniHeader title="User Request Details" />
+        <div>{JSON.stringify(transformedProperty)}</div>
 
-          <PDFDownloadButton property={transformedProperty} type="report" />
+        <PDFDownloadButton property={transformedProperty} type="report" />
 
-          <div className="mt-6">
-            <UserRequestDataView property={transformedProperty} />
-          </div>
-
-          <div className="mt-8">
-            <AdminReport property={transformedProperty} user={request?.user} />
-          </div>
+        <div className="mt-6">
+          <UserRequestDataView property={transformedProperty} />
         </div>
-      );
-    } else {
-      return <InvalidReferencePage />;
-    }
+
+        <div className="mt-8">
+          <AdminReport property={transformedProperty} user={user} />
+        </div>
+      </div>
+    );
   } catch (error) {
     console.error("Error processing reference:", error);
     return <InvalidReferencePage />;

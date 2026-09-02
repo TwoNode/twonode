@@ -9,11 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
-import {
-  approveDueDiligenceReport,
-  uploadDueDiligenceReport,
-  approveOneTimeDueDiligenceReport,
-} from "../../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -244,11 +240,14 @@ export function AdminReportUpload({
       }
 
       formData.append("prevImages", JSON.stringify(prevImages));
-      const response = await uploadDueDiligenceReport(formData);
+      const response = await revaApi.admin.requests.uploadReport(
+        property?.reference || "",
+        formData
+      );
 
-      if (response?.error) {
-        notifyError("Error saving form data");
-        throw response?.error || new Error("An error occurred");
+      if (!response.success) {
+        notifyError(response.error || "Error saving form data");
+        throw new Error(response.error);
       }
 
       notifySuccess("Report data saved successfully!");
@@ -273,18 +272,14 @@ export function AdminReportUpload({
         return;
       }
 
-      // Use appropriate approval function based on request type
-      const approvalFunction = property?.isOneTimeRequest
-        ? approveOneTimeDueDiligenceReport
-        : approveDueDiligenceReport;
-
-      const response = await approvalFunction(
+      // The route itself picks approveDueDiligenceReport/approveOneTimeDueDiligenceReport by request type
+      const response = await revaApi.admin.requests.approve(
         property?.reference || "",
         !property?.report?.isApproved
       );
 
-      if (response?.error) {
-        throw response?.error || new Error("An error occurred");
+      if (!response.success) {
+        throw new Error(response.error);
       }
 
       notifySuccess(

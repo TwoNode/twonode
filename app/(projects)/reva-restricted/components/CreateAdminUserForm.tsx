@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createAdminUser } from "../actions/adminDbActions";
+import { revaApi } from "@/reva/apiClient";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -62,16 +62,10 @@ export default function CreateAdminUserForm() {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("email", data.email);
-      formData.append("firstName", data.firstName);
-      formData.append("lastName", data.lastName);
-      formData.append("role", data.role);
-
-      const result = await createAdminUser(formData);
+      const result = await revaApi.admin.users.create(data);
 
       if (result.success) {
-        toast.success(result.message || "Admin user created successfully!");
+        toast.success("Admin user created successfully!");
         form.reset();
       } else {
         toast.error(result.error || "Failed to create admin user");

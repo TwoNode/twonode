@@ -1,17 +1,17 @@
 import React from "react";
 import Welcome from "./components/Welcome";
 import Link from "next/link";
-import { getAllRequestsWithUserByAdmin } from "../actions/adminDbActions";
+import { getAllRequestsWithUserByAdmin } from "@/reva/services/reportService";
 import ErrorComponent from "../../reva/dashboard/components/ErrorComponent";
 
 const Home = async () => {
-  const { data, success, oneTimeRequests } =
-    await getAllRequestsWithUserByAdmin({
+  let data, oneTimeRequests;
+  try {
+    ({ properties: data, oneTimeRequests } = await getAllRequestsWithUserByAdmin({
       limit: 5,
       includeOneTimeRequests: true,
-    });
-
-  if (!success) {
+    }));
+  } catch {
     return <ErrorComponent />;
   }
 

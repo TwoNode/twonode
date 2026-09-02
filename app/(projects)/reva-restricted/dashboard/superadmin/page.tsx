@@ -4,7 +4,7 @@ import AdminUsersList from "../../components/AdminUsersList";
 import UserRoleManagementForm from "../../components/UserRoleManagementForm";
 import AllUsersList from "../../components/AllUsersList";
 import CreateNotificationForm from "../../components/CreateNotificationForm";
-import { getAllUsers } from "../../actions/adminDbActions";
+import { getAllUsers } from "@/reva/services/adminUserService";
 import { canAccessRevaAdminPanel } from "@/permissions";
 
 interface User {
@@ -38,20 +38,17 @@ interface AdminUser {
 }
 
 const RevaPage: FC = async () => {
-  // Fetch all users
-  const allUsersResult = await getAllUsers();
-
-  const allUsers =
-    allUsersResult.success && allUsersResult.data?.allUsers
-      ? (allUsersResult.data.allUsers as User[])
-      : [];
-
-  const adminUsers =
-    allUsersResult.success && allUsersResult.data?.allUsers
-      ? (allUsersResult.data.allUsers.filter((user: User) =>
-          canAccessRevaAdminPanel(user.role)
-        ) as AdminUser[])
-      : [];
+  let allUsers: User[] = [];
+  let adminUsers: AdminUser[] = [];
+  try {
+    const result = await getAllUsers();
+    allUsers = result.allUsers as User[];
+    adminUsers = result.allUsers.filter((user) =>
+      canAccessRevaAdminPanel(user.role)
+    ) as AdminUser[];
+  } catch {
+    // fall through with empty lists
+  }
 
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
