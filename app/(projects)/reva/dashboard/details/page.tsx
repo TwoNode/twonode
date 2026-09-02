@@ -2,10 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import SingleRequestPage from "./SingleRequestPage";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
-import {
-  authGetTransactionData,
-  authPaymentSuccessful,
-} from "@/app/(projects)/reva/actions/revaActions";
+import { authGetTransactionData } from "@/reva/services/propertyRequestService";
 import InvalidReferencePage from "@/components/InvalidReferencePage";
 
 const ViewDetailsPage = async ({
@@ -21,18 +18,11 @@ const ViewDetailsPage = async ({
   }
 
   try {
-    const result = await authGetTransactionData(reference);
-
-    console.log(result);
-
-    if (!result?.data) {
-      console.error("Invalid or missing property data.");
-      return <InvalidReferencePage />;
-    }
+    const property = await authGetTransactionData(reference);
 
     const transformedProperty = {
-      ...result.data,
-      report: result.data.report ?? undefined, // Ensure compatibility with expected type
+      ...property,
+      report: property.report ?? undefined, // Ensure compatibility with expected type
     };
 
     return <SingleRequestPage property={transformedProperty} />;

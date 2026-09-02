@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { getOneTimeRequestByReference } from "@/app/(projects)/reva/actions/revaActions";
 import DownloadReportButton from "./components/DownloadReportButton";
 
 // Reva colors

@@ -2,7 +2,10 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import VerifyPayment from "./viewDetails";
 import { notFound } from "next/navigation"; // Handles error cases gracefully
-import { authPaymentSuccessful } from "@/app/(projects)/reva/actions/revaActions";
+import { getServerSession } from "@/lib/auth/session";
+import { getUserContact } from "@/reva/services/propertyRequestService";
+import { authPaymentSuccessful } from "@/reva/services/paymentService";
+import { Platform } from "@/utils/platform";
 import PaymentErrorPage from "./PaymentErrorPage";
 
 const VerifyPaymentPage = async ({
@@ -17,22 +20,23 @@ const VerifyPaymentPage = async ({
     return notFound(); // Render a 404 page if the reference is missing
   }
 
-  try {
-    const paymentResult = await authPaymentSuccessful(reference);
+  const session = await getServerSession(Platform.REVA);
+  if (!session) {
+    return notFound();
+  }
 
-    if (paymentResult.success) {
-      return <VerifyPayment formData={paymentResult?.data} />;
-    } else {
-      return (
-        <PaymentErrorPage
-          message={paymentResult?.message || ""}
-          reference={reference}
-        />
-      );
-    }
+  try {
+    const user = await getUserContact(session.sub);
+    const data = await authPaymentSuccessful(reference, session.sub, user.email);
+    return <VerifyPayment formData={data} />;
   } catch (error) {
     console.error("Error processing payment:", error);
-    return notFound();
+    return (
+      <PaymentErrorPage
+        message={error instanceof Error ? error.message : ""}
+        reference={reference}
+      />
+    );
   }
 };
 

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { downloadOneTimeRequestReport } from "@/app/(projects)/reva/actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import { toast } from "sonner";
 
 interface DownloadReportButtonProps {
@@ -20,7 +20,7 @@ const DownloadReportButton: React.FC<DownloadReportButtonProps> = ({
   const handleDownload = async () => {
     setIsLoading(true);
     try {
-      const result = await downloadOneTimeRequestReport(reference, email);
+      const result = await revaApi.oneTimeProperties.lookupReport(reference, email);
 
       if (!result.success) {
         toast.error(result.error || "Failed to download report");

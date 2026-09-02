@@ -1,14 +1,17 @@
 import React from "react";
-import { getUserProperties } from "../../actions/revaActions";
+import { getServerSession } from "@/lib/auth/session";
+import { getUserProperties } from "@/reva/services/propertyRequestService";
+import { Platform } from "@/utils/platform";
 import AllRequestsClient from "./AllRequestsClient";
 import ErrorComponent from "../components/ErrorComponent";
 
 export async function AllRequests() {
-  const { data, success } = await getUserProperties();
-
-  if (!success) {
+  const session = await getServerSession(Platform.REVA);
+  if (!session) {
     return <ErrorComponent />;
   }
 
-  return <AllRequestsClient initialData={data || []} />;
+  const data = await getUserProperties(session.sub);
+
+  return <AllRequestsClient initialData={data} />;
 }

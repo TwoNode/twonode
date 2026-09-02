@@ -15,7 +15,7 @@ import {
   Mail,
 } from "lucide-react";
 import Link from "next/link";
-import { getOneTimeRequestByReference } from "@/app/(projects)/reva/actions/revaActions";
+import { getOneTimeRequestByReference } from "@/reva/services/propertyRequestService";
 import DownloadReportButton from "./components/DownloadReportButton";
 import { OneTimeRequest } from "./OneTimeRequest";
 
@@ -51,18 +51,10 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
     );
   }
 
-  interface OneTimeRequestResult {
-    success: boolean;
-    data?: any; // Make data optional to match the actual return type
-    error?: string;
-  }
-
-  const result: OneTimeRequestResult = await getOneTimeRequestByReference(
-    reference,
-    email
-  );
-
-  if (!result.success || !result.data) {
+  let request;
+  try {
+    request = await getOneTimeRequestByReference(reference, email);
+  } catch {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -74,8 +66,7 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
           <CardContent>
             <Alert>
               <AlertDescription>
-                {result.error ||
-                  "Unable to find your request. Please verify your reference and email, or contact support if you believe this is an error."}
+                Unable to find your request. Please verify your reference and email, or contact support if you believe this is an error.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -83,30 +74,6 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
       </div>
     );
   }
-
-  if (!result.data) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-red-600">
-              Error Loading Request
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert>
-              <AlertDescription>
-                {result.error ||
-                  "An error occurred while loading the request. Please try again later."}
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const request = result.data;
 
   return <OneTimeRequest data={request} />;
 }

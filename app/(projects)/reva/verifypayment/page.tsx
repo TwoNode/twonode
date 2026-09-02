@@ -2,7 +2,7 @@ import { Metadata, Viewport } from "next";
 import { FC } from "react";
 import VerifyPayment from "./viewDetails";
 import { notFound } from "next/navigation";
-import { checkPaymentSuccess } from "../actions/revaActions";
+import { checkPaymentSuccess } from "@/reva/services/paymentService";
 import PaymentErrorPage from "./PaymentErrorPage";
 
 const VerifyPaymentPage = async ({
@@ -18,21 +18,16 @@ const VerifyPaymentPage = async ({
   }
 
   try {
-    const paymentResult = await checkPaymentSuccess(reference);
-
-    if (paymentResult.success) {
-      return <VerifyPayment formData={paymentResult?.data} />;
-    } else {
-      return (
-        <PaymentErrorPage
-          message={paymentResult?.message || ""}
-          reference={reference}
-        />
-      );
-    }
+    const data = await checkPaymentSuccess(reference);
+    return <VerifyPayment formData={data} />;
   } catch (error) {
     console.error("Error processing payment:", error);
-    return notFound();
+    return (
+      <PaymentErrorPage
+        message={error instanceof Error ? error.message : ""}
+        reference={reference}
+      />
+    );
   }
 };
 
