@@ -3,16 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  getAllUsers,
-  getUserStats,
-  updateUserRole,
-  updateUserStatus,
-  updateUserSubscription,
-  cancelUserSubscription,
-  promoteToAdmin,
-  createAdmin,
-} from "../../../actions/adminActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { SurfboardRole } from "@/prisma/generated";
 
 interface Subscription {
@@ -98,8 +89,8 @@ export default function UserManagementPage() {
     // For now, we'll check from the users list after fetching
     const checkCurrentUserRole = async () => {
       try {
-        const usersResult = await getAllUsers();
-        if (usersResult.success && usersResult.users) {
+        const usersResult = await surfboardApi.admin.users.list();
+        if (usersResult.success) {
           // In production, this should come from auth context
           // For now, we'll assume superadmin if we can see all users
           setCurrentUserRole("SUPERADMIN");
@@ -115,18 +106,18 @@ export default function UserManagementPage() {
     setLoading(true);
     try {
       const [usersResult, statsResult] = await Promise.all([
-        getAllUsers(),
-        getUserStats(),
+        surfboardApi.admin.users.list(),
+        surfboardApi.admin.users.stats(),
       ]);
 
-      if (usersResult.success && usersResult.users) {
-        setUsers(usersResult.users);
+      if (usersResult.success) {
+        setUsers(usersResult.data);
       } else {
         toast.error(usersResult.error || "Failed to fetch users");
       }
 
-      if (statsResult.success && statsResult.stats) {
-        setStats(statsResult.stats);
+      if (statsResult.success) {
+        setStats(statsResult.data);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -175,9 +166,9 @@ export default function UserManagementPage() {
   });
 
   const handleRoleChange = async (userId: string, newRole: SurfboardRole) => {
-    const result = await updateUserRole({ userId, newRole });
+    const result = await surfboardApi.admin.users.updateRole(userId, newRole);
     if (result.success) {
-      toast.success(result.message);
+      toast.success(`User role updated to ${newRole}`);
       fetchData();
     } else {
       toast.error(result.error);
@@ -185,9 +176,9 @@ export default function UserManagementPage() {
   };
 
   const handleStatusToggle = async (userId: string, currentStatus: boolean) => {
-    const result = await updateUserStatus({ userId, isActive: !currentStatus });
+    const result = await surfboardApi.admin.users.setStatus(userId, !currentStatus);
     if (result.success) {
-      toast.success(result.message);
+      toast.success(`User ${!currentStatus ? "activated" : "deactivated"} successfully`);
       fetchData();
     } else {
       toast.error(result.error);
@@ -198,9 +189,9 @@ export default function UserManagementPage() {
     if (!confirm("Are you sure you want to promote this user to Admin?"))
       return;
 
-    const result = await promoteToAdmin(userId);
+    const result = await surfboardApi.admin.users.promote(userId);
     if (result.success) {
-      toast.success(result.message);
+      toast.success("User promoted to Admin successfully");
       fetchData();
     } else {
       toast.error(result.error);
@@ -234,13 +225,10 @@ export default function UserManagementPage() {
   const handleUpdateSubscription = async () => {
     if (!editingSubscription) return;
 
-    const result = await updateUserSubscription({
-      userId: editingSubscription.id,
-      ...subscriptionForm,
-    });
+    const result = await surfboardApi.admin.users.updateSubscription(editingSubscription.id, subscriptionForm);
 
     if (result.success) {
-      toast.success(result.message);
+      toast.success("Subscription updated successfully");
       setShowSubscriptionModal(false);
       setEditingSubscription(null);
       fetchData();
@@ -252,9 +240,9 @@ export default function UserManagementPage() {
   const handleCancelSubscription = async (userId: string) => {
     if (!confirm("Are you sure you want to cancel this subscription?")) return;
 
-    const result = await cancelUserSubscription(userId);
+    const result = await surfboardApi.admin.users.cancelSubscription(userId);
     if (result.success) {
-      toast.success(result.message);
+      toast.success("Subscription canceled successfully");
       setShowSubscriptionModal(false);
       setEditingSubscription(null);
       fetchData();
@@ -265,9 +253,9 @@ export default function UserManagementPage() {
 
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await createAdmin(newAdminForm);
+    const result = await surfboardApi.admin.users.create(newAdminForm);
     if (result.success) {
-      toast.success(result.message);
+      toast.success("Admin user created successfully");
       setShowAddAdminModal(false);
       setNewAdminForm({
         firstName: "",

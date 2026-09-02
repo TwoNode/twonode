@@ -215,7 +215,7 @@ export const surfboardApi = {
 
       updateSubscription: (
         id: string,
-        input: { planCode: string; planName: string; amount: number; interval: string; status: string; currentEnd?: string | null }
+        input: { planCode: string; planName: string; amount: number; interval: string; status: string; currentEnd?: string | Date | null }
       ) =>
         jsonFetch<any>(`${BASE}/admin/users/${encodeURIComponent(id)}/subscription`, {
           method: "PATCH",

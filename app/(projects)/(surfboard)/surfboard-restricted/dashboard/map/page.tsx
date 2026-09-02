@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
 import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
-import { getAllSurfPlansForAdmin } from "@/app/(projects)/(surfboard)/actions/adminActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 text-center p-6">
@@ -42,9 +42,9 @@ export default function AdminMapViewerPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await getAllSurfPlansForAdmin();
+      const result = await surfboardApi.admin.plansMap();
 
-      if (result.success && result.data) {
+      if (result.success) {
         setAllPlans(result.data.plans || []);
       } else {
         setError(result.error || "Failed to fetch plans");
