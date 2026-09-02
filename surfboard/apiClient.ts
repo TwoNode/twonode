@@ -562,6 +562,21 @@ export const surfboardApi = {
   subscription: {
     /** Self-service — clears the caller's own subscription. Dev-only debug tool. */
     clear: () => jsonFetch<{ deletedCount: number }>(`${BASE}/subscription/clear`, { method: "POST" }),
+
+    get: () => jsonFetch<any>(`${BASE}/subscription`),
+
+    userAndActiveSub: () => jsonFetch<{ subscription: any | null; user: any }>(`${BASE}/subscription/user-and-active`),
+
+    initiate: (planId: string) =>
+      jsonFetch<any>(`${BASE}/subscription/initiate`, { method: "POST", body: JSON.stringify({ planId }) }),
+
+    verify: (reference: string) =>
+      jsonFetch<any>(`${BASE}/subscription/verify`, { method: "POST", body: JSON.stringify({ reference }) }),
+
+    disable: () => jsonFetch<{ message: string; data?: { currentEnd: string; nextPaymentDate: string | null } }>(
+      `${BASE}/subscription/disable`,
+      { method: "POST" }
+    ),
   },
 
   recordCopy: {

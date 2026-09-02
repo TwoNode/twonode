@@ -7,7 +7,6 @@ import {
   getAndRefreshUserSession,
 } from "@/utils/encryptedCookies";
 import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
-import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
 import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
 import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
 import { canAccessRoute as canAccessGBCRoute } from "@/gbc/access/routes";
@@ -248,8 +247,6 @@ const proxyWithLogic = withDynamicAuth(
           hasAccess = false;
         } else {
           try {
-            // Note: getUserAndActiveSub uses cookies() which is fine in middleware context if handled correctly,
-            // but we should ideally use the subscription data from the cookie if available
             const subData = platformSession.subscription;
 
             if (!subData || subData.status !== "active") {

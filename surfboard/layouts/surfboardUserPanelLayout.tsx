@@ -24,7 +24,7 @@ import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getUserAndActiveSub } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { getUnreadNotificationCount } from "@/app/(projects)/(surfboard)/actions/notificationActions";
 
 // Surfboard dashboard navbar with logo and username
@@ -139,15 +139,13 @@ export default function SurfboardUserPanelLayout({
 
   async function isUserSubscribed(): Promise<boolean> {
     try {
-      const session = await getUserAndActiveSub();
-      const userData = session?.user || null;
+      const result = await surfboardApi.subscription.userAndActiveSub();
+      if (!result.success) return false;
+
+      const userData = result.data?.user || null;
       setUser(userData);
 
-      if (!session?.subscription) return false;
-
-      const sub = session.subscription;
-
-      return sub ? true : false;
+      return !!result.data?.subscription;
     } catch (error) {
       console.error("Error checking subscription:", error);
       return false;
