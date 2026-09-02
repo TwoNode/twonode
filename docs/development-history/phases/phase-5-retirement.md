@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 5 — Retirement
 
-**Status:** Spec written, execution starting. **Date:** 2026-08-28.
+**Status:** Execution complete (all three products' action files retired) — live smoke pass and PR merge to `main` still pending. **Date:** 2026-08-28, completed 2026-09-02.
 
 ## Why
 
@@ -98,4 +98,29 @@ Product order: **GBC → REVA → Surfboard**, smallest-to-largest surface, each
 
 ## Completion Report
 
-_(Filled in once this phase finishes — see every prior phase's file for the structure this will follow.)_
+### What was built
+
+All three products' `actions/` folders are now empty of the legacy files this phase targeted — full step-by-step log (every commit) lives in `docs/development-history/progress.md`; this section summarizes the shape of the work, not every commit.
+
+- **GBC** — all 11 real action files repointed and deleted (`app/(projects)/(GBC)/actions/` fully empty), 2 more than the original 9-file estimate (`contact-actions.ts`, `qr-verification.ts` were initially missed by the source survey). Playwright browser testing introduced here for public-page verification, used alongside curl for admin routes.
+- **REVA** — `reva/apiClient.ts` built from scratch (the one product with no client yet), then `authActions.ts`/`revaActions.ts`/`adminDbActions.ts` repointed and deleted. `awsActions.ts`/`paystackActions.ts` deliberately kept as shared server-side utilities, still imported directly by `paymentService.ts`/`reportService.ts` — not a gap, a documented exception (both files stay `"use server"` but have zero remaining page/component consumers of their own).
+- **Surfboard** (largest, ~19 action files) — `surfboard/apiClient.ts` extended from QR-earnings-only to the full route surface; `userActions.ts`, `paystackSubscriptions.ts`, and the dead `migrate/` folder deleted outright; then, in strict grep-verified batches: `auditLogActions.ts`, `authActions.ts`, `settingsActions.ts`, `subscriptionAnalyticsActions.ts`, `verificationActions.ts`, `qrAdminActions.ts`, `profile.ts`, `mdaRemarkActions.ts`, `adminActions.ts`, `subscriptionActions.ts`, `paystackActions.ts`, `ossgActions.ts`, `aiExtractionActions.ts`, `notificationActions.ts`, `awsActions.ts`, `surfboardActions.ts`, and finally `codActions.ts` — the last two, both ~5,000+ line files with ~17-20 real consumers each, closed out the pass. `app/(projects)/(surfboard)/actions/` is now fully empty.
+
+Two small backend gaps surfaced and filled while repointing `codActions.ts`'s consumers, both because a function existed in a service but had never been wired to a route: a dev-only `POST /api/v1/surfboard/cod/batches/reset` route (+ `deleteAllBatches` ported into `remitaVerificationService.ts`, SUPERADMIN-only, refuses outside development) for the debug "wipe all batches" tool in `SubmittedBatchesModal.tsx`; and `GET /api/v1/surfboard/mda/records-ii/batches` (+ `apiClient.mda.recordsII.batches()`) since `getRecordsIIBatches`/`getRecordsIIHistoryBatches` existed in `batchApprovalService.ts` but nothing exposed them.
+
+### Judgment calls made during implementation
+
+- **Preserve exact behavior over "fixing" it, twice** — `awsActions.ts`'s `uploadSurfboardFileToS3` took a `userId` slot every real caller actually filled with `plan.planNumber`, kept exactly rather than switched to the real user id, to avoid changing the S3 key namespace of already-uploaded files. `getPlanPublicUrl` (a server-only base-URL formatter using request headers) became a plain client-side `window.location.origin` computation in `SinglePlan.tsx`, since that component was already `"use client"` and needed no server round-trip for a URL string.
+- **Real bugs found and fixed rather than replicated**: silently-swallowed notification failures (`notificationActions.ts`'s helpers checked a legacy cookie session that services calling them internally never had); dropped QR styling options and missing filter/sort forwarding on 3 routes that only ever used service defaults; an eager Paystack-secret-key evaluation at module scope that built fine as a `"use server"` file but threw at production-build time once imported directly by a plain route module (`qrAdminService.ts`, caught and fixed, then proactively avoided in `paystackSubscriptionService.ts`).
+- **Two confirmed-dead-code drops, not migrations**: `aiExtractionActions.ts`'s `extractSurveyPlanDataFromPdf`/`extractEBSReceiptFields`/`extractRemitaReceiptFromHtml` (zero real call sites, one only reachable via commented-out code); `verificationActions.ts`'s `verifyPlanRecordCopy` (imported but never called — the one apparent consumer runs its own client-side verification instead).
+- **`proxy.ts`'s middleware dependency turned out to be a non-issue** — the spec flagged extracting `getUserAndActiveSub` out of `subscriptionActions.ts` as a special middleware-safe step; grep confirmed the import was dead code, never actually called, so the fix was deleting an unused import plus its stale comment, not a careful extraction.
+
+### Verification performed
+
+- `tsc --noEmit`, `vitest run` (242/242), and a full production build all clean after every commit in the sequence above, not just at the end — the same per-step discipline used throughout Phases 2-4.
+- A repo-wide `grep` for every deleted file's old import path confirmed zero remaining references at each step, and a final sweep for `"use server"` directives across `app/`, `reva/`, `surfboard/`, `gbc/` after `codActions.ts`'s deletion turned up only the expected survivors: REVA's two intentionally-kept utility files, plus a handful of `utils/`-level auth/cookie helpers (`revaAuth.ts`, `surfAuth.ts`, `customCookieSetter.ts`) that were never in scope for this phase — they live outside any product's `actions/` folder and were never enumerated in the source inventory.
+- **Not yet done**: the live smoke pass across all three products' key flows (REVA's guest request flow and admin review, Surfboard's plan purchase and MDA review) — this requires either a real Kinde-authenticated browser session or curl+minted-JWT against a running dev server, same documented gap as every prior phase's completion report for admin-authenticated pages. The merge of `rebuild/foundations` to `main` via PR (per the standing rule that `main` is never pushed to directly) also has not happened yet.
+
+### Next up
+
+Run the live smoke pass, then open the PR merging `rebuild/foundations` into `main`.
