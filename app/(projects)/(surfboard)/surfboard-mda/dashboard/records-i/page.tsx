@@ -44,7 +44,7 @@ import {
   updateRecordsIStatus,
   getRecordsIHistory,
 } from "../../../actions/codActions";
-import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
@@ -224,7 +224,7 @@ export default function RecordsIAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons("records-i");
+      const res = await surfboardApi.mda.remarks.queryReasons("records-i");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

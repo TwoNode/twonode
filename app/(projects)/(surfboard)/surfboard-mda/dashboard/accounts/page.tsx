@@ -47,7 +47,7 @@ import {
   getPendingCountByRole,
   getAccountsHistory,
 } from "../../../actions/codActions";
-import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
@@ -208,7 +208,7 @@ export default function AccountsAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons("accounts");
+      const res = await surfboardApi.mda.remarks.queryReasons("accounts");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

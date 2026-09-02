@@ -48,7 +48,7 @@ import {
   getRecordsIIHistoryBatches,
   updateRecordsIIStatus,
 } from "../../../actions/codActions";
-import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
@@ -230,7 +230,7 @@ export default function RecordsIIAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons("records-ii");
+      const res = await surfboardApi.mda.remarks.queryReasons("records-ii");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

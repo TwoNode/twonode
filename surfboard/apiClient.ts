@@ -456,6 +456,13 @@ export const surfboardApi = {
   },
 
   mda: {
+    remarks: {
+      charting: () => jsonFetch<string[]>(`${BASE}/mda/remarks/charting`),
+
+      queryReasons: (role: "accounts" | "charting" | "surcon" | "records-i" | "records-ii" | "intake") =>
+        jsonFetch<string[]>(`${BASE}/mda/remarks/query-reasons?role=${role}`),
+    },
+
     accounts: {
       batches: (view?: "history") => jsonFetch<any[]>(`${BASE}/mda/accounts/batches${view ? `?view=${view}` : ""}`),
 

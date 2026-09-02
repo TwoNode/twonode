@@ -44,7 +44,7 @@ import {
   updateSurconStatus,
   getSurconHistory,
 } from "../../../actions/codActions";
-import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
@@ -218,7 +218,7 @@ export default function SurconAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons("surcon");
+      const res = await surfboardApi.mda.remarks.queryReasons("surcon");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

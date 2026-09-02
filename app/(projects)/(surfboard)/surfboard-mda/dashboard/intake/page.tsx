@@ -47,7 +47,7 @@ import {
   updateIntakeBatchStatus,
   updateIntakeStatus,
 } from "../../../actions/codActions";
-import { getUniqueQueryReasons } from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import { PlanLockWarningDialog } from "../../../components/PlanLockWarningDialog";
@@ -197,7 +197,7 @@ export default function IntakeAdminPage() {
 
   const fetchUniqueRemarks = async () => {
     try {
-      const res = await getUniqueQueryReasons("intake");
+      const res = await surfboardApi.mda.remarks.queryReasons("intake");
       if (res.success && res.data) {
         setUniqueQueryReasons(res.data);
       }

@@ -41,10 +41,7 @@ import {
   updateChartingStatus,
   getChartingHistory,
 } from "../../../actions/codActions";
-import {
-  getUniqueChartingRemarks,
-  getUniqueQueryReasons,
-} from "../../../actions/mdaRemarkActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
 import {
@@ -198,8 +195,8 @@ export default function ChartingAdminPage() {
   const fetchUniqueRemarks = async () => {
     try {
       const [chartingRes, queryRes] = await Promise.all([
-        getUniqueChartingRemarks(),
-        getUniqueQueryReasons("charting"),
+        surfboardApi.mda.remarks.charting(),
+        surfboardApi.mda.remarks.queryReasons("charting"),
       ]);
       if (chartingRes.success && chartingRes.data) {
         setUniqueChartingRemarks(chartingRes.data);
