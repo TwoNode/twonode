@@ -14,7 +14,7 @@ import {
   notifyPlanQueried,
   notifyPlanApproved,
   notifyReadyForPhysicalSubmission,
-} from "./notificationActions";
+} from "@/surfboard/services/notificationService";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
 import { extractPaymentDetailsFromText, extractLASGReceiptFromHtml } from "@/surfboard/services/aiExtractionService";
@@ -1194,7 +1194,7 @@ export async function submitRedCopyBatch(
     // Notify user about their batch submission
     try {
       const { notifyRecordCopySubmitted } =
-        await import("./notificationActions");
+        await import("@/surfboard/services/notificationService");
       await notifyRecordCopySubmitted({
         userId: user.id,
         batchId: batch.id,
@@ -2753,7 +2753,7 @@ export async function updateIntakeStatus(
         data: { redCopyStatus: "QUERIED" }
       });
 
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      const { notifyConsolidatedQueries } = await import("@/surfboard/services/notificationService");
       await notifyConsolidatedQueries({
         userId: plan.userId,
         planId,
@@ -4193,7 +4193,7 @@ export async function checkAndDispatchQueries(planId: string) {
         data: { redCopyStatus: "QUERIED" },
       });
 
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      const { notifyConsolidatedQueries } = await import("@/surfboard/services/notificationService");
       await notifyConsolidatedQueries({
         userId: plan.userId,
         planId,
@@ -4809,7 +4809,7 @@ export async function updateIntakeBatchStatus(
 
     // Dispatch notifications if queried
     if (!approved && batch.submittedBy) {
-      const { notifyConsolidatedQueries } = await import("./notificationActions");
+      const { notifyConsolidatedQueries } = await import("@/surfboard/services/notificationService");
       for (const p of batch.plans) {
         await notifyConsolidatedQueries({
           userId: batch.submittedBy,

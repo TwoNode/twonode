@@ -33,7 +33,7 @@ vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/utils/paystackConfig", () => ({
   getPaystackSecretForWebhook: mockGetPaystackSecretForWebhook,
 }));
-vi.mock("@/app/(projects)/(surfboard)/actions/notificationActions", () => ({
+vi.mock("@/surfboard/services/notificationService", () => ({
   createNotification: mockCreateNotification,
 }));
 vi.mock("@/utils/email", () => ({

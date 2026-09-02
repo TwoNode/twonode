@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  createNotification,
-  getUserNotifications,
-  deleteNotification,
-} from "../../../actions/notificationActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,13 +96,13 @@ export default function AdminNotificationsPage() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const result = await getUserNotifications({
+      const result = await surfboardApi.notifications.list({
         includeRead: true,
         includeDismissed: true,
         limit: 100,
       });
 
-      if (result.success && result.data) {
+      if (result.success) {
         setNotifications(result.data);
       } else {
         toast.error("Failed to load notifications");
@@ -131,7 +127,7 @@ export default function AdminNotificationsPage() {
 
     try {
       setCreating(true);
-      const result = await createNotification({
+      const result = await surfboardApi.notifications.create({
         type: formData.type,
         title: formData.title,
         message: formData.message,
@@ -168,7 +164,7 @@ export default function AdminNotificationsPage() {
       return;
     }
 
-    const result = await deleteNotification(notificationId);
+    const result = await surfboardApi.notifications.remove(notificationId);
     if (result.success) {
       toast.success("Notification deleted");
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));

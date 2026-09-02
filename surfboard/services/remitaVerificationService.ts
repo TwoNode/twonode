@@ -7,7 +7,7 @@ import {
   notifyLASGReceiptUploaded,
   notifyPaymentReceived,
   notifyRecordCopySubmitted,
-} from "@/app/(projects)/(surfboard)/actions/notificationActions";
+} from "@/surfboard/services/notificationService";
 import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { computeGeometryDetails } from "@/app/(projects)/(surfboard)/utils/dbUtils";
 import { calculatePlanFeeByZone, getChartingInterpretation, getZoneFromGeometry } from "@/surfboard/services/codFeeService";

@@ -1,15 +1,9 @@
 import prisma from "@/lib/prisma";
-import { createNotification } from "@/app/(projects)/(surfboard)/actions/notificationActions";
+import { createNotification } from "@/surfboard/services/notificationService";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 
-/**
- * Migrated from app/(projects)/(surfboard)/actions/qrAdminActions.ts.
- * createNotification stays imported from notificationActions.ts (a "use
- * server" file not yet in this phase's migration scope — its exports still
- * work as plain async functions when imported server-side, same pattern
- * REVA/GBC used for not-yet-migrated shared dependencies).
- */
+/** Migrated from app/(projects)/(surfboard)/actions/qrAdminActions.ts. */
 
 
 export async function getAdminQREarningsStats() {

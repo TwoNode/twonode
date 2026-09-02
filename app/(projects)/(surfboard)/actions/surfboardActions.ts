@@ -722,7 +722,7 @@ export async function createSurfPlan(dto: SurfboardPlanDTO) {
     // Send notification to user about new plan creation
     try {
       const { notifyPlanCreated, notifyPlanUpdate } = await import(
-        "./notificationActions"
+        "@/surfboard/services/notificationService"
       );
 
       // Notify the user who created the plan
@@ -933,7 +933,7 @@ export async function updateSurfPlan(
     // Send notifications
     try {
       const { notifyPlanUpdate, notifyPlanUpdated } = await import(
-        "./notificationActions"
+        "@/surfboard/services/notificationService"
       );
 
       // Always notify user that their plan was updated (no email for regular updates)
@@ -2188,7 +2188,7 @@ export async function updateSurfPlanStatus(
 
     // Send notification if status changed
     if (plan.status !== status) {
-      const { notifyPlanUpdate } = await import("./notificationActions");
+      const { notifyPlanUpdate } = await import("@/surfboard/services/notificationService");
 
       const statusMessages: Record<typeof status, string> = {
         PENDING: "Your plan has been marked as pending review.",
@@ -2676,7 +2676,7 @@ export async function addSurfUserToSharedSurfPlan(
 
     // Send notification to the user
     try {
-      const { notifyPlanShared } = await import("./notificationActions");
+      const { notifyPlanShared } = await import("@/surfboard/services/notificationService");
       await notifyPlanShared({
         planId,
         planNumber: plan.planNumber,
@@ -2832,7 +2832,7 @@ export async function sharePlanWithUser(
     });
 
     // Send notification to the user
-    const { notifyPlanShared } = await import("./notificationActions");
+    const { notifyPlanShared } = await import("@/surfboard/services/notificationService");
     await notifyPlanShared({
       planId,
       planNumber: plan.planNumber,

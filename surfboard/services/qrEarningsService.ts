@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { createNotification } from "@/app/(projects)/(surfboard)/actions/notificationActions";
+import { createNotification } from "@/surfboard/services/notificationService";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 
@@ -9,11 +9,6 @@ import { NotFoundError, ValidationError } from "@/lib/api/errors";
  * that used to get { success: false, error } back on failure now get a
  * thrown ApiError instead, caught by the route's handleApiError — the
  * service layer never returns a failure shape itself.
- *
- * notificationActions.ts stays a "use server" action file for now (it's
- * Phase 2 territory); importing createNotification from it here works
- * because Next treats "use server" exports as plain async functions when
- * imported from other server-side code, same as the original file did.
  *
  * getPaystackSecretForWebhook() is async — it must be awaited fresh inside
  * each function that needs it, never cached at module scope (that binds a

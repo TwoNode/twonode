@@ -9,7 +9,7 @@ import {
   notifyPlanShared,
   notifyPlanUpdate,
   notifyPlanUpdated,
-} from "@/app/(projects)/(surfboard)/actions/notificationActions";
+} from "@/surfboard/services/notificationService";
 import { getPlanQRAccessState, incrementPlanQRScanCount } from "@/surfboard/services/qrEarningsService";
 import { PLAN_TYPES } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";

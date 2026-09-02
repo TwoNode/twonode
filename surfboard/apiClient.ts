@@ -579,6 +579,37 @@ export const surfboardApi = {
     ),
   },
 
+  notifications: {
+    list: (params?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.includeRead === false) qs.set("includeRead", "false");
+      if (params?.includeDismissed) qs.set("includeDismissed", "true");
+      if (params?.limit) qs.set("limit", String(params.limit));
+      const query = qs.toString();
+      return jsonFetch<any[]>(`${BASE}/notifications${query ? `?${query}` : ""}`);
+    },
+
+    create: (input: {
+      type: "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" | "PLAN" | "SHARING";
+      title: string;
+      message: string;
+      audience: "SPECIFIC_USERS" | "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
+      userIds?: string[];
+      link?: string;
+      metadata?: any;
+      sendEmail?: boolean;
+    }) => jsonFetch<{ id: string }>(`${BASE}/notifications`, { method: "POST", body: JSON.stringify(input) }),
+
+    unreadCount: () => jsonFetch<{ count: number }>(`${BASE}/notifications/unread-count`),
+
+    markRead: (id: string) => jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }),
+
+    dismiss: (id: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+
+    remove: (id: string) => jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
   ai: {
     extractSurveyPlan: (extractedText: string) =>
       jsonFetch<any>(`${BASE}/ai/extract-survey-plan`, { method: "POST", body: JSON.stringify({ extractedText }) }),

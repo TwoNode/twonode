@@ -25,7 +25,6 @@ import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { getUnreadNotificationCount } from "@/app/(projects)/(surfboard)/actions/notificationActions";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
@@ -177,8 +176,8 @@ export default function SurfboardUserPanelLayout({
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const result = await getUnreadNotificationCount();
-        if (result.success && result.data) {
+        const result = await surfboardApi.notifications.unreadCount();
+        if (result.success) {
           setUnreadCount(result.data.count);
         }
       } catch (error) {

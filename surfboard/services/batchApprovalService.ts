@@ -7,7 +7,7 @@ import {
   notifyPlanApproved,
   notifyPlanQueried,
   notifyReadyForPhysicalSubmission,
-} from "@/app/(projects)/(surfboard)/actions/notificationActions";
+} from "@/surfboard/services/notificationService";
 import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { verifyQueryPaymentLinks } from "@/surfboard/services/remitaVerificationService";
 import { getCodSubmissionSettings } from "@/surfboard/services/settingsService";
