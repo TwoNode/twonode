@@ -39,11 +39,6 @@ import {
   Lock,
   Search,
 } from "lucide-react";
-import {
-  getRecordsIPlans,
-  updateRecordsIStatus,
-  getRecordsIHistory,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -242,8 +237,8 @@ export default function RecordsIAdminPage() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const result = await getRecordsIPlans();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("records-i");
+      if (result.success) {
         setPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch plans");
@@ -259,8 +254,8 @@ export default function RecordsIAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getRecordsIHistory();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("records-i", "history");
+      if (result.success) {
         setHistoryPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch history");
@@ -290,7 +285,8 @@ export default function RecordsIAdminPage() {
 
     try {
       setProcessing(true);
-      const result = await updateRecordsIStatus(
+      const result = await surfboardApi.mda.stage.decide(
+        "records-i",
         selectedPlan.id,
         actionType === "approve",
         comment.trim() || undefined

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, FileText, CheckCircle2, Circle } from "lucide-react";
-import { submitPhysicalCopies } from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 export interface PhysicalSubmissionPlan {
   id: string;
@@ -76,7 +76,9 @@ export function PhysicalSubmissionModal({
 
     setIsSubmitting(true);
     try {
-      const result = await submitPhysicalCopies(Array.from(selectedPlanIds));
+      const result = await surfboardApi.plans.submitPhysicalCopies(
+        Array.from(selectedPlanIds),
+      );
       if (result.success) {
         toast.success(`Successfully submitted physical copies for ${result.data?.count} record(s)`);
         onSuccess();

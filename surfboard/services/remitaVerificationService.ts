@@ -12,7 +12,7 @@ import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/ut
 import { computeGeometryDetails } from "@/app/(projects)/(surfboard)/utils/dbUtils";
 import { calculatePlanFeeByZone, getChartingInterpretation, getZoneFromGeometry } from "@/surfboard/services/codFeeService";
 import { getZoneFees, getSystemChargePercent } from "@/surfboard/services/settingsService";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { ApiError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
 
 /**
@@ -808,4 +808,56 @@ export async function getCurrentPayerProfile(userId: string): Promise<PayerProfi
   });
   if (!dbUser) throw new NotFoundError("User");
   return dbUser;
+}
+
+/** Dev-only debug tool (SUPERADMIN, non-production) — resets every plan's batch/stage/lock fields and deletes all batches. */
+export async function deleteAllBatches(): Promise<{ deletedCount: number }> {
+  if (process.env.NODE_ENV === "production") {
+    throw new ApiError(403, "FORBIDDEN", "This action is not available in production");
+  }
+
+  await prisma.surfboardPlan.updateMany({
+    where: { batchId: { not: null } },
+    data: {
+      batchId: null,
+      redCopyStatus: "NOT_SUBMITTED",
+      redCopySubmittedAt: null,
+      possibleChartingRemarks: null,
+      accountsStatus: "PENDING",
+      chartingStatus: "PENDING",
+      surconStatus: "PENDING",
+      recordsIStatus: "PENDING",
+      recordsIIStatus: "PENDING",
+      chartingRemarks: null,
+      chartingApprovedBy: null,
+      chartingApprovedAt: null,
+      surconApprovedBy: null,
+      surconApprovedAt: null,
+      surconComment: null,
+      recordsIApprovedBy: null,
+      recordsIApprovedAt: null,
+      recordsIComment: null,
+      recordsIIApprovedBy: null,
+      recordsIIApprovedAt: null,
+      recordsIIComment: null,
+      accountsLockedBy: null,
+      accountsLockedAt: null,
+      accountsLockExpiresAt: null,
+      chartingLockedBy: null,
+      chartingLockedAt: null,
+      chartingLockExpiresAt: null,
+      surconLockedBy: null,
+      surconLockedAt: null,
+      surconLockExpiresAt: null,
+      recordsILockedBy: null,
+      recordsILockedAt: null,
+      recordsILockExpiresAt: null,
+      recordsIILockedBy: null,
+      recordsIILockedAt: null,
+      recordsIILockExpiresAt: null,
+    },
+  });
+
+  const result = await prisma.certificateOfDepositBatch.deleteMany({});
+  return { deletedCount: result.count };
 }

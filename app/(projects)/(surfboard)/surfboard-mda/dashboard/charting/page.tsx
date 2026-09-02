@@ -36,11 +36,6 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
-import {
-  getChartingPlans,
-  updateChartingStatus,
-  getChartingHistory,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -218,8 +213,8 @@ export default function ChartingAdminPage() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const result = await getChartingPlans();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("charting");
+      if (result.success) {
         setPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch plans");
@@ -235,8 +230,8 @@ export default function ChartingAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getChartingHistory();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("charting", "history");
+      if (result.success) {
         setHistoryPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch history");
@@ -273,9 +268,10 @@ export default function ChartingAdminPage() {
 
     try {
       setProcessing(true);
-      const result = await updateChartingStatus(
+      const result = await surfboardApi.mda.stage.decide(
+        "charting",
         selectedPlan.id,
-        actionType.toUpperCase() as "APPROVE" | "QUERY",
+        actionType === "approve",
         chartingRemarks
       );
 

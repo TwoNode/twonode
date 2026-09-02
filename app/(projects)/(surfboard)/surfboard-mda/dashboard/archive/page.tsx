@@ -42,11 +42,7 @@ import {
     StickyNote,
     Image as ImageIcon,
 } from "lucide-react";
-import {
-    getPendingArchiveBatches,
-    getArchiveHistoryBatches,
-    markPlanArchived,
-} from "../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
     id: string;
@@ -169,8 +165,8 @@ export default function ArchiveDashboard() {
     const fetchBatches = async () => {
         try {
             setLoading(true);
-            const result = await getPendingArchiveBatches();
-            if (result.success && result.data) {
+            const result = await surfboardApi.mda.archive.batches();
+            if (result.success) {
                 setBatches(result.data as any);
             } else {
                 toast.error(result.error || "Failed to fetch batches");
@@ -186,8 +182,8 @@ export default function ArchiveDashboard() {
     const fetchHistory = async () => {
         try {
             setHistoryLoading(true);
-            const result = await getArchiveHistoryBatches();
-            if (result.success && result.data) {
+            const result = await surfboardApi.mda.archive.batches("history");
+            if (result.success) {
                 setHistoryBatches(result.data as any);
             } else {
                 toast.error(result.error || "Failed to fetch history");
@@ -232,7 +228,7 @@ export default function ArchiveDashboard() {
         try {
             setProcessing(true);
             setProcessingPlanId(selectedPlan.id);
-            const result = await markPlanArchived(
+            const result = await surfboardApi.mda.archive.markArchived(
                 selectedPlan.id,
                 archiveNotes.trim() || undefined
             );
@@ -267,7 +263,7 @@ export default function ArchiveDashboard() {
             let failedCount = 0;
 
             for (const plan of selectedBatch.plans) {
-                const result = await markPlanArchived(
+                const result = await surfboardApi.mda.archive.markArchived(
                     plan.id,
                     archiveNotes.trim() || undefined
                 );

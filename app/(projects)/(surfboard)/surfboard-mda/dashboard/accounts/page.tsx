@@ -41,12 +41,6 @@ import {
   Search,
   Lock,
 } from "lucide-react";
-import {
-  getAccountsBatches,
-  updateAccountsApproval,
-  getPendingCountByRole,
-  getAccountsHistory,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -225,8 +219,8 @@ export default function AccountsAdminPage() {
 
   const fetchPendingCount = async () => {
     try {
-      const result = await getPendingCountByRole();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.pendingCounts();
+      if (result.success) {
         setPendingCount(result.data.accounts);
       }
     } catch (error) {
@@ -237,8 +231,8 @@ export default function AccountsAdminPage() {
   const fetchBatches = async () => {
     try {
       setLoading(true);
-      const result = await getAccountsBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.accounts.batches();
+      if (result.success) {
         setBatches(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch batches");
@@ -256,8 +250,8 @@ export default function AccountsAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getAccountsHistory();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.accounts.batches("history");
+      if (result.success) {
         setHistoryBatches(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch history");
@@ -285,7 +279,7 @@ export default function AccountsAdminPage() {
 
     try {
       setProcessing(true);
-      const result = await updateAccountsApproval(
+      const result = await surfboardApi.mda.accounts.decide(
         selectedBatch.id,
         approvalAction === "approve",
         comment || undefined

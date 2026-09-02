@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2, Home } from "lucide-react";
-import { verifyBatchPayment } from "../../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 function PaymentCallbackContent() {
   const searchParams = useSearchParams();
@@ -33,7 +33,11 @@ function PaymentCallbackContent() {
       }
 
       try {
-        const result = await verifyBatchPayment(reference);
+        // batchId is unused server-side — verifyBatchPayment looks the batch up by reference
+        const result = await surfboardApi.cod.batches.verifyPayment(
+          "_",
+          reference,
+        );
 
         if (result.success) {
           setStatus("success");

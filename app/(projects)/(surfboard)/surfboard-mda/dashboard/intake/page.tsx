@@ -41,12 +41,6 @@ import {
   Image as ImageIcon,
   Lock,
 } from "lucide-react";
-import {
-  getIntakeBatches,
-  getIntakeHistoryBatches,
-  updateIntakeBatchStatus,
-  updateIntakeStatus,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -215,8 +209,8 @@ export default function IntakeAdminPage() {
   const fetchBatches = async () => {
     try {
       setLoading(true);
-      const result = await getIntakeBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.intake.batches();
+      if (result.success) {
         setBatches(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch batches");
@@ -232,8 +226,8 @@ export default function IntakeAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getIntakeHistoryBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.intake.batches("history");
+      if (result.success) {
         const sortedBatches = (result.data as any).sort((a: any, b: any) => {
           const aTime = new Date(Math.max(...a.plans.map((p: any) => new Date(p.intakeApprovedAt || 0).getTime()))).getTime();
           const bTime = new Date(Math.max(...b.plans.map((p: any) => new Date(p.intakeApprovedAt || 0).getTime()))).getTime();
@@ -289,7 +283,7 @@ export default function IntakeAdminPage() {
 
     try {
       setProcessing(true);
-      const result = await updateIntakeBatchStatus(
+      const result = await surfboardApi.mda.intake.decide(
         selectedBatch.id,
         actionType === "approve",
         comment.trim() || undefined
@@ -329,7 +323,8 @@ export default function IntakeAdminPage() {
     try {
       setProcessing(true);
       setProcessingPlanId(selectedPlan.id);
-      const result = await updateIntakeStatus(
+      const result = await surfboardApi.mda.stage.decide(
+        "intake",
         selectedPlan.id,
         actionType === "approve",
         comment.trim() || undefined

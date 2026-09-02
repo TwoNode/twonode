@@ -32,7 +32,6 @@ import {
   AlertTriangle,
   Copy,
 } from "lucide-react";
-import { resubmitQueriedPlan, getCurrentPayerProfile } from "../actions/codActions";
 import { parseCSVContent } from "../utils/surfboardUtils";
 import type { PillarData } from "../types/surfboardTypes";
 import MaplibreMap from "./maps/MaplibreMap";
@@ -109,7 +108,7 @@ export function AmendPlanModal({
         if (settingsResult.success) {
           setFeePercent(settingsResult.data.queryResponseFeePercent || 0);
         }
-        const profileRes = await getCurrentPayerProfile();
+        const profileRes = await surfboardApi.cod.payerProfile();
         if (profileRes.success && profileRes.data) {
           setPayer(profileRes.data);
         }
@@ -321,14 +320,13 @@ export function AmendPlanModal({
         }
         : undefined;
 
-      const result = await resubmitQueriedPlan(
-        plan.id,
-        pillarsData,
+      const result = await surfboardApi.plans.resubmit(plan.id, {
+        pillars: pillarsData,
         recordCopyUrl,
-        locationData,
-        showPayment ? lasgReceiptUrl : undefined,
-        showPayment ? remitaReceiptUrl : undefined
-      );
+        location: locationData,
+        lasgReceiptUrl: showPayment ? lasgReceiptUrl : undefined,
+        remitaReceiptUrl: showPayment ? remitaReceiptUrl : undefined,
+      });
 
       if (result.success) {
         toast.success(

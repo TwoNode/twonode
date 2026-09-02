@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  getAndLockOldestAvailablePlan,
-  releaseAllLocksForUser,
-} from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 type MDARole = "CHARTING" | "SURCON" | "RECORDS_I" | "RECORDS_II";
 
@@ -58,9 +55,9 @@ export function usePlanLock({
     setLockError(null);
 
     try {
-      const result = await getAndLockOldestAvailablePlan(role);
+      const result = await surfboardApi.cod.locks.claimNextPlan(role as any);
 
-      if (result.success && result.data) {
+      if (result.success) {
         if (result.data.locked && result.data.planId) {
           setLockedPlanId(result.data.planId);
           setLockedPlanNumber(result.data.planNumber);
@@ -94,7 +91,7 @@ export function usePlanLock({
     if (!lockedPlanId || !hasLock.current) return;
 
     try {
-      await releaseAllLocksForUser(role);
+      await surfboardApi.cod.locks.releaseAll(role as any);
       setLockedPlanId(null);
       setLockedPlanNumber(null);
       setLockExpiresAt(null);
@@ -108,7 +105,7 @@ export function usePlanLock({
   // Release all locks for the user (called on page leave)
   const releaseAllLocks = useCallback(async () => {
     try {
-      await releaseAllLocksForUser(role);
+      await surfboardApi.cod.locks.releaseAll(role as any);
       setLockedPlanId(null);
       setLockedPlanNumber(null);
       setLockExpiresAt(null);

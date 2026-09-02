@@ -673,6 +673,12 @@ export const surfboardApi = {
             body: JSON.stringify({ reference }),
           },
         ),
+
+      /** Dev-only debug tool (SUPERADMIN, non-production) — resets every plan's batch/stage/lock fields and deletes all batches. */
+      reset: () =>
+        jsonFetch<{ deletedCount: number }>(`${BASE}/cod/batches/reset`, {
+          method: "POST",
+        }),
     },
 
     /** Client-side fee preview before batch submit — same calculation batch submit uses internally. */
@@ -821,6 +827,11 @@ export const surfboardApi = {
     pendingCounts: () => jsonFetch<any>(`${BASE}/mda/pending-counts`),
 
     recordsII: {
+      batches: (view?: "history") =>
+        jsonFetch<any[]>(
+          `${BASE}/mda/records-ii/batches${view ? `?view=${view}` : ""}`,
+        ),
+
       /** Approval here transmits to OSSG and sets the plan LODGED — kept separate from the shared /mda/:role decision route below. */
       decide: (planId: string, approved: boolean, comment?: string) =>
         jsonFetch<any>(

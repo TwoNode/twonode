@@ -43,11 +43,6 @@ import {
   Package,
   Image as ImageIcon,
 } from "lucide-react";
-import {
-  getRecordsIIBatches,
-  getRecordsIIHistoryBatches,
-  updateRecordsIIStatus,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useBatchLock } from "../../../hooks/useBatchLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -248,8 +243,8 @@ export default function RecordsIIAdminPage() {
   const fetchBatches = async () => {
     try {
       setLoading(true);
-      const result = await getRecordsIIBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.recordsII.batches();
+      if (result.success) {
         setBatches(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch batches");
@@ -265,8 +260,8 @@ export default function RecordsIIAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getRecordsIIHistoryBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.recordsII.batches("history");
+      if (result.success) {
         setHistoryBatches(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch history");
@@ -325,7 +320,7 @@ export default function RecordsIIAdminPage() {
     try {
       setProcessing(true);
       setProcessingPlanId(selectedPlan.id);
-      const result = await updateRecordsIIStatus(
+      const result = await surfboardApi.mda.recordsII.decide(
         selectedPlan.id,
         actionType === "approve",
         comment.trim() || undefined
@@ -371,7 +366,7 @@ export default function RecordsIIAdminPage() {
       let failedCount = 0;
 
       for (const plan of selectedBatch.plans) {
-        const result = await updateRecordsIIStatus(
+        const result = await surfboardApi.mda.recordsII.decide(
           plan.id,
           actionType === "approve",
           comment.trim() || undefined

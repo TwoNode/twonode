@@ -39,11 +39,6 @@ import {
   Lock,
   Search,
 } from "lucide-react";
-import {
-  getSurconPlans,
-  updateSurconStatus,
-  getSurconHistory,
-} from "../../../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { usePlanLock } from "../../../hooks/usePlanLock";
 import { RemarkSelector } from "../../../components/RemarkSelector";
@@ -236,8 +231,8 @@ export default function SurconAdminPage() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const result = await getSurconPlans();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("surcon");
+      if (result.success) {
         setPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch plans");
@@ -253,8 +248,8 @@ export default function SurconAdminPage() {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-      const result = await getSurconHistory();
-      if (result.success && result.data) {
+      const result = await surfboardApi.mda.stage.plans("surcon", "history");
+      if (result.success) {
         setHistoryPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch history");
@@ -284,7 +279,8 @@ export default function SurconAdminPage() {
 
     try {
       setProcessing(true);
-      const result = await updateSurconStatus(
+      const result = await surfboardApi.mda.stage.decide(
+        "surcon",
         selectedPlan.id,
         actionType === "approve",
         comment.trim() || undefined

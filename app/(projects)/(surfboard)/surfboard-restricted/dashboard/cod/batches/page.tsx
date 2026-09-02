@@ -22,7 +22,7 @@ import {
   DollarSign,
   RefreshCw,
 } from "lucide-react";
-import { getBatchesByStatus } from "../../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Batch {
   id: string;
@@ -60,18 +60,18 @@ export default function BatchManagementPage() {
       setLoading(true);
       // Fetch batches with LASG_PAID (ready for MDA review) and ACCOUNTS_APPROVED
       const [paidResult, approvedResult] = await Promise.all([
-        getBatchesByStatus("LASG_PAID"),
-        getBatchesByStatus("ACCOUNTS_APPROVED"),
+        surfboardApi.cod.batches.list("LASG_PAID"),
+        surfboardApi.cod.batches.list("ACCOUNTS_APPROVED"),
       ]);
 
-      if (paidResult.success && paidResult.data) {
-        setPaidBatches(paidResult.data.batches || []);
+      if (paidResult.success) {
+        setPaidBatches(paidResult.data || []);
       } else {
         toast.error(paidResult.error || "Failed to fetch paid batches");
       }
 
-      if (approvedResult.success && approvedResult.data) {
-        setApprovedBatches(approvedResult.data.batches || []);
+      if (approvedResult.success) {
+        setApprovedBatches(approvedResult.data || []);
       } else {
         toast.error(
           approvedResult.error || "Failed to fetch approved batches"

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, FileText, Loader2, Edit3, ArrowLeft } from "lucide-react";
-import { getQueriedPlansForUser } from "../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { AmendPlanModal } from "../../../components/AmendPlanModal";
 import Link from "next/link";
 
@@ -52,9 +52,9 @@ export default function QueriedPlansPage() {
   const fetchQueriedPlans = async () => {
     try {
       setLoading(true);
-      const result = await getQueriedPlansForUser();
-      if (result.success && result.data) {
-        setPlans(result.data.plans as any);
+      const result = await surfboardApi.plans.queried();
+      if (result.success) {
+        setPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch queried plans");
       }

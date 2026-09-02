@@ -28,7 +28,6 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { RemitaPaymentModal } from "./RemitaPaymentModal";
-import { submitRedCopyBatch } from "../actions/codActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useRouter } from "next/navigation";
 import { VerificationResultModal } from "./VerificationResultModal";
@@ -531,12 +530,12 @@ export function BatchSubmissionModal({
 
       setIsSubmitting(true);
 
-      const result = await submitRedCopyBatch(
+      const result = await surfboardApi.cod.batches.submit(
         selectedPlans.map((p) => p.id),
-        isAccepted,
+        true,
       );
 
-      if (result.success && result.data) {
+      if (result.success) {
         const { batchId, batchCode, totalAmount, planCount, submitter } =
           result.data;
 

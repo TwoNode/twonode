@@ -25,7 +25,6 @@ import {
   FolderCheck,
 } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { getPendingCountByRole } from "../../actions/codActions";
 
 type MDARole =
   | "ACCOUNTS"
@@ -248,7 +247,7 @@ export default function MDADashboardHome() {
         }
 
         // Get pending counts
-        const countsResult = await getPendingCountByRole();
+        const countsResult = await surfboardApi.mda.pendingCounts();
         if (countsResult.success && countsResult.data) {
           setPendingCounts(countsResult.data);
         }
