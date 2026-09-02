@@ -886,3 +886,33 @@ export async function getAdminBoundaries(geometry: object): Promise<AdminBoundar
 
   return result?.length ? result[0] : null;
 }
+
+/** Minimal plan data with geometry for the admin map view — ADMIN/SUPERADMIN only, enforced at the route layer. */
+export async function getAllSurfPlansForAdmin() {
+  const plans = await prisma.surfboardPlan.findMany({
+    where: { deleted: false, geometry: { not: Prisma.DbNull as any } },
+    select: {
+      id: true,
+      planNumber: true,
+      surveyTitle: true,
+      ward: true,
+      lga: true,
+      status: true,
+      geometry: true,
+      user: { select: { firstName: true, lastName: true, email: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return plans.map((plan) => ({
+    id: plan.id,
+    planNumber: plan.planNumber,
+    surveyTitle: plan.surveyTitle,
+    location: plan.ward && plan.lga ? `${plan.ward}, ${plan.lga}` : plan.ward || plan.lga,
+    status: plan.status,
+    geometry: plan.geometry,
+    ward: plan.ward,
+    lga: plan.lga,
+    owner: plan.user ?? null,
+  }));
+}
