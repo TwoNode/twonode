@@ -2,6 +2,7 @@ import type { ApiResult } from "@/lib/api/types";
 import type { GBCEdition } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
+import type { Sponsor } from "@/gbc/types/sponsor";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
@@ -89,6 +90,30 @@ export type SpeakerInput = {
   order?: number;
   visible?: boolean;
   featured?: boolean;
+};
+
+export type SponsorInput = {
+  name: string;
+  logo: string;
+  logoS3Key?: string;
+  tier: "HEADLINE" | "IMPACT" | "SUPPORTING";
+  description?: string;
+  website?: string;
+  order?: number;
+  visible?: boolean;
+};
+
+export type Partner = {
+  id: string;
+  name: string;
+  logo: string;
+  logoS3Key?: string | null;
+  description?: string | null;
+  website?: string | null;
+  order: number;
+  visible: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const gbcApi = {
@@ -183,5 +208,29 @@ export const gbcApi = {
 
     remove: (id: string) =>
       jsonFetch<undefined>(`${BASE}/admin/speakers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  sponsors: {
+    list: () => jsonFetch<Sponsor[]>(`${BASE}/sponsors`),
+
+    listAll: () => jsonFetch<Sponsor[]>(`${BASE}/admin/sponsors`),
+
+    create: (input: SponsorInput) =>
+      jsonFetch<Sponsor>(`${BASE}/admin/sponsors`, { method: "POST", body: JSON.stringify(input) }),
+
+    // newLogoS3Key is separate from logoS3Key: the route only deletes the old
+    // S3 object when a *new* upload actually replaced it, not on every edit.
+    update: (id: string, input: Partial<SponsorInput>, newLogoS3Key?: string) =>
+      jsonFetch<Sponsor>(`${BASE}/admin/sponsors/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ ...input, newLogoS3Key }),
+      }),
+
+    remove: (id: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/sponsors/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  partners: {
+    list: () => jsonFetch<Partner[]>(`${BASE}/partners`),
   },
 };

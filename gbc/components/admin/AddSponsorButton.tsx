@@ -20,8 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { createGBCSponsor } from "@/app/(projects)/(GBC)/actions/sponsor-actions";
-import { uploadGBCSponsorLogo } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Plus, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,33 +49,32 @@ export function AddSponsorButton() {
     try {
       const formData = new FormData(e.currentTarget);
 
-      // Upload logo first if provided
-      let logoUrl = "";
-      let logoS3Key = "";
-
-      if (logoFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", logoFile);
-
-        const uploadResult = await uploadGBCSponsorLogo(uploadFormData);
-
-        if (uploadResult.success && uploadResult.data) {
-          logoUrl = uploadResult.data.url;
-          logoS3Key = uploadResult.data.key;
-        } else {
-          toast.error("Failed to upload logo");
-          return;
-        }
-      } else {
+      if (!logoFile) {
         toast.error("Please upload a logo");
         return;
       }
 
-      // Add logo URL to form data
-      formData.set("logo", logoUrl);
-      formData.set("logoS3Key", logoS3Key);
+      const uploadResult = await gbcApi.uploads.file("sponsor-logo", logoFile);
+      if (!uploadResult.success || !uploadResult.data) {
+        toast.error("Failed to upload logo");
+        return;
+      }
 
-      const result = await createGBCSponsor(formData);
+      const result = await gbcApi.sponsors.create({
+        name: formData.get("name") as string,
+        logo: uploadResult.data.url,
+        logoS3Key: uploadResult.data.key,
+        tier: formData.get("tier") as "HEADLINE" | "IMPACT" | "SUPPORTING",
+        description: (formData.get("description") as string) || undefined,
+        website: (formData.get("website") as string) || undefined,
+        order: parseInt(formData.get("order") as string) || 0,
+        // Preserves a pre-existing product bug: this checkbox has no
+        // value="true", so formData's value is "on" not "true" when
+        // checked — visible is effectively always false today. Not fixed
+        // here to avoid silently changing live behavior; see the sibling
+        // bug already flagged on AddSpeakerButton (Phase 5 step 5).
+        visible: formData.get("visible") === "true",
+      });
 
       if (result.success) {
         toast.success("Sponsor added successfully");

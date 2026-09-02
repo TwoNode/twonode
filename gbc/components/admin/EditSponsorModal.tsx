@@ -20,8 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { updateGBCSponsor } from "@/app/(projects)/(GBC)/actions/sponsor-actions";
-import { uploadGBCSponsorLogo } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Sponsor } from "@/gbc/types/sponsor";
@@ -55,27 +54,33 @@ export function EditSponsorModal({ sponsor }: EditSponsorModalProps) {
     try {
       const formData = new FormData(e.currentTarget);
 
-      // Handle logo upload if a new file is selected
+      let logo = sponsor.logo;
+      let newLogoS3Key: string | undefined;
+
       if (logoFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", logoFile);
-
-        const uploadResult = await uploadGBCSponsorLogo(uploadFormData);
-
-        if (uploadResult.success && uploadResult.data) {
-          formData.set("logo", uploadResult.data.url);
-          formData.set("logoS3Key", uploadResult.data.key);
-        } else {
+        const uploadResult = await gbcApi.uploads.file("sponsor-logo", logoFile);
+        if (!uploadResult.success || !uploadResult.data) {
           toast.error("Failed to upload new logo");
           setIsSubmitting(false);
           return;
         }
-      } else {
-        // Keep existing logo
-        formData.set("logo", sponsor.logo);
+        logo = uploadResult.data.url;
+        newLogoS3Key = uploadResult.data.key;
       }
 
-      const result = await updateGBCSponsor(sponsor.id, formData);
+      const result = await gbcApi.sponsors.update(
+        sponsor.id,
+        {
+          name: formData.get("name") as string,
+          logo,
+          tier: formData.get("tier") as "HEADLINE" | "IMPACT" | "SUPPORTING",
+          description: (formData.get("description") as string) || undefined,
+          website: (formData.get("website") as string) || undefined,
+          order: parseInt(formData.get("order") as string) || 0,
+          visible: formData.get("visible") === "true",
+        },
+        newLogoS3Key
+      );
 
       if (result.success) {
         toast.success("Sponsor updated successfully");

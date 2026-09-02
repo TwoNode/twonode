@@ -1,8 +1,7 @@
 import { requireAdmin } from "@/gbc/utils/auth";
-import { getAllSponsors } from "../../../actions/sponsor-actions";
+import { getAllSponsors } from "@/gbc/services/cmsService";
 import { AddSponsorButton } from "@/gbc/components/admin/AddSponsorButton";
 import { SponsorsManager } from "@/gbc/components/admin/SponsorsManager";
-import { Sponsor } from "@/gbc/types/sponsor";
 import { Card } from "@/components/ui/card";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
@@ -11,10 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSponsorsPage() {
   await requireAdmin();
 
-  const sponsorsResult = await getAllSponsors();
-  const sponsors: Sponsor[] = sponsorsResult.success
-    ? sponsorsResult.data || []
-    : [];
+  const sponsors = await getAllSponsors();
 
   return (
     <div className="space-y-6">

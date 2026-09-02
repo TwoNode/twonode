@@ -14,7 +14,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getGBCTicketAvailability } from "../actions/ticket-actions";
-import { getSponsors } from "../actions/sponsor-actions";
 import { getAllGBCSettings } from "../actions/settings-actions";
 
 // Import new components

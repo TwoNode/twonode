@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { getSponsors } from "@/app/(projects)/(GBC)/actions/sponsor-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 export default function HomeSponsors() {
   const [sponsors, setSponsors] = useState<any[]>([]);
@@ -14,7 +14,7 @@ export default function HomeSponsors() {
     const fetchSponsors = async () => {
       setIsLoading(true);
       try {
-        const sponsorsResult = await getSponsors();
+        const sponsorsResult = await gbcApi.sponsors.list();
         if (sponsorsResult.success) {
           setSponsors(sponsorsResult.data?.slice(0, 6) ?? []);
         }

@@ -1,17 +1,12 @@
 // src/app/(public)/sponsors/page.tsx
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-// import { getSponsors, getPartners } from "@/actions/sponsor-actions";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
-import { getPartners, getSponsors } from "../../actions/sponsor-actions";
+import { getPartners, getSponsors } from "@/gbc/services/cmsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function SponsorsPage() {
-  const sponsorsResult = await getSponsors();
-  const partnersResult = await getPartners();
-
-  const sponsors = sponsorsResult.success ? sponsorsResult.data : [];
-  const partners = partnersResult.success ? partnersResult.data : [];
+  const [sponsors, partners] = await Promise.all([getSponsors(), getPartners()]);
 
   // Group sponsors by tier
   const sponsorsByTier = {

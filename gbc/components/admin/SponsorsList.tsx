@@ -13,8 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteGBCSponsor } from "@/app/(projects)/(GBC)/actions/sponsor-actions";
-import { deleteGBCFile } from "@/app/(projects)/(GBC)/actions/upload-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Trash2, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Sponsor } from "@/gbc/types/sponsor";
@@ -49,12 +48,14 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
   async function handleDelete(id: string, logoS3Key?: string) {
     setIsDeleting(true);
     try {
-      // Delete logo from S3 if exists
+      // cmsService.deleteSponsor doesn't clean up S3 itself (unlike
+      // deleteGalleryItem/deleteSpeaker) — this explicit call is the only
+      // place a sponsor's logo gets removed from storage.
       if (logoS3Key) {
-        await deleteGBCFile(logoS3Key);
+        await gbcApi.uploads.deleteFile(logoS3Key);
       }
 
-      const result = await deleteGBCSponsor(id);
+      const result = await gbcApi.sponsors.remove(id);
       if (result.success) {
         toast.success("Sponsor deleted successfully");
         setDeleteId(null);
