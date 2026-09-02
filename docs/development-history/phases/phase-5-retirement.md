@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 5 — Retirement
 
-**Status:** Execution complete (all three products' action files retired) — live smoke pass and PR merge to `main` still pending. **Date:** 2026-08-28, completed 2026-09-02.
+**Status:** Execution complete (all three products' action files retired, live smoke pass done) — PR merge to `main` still pending. **Date:** 2026-08-28, completed 2026-09-02.
 
 ## Why
 
@@ -119,8 +119,9 @@ Two small backend gaps surfaced and filled while repointing `codActions.ts`'s co
 
 - `tsc --noEmit`, `vitest run` (242/242), and a full production build all clean after every commit in the sequence above, not just at the end — the same per-step discipline used throughout Phases 2-4.
 - A repo-wide `grep` for every deleted file's old import path confirmed zero remaining references at each step, and a final sweep for `"use server"` directives across `app/`, `reva/`, `surfboard/`, `gbc/` after `codActions.ts`'s deletion turned up only the expected survivors: REVA's two intentionally-kept utility files, plus a handful of `utils/`-level auth/cookie helpers (`revaAuth.ts`, `surfAuth.ts`, `customCookieSetter.ts`) that were never in scope for this phase — they live outside any product's `actions/` folder and were never enumerated in the source inventory.
-- **Not yet done**: the live smoke pass across all three products' key flows (REVA's guest request flow and admin review, Surfboard's plan purchase and MDA review) — this requires either a real Kinde-authenticated browser session or curl+minted-JWT against a running dev server, same documented gap as every prior phase's completion report for admin-authenticated pages. The merge of `rebuild/foundations` to `main` via PR (per the standing rule that `main` is never pushed to directly) also has not happened yet.
+- **Live smoke pass (2026-09-02)**: real curl+minted-native-JWT sessions against a scratch `next dev` server on the local Postgres (no real Kinde login needed — the same `signAccessToken`/`access_token_{platform}` cookie mechanism `withAuth` verifies). REVA: `auth/me`, admin request/user lists, and a user's own properties all real 200s for freshly-seeded USER/SUPERADMIN accounts. Surfboard (the deeper pass, since this is what this phase's Surfboard step actually changed): a real plan created via `POST /plans`, then a `CertificateOfDepositBatch` seeded directly via Prisma at `LASG_PAID` (real `POST /cod/batches` needs a PostGIS raw-SQL zone lookup this machine's local Postgres can't run — the same environment gap Phase 4's report already flagged, not something this phase's changes touch), walked through the real HTTP decision routes for every MDA stage in dependency order (Charting → Surcon → Records I → Accounts → Intake → Records II → Archive), plus batch list/get, pending-counts, plan-lock claim/release, the dev-only reset tool, and dashboard analytics — 25/25 real 200s. All seeded rows deleted and confirmed at 0 afterward. **Not exercised**: the guest one-time-property submission (real external Paystack call + multipart upload, unchanged this phase, already verified in Phase 3) and real Kinde-authenticated admin-panel page rendering (same documented gap as every prior phase).
+- The merge of `rebuild/foundations` to `main` via PR (per the standing rule that `main` is never pushed to directly) has not happened yet.
 
 ### Next up
 
-Run the live smoke pass, then open the PR merging `rebuild/foundations` into `main`.
+Open the PR merging `rebuild/foundations` into `main`.
