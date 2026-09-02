@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-import { PropertyWithoutUser } from "../../actions/revaActions";
+import { PropertyWithoutUser } from "@/reva/services/propertyRequestService";
 import Link from "next/link";
 import {
   notifyError,

@@ -29,13 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
-import {
-  getUserNotifications,
-  markNotificationAsRead,
-  dismissNotification,
-  getUnreadNotificationCount,
-} from "../../actions/revaActions";
-import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
+import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 
 type NotificationType =
@@ -110,10 +104,10 @@ export default function NotificationsList() {
   const fetchUserAndNotifications = async () => {
     try {
       setLoading(true);
-      const user = await getAuthenticatedRevaUser();
-      if (user?.id) {
-        setUserId(user.id);
-        const result = await getUserNotifications(user.id, user.role);
+      const me = await revaApi.auth.me();
+      if (me.success) {
+        setUserId(me.data.id);
+        const result = await revaApi.notifications.list();
         if (result.success) {
           setNotifications(
             (result.data || []).map((notification) => ({
@@ -169,7 +163,7 @@ export default function NotificationsList() {
     if (!userId) return;
 
     try {
-      const result = await markNotificationAsRead(notificationId, userId);
+      const result = await revaApi.notifications.markRead(notificationId);
       if (result.success) {
         setNotifications((prev) =>
           prev.map((notif) =>
@@ -188,7 +182,7 @@ export default function NotificationsList() {
     if (!userId) return;
 
     try {
-      const result = await dismissNotification(notificationId, userId);
+      const result = await revaApi.notifications.dismiss(notificationId);
       if (result.success) {
         setNotifications((prev) =>
           prev.map((notif) =>

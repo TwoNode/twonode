@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Bell, Send, Loader2 } from "lucide-react";
-import { createNotification } from "../../reva/actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import { toast } from "sonner";
 
@@ -95,7 +95,7 @@ export default function CreateNotificationForm() {
             : undefined,
       };
 
-      const result = await createNotification(notificationData);
+      const result = await revaApi.notifications.create(notificationData);
 
       if (result.success) {
         toast.success("Notification created successfully!");
@@ -110,7 +110,7 @@ export default function CreateNotificationForm() {
           includeLink: false,
         });
       } else {
-        toast.error(result.message || "Failed to create notification");
+        toast.error(result.error || "Failed to create notification");
       }
     } catch (error) {
       console.error("Error creating notification:", error);

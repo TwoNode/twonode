@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
-import { getUnreadNotificationCount } from "@/app/(projects)/reva/actions/revaActions";
-import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
+import { revaApi } from "@/reva/apiClient";
 
 interface NotificationBellProps {
   href: string;
@@ -33,12 +32,9 @@ export default function NotificationBell({
 
   const fetchUnreadCount = async () => {
     try {
-      const user = await getAuthenticatedRevaUser();
-      if (user?.id) {
-        const result = await getUnreadNotificationCount(user.id, user.role);
-        if (result.success) {
-          setUnreadCount(result.count);
-        }
+      const result = await revaApi.notifications.unreadCount();
+      if (result.success) {
+        setUnreadCount(result.data.count);
       }
     } catch (error) {
       console.error("Error fetching unread count:", error);

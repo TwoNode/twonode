@@ -12,10 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import {
-  saveFormDataAndInitiatePaystack,
-  checkPaymentSuccess,
-} from "../actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import Bowser from "bowser";
 import PaystackPop from "@paystack/inline-js";
 
@@ -614,16 +611,6 @@ const RevaDueDiligenceForm: React.FC = () => {
     setShowReview(false);
   };
 
-  interface SaveFormResponse {
-    data: {
-      reference: string;
-    };
-    paystack: object;
-    status: number;
-    success: boolean;
-    message: string;
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -681,26 +668,20 @@ const RevaDueDiligenceForm: React.FC = () => {
 
     // console.log(formData);
 
-    saveFormDataAndInitiatePaystack(formData)
-      .then((response: SaveFormResponse | any) => {
-        // console.log("Form data saved successfully:", response);
-
-        if (response.error) {
-          notifyError("Error saving form data");
-          throw new Error(response.error);
+    revaApi.oneTimeProperties
+      .submit(formData)
+      .then((result) => {
+        if (!result.success) {
+          notifyError(result.error || "Error saving form data");
+          throw new Error(result.error);
         }
 
         notifySuccess("Form data saved successfully!");
-
-        if ("data" in response && response.data) {
-        } else {
-          console.error("Unexpected response format:", response);
-        }
         notifyInfo("Opening payment popup...");
 
         // Use Paystack popup instead of redirect
-        const accessCode = response?.paystack?.access_code;
-        const reference = response?.data?.reference;
+        const accessCode = result.data.paystack?.access_code;
+        const reference = result.data.property?.reference;
 
         if (accessCode && reference) {
           const popup = new PaystackPop() as any;
@@ -717,8 +698,7 @@ const RevaDueDiligenceForm: React.FC = () => {
 
               try {
                 setIsLoading(true);
-                // Use server action to verify payment
-                const verifyResult = await checkPaymentSuccess(
+                const verifyResult = await revaApi.payments.verifyOneTime(
                   response.reference
                 );
 
@@ -730,7 +710,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                   );
                 } else {
                   notifyError(
-                    "Payment verification failed: " + verifyResult.message
+                    "Payment verification failed: " + verifyResult.error
                   );
                 }
               } catch (error) {
@@ -903,7 +883,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 style={{ lineHeight: "12px" }}
               >
                 if address isn't available and you're at the property, tap{" "}
-                <span className="inline-block py-1 px-1 mx-[2px] text-xs whitespace-nowrap bg-slate-100 rounded-sm">
+                <span className="inline-block py-1 px-1 mx-0.5 text-xs whitespace-nowrap bg-slate-100 rounded-sm">
                   Use My Location.
                 </span>{" "}
                 We'll use your accurate location.

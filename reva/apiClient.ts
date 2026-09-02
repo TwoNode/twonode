@@ -207,4 +207,9 @@ export const revaApi = {
     /** The legacy multi-platform cookie session, not the native JWT one — see app/api/v1/reva/session/route.ts. */
     get: () => jsonFetch<EncryptedUserData>(`${BASE}/session`),
   },
+
+  auth: {
+    /** The native JWT session (id/email/role) — client components that need "who am I" without a server page. */
+    me: () => jsonFetch<{ id: string; email: string; role: string }>(`/api/v1/auth/me?platform=reva`),
+  },
 };

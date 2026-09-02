@@ -13,6 +13,15 @@ import { notifyNewPropertyRequest } from "@/reva/services/notificationService";
 export type PropertyStatus = "Available" | "Completed" | "Processing";
 export type PaymentStatus = "Paid" | "Unpaid";
 
+export type PropertyWithoutUser = Omit<
+  Prisma.PropertyCreateInput,
+  "user" | "status" | "paymentStatus"
+> & {
+  reference?: string;
+  status?: PropertyStatus | string | null | undefined;
+  paymentStatus?: PaymentStatus | string | null | undefined;
+};
+
 /** The native JWT session carries {sub, role, platform} only — routes that need the user's email/name for a Paystack charge or an email notification fetch it here. */
 export async function getUserContact(userId: string) {
   const user = await prisma.revaUser.findUnique({

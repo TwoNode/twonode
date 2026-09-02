@@ -34,10 +34,7 @@ import {
 
 import Link from "next/link";
 import { removeIdPrefix } from "@/utils/removeIDFromParcel";
-import {
-  authSaveFormDataAndInitiatePaystack,
-  authPaymentSuccessful,
-} from "../../actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import {
   notifyError,
   notifyInfo,
@@ -634,16 +631,6 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
     setShowReview(false);
   };
 
-  interface SaveFormResponse {
-    data: {
-      reference: string;
-    };
-    paystack: object;
-    status: number;
-    success: boolean;
-    message: string;
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     try {
       e.preventDefault();
@@ -686,42 +673,20 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
         }
       }
 
-      console.log("Form submitted with values:", {
-        title,
-        address,
-        location,
-        lga,
-        totalCost,
-        fileNames,
-        files,
-        siteImageNames,
-        siteImages,
-        comments,
-        parcelId,
-      });
-
-      console.log(formData);
-
-      authSaveFormDataAndInitiatePaystack(formData)
-        .then((response: SaveFormResponse | any) => {
-          // console.log("Form data saved successfully:", response);
-
-          if (response.error) {
-            notifyError("Error saving form data");
-            throw new Error(response.error);
+      revaApi.properties
+        .submit(formData)
+        .then((result) => {
+          if (!result.success) {
+            notifyError(result.error || "Error saving form data");
+            throw new Error(result.error);
           }
 
           notifySuccess("Form data saved successfully!");
-
-          if ("data" in response && response.data) {
-          } else {
-            console.error("Unexpected response format:", response);
-          }
           notifyInfo("Opening payment popup...");
 
           // Use Paystack popup instead of redirect
-          const accessCode = response?.paystack?.access_code;
-          const reference = response?.data?.reference;
+          const accessCode = result.data.paystack?.access_code;
+          const reference = result.data.property?.reference;
 
           if (accessCode && reference) {
             const popup = new PaystackPop() as any;
@@ -738,8 +703,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
 
                 try {
                   setIsLoading(true);
-                  // Use server action to verify payment
-                  const verifyResult = await authPaymentSuccessful(
+                  const verifyResult = await revaApi.payments.verify(
                     response.reference
                   );
 
@@ -751,7 +715,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                     );
                   } else {
                     notifyError(
-                      "Payment verification failed: " + verifyResult.message
+                      "Payment verification failed: " + verifyResult.error
                     );
                   }
                 } catch (error) {

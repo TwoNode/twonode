@@ -34,14 +34,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import Link from "next/link";
-import {
-  getAdminNotifications,
-  getSuperAdminNotifications,
-  markNotificationAsRead,
-  dismissNotification,
-} from "../../../reva/actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
-import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 
 type NotificationType =
   | "INFO"
@@ -119,18 +113,14 @@ export default function AdminNotificationsList() {
   const fetchAdminAndNotifications = async () => {
     try {
       setLoading(true);
-      const admin = await getAuthenticatedRevaUser();
-      if (admin?.id) {
-        setAdminUserId(admin.id);
-        setUserRole(admin.role);
+      const admin = await revaApi.auth.me();
+      if (admin.success) {
+        setAdminUserId(admin.data.id);
+        // /api/v1/auth/me lowercases role; this component's comparisons expect the Prisma enum casing
+        setUserRole(admin.data.role.toUpperCase());
 
-        // Use different function based on role
-        let result;
-        if (admin.role === "SUPERADMIN") {
-          result = await getSuperAdminNotifications();
-        } else {
-          result = await getAdminNotifications();
-        }
+        // The route itself picks getAdminNotifications/getSuperAdminNotifications by session role
+        const result = await revaApi.notifications.list();
 
         if (result.success) {
           setNotifications(
@@ -189,7 +179,7 @@ export default function AdminNotificationsList() {
     if (!adminUserId) return;
 
     try {
-      const result = await markNotificationAsRead(notificationId, adminUserId);
+      const result = await revaApi.notifications.markRead(notificationId);
       if (result.success) {
         setNotifications((prev) =>
           prev.map((notif) =>
@@ -208,7 +198,7 @@ export default function AdminNotificationsList() {
     if (!adminUserId) return;
 
     try {
-      const result = await dismissNotification(notificationId, adminUserId);
+      const result = await revaApi.notifications.dismiss(notificationId);
       if (result.success) {
         setNotifications((prev) =>
           prev.map((notif) =>
