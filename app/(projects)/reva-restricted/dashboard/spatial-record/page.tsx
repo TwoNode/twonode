@@ -1,4 +1,4 @@
-import { getSecureHtml } from "../../actions/otherActions";
+import { getSecureHtml } from "@/reva/utils/secureHtml";
 import SpatialRecordMap from "./SpatialRecordMap";
 
 const SpatialRecord = async () => {
