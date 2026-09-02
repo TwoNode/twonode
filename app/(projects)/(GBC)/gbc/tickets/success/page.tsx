@@ -10,7 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { verifyGBCPayment } from "@/app/(projects)/(GBC)/actions/ticket-actions";
-import { getAllGBCSettings } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
 
 export default async function TicketSuccessPage({
@@ -65,8 +65,7 @@ export default async function TicketSuccessPage({
   const isGroupTicket = count > 1;
 
   // Fetch settings for event details
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";

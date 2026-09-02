@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { updateGBCSettingsSection } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GBCSettingsData } from "@/gbc/utils/settings";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +26,7 @@ export function GallerySettings({ settings }: Props) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const result = await updateGBCSettingsSection("gallery", formData);
+      const result = await gbcApi.settings.update({ gallery: formData });
 
       if (result.success) {
         toast.success("Gallery settings updated");

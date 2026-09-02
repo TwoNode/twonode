@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { z } from "zod";
-import { updateGBCSettingsSection } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GBCSettingsData } from "@/gbc/utils/settings";
 
 // Define form validation schema
@@ -115,7 +115,7 @@ export function EventConfigForm({ settings }: Props) {
 
     try {
       // Update all event settings at once
-      const result = await updateGBCSettingsSection("event", formData);
+      const result = await gbcApi.settings.update({ event: formData });
 
       if (result.success) {
         toast.success("Event configuration updated successfully");

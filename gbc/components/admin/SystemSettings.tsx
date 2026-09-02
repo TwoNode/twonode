@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Database } from "lucide-react";
 import { toast } from "sonner";
-import { updateGBCSetting } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { GBCSettingsData } from "@/gbc/utils/settings";
 
 interface Props {
@@ -29,7 +29,7 @@ export function SystemSettings({ settings }: Props) {
     if (key === "debugMode") setDebugMode(value);
 
     try {
-      const result = await updateGBCSetting(`system.${key}`, value);
+      const result = await gbcApi.settings.update({ system: { [key]: value } });
 
       if (result.success) {
         toast.success(

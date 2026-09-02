@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getGBCTicketAvailability } from "../actions/ticket-actions";
-import { getAllGBCSettings } from "../actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 // Import new components
 import HomeSpeakers from "@/gbc/components/HomeSpeakers";
@@ -90,7 +90,7 @@ export default function HomePage() {
       try {
         const [statsResult, settingsResult] = await Promise.all([
           getGBCTicketAvailability(),
-          getAllGBCSettings(),
+          gbcApi.settings.get(),
         ]);
 
         if (statsResult.success) {

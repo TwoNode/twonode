@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateGBCSettingsSection } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 import { Bell, Mail, Smartphone, Save, X, Edit } from "lucide-react";
 import { GBCSettingsData } from "@/gbc/utils/settings";
@@ -107,10 +107,7 @@ export function NotificationSettings({ settings }: Props) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await updateGBCSettingsSection(
-        "notifications",
-        notificationSettings
-      );
+      const result = await gbcApi.settings.update({ notifications: notificationSettings });
 
       if (result.success) {
         toast.success("Notification settings updated successfully");

@@ -1,5 +1,5 @@
 import type { ApiResult } from "@/lib/api/types";
-import type { GBCEdition } from "@/gbc/utils/settings";
+import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
 import type { Sponsor } from "@/gbc/types/sponsor";
@@ -63,6 +63,8 @@ export type AddAdminInput = {
 
 export type UploadResult = { key: string; url: string; thumbnailKey?: string; thumbnailUrl?: string };
 export type UploadKind = "sponsor-logo" | "partner-logo" | "speaker-photo" | "gallery-media";
+
+export type SettingsPatch = { [K in keyof Omit<GBCSettingsData, "editions">]?: Partial<GBCSettingsData[K]> };
 
 export type GalleryInput = {
   title: string;
@@ -232,5 +234,18 @@ export const gbcApi = {
 
   partners: {
     list: () => jsonFetch<Partner[]>(`${BASE}/partners`),
+  },
+
+  settings: {
+    get: () => jsonFetch<GBCSettingsData>(`${BASE}/settings`),
+
+    update: (patch: SettingsPatch) =>
+      jsonFetch<GBCSettingsData>(`${BASE}/admin/settings`, { method: "PATCH", body: JSON.stringify(patch) }),
+
+    reset: () => jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/reset`, { method: "POST" }),
+
+    previous: () => jsonFetch<GBCSettingsData | null>(`${BASE}/admin/settings/previous`),
+
+    rollback: () => jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/rollback`, { method: "POST" }),
   },
 };

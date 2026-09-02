@@ -14,8 +14,23 @@ import { requireAdmin } from "@/gbc/utils/auth";
 import { calculateTicketPrice } from "@/gbc/utils";
 import { sendGBCTicketSMS } from "@/gbc/utils/sms";
 import { generateQRCodeBuffer } from "@/gbc/utils/qr_code";
-import { getAllGBCSettings } from "./settings-actions";
+import { getSettings } from "@/gbc/services/settingsService";
 import { sendGBCTicketConfirmation } from "@/gbc/utils/email";
+import type { GBCSettingsData } from "@/gbc/utils/settings";
+
+// settings-actions.ts was deleted in Phase 5 — this file is superseded by
+// gbc/services/ticketService.ts but still has live consumers pending a
+// dedicated repointing pass, so it keeps working via this compatibility
+// shim over the new service (which throws instead of returning {success}).
+async function getAllGBCSettings(): Promise<
+  { success: true; data: GBCSettingsData } | { success: false; error: string }
+> {
+  try {
+    return { success: true, data: await getSettings() };
+  } catch {
+    return { success: false, error: "Failed to fetch settings" };
+  }
+}
 
 /**
  * The Prisma dbgenerated default for ticketNumber was removed in the

@@ -14,14 +14,13 @@ import { EventConfigForm } from "@/gbc/components/admin/EventConfigForm";
 import { SystemSettings } from "@/gbc/components/admin/SystemSettings";
 import { GallerySettings } from "@/gbc/components/admin/GallerySettings";
 import { SocialLinksSettings } from "@/gbc/components/admin/SocialLinksSettings";
-import { getAllGBCSettings } from "../../../actions/settings-actions";
+import { getSettings } from "@/gbc/services/settingsService";
 
 // Admin page — never safe to statically prerender alongside the other restricted pages.
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   return (
     <div>

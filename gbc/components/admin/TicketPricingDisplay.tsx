@@ -12,7 +12,7 @@ import {
   GraduationCap,
   Star,
 } from "lucide-react";
-import { updateGBCSettingsSection } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 import { GBCSettingsData, defaultSettings } from "@/gbc/utils/settings";
 
@@ -52,7 +52,7 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await updateGBCSettingsSection("tickets", pricing);
+      const result = await gbcApi.settings.update({ tickets: pricing });
 
       if (result.success) {
         toast.success("Ticket prices updated successfully");
