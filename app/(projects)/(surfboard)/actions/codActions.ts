@@ -17,13 +17,8 @@ import {
 } from "./notificationActions";
 import { logAuditAction, createChangeLog } from "../utils/auditLogger";
 import { fetchAndExtractTextFromUrl } from "../utils/pdfUtils";
-import {
-  extractPaymentDetailsFromText,
-  extractLASGReceiptFromHtml,
-  extractRemitaReceiptFromHtml,
-  extractEBSReceiptFields,
-} from "./aiExtractionActions";
-import { transmitToOSSG } from "./ossgActions";
+import { extractPaymentDetailsFromText, extractLASGReceiptFromHtml } from "@/surfboard/services/aiExtractionService";
+import { transmitToOSSG } from "@/surfboard/utils/ossg";
 import area from "@turf/area";
 
 

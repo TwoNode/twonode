@@ -2,10 +2,7 @@ import prisma from "@/lib/prisma";
 import area from "@turf/area";
 import { checkPaymentStatus } from "@/app/(projects)/(surfboard)/utils/remita";
 import { fetchAndExtractTextFromUrl } from "@/app/(projects)/(surfboard)/utils/pdfUtils";
-import {
-  extractLASGReceiptFromHtml,
-  extractPaymentDetailsFromText,
-} from "@/app/(projects)/(surfboard)/actions/aiExtractionActions";
+import { extractLASGReceiptFromHtml, extractPaymentDetailsFromText } from "@/surfboard/services/aiExtractionService";
 import {
   notifyLASGReceiptUploaded,
   notifyPaymentReceived,

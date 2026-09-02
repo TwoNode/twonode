@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { ApprovalStatus, BatchPaymentStatus } from "@/prisma/generated";
-import { transmitToOSSG } from "@/app/(projects)/(surfboard)/actions/ossgActions";
+import { transmitToOSSG } from "@/surfboard/utils/ossg";
 import {
   notifyAccountsDisapproval,
   notifyConsolidatedQueries,

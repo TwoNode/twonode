@@ -579,6 +579,17 @@ export const surfboardApi = {
     ),
   },
 
+  ai: {
+    extractSurveyPlan: (extractedText: string) =>
+      jsonFetch<any>(`${BASE}/ai/extract-survey-plan`, { method: "POST", body: JSON.stringify({ extractedText }) }),
+
+    recognizePersonCount: (surveyTitle: string) =>
+      jsonFetch<{ count: number; names: string[] }>(`${BASE}/ai/recognize-person-count`, {
+        method: "POST",
+        body: JSON.stringify({ surveyTitle }),
+      }),
+  },
+
   recordCopy: {
     downloadPdf: (planId: string) =>
       jsonFetch<string>(`${BASE}/plans/${encodeURIComponent(planId)}/record-copy/download`),

@@ -6,10 +6,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Check, AlertCircle } from "lucide-react";
-import {
-  extractSurveyPlanDataFromText,
-  type AIExtractedData,
-} from "../actions/aiExtractionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
+import type { AIExtractedData } from "@/surfboard/services/aiExtractionService";
 
 // Declare pdf.js types
 declare global {
@@ -145,9 +143,9 @@ export default function AIAutofillButton({
       toast.info("Sending to AI for analysis...");
 
       // Send extracted text to server for AI processing
-      const result = await extractSurveyPlanDataFromText(extractedText);
+      const result = await surfboardApi.ai.extractSurveyPlan(extractedText);
 
-      if (!result.success || !result.data) {
+      if (!result.success) {
         throw new Error(result.error || "AI extraction failed");
       }
 
@@ -364,9 +362,9 @@ export function AIAutofillButtonCompact({
       }
 
       setStatus("processing");
-      const result = await extractSurveyPlanDataFromText(extractedText);
+      const result = await surfboardApi.ai.extractSurveyPlan(extractedText);
 
-      if (!result.success || !result.data) {
+      if (!result.success) {
         throw new Error(result.error || "AI extraction failed");
       }
 

@@ -32,7 +32,7 @@ import {
   getSurfboardUploadTargetsMulti,
   deleteSurfboardFileFromS3,
 } from "@/app/(projects)/(surfboard)/actions/awsActions";
-import { recognizePersonCount } from "@/app/(projects)/(surfboard)/actions/aiExtractionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import {
   generatePolygonFromPillars,
   generateMultiPolygonFromPillarGroups,
@@ -1014,8 +1014,8 @@ export default function SurfboardPlanForm({
     if (!form.surveyTitle) return;
     setIsRecognizing(true);
     try {
-      const res = await recognizePersonCount(form.surveyTitle);
-      if (res.success && res.data) {
+      const res = await surfboardApi.ai.recognizePersonCount(form.surveyTitle);
+      if (res.success) {
         setPersonCountAI(res.data.count);
         if (res.data.count !== personCountManual) {
           toast.warning(
