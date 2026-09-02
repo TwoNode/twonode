@@ -13,12 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  createGBCTicket,
-  createGBCGroupTicket,
-  createGBCPairTicket,
-  verifyGBCPayment,
-} from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { gbcApi, type AttendeeInput } from "@/gbc/apiClient";
 import { ShoppingCart, Loader2, Users, AlertCircle } from "lucide-react";
 import { isTicketTypeAvailable } from "@/gbc/utils";
 
@@ -292,7 +287,7 @@ export function GBCTicketPurchaseForm({
 
         const primaryAttendee = primaryAttendees[0];
 
-        result = await createGBCPairTicket(validAttendees);
+        result = await gbcApi.tickets.purchasePair(validAttendees as AttendeeInput[]);
 
         if (!result.success || !result.data) {
           throw new Error(result.error || "Failed to create pair tickets");
@@ -324,7 +319,7 @@ export function GBCTicketPurchaseForm({
 
         const primaryAttendee = primaryAttendees[0];
 
-        result = await createGBCGroupTicket(validAttendees);
+        result = await gbcApi.tickets.purchaseGroup(validAttendees as AttendeeInput[]);
 
         if (!result.success || !result.data) {
           throw new Error(result.error || "Failed to create group tickets");
@@ -336,7 +331,19 @@ export function GBCTicketPurchaseForm({
         primaryName = primaryAttendee.name;
       } else {
         // Regular individual ticket
-        result = await createGBCTicket(formData);
+        const phone = formData.get("phone") as string;
+        const profession = formData.get("profession") as string;
+        const otherProfession = formData.get("otherProfession") as string;
+
+        result = await gbcApi.tickets.purchase({
+          name: formData.get("name") as string,
+          email: formData.get("email") as string,
+          ...(phone && { phone }),
+          gender: formData.get("gender") as any,
+          profession,
+          ...(profession === "OTHER" && otherProfession && { otherProfession }),
+          ticketType: ticketType as any,
+        });
 
         if (!result.success || !result.data) {
           throw new Error(result.error || "Failed to create ticket");
@@ -389,7 +396,7 @@ export function GBCTicketPurchaseForm({
           toast.success("Payment successful! Verifying... " + paymentRef);
 
           try {
-            const verification = await verifyGBCPayment(paymentRef, true);
+            const verification = await gbcApi.tickets.verifyPayment(paymentRef, true);
             if (!verification.success) {
               throw new Error(
                 verification.error ||

@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import { getGBCTicketAvailability } from "../../actions/ticket-actions";
+import { getTicketAvailability } from "@/gbc/services/ticketService";
 import { GBCTicketPurchaseForm } from "@/gbc/components/TicketPurchaseForm";
 import { getSettings } from "@/gbc/services/settingsService";
 import { TicketCards } from "@/gbc/components/admin/TicketCards";
@@ -12,8 +12,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function TicketsPage() {
-  const statsResult = await getGBCTicketAvailability();
-  const stats = statsResult.success ? statsResult.data : null;
+  const stats = await getTicketAvailability();
 
   // Fetch settings from database
   const settings = await getSettings();

@@ -3,6 +3,7 @@ import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
 import type { Sponsor } from "@/gbc/types/sponsor";
+import type { GBCTicket } from "@/prisma/generated";
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
@@ -65,6 +66,72 @@ export type UploadResult = { key: string; url: string; thumbnailKey?: string; th
 export type UploadKind = "sponsor-logo" | "partner-logo" | "speaker-photo" | "gallery-media";
 
 export type SettingsPatch = { [K in keyof Omit<GBCSettingsData, "editions">]?: Partial<GBCSettingsData[K]> };
+
+export type ContactFormInput = {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  type: "GENERAL" | "SPONSORSHIP" | "TECHNICAL" | "MEDIA" | "SPEAKING";
+};
+
+export type QRTicketData = {
+  ticketNumber: string;
+  name: string;
+  email: string;
+  ticketType: string;
+  hash: string;
+  timestamp: number;
+};
+
+export type Inquiry = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  type: string | null;
+  status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TicketPurchaseInput = {
+  name: string;
+  email: string;
+  phone?: string;
+  gender: "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+  profession: string;
+  otherProfession?: string;
+  ticketType: "EARLY_BIRD" | "REGULAR" | "COMPANY" | "VIP" | "STUDENT";
+};
+
+export type AttendeeInput = {
+  name: string;
+  email: string;
+  phone?: string;
+  gender: "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+  profession: string;
+  otherProfession?: string;
+  isPrimary?: boolean;
+};
+
+export type PurchaseResult = { ticket: GBCTicket; reference: string; paymentUrl: string };
+export type MultiPurchaseResult = { tickets: GBCTicket[]; reference: string; paymentUrl: string };
+export type TicketAvailability = { availableTickets: number; maxTickets: number; soldEarlyBirdTickets: number };
+export type TicketStats = {
+  totalTickets: number;
+  completedTickets: number;
+  pendingTickets: number;
+  checkedInTickets: number;
+  availableTickets: number;
+  totalRevenue: number;
+  maxTickets: number;
+  soldEarlyBirdTickets: number;
+};
 
 export type GalleryInput = {
   title: string;
@@ -247,5 +314,98 @@ export const gbcApi = {
     previous: () => jsonFetch<GBCSettingsData | null>(`${BASE}/admin/settings/previous`),
 
     rollback: () => jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/rollback`, { method: "POST" }),
+  },
+
+  tickets: {
+    availability: () => jsonFetch<TicketAvailability>(`${BASE}/tickets/availability`),
+
+    byNumber: (ticketNumber: string) => jsonFetch<GBCTicket>(`${BASE}/tickets/${encodeURIComponent(ticketNumber)}`),
+
+    purchase: (input: TicketPurchaseInput) =>
+      jsonFetch<PurchaseResult>(`${BASE}/tickets`, { method: "POST", body: JSON.stringify(input) }),
+
+    purchaseGroup: (attendees: AttendeeInput[]) =>
+      jsonFetch<MultiPurchaseResult>(`${BASE}/tickets/group`, { method: "POST", body: JSON.stringify({ attendees }) }),
+
+    purchasePair: (attendees: AttendeeInput[]) =>
+      jsonFetch<MultiPurchaseResult>(`${BASE}/tickets/pair`, { method: "POST", body: JSON.stringify({ attendees }) }),
+
+    verifyPayment: (reference: string, sendEmail?: boolean) =>
+      jsonFetch<{ tickets: GBCTicket[]; count: number; amount: number }>(`${BASE}/payments/verify`, {
+        method: "POST",
+        body: JSON.stringify({ reference, sendEmail }),
+      }),
+
+    admin: {
+      list: (filters?: { status?: string; search?: string; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (filters?.status) params.set("status", filters.status);
+        if (filters?.search) params.set("search", filters.search);
+        if (filters?.limit) params.set("limit", String(filters.limit));
+        const qs = params.toString();
+        return jsonFetch<GBCTicket[]>(`${BASE}/admin/tickets${qs ? `?${qs}` : ""}`);
+      },
+
+      get: (id: string) => jsonFetch<GBCTicket>(`${BASE}/admin/tickets/${encodeURIComponent(id)}`),
+
+      remove: (id: string) =>
+        jsonFetch<undefined>(`${BASE}/admin/tickets/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+      generateQRCode: (id: string) =>
+        jsonFetch<{ url: string; key: string }>(`${BASE}/admin/tickets/${encodeURIComponent(id)}/qr-code`, {
+          method: "POST",
+        }),
+
+      checkIn: (ticketNumber: string) =>
+        jsonFetch<{ ticket: GBCTicket; message: string }>(`${BASE}/admin/tickets/check-in`, {
+          method: "POST",
+          body: JSON.stringify({ ticketNumber }),
+        }),
+
+      export: () => jsonFetch<GBCTicket[]>(`${BASE}/admin/tickets/export`),
+
+      stats: () => jsonFetch<TicketStats>(`${BASE}/admin/tickets/stats`),
+    },
+  },
+
+  contact: {
+    submit: (input: ContactFormInput) =>
+      jsonFetch<{ inquiry: Inquiry; message: string }>(`${BASE}/contact`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+  },
+
+  inquiries: {
+    list: (filters?: { status?: string; type?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.set("status", filters.status);
+      if (filters?.type) params.set("type", filters.type);
+      const qs = params.toString();
+      return jsonFetch<Inquiry[]>(`${BASE}/admin/inquiries${qs ? `?${qs}` : ""}`);
+    },
+
+    remove: (id: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/inquiries/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+    updateStatus: (id: string, status: Inquiry["status"]) =>
+      jsonFetch<Inquiry>(`${BASE}/admin/inquiries/${encodeURIComponent(id)}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+
+    reply: (id: string, subject: string, message: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/inquiries/${encodeURIComponent(id)}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ subject, message }),
+      }),
+  },
+
+  qr: {
+    verify: (qrDataString: string, maxAgeHours?: number) =>
+      jsonFetch<{ valid: boolean; data?: QRTicketData; error?: string }>(`${BASE}/admin/qr/verify`, {
+        method: "POST",
+        body: JSON.stringify({ qrDataString, maxAgeHours }),
+      }),
   },
 };

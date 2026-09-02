@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
-import { submitGBCContactForm } from "@/app/(projects)/(GBC)/actions/contact-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,11 +27,19 @@ export function ContactForm() {
     try {
       const form = event.currentTarget;
       const formData = new FormData(form);
+      const phone = formData.get("phone") as string;
 
-      const result = await submitGBCContactForm(formData);
+      const result = await gbcApi.contact.submit({
+        name: formData.get("name") as string,
+        email: formData.get("email") as string,
+        ...(phone && { phone }),
+        subject: formData.get("subject") as string,
+        message: formData.get("message") as string,
+        type: formData.get("type") as any,
+      });
 
       if (result.success) {
-        toast.success(result.message || "Message sent successfully!");
+        toast.success(result.data.message || "Message sent successfully!");
         // Reset form
         form.reset();
       } else {

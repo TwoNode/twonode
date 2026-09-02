@@ -51,6 +51,10 @@ export type TicketPurchaseInput = z.infer<typeof ticketPurchaseSchema>;
 export const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Invalid email address"),
+  // Not previously declared here — silently stripped by zod before reaching
+  // the database, same bug pattern as gallerySchema's mediaS3Key. See
+  // GBCContactInquiry's phone column and Phase 5's ticket-actions.ts step.
+  phone: z.string().optional(),
   subject: z.string().min(5, "Subject must be at least 5 characters").max(200),
   message: z
     .string()

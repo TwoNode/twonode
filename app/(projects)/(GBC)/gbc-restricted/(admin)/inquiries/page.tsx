@@ -1,5 +1,5 @@
 // src/app/admin/inquiries/page.tsx
-import { getGBCContactInquiries } from "../../../actions/contact-actions";
+import { getInquiries } from "@/gbc/services/contactService";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
 import { InquiriesTable } from "@/gbc/components/admin/InquiriesTable";
@@ -14,12 +14,7 @@ export default async function AdminInquiriesPage({
   searchParams: { status?: string; type?: string };
 }) {
   const { status, type } = await searchParams;
-  const inquiriesResult = await getGBCContactInquiries({
-    status,
-    type,
-  });
-
-  const inquiries = inquiriesResult.success ? inquiriesResult.data : [];
+  const inquiries = await getInquiries({ status, type });
 
   // Calculate stats
   const stats = {

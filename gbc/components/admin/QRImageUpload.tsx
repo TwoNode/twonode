@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { checkInGBCTicket } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 import { Upload, CheckCircle, XCircle, Image as ImageIcon } from "lucide-react";
 
@@ -123,24 +123,21 @@ export function QRImageUpload() {
         if (parsed.ticketNumber) {
           // This is a structured QR code with hash - verify it on server
           try {
-            const { verifyQRCodeHash } = await import(
-              "@/app/(projects)/(GBC)/actions/qr-verification"
-            );
-
             // Verify hash on server (no expiration check)
-            const verification = await verifyQRCodeHash(code.data);
+            const result = await gbcApi.qr.verify(code.data);
 
-            if (!verification.valid) {
-              toast.error(verification.error || "Invalid QR code");
+            if (!result.success || !result.data.valid) {
+              const error = (result.success ? result.data.error : result.error) || "Invalid QR code";
+              toast.error(error);
               setLastResult({
                 success: false,
-                error: verification.error || "QR code verification failed",
+                error,
               });
               setIsProcessing(false);
               return;
             }
 
-            ticketNumber = verification.data!.ticketNumber;
+            ticketNumber = result.data.data!.ticketNumber;
             console.log("✅ QR code verified successfully:", ticketNumber);
           } catch (verifyError: any) {
             console.error("QR verification error:", verifyError);
@@ -188,11 +185,11 @@ export function QRImageUpload() {
       console.log("Processing ticket:", ticketNumber);
 
       // Check in the ticket
-      const result = await checkInGBCTicket(ticketNumber.trim());
+      const result = await gbcApi.tickets.admin.checkIn(ticketNumber.trim());
 
       if (result.success) {
-        toast.success(result.message || "Check-in successful!");
-        setLastResult({ success: true, data: result.data });
+        toast.success(result.data?.message || "Check-in successful!");
+        setLastResult({ success: true, data: result.data?.ticket });
       } else {
         toast.error(result.error || "Check-in failed");
         setLastResult({

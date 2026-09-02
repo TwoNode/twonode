@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { deleteGBCTicket } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { formatCurrency, formatDate } from "@/gbc/utils";
 
 export interface Ticket {
@@ -69,7 +69,7 @@ export function AdminTicketsTable({ tickets }: TicketsTableProps) {
 
   async function handleDelete(id: string) {
     try {
-      const result = await deleteGBCTicket(id);
+      const result = await gbcApi.tickets.admin.remove(id);
 
       if (result.success) {
         toast.success("Ticket deleted successfully");

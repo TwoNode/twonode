@@ -1,4 +1,4 @@
-import { getGBCTickets } from "../../../actions/ticket-actions";
+import { getTickets } from "@/gbc/services/ticketService";
 import { Card } from "@/components/ui/card";
 import { Users, CheckCircle, Clock } from "lucide-react";
 
@@ -6,8 +6,7 @@ import { Users, CheckCircle, Clock } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAttendeesPage() {
-  const ticketsResult = await getGBCTickets({ status: "COMPLETED" });
-  const tickets = ticketsResult.success ? ticketsResult.data : [];
+  const tickets = await getTickets({ status: "COMPLETED" });
 
   const checkedIn = tickets?.filter((t) => t.checkedIn).length || 0;
   const pending = tickets?.length ? tickets.length - checkedIn : 0;

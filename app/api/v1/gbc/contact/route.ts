@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
   try {
     const data = await validateBody(req, contactFormSchema);
     const inquiry = await submitContactForm(data);
-    return NextResponse.json({ success: true, data: inquiry, message: "Thank you! We'll get back to you soon." });
+    return NextResponse.json({
+      success: true,
+      data: { inquiry, message: "Thank you! We'll get back to you soon." },
+    });
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }

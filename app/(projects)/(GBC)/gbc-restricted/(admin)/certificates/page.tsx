@@ -1,12 +1,11 @@
-import { getGBCTickets } from "../../../actions/ticket-actions";
+import { getTickets } from "@/gbc/services/ticketService";
 import CertificatesClient from "./CertificatesClient";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
 export default async function AdminCertificatesPage() {
-  const ticketsResult = await getGBCTickets({ status: "COMPLETED" });
-  const tickets = (ticketsResult.success && ticketsResult.data) ? ticketsResult.data : [];
+  const tickets = await getTickets({ status: "COMPLETED" });
 
   return (
     <div>

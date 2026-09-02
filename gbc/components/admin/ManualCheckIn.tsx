@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getGBCTickets, checkInGBCTicket } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 import { Search, CheckCircle, Loader2 } from "lucide-react";
 
@@ -24,7 +24,7 @@ export function ManualCheckIn() {
     setIsSearching(true);
 
     try {
-      const result = await getGBCTickets({
+      const result = await gbcApi.tickets.admin.list({
         search: searchTerm,
         status: "COMPLETED",
       });
@@ -46,10 +46,10 @@ export function ManualCheckIn() {
   }
 
   async function handleCheckIn(ticketNumber: string) {
-    const result = await checkInGBCTicket(ticketNumber);
+    const result = await gbcApi.tickets.admin.checkIn(ticketNumber);
 
     if (result.success) {
-      toast.success(result.message || "Check-in successful!");
+      toast.success(result.data?.message || "Check-in successful!");
       // Remove from results
       setResults(results.filter((t) => t.ticketNumber !== ticketNumber));
     } else {

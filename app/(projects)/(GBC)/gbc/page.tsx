@@ -13,7 +13,6 @@ import {
   Zap,
   AlertCircle,
 } from "lucide-react";
-import { getGBCTicketAvailability } from "../actions/ticket-actions";
 import { gbcApi } from "@/gbc/apiClient";
 
 // Import new components
@@ -89,7 +88,7 @@ export default function HomePage() {
       setIsLoading(true);
       try {
         const [statsResult, settingsResult] = await Promise.all([
-          getGBCTicketAvailability(),
+          gbcApi.tickets.availability(),
           gbcApi.settings.get(),
         ]);
 

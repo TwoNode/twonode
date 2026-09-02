@@ -1,6 +1,6 @@
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
-import { getGBCTicketStats } from "../../actions/ticket-actions";
+import { getTicketStats } from "@/gbc/services/ticketService";
 import { requireAdmin } from "@/gbc/utils/auth";
 import { StatsCard } from "@/gbc/components/admin/StatsCard";
 import { RecentTickets } from "@/gbc/components/admin/RecentTickets";
@@ -14,13 +14,7 @@ export default async function AdminDashboard() {
     name: "John Doe",
     id: "1",
   };
-  const statsResult = await getGBCTicketStats();
-
-  if (!statsResult.success) {
-    return <div>Error loading stats</div>;
-  }
-
-  const stats = statsResult.data!;
+  const stats = await getTicketStats();
 
   return (
     <div>

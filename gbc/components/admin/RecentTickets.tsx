@@ -1,14 +1,12 @@
-import { getGBCTickets } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { getTickets } from "@/gbc/services/ticketService";
 import { formatDate } from "@/gbc/utils";
 
 export async function RecentTickets() {
-  const result = await getGBCTickets({ limit: 5 });
+  const tickets = await getTickets({ limit: 5 });
 
-  if (!result.success || !result.data) {
+  if (tickets.length === 0) {
     return <p className="text-gray-500">No tickets found</p>;
   }
-
-  const tickets = result.data;
 
   return (
     <div className="space-y-3">

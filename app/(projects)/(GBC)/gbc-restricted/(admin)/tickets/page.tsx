@@ -1,4 +1,4 @@
-import { getGBCTickets } from "../../../actions/ticket-actions";
+import { getTickets } from "@/gbc/services/ticketService";
 import {
   AdminTicketsTable,
   type Ticket,
@@ -16,15 +16,7 @@ export default async function AdminTicketsPage({
   searchParams: { search?: string; status?: string };
 }) {
   const { search, status } = await searchParams;
-  const ticketsResult = await getGBCTickets({
-    search,
-    status,
-  });
-
-  // Ensure we always pass an array to the TicketsTable
-  const tickets: Ticket[] = ticketsResult.success
-    ? ticketsResult.data || []
-    : [];
+  const tickets: Ticket[] = await getTickets({ search, status });
 
   return (
     <div>

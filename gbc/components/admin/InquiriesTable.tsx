@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  updateGBCInquiryStatus,
-  deleteGBCInquiry,
-  replyToGBCInquiry,
-} from "@/app/(projects)/(GBC)/actions/contact-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -61,7 +57,7 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
 
   async function handleStatusChange(id: string, status: string) {
     try {
-      const result = await updateGBCInquiryStatus(id, status);
+      const result = await gbcApi.inquiries.updateStatus(id, status as any);
       if (result.success) {
         toast.success("Status updated successfully");
         window.location.reload();
@@ -81,7 +77,7 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
 
     setIsSending(true);
     try {
-      const result = await replyToGBCInquiry(
+      const result = await gbcApi.inquiries.reply(
         replyInquiry.id,
         replySubject,
         replyMessage
@@ -105,7 +101,7 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
   async function handleDelete(id: string) {
     setIsDeleting(true);
     try {
-      const result = await deleteGBCInquiry(id);
+      const result = await gbcApi.inquiries.remove(id);
       if (result.success) {
         toast.success("Inquiry deleted successfully");
         setDeleteId(null);

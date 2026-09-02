@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { exportGBCTickets } from "@/app/(projects)/(GBC)/actions/ticket-actions";
+import { gbcApi } from "@/gbc/apiClient";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,7 @@ export function ExportButton() {
   async function handleExport(format: "csv" | "excel") {
     setIsExporting(true);
     try {
-      const result = await exportGBCTickets();
+      const result = await gbcApi.tickets.admin.export();
 
       if (result.success && result.data) {
         const tickets = result.data;

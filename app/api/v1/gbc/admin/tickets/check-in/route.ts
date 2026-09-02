@@ -16,7 +16,7 @@ export const POST = withAuth<GBCRole>(
     const { ticketNumber } = await validateBody(req, bodySchema);
     const admin = await getAdminContact(ctx.session.sub);
     const data = await checkInTicket(ticketNumber, admin.email);
-    return NextResponse.json({ success: true, ...data });
+    return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }
 );
