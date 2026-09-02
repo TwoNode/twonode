@@ -1,5 +1,7 @@
 import EditPlan from "./EditPlan";
-import { getSurfPlanById } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getSurfPlanById } from "@/surfboard/services/planService";
+import { getServerSession } from "@/lib/auth/session";
+import { Platform } from "@/utils/platform";
 import { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 import Link from "next/link";
@@ -12,9 +14,8 @@ export default async function EditPlanPage({
 }) {
   const { planId } = await searchParams;
 
-  const result = await getSurfPlanById(planId, { forEdit: true });
-
-  if (!result.success) {
+  const session = await getServerSession(Platform.SURFBOARD);
+  if (!session) {
     return (
       <SurfPageNotFound
         url="/surfboard/dashboard/plans"
@@ -23,7 +24,10 @@ export default async function EditPlanPage({
     );
   }
 
-  if (!result.data) {
+  let plan;
+  try {
+    plan = await getSurfPlanById(session.sub, planId, { forEdit: true });
+  } catch {
     return (
       <SurfPageNotFound
         url="/surfboard/dashboard/plans"
@@ -31,8 +35,6 @@ export default async function EditPlanPage({
       />
     );
   }
-
-  const plan = result.data;
 
   // Check if plan is locked (submitted for certificate processing)
   const isLocked = plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED";
@@ -75,7 +77,7 @@ export default async function EditPlanPage({
 
   return (
     <>
-      <EditPlan plan={plan as SurfboardPlanDTO} />
+      <EditPlan plan={plan as unknown as SurfboardPlanDTO} />
     </>
   );
 }

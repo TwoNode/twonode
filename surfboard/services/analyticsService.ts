@@ -180,6 +180,92 @@ export async function getTimeTrend(scope: AnalyticsScope): Promise<TimeTrendPoin
   return rows.map((r) => ({ period: r.month, count: r.count }));
 }
 
+export interface UserDashboardAnalytics {
+  totalPlansCount: number;
+  provisionalPlansCount: number;
+  facilitatorStats: { facilitator: string; count: number; totalArea: number }[];
+  lgaStats: { lga: string; count: number }[];
+  pendingCertificates: {
+    id: string;
+    planNumber: string;
+    surveyTitle: string;
+    facilitator: string;
+    updatedAt: Date;
+    planType: string;
+    status: string;
+  }[];
+  pillarStats: { type: string; count: number }[];
+  timeTrends: TimeTrendPoint[];
+}
+
+/** Own-plans-only dashboard analytics for a single surveyor — ported unchanged from surfboardActions.ts's getDashboardAnalytics. */
+export async function getUserDashboardAnalytics(userId: string): Promise<UserDashboardAnalytics> {
+  const excludeProvisional = { notIn: PROVISIONAL_TYPES };
+
+  const [totalPlansCount, provisionalPlansCount, facilitatorStats, plansWithDeededArea, lgaStats, pendingCertificates, pillarStats, timeTrends] =
+    await Promise.all([
+      prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional } }),
+      prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES } } }),
+      prisma.surfboardPlan.groupBy({
+        by: ["facilitator"],
+        where: { userId, planType: excludeProvisional, facilitator: { not: "" } },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+      prisma.surfboardPlan.findMany({
+        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, deededArea: { not: "" } },
+        select: { facilitator: true, deededArea: true },
+      }),
+      prisma.surfboardPlan.groupBy({
+        by: ["lga"],
+        where: { userId, planType: excludeProvisional, lga: { not: "" } },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+      prisma.surfboardPlan.findMany({
+        where: { userId, status: "PENDING", planType: excludeProvisional, surveyTitle: { not: "" } },
+        select: { id: true, planNumber: true, surveyTitle: true, facilitator: true, updatedAt: true, planType: true, status: true },
+        orderBy: { updatedAt: "desc" },
+        take: 10,
+      }),
+      prisma.surfboardPlan.groupBy({
+        by: ["pillarType"],
+        where: { userId, planType: excludeProvisional, pillarType: { not: "" } },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+      getTimeTrend({ role: SurfboardRole.USER, userId }),
+    ]);
+
+  const processedFacilitatorStats = facilitatorStats.map((stat) => {
+    const totalDeededArea = plansWithDeededArea
+      .filter((plan) => plan.facilitator === stat.facilitator)
+      .reduce((sum, plan) => {
+        const areaValue = parseFloat(plan.deededArea.replace(/[^0-9.]/g, ""));
+        return sum + (isNaN(areaValue) ? 0 : areaValue);
+      }, 0);
+    return { facilitator: stat.facilitator || "Unknown", count: stat._count.id, totalArea: totalDeededArea };
+  });
+
+  return {
+    totalPlansCount,
+    provisionalPlansCount,
+    facilitatorStats: processedFacilitatorStats,
+    lgaStats: lgaStats.map((stat) => ({ lga: stat.lga || "Unknown", count: stat._count.id })),
+    pendingCertificates: pendingCertificates.map((cert) => ({
+      id: cert.id,
+      planNumber: cert.planNumber,
+      surveyTitle: cert.surveyTitle || "Untitled Survey",
+      facilitator: cert.facilitator || "Unknown",
+      updatedAt: cert.updatedAt,
+      planType: cert.planType,
+      status: cert.status,
+    })),
+    pillarStats: pillarStats.map((stat) => ({ type: stat.pillarType || "UNKNOWN", count: stat._count.id })),
+    timeTrends,
+  };
+}
+
 // --- MDA stage-scoped analytics ---
 
 export type MdaStageRole = Exclude<SurfboardRole, "USER" | "ADMIN" | "SUPERADMIN" | "MDA_SUPERADMIN">;

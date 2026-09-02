@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Upload, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
-import { updatePlanRecordCopy } from "../actions/surfboardActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
@@ -83,7 +82,7 @@ export function RecordCopyUploadModal({
       const result = await surfboardApi.files.uploadSurfboardFile(
         file,
         "redcopy",
-        plan.planNumber
+        plan.planNumber,
       );
 
       if (result && result.url) {
@@ -91,7 +90,10 @@ export function RecordCopyUploadModal({
         uploadedKey = result.key;
 
         // Update plan with record copy URL using server action
-        const updateResult = await updatePlanRecordCopy(planId, result.url);
+        const updateResult = await surfboardApi.plans.updateRecordCopy(
+          planId,
+          result.url,
+        );
 
         if (updateResult.success) {
           setUploadStatus((prev) => ({
@@ -103,7 +105,9 @@ export function RecordCopyUploadModal({
           // Database update failed - clean up the uploaded file
           if (uploadedUrl) {
             try {
-              await surfboardApi.files.deleteSurfboardFile({ url: uploadedUrl });
+              await surfboardApi.files.deleteSurfboardFile({
+                url: uploadedUrl,
+              });
               console.log("Cleaned up uploaded file after DB update failure");
             } catch (cleanupError) {
               console.error("Failed to clean up uploaded file:", cleanupError);
@@ -137,7 +141,7 @@ export function RecordCopyUploadModal({
       toast.error(
         `Failed to upload record copy: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   };
@@ -164,7 +168,7 @@ export function RecordCopyUploadModal({
 
     // Check if all uploads were successful
     const allSuccess = Object.values(uploadStatus).every(
-      (status) => status.url && !status.error
+      (status) => status.url && !status.error,
     );
 
     if (allSuccess) {
@@ -177,7 +181,7 @@ export function RecordCopyUploadModal({
 
   const allPlansHaveFiles = selectedPlans.every(
     (plan) =>
-      files[plan.id] || plan.redCopyFileUrl || uploadStatus[plan.id]?.url
+      files[plan.id] || plan.redCopyFileUrl || uploadStatus[plan.id]?.url,
   );
 
   return (
@@ -208,7 +212,7 @@ export function RecordCopyUploadModal({
                       (p) =>
                         p.redCopyFileUrl ||
                         uploadStatus[p.id]?.url ||
-                        files[p.id]
+                        files[p.id],
                     ).length
                   }{" "}
                   / {selectedPlans.length}
@@ -272,7 +276,7 @@ export function RecordCopyUploadModal({
                           onChange={(e) =>
                             handleFileSelect(
                               plan.id,
-                              e.target.files?.[0] || null
+                              e.target.files?.[0] || null,
                             )
                           }
                           className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"

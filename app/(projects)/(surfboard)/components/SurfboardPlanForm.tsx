@@ -20,14 +20,6 @@ import {
   PILLAR_TYPE_ADJOINING_FILTERS,
   ParcelInfo,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
-import {
-  createSurfPlan,
-  updateSurfPlan,
-  searchReferencePlanNumbers,
-  getAllFacilitatorsAndPlanNumbers,
-  checkPlanNumberExists,
-  getAdminBoundaries,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
   generatePolygonFromPillars,
@@ -430,8 +422,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     (async () => {
       try {
-        const result = await getAllFacilitatorsAndPlanNumbers();
-        if (result.success && result.data) {
+        const result = await surfboardApi.plans.facilitators(true);
+        if (result.success) {
           setFacilitators(result.data.facilitators);
         }
       } catch (e) {
@@ -493,8 +485,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED); // Use generic search
-        setAdjOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(PLAN_TYPES.DEED); // Use generic search
+        setAdjOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setAdjOptions([]);
@@ -515,8 +507,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(form.planType);
-        setRefOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(form.planType);
+        setRefOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setRefOptions([]);
@@ -653,7 +645,7 @@ export default function SurfboardPlanForm({
 
         // Get admin boundaries for this polygon
         const tempPoly = await generatePolygonFromPillars(pillarsWithIndex);
-        const adminData = await getAdminBoundaries(tempPoly as any);
+        const adminData = await surfboardApi.plans.adminBoundaries(tempPoly as any);
 
         newParcels.push({
           polygonIndex: parcelIdx,
@@ -811,7 +803,8 @@ export default function SurfboardPlanForm({
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         withdrawalAndResubmissionStatus: form.withdrawalAndResubmissionStatus,
-        reasonForWithdrawalAndResubmission: form.reasonForWithdrawalAndResubmission,
+        reasonForWithdrawalAndResubmission:
+          form.reasonForWithdrawalAndResubmission,
         pillarTypeReferencePlanNumber: form.pillarTypeReferencePlanNumber,
         parcels: parcels,
         dateLodged:
@@ -837,7 +830,7 @@ export default function SurfboardPlanForm({
       let res: ApiResult<{ id: string; planNumber: string }>;
 
       if (mode === "create") {
-        res = await createSurfPlan(payload);
+        res = await surfboardApi.plans.create(payload as any);
         if (res.success) {
           toast.success("Plan created");
           setSelectedCadFiles([]);
@@ -847,7 +840,7 @@ export default function SurfboardPlanForm({
           toast.error(res.error || "Create failed");
         }
       } else {
-        res = await updateSurfPlan(payload);
+        res = await surfboardApi.plans.update(form.id!, payload as any);
         if (res.success) toast.success("Plan updated");
         else toast.error(res.error || "Update failed");
       }
@@ -874,7 +867,11 @@ export default function SurfboardPlanForm({
     if (!form.planNumber.trim()) return;
     setIsCheckingPlanNumber(true);
     try {
-      const exists = await checkPlanNumberExists(form.planNumber, form.id);
+      const checkResult = await surfboardApi.plans.checkNumberExists(
+        form.planNumber,
+        form.id,
+      );
+      const exists = checkResult.success ? checkResult.data.exists : false;
       if (exists) {
         setErrors((prev) => ({
           ...prev,
@@ -940,7 +937,8 @@ export default function SurfboardPlanForm({
         !refFilterConf.allowFreeText &&
         !refOptions.includes(form.referencePlanNumber)
       ) {
-        errs.referencePlanNumber = "Must select a valid plan number from the list";
+        errs.referencePlanNumber =
+          "Must select a valid plan number from the list";
       }
     }
 
@@ -948,7 +946,8 @@ export default function SurfboardPlanForm({
       form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
       !form.reasonForWithdrawalAndResubmission?.trim()
     ) {
-      errs.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
+      errs.reasonForWithdrawalAndResubmission =
+        "Reason for withdrawal is required";
     }
 
     if (showAdjoiningField && !form.pillarTypeReferencePlanNumber?.trim()) {
@@ -1063,9 +1062,12 @@ export default function SurfboardPlanForm({
         try {
           await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
-          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+          console.error(
+            "S3 delete failed, proceeding with DB update:",
+            s3Error,
+          );
         }
-        await updateSurfPlan({
+        await surfboardApi.plans.update(form.id!, {
           ...INITIALS(initial),
           [field]: form[field].filter((f) => f !== file),
         } as any);
@@ -1548,13 +1550,18 @@ export default function SurfboardPlanForm({
                       id="reasonForWithdrawal"
                       value={form.reasonForWithdrawalAndResubmission || ""}
                       onChange={(e) =>
-                        setField("reasonForWithdrawalAndResubmission", e.target.value)
+                        setField(
+                          "reasonForWithdrawalAndResubmission",
+                          e.target.value,
+                        )
                       }
                       rows={3}
                       className={cn(
                         inputBase,
-                        errors.reasonForWithdrawalAndResubmission ? inputError : inputBorder,
-                        "min-h-[80px] resize-y"
+                        errors.reasonForWithdrawalAndResubmission
+                          ? inputError
+                          : inputBorder,
+                        "min-h-20 resize-y",
                       )}
                       disabled={lockNonCert && mode === "edit"}
                       placeholder="Please explain why the reference plan was withdrawn..."
@@ -2120,39 +2127,70 @@ export default function SurfboardPlanForm({
                           {(() => {
                             const geometry = handleGeometryDisplay();
                             if (!geometry || !geometry.coordinates?.length) {
-                              return <span className="text-xs text-gray-500 italic">No coordinates data</span>;
+                              return (
+                                <span className="text-xs text-gray-500 italic">
+                                  No coordinates data
+                                </span>
+                              );
                             }
 
-                            const boundaries: { label: string; points: [number, number][] }[] = [];
+                            const boundaries: {
+                              label: string;
+                              points: [number, number][];
+                            }[] = [];
 
                             if (geometry.type === "Polygon") {
-                              geometry.coordinates.forEach((ring: [number, number][], ringIndex: number) => {
-                                if (Array.isArray(ring) && ring.length > 0) {
-                                  boundaries.push({
-                                    label: geometry.coordinates.length > 1
-                                      ? `Polygon Ring ${ringIndex + 1}`
-                                      : "Polygon",
-                                    points: ring,
-                                  });
-                                }
-                              });
+                              geometry.coordinates.forEach(
+                                (
+                                  ring: [number, number][],
+                                  ringIndex: number,
+                                ) => {
+                                  if (Array.isArray(ring) && ring.length > 0) {
+                                    boundaries.push({
+                                      label:
+                                        geometry.coordinates.length > 1
+                                          ? `Polygon Ring ${ringIndex + 1}`
+                                          : "Polygon",
+                                      points: ring,
+                                    });
+                                  }
+                                },
+                              );
                             } else if (geometry.type === "MultiPolygon") {
-                              geometry.coordinates.forEach((polygon: [number, number][][], polyIndex: number) => {
-                                if (Array.isArray(polygon)) {
-                                  polygon.forEach((ring: [number, number][], ringIndex: number) => {
-                                    if (Array.isArray(ring) && ring.length > 0) {
-                                      boundaries.push({
-                                        label: polygon.length > 1
-                                          ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
-                                          : `Polygon ${polyIndex + 1}`,
-                                        points: ring,
-                                      });
-                                    }
-                                  });
-                                }
-                              });
+                              geometry.coordinates.forEach(
+                                (
+                                  polygon: [number, number][][],
+                                  polyIndex: number,
+                                ) => {
+                                  if (Array.isArray(polygon)) {
+                                    polygon.forEach(
+                                      (
+                                        ring: [number, number][],
+                                        ringIndex: number,
+                                      ) => {
+                                        if (
+                                          Array.isArray(ring) &&
+                                          ring.length > 0
+                                        ) {
+                                          boundaries.push({
+                                            label:
+                                              polygon.length > 1
+                                                ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
+                                                : `Polygon ${polyIndex + 1}`,
+                                            points: ring,
+                                          });
+                                        }
+                                      },
+                                    );
+                                  }
+                                },
+                              );
                             } else {
-                              return <span className="text-xs text-gray-500 italic">Unsupported geometry: {geometry.type}</span>;
+                              return (
+                                <span className="text-xs text-gray-500 italic">
+                                  Unsupported geometry: {geometry.type}
+                                </span>
+                              );
                             }
 
                             return boundaries.map((boundary, i) => (
@@ -2161,15 +2199,24 @@ export default function SurfboardPlanForm({
                                 className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
                               >
                                 <span>
-                                  {boundary.label} ({boundary.points.length} points):
+                                  {boundary.label} ({boundary.points.length}{" "}
+                                  points):
                                 </span>
                                 {boundary.points.map((coord, j) => {
-                                  if (!Array.isArray(coord) || coord.length < 2) return null;
+                                  if (!Array.isArray(coord) || coord.length < 2)
+                                    return null;
                                   const [x, y] = coord;
                                   return (
                                     <div key={j} className="py-0.5">
-                                      Point {j + 1}: ({typeof x === "number" ? x.toFixed(6) : String(x)},{" "}
-                                      {typeof y === "number" ? y.toFixed(6) : String(y)})
+                                      Point {j + 1}: (
+                                      {typeof x === "number"
+                                        ? x.toFixed(6)
+                                        : String(x)}
+                                      ,{" "}
+                                      {typeof y === "number"
+                                        ? y.toFixed(6)
+                                        : String(y)}
+                                      )
                                     </div>
                                   );
                                 })}

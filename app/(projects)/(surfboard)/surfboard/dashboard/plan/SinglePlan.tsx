@@ -20,13 +20,6 @@ import {
   File,
   Lock,
 } from "lucide-react";
-import {
-  getSurfPlanById,
-  deleteSurfPlan,
-  generatePlanQRCode,
-  getPlanPublicUrl,
-  updateSurfPlan,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import type {
   PillarData,
   Plan,
@@ -279,8 +272,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const fetchPlanData = async () => {
     try {
       setLoading(true);
-      const result = await getSurfPlanById(planId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.plans.get(planId);
+      if (result.success) {
         const data = result.data;
         setIsOwner(result?.data?.isOwner || false);
         setPlan({
@@ -324,16 +317,14 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   }, [planId, router]);
 
   useEffect(() => {
-    getPlanPublicUrl(planId)
-      .then(setPublicUrl)
-      .catch(() => {});
+    setPublicUrl(`${window.location.origin}/surfboardplan/${planId}`);
   }, [planId]);
 
   const handleGenerateQrCode = async () => {
     try {
       setIsGeneratingQr(true);
-      const res = await generatePlanQRCode(planId, qrOptions as any);
-      if (res.success && res.data) {
+      const res = await surfboardApi.plans.generateQR(planId, qrOptions as any);
+      if (res.success) {
         setQrCodeDataUrl(res.data.qrCodeDataUrl);
         setIsQrModalOpen(true);
       } else {
@@ -361,7 +352,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
     setIsDeleting(true);
     try {
-      const result = await deleteSurfPlan(plan.id);
+      const result = await surfboardApi.plans.delete(plan.id);
       if (result.success) {
         toast.success("Plan deleted successfully");
         router.push("/surfboard/dashboard/plans");
@@ -622,7 +613,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <Button
             variant="outline"
             onClick={async () => {
-              const res = await generatePlanQRCode(planId, qrOptions as any);
+              const res = await surfboardApi.plans.generateQR(planId, qrOptions as any);
               if (res.success && res.data)
                 setQrCodeDataUrl(res.data.qrCodeDataUrl);
             }}
@@ -696,7 +687,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         } catch (s3Error) {
           console.error("S3 delete failed, proceeding with DB update:", s3Error);
         }
-        await updateSurfPlan({
+        await surfboardApi.plans.update(plan!.id, {
           ...INITIALS(plan),
           [field]: plan?.[field].filter((f) => f !== file),
         } as any);

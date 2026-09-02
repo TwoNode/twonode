@@ -5,7 +5,7 @@ import { FiUsers, FiMapPin, FiClock, FiFileText, FiPieChart, FiLayers } from 're
 import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
 import { StatsCard } from './StatsCard';
-import { getDashboardAnalytics } from '@/app/(projects)/(surfboard)/actions/surfboardActions';
+import { surfboardApi } from '@/surfboard/apiClient';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
 
 export function AnalyticsDashboard() {
@@ -17,9 +17,9 @@ export function AnalyticsDashboard() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const result = await getDashboardAnalytics();
-        
-        if (result.success && result.data) {
+        const result = await surfboardApi.analytics.dashboard();
+
+        if (result.success) {
           setAnalytics(result.data);
         } else {
           setError(result.error || 'Failed to load analytics data');

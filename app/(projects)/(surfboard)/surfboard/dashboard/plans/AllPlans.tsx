@@ -5,12 +5,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  getPaginatedSurfPlans,
-  getSurfPlanById,
-  permanentlyDeleteSurfPlan,
-  generatePlanQRCode,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,7 +168,7 @@ export default function AllPlans() {
   ) => {
     try {
       setLoading(true);
-      const result = await getPaginatedSurfPlans({
+      const result = await surfboardApi.plans.list({
         page,
         pageSize,
         filters: {
@@ -381,8 +375,8 @@ export default function AllPlans() {
   const refreshSelectedPlan = async (planId: string) => {
     try {
       setModalLoading(true);
-      const result = await getSurfPlanById(planId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.plans.get(planId);
+      if (result.success) {
         setSelectedPlan(result.data);
         // Also update the plan in the plans array
         setPlans((prevPlans) =>
@@ -426,7 +420,7 @@ export default function AllPlans() {
       setQrCodeDataUrl(null); // Reset previous QR code
       setQrModalOpen(true); // Open modal immediately to show loading
 
-      const result = await generatePlanQRCode(planId, {
+      const result = await surfboardApi.plans.generateQR(planId, {
         darkColor: "#3b82f6",
         lightColor: "#ffffff",
         minLightAlpha: 0.3,
@@ -435,7 +429,7 @@ export default function AllPlans() {
         forceOpaque: false,
       });
 
-      if (result.success && result.data) {
+      if (result.success) {
         setQrCodeDataUrl(result.data.qrCodeDataUrl);
       } else {
         toast.error(result.error || "Failed to generate QR code");
@@ -462,7 +456,7 @@ export default function AllPlans() {
     setIsDeleting(true);
     toast.loading("Deleting plan...", { duration: Infinity });
     try {
-      const result = await permanentlyDeleteSurfPlan(planToDelete);
+      const result = await surfboardApi.plans.permanentDelete(planToDelete);
       if (result.success) {
         toast.success("Plan deleted successfully");
         setDeleteDialogOpen(false);

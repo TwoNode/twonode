@@ -6,6 +6,7 @@ import {
   getDimensionBreakdown,
   getLodgementTrend,
   getTimeTrend,
+  getUserDashboardAnalytics,
   type AnalyticsDimension,
 } from "@/surfboard/services/analyticsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
@@ -47,7 +48,11 @@ export const GET = withAuth<SurfboardRole>(
       return NextResponse.json({ success: true, data: await getTimeTrend(scope) });
     }
 
-    throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend" });
+    if (section === "dashboard") {
+      return NextResponse.json({ success: true, data: await getUserDashboardAnalytics(ctx.session.sub) });
+    }
+
+    throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend|dashboard" });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
 );

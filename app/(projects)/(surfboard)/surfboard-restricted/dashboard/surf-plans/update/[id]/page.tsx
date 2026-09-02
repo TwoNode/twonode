@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import SurfboardPlanForm from "@/app/(projects)/(surfboard)/components/SurfboardPlanForm";
-import {
-  getSurfPlanById,
-  updateSurfPlan,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
 export default function UpdateSurfPlanPage({
@@ -22,7 +19,7 @@ export default function UpdateSurfPlanPage({
   useEffect(() => {
     const fetchPlan = async () => {
       try {
-        const res = await getSurfPlanById(params.id);
+        const res = await surfboardApi.plans.get(params.id);
         if (res.success && res.data) {
           setPlan(res.data as any);
         } else {
@@ -43,7 +40,7 @@ export default function UpdateSurfPlanPage({
 
   const handleSubmit = async (updatedPlan: SurfboardPlanDTO) => {
     try {
-      await updateSurfPlan(updatedPlan);
+      await surfboardApi.plans.update(updatedPlan.id!, updatedPlan as any);
       toast.success("Plan updated successfully");
       router.push("/surfboard-restricted/dashboard");
     } catch (error) {

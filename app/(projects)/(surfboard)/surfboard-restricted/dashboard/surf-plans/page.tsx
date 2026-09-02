@@ -38,10 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import {
-  verifyPersonCount,
-  queryPlan,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface SurveyPlan {
   id: string;
@@ -214,7 +211,7 @@ export default function SurfPlansPage() {
     const count = getPersonCount(plan.surveyTitle);
 
     try {
-      const res = await verifyPersonCount(plan.id, count);
+      const res = await surfboardApi.plans.verifyPersonCount(plan.id, count);
       if (res.success) {
         toast.success("Person count verified");
         setPlans((prev) =>
@@ -239,7 +236,7 @@ export default function SurfPlansPage() {
     setProcessingId(plan.id);
 
     try {
-      const res = await queryPlan(plan.id);
+      const res = await surfboardApi.plans.query(plan.id);
       if (res.success) {
         toast.success("Plan queried");
         setPlans((prev) =>
