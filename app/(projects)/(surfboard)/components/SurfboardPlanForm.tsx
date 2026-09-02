@@ -28,10 +28,6 @@ import {
   checkPlanNumberExists,
   getAdminBoundaries,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import {
-  getSurfboardUploadTargetsMulti,
-  deleteSurfboardFileFromS3,
-} from "@/app/(projects)/(surfboard)/actions/awsActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import {
   generatePolygonFromPillars,
@@ -757,7 +753,7 @@ export default function SurfboardPlanForm({
       );
     });
     try {
-      const targets = await getSurfboardUploadTargetsMulti(formData);
+      const targets = await surfboardApi.files.uploadTargetsMulti(formData);
       return targets.map((target) => target.publicUrl);
     } catch (error) {
       console.error("Error uploading files:", error);
@@ -1065,7 +1061,7 @@ export default function SurfboardPlanForm({
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         try {
-          await deleteSurfboardFileFromS3({ url: file });
+          await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
           console.error("S3 delete failed, proceeding with DB update:", s3Error);
         }

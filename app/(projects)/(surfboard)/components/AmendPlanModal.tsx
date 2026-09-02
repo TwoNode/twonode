@@ -33,7 +33,6 @@ import {
   Copy,
 } from "lucide-react";
 import { resubmitQueriedPlan, getCurrentPayerProfile } from "../actions/codActions";
-import { uploadSurfboardFileToS3 } from "../actions/awsActions";
 import { parseCSVContent } from "../utils/surfboardUtils";
 import type { PillarData } from "../types/surfboardTypes";
 import MaplibreMap from "./maps/MaplibreMap";
@@ -297,7 +296,7 @@ export function AmendPlanModal({
       // Upload new record copy if selected
       if (selectedFile) {
         setUploading(true);
-        const uploadResult = await uploadSurfboardFileToS3(
+        const uploadResult = await surfboardApi.files.uploadSurfboardFile(
           selectedFile,
           "redcopy",
           plan.planNumber

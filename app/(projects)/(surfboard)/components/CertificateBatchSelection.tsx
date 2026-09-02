@@ -31,7 +31,6 @@ import {
   scoreResults,
   shoelaceArea,
 } from "../utils/recordCopyVerification";
-import { uploadSurfboardFileToS3, deleteSurfboardFileFromS3 } from "../actions/awsActions";
 import { updatePlanRecordCopy } from "../actions/surfboardActions";
 
 interface Plan {
@@ -386,14 +385,14 @@ export function BatchSubmissionModal({
       // Delete the old file from S3 if it existed to save space
       if (plan.redCopyFileUrl) {
         try {
-          await deleteSurfboardFileFromS3({ url: plan.redCopyFileUrl });
+          await surfboardApi.files.deleteSurfboardFile({ url: plan.redCopyFileUrl });
         } catch (e) {
           console.error("Failed to delete old file:", e);
         }
       }
 
       // Upload new file to S3
-      const result = await uploadSurfboardFileToS3(file, "redcopy", plan.planNumber);
+      const result = await surfboardApi.files.uploadSurfboardFile(file, "redcopy", plan.planNumber);
       if (!result || !result.url) {
         throw new Error("Upload to S3 failed");
       }

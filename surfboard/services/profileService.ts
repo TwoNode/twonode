@@ -1,13 +1,8 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError } from "@/lib/api/errors";
-import { uploadFile } from "@/app/(projects)/(surfboard)/actions/awsActions";
+import { uploadFile } from "@/surfboard/services/awsService";
 
-/**
- * Migrated from app/(projects)/(surfboard)/actions/profile.ts. uploadFile
- * stays imported from awsActions.ts (a "use server" file not yet in this
- * phase's migration scope — still works as a plain async function when
- * imported server-side).
- */
+/** Migrated from app/(projects)/(surfboard)/actions/profile.ts. */
 
 export type ProfileData = {
   id: string;

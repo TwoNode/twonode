@@ -18,7 +18,7 @@ import {
   checkPlanNumberExists,
   searchReferencePlanNumbers,
 } from "../actions/surfboardActions";
-import { uploadSurfboardFileWithAuth } from "../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Badge } from "@/components/ui/badge";
 import MaplibreMap from "./maps/MaplibreMap";
 import { File, X, FileText, FileCheck, Save, Loader2 } from "lucide-react";
@@ -331,7 +331,7 @@ export default function OptimizedSurfboardPlanForm({
 
     for (const file of files) {
       try {
-        const result = await uploadSurfboardFileWithAuth(
+        const result = await surfboardApi.files.uploadSurfboardFileWithAuth(
           file,
           kind,
           formData.planNumber

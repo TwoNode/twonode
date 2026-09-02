@@ -579,6 +579,60 @@ export const surfboardApi = {
     ),
   },
 
+  files: {
+    /**
+     * Matches the source uploadSurfboardFileToS3's ergonomics: returns
+     * {url, key, originalName} directly, throws on failure — `userId` is
+     * whatever S3-key-namespace string the caller passes (every real
+     * caller actually passes a plan number there, preserved as-is).
+     */
+    uploadSurfboardFile: async (
+      file: File,
+      fileType: "pdf" | "cad" | "certificate" | "redcopy",
+      userId: string,
+      planNumber?: string,
+      filename?: string
+    ) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("fileType", fileType);
+      fd.append("userId", userId);
+      if (planNumber) fd.append("planNumber", planNumber);
+      if (filename) fd.append("filename", filename);
+      const result = await formFetch<{ url: string; key: string; originalName: string }>(`${BASE}/files/upload`, fd);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+
+    /** userId resolved from the session server-side — matches uploadSurfboardFileWithAuth. */
+    uploadSurfboardFileWithAuth: async (
+      file: File,
+      fileType: "pdf" | "cad" | "certificate" | "redcopy",
+      planNumber?: string
+    ) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("fileType", fileType);
+      if (planNumber) fd.append("planNumber", planNumber);
+      const result = await formFetch<{ url: string; key: string; originalName: string }>(`${BASE}/files/upload-with-auth`, fd);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+
+    /** Matches getSurfboardUploadTargetsMulti's ergonomics — returns the target array directly, throws on failure. */
+    uploadTargetsMulti: async (formData: FormData) => {
+      const result = await formFetch<{ key: string; url: string; publicUrl: string }[]>(`${BASE}/files/upload-multi`, formData);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
+    },
+
+    /** Matches deleteSurfboardFileFromS3's ergonomics — void on success, throws on failure. */
+    deleteSurfboardFile: async (input: { key?: string; url?: string }) => {
+      const result = await jsonFetch<{ success: boolean }>(`${BASE}/files/delete`, { method: "POST", body: JSON.stringify(input) });
+      if (!result.success) throw new Error(result.error);
+    },
+  },
+
   notifications: {
     list: (params?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }) => {
       const qs = new URLSearchParams();

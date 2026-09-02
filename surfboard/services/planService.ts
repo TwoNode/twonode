@@ -3,7 +3,7 @@ import { Prisma } from "@/prisma/generated";
 import QRCode from "qrcode";
 import { headers } from "next/headers";
 import { computeGeometryDetails, type GeometryInput } from "@/app/(projects)/(surfboard)/utils/dbUtils";
-import { deleteMultipleSurfboardFilesFromS3WithUrl, uploadSurfboardFileToS3 } from "@/app/(projects)/(surfboard)/actions/awsActions";
+import { deleteMultipleSurfboardFilesFromS3WithUrl, uploadSurfboardFileToS3 } from "@/surfboard/services/awsService";
 import {
   notifyPlanCreated,
   notifyPlanShared,

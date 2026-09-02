@@ -46,7 +46,7 @@ import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import MaplibreMap from "../../../components/maps/MaplibreMap";
 import Link from "next/link";
-import { deleteSurfboardFileFromS3 } from "../../../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -692,7 +692,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         try {
-          await deleteSurfboardFileFromS3({ url: file });
+          await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
           console.error("S3 delete failed, proceeding with DB update:", s3Error);
         }

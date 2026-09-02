@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Upload, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { updatePlanRecordCopy } from "../actions/surfboardActions";
-import { uploadSurfboardFileToS3 } from "../actions/awsActions";
-import { deleteSurfboardFileFromS3 } from "../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface Plan {
   id: string;
@@ -81,7 +80,7 @@ export function RecordCopyUploadModal({
       }
 
       // Upload to AWS S3 using the existing function
-      const result = await uploadSurfboardFileToS3(
+      const result = await surfboardApi.files.uploadSurfboardFile(
         file,
         "redcopy",
         plan.planNumber
@@ -104,7 +103,7 @@ export function RecordCopyUploadModal({
           // Database update failed - clean up the uploaded file
           if (uploadedUrl) {
             try {
-              await deleteSurfboardFileFromS3({ url: uploadedUrl });
+              await surfboardApi.files.deleteSurfboardFile({ url: uploadedUrl });
               console.log("Cleaned up uploaded file after DB update failure");
             } catch (cleanupError) {
               console.error("Failed to clean up uploaded file:", cleanupError);
@@ -121,7 +120,7 @@ export function RecordCopyUploadModal({
       // Clean up S3 file if it was uploaded but something failed
       if (uploadedUrl) {
         try {
-          await deleteSurfboardFileFromS3({ url: uploadedUrl });
+          await surfboardApi.files.deleteSurfboardFile({ url: uploadedUrl });
           console.log("Cleaned up uploaded file after error");
         } catch (cleanupError) {
           console.error("Failed to clean up uploaded file:", cleanupError);

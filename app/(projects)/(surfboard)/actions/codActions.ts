@@ -6,7 +6,7 @@ import type { ApiResult } from "../types/surfboardTypes";
 import { handlePrismaError } from "../utils/prismaErrorHandler";
 import { checkPaymentStatus, fetchRemitaReceiptPdf } from "../utils/remita";
 // pdf-parse will be dynamically imported where needed
-import { uploadFile } from "./awsActions";
+import { uploadFile } from "@/surfboard/services/awsService";
 import {
   notifyLASGReceiptUploaded,
   notifyPaymentReceived,
