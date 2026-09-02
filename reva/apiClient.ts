@@ -54,6 +54,16 @@ export type AnyRequestForAdmin =
   | { type: "oneTime"; data: OneTimeUserProperty };
 
 export type ApproveReportResult = { data: Property | OneTimeUserProperty; warnings: string[]; message: string };
+
+export type AdminVerifyResult = {
+  reference: string;
+  originalStatus: string | null;
+  newStatus: "Paid" | "Unpaid";
+  success: boolean;
+  message: string;
+  isLive: boolean;
+  data: Property | OneTimeUserProperty;
+};
 export type UploadReportResult = { data: Property | OneTimeUserProperty; warnings: string[] };
 
 export const revaApi = {
@@ -184,6 +194,12 @@ export const revaApi = {
 
       uploadReport: (reference: string, formData: FormData) =>
         formFetch<UploadReportResult>(`${BASE}/admin/requests/${encodeURIComponent(reference)}/report`, formData),
+
+      verifyPayment: (reference: string, isLive: boolean, type: "authenticated" | "oneTime") =>
+        jsonFetch<AdminVerifyResult>(`${BASE}/admin/requests/${encodeURIComponent(reference)}/verify-payment`, {
+          method: "POST",
+          body: JSON.stringify({ isLive, type }),
+        }),
     },
   },
 

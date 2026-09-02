@@ -9,6 +9,7 @@ import {
   updateOneTimeTransactionStatus,
   updatePropertyTransactionStatus,
 } from "@/reva/services/propertyRequestService";
+import type { Property, OneTimeUserProperty } from "@/prisma/generated";
 import { notifyPaymentReceived } from "@/reva/services/notificationService";
 
 /**
@@ -196,4 +197,63 @@ export async function authPaymentSuccessful(reference: string, userId: string, u
   }
 
   return updated;
+}
+
+export type AdminVerifyResult = {
+  reference: string;
+  originalStatus: string | null;
+  newStatus: "Paid" | "Unpaid";
+  success: boolean;
+  message: string;
+  isLive: boolean;
+  data: Property | OneTimeUserProperty;
+};
+
+/**
+ * Migrated from PaymentVerification.tsx's inline verifyPayment — the admin
+ * ops tool for manually re-checking any transaction's real Paystack status
+ * on demand (distinct from checkPaymentSuccess/authPaymentSuccessful, which
+ * are guest/user self-service verify-after-redirect flows, not an admin
+ * bulk-recheck one). Never throws for a Paystack-side failure — that's a
+ * normal verification outcome the admin UI needs to display per-row, not a
+ * request failure; only a genuinely missing transaction throws.
+ */
+export async function adminVerifyTransaction(
+  reference: string,
+  isLive: boolean,
+  type: "authenticated" | "oneTime"
+): Promise<AdminVerifyResult> {
+  const existing =
+    type === "authenticated"
+      ? await prisma.property.findUnique({ where: { reference } })
+      : await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
+  if (!existing) throw new NotFoundError("Transaction");
+
+  const originalStatus = existing.paymentStatus;
+  const verification: any = await verifyPaystackTransaction(reference, isLive);
+
+  if (!verification?.status) {
+    return { reference, originalStatus, newStatus: "Unpaid" as const, success: false, message: "Failed to verify payment with Paystack", isLive, data: existing };
+  }
+
+  const paystackData = verification.data;
+  const isPaid = paystackData.status === "success";
+  const newStatus: "Paid" | "Unpaid" = isPaid ? "Paid" : "Unpaid";
+  const statusMessage = isPaid ? "Payment verified via admin verification" : `Payment verification failed: ${paystackData.status}`;
+  const errorField = isPaid ? null : paystackData.gateway_response || "Payment verification failed";
+
+  const updated =
+    type === "authenticated"
+      ? await updatePropertyTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField)
+      : await updateOneTimeTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField);
+
+  return {
+    reference,
+    originalStatus,
+    newStatus,
+    success: true,
+    message: isPaid ? "Payment verified as successful" : `Payment status: ${paystackData.status}`,
+    isLive,
+    data: updated,
+  };
 }

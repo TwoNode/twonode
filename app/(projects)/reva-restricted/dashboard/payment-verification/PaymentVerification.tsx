@@ -32,12 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { verifyPaystackTransaction } from "../../../reva/actions/paystackActions";
-import { getAllRequestsWithUserByAdmin } from "../../actions/adminDbActions";
-import {
-  updatePropertyTransactionStatus,
-  updateOneTimeTransactionStatus,
-} from "../../../reva/actions/revaActions";
+import { revaApi } from "@/reva/apiClient";
 import {
   notifySuccess,
   notifyError,
@@ -99,17 +94,17 @@ export function PaymentVerification() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await getAllRequestsWithUserByAdmin({
+      const response = await revaApi.admin.requests.list({
         includeOneTimeRequests: true,
       });
 
       if (response.success) {
         const allRequests: Request[] = [
-          ...(response.data || []).map((req: any) => ({
+          ...(response.data.properties || []).map((req: any) => ({
             ...req,
             type: "authenticated",
           })),
-          ...(response.oneTimeRequests || []).map((req: any) => ({
+          ...(response.data.oneTimeRequests || []).map((req: any) => ({
             ...req,
             type: "oneTime",
           })),
@@ -156,79 +151,30 @@ export function PaymentVerification() {
     request: Request
   ): Promise<VerificationResult> => {
     try {
-      const verificationResponse = await verifyPaystackTransaction(
+      const result = await revaApi.admin.requests.verifyPayment(
         request.reference,
-        request.isLive
+        request.isLive,
+        request.type === "authenticated" ? "authenticated" : "oneTime"
       );
 
-      const originalStatus = request.paymentStatus;
-      let newStatus = originalStatus;
-      let success = false;
-      let message = "";
-
-      if (verificationResponse && verificationResponse.status) {
-        const paystackData = verificationResponse.data;
-
-        if (paystackData.status === "success") {
-          newStatus = "Paid";
-          success = true;
-          message = "Payment verified as successful";
-
-          // Update database
-          if (request.type === "authenticated") {
-            await updatePropertyTransactionStatus(
-              request.reference,
-              "Processing",
-              "Paid",
-              "Payment verified via admin verification",
-              null
-            );
-          } else {
-            await updateOneTimeTransactionStatus(
-              request.reference,
-              "Processing",
-              "Paid",
-              "Payment verified via admin verification",
-              null
-            );
-          }
-        } else {
-          newStatus = "Unpaid";
-          success = true;
-          message = `Payment status: ${paystackData.status}`;
-
-          // Update database
-          if (request.type === "authenticated") {
-            await updatePropertyTransactionStatus(
-              request.reference,
-              "Processing",
-              "Unpaid",
-              `Payment verification failed: ${paystackData.status}`,
-              paystackData.gateway_response || "Payment verification failed"
-            );
-          } else {
-            await updateOneTimeTransactionStatus(
-              request.reference,
-              "Processing",
-              "Unpaid",
-              `Payment verification failed: ${paystackData.status}`,
-              paystackData.gateway_response || "Payment verification failed"
-            );
-          }
-        }
-      } else {
-        newStatus = "Unpaid";
-        success = false;
-        message = "Failed to verify payment with Paystack";
+      if (!result.success) {
+        return {
+          reference: request.reference,
+          originalStatus: request.paymentStatus,
+          newStatus: request.paymentStatus,
+          success: false,
+          message: result.error || "Failed to verify payment",
+          isLive: request.isLive,
+        };
       }
 
       return {
-        reference: request.reference,
-        originalStatus,
-        newStatus,
-        success,
-        message,
-        isLive: request.isLive,
+        reference: result.data.reference,
+        originalStatus: result.data.originalStatus ?? "",
+        newStatus: result.data.newStatus,
+        success: result.data.success,
+        message: result.data.message,
+        isLive: result.data.isLive,
       };
     } catch (error) {
       console.error(`Error verifying payment for ${request.reference}:`, error);
