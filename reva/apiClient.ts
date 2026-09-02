@@ -1,0 +1,188 @@
+import type { ApiResult } from "@/lib/api/types";
+import type { Property, OneTimeUserProperty, RevaUser, Notification, Role, NotificationAudience, NotificationType } from "@/prisma/generated";
+import type { RevaProfile, ProfileUpdateInput } from "@/reva/services/profileService";
+import type { ReportDownload } from "@/reva/services/propertyRequestService";
+
+/**
+ * Thin typed wrapper around /api/v1/reva/* — mirrors gbc/apiClient.ts and
+ * surfboard/apiClient.ts's conventions. Same-origin fetch already sends
+ * cookies, so no credentials option is needed.
+ */
+
+const BASE = "/api/v1/reva";
+
+async function jsonFetch<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+  });
+  return res.json();
+}
+
+async function formFetch<T>(url: string, formData: FormData, init?: RequestInit): Promise<ApiResult<T>> {
+  const res = await fetch(url, { ...init, method: init?.method ?? "POST", body: formData });
+  return res.json();
+}
+
+export type CreateAdminUserInput = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "ADMIN" | "SUPERADMIN";
+};
+
+export type CreateNotificationInput = {
+  type: NotificationType;
+  title: string;
+  message: string;
+  userIds?: string[];
+  audience?: NotificationAudience;
+  link?: string;
+  metadata?: any;
+};
+
+export type PropertyStatusUpdate = {
+  status: "Available" | "Completed" | "Processing";
+  paymentStatus: "Paid" | "Unpaid";
+  statusMessage: string;
+  error: string | null;
+};
+
+export type AnyRequestForAdmin =
+  | { type: "property"; data: Property & { user: Pick<RevaUser, "id" | "email" | "firstName" | "lastName" | "kindeId"> } }
+  | { type: "oneTime"; data: OneTimeUserProperty };
+
+export type ApproveReportResult = { data: Property | OneTimeUserProperty; warnings: string[]; message: string };
+export type UploadReportResult = { data: Property | OneTimeUserProperty; warnings: string[] };
+
+export const revaApi = {
+  profile: {
+    get: () => jsonFetch<RevaProfile>(`${BASE}/profile`),
+
+    update: (input: ProfileUpdateInput) =>
+      jsonFetch<RevaProfile>(`${BASE}/profile`, { method: "PATCH", body: JSON.stringify(input) }),
+  },
+
+  properties: {
+    listMine: () => jsonFetch<Property[]>(`${BASE}/properties`),
+
+    submit: (formData: FormData) =>
+      formFetch<{ paystack: any; property: Property }>(`${BASE}/properties`, formData),
+
+    transaction: (reference: string) =>
+      jsonFetch<Property>(`${BASE}/properties/transactions/${encodeURIComponent(reference)}`),
+
+    updateStatus: (reference: string, input: PropertyStatusUpdate) =>
+      jsonFetch<Property>(`${BASE}/properties/${encodeURIComponent(reference)}/status`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+  },
+
+  oneTimeProperties: {
+    submit: (formData: FormData) =>
+      formFetch<{ paystack: any; property: OneTimeUserProperty }>(`${BASE}/one-time-properties`, formData),
+
+    getById: (id: string, email: string) =>
+      jsonFetch<OneTimeUserProperty>(`${BASE}/one-time-properties/${encodeURIComponent(id)}?email=${encodeURIComponent(email)}`),
+
+    lookup: (reference: string, email: string) =>
+      jsonFetch<OneTimeUserProperty>(
+        `${BASE}/one-time-properties/lookup?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
+      ),
+
+    lookupReport: (reference: string, email: string) =>
+      jsonFetch<ReportDownload>(
+        `${BASE}/one-time-properties/lookup/report?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
+      ),
+
+    updateStatus: (reference: string, input: PropertyStatusUpdate) =>
+      jsonFetch<OneTimeUserProperty>(`${BASE}/one-time-properties/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ reference, ...input }),
+      }),
+
+    transaction: (reference: string) =>
+      jsonFetch<OneTimeUserProperty>(`${BASE}/one-time-properties/transactions/${encodeURIComponent(reference)}`),
+  },
+
+  payments: {
+    verifyOneTime: (reference: string) =>
+      jsonFetch<OneTimeUserProperty>(`${BASE}/payments/one-time/verify`, {
+        method: "POST",
+        body: JSON.stringify({ reference }),
+      }),
+
+    verify: (reference: string) =>
+      jsonFetch<Property>(`${BASE}/payments/verify`, { method: "POST", body: JSON.stringify({ reference }) }),
+  },
+
+  notifications: {
+    list: () => jsonFetch<Notification[]>(`${BASE}/notifications`),
+
+    create: (input: CreateNotificationInput) =>
+      jsonFetch<Notification>(`${BASE}/notifications`, { method: "POST", body: JSON.stringify(input) }),
+
+    unreadCount: () => jsonFetch<{ count: number }>(`${BASE}/notifications/unread-count`),
+
+    markRead: (id: string) => jsonFetch<Notification>(`${BASE}/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }),
+
+    dismiss: (id: string) =>
+      jsonFetch<Notification>(`${BASE}/notifications/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+  },
+
+  admin: {
+    users: {
+      list: () => jsonFetch<RevaUser[]>(`${BASE}/admin/users`),
+
+      listAdmins: () => jsonFetch<RevaUser[]>(`${BASE}/admin/users?scope=admins`),
+
+      create: (input: CreateAdminUserInput) =>
+        jsonFetch<RevaUser>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),
+
+      remove: (id: string) => jsonFetch<undefined>(`${BASE}/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+      promote: (id: string, role: "ADMIN" | "SUPERADMIN") =>
+        jsonFetch<RevaUser>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {
+          method: "PATCH",
+          body: JSON.stringify({ action: "promote", role }),
+        }),
+
+      demote: (id: string) =>
+        jsonFetch<RevaUser>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {
+          method: "PATCH",
+          body: JSON.stringify({ action: "demote" }),
+        }),
+
+      setActive: (id: string, active: boolean) =>
+        jsonFetch<RevaUser>(`${BASE}/admin/users/${encodeURIComponent(id)}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ active }),
+        }),
+    },
+
+    requests: {
+      list: (filters?: { limit?: number; onlyWithReport?: boolean; includeOneTimeRequests?: boolean }) => {
+        const params = new URLSearchParams();
+        if (filters?.limit) params.set("limit", String(filters.limit));
+        if (filters?.onlyWithReport) params.set("onlyWithReport", "true");
+        if (filters?.includeOneTimeRequests) params.set("includeOneTimeRequests", "true");
+        const qs = params.toString();
+        return jsonFetch<{ properties: Property[]; oneTimeRequests: OneTimeUserProperty[] | null }>(
+          `${BASE}/admin/requests${qs ? `?${qs}` : ""}`
+        );
+      },
+
+      get: (reference: string) => jsonFetch<AnyRequestForAdmin>(`${BASE}/admin/requests/${encodeURIComponent(reference)}`),
+
+      approve: (reference: string, isApproved: boolean, comment?: string) =>
+        jsonFetch<ApproveReportResult>(`${BASE}/admin/requests/${encodeURIComponent(reference)}/approve`, {
+          method: "POST",
+          body: JSON.stringify({ isApproved, comment }),
+        }),
+
+      uploadReport: (reference: string, formData: FormData) =>
+        formFetch<UploadReportResult>(`${BASE}/admin/requests/${encodeURIComponent(reference)}/report`, formData),
+    },
+  },
+};
