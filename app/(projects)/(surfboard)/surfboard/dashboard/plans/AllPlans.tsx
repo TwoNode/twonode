@@ -11,7 +11,7 @@ import {
   permanentlyDeleteSurfPlan,
   generatePlanQRCode,
 } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getProfile } from "@/app/(projects)/(surfboard)/actions/profile";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -214,8 +214,8 @@ export default function AllPlans() {
   useEffect(() => {
     loadPlans(1, pagination.pageSize);
     // Load profile to check KYC validation status
-    getProfile().then((res) => {
-      if (res.data) {
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) {
         setIsKycValidated(res.data.isKycValidated);
       }
     });

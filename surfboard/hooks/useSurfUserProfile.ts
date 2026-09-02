@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  getProfile,
-  updateProfile,
-  type ProfileData,
-} from "@/app/(projects)/(surfboard)/actions/profile";
+import { surfboardApi } from "@/surfboard/apiClient";
+import type { ProfileData } from "@/surfboard/services/profileService";
 
 interface UserProfileState extends Omit<ProfileData, "id" | "email"> {
   email: string;
@@ -39,12 +36,13 @@ export function useSurfUserProfile() {
     const fetchUserProfile = async () => {
       try {
         setIsLoading(true);
-        const { data, error } = await getProfile();
+        const result = await surfboardApi.profile.get();
 
-        if (error) {
-          throw new Error(error);
+        if (!result.success) {
+          throw new Error(result.error);
         }
 
+        const data = result.data;
         if (data) {
           setUserData({
             firstName: data.firstName || "",
@@ -198,13 +196,14 @@ export function useSurfUserProfile() {
         return false;
       }
 
-      const { data, error } = await updateProfile(formData);
+      const result = await surfboardApi.profile.update(formData);
 
-      if (error) {
-        throw new Error(error);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       // Update the user data with the response
+      const data = result.data;
       if (data) {
         const updatedData = {
           ...data,

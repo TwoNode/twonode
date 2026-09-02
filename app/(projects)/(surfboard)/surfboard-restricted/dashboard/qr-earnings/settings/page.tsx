@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { updateQREarningsSettings } from "@/app/(projects)/(surfboard)/actions/qrAdminActions";
 import { toast } from "sonner";
 
 const EMPTY_SETTINGS: QREarningsSettingsData = {
@@ -43,7 +42,7 @@ export default function QREarningsSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await updateQREarningsSettings(settings);
+      const res = await surfboardApi.admin.qr.updateSettings(settings);
       if (res.success) {
         toast.success("QR Earnings settings updated");
       } else {

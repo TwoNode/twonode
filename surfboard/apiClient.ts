@@ -155,6 +155,21 @@ export const surfboardApi = {
         }),
     },
 
+    qr: {
+      stats: () => jsonFetch<any>(`${BASE}/admin/qr/stats`),
+
+      pendingWithdrawals: () => jsonFetch<any[]>(`${BASE}/admin/qr/withdrawals`),
+
+      processWithdrawal: (id: string, action: "APPROVE_PAYOUT" | "REJECT", adminComment?: string) =>
+        jsonFetch<{ message: string }>(`${BASE}/admin/qr/withdrawals/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ action, adminComment }),
+        }),
+
+      updateSettings: (settings: QREarningsSettingsData) =>
+        jsonFetch<{ message: string }>(`${BASE}/admin/qr/settings`, { method: "PATCH", body: JSON.stringify(settings) }),
+    },
+
     auditLogs: {
       list: (params: {
         page?: number;
@@ -525,6 +540,12 @@ export const surfboardApi = {
   session: {
     /** The legacy multi-platform cookie session, not the native JWT one — see app/api/v1/surfboard/session/route.ts. */
     get: () => jsonFetch<any>(`${BASE}/session`),
+  },
+
+  profile: {
+    get: () => jsonFetch<any>(`${BASE}/profile`),
+
+    update: (formData: FormData) => formFetch<any>(`${BASE}/profile`, formData, { method: "PATCH" }),
   },
 
   subscriptionAnalytics: {

@@ -40,11 +40,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  getAdminQREarningsStats,
-  getAdminPendingWithdrawals,
-  processAdminWithdrawalRequest,
-} from "@/app/(projects)/(surfboard)/actions/qrAdminActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -62,8 +58,8 @@ export default function AdminQREarningsPage() {
     setLoading(true);
     try {
       const [statsRes, queueRes] = await Promise.all([
-        getAdminQREarningsStats(),
-        getAdminPendingWithdrawals(),
+        surfboardApi.admin.qr.stats(),
+        surfboardApi.admin.qr.pendingWithdrawals(),
       ]);
 
       if (statsRes.success) setStats(statsRes.data);
@@ -91,12 +87,12 @@ export default function AdminQREarningsPage() {
     const toastId = toast.loading("Processing Paystack Automated Transfer...");
 
     try {
-      const res = await processAdminWithdrawalRequest(
+      const res = await surfboardApi.admin.qr.processWithdrawal(
         requestId,
         "APPROVE_PAYOUT",
       );
       if (res.success) {
-        toast.success(res.message || "Payout approved and sent!", {
+        toast.success(res.data.message || "Payout approved and sent!", {
           id: toastId,
         });
         fetchData();
@@ -118,7 +114,7 @@ export default function AdminQREarningsPage() {
     const toastId = toast.loading("Rejecting withdrawal request...");
 
     try {
-      const res = await processAdminWithdrawalRequest(
+      const res = await surfboardApi.admin.qr.processWithdrawal(
         selectedRejectId,
         "REJECT",
         rejectReason,
