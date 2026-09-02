@@ -3,7 +3,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUserData } from "@/app/(projects)/(surfboard)/actions/authActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Platform } from "@/utils/platform";
 
 interface UserData {
@@ -22,7 +22,7 @@ export default function SurfboardSuperAdminPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const result = await getUserData();
+        const result = await surfboardApi.session.get();
         if (result.success && result.data) {
           const data = result.data;
           

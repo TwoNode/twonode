@@ -24,7 +24,7 @@ import {
   Archive,
   FolderCheck,
 } from "lucide-react";
-import { getUserData } from "../../actions/authActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { getPendingCountByRole } from "../../actions/codActions";
 
 type MDARole =
@@ -239,7 +239,7 @@ export default function MDADashboardHome() {
     const fetchData = async () => {
       try {
         // Get user data
-        const userResult = await getUserData();
+        const userResult = await surfboardApi.session.get();
         if (userResult.success && userResult.data) {
           setUserRole(userResult.data.role as MDARole);
           setUserName(

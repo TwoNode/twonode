@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -104,11 +105,10 @@ export function AmendPlanModal({
   // Fetch settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
-      const { getCodSubmissionSettings } = await import("../actions/settingsActions");
       try {
-        const settings = await getCodSubmissionSettings();
-        if (settings) {
-          setFeePercent(settings.queryResponseFeePercent || 0);
+        const settingsResult = await surfboardApi.settings.codSubmission();
+        if (settingsResult.success) {
+          setFeePercent(settingsResult.data.queryResponseFeePercent || 0);
         }
         const profileRes = await getCurrentPayerProfile();
         if (profileRes.success && profileRes.data) {

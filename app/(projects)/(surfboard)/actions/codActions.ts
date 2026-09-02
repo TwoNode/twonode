@@ -1017,7 +1017,7 @@ export async function submitRedCopyBatch(
     // Import needed utilities
     const { computeGeometryDetails } = await import("../utils/dbUtils");
     const { getZoneFees, getSystemChargePercent } =
-      await import("./settingsActions");
+      await import("@/surfboard/services/settingsService");
 
     // Get zone fees and system charge
     const zoneFees = await getZoneFees();
@@ -3719,7 +3719,7 @@ export async function resubmitQueriedPlan(
     // Determine if payment verification is needed
     if (lasgReceiptUrl && remitaReceiptUrl) {
       // We use plan.codFee from the initial fetch
-      const { getCodSubmissionSettings } = await import("./settingsActions");
+      const { getCodSubmissionSettings } = await import("@/surfboard/services/settingsService");
       const settings = await getCodSubmissionSettings();
       const feePercent = settings.queryResponseFeePercent || 0;
       const expectedAmount = plan?.codFee ? (Number(plan.codFee) * feePercent) / 100 : 0;

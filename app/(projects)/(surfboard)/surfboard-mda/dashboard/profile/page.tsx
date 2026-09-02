@@ -10,7 +10,7 @@ import {
   Loader2,
   ArrowLeft,
 } from "lucide-react";
-import { getUserData } from "../../../actions/authActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface MDAProfile {
   firstName: string;
@@ -56,9 +56,9 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const result = await getUserData();
+        const result = await surfboardApi.session.get();
 
-        if (result.success && result.data) {
+        if (result.success) {
           setProfile({
             firstName: result.data.firstName,
             lastName: result.data.lastName,

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { toggleUserKycValidation } from "@/app/(projects)/(surfboard)/actions/settingsActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 
 interface SurveyorRow {
@@ -55,7 +54,7 @@ export default function KycClient({
     setLoadingId(id);
     const newStatus = !currentStatus;
     
-    const res = await toggleUserKycValidation(id, newStatus);
+    const res = await surfboardApi.settings.toggleUserKyc(id, newStatus);
     if (res.success) {
       setSurveyors((prev) =>
         prev.map((s) =>

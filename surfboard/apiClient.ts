@@ -526,4 +526,57 @@ export const surfboardApi = {
     /** The legacy multi-platform cookie session, not the native JWT one — see app/api/v1/surfboard/session/route.ts. */
     get: () => jsonFetch<any>(`${BASE}/session`),
   },
+
+  subscriptionAnalytics: {
+    get: () => jsonFetch<any>(`${BASE}/subscription-analytics`),
+  },
+
+  subscription: {
+    /** Self-service — clears the caller's own subscription. Dev-only debug tool. */
+    clear: () => jsonFetch<{ deletedCount: number }>(`${BASE}/subscription/clear`, { method: "POST" }),
+  },
+
+  recordCopy: {
+    downloadPdf: (planId: string) =>
+      jsonFetch<string>(`${BASE}/plans/${encodeURIComponent(planId)}/record-copy/download`),
+
+    saveVerification: (planId: string, verdict: string, score: number, verificationData: any) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/plans/${encodeURIComponent(planId)}/record-copy/verification`, {
+        method: "POST",
+        body: JSON.stringify({ verdict, score, verificationData }),
+      }),
+  },
+
+  settings: {
+    get: () => jsonFetch<any>(`${BASE}/settings`),
+
+    update: (settings: any) => jsonFetch<{ success: boolean }>(`${BASE}/settings`, { method: "PATCH", body: JSON.stringify(settings) }),
+
+    history: () => jsonFetch<any[]>(`${BASE}/settings/history`),
+
+    revert: (settingsId: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/settings/revert/${encodeURIComponent(settingsId)}`, { method: "POST" }),
+
+    reset: () => jsonFetch<{ success: boolean }>(`${BASE}/settings/reset`, { method: "POST" }),
+
+    codSubmission: () =>
+      jsonFetch<{ codAcceptanceText: string; codPolicyContent: string; queryResponseFeePercent: number }>(
+        `${BASE}/settings/cod-submission`
+      ),
+
+    coordinateShifts: () =>
+      jsonFetch<Record<string, { eastingShift: number; northingShift: number }>>(`${BASE}/settings/coordinate-shifts`),
+
+    sendAccountUpdateInquiry: (details: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/settings/account-update-inquiry`, {
+        method: "POST",
+        body: JSON.stringify({ details }),
+      }),
+
+    toggleUserKyc: (userId: string, status: boolean) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/admin/users/${encodeURIComponent(userId)}/kyc`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+  },
 };

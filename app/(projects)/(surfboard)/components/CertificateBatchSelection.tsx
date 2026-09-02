@@ -20,13 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Loader2, CheckCircle, AlertCircle, X, XCircle, Eye, UploadCloud } from "lucide-react";
 import { RemitaPaymentModal } from "./RemitaPaymentModal";
 import { submitRedCopyBatch } from "../actions/codActions";
-import { getCodSubmissionSettings, getCurrentSettings } from "../actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useRouter } from "next/navigation";
-import {
-  verifyPlanRecordCopy,
-  downloadPlanPdfAsBase64,
-  savePlanVerificationResult,
-} from "../actions/verificationActions";
 import { VerificationResultModal } from "./VerificationResultModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -95,9 +90,11 @@ export function BatchSubmissionModal({
 
   useEffect(() => {
     if (isOpen) {
-      getCodSubmissionSettings().then((settings) => {
-        setAcceptanceText(settings.codAcceptanceText);
-        setPolicyContent(settings.codPolicyContent);
+      surfboardApi.settings.codSubmission().then((result) => {
+        if (result.success) {
+          setAcceptanceText(result.data.codAcceptanceText);
+          setPolicyContent(result.data.codPolicyContent);
+        }
       });
       setIsAccepted(false);
       setVerificationData({});
@@ -133,8 +130,8 @@ export function BatchSubmissionModal({
 
     try {
       // 1. Download S3 PDF as Base64 to bypass CORS
-      const dlRes = await downloadPlanPdfAsBase64(plan.id);
-      if (!dlRes.success || !dlRes.data) {
+      const dlRes = await surfboardApi.recordCopy.downloadPdf(plan.id);
+      if (!dlRes.success) {
         throw new Error(dlRes.error || "Failed to download PDF from server.");
       }
 
@@ -186,7 +183,7 @@ export function BatchSubmissionModal({
       // 5. Run verification logic
       const extraction = extractFromPDFText(allText, allItems);
       
-      const settings = await getCurrentSettings();
+      const settings = await surfboardApi.settings.get();
       const rawTol = ((settings.success && settings.data?.recordCopyTolerances) || {}) as any;
       const tolerances = {
         tolAnchor: Number(rawTol.tolAnchor ?? 0.05),
@@ -345,7 +342,7 @@ export function BatchSubmissionModal({
       };
 
       // 6. Save verification results to DB
-      const saveRes = await savePlanVerificationResult(
+      const saveRes = await surfboardApi.recordCopy.saveVerification(
         plan.id,
         finalStatus,
         finalOverall,

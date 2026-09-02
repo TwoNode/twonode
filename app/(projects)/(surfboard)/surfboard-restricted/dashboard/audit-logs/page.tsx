@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  getAuditLogs,
-  getAuditLogActions,
-  getAuditLogEntities,
-} from "../../../actions/auditLogActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import { FileText, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -44,17 +40,11 @@ export default function AuditLogsPage() {
   // Fetch filter options
   useEffect(() => {
     async function fetchFilterOptions() {
-      const [actionsRes, entitiesRes] = await Promise.all([
-        getAuditLogActions(),
-        getAuditLogEntities(),
-      ]);
+      const result = await surfboardApi.admin.auditLogs.filters();
 
-      if (actionsRes.success && actionsRes.data) {
-        setActions(actionsRes.data);
-      }
-
-      if (entitiesRes.success && entitiesRes.data) {
-        setEntities(entitiesRes.data);
+      if (result.success) {
+        setActions(result.data.actions);
+        setEntities(result.data.entities);
       }
     }
 
@@ -65,14 +55,14 @@ export default function AuditLogsPage() {
   useEffect(() => {
     async function fetchLogs() {
       setLoading(true);
-      const result = await getAuditLogs({
+      const result = await surfboardApi.admin.auditLogs.list({
         page,
         pageSize,
         action: actionFilter || undefined,
         entity: entityFilter || undefined,
       });
 
-      if (result.success && result.data) {
+      if (result.success) {
         setLogs(result.data.logs);
         setTotalPages(result.data.totalPages);
         setTotal(result.data.total);

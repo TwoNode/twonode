@@ -14,17 +14,15 @@ import {
 import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { computeGeometryDetails } from "@/app/(projects)/(surfboard)/utils/dbUtils";
 import { calculatePlanFeeByZone, getChartingInterpretation, getZoneFromGeometry } from "@/surfboard/services/codFeeService";
+import { getZoneFees, getSystemChargePercent } from "@/surfboard/services/settingsService";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/codActions.ts — batch
  * submission through Remita/LASG payment verification. Depends on
- * codFeeService.ts (already migrated) for zone/fee calculation; getZoneFees/
- * getSystemChargePercent stay imported from settingsActions.ts (a "use
- * server" file not in this phase's migration scope — its exports still work
- * as plain async functions when imported server-side, same as
- * notificationActions.ts in Phase 1).
+ * codFeeService.ts and settingsService.ts (both already migrated) for
+ * zone/fee calculation.
  *
  * Callers pass userId/userRole explicitly instead of this service reading
  * cookies itself.
@@ -84,7 +82,6 @@ export async function submitRedCopyBatch(userId: string, planIds: string[], acce
     });
   }
 
-  const { getZoneFees, getSystemChargePercent } = await import("@/app/(projects)/(surfboard)/actions/settingsActions");
   const zoneFees = await getZoneFees();
   const systemChargePercent = await getSystemChargePercent();
 

@@ -16,7 +16,6 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
-import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useSurfUserProfile } from "@/surfboard/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
@@ -111,7 +110,7 @@ export default function SettingsPage() {
 
   const handleSendInquiry = async (details: string) => {
     setIsSendingInquiry(true);
-    const res = await sendAccountUpdateInquiry(details);
+    const res = await surfboardApi.settings.sendAccountUpdateInquiry(details);
     setIsSendingInquiry(false);
     if (res.success) {
       toast.success("Request sent to admin.");

@@ -3,13 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  getCurrentSettings,
-  updateSettings,
-  getSettingsHistory,
-  revertToPreviousSettings,
-  resetToDefaultSettings,
-} from "../../../actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface AdminProfile {
   id: string;
@@ -163,8 +157,8 @@ export default function SettingsPage() {
     const fetchSettings = async () => {
       try {
         setSettingsLoading(true);
-        const result = await getCurrentSettings();
-        if (result.success && result.data) {
+        const result = await surfboardApi.settings.get();
+        if (result.success) {
           setSettings(result.data);
           setOriginalSettings(result.data);
         }
@@ -194,7 +188,7 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     try {
       setSettingsSaving(true);
-      const result = await updateSettings(settings);
+      const result = await surfboardApi.settings.update(settings);
       if (result.success) {
         toast.success("Zone fee settings updated successfully");
         setOriginalSettings(settings);
@@ -462,8 +456,8 @@ export default function SettingsPage() {
   // Fetch settings history
   const fetchSettingsHistory = async () => {
     try {
-      const result = await getSettingsHistory();
-      if (result.success && result.data) {
+      const result = await surfboardApi.settings.history();
+      if (result.success) {
         setSettingsHistory(result.data);
         setShowSettingsHistory(true);
       } else {
@@ -478,13 +472,13 @@ export default function SettingsPage() {
   // Revert to previous settings
   const handleRevertSettings = async (settingsId: string) => {
     try {
-      const result = await revertToPreviousSettings(settingsId);
+      const result = await surfboardApi.settings.revert(settingsId);
       if (result.success) {
         toast.success("Settings reverted successfully");
         setShowSettingsHistory(false);
         // Refresh settings
-        const settingsResult = await getCurrentSettings();
-        if (settingsResult.success && settingsResult.data) {
+        const settingsResult = await surfboardApi.settings.get();
+        if (settingsResult.success) {
           setSettings(settingsResult.data);
           setOriginalSettings(settingsResult.data);
         }
@@ -508,11 +502,11 @@ export default function SettingsPage() {
 
     try {
       setSettingsSaving(true);
-      const result = await resetToDefaultSettings();
+      const result = await surfboardApi.settings.reset();
       if (result.success) {
         toast.success("Settings reset to defaults successfully");
-        const settingsResult = await getCurrentSettings();
-        if (settingsResult.success && settingsResult.data) {
+        const settingsResult = await surfboardApi.settings.get();
+        if (settingsResult.success) {
           setSettings(settingsResult.data);
           setOriginalSettings(settingsResult.data);
         }

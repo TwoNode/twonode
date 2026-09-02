@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Settings, Trash2, Loader2, RefreshCw, BarChart3 } from "lucide-react";
-import { clearUserSubscription } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
-import { getSubscriptionAnalytics } from "@/app/(projects)/(surfboard)/actions/subscriptionAnalyticsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface SubscriptionAnalytics {
   activeCount: number;
@@ -54,9 +53,9 @@ export default function SubscriptionAdminFAB() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      const { data } = await getSubscriptionAnalytics();
-      if (data) {
-        setAnalytics(data);
+      const result = await surfboardApi.subscriptionAnalytics.get();
+      if (result.success) {
+        setAnalytics(result.data);
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -75,7 +74,7 @@ export default function SubscriptionAdminFAB() {
   const handleClearSubscription = async () => {
     setIsClearing(true);
     try {
-      const result = await clearUserSubscription();
+      const result = await surfboardApi.subscription.clear();
       if (result?.success) {
         toast.success("Subscription cleared successfully");
         window.location.reload();

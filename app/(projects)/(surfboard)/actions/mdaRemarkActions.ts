@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { getUserData } from "./authActions";
+import { getEncryptedUserData } from "@/utils/encryptedCookies";
 
 export type ApiResult<T = any> = {
   success: boolean;
@@ -12,8 +12,8 @@ export type ApiResult<T = any> = {
 
 export async function getUniqueChartingRemarks(): Promise<ApiResult<string[]>> {
   try {
-    const session = await getUserData();
-    if (!session.success || !session.data) {
+    const session = await getEncryptedUserData();
+    if (!session) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -51,8 +51,8 @@ export async function getUniqueChartingRemarks(): Promise<ApiResult<string[]>> {
 
 export async function getUniqueQueryReasons(role: "accounts" | "charting" | "surcon" | "records-i" | "records-ii" | "intake"): Promise<ApiResult<string[]>> {
   try {
-    const session = await getUserData();
-    if (!session.success || !session.data) {
+    const session = await getEncryptedUserData();
+    if (!session) {
       return { success: false, error: "Unauthorized" };
     }
 

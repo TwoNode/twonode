@@ -19,12 +19,8 @@ import {
   Eye,
   Percent,
 } from "lucide-react";
-import { getUserData } from "../../../actions/authActions";
-import {
-  getCurrentSettings,
-  updateSettings,
-  type RecordCopyVerificationTolerances,
-} from "../../../actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
+import type { RecordCopyVerificationTolerances } from "@/surfboard/services/settingsService";
 
 interface UserProfile {
   firstName: string;
@@ -85,7 +81,7 @@ export default function SettingsPage() {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const result = await getUserData();
+        const result = await surfboardApi.session.get();
 
         if (result.success && result.data) {
           setProfile({
@@ -115,8 +111,8 @@ export default function SettingsPage() {
   const fetchMdaSettings = async () => {
     try {
       setMdaSettingsLoading(true);
-      const result = await getCurrentSettings();
-      if (result.success && result.data) {
+      const result = await surfboardApi.settings.get();
+      if (result.success) {
         const s: MDASettings = {
           codAcceptanceText: result.data.codAcceptanceText,
           codPolicyContent: result.data.codPolicyContent,
@@ -161,7 +157,7 @@ export default function SettingsPage() {
     if (!mdaSettings) return;
     try {
       setMdaSettingsSaving(true);
-      const result = await updateSettings({
+      const result = await surfboardApi.settings.update({
         zoneFees: mdaSettings.zoneFees,
         systemChargePercent: mdaSettings.systemChargePercent,
         codAcceptanceText: mdaSettings.codAcceptanceText,

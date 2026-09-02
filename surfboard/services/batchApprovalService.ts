@@ -10,6 +10,7 @@ import {
 } from "@/app/(projects)/(surfboard)/actions/notificationActions";
 import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { verifyQueryPaymentLinks } from "@/surfboard/services/remitaVerificationService";
+import { getCodSubmissionSettings } from "@/surfboard/services/settingsService";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 
 /**
@@ -728,7 +729,6 @@ export async function resubmitQueriedPlan(
   if (!plan) throw new NotFoundError("Plan (or no pending queries to respond to)");
 
   if (lasgReceiptUrl && remitaReceiptUrl) {
-    const { getCodSubmissionSettings } = await import("@/app/(projects)/(surfboard)/actions/settingsActions");
     const settings = await getCodSubmissionSettings();
     const feePercent = settings.queryResponseFeePercent || 0;
     const expectedAmount = plan.codFee ? (Number(plan.codFee) * feePercent) / 100 : 0;

@@ -6,7 +6,7 @@ import * as turf from "@turf/turf";
 import { Feature, GeoJsonProperties, Point } from "geojson";
 import proj4 from "proj4";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getCoordinateShifts } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
 
 // Define the updated structure of pillar data passed as props
@@ -194,7 +194,8 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) =>
     }
 
     const fetchAndRender = async () => {
-      const shifts = await getCoordinateShifts();
+      const shiftsResult = await surfboardApi.settings.coordinateShifts();
+      const shifts = shiftsResult.success ? shiftsResult.data : {};
       const visualPillars = applyVisualizationShift(processedPillars, state, shifts);
 
       const mapInstance = map.current;
