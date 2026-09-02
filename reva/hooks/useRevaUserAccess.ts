@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
 import { canAccessRoute } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
-import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
+import { revaApi } from "@/reva/apiClient";
 
 interface UserData {
   platform: Platform;
@@ -54,8 +54,8 @@ export function useRevaUserAccess() {
 
       try {
         console.log("🔍 Checking admin access & fetching user data...");
-        const result = await getRevaUserData();
-        if (!result.success || !result.data) throw new Error(result.error || "Failed to fetch user data");
+        const result = await revaApi.session.get();
+        if (!result.success) throw new Error(result.error || "Failed to fetch user data");
 
         const fullUserData = result.data;
         if (!isMounted) return;
@@ -65,7 +65,7 @@ export function useRevaUserAccess() {
         const revaSession = fullUserData.platforms?.[Platform.REVA] || 
                           (fullUserData.platform === Platform.REVA ? { role: fullUserData.role, subscription: fullUserData.subscription } : null);
 
-        if (!revaSession) {
+        if (!revaSession || !revaSession.role) {
           console.log("🛡️ Reva Portal access check failed: No active Reva session found in current login.");
           if (isMounted) {
             setIsUser(false);

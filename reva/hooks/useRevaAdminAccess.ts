@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useKindeBrowserClient } from "@kinde-oss/kinde-auth-nextjs";
-import { getRevaUserData } from "@/app/(projects)/reva/actions/authActions";
+import { revaApi } from "@/reva/apiClient";
 import { Platform } from "@/utils/platform";
 import { canAccessRoute } from "@/reva/access/routes";
 
@@ -60,9 +60,9 @@ export function useRevaAdminAccess() {
       // 5. Fetch User Data
       try {
         console.log("🔍 Checking admin access & fetching user data...");
-        const result = await getRevaUserData();
+        const result = await revaApi.session.get();
 
-        if (!result.success || !result.data) {
+        if (!result.success) {
           console.log(
             "❌ Failed to get user data, redirecting to login",
             result.error
@@ -79,7 +79,7 @@ export function useRevaAdminAccess() {
         const revaSession = fullUserData.platforms?.[Platform.REVA] || 
                           (fullUserData.platform === Platform.REVA ? { role: fullUserData.role } : null);
 
-        if (!revaSession) {
+        if (!revaSession || !revaSession.role) {
           console.log("❌ No active Reva session found in current multi-platform login");
           if (isMounted) {
             setIsAdmin(false);

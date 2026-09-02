@@ -2,6 +2,7 @@ import type { ApiResult } from "@/lib/api/types";
 import type { Property, OneTimeUserProperty, RevaUser, Notification, Role, NotificationAudience, NotificationType } from "@/prisma/generated";
 import type { RevaProfile, ProfileUpdateInput } from "@/reva/services/profileService";
 import type { ReportDownload } from "@/reva/services/propertyRequestService";
+import type { EncryptedUserData } from "@/utils/encryptedCookies";
 
 /**
  * Thin typed wrapper around /api/v1/reva/* — mirrors gbc/apiClient.ts and
@@ -184,5 +185,10 @@ export const revaApi = {
       uploadReport: (reference: string, formData: FormData) =>
         formFetch<UploadReportResult>(`${BASE}/admin/requests/${encodeURIComponent(reference)}/report`, formData),
     },
+  },
+
+  session: {
+    /** The legacy multi-platform cookie session, not the native JWT one — see app/api/v1/reva/session/route.ts. */
+    get: () => jsonFetch<EncryptedUserData>(`${BASE}/session`),
   },
 };
