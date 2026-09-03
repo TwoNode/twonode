@@ -79,13 +79,24 @@ export async function POST(req: NextRequest) {
           platform,
           tokenHash: newTokenHash,
           familyId: currentToken.familyId,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          // Inherit the rotated token's own expiry rather than resetting to a
+          // fresh +30 days -- rotation refreshes the token value, it shouldn't
+          // extend (or shorten) the session length the original login/rememberMe
+          // choice set.
+          expiresAt: currentToken.expiresAt,
         },
       }),
     ]);
 
     const newAccessToken = await signAccessToken({ sub: user.id, role: user.role, platform });
-    await setAuthCookies(platform, newAccessToken, newRawRefreshToken);
+    // Cookie maxAge must match the token's actual remaining lifetime (set
+    // above), not setAuthCookies's 30-day default -- otherwise the browser
+    // drops the cookie on a different schedule than the DB row expires on.
+    const remainingSeconds = Math.max(
+      0,
+      Math.floor((currentToken.expiresAt.getTime() - Date.now()) / 1000)
+    );
+    await setAuthCookies(platform, newAccessToken, newRawRefreshToken, remainingSeconds);
 
     return NextResponse.json({ success: true, data: {} });
   } catch (err) {
