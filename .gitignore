@@ -43,4 +43,14 @@ prisma/generated/
 test.js
 .cursor-settings.json
 public/sitemap-0.xml
+public/sitemap.xml
+public/robots.txt
 node_modules
+
+# Next.js 16 auto-generated agent rules (regenerates on `next dev`)
+/AGENTS.md
+/CLAUDE.md
+
+# other AI tool directories
+.agent/
+.gemini/
