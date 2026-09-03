@@ -1,0 +1,57 @@
+name: Deploy migrations to production (twonode_db)
+
+# Deliberately NOT triggered by push/merge — prod must not be touched
+# automatically. Run this by hand from the Actions tab (or `gh workflow run
+# migrate-production.yml --ref prod`) only when you've verified the
+# migration against staging and are ready for real users to be affected.
+#
+# The `Production` GitHub Environment restricts this job to the `prod`
+# branch and is the only place PROD_DATABASE_URL is readable — this repo's
+# billing plan doesn't support required-reviewer approval gates, so
+# workflow_dispatch-only + branch restriction is the real gate here.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "twonode_db" to confirm you want to run migrations against production'
+        required: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Verify confirmation input
+        if: inputs.confirm != 'twonode_db'
+        run: |
+          echo "::error::Confirmation input didn't match 'twonode_db' — aborting."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: prisma migrate status (pre-flight, dry check)
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: prisma migrate deploy
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: prisma migrate status (post-flight)
+        if: always()
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
