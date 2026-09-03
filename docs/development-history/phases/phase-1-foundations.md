@@ -85,3 +85,25 @@ Phase 1 is complete. Not yet done, deliberately deferred to later phases:
 - `docs/development-history/implementation-plan.md` and `docs/development-history/progress.md` both already carry the fuller Phase 2-4 scope additions made alongside this phase (analytics dashboards, GBC multi-edition support) — see those documents for what's next.
 
 Recommended next step: full route-by-route spec for Phase 2 (Surfboard), required before any Phase 2 execution begins per the plan's own sequencing rule.
+
+## Post-Phase-5 auth audit (2026-09-03)
+
+With all 5 phases shipped, ran a targeted audit comparing this native JWT auth system against proplity's (the sibling project it was explicitly modeled on), to check whether the "similar to proplity" bar was actually met.
+
+**Verdict: the core design is a faithful mirror — same jose HS256 15-min access tokens, sha256-hashed rotating refresh tokens with `familyId` reuse/theft detection, DB-backed login rate limiting, CSRF Origin/Referer validation, bcrypt with a constant-time dummy-hash comparison against user enumeration. All 6 flows (register/login/refresh/logout/me/change-password) exist; 154/206 API routes use `withAuth`.**
+
+Two real bugs found and fixed:
+
+- **Refresh-token rotation didn't preserve the original session length** (`app/api/v1/auth/refresh/route.ts`) — every rotation reset the new refresh token to a fresh 30-day `expiresAt` and let the cookie fall back to its 30-day default, regardless of what the original login's `rememberMe` choice actually set. A 1-day "don't remember me" session silently became a rolling 30-day one the moment it refreshed. Fixed to inherit `currentToken.expiresAt` on rotation and set the cookie's `maxAge` to the actual remaining lifetime, matching proplity's `refresh/route.ts` exactly (same fix, same reasoning, ported over).
+- **`app/api/reva/users/route.ts` deleted** — a dead, non-`/v1`, unauthenticated in-memory dummy CRUD route, zero call sites anywhere. Unrelated to the Kinde bridge; just leftover scaffolding.
+
+**Confirmed still open, not fixed — both by explicit decision, not oversight:**
+
+- **Kinde is not retired — it runs as a live, parallel auth system**, not a harmless leftover. `KindeAuthProvider.tsx`, the 7 Kinde callback routes, `utils/encryptedCookies.ts`, and the per-product `revaAuth.ts`/`surfAuth.ts`/`gbc/utils/auth.ts` are all still the real security boundary for `proxy.ts` and ~20 downstream consumers (Step 7's dual-write, above) — the native JWT session rides alongside it rather than having replaced it. **You've decided to keep this deferred for now**; full retirement remains exactly where Step 7 always said it would land: Phase 2's registry work already touched `proxy.ts` once, a dedicated follow-up phase would need to finish the cutover.
+- `app/api/v1/reva/session/route.ts` still reads the legacy `USER_SESSION` cookie directly by its own admission (self-documented as "not-yet-unified") — same root cause, not a separate bug.
+
+## GBC edition storage — reviewed, not changed (2026-09-03)
+
+Separately reviewed how GBC's multi-edition data is stored (see Phase 4 Step 8, and `gbc/utils/settings.ts`): editions live as a JSON array (`GBCSettingsData.editions`) inside the single `GBCSettings.settings` blob, not a relational table — `GBCTicket`/`GBCSponsor`/`GBCPartner`/`GBCSpeaker`/`GBCEventStats` tag rows with a plain indexed `edition` string, not a foreign key.
+
+This was a reasonable choice at the time (low edition-change frequency, fits the existing settings-blob pattern, no migration needed to add an edition) but has real costs now that editions are a first-class, revenue-reporting feature: no referential integrity between the tag columns and `settings.editions[].key`, no DB-level query/filter/index on individual editions, a read-modify-write race on concurrent settings edits, no cascade on rename/delete, and the "exactly one ACTIVE edition" rule is enforced only in `editionService.ts`, not the database. **Flagged as a recommended follow-up** — promote `GBCEdition` to a real Prisma model with a unique `key`, proper foreign keys from the 5 tag columns, and (Postgres) a partial unique index enforcing one `ACTIVE` edition at the DB level — but not started; no decision yet on whether/when to schedule it.

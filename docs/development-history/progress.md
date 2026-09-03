@@ -133,6 +133,8 @@ See also: `docs/development-history/route-inventory.md` — the full list of eve
 - [ ] Zero remaining `"use server"` action call sites confirmed
 - [ ] Full-repo `tsc`/`build`/`vitest`/manual verification pass
 - [ ] Merged to `main`
+- [x] **Post-Phase-5 auth audit (2026-09-03)** — compared the native JWT auth system against proplity's (the project it was modeled on) to verify parity. Core design confirmed on par (jose HS256 access tokens, rotating sha256-hashed refresh tokens with theft detection, DB-backed rate limiting, CSRF, bcrypt with dummy-hash timing protection). Found and fixed 2 real issues: refresh-token rotation was resetting every session to a fresh 30-day expiry instead of inheriting the original `rememberMe` length (`app/api/v1/auth/refresh/route.ts`, now matches proplity's inherit-`expiresAt` pattern); deleted `app/api/reva/users/route.ts`, a dead unauthenticated dummy CRUD route. Confirmed Kinde is a live parallel auth system (not a leftover) per Phase 1 Step 7's dual-write — kept deferred, by your decision, not retired this pass. Full writeup in `phase-1-foundations.md`'s "Post-Phase-5 auth audit" section.
+- [x] **GBC edition storage reviewed (2026-09-03)** — assessed the JSON-blob-in-`GBCSettings` pattern (Phase 4 Step 8) against a proper relational model now that editions are a revenue-reporting feature, not just settings. Reasonable at the time; real costs now: no FK integrity from the 5 tag columns, no DB-level edition querying/indexing, read-modify-write race risk, no cascade on rename/delete, "exactly one ACTIVE" enforced only in app code. Recommended a `GBCEdition` model with FKs and a Postgres partial-unique-index on `status = 'ACTIVE'` — not started, no schedule decided. See `phase-1-foundations.md`.
 
 ---
 
