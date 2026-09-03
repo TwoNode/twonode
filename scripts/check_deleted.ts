@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../prisma/generated";
 const prisma = new PrismaClient();
 async function main() {
   const record = await prisma.subscriptionHistory.findUnique({
