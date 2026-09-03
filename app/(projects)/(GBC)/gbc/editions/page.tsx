@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 import { getEditions } from "@/gbc/services/editionService";
 import GBC2Navbar from "@/gbc/components/Navbar";
-import { GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export const metadata = {
   title: "Past Editions - GBC",
@@ -18,7 +18,10 @@ export default async function PastEditionsPage() {
     <div className="min-h-screen bg-gray-50">
       <GBC2Navbar />
 
-      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -58,7 +61,8 @@ export default async function PastEditionsPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {past.length === 0 ? (
             <p className="text-center text-gray-500 max-w-xl mx-auto">
-              No past editions yet — check back after this year&apos;s conference wraps up.
+              No past editions yet — check back after this year&apos;s
+              conference wraps up.
             </p>
           ) : (
             <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
@@ -70,17 +74,27 @@ export default async function PastEditionsPage() {
                 >
                   <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-purple-600 mb-1">GBC {edition.key}</div>
-                      <h2 className="text-xl sm:text-2xl font-bold mb-2">{edition.name}</h2>
+                      <div
+                        className="text-sm font-semibold mb-1"
+                        style={{ color: GBC_COLORS.primary.main }}
+                      >
+                        GBC {edition.key}
+                      </div>
+                      <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                        {edition.name}
+                      </h2>
                       <p className="text-gray-600 mb-3">{edition.theme}</p>
                       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="h-4 w-4" />
-                          {new Date(edition.startDate).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {new Date(edition.startDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )}
                         </span>
                         <span className="flex items-center gap-1.5">
                           <MapPin className="h-4 w-4" />
@@ -88,7 +102,10 @@ export default async function PastEditionsPage() {
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="h-6 w-6 text-purple-600 shrink-0 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                      className="h-6 w-6 shrink-0 group-hover:translate-x-1 transition-transform"
+                      style={{ color: GBC_COLORS.primary.main }}
+                    />
                   </div>
                 </Link>
               ))}
