@@ -43,15 +43,10 @@ export function useRevaUserAccess() {
         return;
       }
 
-      if (!isAuthenticated || !user) {
-        if (isMounted) {
-          setIsUser(false);
-          setIsLoading(false);
-          router.push("/reva/login");
-        }
-        return;
-      }
-
+      // Don't redirect on Kinde alone: a natively-logged-in user (email +
+      // password, no Kinde session at all) is still a real session — the
+      // session fetch below resolves either kind, so it's the sole source
+      // of truth for whether this user is actually signed in.
       try {
         console.log("🔍 Checking admin access & fetching user data...");
         const result = await revaApi.session.get();
