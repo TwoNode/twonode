@@ -4,11 +4,19 @@ import React from "react";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform, RevaRole } from "@/utils/platform";
 
 export default function RevaLogin() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 to-blue-100 px-4 py-12">
+    <AuthSplitLayout
+      accent="#008cff"
+      accentDark="#032740"
+      eyebrow="REVA Workspace"
+      headline="Track valuations with confidence."
+      description="Sign in to manage property requests, approvals, and valuation reports — all in one place."
+    >
       <NativeAuthCard
         platform={Platform.REVA}
         logoSrc="/reva/revaLogo.png"
@@ -28,13 +36,14 @@ export default function RevaLogin() {
           <LoginLink postLoginRedirectURL="/api/auth/success/reva">
             <Button
               variant="outline"
-              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base border-blue-200 text-blue-900 hover:bg-blue-50"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
             >
+              <GoogleIcon />
               Continue with Google
             </Button>
           </LoginLink>
         }
       />
-    </div>
+    </AuthSplitLayout>
   );
 }

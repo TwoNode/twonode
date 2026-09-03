@@ -4,6 +4,8 @@ import React from "react";
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
+import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
+import { Platform } from "@/utils/platform";
 import { cn } from "@/lib/utils";
 import { Menu, LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
@@ -58,6 +60,9 @@ export function DashboardShell({
   logoutRedirectUrl = "/api/auth/logout_redirect",
 }: DashboardShellProps) {
   const sidebar = useStore(useSidebar, (x) => x);
+  // DashboardShell is Surfboard-only today (pilot scope, see doc-comment
+  // above) — hardcoded rather than a prop until a second product adopts it.
+  useNativeAuthRefresh(Platform.SURFBOARD);
 
   const navItems = getNavItemsForRole(role, group).map((r) => ({
     icon: r.icon,

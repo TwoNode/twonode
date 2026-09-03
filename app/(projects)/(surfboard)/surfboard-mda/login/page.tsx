@@ -1,32 +1,44 @@
-import React from "react";
+"use client";
+
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { Button } from "@/components/ui/button";
+import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { Platform } from "@/utils/platform";
 
 const postLoginRedirectURL = "/api/auth/success/surf-mda";
 
 export default function SurfMDALoginPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-purple-50 via-blue-50 to-indigo-100 px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
-        <div className="flex justify-center mb-6">
-          <img
-            src="/surfboard/surf_logo.svg"
-            alt="Surfboard Logo"
-            className="w-20 h-20 rounded-full shadow-lg border-4 border-purple-100 object-contain bg-white"
-            style={{ background: "white" }}
-          />
-        </div>
-        <h1 className="text-3xl font-extrabold text-purple-900 mb-2">
-          MDA Portal
-        </h1>
-        <p className="text-purple-700 mb-6 text-base font-medium">
-          Ministry, Department & Agency Access
-        </p>
-        <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
-          <button className="w-full px-6 py-3 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition text-lg shadow">
-            Sign in to MDA Portal
-          </button>
-        </LoginLink>
-      </div>
-    </div>
+    <AuthSplitLayout
+      accent="#6D28D9"
+      accentDark="#4C1D95"
+      eyebrow="MDA Portal"
+      headline="Ministries, Departments & Agencies."
+      description="Sign in to your MDA workspace to manage submissions, approvals, and inter-agency records."
+    >
+      <NativeAuthCard
+        platform={Platform.SURFBOARD}
+        logoSrc="/surfboard/surf_logo.svg"
+        logoAlt="Surfboard Logo"
+        title="MDA Portal"
+        subtitle="Ministry, Department & Agency access."
+        accent="#6D28D9"
+        accentDark="#4C1D95"
+        resolveRedirect={() => "/surfboard-mda/dashboard"}
+        alternateAuth={
+          <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
+            <Button
+              variant="outline"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </Button>
+          </LoginLink>
+        }
+      />
+    </AuthSplitLayout>
   );
 }

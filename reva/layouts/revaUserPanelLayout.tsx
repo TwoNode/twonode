@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
+import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { cn } from "@/lib/utils";
 import { RevaUserDashboardNavbar } from "@/reva/components/RevaUserDashboardHeader";
 import { LogOut } from "lucide-react";
@@ -12,6 +13,7 @@ import RevaLoading from "@/reva/components/RevaLoading";
 import { REVA_COLORS } from "@/reva/colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { getNavItemsForRole } from "@/reva/access/routes";
+import { Platform } from "@/utils/platform";
 
 export default function RevaUserPanelLayout({
   children,
@@ -20,6 +22,7 @@ export default function RevaUserPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const { user, isUser, isLoading, userData } = useRevaUserAccess();
+  useNativeAuthRefresh(Platform.REVA);
 
   const menuList = [
     // reva/access/routes.ts is the single source of truth for which nav

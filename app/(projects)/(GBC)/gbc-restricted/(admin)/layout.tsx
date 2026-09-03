@@ -3,6 +3,8 @@
 import { AdminMobileNav } from "@/gbc/components/admin/AdminMobileNav";
 import { AdminSidebar } from "@/gbc/components/admin/AdminSidebar";
 import { useState } from "react";
+import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
+import { Platform } from "@/utils/platform";
 
 export default function AdminLayout({
   children,
@@ -10,6 +12,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useNativeAuthRefresh(Platform.GBC);
 
   return (
     <div className="flex h-screen bg-gray-50">

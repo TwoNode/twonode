@@ -2,7 +2,11 @@ import crypto from "crypto";
 import { Platform } from "@/utils/platform";
 import prisma from "@/lib/prisma";
 import { verifyToken, signAccessToken, JWTPayload } from "@/lib/auth/jwt";
-import { getAccessTokenCookie, setAuthCookies } from "@/lib/auth/cookies";
+import {
+  getAccessTokenCookie,
+  setAuthCookies,
+  clearAuthCookies,
+} from "@/lib/auth/cookies";
 import { findUserById } from "@/lib/auth/userLookup";
 import {
   getUserActiveSubscription,
@@ -87,4 +91,82 @@ export async function issueSession(
 
   const accessToken = await signAccessToken({ sub: userId, role, platform });
   await setAuthCookies(platform, accessToken, rawRefreshToken, refreshMaxAgeSeconds);
+}
+
+export type RefreshResult =
+  | { ok: true }
+  | { ok: false; reason: "invalid" | "inactive" };
+
+/**
+ * Rotates a refresh token into a fresh access+refresh pair, with reuse
+ * detection (replaying an already-rotated token revokes the whole family —
+ * theft response) and expiry-inheritance (rotation refreshes the token
+ * value, it must not reset or extend the session length the original
+ * login/rememberMe choice set). Extracted from POST /api/v1/auth/refresh so
+ * proxy.ts's silent-refresh fast path (below) and the explicit client-
+ * triggered route share one implementation of this security-critical logic
+ * instead of two that can drift.
+ */
+export async function rotateRefreshToken(
+  platform: Platform,
+  rawRefreshToken: string
+): Promise<RefreshResult> {
+  const tokenHash = crypto.createHash("sha256").update(rawRefreshToken).digest("hex");
+
+  const rotated = await prisma.refreshToken.updateMany({
+    where: { tokenHash, platform, revokedAt: null, expiresAt: { gt: new Date() } },
+    data: { revokedAt: new Date() },
+  });
+
+  if (rotated.count === 0) {
+    const existing = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+    if (existing?.revokedAt) {
+      await prisma.refreshToken.updateMany({
+        where: { familyId: existing.familyId },
+        data: { revokedAt: new Date() },
+      });
+    }
+    await clearAuthCookies(platform);
+    return { ok: false, reason: "invalid" };
+  }
+
+  const currentToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+  const user = currentToken ? await findUserById(platform, currentToken.userId) : null;
+
+  if (!currentToken || !user || !user.isActive) {
+    await clearAuthCookies(platform);
+    return { ok: false, reason: "inactive" };
+  }
+
+  const newRawRefreshToken = crypto.randomBytes(32).toString("hex");
+  const newTokenHash = crypto.createHash("sha256").update(newRawRefreshToken).digest("hex");
+
+  await prisma.$transaction([
+    prisma.refreshToken.update({
+      where: { id: currentToken.id },
+      data: { replacedBy: newTokenHash },
+    }),
+    prisma.refreshToken.create({
+      data: {
+        userId: currentToken.userId,
+        platform,
+        tokenHash: newTokenHash,
+        familyId: currentToken.familyId,
+        // Inherit the rotated token's own expiry rather than resetting to a
+        // fresh +30 days — rotation refreshes the token value, it shouldn't
+        // extend (or shorten) the session length the original login/
+        // rememberMe choice set.
+        expiresAt: currentToken.expiresAt,
+      },
+    }),
+  ]);
+
+  const newAccessToken = await signAccessToken({ sub: user.id, role: user.role, platform });
+  const remainingSeconds = Math.max(
+    0,
+    Math.floor((currentToken.expiresAt.getTime() - Date.now()) / 1000)
+  );
+  await setAuthCookies(platform, newAccessToken, newRawRefreshToken, remainingSeconds);
+
+  return { ok: true };
 }

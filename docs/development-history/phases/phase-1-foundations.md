@@ -1,6 +1,6 @@
 # Phase: Architecture Rebuild Phase 1 — Foundations
 
-**Status:** Complete — Steps 1-12 of 12 done and verified. **Date:** 2026-08-23 through 2026-08-26. Branch stays on `rebuild/foundations` pending review; not merged to `main`.
+**Status:** Complete — Steps 1-12 of 12 done and verified. **Date:** 2026-08-23 through 2026-08-26. Merged to `main` via [PR #34](https://github.com/roji-tech/twonodes/pull/34) (2026-09-03), along with Phases 2-5 — see `docs/development-history/progress.md` for the full merge status and everything that's happened directly against `main` since.
 
 ## Why
 
