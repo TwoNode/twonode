@@ -4,13 +4,20 @@ import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform } from "@/utils/platform";
 
 export default function GBCAdminLogin() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-purple-50 to-purple-100 px-4 py-12">
-      <div className="max-w-md w-full mb-4">
+    <AuthSplitLayout
+      accent="#7C3AED"
+      accentDark="#5B21B6"
+      eyebrow="GBC Admin"
+      headline="Geospatial Builders Conference."
+      description="Administrator access only — manage editions, tickets, and attendee records."
+      footerNote="Geospatial Builders Conference 2.0"
+      notice={
         <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
           <div className="flex items-start">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-2 shrink-0" />
@@ -20,8 +27,8 @@ export default function GBCAdminLogin() {
             </p>
           </div>
         </div>
-      </div>
-
+      }
+    >
       <NativeAuthCard
         platform={Platform.GBC}
         logoSrc="/gbc2/gbc2DarkLogo.png"
@@ -43,10 +50,6 @@ export default function GBCAdminLogin() {
           </LoginLink>
         }
       />
-
-      <p className="text-sm text-gray-500 mt-4">
-        Geospatial Builders Conference 2.0
-      </p>
-    </div>
+    </AuthSplitLayout>
   );
 }

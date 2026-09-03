@@ -4,12 +4,19 @@ import React from "react";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export default function SurfboardLoginPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 via-teal-50 to-blue-100 px-4 py-12">
+    <AuthSplitLayout
+      accent="#0077B6"
+      accentDark="#023E8A"
+      eyebrow="Surfboard"
+      headline="Turn field data into decisions."
+      description="Sign in to create, manage, and analyze your survey plans in real time."
+    >
       <NativeAuthCard
         platform={Platform.SURFBOARD}
         logoSrc="/surfboard/surf_logo.svg"
@@ -37,6 +44,6 @@ export default function SurfboardLoginPage() {
           </LoginLink>
         }
       />
-    </div>
+    </AuthSplitLayout>
   );
 }

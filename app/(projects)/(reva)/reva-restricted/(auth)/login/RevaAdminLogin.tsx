@@ -1,33 +1,54 @@
 "use client";
 
-import React from "react";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
+import { Platform } from "@/utils/platform";
 
 export default function RevaAdminLogin() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 to-blue-100 px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
-        <div className="flex justify-center mb-6">
-          <img
-            src="/reva/revaLogo.png"
-            alt="REVA Logo"
-            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white"
-            style={{ background: "white" }}
-          />
+    <AuthSplitLayout
+      accent="#008cff"
+      accentDark="#032740"
+      eyebrow="REVA Admin"
+      headline="Administrator console."
+      description="Manage REVA operations, users, and requests from a single dashboard."
+      notice={
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-2 shrink-0" />
+            <p className="text-sm text-amber-800">
+              Admin access only. If you need access to this portal, please
+              contact the system administrator.
+            </p>
+          </div>
         </div>
-        <h1 className="text-3xl font-extrabold text-blue-900 mb-2">
-          REVA Admin Login
-        </h1>
-        <p className="text-blue-700 mb-6 text-base font-medium">
-          Admin access only. Please sign in to continue.
-        </p>
-        <LoginLink postLoginRedirectURL="/api/auth/success/reva-restricted">
-          <Button className="w-full px-6 py-3 bg-blue-800 text-white rounded-lg font-semibold hover:bg-blue-900 transition mb-4 text-lg shadow">
-            Sign in to REVA
-          </Button>
-        </LoginLink>
-      </div>
-    </div>
+      }
+    >
+      <NativeAuthCard
+        platform={Platform.REVA}
+        logoSrc="/reva/revaLogo.png"
+        logoAlt="REVA Logo"
+        title="REVA Admin Login"
+        subtitle="Admin access only. Please sign in to continue."
+        accent="#008cff"
+        accentDark="#032740"
+        resolveRedirect={() => "/reva-restricted/dashboard"}
+        alternateAuth={
+          <LoginLink postLoginRedirectURL="/api/auth/success/reva-restricted">
+            <Button
+              variant="outline"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </Button>
+          </LoginLink>
+        }
+      />
+    </AuthSplitLayout>
   );
 }
