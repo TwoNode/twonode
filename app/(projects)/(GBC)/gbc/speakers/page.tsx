@@ -3,6 +3,7 @@ import GBC2Navbar from "@/gbc/components/Navbar";
 import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export const metadata = {
   title: "Speakers | GBC 2.0",
@@ -24,7 +25,7 @@ export default async function SpeakersPage() {
        <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="bg-linear-to-r from-purple-600 to-indigo-600 text-white py-20">
+      <section className="text-white py-20" style={{ background: GBC_GRADIENTS.primary }}>
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">

@@ -12,6 +12,7 @@ import {
 import { verifyPayment } from "@/gbc/services/ticketService";
 import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function TicketSuccessPage({
   searchParams,
@@ -89,7 +90,7 @@ export default async function TicketSuccessPage({
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Header */}
-          <div className="bg-linear-to-r from-purple-600 to-indigo-600 p-6 text-white">
+          <div className="p-6 text-white" style={{ background: GBC_GRADIENTS.primary }}>
             <div className="flex items-center gap-3 mb-4">
               <CheckCircle className="h-8 w-8 text-green-300" />
               <h1 className="text-2xl md:text-3xl font-bold">
@@ -244,7 +245,8 @@ export default async function TicketSuccessPage({
               </Link>
               <Link href="/gbc/contact" className="flex-1">
                 <Button
-                  className="w-full bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                  className="w-full text-white hover:brightness-110"
+                  style={{ background: GBC_GRADIENTS.primary }}
                   size="lg"
                 >
                   Contact Support
