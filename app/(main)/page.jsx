@@ -45,7 +45,7 @@ export default function Home() {
               <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1 h-full">
                 <div className="relative h-48 bg-linear-to-r from-blue-500 to-blue-700 flex items-center justify-center">
                   <Image
-                    src="/surfboard/surf_logo.png"
+                    src="/surfboard/surf_logo.svg"
                     alt="Surfboard Project"
                     width={120}
                     height={120}

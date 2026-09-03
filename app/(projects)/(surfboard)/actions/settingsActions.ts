@@ -448,6 +448,15 @@ export async function getSurveyorsForKyc(): Promise<ApiResult<any[]>> {
         payerIDType: true,
         isKycValidated: true,
         createdAt: true,
+        bankDetails: {
+          select: {
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            isVerified: true,
+            verifiedAt: true,
+          },
+        },
       },
     });
 
@@ -479,6 +488,40 @@ export async function toggleUserKycValidation(
   } catch (error) {
     console.error("Error toggling KYC validation:", error);
     return { success: false, error: "Failed to update KYC status" };
+  }
+}
+
+export async function toggleBankVerification(
+  userId: string,
+  status: boolean
+): Promise<ApiResult<{ success: boolean }>> {
+  try {
+    const user = await getAuthenticatedSurfUserFromCookie();
+    if (!user || user.role !== "SUPERADMIN") {
+      return { success: false, error: "Unauthorized access" };
+    }
+
+    const bankDetails = await prisma.surveyorBankDetails.findUnique({
+      where: { userId },
+    });
+    if (!bankDetails) {
+      return { success: false, error: "This surveyor has not added bank details yet" };
+    }
+
+    await prisma.surveyorBankDetails.update({
+      where: { userId },
+      data: {
+        isVerified: status,
+        verifiedAt: status ? new Date() : null,
+      },
+    });
+
+    revalidatePath("/surf-restricted/dashboard/kyc");
+
+    return { success: true, data: { success: true } };
+  } catch (error) {
+    console.error("Error toggling bank verification:", error);
+    return { success: false, error: "Failed to update bank verification status" };
   }
 }
 
