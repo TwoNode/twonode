@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
 
 interface SurveyorRow {
   id: string;
@@ -96,7 +97,7 @@ export default function KycClient({
   };
 
   return (
-    <Card className="bg-[#1A1A1A] border-[#2A2A2A] shadow-xl">
+    <Card className="bg-white border-gray-200 shadow-xl">
       <CardContent className="p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div className="relative w-full md:w-96">
@@ -105,22 +106,33 @@ export default function KycClient({
               placeholder="Search by name, email, or SURCON..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-[#242424] border-[#333] text-white w-full h-11"
+              className="pl-10 bg-white border-gray-300 text-gray-900 w-full h-11"
             />
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-400">
+          <div className="flex items-center gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" /> Validated
+              <CheckCircle
+                className="h-4 w-4"
+                style={{ color: SURFBOARD_COLORS.success.main }}
+              />{" "}
+              Validated
             </div>
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-500" /> Pending
+              <AlertCircle
+                className="h-4 w-4"
+                style={{ color: SURFBOARD_COLORS.warning.main }}
+              />{" "}
+              Pending
             </div>
           </div>
         </div>
 
-        <div className="rounded-md border border-[#333] overflow-x-auto">
+        <div className="rounded-md border border-gray-200 overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-[#242424] text-gray-300">
+            <thead
+              className="text-gray-700"
+              style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
+            >
               <tr>
                 <th className="px-4 py-3 font-medium">Surveyor</th>
                 <th className="px-4 py-3 font-medium">SURCON Reg No</th>
@@ -131,7 +143,7 @@ export default function KycClient({
                 <th className="px-4 py-3 font-medium text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#333]">
+            <tbody className="divide-y divide-gray-200">
               {filteredSurveyors.length === 0 ? (
                 <tr>
                   <td
@@ -143,40 +155,40 @@ export default function KycClient({
                 </tr>
               ) : (
                 filteredSurveyors.map((s) => (
-                  <tr key={s.id} className="hover:bg-[#2A2A2A]/50 transition-colors">
+                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-white font-medium">
+                        <span className="text-gray-900 font-medium">
                           {s.firstName} {s.lastName}
                         </span>
-                        <span className="text-gray-400 text-xs">{s.email}</span>
+                        <span className="text-gray-500 text-xs">{s.email}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-300">
+                    <td className="px-4 py-3 text-gray-700">
                       {s.surconRegNumber || (
-                        <span className="text-gray-600 italic">Not set</span>
+                        <span className="text-gray-400 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-300">
+                    <td className="px-4 py-3 text-gray-700">
                       {s.payerID ? (
                         <div className="flex flex-col gap-1">
                           <span>{s.payerID}</span>
-                          <Badge variant="outline" className="w-fit text-xs border-[#444] text-gray-400">
+                          <Badge variant="outline" className="w-fit text-xs border-gray-300 text-gray-600">
                             {s.payerIDType || "Unknown Type"}
                           </Badge>
                         </div>
                       ) : (
-                        <span className="text-gray-600 italic">Not set</span>
+                        <span className="text-gray-400 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-300">
+                    <td className="px-4 py-3 text-gray-700">
                       {s.bankDetails ? (
                         <div className="flex items-center gap-2">
                           <div className="flex flex-col">
-                            <span className="text-white">
+                            <span className="text-gray-900">
                               {s.bankDetails.accountName}
                             </span>
-                            <span className="text-gray-400 text-xs">
+                            <span className="text-gray-500 text-xs">
                               {s.bankDetails.bankName} •{" "}
                               {s.bankDetails.accountNumber}
                             </span>
@@ -190,23 +202,23 @@ export default function KycClient({
                                 s.bankDetails!.isVerified
                               )
                             }
-                            className="data-[state=checked]:bg-green-500"
+                            className="data-[state=checked]:bg-[#43AA8B]"
                           />
                         </div>
                       ) : (
-                        <span className="text-gray-600 italic">Not set</span>
+                        <span className="text-gray-400 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {format(new Date(s.createdAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {s.isKycValidated ? (
-                        <Badge className="bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20">
+                        <Badge style={surfboardStatusBadgeStyle("success")}>
                           Validated
                         </Badge>
                       ) : (
-                        <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20">
+                        <Badge style={surfboardStatusBadgeStyle("warning")}>
                           Pending
                         </Badge>
                       )}
@@ -222,7 +234,7 @@ export default function KycClient({
                           onCheckedChange={() =>
                             handleToggleValidation(s.id, s.isKycValidated)
                           }
-                          className="data-[state=checked]:bg-green-500"
+                          className="data-[state=checked]:bg-[#43AA8B]"
                         />
                       </div>
                     </td>

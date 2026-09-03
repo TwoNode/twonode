@@ -3,17 +3,21 @@ import { useEffect, useState } from "react";
 import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 text-center p-6">
-    <AlertCircle className="h-12 w-12 text-red-500" />
+    <AlertCircle
+      className="h-12 w-12"
+      style={{ color: SURFBOARD_COLORS.error.main }}
+    />
     <h2 className="text-2xl font-semibold text-gray-800">
       Oops! Something went wrong
     </h2>
     <p className="max-w-md text-gray-600">{message}</p>
     <button
       onClick={() => window.location.reload()}
-      className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition-colors"
+      className="mt-4 rounded-md bg-[#0077B6] px-4 py-2 text-white hover:bg-[#023E8A] transition-colors"
     >
       Try Again
     </button>
@@ -22,7 +26,10 @@ const ErrorState = ({ message }: { message: string }) => (
 
 const LoadingState = () => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4">
-    <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+    <Loader2
+      className="h-12 w-12 animate-spin"
+      style={{ color: SURFBOARD_COLORS.primary.main }}
+    />
     <h2 className="text-xl font-medium text-gray-700">Loading Surf Plans</h2>
     <p className="text-gray-500">Hang tight while we fetch your data...</p>
   </div>

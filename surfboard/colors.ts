@@ -57,3 +57,10 @@ export const SURFBOARD_COLORS = {
     itemBorderLeft: "#0077B6",
   },
 };
+
+export function surfboardStatusBadgeStyle(
+  tone: "success" | "warning" | "info" | "error"
+) {
+  const color = SURFBOARD_COLORS[tone].main;
+  return { backgroundColor: `${color}1A`, color };
+}

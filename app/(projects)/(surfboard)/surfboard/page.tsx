@@ -22,6 +22,7 @@ import {
   Ruler,
   Compass,
   FileDown,
+  Menu,
 } from "lucide-react";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
@@ -133,11 +134,55 @@ export default function SurfboardLandingPage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/surfboard/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:opacity-90"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:opacity-90"
                 style={{ color: SURFBOARD_COLORS.primary.dark }}
               >
                 Get Started <ArrowRight className="h-4 w-4" />
               </Link>
+              <details className="relative md:hidden group">
+                <summary
+                  className="list-none flex items-center justify-center h-10 w-10 rounded-lg bg-white/10 border border-white/20 cursor-pointer"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5 text-white" />
+                </summary>
+                <div
+                  className="absolute right-0 top-12 w-56 rounded-xl border border-white/10 bg-white p-2 shadow-2xl z-50"
+                  style={{ color: SURFBOARD_COLORS.primary.dark }}
+                >
+                  <Link
+                    href="#features"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
+                  >
+                    Features
+                  </Link>
+                  <Link
+                    href="#how"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
+                  >
+                    How it works
+                  </Link>
+                  <Link
+                    href="#faq"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
+                  >
+                    FAQ
+                  </Link>
+                  <Link
+                    href="/surfboard/badge"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
+                  >
+                    Badge Video
+                  </Link>
+                  <div className="my-1 border-t border-gray-100 sm:hidden" />
+                  <Link
+                    href="/surfboard/login"
+                    className="sm:hidden block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-gray-100"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              </details>
             </div>
           </div>
         </div>
