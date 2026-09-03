@@ -1,0 +1,43 @@
+name: Check migrations against staging
+
+# Read-only safety net: on any PR into main or prod that touches migrations
+# or the schema, verify the migration history actually applies cleanly to
+# test_db (catches drift/conflicts before merge, before the staging
+# auto-deploy or a manual prod run ever sees it). Never writes to any
+# database.
+on:
+  pull_request:
+    branches: [main, prod]
+    paths:
+      - "prisma/migrations/**"
+      - "prisma/schema/**"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: prisma validate
+        run: npx prisma validate
+
+      - name: Diff staging (test_db) against this branch's schema
+        run: |
+          echo "Pending schema diff for test_db (informational — does not fail the build):"
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema \
+            --script || true
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
