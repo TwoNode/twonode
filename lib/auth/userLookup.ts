@@ -18,6 +18,8 @@ import { Platform } from "@/utils/platform";
 export type NativeAuthUser = {
   id: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   passwordHash: string | null;
   role: string;
   isActive: boolean;
@@ -31,19 +33,19 @@ export async function findUserByEmail(
     case Platform.REVA: {
       const u = await prisma.revaUser.findUnique({ where: { email } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active }
         : null;
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.findUnique({ where: { email } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
         : null;
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.findUnique({ where: { email } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
         : null;
     }
     default:
@@ -59,19 +61,19 @@ export async function findUserById(
     case Platform.REVA: {
       const u = await prisma.revaUser.findUnique({ where: { id } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active }
         : null;
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.findUnique({ where: { id } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
         : null;
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.findUnique({ where: { id } });
       return u
-        ? { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
+        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive }
         : null;
     }
     default:
@@ -101,7 +103,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`, // kindeId is required+unique; native-only accounts get a placeholder, never a real Kinde id
         },
       });
-      return { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active };
+      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active };
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.create({
@@ -114,7 +116,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
-      return { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive };
+      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive };
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.create({
@@ -127,7 +129,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
-      return { id: u.id, email: u.email, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive };
+      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive };
     }
     default:
       throw new Error(`Unsupported platform: ${platform}`);

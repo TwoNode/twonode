@@ -46,16 +46,11 @@ export function useRevaAdminAccess() {
         return; // Kinde is still loading, wait for it to complete
       }
 
-      // 4. Authentication Check
-      if (!isAuthenticated || !user) {
-        console.log("❌ Not authenticated or no user, redirecting to login");
-        if (isMounted) {
-          setIsAdmin(false);
-          setIsLoading(false);
-          router.push("/reva-restricted/login");
-        }
-        return;
-      }
+      // 4. Authentication Check — don't redirect on Kinde alone: a
+      // natively-logged-in admin (email + password, no Kinde session at
+      // all) is still a real session. The session fetch below resolves
+      // either kind, so it's the sole source of truth for whether this
+      // user is actually signed in.
 
       // 5. Fetch User Data
       try {

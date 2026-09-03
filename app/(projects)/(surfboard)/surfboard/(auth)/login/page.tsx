@@ -1,43 +1,40 @@
-import React from "react";
-import {
-  LoginLink,
-  RegisterLink,
-} from "@kinde-oss/kinde-auth-nextjs/components";
+"use client";
 
-const postLoginRedirectURL = "/api/auth/success/surfboard";
+import React from "react";
+import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { Button } from "@/components/ui/button";
+import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { Platform, SurfboardRole } from "@/utils/platform";
 
 export default function SurfboardLoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 via-teal-50 to-blue-100 px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
-        <div className="flex justify-center mb-6">
-          <img
-            src="/surfboard/surf_logo.svg"
-            alt="Surfboard Logo"
-            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white"
-            style={{ background: "white" }}
-          />
-        </div>
-        <h1 className="text-3xl font-extrabold text-blue-900 mb-2">
-          Sign in to Surfboard
-        </h1>
-        <p className="text-blue-700 mb-6 text-base font-medium">
-          Access your Surfboard dashboard and manage your survey plans securely.
-        </p>
-        <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
-          <button className="w-full px-6 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition mb-4 text-lg shadow">
-            Sign in to Surfboard
-          </button>
-        </LoginLink>
-        <div className="text-blue-700 mt-4">
-          Don&apos;t have an account?{" "}
-          <RegisterLink postLoginRedirectURL={postLoginRedirectURL}>
-            <span className="underline cursor-pointer hover:text-blue-900 font-semibold">
-              Register here
-            </span>
-          </RegisterLink>
-        </div>
-      </div>
+      <NativeAuthCard
+        platform={Platform.SURFBOARD}
+        logoSrc="/surfboard/surf_logo.svg"
+        logoAlt="Surfboard Logo"
+        title="Sign in to Surfboard"
+        subtitle="Access your Surfboard dashboard and manage your survey plans securely."
+        registerNotice="Set up your Surfboard account to create and track survey plans."
+        accent="#0077B6"
+        accentDark="#023E8A"
+        allowRegister
+        resolveRedirect={(role) =>
+          role.toUpperCase() === SurfboardRole.USER
+            ? "/surfboard/dashboard"
+            : "/surfboard-restricted/dashboard"
+        }
+        alternateAuth={
+          <LoginLink postLoginRedirectURL="/api/auth/success/surfboard">
+            <Button
+              variant="outline"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base border-blue-200 text-blue-900 hover:bg-blue-50"
+            >
+              Continue with Google
+            </Button>
+          </LoginLink>
+        }
+      />
     </div>
   );
 }

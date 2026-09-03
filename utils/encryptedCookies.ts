@@ -277,7 +277,7 @@ export async function updateLastActivity(
   }
 }
 
-async function getUserActiveSubscription(userId: string) {
+export async function getUserActiveSubscription(userId: string) {
   try {
     const sub = await prisma.subscription.findFirst({
       where: {

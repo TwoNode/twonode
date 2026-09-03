@@ -3,6 +3,11 @@ import { Platform } from "@/utils/platform";
 import prisma from "@/lib/prisma";
 import { verifyToken, signAccessToken, JWTPayload } from "@/lib/auth/jwt";
 import { getAccessTokenCookie, setAuthCookies } from "@/lib/auth/cookies";
+import { findUserById } from "@/lib/auth/userLookup";
+import {
+  getUserActiveSubscription,
+  type EncryptedUserData,
+} from "@/utils/encryptedCookies";
 
 export async function getServerSession(
   platform: Platform
@@ -12,6 +17,46 @@ export async function getServerSession(
   const payload = await verifyToken(token);
   if (!payload || payload.platform !== platform) return null;
   return payload;
+}
+
+/**
+ * The /api/v1/{reva,surfboard}/session routes (and the client hooks that
+ * call them, useRevaUserAccess/useRevaAdminAccess) were built against the
+ * legacy Kinde-derived encrypted cookie's EncryptedUserData shape. Rather
+ * than teach every consumer a second shape, a natively-authenticated
+ * request gets adapted into that same shape here — the one place that
+ * translation happens — so those routes/hooks work unmodified for either
+ * auth method.
+ */
+export async function getNativeSessionAsLegacyUserData(
+  platform: Platform
+): Promise<EncryptedUserData | null> {
+  const session = await getServerSession(platform);
+  if (!session) return null;
+
+  const user = await findUserById(platform, session.sub);
+  if (!user || !user.isActive) return null;
+
+  const subscription =
+    platform === Platform.SURFBOARD
+      ? ((await getUserActiveSubscription(user.id)) ?? undefined)
+      : undefined;
+
+  return {
+    userId: user.id,
+    email: user.email,
+    firstName: user.firstName ?? "",
+    lastName: user.lastName ?? "",
+    kindeId: "", // native accounts have no real Kinde identity
+    sessionId: session.sub,
+    lastActivity: Date.now(),
+    picture: null,
+    platforms: { [platform]: { role: user.role as any, subscription } },
+    // Legacy top-level fields some older call sites still read directly.
+    platform,
+    role: user.role as any,
+    subscription,
+  };
 }
 
 /**
