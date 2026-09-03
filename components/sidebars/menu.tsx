@@ -16,6 +16,10 @@ interface LinkItem {
   url: string;
   /** Visual sidebar section heading — rendered above this item when it differs from the previous item's section. */
   section?: string;
+  /** Small count pill rendered at the end of the row, e.g. a pending-items count. */
+  badge?: number | string;
+  /** Tints the badge to draw the eye (e.g. items needing action) instead of the neutral default. */
+  badgeAttention?: boolean;
 }
 
 interface ElementItem {
@@ -28,12 +32,22 @@ export interface MenuProps {
   items: MenuItem[];
   userImageUrl?: string;
   colorPalette?: any; // Accepts a color palette object (REVA_COLORS or SURFBOARD_COLORS)
+  /**
+   * "auto" (default) keeps the original behavior: text color depends on
+   * whether colorPalette.primary.contrastText is set, tuned for a light
+   * sidebar background — this is what SheetMenu's light popover still uses.
+   * "dark" forces the near-black-rail styling (always-white text, brand
+   * color only for the active highlight/icon) — pass this from Sidebar,
+   * which is always dark now regardless of product.
+   */
+  variant?: "auto" | "dark";
 }
 
-export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
+export function Menu({ items, userImageUrl = "", colorPalette, variant = "auto" }: MenuProps) {
   const colors = colorPalette || require("@/reva/colors").REVA_COLORS;
   const pathname = usePathname();
   const sidebar = useStore(useSidebar, (x) => x);
+  const isDark = variant === "dark";
 
   const isActive = (url: string) => pathname === url;
 
@@ -41,10 +55,11 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
   // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
   // invalid 5-digit "#fff99"). Use a literal translucent white instead of
   // trying to alpha-blend the hex string.
-  const mutedTextColor =
-    colorPalette && colorPalette.primary && colorPalette.primary.contrastText
-      ? "rgba(255, 255, 255, 0.6)"
-      : colors.text?.muted ?? colors.primary.main;
+  const mutedTextColor = isDark
+    ? "rgba(255, 255, 255, 0.5)"
+    : colorPalette && colorPalette.primary && colorPalette.primary.contrastText
+    ? "rgba(255, 255, 255, 0.6)"
+    : colors.text?.muted ?? colors.primary.main;
 
   let previousSection: string | undefined;
 
@@ -92,22 +107,33 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
                     "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg px-2.5 transition-all duration-200 ease-in-out"
                   )}
                   style={{
-                    background: isActive(item.url)
+                    background: isDark
+                      ? isActive(item.url)
+                        ? `${colors.sidebar.itemBorderLeft}47`
+                        : "transparent"
+                      : isActive(item.url)
                       ? `${colors.primary.light}1A`
                       : "transparent",
-                    borderLeft: isActive(item.url)
+                    borderLeft: isDark
+                      ? "3px solid transparent"
+                      : isActive(item.url)
                       ? `3px solid ${colors.sidebar.itemBorderLeft}`
                       : "3px solid transparent",
-                    color:
-                      colorPalette &&
-                      colorPalette.primary &&
-                      colorPalette.primary.contrastText
-                        ? colorPalette.primary.contrastText
-                        : colors.primary.dark,
+                    color: isDark
+                      ? isActive(item.url)
+                        ? "#fff"
+                        : "rgba(255,255,255,0.78)"
+                      : colorPalette &&
+                        colorPalette.primary &&
+                        colorPalette.primary.contrastText
+                      ? colorPalette.primary.contrastText
+                      : colors.primary.dark,
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive(item.url)) {
-                      e.currentTarget.style.backgroundColor = `${colors.primary.light}0D`;
+                      e.currentTarget.style.backgroundColor = isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : `${colors.primary.light}0D`;
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -119,10 +145,16 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
                   <span
                     className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
                     style={{
-                      backgroundColor: isActive(item.url)
+                      backgroundColor: isDark
+                        ? isActive(item.url)
+                          ? `${colors.sidebar.itemBorderLeft}33`
+                          : "transparent"
+                        : isActive(item.url)
                         ? `${colors.primary.light}60`
                         : `${colors.background.default}50`,
-                      borderColor: isActive(item.url)
+                      borderColor: isDark
+                        ? "transparent"
+                        : isActive(item.url)
                         ? `${colors.primary.main}60`
                         : `${colors.primary.light}40`,
                     }}
@@ -130,31 +162,56 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
                     <item.icon
                       className="w-4 h-4 transition-all duration-200"
                       style={{
-                        color:
-                          colorPalette &&
-                          colorPalette.primary &&
-                          colorPalette.primary.contrastText
-                            ? colorPalette.primary.contrastText
-                            : isActive(item.url)
-                            ? colors.primary.dark
-                            : colors.primary.main,
+                        color: isDark
+                          ? isActive(item.url)
+                            ? colors.sidebar.itemBorderLeft
+                            : "rgba(255,255,255,0.6)"
+                          : colorPalette &&
+                            colorPalette.primary &&
+                            colorPalette.primary.contrastText
+                          ? colorPalette.primary.contrastText
+                          : isActive(item.url)
+                          ? colors.primary.dark
+                          : colors.primary.main,
                       }}
                     />
                   </span>
                   <span
-                    className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap"
+                    className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1"
                     style={{
-                      color:
-                        colorPalette &&
-                        colorPalette.primary &&
-                        colorPalette.primary.contrastText
-                          ? colorPalette.primary.contrastText
-                          : colors.primary.dark,
+                      color: isDark
+                        ? isActive(item.url)
+                          ? "#fff"
+                          : "rgba(255,255,255,0.78)"
+                        : colorPalette &&
+                          colorPalette.primary &&
+                          colorPalette.primary.contrastText
+                        ? colorPalette.primary.contrastText
+                        : colors.primary.dark,
                       fontWeight: isActive(item.url) ? "700" : "500",
                     }}
                   >
                     {item.label}
                   </span>
+                  {item.badge !== undefined && (
+                    <span
+                      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1.5 text-[10.5px] font-bold"
+                      style={{
+                        background: item.badgeAttention
+                          ? "#F59E0B"
+                          : isDark
+                          ? "rgba(255,255,255,0.14)"
+                          : `${colors.primary.light}26`,
+                        color: item.badgeAttention
+                          ? "#3D2600"
+                          : isDark
+                          ? "#fff"
+                          : colors.primary.dark,
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

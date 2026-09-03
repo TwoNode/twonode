@@ -2,18 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { FiRefreshCw } from "react-icons/fi";
 import {
-  FiPlus,
-  FiFileText,
-  FiUsers,
-  FiClock,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiRefreshCw,
-} from "react-icons/fi";
+  Plus,
+  FileText,
+  Users,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
-import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
+import {
+  surfboardPlanStatusLabel,
+  surfboardPlanStatusTone,
+} from "@/surfboard/statusTone";
 
 interface Plan {
   id: string;
@@ -128,236 +135,88 @@ export default function DashboardHome() {
     fetchData();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "LODGED":
-        return (
-          <span
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style={surfboardStatusBadgeStyle("success")}
-          >
-            <FiCheckCircle className="mr-1" /> Lodged
-          </span>
-        );
-      case "PENDING":
-        return (
-          <span
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style={surfboardStatusBadgeStyle("warning")}
-          >
-            <FiClock className="mr-1" /> Pending
-          </span>
-        );
-      case "QUERIED":
-        return (
-          <span
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style={surfboardStatusBadgeStyle("error")}
-          >
-            <FiAlertCircle className="mr-1" /> Queried
-          </span>
-        );
-      case "UNDER_REVIEW":
-        return (
-          <span
-            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            style={surfboardStatusBadgeStyle("info")}
-          >
-            <FiCheckCircle className="mr-1" /> Under Review
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        );
-    }
+  const STATUS_ICON: Record<string, typeof CheckCircle> = {
+    LODGED: CheckCircle,
+    PENDING: Clock,
+    QUERIED: AlertCircle,
+    UNDER_REVIEW: CheckCircle,
   };
+
+  const getStatusBadge = (status: string) => (
+    <DashboardBadge tone={surfboardPlanStatusTone(status)} icon={STATUS_ICON[status]}>
+      {surfboardPlanStatusLabel(status)}
+    </DashboardBadge>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Welcome back! Here's what's happening with your survey plans.
-          </p>
-        </div>
-        <div className="flex space-x-3 w-full sm:w-auto">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FiRefreshCw
-              className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </button>
-          <Link
-            href="/surfboard/dashboard/newplan"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0077B6] hover:bg-[#023E8A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6]"
-          >
-            <FiPlus className="mr-2 h-4 w-4" />
-            New Plan
-          </Link>
-        </div>
+      {/* Utility row — refresh sits above the hero since the hero's one CTA slot is New Plan */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FiRefreshCw
+            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </button>
       </div>
+
+      <DashboardHero
+        greeting="Welcome back."
+        title="Dashboard"
+        description="Here's what's happening with your survey plans. Numbers update automatically as facilitators lodge and review."
+        pills={[
+          `${stats.totalPlans} Plans`,
+          `${stats.sharedPlans} Shared`,
+          `${stats.pending} Pending`,
+        ]}
+        gradient={`linear-gradient(120deg, ${SURFBOARD_COLORS.primary.dark}, ${SURFBOARD_COLORS.primary.main})`}
+        cta={{ label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus }}
+      />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div
-                className="shrink-0 rounded-md p-3"
-                style={{ backgroundColor: SURFBOARD_COLORS.primary.main }}
-              >
-                <FiFileText className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Plans
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.totalPlans}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans"
-                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
-              >
-                View all plans
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Link href="/surfboard/dashboard/plans">
+          <StatCard
+            label="Total Plans"
+            value={stats.totalPlans}
+            breakdown={`Pending ${stats.pending} · Lodged ${stats.lodged} · Queried ${stats.queried}`}
+            icon={FileText}
+            tone="brand"
+            accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
+          />
+        </Link>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div
-                className="shrink-0 rounded-md p-3"
-                style={{ backgroundColor: SURFBOARD_COLORS.secondary.main }}
-              >
-                <FiUsers className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Shared with Me
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.sharedPlans}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/shared"
-                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
-              >
-                View shared plans
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Link href="/surfboard/dashboard/shared">
+          <StatCard
+            label="Shared with Me"
+            value={stats.sharedPlans}
+            icon={Users}
+            tone="info"
+          />
+        </Link>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div
-                className="shrink-0 rounded-md p-3"
-                style={{ backgroundColor: SURFBOARD_COLORS.warning.main }}
-              >
-                <FiClock className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pending Approval
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.pending}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans?status=PENDING"
-                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
-              >
-                View pending
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Link href="/surfboard/dashboard/plans?status=PENDING">
+          <StatCard label="Pending Approval" value={stats.pending} icon={Clock} tone="warning" />
+        </Link>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div
-                className="shrink-0 rounded-md p-3"
-                style={{ backgroundColor: SURFBOARD_COLORS.success.main }}
-              >
-                <FiCheckCircle className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Lodged
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.lodged}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans?status=LODGED"
-                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
-              >
-                View lodged
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Link href="/surfboard/dashboard/plans?status=LODGED">
+          <StatCard label="Lodged" value={stats.lodged} icon={CheckCircle} tone="success" />
+        </Link>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-white/10">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("analytics")}
             className={`${
               activeTab === "analytics"
                 ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Analytics
@@ -367,7 +226,7 @@ export default function DashboardHome() {
             className={`${
               activeTab === "recent"
                 ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Recent Activity
@@ -377,7 +236,7 @@ export default function DashboardHome() {
             className={`${
               activeTab === "shared"
                 ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Shared with Me
@@ -425,14 +284,14 @@ export default function DashboardHome() {
         {activeTab === "analytics" && <AnalyticsDashboard />}
 
         {activeTab === "recent" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul role="list" className="divide-y divide-gray-200">
+          <div className="bg-white shadow overflow-hidden sm:rounded-md dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {recentPlans.length > 0 ? (
                 recentPlans.map((plan) => (
                   <li key={plan.id}>
                     <Link
                       href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                      className="block hover:bg-gray-50"
+                      className="block hover:bg-gray-50 dark:hover:bg-white/5"
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
@@ -445,11 +304,11 @@ export default function DashboardHome() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className="sm:flex">
-                            <p className="flex items-center text-sm text-gray-500">
+                            <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                               {plan.facilitator || "No facilitator"}
                             </p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                             <p>
                               Updated{" "}
                               <time
@@ -470,7 +329,7 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No recent plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No recent plans found</p>
                 </div>
               )}
             </ul>
@@ -478,14 +337,14 @@ export default function DashboardHome() {
         )}
 
         {activeTab === "shared" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul role="list" className="divide-y divide-gray-200">
+          <div className="bg-white shadow overflow-hidden sm:rounded-md dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {sharedPlans.length > 0 ? (
                 sharedPlans.map((plan) => (
                   <li key={plan.id}>
                     <Link
                       href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                      className="block hover:bg-gray-50"
+                      className="block hover:bg-gray-50 dark:hover:bg-white/5"
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
@@ -509,11 +368,11 @@ export default function DashboardHome() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className="sm:flex">
-                            <p className="flex items-center text-sm text-gray-500">
+                            <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                               {plan.facilitator || "No facilitator"}
                             </p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                             <p>
                               Shared on{" "}
                               <time
@@ -534,7 +393,7 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No shared plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No shared plans found</p>
                 </div>
               )}
             </ul>

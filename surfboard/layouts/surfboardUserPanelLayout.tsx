@@ -27,6 +27,35 @@ import { Button } from "@/components/ui/button";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
+import { useTheme } from "@/hooks/useTheme";
+import {
+  DashboardSearch,
+  type DashboardSearchResult,
+} from "@/components/dashboard/DashboardSearch";
+import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import {
+  surfboardPlanStatusLabel,
+  surfboardPlanStatusTone,
+} from "@/surfboard/statusTone";
+
+async function searchPlans(query: string): Promise<DashboardSearchResult[]> {
+  const result = await surfboardApi.plans.list({
+    pageSize: 6,
+    filters: { search: query },
+  });
+  if (!result.success || !result.data) return [];
+  const plans = (result.data as any).plans ?? [];
+  return plans.map((p: any) => ({
+    id: p.id,
+    title: p.planNumber,
+    subtitle: p.surveyTitle,
+    href: `/surfboard/dashboard/plans?tab=all&search=${encodeURIComponent(p.planNumber)}`,
+    badge: {
+      label: surfboardPlanStatusLabel(p.status),
+      tone: surfboardPlanStatusTone(p.status),
+    },
+  }));
+}
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
@@ -66,7 +95,17 @@ function SurfboardUserDashboardNavbar({
           Surfboard
         </span>
       </div>
-      <div className="flex-1" />
+      <div className="hidden md:flex flex-1 justify-center px-6">
+        <DashboardSearch
+          placeholder="Search plans, facilitators…"
+          onSearch={searchPlans}
+          viewAllHref={(q) =>
+            `/surfboard/dashboard/plans?tab=all&search=${encodeURIComponent(q)}`
+          }
+          className="max-w-sm"
+        />
+      </div>
+      <div className="flex-1 md:hidden" />
 
       {showSubscriptionBadge ? (
         <Link href="/surfboard/dashboard/subscription" className="pointer">
@@ -95,6 +134,8 @@ function SurfboardUserDashboardNavbar({
             {user?.firstName || user?.given_name}
           </span>
         ))} */}
+
+      <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
 
       {/* Notification Bell */}
       <Link
@@ -136,6 +177,7 @@ export default function SurfboardUserPanelLayout({
   const [user, setUser] = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const sidebar = useStore(useSidebar, (x) => x);
+  const { theme } = useTheme();
   useNativeAuthRefresh(Platform.SURFBOARD);
   const dashboardUrl = "/surfboard/dashboard";
 
@@ -308,7 +350,7 @@ export default function SurfboardUserPanelLayout({
           "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
         )}
-        style={{ background: SURFBOARD_COLORS.background.default }}
+        style={{ background: theme === "dark" ? "#0B1A26" : SURFBOARD_COLORS.background.default }}
       >
         {/* Mobile Overlay - appears when sidebar is open */}
         {sidebar.isOpen && (
