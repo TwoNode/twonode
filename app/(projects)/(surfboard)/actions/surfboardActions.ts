@@ -2013,14 +2013,6 @@ export async function getPublicSurfPlanByIdWithSurveyor(
       return { success: false, error: "Plan not found or access denied" };
     }
 
-    // Increment scan counter in background
-    try {
-      const { incrementPlanQRScanCount } = await import("./qrEarningsActions");
-      incrementPlanQRScanCount(plan.id);
-    } catch (e) {
-      // Ignore scan count increment errors silently
-    }
-
     // Add area and centroid to the plan
     let planWithGeometry: Plan = { ...plan };
 
@@ -2058,47 +2050,6 @@ export async function getPublicSurfPlanByIdWithSurveyor(
     return { success: true, data: planWithGeometry };
   } catch (err) {
     console.error("getPublicSurfPlanByIdWithSurveyor error:", err);
-    return { success: false, error: (err as Error).message };
-  }
-}
-
-/**
- * Server-side gating for public survey plans.
- * Returns redacted data if the user does not have a valid PAID_ACTIVE or FREE session.
- */
-export async function getGatedPublicSurfPlan(
-  id: string,
-  token?: string
-): Promise<ApiResult<any> & { accessInfo?: any }> {
-  try {
-    const res = await getPublicSurfPlanByIdWithSurveyor(id);
-    if (!res.success || !res.data) {
-      return res;
-    }
-
-    const { getPlanQRAccessState } = await import("./qrEarningsActions");
-    const accessRes = await getPlanQRAccessState(res.data.id, token);
-
-    if (
-      accessRes.success &&
-      (accessRes.accessState === "PAID_ACTIVE" || accessRes.accessState === "FREE")
-    ) {
-      return { success: true, data: res.data, accessInfo: accessRes } as ApiResult<any> & { accessInfo?: any };
-    }
-
-    // Redact sensitive data for unauthorized viewers
-    const redactedPlan = {
-      ...res.data,
-      pillars: null,
-      centroid: null,
-      geometry: null,
-      areaSqM: 0,
-      user: null,
-    };
-
-    return { success: true, data: redactedPlan, accessInfo: accessRes } as ApiResult<any> & { accessInfo?: any };
-  } catch (err) {
-    console.error("getGatedPublicSurfPlan error:", err);
     return { success: false, error: (err as Error).message };
   }
 }

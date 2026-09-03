@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>REVA Parcel Report</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.29/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCzhhoV6YJZc640ODPgDoz9dKTSXnYr0Gw&libraries=places"></script>
+
+    <style>
+      .Wrapper {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+        background: #f9f9f9;
+        color: #333;
+        line-height: 1.6;
+        box-sizing: border-box;
+      }
+
+      #viewDiv {
+        height: 100vh;
+        width: 100%;
+        position: relative;
+      }
+
+      .floating-box {
+        position: absolute;
+        top: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #ffffff;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem 2rem;
+        width: 95%;
+        max-width: 630px;
+        z-index: 10;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      input[type="text"] {
+        max-width: 100%;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #4c8bf5;
+        box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.2);
+      }
+
+      .parcel-info p {
+        margin: 0.5rem 0;
+        font-size: 0.95rem;
+        color: #495057;
+      }
+
+      .parcel-info strong {
+        font-weight: 600;
+        color: #212529;
+      }
+
+      .widget-toggle {
+        position: absolute;
+        z-index: 20;
+        background-color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .widget-toggle:hover {
+        background-color: #f1f3f5;
+      }
+
+      #toggleLegend {
+        bottom: 90px;
+        left: 14px;
+      }
+
+      #toggleLayerList {
+        bottom: 90px;
+        right: 14px;
+      }
+
+      .widget-panel {
+        position: absolute;
+        z-index: 15;
+        background: #ffffff;
+        border-radius: 12px;
+        overflow: auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-height: 320px;
+        padding: 1rem;
+      }
+
+      #legendPanel,
+      #layerListPanel {
+        display: none;
+        bottom: 140px;
+      }
+
+      #legendPanel {
+        left: 14px;
+      }
+
+      #layerListPanel {
+        right: 14px;
+      }
+
+      button.print-btn {
+        margin-top: 1.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: #4c8bf5;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      button.print-btn:hover {
+        background: #3b73db;
+      }
+
+      @media print {
+        #viewDiv,
+        .floating-box,
+        .widget-toggle,
+        .widget-panel {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <div class="Wrapper">
+    <div id="viewDiv">
+      <div class="floating-box">
+        <div class="form-group">
+          <input id="searchInput" type="text" placeholder="Search address..." />
+        </div>
+        <div id="parcelInfo" class="parcel-info">
+          <p><strong>Parcel ID:</strong> <span id="printParcelId">-</span></p>
+          <p>
+            <strong>Taxable Area (sq.m):</strong> <span id="printArea">-</span>
+          </p>
+          <p><strong>Coordinates:</strong> <span id="printCoords">-</span></p>
+          <p>
+            <strong>Parcel Coordinates:</strong>
+            <span id="printParcelCoords">-</span>
+          </p>
+        </div>
+        <button class="print-btn" onclick="printReport()">Print Report</button>
+      </div>
+      <button id="toggleLegend" class="widget-toggle">Legend</button>
+      <button id="toggleLayerList" class="widget-toggle">Layers</button>
+      <div id="legendPanel" class="widget-panel"></div>
+      <div id="layerListPanel" class="widget-panel"></div>
+    </div>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/WebMap",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Legend",
+        "esri/widgets/LayerList",
+        "esri/geometry/geometryEngine",
+        "esri/geometry/SpatialReference",
+        "esri/geometry/projection",
+        "esri/geometry/Point",
+        "esri/Graphic",
+      ], function (
+        Map,
+        MapView,
+        WebMap,
+        FeatureLayer,
+        Legend,
+        LayerList,
+        geometryEngine,
+        SpatialReference,
+        projection,
+        Point,
+        Graphic
+      ) {
+        const webmap = new WebMap({
+          portalItem: { id: "bbebcf9341b24cc29cf95878e4dd2dd3" },
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: webmap,
+          center: [3.35, 6.61],
+          zoom: 12,
+        });
+
+        const parcelLayer = new FeatureLayer({
+          url: "https://services5.arcgis.com/DQqY3pyPVyNe3HvS/arcgis/rest/services/FINALSCRAMP_WFL1/FeatureServer/2",
+          outFields: ["*"],
+        });
+
+        webmap.add(parcelLayer);
+
+        new Legend({ view: view, container: "legendPanel" });
+        new LayerList({ view: view, container: "layerListPanel" });
+
+        document
+          .getElementById("toggleLegend")
+          .addEventListener("click", () => {
+            const panel = document.getElementById("legendPanel");
+            panel.style.display =
+              panel.style.display === "none" ? "block" : "none";
+          });
+
+        document
+          .getElementById("toggleLayerList")
+          .addEventListener("click", () => {
+            const panel = document.getElementById("layerListPanel");
+            panel.style.display =
+              panel.style.display === "none" ? "block" : "none";
+          });
+
+        let currentParcelCoords = "";
+
+        const lagosSpatialRef = new SpatialReference({
+          wkid: null,
+          latestWkid: null,
+          wkt: null,
+          isWKT: false,
+          customParameters: {
+            transformation: {
+              name: "LAGOS STATE RECTIFIED (VECTOR 4)",
+              wkid: null,
+              method: "Molodensky-Badekas",
+              geoTransforms: [
+                {
+                  dx: -180.472174,
+                  dy: -98.214179,
+                  dz: 113.210457,
+                  rx: 4.944062474,
+                  ry: 0.021137132,
+                  rz: 0.466632746,
+                  s: 13.96279535,
+                },
+              ],
+            },
+            geographic: SpatialReference.MINNA,
+            projected: new SpatialReference({ wkid: 26331 }), // UTM zone 31N
+          },
+        });
+
+        view.on("click", function (event) {
+          view.hitTest(event).then(function (response) {
+            const results = response.results.filter(
+              (r) => r.graphic.layer === parcelLayer
+            );
+            if (results.length) {
+              const graphic = results[0].graphic;
+              const attrs = graphic.attributes;
+              const originParcelID = attrs.ParcelID;
+
+              const relationshipQuery = {
+                outFields: ["*"],
+                relationshipId: 0, // Update this to match your relationship ID
+                where: `ParcelID = '${originParcelID}'`,
+                returnGeometry: true,
+              };
+
+              parcelLayer
+                .queryRelatedFeatures(relationshipQuery)
+                .then(function (relatedResults) {
+                  let relatedGeometry = null;
+
+                  for (let objectId in relatedResults) {
+                    const relatedFeatures = relatedResults[objectId].features;
+                    if (relatedFeatures.length > 0) {
+                      relatedGeometry = relatedFeatures[0].geometry;
+                      break;
+                    }
+                  }
+
+                  if (relatedGeometry) {
+                    const area = geometryEngine
+                      .planarArea(relatedGeometry, "square-meters")
+                      .toFixed(3);
+                    document.getElementById("printParcelId").innerText =
+                      originParcelID || "N/A";
+                    document.getElementById(
+                      "printArea"
+                    ).innerText = `${area} sq.mts.`;
+                    document.getElementById(
+                      "printCoords"
+                    ).innerText = `${event.mapPoint.latitude.toFixed(
+                      6
+                    )}, ${event.mapPoint.longitude.toFixed(6)}`;
+
+                    projection.load().then(() => {
+                      const transformed = projection.project(
+                        relatedGeometry,
+                        lagosSpatialRef.customParameters.projected
+                      );
+                      const rings = transformed?.rings?.[0] || [];
+                      const coordsFormatted = rings
+                        .map(
+                          (pair) =>
+                            `[${pair[0].toFixed(3)}, ${pair[1].toFixed(3)}]`
+                        )
+                        .join(", ");
+                      currentParcelCoords = coordsFormatted;
+                      document.getElementById("printParcelCoords").innerText =
+                        coordsFormatted;
+                    });
+                  } else {
+                    console.warn("No related geometry found.");
+                  }
+                });
+            }
+          });
+        });
+
+        const input = document.getElementById("searchInput");
+        const searchBox = new google.maps.places.SearchBox(input);
+
+        searchBox.addListener("places_changed", function () {
+          const places = searchBox.getPlaces();
+          if (places.length === 0) return;
+
+          const place = places[0];
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+
+          view.goTo({ center: [lng, lat], zoom: 18 });
+
+          const markerGraphic = new Graphic({
+            geometry: { type: "point", longitude: lng, latitude: lat },
+            symbol: { type: "simple-marker", color: "red", size: "12px" },
+          });
+
+          view.graphics.removeAll();
+          view.graphics.add(markerGraphic);
+        });
+
+        window.printReport = function () {
+          view
+            .takeScreenshot({ width: 1800, height: 1200 })
+            .then(function (screenshot) {
+              const parcelId =
+                document.getElementById("printParcelId").innerText;
+              const area = document.getElementById("printArea").innerText;
+              const coords = document.getElementById("printCoords").innerText;
+              const parcelCoords =
+                document.getElementById("printParcelCoords").innerText;
+              const reportDate = new Date().toLocaleString();
+              const year = new Date().getFullYear();
+
+              const html = `
+            <html>
+            <head>
+              <title>SCRAMP Parcel Report</title>
+              <style>
+                body { font-family: 'Inter', sans-serif; padding: 2rem; color: #333; }
+                h2 { margin-bottom: 1rem; }
+                .logo { width: 180px; margin-bottom: 1rem; }
+                img.snapshot { width: 100%; margin-top: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
+                .north-arrow {
+                  position: absolute; top: 2rem; right: 2rem; width: 60px; height: auto; opacity: 0.9;
+                }
+                .footer { margin-top: 2rem; font-size: 0.8rem; color: #555; }
+              </style>
+            </head>
+            <body>
+              <img class="logo" id="logo" src="https://www.twonodetechnologies.com/logo.svg" alt="REVA Logo"/>
+              <h2>SCRAMP Parcel Report</h2>
+              <p><strong>Parcel ID:</strong> ${parcelId}</p>
+              <p><strong>Taxable Area:</strong> ${area}</p>
+              <p><strong>Coordinates:</strong> ${coords}</p>
+              <p><strong>Parcel Coordinates:</strong></p>
+              <p style="font-size: 0.85rem; line-height: 1.4;">${parcelCoords}</p>
+              <p><strong>Generated At:</strong> ${reportDate}</p>
+              <div style="position: relative;">
+                <img class="snapshot" id="mapImg" src="${screenshot.dataUrl}" alt="Map Snapshot"/>
+                <img class="north-arrow" src="https://reva-store.s3.eu-north-1.amazonaws.com/uploads/BlackTrueNorth.svg" alt="True North Arrow"/>
+              </div>
+              <div class="footer">© ${year} SCRAMP by TwoNode Technologies. All rights reserved.</div>
+            </body>
+            </html>
+          `;
+
+              const printWindow = window.open("", "_blank");
+              printWindow.document.write(html);
+              printWindow.document.close();
+
+              printWindow.onload = () => {
+                const logo = printWindow.document.getElementById("logo");
+                const mapImg = printWindow.document.getElementById("mapImg");
+                const waitToPrint = () => {
+                  if (logo.complete && mapImg.complete) {
+                    printWindow.print();
+                    printWindow.close();
+                  } else {
+                    logo.onload = mapImg.onload = () => {
+                      printWindow.print();
+                      printWindow.close();
+                    };
+                    logo.onerror = mapImg.onerror = () => {
+                      printWindow.print();
+                      printWindow.close();
+                    };
+                  }
+                };
+                waitToPrint();
+              };
+            });
+        };
+      });
+    </script>
+  </div>
+</html>

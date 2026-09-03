@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Parcel Entry with WebMap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <style>
+    html, body, #viewDiv { padding: 0; margin: 0; height: 100%; width: 100%; }
+    #uploadInput {
+      position: absolute; top: 10px; left: 10px; z-index: 99;
+      background: white; padding: 10px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    }
+    #formContainer {
+      position: absolute; top: 10px; right: 10px; z-index: 99;
+      background: white; padding: 15px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.2);
+      display: none;
+      max-width: 300px;
+      overflow-y: auto;
+      max-height: 90%;
+    }
+    label { display: block; margin-top: 8px; font-weight: bold; }
+    input, select { width: 100%; padding: 6px; margin-top: 4px; }
+    button { margin-top: 10px; padding: 6px 12px; background: #3366cc; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="uploadInput">
+    <label>Select CSV with Easting, Northing</label>
+    <input type="file" id="csvFile" accept=".csv" />
+  </div>
+
+  <div id="formContainer">
+    <label>Plan Number:<input type="text" id="planNumberInput" /></label>
+    <label>Survey Title:<input type="text" id="surveyTitleInput" /></label>
+    
+    <label>Plan Type:
+      <select id="planTypeInput">
+        <option value="">-- Select --</option>
+        <option>APPROVED LAYOUT</option>
+        <option>DEED</option>
+        <option>DEED CHANGE OF TITLE</option>
+        <option>DEED CHANGE OF TITLE(LAYOUT)</option>
+        <option>PROVISIONAL</option>
+        <option>PROVISIONAL LAYOUT</option>
+        <option>WITHDRAWAL AND RE-SUBMISSION</option>
+      </select>
+    </label>
+
+    <div id="referencePlanDiv" class="hidden">
+      <label>Reference Plan Number:<input type="text" id="referencePlanInput" /></label>
+    </div>
+
+    <label>Pillar Type:
+      <select id="pillarTypeInput">
+        <option value="">-- Select --</option>
+        <option>REGULAR</option>
+        <option>SPECIAL</option>
+      </select>
+    </label>
+
+    <label>Deeded Area:<input type="text" id="deededAreaInput" /></label>
+    <label>Facilitator:<input type="text" id="facilitatorInput" /></label>
+
+    <label>WARD:<input type="text" id="wardInput" readonly /></label>
+    <label>LCDA:<input type="text" id="lcdaInput" readonly /></label>
+    <label>LGA:<input type="text" id="lgaInput" readonly /></label>
+
+    <label>Upload PDF of Survey Plan:<input type="file" id="pdfUpload" accept=".pdf" /></label>
+    <label>Upload CAD (.dwg) File:<input type="file" id="cadUpload" accept=".dwg" /></label>
+
+    <div id="certificateDiv">
+      <label>Is Certificate of Deposit Ready?
+        <select id="certificateReady">
+          <option value="">-- Select --</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+
+    <label id="evidenceLabel" class="hidden">Upload Evidence of Lodgment:<input type="file" id="evidenceUpload" /></label>
+
+    <button id="submitAttributes">Submit</button>
+  </div>
+
+  <div id="viewDiv"></div>
+
+<!-- Keep your existing HTML and CSS above unchanged -->
+
+<script src="https://js.arcgis.com/4.29/"></script>
+<script>
+require([
+  "esri/views/MapView",
+  "esri/WebMap",
+  "esri/layers/GraphicsLayer",
+  "esri/Graphic",
+  "esri/geometry/Point",
+  "esri/geometry/Polygon",
+  "esri/geometry/projection",
+  "esri/geometry/SpatialReference",
+  "esri/widgets/LayerList",
+  "esri/rest/support/Query",
+  "esri/layers/FeatureLayer"
+], function(MapView, WebMap, GraphicsLayer, Graphic, Point, Polygon, projection, SpatialReference, LayerList, Query, FeatureLayer) {
+
+  const graphicsLayer = new GraphicsLayer({ title: "Uploaded Survey" });
+
+  const webmap = new WebMap({
+    portalItem: { id: "5b13e132fb1c403fb19d389b0462af4e" }
+  });
+
+  webmap.add(graphicsLayer);
+
+  const view = new MapView({ container: "viewDiv", map: webmap });
+
+  view.when(() => webmap.reorder(graphicsLayer, 2));
+
+  const layerList = new LayerList({ view });
+  view.ui.add(layerList, "bottom-left");
+
+  const form = document.getElementById("formContainer");
+  const submitBtn = document.getElementById("submitAttributes");
+
+  const wardInput = document.getElementById("wardInput");
+  const lcdaInput = document.getElementById("lcdaInput");
+  const lgaInput = document.getElementById("lgaInput");
+
+  const certificateDiv = document.getElementById("certificateDiv");
+  const certificateReadySelect = document.getElementById("certificateReady");
+  const evidenceLabel = document.getElementById("evidenceLabel");
+
+  const planTypeInput = document.getElementById("planTypeInput");
+  const referencePlanDiv = document.getElementById("referencePlanDiv");
+  const referencePlanInput = document.getElementById("referencePlanInput");
+
+  let currentGraphic = null;
+
+  planTypeInput.addEventListener("change", function() {
+    const value = this.value;
+    const showRef = ["DEED CHANGE OF TITLE", "DEED CHANGE OF TITLE(LAYOUT)", "WITHDRAWAL AND RE-SUBMISSION"].includes(value);
+    referencePlanDiv.classList.toggle("hidden", !showRef);
+
+    const hideCert = ["PROVISIONAL", "PROVISIONAL LAYOUT"].includes(value);
+    certificateDiv.classList.toggle("hidden", hideCert);
+
+    if (hideCert) {
+      certificateReadySelect.value = "";
+      evidenceLabel.classList.add("hidden");
+    }
+  });
+
+  certificateReadySelect.addEventListener("change", function() {
+    evidenceLabel.classList.toggle("hidden", this.value !== "yes");
+  });
+
+  const adminLayer = new FeatureLayer({
+    url: "https://services8.arcgis.com/u07MVBpj9TT3farW/arcgis/rest/services/LagosStateHealthFacilities/FeatureServer/2",
+    outFields: ["WARD", "LCDA", "LGA"]
+  });
+
+  document.getElementById("csvFile").addEventListener("change", handleCSVUpload);
+
+  async function handleCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    const rows = text.trim().split("\n").slice(1);
+    const coords = rows.map(row => {
+      const [_, easting, northing] = row.split(",");
+      return new Point({
+        x: parseFloat(easting),
+        y: parseFloat(northing),
+        spatialReference: new SpatialReference({ wkid: 26331 })
+      });
+    });
+
+    await projection.load();
+
+    const projectedPoints = coords.map(pt =>
+      projection.project(pt, new SpatialReference({ wkid: 4326 }))
+    );
+
+    const ring = projectedPoints.map(pt => [pt.x, pt.y]);
+    if (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) {
+      ring.push(ring[0]);
+    }
+
+    const polygon = new Polygon({
+      rings: [ring],
+      spatialReference: { wkid: 4326 }
+    });
+
+    const graphic = new Graphic({
+      geometry: polygon,
+      symbol: {
+        type: "simple-fill",
+        color: [51, 102, 204, 0.3],
+        outline: { color: [255, 0, 0], width: 2 }
+      }
+    });
+
+    currentGraphic = graphic;
+
+    graphicsLayer.removeAll();
+    graphicsLayer.add(graphic);
+    view.goTo(graphic);
+    form.style.display = "block";
+
+    const query = adminLayer.createQuery();
+    query.geometry = polygon;
+    query.spatialRelationship = "intersects";
+    query.returnGeometry = false;
+
+    const results = await adminLayer.queryFeatures(query);
+
+    if (results.features.length > 0) {
+      const attrs = results.features[0].attributes;
+      wardInput.value = attrs.WARD || "N/A";
+      lcdaInput.value = attrs.LCDA || "N/A";
+      lgaInput.value = attrs.LGA || "N/A";
+      graphic.attributes = { WARD: attrs.WARD, LCDA: attrs.LCDA, LGA: attrs.LGA };
+    } else {
+      wardInput.value = lcdaInput.value = lgaInput.value = "Not Found";
+    }
+  }
+
+  submitBtn.onclick = async () => {
+    const planNumber = document.getElementById("planNumberInput").value;
+    const surveyTitle = document.getElementById("surveyTitleInput").value;
+    const deededArea = document.getElementById("deededAreaInput").value;
+    const facilitator = document.getElementById("facilitatorInput").value;
+    const planType = planTypeInput.value;
+    const pillarType = document.getElementById("pillarTypeInput").value;
+    const certReady = certificateReadySelect.value;
+    const referencePlanNumber = referencePlanInput.value;
+
+    if (!planNumber || !facilitator || !planType || !surveyTitle || !deededArea || (!["PROVISIONAL", "PROVISIONAL LAYOUT"].includes(planType) && !certReady) || !pillarType) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+
+    if (["DEED CHANGE OF TITLE", "DEED CHANGE OF TITLE(LAYOUT)", "WITHDRAWAL AND RE-SUBMISSION"].includes(planType)
+        && !referencePlanNumber) {
+      alert("Please enter the Reference Plan Number.");
+      return;
+    }
+
+    const attributes = {
+      ...currentGraphic.attributes,
+      PlanNumber: planNumber,
+      SurveyTitle: surveyTitle,
+      PlanType: planType,
+      ReferencePlanNumber: referencePlanNumber || "N/A",
+      DeededArea: deededArea,
+      Facilitator: facilitator,
+      PillarType: pillarType,
+      CertificateReady: certReady
+    };
+
+    const geometry = currentGraphic.geometry.toJSON();
+
+    try {
+      const response = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ geometry, attributes })
+      });
+
+      if (response.ok) {
+        alert("Submission successful!");
+      } else {
+        alert("Submission failed. Check backend.");
+      }
+    } catch (error) {
+      console.error("Error sending data to backend:", error);
+      alert("An error occurred during submission.");
+    }
+  };
+});
+</script>

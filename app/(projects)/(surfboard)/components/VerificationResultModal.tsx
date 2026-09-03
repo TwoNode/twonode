@@ -171,7 +171,7 @@ export function TraverseCanvasMap({ csvVertices, legResults, anchor }: TraverseC
 
   return (
     <div className="w-full border rounded-xl overflow-hidden bg-slate-950 relative shadow-sm">
-      <canvas ref={canvasRef} className="block w-full h-75" />
+      <canvas ref={canvasRef} className="block w-full h-[300px]" />
       <div className="absolute bottom-3 right-3 bg-slate-900/90 border border-slate-700/50 rounded px-2.5 py-1.5 text-[10px] font-mono flex flex-col gap-1 text-slate-300">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />

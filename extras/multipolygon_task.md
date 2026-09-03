@@ -1,0 +1,13 @@
+- [x] Update `app/(projects)/(surfboard)/components/SurfboardPlanForm.tsx`
+  - [x] Enforce >1 CSV for "APPROVED LAYOUT" and "PROVISIONAL LAYOUT"
+  - [x] Verify/Add per-polygon title inputs in UI
+  - [x] Add "Reason for Withdrawal" textarea for "WITHDRAWAL AND RE-SUBMISSION"
+  - [x] Verify "REGULAR + ADJOINING" / "SPECIAL + ADJOINING" logic
+- [x] Update `app/(projects)/(surfboard)/actions/codActions.ts`
+  - [x] Modify `getChartingInterpretation` to use `, ` and remove duplicates
+- [x] Update MDA dashboards (`charting` and `surcon`)
+  - [x] Update `getPillarsText` and copy button logic in `charting/page.tsx`
+  - [x] Update `getPillarsText` and copy button logic in `surcon/page.tsx`
+- [x] Update Single Plan Pages
+  - [x] Show "Reason for Withdrawal" and `withdrawalAndResubmissionStatus` in `SinglePlan.tsx` or `OptimizedSinglePlanDetails.tsx`
+- [x] Verify `surfboardActions.ts` status logic for resubmissions

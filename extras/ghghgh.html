@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Survey Plan Extractor — AI (Two-stage, Title accepts companies)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; max-width:1100px; margin:24px auto; padding:0 18px; color:#111; }
+    h1 { margin:6px 0 8px; font-size:20px; }
+    p.lead { margin:0 0 12px 0; color:#444; }
+    .controls { display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+    input[type=file], input[type=password], select { padding:8px; }
+    button { background:#0b76ef; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#efefef; color:#111; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+    th, td { border:1px solid #e6e6e6; padding:8px 10px; text-align:left; vertical-align:top; }
+    th { background:#fafafa; font-weight:700; }
+    .coords-table th, .coords-table td { text-align:center; }
+    textarea { width:100%; height:160px; margin-top:10px; font-family:monospace; font-size:13px; }
+    .small { font-size:12px; color:#666; }
+    .editable { background:#fffbe6; }
+    .warning { color:#b33; font-weight:600; }
+    .note { color:#555; font-size:13px; }
+    .top-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+    .muted { color:#666; font-size:12px; }
+  </style>
+
+  <!-- pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.6.172/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.6.172/pdf.worker.min.js';</script>
+</head>
+<body>
+  <h1>Survey Plan Extractor — AI-assisted (Two-stage)</h1>
+  <p class="lead">Upload a searchable PDF. Paste your OpenAI API key (kept only in this tab session). The AI will run internal reasoning then return strict JSON. <span class="warning">Not secure for production</span>.</p>
+
+  <div class="controls">
+    <input id="pdfInput" type="file" accept="application/pdf" />
+    <input id="apiKey" type="password" placeholder="Paste OpenAI API key here" style="width:360px" />
+    <select id="modelSelect">
+      <option value="gpt-4o-mini">gpt-4o-mini (recommended)</option>
+      <option value="gpt-4">gpt-4</option>
+      <option value="gpt-4o">gpt-4o</option>
+    </select>
+    <button id="extractBtn" disabled>Extract + AI</button>
+    <button id="downloadCsv" disabled>Download CSV</button>
+  </div>
+
+  <div class="small note">Security: This demo stores the API key only in memory/sessionStorage in this browser tab. For production, use a backend proxy.</div>
+  <div id="status" class="small"></div>
+
+  <table id="fieldTable">
+    <thead><tr><th>Field</th><th>Value (editable)</th></tr></thead>
+    <tbody>
+      <tr><td>Filename</td><td id="fn"></td></tr>
+      <tr><td>Plan Number (UPPERCASE)</td><td id="planNumber" contenteditable="true" class="editable"></td></tr>
+      <tr><td>Survey Title (person/company — single line)</td><td id="surveyTitle" contenteditable="true" class="editable"></td></tr>
+      <tr><td>Locality (first valid line only)</td><td id="locality" contenteditable="true" class="editable"></td></tr>
+      <tr><td>Area</td><td id="area" contenteditable="true" class="editable"></td></tr>
+      <tr><td>Date (MM/DD/YYYY)</td><td id="dateField" contenteditable="true" class="editable"></td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:14px">Coordinates — Northing / Easting (paired)</h3>
+  <table class="coords-table" id="coordsTable">
+    <thead><tr><th>#</th><th>Northing (mN)</th><th>Easting (mE)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3 style="margin-top:14px">Raw extracted text (pdf.js output)</h3>
+  <textarea id="rawText" readonly placeholder="Raw text extracted from PDF appears here..."></textarea>
+
+<script>
+/* Two-stage AI extraction HTML app (Option B: browser -> OpenAI)
+   - The system prompt performs internal reasoning then returns final JSON only.
+   - The prompt below supports company names as survey titles.
+   - Date normalization is required to MM/DD/YYYY.
+   IMPORTANT: Keep your OpenAI API key secure; this demo exposes it to the browser.
+*/
+
+const pdfInput = document.getElementById('pdfInput');
+const apiKeyInput = document.getElementById('apiKey');
+const modelSelect = document.getElementById('modelSelect');
+const extractBtn = document.getElementById('extractBtn');
+const downloadCsvBtn = document.getElementById('downloadCsv');
+const statusEl = document.getElementById('status');
+const rawTextArea = document.getElementById('rawText');
+
+pdfInput.addEventListener('change', () => {
+  extractBtn.disabled = !pdfInput.files.length || !apiKeyInput.value.trim();
+  document.getElementById('fn').innerText = pdfInput.files.length ? pdfInput.files[0].name : '';
+});
+apiKeyInput.addEventListener('input', () => {
+  extractBtn.disabled = !pdfInput.files.length || !apiKeyInput.value.trim();
+});
+
+extractBtn.addEventListener('click', async () => {
+  const file = pdfInput.files[0];
+  const apiKey = apiKeyInput.value.trim();
+  const model = modelSelect.value;
+  if (!file || !apiKey) { alert('Provide a PDF and your OpenAI API key'); return; }
+
+  try {
+    status('Extracting PDF text...');
+    const text = await extractTextFromPdf(file);
+    rawTextArea.value = text;
+
+    status('Preparing prompt + truncating (if needed)...');
+    // Truncate conservatively to avoid token limits; keep head + tail
+    const MAX_CHARS = 20000;
+    let payloadText = text;
+    if (payloadText.length > MAX_CHARS) {
+      payloadText = payloadText.slice(0, 13000) + '\n\n...TRUNCATED...\n\n' + payloadText.slice(-7000);
+    }
+
+    status('Calling OpenAI for two-stage reasoning + JSON extraction...');
+    const content = await callOpenAI(apiKey, model, payloadText);
+    status('Parsing model response...');
+    const parsed = parseAIResponse(content);
+    populateFromAI(parsed);
+    status('Done — review/examine fields. You can edit and download CSV.');
+    downloadCsvBtn.disabled = false;
+    // store key in sessionStorage only if user wants (kept in this tab)
+    sessionStorage.setItem('OPENAI_KEY_IN_MEMORY', apiKey);
+  } catch (err) {
+    console.error(err);
+    status('Error: ' + (err.message || err));
+    alert('Error: ' + (err.message || err));
+  }
+});
+
+/* ---------- pdf.js extraction ---------- */
+async function extractTextFromPdf(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let full = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const strings = content.items.map(i => i.str);
+    full += strings.join(' ') + '\n\n';
+  }
+  full = full.replace(/\r/g, '\n').replace(/\n[ \t]+\n/g, '\n\n').replace(/[ \t]{2,}/g, ' ');
+  return full.trim();
+}
+
+/* ---------- OpenAI call (chat completions) ---------- */
+async function callOpenAI(apiKey, model, extractedText) {
+  // Two-stage reasoning system prompt (internal reasoning + final JSON)
+  const systemPrompt = `
+You are an advanced AI specialized in interpreting Nigerian cadastral SURVEY PLANS.
+You MUST perform TWO STAGES:
+1) INTERNAL REASONING (do not output reasoning): read the entire text, identify ALL candidate tokens for plan number, survey title, locality, area, date, and coordinates; classify candidates (is this a name, address, date, plan id?); pick the best candidate for each field; normalize and clean them (remove dashes, fix spacing, uppercase plan number, convert date to MM/DD/YYYY, etc.); pair coordinates; resolve ambiguities using domain logic (dates are not plan numbers; titles are people or entities; localities are addresses).
+2) FINAL OUTPUT: return STRICT JSON ONLY with the exact fields: planNumber, surveyTitle, locality, area, date, coordinates.
+Important details:
+- Plan Number rules:
+  * Must begin with 2-5 letters and contain multiple '/' segments.
+  * Must NOT be a date. Prefer tokens with alphanumeric segments (not 1-2 digit date segments).
+  * Output in UPPERCASE.
+-2. SURVEY TITLE (CRITICAL LOGIC — PERSON OR LAND OWNER ENTITY, NOT SURVEYOR)
+The Survey Title is the FIRST non-empty line immediately after any variation of:
+- “SAID TO BELONG TO”
+- "-SAID TO BELONG TO-"
+- "SAID TO BELONG TO:"
+
+This title MUST represent the OWNER of the land, not the surveyor.
+
+VALID survey title examples:
+- An individual (e.g. “MR. LAFO OLATERU OLAGBEGI”)
+- A company or organization (e.g. “FINETRUST MULTIPURPOSE COOPERATIVE”)
+- A church or estate (e.g. “GLORYLAND ESTATE LTD.”)
+
+DO NOT accept lines that belong to the surveyor or their company.
+
+The following MUST BE EXCLUDED as survey titles:
+- Any line near email, phone numbers, office address
+- Any line containing professional terms:
+  “SURVEYOR”, “SURVEY CONSULT”, “ENGINEERING”, “CONSULT LTD”, “SERVICES”, “FIRM”, "CONSULTANCY"
+- Any block that includes:
+  - Street address (e.g., “NO 58, KUDIRAT ABIOLA WAY…”)
+  - Phone numbers (“+234…”)
+  - Email addresses
+  - Website URLs
+  - Company tagline
+- Any block associated with footer/contact info of the surveyor.
+
+RULE:
+Extract ONLY the first non-empty line AFTER the “SAID TO BELONG TO” phrase that is NOT part of the surveyor/company block and DOES resemble a land-owning entity.
+
+  * Must be the FIRST non-empty line immediately after any line containing 'SAID TO BELONG TO' (case-insensitive).
+  * It may be a PERSON name OR a COMPANY/ORGANIZATION/CHURCH/ESTATE. Classify it as an owner entity (not an address)
+  * .
+  * Strip leading/trailing dashes and whitespace.
+- Locality:
+  * Extract the FIRST valid locality line after the survey title (Option A).
+  * Valid locality lines commonly start with or contain: 'AT', 'NO.', 'ALONG', 'BEING', 'SITUATED AT', 'LOCATED AT', or contain 'NO.'.
+  * Stop before metadata such as 'LOCAL GOVT AREA', 'STATE', 'SCALE', 'ORIGIN', 'AREA'.
+- Area:
+  * Extract numeric area and unit (e.g., '917.830 SQ. MTS', '645.576 SQ.MTS', '0.045 HA').
+  * Normalize spacing and punctuation.
+- Date:
+  * Recognize numeric formats (e.g., '24 - 04 - 2025', '24/04/2025', '5/5/95') and written formats ('3RD JULY, 2025').
+  * Convert and return a final date in MM/DD/YYYY.
+  * If a 2-digit year is found: if >=50 => 19xx, otherwise 20xx.
+- Coordinates:
+  * Accept patterns like '722 861.953mN' or '722861.953 mN' or '722861.953m N'.
+  * Remove internal spaces so examples become '722861.953mN'.
+  * Normalize suffix to 'mN' or 'mE'.
+  * Pair northing (mN) and easting (mE) in reading order; if unmatched include with empty other field.
+General rules:
+- DO NOT hallucinate. If unsure, set field to an empty string or empty array.
+- Remove stray dashes and extra spaces.
+- If multiple candidates exist, choose the most complete/standard-looking one.
+- Return STRICT JSON ONLY (no explanation, no markdown, no extra text).
+`;
+
+  const userPrompt = `
+Raw extracted text below:
+--------------------------
+${extractedText}
+--------------------------
+Return the JSON object with keys: planNumber, surveyTitle, locality, area, date, coordinates.
+Date must be in MM/DD/YYYY. Coordinates must be an array of objects with keys "northing" and "easting".
+`;
+
+  const body = {
+    model: model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: 1000,
+    temperature: 0.0
+  };
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error('OpenAI API error: ' + resp.status + ' — ' + errText);
+  }
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('No response content from model');
+  return content;
+}
+
+/* ---------- parse model JSON safely ---------- */
+function parseAIResponse(text) {
+  const jsonText = extractJsonSubstring(text);
+  if (!jsonText) throw new Error('Could not locate JSON in model response.');
+  try {
+    const obj = JSON.parse(jsonText);
+    // Validate keys
+    obj.planNumber = obj.planNumber ? String(obj.planNumber).toUpperCase() : '';
+    obj.surveyTitle = obj.surveyTitle ? String(obj.surveyTitle).trim() : '';
+    obj.locality = obj.locality ? String(obj.locality).trim() : '';
+    obj.area = obj.area ? String(obj.area).trim() : '';
+    obj.date = obj.date ? String(obj.date).trim() : '';
+    // Normalize coordinates array
+    if (!Array.isArray(obj.coordinates)) obj.coordinates = [];
+    obj.coordinates = obj.coordinates.map(c => ({
+      northing: c.northing ? String(c.northing).replace(/\s+/g,'') : '',
+      easting: c.easting ? String(c.easting).replace(/\s+/g,'') : ''
+    }));
+    // Ensure date is in MM/DD/YYYY if model returned a valid date-like string but maybe different format
+    if (obj.date) {
+      const normalized = normalizeDateToMMDDYYYY(obj.date);
+      if (normalized) obj.date = normalized;
+      // if normalization fails, keep the original (user can edit)
+    }
+    return obj;
+  } catch (err) {
+    console.error('JSON parse error', err, text);
+    throw new Error('Failed to parse JSON from model: ' + err.message);
+  }
+}
+
+// Extract JSON substring between first { and last }
+function extractJsonSubstring(s) {
+  if (!s || typeof s !== 'string') return null;
+  // Remove code fences if present
+  let cleaned = s.replace(/```json|```/g, '').trim();
+  const first = cleaned.indexOf('{');
+  const last = cleaned.lastIndexOf('}');
+  if (first === -1 || last === -1 || last <= first) return null;
+  const candidate = cleaned.slice(first, last + 1);
+  try { JSON.parse(candidate); return candidate; } catch(e) { return null; }
+}
+
+/* ---------- helper: date normalization to MM/DD/YYYY ---------- */
+function normalizeDateToMMDDYYYY(s) {
+  if (!s) return '';
+  s = s.trim();
+  // If already mm/dd/yyyy
+  const already = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (already) {
+    let mm = Number(already[1]), dd = Number(already[2]), yy = Number(already[3]);
+    if (yy < 100) yy = (yy >= 50 ? 1900 + yy : 2000 + yy);
+    return pad(mm) + '/' + pad(dd) + '/' + yy;
+  }
+  // dd - mm - yyyy or dd/mm/yyyy variants
+  const dmy = s.match(/^([0-3]?\d)[\s\-\/]+([0-1]?\d)[\s\-\/]+(\d{2,4})$/);
+  if (dmy) {
+    let dd = Number(dmy[1]), mm = Number(dmy[2]), yy = Number(dmy[3]);
+    if (yy < 100) yy = (yy >= 50 ? 1900 + yy : 2000 + yy);
+    return pad(mm) + '/' + pad(dd) + '/' + yy;
+  }
+  // written formats: "3RD JULY,2025" or "3 JULY 2025" or "JULY 3 2025"
+  const written = s.match(/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)[,]?\s+(\d{4})/i);
+  if (written) {
+    const dd = Number(written[1]);
+    const mm = monthNameToNumber(written[2]);
+    const yy = Number(written[3]);
+    if (mm) return pad(mm) + '/' + pad(dd) + '/' + yy;
+  }
+  // written reversed: "JULY 3, 2025"
+  const written2 = s.match(/([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
+  if (written2) {
+    const mm = monthNameToNumber(written2[1]);
+    const dd = Number(written2[2]);
+    const yy = Number(written2[3]);
+    if (mm) return pad(mm) + '/' + pad(dd) + '/' + yy;
+  }
+  return ''; // could not normalize
+}
+function monthNameToNumber(name) {
+  if (!name) return null;
+  const m = name.trim().toLowerCase().slice(0,3);
+  const map = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+  return map[m] || null;
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+/* ---------- populate UI from AI output ---------- */
+function populateFromAI(obj) {
+  document.getElementById('planNumber').innerText = obj.planNumber || '';
+  document.getElementById('surveyTitle').innerText = obj.surveyTitle || '';
+  document.getElementById('locality').innerText = obj.locality || '';
+  document.getElementById('area').innerText = obj.area || '';
+  document.getElementById('dateField').innerText = obj.date || '';
+
+  const tbody = document.querySelector('#coordsTable tbody');
+  tbody.innerHTML = '';
+  if (!obj.coordinates || obj.coordinates.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="center">-</td><td colspan="2" class="center small">No coordinates</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+  obj.coordinates.forEach((p, idx) => {
+    const n = p.northing || '';
+    const e = p.easting || '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="center">${idx+1}</td>
+                    <td contenteditable="true" class="editable">${n}</td>
+                    <td contenteditable="true" class="editable">${e}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- CSV download ---------- */
+downloadCsvBtn.addEventListener('click', () => {
+  const filename = (document.getElementById('fn').innerText || 'survey').replace(/\.[^/.]+$/,'');
+  const plan = document.getElementById('planNumber').innerText.trim();
+  const area = document.getElementById('area').innerText.trim();
+  const title = document.getElementById('surveyTitle').innerText.trim();
+  const locality = document.getElementById('locality').innerText.trim();
+  const datev = document.getElementById('dateField').innerText.trim();
+
+  const tbodyRows = document.querySelectorAll('#coordsTable tbody tr');
+  const coordRows = [];
+  tbodyRows.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length >= 3) {
+      const n = tds[1].innerText.trim();
+      const e = tds[2].innerText.trim();
+      if (!n && !e) return;
+      coordRows.push({ n, e });
+    }
+  });
+
+  const header = ['filename','planNumber','area','surveyTitle','locality','date','northing','easting'];
+  const lines = [header.join(',')];
+  if (coordRows.length === 0) {
+    lines.push(`"${filename}","${plan}","${area}","${title}","${locality}","${datev}","",""`);
+  } else {
+    coordRows.forEach(r => {
+      const line = [`"${filename}"`,`"${plan}"`,`"${area}"`,`"${title}"`,`"${locality}"`,`"${datev}"`,`"${r.n}"`,`"${r.e}"`].join(',');
+      lines.push(line);
+    });
+  }
+  const csv = lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${filename}_extracted.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* ---------- helper: status ---------- */
+function status(msg) { statusEl.innerText = msg; }
+</script>
+</body>
+</html>
