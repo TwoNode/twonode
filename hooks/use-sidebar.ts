@@ -17,7 +17,12 @@ type SidebarStore = {
 export const useSidebar = create(
   persist<SidebarStore>(
     (set, get) => ({
-      isOpen: true,
+      // false so the sidebar starts closed on mobile/tablet, where its
+      // translate-x-based collapse is the only thing hiding it — desktop
+      // (lg+) always shows it regardless of this value, via the
+      // `lg:translate-x-0` fallback already baked into the closed-state
+      // class in components/sidebars/sidebar.tsx.
+      isOpen: false,
       isHover: false,
       settings: { disabled: false, isHoverOpen: false },
       toggleOpen: () => {
