@@ -7,7 +7,7 @@ import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import AdminReport from "./AdminReport";
 import { OneTimeRequestView } from "../components/OneTimeRequestView";
 import { AdminReportUpload } from "./AdminReportUpload";
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components/PDFDownloadButton";
+import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 const ViewDetailsPage = async ({
   searchParams,

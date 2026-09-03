@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
-import { deleteManyFromS3, uploadToS3FromServer } from "@/app/(projects)/reva/actions/awsActions";
+import { deleteManyFromS3, uploadToS3FromServer } from "@/app/(projects)/(reva)/reva/actions/awsActions";
 import { sendMail, sendEmailToAllAdmins } from "@/utils/email";
 import { notifyReportReady, notifySystemAlert } from "@/reva/services/notificationService";
 

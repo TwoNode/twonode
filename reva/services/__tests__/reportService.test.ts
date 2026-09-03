@@ -28,7 +28,7 @@ const mockEmail = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/reva/services/notificationService", () => mockNotify);
 vi.mock("@/utils/email", () => mockEmail);
-vi.mock("@/app/(projects)/reva/actions/awsActions", () => ({
+vi.mock("@/app/(projects)/(reva)/reva/actions/awsActions", () => ({
   uploadToS3FromServer: vi.fn(),
   deleteManyFromS3: vi.fn(),
 }));

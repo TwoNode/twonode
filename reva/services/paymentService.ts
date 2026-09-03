@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { ValidationError, ConflictError, NotFoundError } from "@/lib/api/errors";
-import { uploadToS3FromServer } from "@/app/(projects)/reva/actions/awsActions";
-import { initializePaystack, verifyPaystackTransaction } from "@/app/(projects)/reva/actions/paystackActions";
+import { uploadToS3FromServer } from "@/app/(projects)/(reva)/reva/actions/awsActions";
+import { initializePaystack, verifyPaystackTransaction } from "@/app/(projects)/(reva)/reva/actions/paystackActions";
 import { sendEmailToAdmin } from "@/utils/email";
 import {
   saveToOneTimeProperty,

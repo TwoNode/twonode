@@ -25,7 +25,7 @@ import {
   notifySuccess,
   notifyWarning,
 } from "@/utils/notify";
-import { PDFDownloadButton } from "@/app/(projects)/reva-restricted/dashboard/details/components/PDFDownloadButton";
+import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"

@@ -67,13 +67,13 @@ export function AdminDirectLinkUpload({
       notifyError(
         `Please provide required field(s): ${missingFields
           .map((field) => field.replace(/([A-Z])/g, " $1").toUpperCase())
-          .join(", ")}`
+          .join(", ")}`,
       );
       return;
     }
 
     formRef.current?.dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true })
+      new Event("submit", { bubbles: true, cancelable: true }),
     );
 
     notifyInfo("File submission in progress...");
@@ -98,7 +98,7 @@ export function AdminDirectLinkUpload({
       // Add isOneTimeRequest flag to the form data
       formData.append(
         "isOneTimeRequest",
-        property?.isOneTimeRequest ? "true" : "false"
+        property?.isOneTimeRequest ? "true" : "false",
       );
 
       const file = form.directFileLink;
@@ -113,7 +113,7 @@ export function AdminDirectLinkUpload({
         throw new Error(
           `File size exceeds the maximum limit of ${
             maxFileSize / (1024 * 1024)
-          }MB`
+          }MB`,
         );
       }
 
@@ -121,7 +121,7 @@ export function AdminDirectLinkUpload({
 
       const response = await revaApi.admin.requests.uploadReport(
         property.reference,
-        formData
+        formData,
       );
 
       if (!response.success) {
@@ -157,7 +157,7 @@ export function AdminDirectLinkUpload({
       // The route itself picks approveDueDiligenceReport/approveOneTimeDueDiligenceReport by request type
       const response = await revaApi.admin.requests.approve(
         property?.reference || "",
-        !property?.report?.isApproved
+        !property?.report?.isApproved,
       );
 
       if (!response.success) {
@@ -167,12 +167,12 @@ export function AdminDirectLinkUpload({
       notifySuccess(
         property?.report?.isApproved
           ? "Report disapproved successfully!"
-          : "Report approved successfully!"
+          : "Report approved successfully!",
       );
       setShowConfirmApproval(false);
     } catch (err) {
       notifyError(
-        "An error occurred while approving the report. Please try again."
+        "An error occurred while approving the report. Please try again.",
       );
       console.error(err);
     } finally {
@@ -183,7 +183,7 @@ export function AdminDirectLinkUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-[999]">
+        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-999">
           <svg
             className="animate-spin h-8 w-8 text-blue-500"
             xmlns="http://www.w3.org/2000/svg"
@@ -359,7 +359,7 @@ export function AdminDirectLinkUpload({
                       <span className="font-medium text-muted-foreground">
                         Direct File Link:
                       </span>
-                      <span className="text-right text-foreground break-words">
+                      <span className="text-right text-foreground wrap-break-word">
                         {form.directFileLink ? (
                           form.directFileLink?.name
                         ) : (
@@ -418,7 +418,7 @@ export function AdminDirectLinkUpload({
                       <span className="font-medium text-muted-foreground">
                         Direct File Link:
                       </span>
-                      <span className="text-right text-foreground break-words">
+                      <span className="text-right text-foreground wrap-break-word">
                         {form.directFileLink ? (
                           form.directFileLink.name
                         ) : (
