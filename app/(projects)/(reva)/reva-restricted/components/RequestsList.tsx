@@ -24,6 +24,7 @@ import {
   GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
 
 // Custom Naira icon component
 const NairaIcon = ({ className }: { className?: string }) => (
@@ -88,11 +89,26 @@ const RequestList = ({
   const getPropertyIcon = (propertyType?: string) => {
     switch (propertyType?.toLowerCase()) {
       case "commercial":
-        return <ShoppingBagIcon className="h-5 w-5 text-blue-500" />;
+        return (
+          <ShoppingBagIcon
+            className="h-5 w-5"
+            style={{ color: REVA_COLORS.primary.light }}
+          />
+        );
       case "apartment":
-        return <BuildingOfficeIcon className="h-5 w-5 text-purple-500" />;
+        return (
+          <BuildingOfficeIcon
+            className="h-5 w-5"
+            style={{ color: REVA_COLORS.secondary.light }}
+          />
+        );
       default:
-        return <HomeModernIcon className="h-5 w-5 text-green-500" />;
+        return (
+          <HomeModernIcon
+            className="h-5 w-5"
+            style={{ color: REVA_COLORS.status.success }}
+          />
+        );
     }
   };
 
@@ -100,22 +116,22 @@ const RequestList = ({
     switch (status) {
       case "Available":
       case "Completed":
-        return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+        return revaStatusBadgeStyle("success");
       case "Processing":
-        return "bg-amber-50 text-amber-700 ring-amber-600/20";
+        return revaStatusBadgeStyle("warning");
       default:
-        return "bg-gray-50 text-gray-700 ring-gray-600/20";
+        return revaStatusBadgeStyle("info");
     }
   };
 
   const getPaymentStatusColor = (status?: string) => {
     switch (status) {
       case "Paid":
-        return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+        return revaStatusBadgeStyle("success");
       case "Unpaid":
-        return "bg-red-50 text-red-700 ring-red-600/20";
+        return revaStatusBadgeStyle("error");
       default:
-        return "bg-gray-50 text-gray-700 ring-gray-600/20";
+        return revaStatusBadgeStyle("info");
     }
   };
 
@@ -235,14 +251,26 @@ const RequestList = ({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              <Badge
+                variant="outline"
+                style={{
+                  backgroundColor: `${REVA_COLORS.primary.light}1A`,
+                  color: REVA_COLORS.primary.light,
+                }}
+              >
                 {
                   requests.filter((r) => !r.isOneTimeRequest && !r.requester)
                     .length
                 }{" "}
                 Regular
               </Badge>
-              <Badge variant="outline" className="bg-purple-50 text-purple-700">
+              <Badge
+                variant="outline"
+                style={{
+                  backgroundColor: `${REVA_COLORS.secondary.light}1A`,
+                  color: REVA_COLORS.secondary.dark,
+                }}
+              >
                 {
                   requests.filter((r) => r.isOneTimeRequest || r.requester)
                     .length
@@ -265,9 +293,16 @@ const RequestList = ({
           return (
             <Card
               key={request.id}
-              className={`group hover:shadow-xl transition-all duration-300 border-0 shadow-lg ${
-                request?.deleted ? "bg-red-50 border-red-200" : ""
-              }`}
+              className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg"
+              style={
+                request?.deleted
+                  ? {
+                      backgroundColor: `${REVA_COLORS.status.error}0D`,
+                      borderColor: `${REVA_COLORS.status.error}33`,
+                      borderWidth: 1,
+                    }
+                  : undefined
+              }
             >
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
@@ -279,22 +314,28 @@ const RequestList = ({
                       <div className="flex items-center gap-2 mb-1">
                         <Badge
                           variant="outline"
-                          className={
+                          style={
                             requestType === "OneTime"
-                              ? "bg-purple-50 text-purple-700"
-                              : "bg-blue-50 text-blue-700"
+                              ? {
+                                  backgroundColor: `${REVA_COLORS.secondary.light}1A`,
+                                  color: REVA_COLORS.secondary.dark,
+                                }
+                              : {
+                                  backgroundColor: `${REVA_COLORS.primary.light}1A`,
+                                  color: REVA_COLORS.primary.light,
+                                }
                           }
                         >
                           {requestType}
                         </Badge>
                         {reportReady && (
-                          <Badge className="bg-green-50 text-green-700">
+                          <Badge style={revaStatusBadgeStyle("success")}>
                             <CheckCircleIcon className="h-3 w-3 mr-1" />
                             Approved
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#008cff] transition-colors">
                         {request.title ||
                           request.description ||
                           "Untitled Request"}
@@ -310,12 +351,12 @@ const RequestList = ({
               <CardContent className="space-y-6">
                 {/* Status Badges */}
                 <div className="flex flex-wrap gap-2">
-                  <Badge className={getStatusColor(request.status || undefined)}>
+                  <Badge style={getStatusColor(request.status || undefined)}>
                     {getStatusIcon(request.status || undefined)}
                     {request.status}
                   </Badge>
                   <Badge
-                    className={getPaymentStatusColor(request.paymentStatus || undefined)}
+                    style={getPaymentStatusColor(request.paymentStatus || undefined)}
                   >
                     {getPaymentStatusIcon(request.paymentStatus || undefined)}
                     {request.paymentStatus}
@@ -410,7 +451,10 @@ const RequestList = ({
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Total Cost
                         </p>
-                        <p className="text-lg font-bold text-blue-600">
+                        <p
+                          className="text-lg font-bold"
+                          style={{ color: REVA_COLORS.primary.light }}
+                        >
                           {formatCurrency(request.totalCost)}
                         </p>
                       </div>
@@ -438,12 +482,14 @@ const RequestList = ({
                           Due Date
                         </p>
                         <p
-                          className={`text-sm ${
-                            new Date() >
-                            addDays(getDateForFormatting(request), 1)
-                              ? "text-red-600"
-                              : "text-gray-900"
-                          }`}
+                          className="text-sm"
+                          style={{
+                            color:
+                              new Date() >
+                              addDays(getDateForFormatting(request), 1)
+                                ? REVA_COLORS.status.error
+                                : REVA_COLORS.gray[900],
+                          }}
                         >
                           {format(
                             addDays(getDateForFormatting(request), 1),
@@ -476,7 +522,7 @@ const RequestList = ({
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                            className="flex items-center gap-2 p-2 text-sm text-[#008cff] hover:text-[#032740] hover:bg-[#008cff]/10 rounded-md transition-colors"
                           >
                             <ArrowDownTrayIcon className="h-3 w-3" />
                             <span className="truncate">
@@ -503,18 +549,18 @@ const RequestList = ({
                     <div className="flex items-center gap-2">
                       {request.report ? (
                         request.report?.isApproved ? (
-                          <Badge className="bg-green-50 text-green-700">
+                          <Badge style={revaStatusBadgeStyle("success")}>
                             <CheckCircleIcon className="h-3 w-3 mr-1" />
                             Report Approved
                           </Badge>
                         ) : (
-                          <Badge className="bg-yellow-50 text-yellow-700">
+                          <Badge style={revaStatusBadgeStyle("warning")}>
                             <ClockIcon className="h-3 w-3 mr-1" />
                             Report Under Review
                           </Badge>
                         )
                       ) : (
-                        <Badge className="bg-red-50 text-red-700">
+                        <Badge style={revaStatusBadgeStyle("error")}>
                           <ExclamationCircleIcon className="h-3 w-3 mr-1" />
                           No Report
                         </Badge>
@@ -534,8 +580,17 @@ const RequestList = ({
 
                 {/* Status Messages */}
                 {request.statusMessage && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-800">
+                  <div
+                    className="rounded-lg p-3 border"
+                    style={{
+                      backgroundColor: `${REVA_COLORS.primary.light}0D`,
+                      borderColor: `${REVA_COLORS.primary.light}33`,
+                    }}
+                  >
+                    <p
+                      className="text-sm"
+                      style={{ color: REVA_COLORS.primary.main }}
+                    >
                       {request.statusMessage}
                     </p>
                   </div>
@@ -543,8 +598,19 @@ const RequestList = ({
 
                 {/* Error Messages */}
                 {request.error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-800">{request.error}</p>
+                  <div
+                    className="rounded-lg p-3 border"
+                    style={{
+                      backgroundColor: `${REVA_COLORS.status.error}0D`,
+                      borderColor: `${REVA_COLORS.status.error}33`,
+                    }}
+                  >
+                    <p
+                      className="text-sm"
+                      style={{ color: REVA_COLORS.status.error }}
+                    >
+                      {request.error}
+                    </p>
                   </div>
                 )}
               </CardContent>

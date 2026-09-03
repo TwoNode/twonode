@@ -137,6 +137,14 @@ export const REVA_GRADIENTS = {
   success: `linear-gradient(to right, ${REVA_COLORS.status.success}, ${REVA_COLORS.status.successLight})`,
 } as const;
 
+// ===== STATUS BADGE STYLE HELPER =====
+export function revaStatusBadgeStyle(
+  tone: "success" | "warning" | "info" | "error"
+) {
+  const color = REVA_COLORS.status[tone];
+  return { backgroundColor: `${color}1A`, color };
+}
+
 // ===== CSS VARIABLES =====
 export const REVA_CSS_VARS = {
   // Primary Colors

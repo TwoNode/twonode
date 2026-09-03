@@ -21,6 +21,7 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import Link from "next/link";
+import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
 
 export type ReportType = {
   // Front page
@@ -1312,7 +1313,8 @@ export const PDFDownloadButton = ({ property }: { property: any }) => (
   <PDFDownloadLink
     document={<ReportPDF property={property} />}
     fileName={`Due_Diligence_Report_${property?.reference}.pdf`}
-    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    className="text-white px-4 py-2 rounded hover:opacity-90"
+    style={{ backgroundColor: REVA_COLORS.primary.light }}
   >
     {({ loading, error }) => {
       if (error) {
@@ -1353,7 +1355,10 @@ const UserRequestDataView = ({ property }: { property: any }) => {
               <Badge variant="secondary">{property.paymentStatus}</Badge>
             )}
             {property?.report?.isApproved && (
-              <Badge className="w-full md:w-auto px-6 text-white bg-green-500">
+              <Badge
+                className="w-full md:w-auto px-6 text-white"
+                style={{ backgroundColor: REVA_COLORS.status.success }}
+              >
                 {"Approved"}
               </Badge>
             )}
@@ -1385,7 +1390,8 @@ const UserRequestDataView = ({ property }: { property: any }) => {
             <PDFDownloadLink
               document={<ReceiptPDF property={property} />}
               fileName={`REVA_Receipt_${property?.reference}.pdf`}
-              className="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 mr-2"
+              className="text-white py-2 px-4 rounded-lg shadow-md hover:opacity-90 mr-2"
+              style={{ backgroundColor: REVA_COLORS.status.success }}
             >
               {({ loading }) =>
                 loading ? "Generating Receipt..." : "Download PDF Receipt"
@@ -1490,8 +1496,8 @@ const UserRequestDataView = ({ property }: { property: any }) => {
               value={property?.paymentStatus || "-"}
               color={
                 property?.paymentStatus === "Paid"
-                  ? "text-green-600"
-                  : "text-red-600"
+                  ? "text-[#10b981]"
+                  : "text-[#ef4444]"
               }
             />
             {property?.paymentLink && (
@@ -1525,7 +1531,8 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline"
+                      className="underline"
+                      style={{ color: REVA_COLORS.primary.light }}
                     >
                       Document {idx + 1}
                     </a>

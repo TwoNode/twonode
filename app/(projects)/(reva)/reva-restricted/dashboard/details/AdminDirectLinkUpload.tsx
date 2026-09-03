@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
 import { revaApi } from "@/reva/apiClient";
+import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
 
 import {
   AlertDialog,
@@ -185,7 +186,8 @@ export function AdminDirectLinkUpload({
       {isLoading && (
         <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-999">
           <svg
-            className="animate-spin h-8 w-8 text-blue-500"
+            className="animate-spin h-8 w-8"
+            style={{ color: REVA_COLORS.primary.light }}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -229,7 +231,8 @@ export function AdminDirectLinkUpload({
                       href={property.report.directFileLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline text-sm"
+                      className="underline text-sm"
+                      style={{ color: REVA_COLORS.primary.light }}
                     >
                       View
                     </a>
@@ -260,7 +263,8 @@ export function AdminDirectLinkUpload({
                         href={URL.createObjectURL(form.directFileLink)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline text-sm"
+                        className="underline text-sm"
+                      style={{ color: REVA_COLORS.primary.light }}
                       >
                         Preview Selected File
                       </a>
@@ -295,7 +299,12 @@ export function AdminDirectLinkUpload({
                 onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
               />
               {form.directFileLink && (
-                <p className="text-sm text-green-600">File ready to upload</p>
+                <p
+                  className="text-sm"
+                  style={{ color: REVA_COLORS.status.success }}
+                >
+                  File ready to upload
+                </p>
               )}
             </div>
           </CardContent>
@@ -310,7 +319,8 @@ export function AdminDirectLinkUpload({
                     <Button
                       type="button"
                       onClick={() => setShowConfirmApproval(true)}
-                      className={`w-full md:w-auto px-6 bg-red-500`}
+                      className="w-full md:w-auto px-6 hover:opacity-90"
+                      style={{ backgroundColor: REVA_COLORS.status.error }}
                     >
                       Disapprove Report
                     </Button>
@@ -318,7 +328,8 @@ export function AdminDirectLinkUpload({
                     <Button
                       type="button"
                       onClick={() => setShowConfirmApproval(true)}
-                      className={`w-full md:w-auto px-6 bg-green-500 hover:bg-red-500`}
+                      className="w-full md:w-auto px-6 hover:opacity-90"
+                      style={{ backgroundColor: REVA_COLORS.status.success }}
                     >
                       Approve Report
                     </Button>
@@ -347,9 +358,19 @@ export function AdminDirectLinkUpload({
                 <AlertDialogTitle className="text-xl font-bold">
                   Confirm Report{" "}
                   {property?.report?.isApproved ? (
-                    <span className={`bg-red-200 p-2`}>Disapprove Report</span>
+                    <span
+                      className="p-2"
+                      style={revaStatusBadgeStyle("error")}
+                    >
+                      Disapprove Report
+                    </span>
                   ) : (
-                    <span className={`bg-green-200 p-2`}>Approve Report</span>
+                    <span
+                      className="p-2"
+                      style={revaStatusBadgeStyle("success")}
+                    >
+                      Approve Report
+                    </span>
                   )}
                 </AlertDialogTitle>
 
@@ -369,7 +390,10 @@ export function AdminDirectLinkUpload({
                     </div>
                   </div>
 
-                  <p className="text-sm text-red-500 mt-6">
+                  <p
+                    className="text-sm mt-6"
+                    style={{ color: REVA_COLORS.status.error }}
+                  >
                     Are you sure you want to{" "}
                     {property?.report?.isApproved ? "disapprove" : "approve"}{" "}
                     this report and make it visible to the client?
@@ -388,7 +412,8 @@ export function AdminDirectLinkUpload({
                     <Button
                       type="button"
                       onClick={handleApprove}
-                      className="w-full md:w-auto px-6 bg-red-500"
+                      className="w-full md:w-auto px-6"
+                      style={{ backgroundColor: REVA_COLORS.status.error }}
                     >
                       Disapprove Report
                     </Button>
@@ -396,7 +421,8 @@ export function AdminDirectLinkUpload({
                     <Button
                       type="button"
                       onClick={handleApprove}
-                      className="w-full md:w-auto px-6 bg-green-500"
+                      className="w-full md:w-auto px-6"
+                      style={{ backgroundColor: REVA_COLORS.status.success }}
                     >
                       Approve Report
                     </Button>

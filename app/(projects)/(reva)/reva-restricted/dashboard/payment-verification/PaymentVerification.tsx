@@ -39,6 +39,7 @@ import {
   notifyInfo,
   notifyWarning,
 } from "@/utils/notify";
+import { REVA_COLORS, REVA_GRADIENTS, revaStatusBadgeStyle } from "@/reva/colors";
 
 interface Request {
   id: string;
@@ -277,18 +278,17 @@ export function PaymentVerification() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      Paid: "bg-green-100 text-green-800",
-      Unpaid: "bg-red-100 text-red-800",
-      Processing: "bg-yellow-100 text-yellow-800",
-    };
+    const tones = {
+      Paid: "success",
+      Unpaid: "error",
+      Processing: "warning",
+    } as const;
 
     return (
       <Badge
-        className={
-          variants[status as keyof typeof variants] ||
-          "bg-gray-100 text-gray-800"
-        }
+        style={revaStatusBadgeStyle(
+          tones[status as keyof typeof tones] || "info"
+        )}
       >
         {status}
       </Badge>
@@ -297,11 +297,7 @@ export function PaymentVerification() {
 
   const getEnvironmentBadge = (isLive: boolean) => {
     return (
-      <Badge
-        className={
-          isLive ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
-        }
-      >
+      <Badge style={revaStatusBadgeStyle(isLive ? "error" : "info")}>
         {isLive ? "Live" : "Test"}
       </Badge>
     );
@@ -311,7 +307,10 @@ export function PaymentVerification() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderColor: REVA_COLORS.primary.light }}
+          ></div>
           <p className="text-gray-600">Loading requests...</p>
         </div>
       </div>
@@ -339,7 +338,8 @@ export function PaymentVerification() {
               filteredRequests.filter((req) => req.paymentStatus !== "Paid")
                 .length === 0
             }
-            className="bg-blue-600 hover:bg-blue-700"
+            style={{ background: REVA_GRADIENTS.primary }}
+            className="hover:opacity-90"
           >
             {verifying ? (
               <>
@@ -406,13 +406,19 @@ export function PaymentVerification() {
               {verificationResults.map((result, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${
-                    result.success
+                  className="p-3 rounded-lg border"
+                  style={(() => {
+                    const tone = result.success
                       ? result.originalStatus !== result.newStatus
-                        ? "bg-green-50 border-green-200"
-                        : "bg-blue-50 border-blue-200"
-                      : "bg-red-50 border-red-200"
-                  }`}
+                        ? "success"
+                        : "info"
+                      : "error";
+                    const color = REVA_COLORS.status[tone];
+                    return {
+                      backgroundColor: `${color}0D`,
+                      borderColor: `${color}33`,
+                    };
+                  })()}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -424,13 +430,13 @@ export function PaymentVerification() {
                       </p>
                     </div>
                     <Badge
-                      className={
+                      style={revaStatusBadgeStyle(
                         result.success
                           ? result.originalStatus !== result.newStatus
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                          : "bg-red-100 text-red-800"
-                      }
+                            ? "success"
+                            : "info"
+                          : "error"
+                      )}
                     >
                       {result.success ? "Success" : "Failed"}
                     </Badge>
@@ -530,7 +536,8 @@ export function PaymentVerification() {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => verifySinglePayment(request)}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              style={{ background: REVA_GRADIENTS.primary }}
+                              className="hover:opacity-90"
                             >
                               Verify Payment
                             </AlertDialogAction>
