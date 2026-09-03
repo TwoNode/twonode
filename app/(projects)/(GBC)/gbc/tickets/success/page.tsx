@@ -12,7 +12,7 @@ import {
 import { verifyPayment } from "@/gbc/services/ticketService";
 import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
-import { GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function TicketSuccessPage({
   searchParams,
@@ -105,36 +105,39 @@ export default async function TicketSuccessPage({
           </div>
 
           <div className="p-6 md:p-8">
-            <div className="bg-purple-50 rounded-lg p-4 mb-6 border border-purple-100">
+            <div
+              className="rounded-lg p-4 mb-6 border"
+              style={{ background: GBC_COLORS.surface.main, borderColor: GBC_COLORS.primary.light }}
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Ticket Number{isGroupTicket ? "s" : ""}
                   </p>
-                  <p className="font-mono font-bold text-purple-900">
+                  <p className="font-mono font-bold" style={{ color: GBC_COLORS.primary.dark }}>
                     {isGroupTicket
                       ? tickets.map((t) => t.ticketNumber).join(", ")
                       : primaryTicket.ticketNumber}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Payment Reference
                   </p>
-                  <p className="font-mono text-sm text-purple-900 break-all">
+                  <p className="font-mono text-sm break-all" style={{ color: GBC_COLORS.primary.dark }}>
                     {reference}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Amount Paid
                   </p>
-                  <p className="font-bold text-purple-900">
+                  <p className="font-bold" style={{ color: GBC_COLORS.primary.dark }}>
                     ₦{amount.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Status
                   </p>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -203,12 +206,15 @@ export default async function TicketSuccessPage({
             </div>
 
             <div className="border-t border-gray-100 pt-6 mb-8">
-              <h3 className="font-bold text-lg mb-4 text-purple-600">
+              <h3 className="font-bold text-lg mb-4" style={{ color: GBC_COLORS.primary.main }}>
                 What's Next?
               </h3>
               <ol className="space-y-3 text-gray-600">
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     1
                   </span>
                   <span>
@@ -216,19 +222,28 @@ export default async function TicketSuccessPage({
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     2
                   </span>
                   <span>Save the QR code on your phone or print it</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     3
                   </span>
                   <span>Bring a valid ID to the event for verification</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     4
                   </span>
                   <span>Present your QR code at the entrance for check-in</span>
@@ -261,7 +276,8 @@ export default async function TicketSuccessPage({
             Didn't receive your ticket? Check your spam folder or contact us at{" "}
             <a
               href={`mailto:${contactEmail}`}
-              className="text-purple-600 hover:underline"
+              className="hover:underline"
+              style={{ color: GBC_COLORS.primary.main }}
             >
               {contactEmail}
             </a>

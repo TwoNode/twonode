@@ -4,7 +4,7 @@ import { ContactForm } from "@/gbc/components/ContactForm";
 import { Mail, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import { getSettings } from "@/gbc/services/settingsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
-import { GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export const metadata = {
   title: "Contact Us | GBC 2.0",
@@ -22,7 +22,8 @@ export default async function ContactPage() {
   const eventDate = settings?.event.date || "2026-03-15";
   const eventVenue = settings?.event.venue || "Eko Hotel & Suites, Lagos";
 
-  const contactEmail = settings?.contact.email || "info@twonodetechnologies.com";
+  const contactEmail =
+    settings?.contact.email || "info@twonodetechnologies.com";
   const contactPhone = settings?.contact.phone || "+234-916-0002-740";
   const contactCity = settings?.contact.city || "Lagos, Nigeria";
   const officeHours = settings?.contact.officeHours || "Mon-Fri 9AM-5PM";
@@ -41,13 +42,25 @@ export default async function ContactPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-24 text-white overflow-hidden" style={{ background: GBC_GRADIENTS.hero }}>
+      <section
+        className="relative py-24 text-white overflow-hidden"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
         {/* Animated background elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-40 right-10 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+        <div
+          className="absolute top-20 left-10 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"
+          style={{ background: GBC_COLORS.primary.light }}
+        />
+        <div
+          className="absolute top-40 right-10 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"
+          style={{ background: GBC_COLORS.secondary.light }}
+        />
+        <div
+          className="absolute -bottom-8 left-1/2 w-72 h-72 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"
+          style={{ background: GBC_COLORS.primary.main }}
+        />
 
         {/* Back to Home Link */}
         <div className="absolute top-6 left-6 z-10">
@@ -99,8 +112,14 @@ export default async function ContactPage() {
           <div className="grid md:grid-cols-4 gap-4 max-w-6xl mx-auto">
             <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 group hover:scale-105">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-linear-to-br from-purple-100 to-purple-200 rounded-full p-4 mb-4 group-hover:scale-110 transition-transform">
-                  <Mail className="h-6 w-6 text-purple-600" />
+                <div
+                  className="rounded-full p-4 mb-4 group-hover:scale-110 transition-transform"
+                  style={{ background: GBC_COLORS.surface.main }}
+                >
+                  <Mail
+                    className="h-6 w-6"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Email Us</h3>
                 <p className="text-sm text-gray-600">{contactEmail}</p>
@@ -109,8 +128,14 @@ export default async function ContactPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 group hover:scale-105">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-linear-to-br from-blue-100 to-blue-200 rounded-full p-4 mb-4 group-hover:scale-110 transition-transform">
-                  <Phone className="h-6 w-6 text-blue-600" />
+                <div
+                  className="rounded-full p-4 mb-4 group-hover:scale-110 transition-transform"
+                  style={{ background: "#FCE7F3" }}
+                >
+                  <Phone
+                    className="h-6 w-6"
+                    style={{ color: GBC_COLORS.secondary.dark }}
+                  />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Call Us</h3>
                 <p className="text-sm text-gray-600">{contactPhone}</p>
@@ -119,8 +144,14 @@ export default async function ContactPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 group hover:scale-105">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-linear-to-br from-indigo-100 to-indigo-200 rounded-full p-4 mb-4 group-hover:scale-110 transition-transform">
-                  <MapPin className="h-6 w-6 text-indigo-600" />
+                <div
+                  className="rounded-full p-4 mb-4 group-hover:scale-110 transition-transform"
+                  style={{ background: GBC_COLORS.surface.main }}
+                >
+                  <MapPin
+                    className="h-6 w-6"
+                    style={{ color: GBC_COLORS.primary.main }}
+                  />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Visit Us</h3>
                 <p className="text-sm text-gray-600">{contactCity}</p>
@@ -129,8 +160,14 @@ export default async function ContactPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 group hover:scale-105">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-linear-to-br from-green-100 to-green-200 rounded-full p-4 mb-4 group-hover:scale-110 transition-transform">
-                  <Clock className="h-6 w-6 text-green-600" />
+                <div
+                  className="rounded-full p-4 mb-4 group-hover:scale-110 transition-transform"
+                  style={{ background: "#FCE7F3" }}
+                >
+                  <Clock
+                    className="h-6 w-6"
+                    style={{ color: GBC_COLORS.secondary.dark }}
+                  />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">Office Hours</h3>
                 <p className="text-sm text-gray-600">{officeHours}</p>
@@ -172,8 +209,14 @@ export default async function ContactPage() {
                 <div className="space-y-3">
                   <div className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:border-purple-200 transition-all">
                     <div className="flex items-start gap-3">
-                      <div className="bg-purple-100 rounded-lg p-2 mt-1">
-                        <MessageCircle className="h-5 w-5 text-purple-600" />
+                      <div
+                        className="rounded-lg p-2 mt-1"
+                        style={{ background: GBC_COLORS.surface.main }}
+                      >
+                        <MessageCircle
+                          className="h-5 w-5"
+                          style={{ color: GBC_COLORS.primary.main }}
+                        />
                       </div>
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-1">
@@ -186,9 +229,15 @@ export default async function ContactPage() {
                     </div>
                   </div>
 
-                  <div className="bg-linear-to-br from-purple-50 to-indigo-50 rounded-lg p-4 shadow-md border border-purple-100 hover:border-purple-300 transition-all">
+                  <div
+                    className="rounded-lg p-4 shadow-md border border-purple-100 hover:border-purple-300 transition-all"
+                    style={{ background: "#FCE7F3" }}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="bg-purple-600 rounded-lg p-2 mt-1">
+                      <div
+                        className="rounded-lg p-2 mt-1"
+                        style={{ background: GBC_COLORS.primary.main }}
+                      >
                         <svg
                           className="h-5 w-5 text-white"
                           fill="none"
@@ -215,11 +264,15 @@ export default async function ContactPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:border-blue-200 transition-all">
+                  <div className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:border-purple-200 transition-all">
                     <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 rounded-lg p-2 mt-1">
+                      <div
+                        className="rounded-lg p-2 mt-1"
+                        style={{ background: GBC_COLORS.surface.main }}
+                      >
                         <svg
-                          className="h-5 w-5 text-blue-600"
+                          className="h-5 w-5"
+                          style={{ color: GBC_COLORS.primary.main }}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -243,11 +296,15 @@ export default async function ContactPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:border-indigo-200 transition-all">
+                  <div className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:border-pink-200 transition-all">
                     <div className="flex items-start gap-3">
-                      <div className="bg-indigo-100 rounded-lg p-2 mt-1">
+                      <div
+                        className="rounded-lg p-2 mt-1"
+                        style={{ background: "#FCE7F3" }}
+                      >
                         <svg
-                          className="h-5 w-5 text-indigo-600"
+                          className="h-5 w-5"
+                          style={{ color: GBC_COLORS.secondary.dark }}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -274,7 +331,10 @@ export default async function ContactPage() {
               </div>
 
               {/* Quick Stats */}
-              <div className="rounded-2xl p-8 text-white shadow-xl" style={{ background: GBC_GRADIENTS.primary }}>
+              <div
+                className="rounded-2xl p-8 text-white shadow-xl"
+                style={{ background: GBC_GRADIENTS.primary }}
+              >
                 <h3 className="text-2xl font-bold mb-6">Response Time</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -377,7 +437,8 @@ export default async function ContactPage() {
                   Visit our{" "}
                   <Link
                     href="/gbc/tickets"
-                    className="text-purple-600 hover:underline font-semibold"
+                    className="hover:underline font-semibold"
+                    style={{ color: GBC_COLORS.primary.main }}
                   >
                     tickets page
                   </Link>{" "}

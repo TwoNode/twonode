@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
 import { getPartners, getSponsors } from "@/gbc/services/cmsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
-import { GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function SponsorsPage() {
-  const [sponsors, partners] = await Promise.all([getSponsors(), getPartners()]);
+  const [sponsors, partners] = await Promise.all([
+    getSponsors(),
+    getPartners(),
+  ]);
 
   // Group sponsors by tier
   const sponsorsByTier = {
@@ -21,7 +24,10 @@ export default async function SponsorsPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -72,7 +78,11 @@ export default async function SponsorsPage() {
               </p>
             </div>
             <Link href="/gbc/contact">
-              <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+              <Button
+                size="lg"
+                className="hover:brightness-110"
+                style={{ background: GBC_COLORS.primary.main }}
+              >
                 <Mail className="mr-2 h-4 w-4" />
                 Contact Us
               </Button>
@@ -86,7 +96,13 @@ export default async function SponsorsPage() {
         <section className="py-12 sm:py-16 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-purple-100 text-purple-600 rounded-full font-bold mb-4">
+              <div
+                className="inline-block px-6 py-2 rounded-full font-bold mb-4"
+                style={{
+                  background: GBC_COLORS.surface.main,
+                  color: GBC_COLORS.primary.main,
+                }}
+              >
                 HEADLINE SPONSORS
               </div>
               <p className="text-gray-600">Our premier partners</p>
@@ -106,7 +122,13 @@ export default async function SponsorsPage() {
         <section className="py-12 sm:py-16 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-yellow-100 text-yellow-600 rounded-full font-bold mb-4">
+              <div
+                className="inline-block px-6 py-2 rounded-full font-bold mb-4"
+                style={{
+                  background: "#FCE7F3",
+                  color: GBC_COLORS.secondary.dark,
+                }}
+              >
                 IMPACT SPONSORS
               </div>
             </div>
@@ -171,7 +193,10 @@ export default async function SponsorsPage() {
       )}
 
       {/* Sponsorship Benefits */}
-      <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>
+      <section
+        className="py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.primary }}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
@@ -213,7 +238,8 @@ export default async function SponsorsPage() {
               <Link href="/gbc/contact">
                 <Button
                   size="lg"
-                  className="bg-white text-purple-600 hover:bg-gray-100"
+                  className="bg-white hover:bg-gray-100"
+                  style={{ color: GBC_COLORS.primary.main }}
                 >
                   Become a Sponsor
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -250,9 +276,12 @@ function SponsorCard({
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow ${
-        featured ? "border-2 border-purple-200" : ""
-      }`}
+      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
+      style={
+        featured
+          ? { border: `2px solid ${GBC_COLORS.primary.light}` }
+          : undefined
+      }
     >
       <div className="p-8">
         <div className="flex items-center justify-center mb-6 h-32">
@@ -277,7 +306,8 @@ function SponsorCard({
               href={sponsor.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              className="inline-flex items-center hover:opacity-80 font-medium"
+              style={{ color: GBC_COLORS.primary.main }}
             >
               Visit Website
               <ExternalLink className="ml-2 h-4 w-4" />

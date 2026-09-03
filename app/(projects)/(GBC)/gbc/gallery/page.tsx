@@ -4,7 +4,7 @@ import { getGalleryItems } from "@/gbc/services/cmsService";
 import { getSettings } from "@/gbc/services/settingsService";
 import Link from "next/link";
 import GBC2Navbar from "@/gbc/components/Navbar";
-import { GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function GalleryPage() {
   const items = await getGalleryItems();
@@ -22,7 +22,7 @@ export default async function GalleryPage() {
     }, {}) || {};
 
   const years = Object.keys(itemsByYear).sort(
-    (a, b) => parseInt(b) - parseInt(a)
+    (a, b) => parseInt(b) - parseInt(a),
   );
 
   return (
@@ -30,7 +30,10 @@ export default async function GalleryPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -85,7 +88,10 @@ export default async function GalleryPage() {
                     <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                       GBC {year}
                     </h2>
-                    <div className="h-1 w-16 sm:w-20 bg-purple-600 rounded" />
+                    <div
+                      className="h-1 w-16 sm:w-20 rounded"
+                      style={{ background: GBC_COLORS.primary.main }}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -189,7 +195,10 @@ function GalleryItem({ item }: { item: any }) {
             )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <Play className="h-8 w-8 text-purple-600 ml-1" />
+                <Play
+                  className="h-8 w-8 ml-1"
+                  style={{ color: GBC_COLORS.primary.main }}
+                />
               </div>
             </div>
           </>
