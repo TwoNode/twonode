@@ -29,7 +29,7 @@ export default function SurfboardBadgePage() {
           <div className="flex h-16 items-center justify-between">
             <Link href="/surfboard" className="group inline-flex items-center gap-2">
               <Image
-                src="/surfboard/surf_logo.svg"
+                src="/surfboard/surf_logo.png"
                 alt="Surfboard"
                 width={48}
                 height={48}

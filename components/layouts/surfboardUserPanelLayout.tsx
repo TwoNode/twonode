@@ -17,7 +17,6 @@ import {
   Plus,
   Bell,
   Menu,
-  QrCode,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -41,7 +40,7 @@ function SurfboardUserDashboardNavbar({
 }) {
   return (
     <header
-      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-blue-100 relative"
+      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-blue-100 relative"
       style={{
         background: `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 60%, ${SURFBOARD_COLORS.secondary.main} 100%)`,
       }}
@@ -57,7 +56,7 @@ function SurfboardUserDashboardNavbar({
         </button>
 
         <img
-          src="/surfboard/surf_logo.svg"
+          src="/surfboard/surf_logo.png"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
         />
@@ -102,7 +101,7 @@ function SurfboardUserDashboardNavbar({
       >
         <Bell className="w-6 h-6 text-white" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1 shadow-lg">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1 shadow-lg">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -232,12 +231,6 @@ export default function SurfboardUserPanelLayout({
       requiresSubscription: false,
     },
     {
-      icon: QrCode,
-      label: "QR Earnings",
-      url: `${dashboardUrl}/qr-earnings`,
-      requiresSubscription: false,
-    },
-    {
       icon: Settings,
       label: "Settings",
       url: `${dashboardUrl}/settings`,
@@ -248,7 +241,7 @@ export default function SurfboardUserPanelLayout({
         <LogoutLink
           key={"logout"}
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-15 rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{ backgroundColor: "transparent" }}
         >
           <span className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200 bg-blue-50 border border-blue-100">
@@ -277,7 +270,7 @@ export default function SurfboardUserPanelLayout({
       <div className="flex items-center justify-center h-screen bg-blue-200">
         <div className="h-20 w-20 relative">
           <img
-            src="/surfboard/surf_logo.svg"
+            src="/surfboard/surf_logo.png"
             alt="Surfboard Logo"
             className="w-8/12 h-8/12 m-auto object-contain absolute inset-0"
           />

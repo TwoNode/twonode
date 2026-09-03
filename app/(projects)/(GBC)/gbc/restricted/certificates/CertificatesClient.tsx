@@ -174,7 +174,7 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
           <span className="text-sm text-gray-500">{selectedTickets.size} selected</span>
         </div>
 
-        <div className="space-y-2 max-h-150 overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
           {filteredTickets.length > 0 ? (
             filteredTickets.map((ticket: any) => (
               <div

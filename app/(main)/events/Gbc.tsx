@@ -34,37 +34,37 @@ export const Gbc = () => {
   }, [isDesktop]);
 
   return (
-    <div className="mywrapper pb-13.75 pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-7.5">
+    <div className="mywrapper pb-[55px] pt-2 bg-white justify-start items-center gap-2.5 inline-flex text-sky-950 text-base font-normal leading-[30px]">
       <div className="w-full flex flex-col justify-start items-start gap-10">
-        <div className="self-stretch min-h-95 flex-col justify-start items-start lg:gap-15 gap-10 flex">
-          <div className="flex justify-between items-center flex-wrap lg:gap-5 gap-2 w-full">
-            <h2 className="text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-11.25 md:leading-16">
+        <div className="self-stretch min-h-[380px] flex-col justify-start items-start lg:gap-[60px] gap-[40px] flex">
+          <div className="flex justify-between items-center flex-wrap lg:gap-[20px] gap-2 w-full">
+            <h2 className="text-sky-950 text-[35px] md:text-[50px] font-extrabold leading-[45px] md:leading-[64px]">
               Geospatial Builders Course 1.0
             </h2>
-            <div className="justify-end items-center gap-3.75 flex sm:w-max w-full">
+            <div className="justify-end items-center gap-[15px] flex sm:w-max w-full">
               {StarSvg}
               {ShareSvg}
             </div>
           </div>
           <div className="self-stretch justify-between items-start flex flex-wrap">
             <div className="w-max flex-col justify-start items-start gap-5 inline-flex">
-              <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+              <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque']text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                 Date and Time
               </h4>
-              <div className="self-stretch min-h-44.25 flex-col justify-start items-start gap-3.75 flex">
-                <div className="ml-2.5 p-2.5 justify-center items-center gap-5 flex">
+              <div className="self-stretch min-h-[177px] flex-col justify-start items-start gap-[15px] flex">
+                <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {CalendarSvg}
                   <span className="text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                     Saturday, November 23rd, 2024
                   </span>
                 </div>
-                <div className="ml-2.5 p-2.5 justify-center items-center gap-5 flex">
+                <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {ClockSvg}
                   <span className="text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                     9 AM Prompt
                   </span>
                 </div>
-                <div className="ml-2.5 p-2.5 justify-center items-center gap-5 flex">
+                <div className="ml-[10px] p-2.5 justify-center items-center gap-5 flex">
                   {PlusSvg}
                   <span className="text-[#00bfff] lg:text-2xl font-medium font-['Bricolage Grotesque']">
                     Add to Calendar
@@ -72,11 +72,11 @@ export const Gbc = () => {
                 </div>
               </div>
             </div>
-            <div className="flex-col justify-start items-end gap-12.5 inline-flex">
-              <div className="w-81 mAX-h-[84px] p-2.5 bg-[#00bfff] rounded-[5px] flex-col justify-center items-center gap-2.5 flex">
+            <div className="flex-col justify-start items-end gap-[50px] inline-flex">
+              <div className="w-[324px] mAX-h-[84px] p-2.5 bg-[#00bfff] rounded-[5px] flex-col justify-center items-center gap-2.5 flex">
                 <Link
                   href={url}
-                  className="cursor-pointer justify-center items-center gap-3.75 inline-flex"
+                  className="cursor-pointer justify-center items-center gap-[15px] inline-flex"
                 >
                   {BuyTicketSvg}
                   <span className="text-white lg:text-[32px] text-[22px] font-semibold font-['Bricolage Grotesque']">
@@ -84,8 +84,8 @@ export const Gbc = () => {
                   </span>
                 </Link>
               </div>
-              <div className="flex-col justify-start items-start gap-6.5 flex">
-                <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+              <div className="flex-col justify-start items-start gap-[26px] flex">
+                <h4 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                   Ticket Information
                 </h4>
                 <div className="justify-start items-center gap-2.5 inline-flex">
@@ -99,15 +99,15 @@ export const Gbc = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 grid-cols-1 justify-between items-center gap-5">
+        <div className="grid lg:grid-cols-2 grid-cols-1 justify-between items-center gap-[20px]">
           <div className="flex-col justify-start items-start gap-5 flex">
-            <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+            <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
               Location
             </h3>
-            <div className="flex-col justify-start items-start gap-3.75 flex">
+            <div className="flex-col justify-start items-start gap-[15px] flex">
               <div className="p-2.5 justify-center items-center gap-5 inline-flex">
                 {LocationSvg}
-                <p className="max-w-134.25 text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
+                <p className="max-w-[537px] text-[#ff1c4d] lg:text-2xl font-semibold font-['Bricolage Grotesque']">
                   Lagos Marriott Hotel Ikeja - 122 Joel Ogunnaike St, Ikeja GRA,
                   Lagos 100271, Lagos.
                 </p>
@@ -115,7 +115,7 @@ export const Gbc = () => {
             </div>
           </div>
 
-          <div className="w-full max-w-155.25 max-h-106 rounded-[5px]">
+          <div className="w-full max-w-[621px] max-h-[424px] rounded-[5px]">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.500011118921!2d3.346840411305369!3d6.584595222421341!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b921776d4cd3f%3A0x82bfa6a8a3177ddf!2sLagos%20Marriott%20Hotel%20Ikeja!5e0!3m2!1sen!2sng!4v1725794142963!5m2!1sen!2sng"
               width="500"
@@ -123,18 +123,18 @@ export const Gbc = () => {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="w-full max-w-155.25 max-h-107.5 rounded-[5px]"
+              className="w-full max-w-[621px] max-h-[430px] rounded-[5px]"
             ></iframe>
           </div>
           {/* <img src="/gbcLocation.png" /> */}
         </div>
 
         <div className="flex-col justify-start items-start gap-5 flex">
-          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
             HOW TO PAY FOR GBC 1.0
           </h3>
 
-          <div className="flex flex-col text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-7.5">
+          <div className="flex flex-col text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[30px]">
             <span className="flex items-center gap-2">
               <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
               Scan the QR Code
@@ -149,16 +149,16 @@ export const Gbc = () => {
               provided
             </span>
           </div>
-          <h4 className="text-[#001f3f] text-xl font-semibold font-['Bricolage Grotesque'] leading-7.5">
+          <h4 className="text-[#001f3f] text-xl font-semibold font-['Bricolage Grotesque'] leading-[30px]">
             NB:
           </h4>
           <div>
-            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-7.5">
+            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[30px]">
               Our event team will reach out to you via the following details
               only;
             </h5>
 
-            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-7.5">
+            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-[30px]">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />
                 Phone Number: 09160002740
@@ -171,7 +171,7 @@ export const Gbc = () => {
             </div>
           </div>
           <div>
-            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-9.5">
+            <h5 className="text-[#001f3f] font-medium font-['Bricolage Grotesque'] leading-[38px]">
               Payment should only be made within 24hours of receiving
               authorization,{" "}
               <b className="text-[#ff1c4d]">
@@ -181,7 +181,7 @@ export const Gbc = () => {
               All payments should be made to;
             </h5>
 
-            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-7.5">
+            <div className="flex flex-col text-[#ff1c4d] font-bold font-['Bricolage Grotesque'] leading-[30px]">
               <span className="flex items-center gap-2">
                 <div className="w-2 h-1 rounded-3xl bg-[#001f3f] ml-2" />{" "}
                 Account Number : - ___________
@@ -196,17 +196,17 @@ export const Gbc = () => {
               </span>
             </div>
 
-            <p className="text-[#ff1c4d] font-semibold font-['Bricolage Grotesque'] leading-9.5">
+            <p className="text-[#ff1c4d] font-semibold font-['Bricolage Grotesque'] leading-[38px]">
               PAYMENT Confirms your RESERVATION
             </p>
           </div>
         </div>
 
-        <div className="w-full min-h-19.5 px-8.5 py-5 bg-[#f8fafb] rounded-[10px] flex-col justify-center items-center gap-2.5 flex">
-          <div className="min-h-9.5 flex-col justify-start items-start gap-5 flex w-full">
-            <div className="justify-between items-center gap-5 flex w-full">
+        <div className="w-full min-h-[78px] px-[34px] py-5 bg-[#f8fafb] rounded-[10px] flex-col justify-center items-center gap-2.5 flex">
+          <div className="min-h-[38px] flex-col justify-start items-start gap-5 flex w-full">
+            <div className="justify-between items-center gap-[20px] flex w-full">
               <Accordion
-                className="w-full flex-col justify-start items-start gap-4.5 flex"
+                className="w-full flex-col justify-start items-start gap-[18px] flex"
                 type="single"
                 collapsible
               >
@@ -214,14 +214,14 @@ export const Gbc = () => {
                   <AccordionTrigger className="w-full">
                     <div className="cursor-pointer w-full flex-col justify-start items-start flex">
                       <div className="w-full bg-gray-50 justify-between items-center inline-flex">
-                        <h2 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+                        <h2 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
                           Event Description
                         </h2>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="text-sky-950 text-base font-normal leading-7.5">
+                    <div className="text-sky-950 text-base font-normal leading-[30px]">
                       <h3 className="text-[#001f3f] font-bold text-2xl">
                         A wake-up call!!!
                       </h3>
@@ -282,7 +282,7 @@ export const Gbc = () => {
         </div>
 
         <div className="flex-col justify-start items-start gap-5 flex w-full">
-          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-6.25 md:leading-10">
+          <h3 className="text-[#001f3f] lg:text-[32px] text-[22px] font-bold font-['Bricolage Grotesque'] text-sky-950 text-[30px] md:text-[40px] font-extrabold leading-[25px] md:leading-[40px]">
             Tags
           </h3>
 
@@ -290,9 +290,9 @@ export const Gbc = () => {
             {TAGS.map((tag) => (
               <div
                 key={tag}
-                className="px-6.75 py-0.75 bg-[#f8fafb] rounded-[50px] justify-center items-center gap-2.5 flex"
+                className="px-[27px] py-[3px] bg-[#f8fafb] rounded-[50px] justify-center items-center gap-2.5 flex"
               >
-                <span className="text-[#001f3f] text-lg font-normal font-['Bricolage Grotesque'] leading-7.5">
+                <span className="text-[#001f3f] text-lg font-normal font-['Bricolage Grotesque'] leading-[30px]">
                   {tag}
                 </span>
               </div>

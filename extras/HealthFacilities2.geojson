@@ -1,0 +1,122 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.2945099998800931,
+          6.5253000000666432
+        ]
+      },
+      "properties": {
+        "OBJECTID": 1,
+        "Join_Count": 1,
+        "TARGET_FID": 1,
+        "globalid": "03b82bf8-22fd-4a50-ae29-f82e5cef3441",
+        "timestamp": 1575590400000,
+        "latitude": 6.5252999999999997,
+        "longitude": 3.2945099999999998,
+        "wardname": "Oke-Afa",
+        "wardcode": "LASOIO17",
+        "lganame": "Oshodi/Isolo",
+        "lgacode": "25016",
+        "statename": "Lagos",
+        "statecode": "LA",
+        "updated_on": 1551398400000,
+        "accessblty": " ",
+        "func_stats": "Unknown",
+        "category": "Pharmacy",
+        "ownership": "Private",
+        "type": "Primary",
+        "source": "OSGOF",
+        "alt_name": " ",
+        "prmry_name": "Peak Pharmacy",
+        "WARD": "OKE-AFA",
+        "LCDA": "EJIGBO",
+        "LGA": "ALIMOSHO",
+        "GridCode": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.3923983330223644,
+          6.463258332617281
+        ]
+      },
+      "properties": {
+        "OBJECTID": 2,
+        "Join_Count": 1,
+        "TARGET_FID": 2,
+        "globalid": "9b801390-a76d-4c2c-9845-3502ddb6bed2",
+        "timestamp": 1545091200000,
+        "latitude": 6.4632583329999997,
+        "longitude": 3.392398333,
+        "wardname": "Idunganran / Idumagbo",
+        "wardcode": "LASLID09",
+        "lganame": "Lagos Island",
+        "lgacode": "25020",
+        "statename": "Lagos",
+        "statecode": "LA",
+        "updated_on": 1551398400000,
+        "accessblty": " ",
+        "func_stats": "Functional",
+        "category": "Primary Health Center",
+        "ownership": "Local Government Area",
+        "type": "Primary",
+        "source": "GRID",
+        "alt_name": " ",
+        "prmry_name": "Oba Adeyinka Oyekan 11 Memorial Health Center",
+        "WARD": "IDUNGARAN/IDUMAGBO",
+        "LCDA": "LAGOS ISLAND",
+        "LGA": "LAGOS ISLAND",
+        "GridCode": null
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.9016191001678862,
+          6.4406375001269254
+        ]
+      },
+      "properties": {
+        "OBJECTID": 3,
+        "Join_Count": 1,
+        "TARGET_FID": 3,
+        "globalid": "5770b877-8a96-4642-b1c4-c1b5fd8515d4",
+        "timestamp": 1545091200000,
+        "latitude": 6.4406375000000002,
+        "longitude": 3.9016191,
+        "wardname": "Orimedu 1",
+        "wardcode": "LASIUI08",
+        "lganame": "Ibeju Lekki",
+        "lgacode": "25009",
+        "statename": "Lagos",
+        "statecode": "LA",
+        "updated_on": 1551398400000,
+        "accessblty": " ",
+        "func_stats": "Functional",
+        "category": "Primary Health Center",
+        "ownership": "Local Government Area",
+        "type": "Primary",
+        "source": "GRID",
+        "alt_name": " ",
+        "prmry_name": "Orimedu Primary Health Center",
+        "WARD": "ORIMEDU I",
+        "LCDA": "IBEJU-LEKKI",
+        "LGA": "IBEJU-LEKKI",
+        "GridCode": null
+      }
+    }
+  ]
+}

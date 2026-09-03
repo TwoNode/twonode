@@ -12,7 +12,7 @@ export default function SurfRestrictedLoginPage() {
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
         <div className="flex justify-center mb-6">
           <img
-            src="/surfboard/surf_logo.svg"
+            src="/surfboard/surf_logo.png"
             alt="Surfboard Logo"
             className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white"
             style={{ background: "white" }}

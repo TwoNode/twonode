@@ -20,8 +20,6 @@ import {
   Receipt,
   FileText,
   Menu,
-  QrCode,
-  Cog,
 } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { SURFBOARD_COLORS } from "@/surfboard-colors";
@@ -37,7 +35,7 @@ function SurfboardAdminDashboardNavbar({
 }) {
   return (
     <header
-      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-blue-100"
+      className="w-full h-[80px] flex items-center px-6 shadow bg-white border-b border-blue-100"
       style={{ background: SURFBOARD_COLORS.primary.dark }}
     >
       <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
@@ -51,7 +49,7 @@ function SurfboardAdminDashboardNavbar({
         </button>
 
         <img
-          src="/surfboard/surf_logo.svg"
+          src="/surfboard/surf_logo.png"
           alt="Surfboard Logo"
           className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
         />
@@ -123,21 +121,6 @@ export default function SurfboardAdminPanelLayout({
       url: `${dashboardUrl}/cod/batches`,
     },
     { icon: Settings, label: "Analytics", url: `${dashboardUrl}/analytics` },
-    {
-      icon: QrCode,
-      label: "QR Earnings",
-      url: `${dashboardUrl}/qr-earnings`,
-    },
-    {
-      icon: Cog,
-      label: "QR Earnings Settings",
-      url: `${dashboardUrl}/qr-earnings/settings`,
-    },
-    {
-      icon: Cog,
-      label: "Settings",
-      url: `${dashboardUrl}/settings`,
-    },
     ...(userData?.role === "SUPERADMIN"
       ? [
           // {
@@ -157,7 +140,7 @@ export default function SurfboardAdminPanelLayout({
         <LogoutLink
           key={"logout"}
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-15 rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
+          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
           style={{ backgroundColor: "transparent" }}
         >
           <span className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200 bg-blue-50 border border-blue-100">

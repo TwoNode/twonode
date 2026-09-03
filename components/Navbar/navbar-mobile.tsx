@@ -28,9 +28,9 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
 
   return (
     <Sheet>
-      <div className="z-200 w-full overflow-y-auto flex h-13.5 justify-between items-center gap-20">
+      <div className="z-200 w-full overflow-y-auto flex h-[54px] justify-between items-center gap-[80px]">
         <Link href={"/"} className="justify-start items-center flex">
-          <img alt="" className="w-50.5 h-11" src="/logo.svg" />
+          <img alt="" className="w-[202px] h-11" src="/logo.svg" />
         </Link>
 
         <SheetTrigger asChild>
@@ -47,7 +47,7 @@ export function SidebarMobile({ sidebarItems }: SidebarMobileProps) {
       >
         <SheetHeader className="flex flex-row justify-between items-center space-y-0 pb-6 pt-5 pr-3">
           <Link href={"/"} className="justify-start items-center flex">
-            <img alt="" className="w-50 h-11" src="/logo.svg" />
+            <img alt="" className="w-[200px] h-11" src="/logo.svg" />
           </Link>
 
           <SheetClose asChild>
