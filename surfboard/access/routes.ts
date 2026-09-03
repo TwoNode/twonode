@@ -49,6 +49,8 @@ export interface SurfboardRouteEntry {
   icon: LucideIcon;
   roles: SurfboardRole[];
   group: SurfboardRouteGroup;
+  /** Visual sidebar section heading — display-only, no bearing on access control. */
+  section?: string;
 }
 
 const ADMIN_ROLES = [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN];
@@ -76,37 +78,37 @@ const MDA_BASE = "/surfboard-mda/dashboard";
 
 export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   // --- Admin panel (ADMIN/SUPERADMIN) ---
-  { path: ADMIN_BASE, label: "Home", icon: Home, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/surf-plans`, label: "Surf Plans", icon: ListChecks, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/map`, label: "Map Viewer", icon: Map, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/user-management`, label: "User Management", icon: ListChecks, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/kyc`, label: "Surveyor's KYC", icon: Shield, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/cod`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin" },
-  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin" },
-  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin" },
+  { path: ADMIN_BASE, label: "Home", icon: Home, roles: ADMIN_ROLES, group: "admin", section: "Overview" },
+  { path: `${ADMIN_BASE}/surf-plans`, label: "Surf Plans", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
+  { path: `${ADMIN_BASE}/map`, label: "Map Viewer", icon: Map, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
+  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
+  { path: `${ADMIN_BASE}/user-management`, label: "User Management", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/kyc`, label: "Surveyor's KYC", icon: Shield, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/cod`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights" },
+  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights" },
+  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System" },
+  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "System" },
+  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin", section: "System" },
+  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin", section: "System" },
 
   // --- User (surveyor) panel ---
-  { path: USER_BASE, label: "Home", icon: Home, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/plans`, label: "My Plans", icon: ListChecks, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/plan`, label: "Plan", icon: FileText, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/newplan`, label: "New Plan", icon: FilePlus2, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/map`, label: "Map", icon: Map, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/viewmap`, label: "View Map", icon: MapPin, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/shared`, label: "Shared With Me", icon: Share2, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/queried-plans`, label: "Queried Plans", icon: AlertTriangle, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/subscription`, label: "Subscription", icon: CreditCard, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/payment`, label: "Payment", icon: CreditCard, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/spcode-verification`, label: "SP Code Verification", icon: BadgeCheck, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/notifications`, label: "Notifications", icon: Bell, roles: USER_PANEL_ROLES, group: "user" },
-  { path: `${USER_BASE}/settings`, label: "Settings", icon: Cog, roles: USER_PANEL_ROLES, group: "user" },
+  { path: USER_BASE, label: "Home", icon: Home, roles: USER_PANEL_ROLES, group: "user", section: "Overview" },
+  { path: `${USER_BASE}/plans`, label: "My Plans", icon: ListChecks, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  { path: `${USER_BASE}/plan`, label: "Plan", icon: FileText, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  { path: `${USER_BASE}/newplan`, label: "New Plan", icon: FilePlus2, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  { path: `${USER_BASE}/queried-plans`, label: "Queried Plans", icon: AlertTriangle, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  { path: `${USER_BASE}/shared`, label: "Shared With Me", icon: Share2, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  { path: `${USER_BASE}/map`, label: "Map", icon: Map, roles: USER_PANEL_ROLES, group: "user", section: "Map" },
+  { path: `${USER_BASE}/viewmap`, label: "View Map", icon: MapPin, roles: USER_PANEL_ROLES, group: "user", section: "Map" },
+  { path: `${USER_BASE}/spcode-verification`, label: "SP Code Verification", icon: BadgeCheck, roles: USER_PANEL_ROLES, group: "user", section: "Map" },
+  { path: `${USER_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: USER_PANEL_ROLES, group: "user", section: "Account" },
+  { path: `${USER_BASE}/subscription`, label: "Subscription", icon: CreditCard, roles: USER_PANEL_ROLES, group: "user", section: "Account" },
+  { path: `${USER_BASE}/payment`, label: "Payment", icon: CreditCard, roles: USER_PANEL_ROLES, group: "user", section: "Account" },
+  { path: `${USER_BASE}/notifications`, label: "Notifications", icon: Bell, roles: USER_PANEL_ROLES, group: "user", section: "Account" },
+  { path: `${USER_BASE}/settings`, label: "Settings", icon: Cog, roles: USER_PANEL_ROLES, group: "user", section: "Account" },
 
   // --- MDA panel — real gap closed here: each stage entry restricts to its
   // own stage role (+ MDA_SUPERADMIN, the supervisory role that sees every

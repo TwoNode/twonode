@@ -14,6 +14,8 @@ interface LinkItem {
   icon: LucideIcon;
   label: string;
   url: string;
+  /** Visual sidebar section heading — rendered above this item when it differs from the previous item's section. */
+  section?: string;
 }
 
 interface ElementItem {
@@ -35,109 +37,128 @@ export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
 
   const isActive = (url: string) => pathname === url;
 
+  // contrastText in this codebase's palettes is always a 3-digit hex ("#fff"),
+  // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
+  // invalid 5-digit "#fff99"). Use a literal translucent white instead of
+  // trying to alpha-blend the hex string.
+  const mutedTextColor =
+    colorPalette && colorPalette.primary && colorPalette.primary.contrastText
+      ? "rgba(255, 255, 255, 0.6)"
+      : colors.text?.muted ?? colors.primary.main;
+
+  let previousSection: string | undefined;
+
   return (
     <ScrollArea className="bg-transparent [&>div>div[style]]:block! h-full">
       <nav className="pt-4 h-full w-full flex flex-col justify-between overflow-y-auto box-border max-h-[85vh]">
-        <ul className="flex flex-col gap-1 items-start px-2 justify-center">
-          {items.map((item, index) =>
-            "element" in item ? (
-              <div key={index} className="w-full">
-                {item?.element}
-              </div>
-            ) : (
-              <Link
-                key={index}
-                href={item.url}
-                onClick={() => {
-                  sidebar?.toggleOpen();
-                }}
-                className={cn(
-                  "p-[5px] group flex flex-col items-center justify-center gap-[6px] w-full h-[70px] rounded-xl transition-all duration-200 ease-in-out",
-                  "hover:scale-105 hover:shadow-sm"
+        <ul className="flex flex-col gap-1 items-start px-2 justify-center w-full">
+          {items.map((item, index) => {
+            if ("element" in item) {
+              // Element items (e.g. Logout) always render trailing today —
+              // give them a bit of visual separation from the nav list above.
+              const el = (
+                <div
+                  key={index}
+                  className="w-full pt-2 mt-2 border-t"
+                  style={{ borderColor: `${colors.primary.light}22` }}
+                >
+                  {item?.element}
+                </div>
+              );
+              previousSection = undefined;
+              return el;
+            }
+
+            const showHeading =
+              !!item.section && item.section !== previousSection;
+            previousSection = item.section;
+
+            return (
+              <li key={index} className="w-full list-none">
+                {showHeading && (
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-wider px-3 pt-3 pb-1.5"
+                    style={{ color: mutedTextColor }}
+                  >
+                    {item.section}
+                  </div>
                 )}
-                style={{
-                  background: isActive(item.url)
-                    ? `linear-gradient(to right, ${colors.primary.light}33, ${colors.secondary.light}33)`
-                    : "transparent",
-                  borderLeft: isActive(item.url)
-                    ? `3px solid ${colors.sidebar.itemBorderLeft}`
-                    : "none",
-                  color:
-                    colorPalette &&
-                    colorPalette.primary &&
-                    colorPalette.primary.contrastText
-                      ? colorPalette.primary.contrastText
-                      : isActive(item.url)
-                      ? colors.primary.dark
-                      : colors.primary.dark,
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive(item.url)) {
-                    e.currentTarget.style.backgroundColor = `${colors.primary.light}22`;
-                    e.currentTarget.style.color =
-                      colorPalette &&
-                      colorPalette.primary &&
-                      colorPalette.primary.contrastText
-                        ? colorPalette.primary.contrastText
-                        : colors.primary.main;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive(item.url)) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color =
-                      colorPalette &&
-                      colorPalette.primary &&
-                      colorPalette.primary.contrastText
-                        ? colorPalette.primary.contrastText
-                        : colors.primary.dark;
-                  }
-                }}
-              >
-                <span
-                  className="w-max lg:mx-auto p-1 rounded-lg transition-all duration-200 border"
+                <Link
+                  href={item.url}
+                  onClick={() => {
+                    sidebar?.toggleOpen();
+                  }}
+                  className={cn(
+                    "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg px-2.5 transition-all duration-200 ease-in-out"
+                  )}
                   style={{
-                    backgroundColor: isActive(item.url)
-                      ? `${colors.primary.light}60`
-                      : `${colors.background.default}50`,
-                    borderColor: isActive(item.url)
-                      ? `${colors.primary.main}60`
-                      : `${colors.primary.light}40`,
+                    background: isActive(item.url)
+                      ? `${colors.primary.light}1A`
+                      : "transparent",
+                    borderLeft: isActive(item.url)
+                      ? `3px solid ${colors.sidebar.itemBorderLeft}`
+                      : "3px solid transparent",
+                    color:
+                      colorPalette &&
+                      colorPalette.primary &&
+                      colorPalette.primary.contrastText
+                        ? colorPalette.primary.contrastText
+                        : colors.primary.dark,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive(item.url)) {
+                      e.currentTarget.style.backgroundColor = `${colors.primary.light}0D`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive(item.url)) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }
                   }}
                 >
-                  <item.icon
-                    className="w-4 h-4 transition-all duration-200"
+                  <span
+                    className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
+                    style={{
+                      backgroundColor: isActive(item.url)
+                        ? `${colors.primary.light}60`
+                        : `${colors.background.default}50`,
+                      borderColor: isActive(item.url)
+                        ? `${colors.primary.main}60`
+                        : `${colors.primary.light}40`,
+                    }}
+                  >
+                    <item.icon
+                      className="w-4 h-4 transition-all duration-200"
+                      style={{
+                        color:
+                          colorPalette &&
+                          colorPalette.primary &&
+                          colorPalette.primary.contrastText
+                            ? colorPalette.primary.contrastText
+                            : isActive(item.url)
+                            ? colors.primary.dark
+                            : colors.primary.main,
+                      }}
+                    />
+                  </span>
+                  <span
+                    className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap"
                     style={{
                       color:
                         colorPalette &&
                         colorPalette.primary &&
                         colorPalette.primary.contrastText
                           ? colorPalette.primary.contrastText
-                          : isActive(item.url)
-                          ? colors.primary.dark
-                          : colors.primary.main,
+                          : colors.primary.dark,
+                      fontWeight: isActive(item.url) ? "700" : "500",
                     }}
-                  />
-                </span>
-                <span
-                  className="text-center text-[11px] font-semibold font-['Eudoxus Sans'] transition-colors duration-200 max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
-                  style={{
-                    color:
-                      colorPalette &&
-                      colorPalette.primary &&
-                      colorPalette.primary.contrastText
-                        ? colorPalette.primary.contrastText
-                        : isActive(item.url)
-                        ? colors.primary.dark
-                        : colors.primary.dark,
-                    fontWeight: isActive(item.url) ? "700" : "500",
-                  }}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            )
-          )}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="mt-8 pb-6 w-full">
