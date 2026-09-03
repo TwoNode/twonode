@@ -3,12 +3,7 @@ import Welcome from "./components/Welcome";
 import Link from "next/link";
 import { getAllRequestsWithUserByAdmin } from "@/reva/services/reportService";
 import ErrorComponent from "../../reva/dashboard/components/ErrorComponent";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
-
-function statusBadgeStyle(tone: "success" | "warning" | "info" | "error") {
-  const color = REVA_COLORS.status[tone];
-  return { backgroundColor: `${color}1A`, color };
-}
+import { REVA_COLORS, REVA_GRADIENTS, revaStatusBadgeStyle } from "@/reva/colors";
 
 const Home = async () => {
   let data, oneTimeRequests;
@@ -67,7 +62,7 @@ const Home = async () => {
                   <div className="flex gap-2 flex-wrap">
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property.status === "Available"
                           ? "success"
                           : property.status === "Processing"
@@ -79,7 +74,7 @@ const Home = async () => {
                     </span>
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property.paymentStatus === "Paid" ? "success" : "error"
                       )}
                     >
@@ -87,7 +82,7 @@ const Home = async () => {
                     </span>
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property?.report &&
                           typeof property?.report === "object" &&
                           "isApproved" in property?.report &&
@@ -205,7 +200,7 @@ const Home = async () => {
                   <div className="flex gap-2 flex-wrap">
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property.status === "Completed" ||
                           property.status === "Available"
                           ? "success"
@@ -218,7 +213,7 @@ const Home = async () => {
                     </span>
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property.paymentStatus === "Paid" ? "success" : "error"
                       )}
                     >
@@ -226,7 +221,7 @@ const Home = async () => {
                     </span>
                     <span
                       className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={statusBadgeStyle(
+                      style={revaStatusBadgeStyle(
                         property?.report &&
                           typeof property?.report === "object" &&
                           "isApproved" in property?.report &&

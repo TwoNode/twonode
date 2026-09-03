@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, addDays } from "date-fns";
 import Link from "next/link";
+import { REVA_COLORS, revaStatusBadgeStyle } from "@/reva/colors";
 
 const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
   return (
@@ -32,20 +33,17 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
               <div className="flex flex-col gap-2 items-end">
                 <Badge
                   variant="outline"
-                  className={
-                    req?.status === "Completed"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }
+                  style={revaStatusBadgeStyle(
+                    req?.status === "Completed" ? "success" : "warning"
+                  )}
                 >
                   {req?.status}
                 </Badge>
                 <Badge
-                  className={`transition-colors ${
-                    req?.paymentStatus === "Paid"
-                      ? "bg-green-100 text-green-700 hover:text-white hover:bg-green-700"
-                      : "bg-red-100 text-red-700 hover:text-white hover:bg-red-700"
-                  }`}
+                  className="transition-colors"
+                  style={revaStatusBadgeStyle(
+                    req?.paymentStatus === "Paid" ? "success" : "error"
+                  )}
                 >
                   {req?.paymentStatus}
                 </Badge>
@@ -63,7 +61,10 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Cost</p>
-                <p className="text-sm font-medium text-blue-600">
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: REVA_COLORS.primary.light }}
+                >
                   ₦{req?.totalCost.toLocaleString()}
                 </p>
               </div>
@@ -76,11 +77,13 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
               <div>
                 <p className="text-xs text-muted-foreground">Due Date</p>
                 <p
-                  className={`text-sm ${
-                    new Date() > addDays(new Date(req?.updatedAt), 1)
-                      ? "text-red-600"
-                      : ""
-                  }`}
+                  className="text-sm"
+                  style={{
+                    color:
+                      new Date() > addDays(new Date(req?.updatedAt), 1)
+                        ? REVA_COLORS.status.error
+                        : undefined,
+                  }}
                 >
                   {format(
                     addDays(new Date(req?.updatedAt), 1),
@@ -93,7 +96,10 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
             {req?.documentsUrls.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Documents</p>
-                <ul className="list-disc pl-5 text-sm text-blue-600">
+                <ul
+                  className="list-disc pl-5 text-sm"
+                  style={{ color: REVA_COLORS.primary.light }}
+                >
                   {req?.documentsUrls.map((url: string, idx: number) => (
                     <li key={idx}>
                       <a
@@ -113,16 +119,25 @@ const OneTimeRequestList = ({ requests }: { requests: any[] }) => {
             <div className="flex justify-between">
               {req?.report ? (
                 req?.report?.isApproved ? (
-                  <Badge className="transition-colors bg-green-100 text-green-700 hover:text-white hover:bg-green-700">
+                  <Badge
+                    className="transition-colors"
+                    style={revaStatusBadgeStyle("success")}
+                  >
                     Approved
                   </Badge>
                 ) : (
-                  <Badge className="transition-colors bg-yellow-100 text-yellow-700 hover:text-white hover:bg-yellow-700">
+                  <Badge
+                    className="transition-colors"
+                    style={revaStatusBadgeStyle("warning")}
+                  >
                     Under Review
                   </Badge>
                 )
               ) : (
-                <Badge className="transition-colors bg-red-100 text-red-700 hover:text-white hover:bg-red-700">
+                <Badge
+                  className="transition-colors"
+                  style={revaStatusBadgeStyle("error")}
+                >
                   No Report
                 </Badge>
               )}

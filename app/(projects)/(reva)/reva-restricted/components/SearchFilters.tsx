@@ -12,6 +12,7 @@ import {
   AdjustmentsHorizontalIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { REVA_COLORS } from "@/reva/colors";
 
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
@@ -240,12 +241,20 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           <span>
             Showing {filteredCount} of {totalCount} requests
             {hasActiveFilters && (
-              <span className="ml-2 text-blue-600">(filtered)</span>
+              <span
+                className="ml-2"
+                style={{ color: REVA_COLORS.primary.light }}
+              >
+                (filtered)
+              </span>
             )}
           </span>
           {hasActiveFilters && (
             <div className="flex items-center gap-2">
-              <InformationCircleIcon className="h-4 w-4 text-blue-500" />
+              <InformationCircleIcon
+                className="h-4 w-4"
+                style={{ color: REVA_COLORS.primary.light }}
+              />
               <Badge variant="outline" className="text-xs">
                 {activeFilterCount} active filters
               </Badge>

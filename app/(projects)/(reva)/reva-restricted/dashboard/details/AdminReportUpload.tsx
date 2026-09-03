@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { notifyError, notifyInfo, notifySuccess } from "@/utils/notify";
 import { revaApi } from "@/reva/apiClient";
+import { REVA_COLORS } from "@/reva/colors";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -303,7 +304,8 @@ export function AdminReportUpload({
       {isLoading && (
         <div className="fixed z-999 inset-0 flex justify-center items-center bg-white bg-opacity-75">
           <svg
-            className="animate-spin h-8 w-8 text-blue-500"
+            className="animate-spin h-8 w-8"
+            style={{ color: REVA_COLORS.primary.light }}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -790,7 +792,8 @@ export function AdminReportUpload({
                     <Button
                       type="button"
                       onClick={() => setShowConfirmApproval(true)}
-                      className="w-full md:w-auto px-6 bg-red-500"
+                      className="w-full md:w-auto px-6 hover:opacity-90"
+                      style={{ backgroundColor: REVA_COLORS.status.error }}
                     >
                       Disapprove Report
                     </Button>
@@ -798,7 +801,8 @@ export function AdminReportUpload({
                     <Button
                       type="button"
                       onClick={() => setShowConfirmApproval(true)}
-                      className="w-full md:w-auto px-6 bg-green-500 hover:bg-red-500"
+                      className="w-full md:w-auto px-6 hover:opacity-90"
+                      style={{ backgroundColor: REVA_COLORS.status.success }}
                     >
                       Approve Report
                     </Button>
@@ -885,7 +889,10 @@ export function AdminReportUpload({
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-6 text-red-500">
+                <p
+                  className="text-sm mt-6"
+                  style={{ color: REVA_COLORS.status.error }}
+                >
                   Are you sure you want to approve this report and send it to
                   client's view?
                 </p>
@@ -896,7 +903,8 @@ export function AdminReportUpload({
               <Button
                 type="button"
                 onClick={handleApprove}
-                className="w-full md:w-auto px-6 text-green-500"
+                className="w-full md:w-auto px-6"
+                style={{ color: REVA_COLORS.status.success }}
               >
                 Approve Report
               </Button>
