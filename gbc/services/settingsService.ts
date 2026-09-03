@@ -29,7 +29,6 @@ function mergeWithDefaults(saved: Partial<GBCSettingsData>): GBCSettingsData {
     notifications: { ...defaultSettings.notifications, ...(saved.notifications || {}) },
     gallery: { ...defaultSettings.gallery, ...(saved.gallery || {}) },
     system: { ...defaultSettings.system, ...(saved.system || {}) },
-    editions: saved.editions ?? defaultSettings.editions,
   };
 }
 
@@ -84,23 +83,6 @@ export async function updateSettings(patch: SettingsPatch, userId: string): Prom
 
 export async function resetToDefaults(userId: string): Promise<GBCSettingsData> {
   return replaceSettings(defaultSettings, userId, "RESET_SETTINGS");
-}
-
-/**
- * Dedicated write path for editionService.ts — editions are excluded from
- * the generic updateSettings() patch surface (see updateSettings' comment)
- * since edition CRUD has its own business rules (exactly-one-ACTIVE) that
- * belong there, not here. This just persists+audit-logs, same as any other
- * settings write.
- */
-export async function replaceEditions(
-  editions: GBCSettingsData["editions"],
-  userId: string,
-  action: string
-): Promise<GBCSettingsData["editions"]> {
-  const current = await getSettings();
-  const updated = await replaceSettings({ ...current, editions }, userId, action);
-  return updated.editions;
 }
 
 export async function getPreviousSettings(): Promise<GBCSettingsData | null> {

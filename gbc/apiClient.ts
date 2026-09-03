@@ -65,7 +65,7 @@ export type AddAdminInput = {
 export type UploadResult = { key: string; url: string; thumbnailKey?: string; thumbnailUrl?: string };
 export type UploadKind = "sponsor-logo" | "partner-logo" | "speaker-photo" | "gallery-media";
 
-export type SettingsPatch = { [K in keyof Omit<GBCSettingsData, "editions">]?: Partial<GBCSettingsData[K]> };
+export type SettingsPatch = { [K in keyof GBCSettingsData]?: Partial<GBCSettingsData[K]> };
 
 export type ContactFormInput = {
   name: string;

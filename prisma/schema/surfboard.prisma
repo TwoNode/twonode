@@ -34,7 +34,7 @@ model SurfboardUser {
   emailVerificationToken   String?
   emailVerificationExpires DateTime?
 
-  isActive Boolean @default(true)
+  isActive       Boolean @default(true)
   isKycValidated Boolean @default(false)
 
   /// Native email+password auth (§4.2) — null if this account has never set
@@ -46,7 +46,7 @@ model SurfboardUser {
   logo            String? // URL to the user's logo
   companyName     String? // User's company name
   companyAddress  String? // User's company address
-  surconRegNumber String? @unique @default(dbgenerated("concat('SURCON_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 5))"))
+  surconRegNumber String?      @unique @default(dbgenerated("concat('SURCON_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 5))"))
   surconRegName   String? // Name as registered with SURCON
   signature       String? // URL to the user's signature image
   prefix          String? // Name prefix (e.g., Mr., Mrs., Dr.)
@@ -55,7 +55,7 @@ model SurfboardUser {
   postalCode      String? // User's postal code
   phoneNumber     String? // User's phone number
   address         String? // User's address
-  payerID         Int?    // Payer ID
+  payerID         Int? // Payer ID
   payerIDType     PayerIDType? // Type of payer: Individual or Commercial
 
   // Relations
@@ -254,7 +254,7 @@ model SurfboardPlan {
 
   // Record Copy Verification
   recordCopyVerifiedAt       DateTime?
-  recordCopyVerdict          String?   // "VERIFIED", "REVIEW", "NOT_VERIFIED", "ERROR"
+  recordCopyVerdict          String? // "VERIFIED", "REVIEW", "NOT_VERIFIED", "ERROR"
   recordCopyVerificationData Json?
 
   // Approval tracking - Intake
@@ -289,10 +289,10 @@ model SurfboardPlan {
   state String?
 
   // Zone-based fee calculation fields
-  zone        String?  // Detected zone from Scale_of_fees (e.g., "lagosZoneA", "lagosZoneB")
-  codFee      Float?   // Calculated CoD fee for this plan
-  isDoubleFee Boolean  @default(false) // True if corporate or >2 names in survey title
-  ethnicity   String?  // "hausa", "igbo", "yoruba" or "corporate" - used for double fee detection
+  zone        String? // Detected zone from Scale_of_fees (e.g., "lagosZoneA", "lagosZoneB")
+  codFee      Float? // Calculated CoD fee for this plan
+  isDoubleFee Boolean @default(false) // True if corporate or >2 names in survey title
+  ethnicity   String? // "hausa", "igbo", "yoruba" or "corporate" - used for double fee detection
 
   /// Array of pillar objects
   pillars Json
@@ -505,13 +505,13 @@ enum WithdrawalStatus {
 }
 
 model QREarningsTransaction {
-  id              String        @id @default(uuid())
-  reference       String        @unique
-  planId          String        @db.Uuid
-  plan            SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  id        String        @id @default(uuid())
+  reference String        @unique
+  planId    String        @db.Uuid
+  plan      SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
-  surveyorId      String
-  surveyor        SurfboardUser @relation("SurveyorQREarnings", fields: [surveyorId], references: [id])
+  surveyorId String
+  surveyor   SurfboardUser @relation("SurveyorQREarnings", fields: [surveyorId], references: [id])
 
   serviceType     QRServiceType
   verificationFee Float
@@ -520,16 +520,16 @@ model QREarningsTransaction {
   totalAmount     Float
   surveyorEarned  Float
 
-  payerEmail      String?
-  payerName       String?
-  paymentStatus   String        @default("PENDING") // PENDING, SUCCESS, FAILED
-  paymentRef      String?
+  payerEmail    String?
+  payerName     String?
+  paymentStatus String  @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentRef    String?
 
-  accessToken     String        @unique @default(uuid())
-  expiresAt       DateTime?
+  accessToken String    @unique @default(uuid())
+  expiresAt   DateTime?
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([planId])
   @@index([surveyorId])

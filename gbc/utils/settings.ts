@@ -65,14 +65,18 @@ export type GBCSettingsData = {
     debugMode: boolean;
     automaticBackups: boolean;
   };
-  editions: GBCEdition[];
 };
 
 /**
- * One entry per conference year (1.0, 2.0, ...). Lives inside the settings
- * JSON blob rather than a new table — see phase-4-gbc.md's edition-metadata
- * plan. Exactly one entry should have status "ACTIVE" at a time, enforced
- * in editionService.ts, not the DB (this is JSON, not a constraint).
+ * One entry per conference year (1.0, 2.0, ...). Was a JSON array inside
+ * this settings blob (see phase-4-gbc.md's original edition-metadata plan);
+ * promoted to its own `GBCEdition` table (see prisma/schema/gbc.prisma) once
+ * editions became a real cross-record concern — this type is now just the
+ * API-facing shape editionService.ts serializes gbc_editions rows into, kept
+ * here since it's imported alongside the rest of GBCSettingsData throughout
+ * the GBC frontend/apiClient. Exactly one entry should have status "ACTIVE"
+ * at a time, enforced in editionService.ts and backed by a DB partial
+ * unique index.
  */
 export type GBCEdition = {
   key: string;
@@ -198,17 +202,4 @@ export const defaultSettings: GBCSettingsData = {
     debugMode: false,
     automaticBackups: true,
   },
-  editions: [
-    {
-      key: "2.0",
-      name: "Geospatial Builders Conference 2.0",
-      theme: "Geospatial Capital: A Catalyst for Inclusive Growth",
-      subTheme: "Driving Transformation in Land Administration and Energy",
-      venue: "Eko Hotel & Suites, Lagos",
-      startDate: "2026-03-15",
-      endDate: "2026-03-15",
-      status: "ACTIVE",
-      ticketPrefix: "GBC2",
-    },
-  ],
 };

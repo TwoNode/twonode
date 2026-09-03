@@ -44,13 +44,10 @@ function resolveProfession(profession: string, otherProfession?: string): string
   return profession === "OTHER" && otherProfession ? `Other: ${otherProfession}` : profession;
 }
 
-/** Falls back to "GBC2" (the previous hardcoded prefix) if no edition is marked ACTIVE — defensive, shouldn't happen once editions are seeded. */
-function getActiveTicketPrefix(settings: Awaited<ReturnType<typeof getSettings>>): string {
-  return settings.editions?.find((e) => e.status === "ACTIVE")?.ticketPrefix ?? "GBC2";
-}
-
-function getActiveEditionKey(settings: Awaited<ReturnType<typeof getSettings>>): string {
-  return settings.editions?.find((e) => e.status === "ACTIVE")?.key ?? "2.0";
+/** Falls back to GBC2/"2.0" (the previous hardcoded prefix/key) if no edition is marked ACTIVE — defensive, shouldn't happen once editions are seeded. Queries gbc_editions directly (see editionService.ts) rather than the settings blob editions used to live in. */
+async function getActiveEditionInfo(): Promise<{ key: string; ticketPrefix: string }> {
+  const active = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE" } });
+  return { key: active?.key ?? "2.0", ticketPrefix: active?.ticketPrefix ?? "GBC2" };
 }
 
 /** Same shape as the old dbgenerated default (prefix + 6 hex chars), just computed in application code so the prefix can vary per edition. */
@@ -142,11 +139,12 @@ export async function createTicket(data: TicketPurchaseInput) {
   }
 
   const price = calculateTicketPrice(data.ticketType as TicketType, settings?.tickets);
+  const activeEdition = await getActiveEditionInfo();
 
   const ticket = await prisma.gBCTicket.create({
     data: {
-      ticketNumber: generateTicketNumber(getActiveTicketPrefix(settings)),
-      edition: getActiveEditionKey(settings),
+      ticketNumber: generateTicketNumber(activeEdition.ticketPrefix),
+      edition: activeEdition.key,
       name: data.name,
       email: data.email,
       phone: data.phone,
@@ -185,8 +183,9 @@ async function createMultiTicket(attendeesData: AttendeeInput[], count: number, 
   await assertCapacityAvailable(count, settings);
 
   const price = calculateTicketPrice(ticketType, settings?.tickets);
-  const ticketPrefix = getActiveTicketPrefix(settings);
-  const edition = getActiveEditionKey(settings);
+  const activeEdition = await getActiveEditionInfo();
+  const ticketPrefix = activeEdition.ticketPrefix;
+  const edition = activeEdition.key;
 
   const tickets = await Promise.all(
     attendeesData.map((attendee) =>

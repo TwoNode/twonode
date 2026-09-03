@@ -18,6 +18,7 @@ const mockPrisma = vi.hoisted(() => ({
     findMany: vi.fn(),
     groupBy: vi.fn(),
   },
+  gBCEdition: { findFirst: vi.fn() },
   gBCUser: { findUnique: vi.fn() },
 }));
 
@@ -25,7 +26,6 @@ const baseSettings = {
   tickets: { pauseTicketReg: false, maxCapacity: 1000, maxEarlyBirdCapacity: 500 },
   event: { date: null, venue: null },
   contact: { city: null },
-  editions: [{ key: "2.0", status: "ACTIVE", ticketPrefix: "GBC2" }],
 };
 
 const mockSettingsService = vi.hoisted(() => ({ getSettings: vi.fn() }));
@@ -80,6 +80,7 @@ const attendee = (overrides: Partial<AttendeeInput> = {}): AttendeeInput => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockSettingsService.getSettings.mockResolvedValue(baseSettings);
+  mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "2.0", status: "ACTIVE", ticketPrefix: "GBC2" });
   mockUtils.isTicketTypeAvailable.mockReturnValue({ available: true });
   mockPaystack.initializeTicketPayment.mockResolvedValue({
     data: { reference: "ref_1", authorization_url: "https://paystack.test/pay" },
@@ -126,13 +127,7 @@ describe("createTicket", () => {
   });
 
   it("generates the ticket number from the active edition's prefix, tagged with that edition's key", async () => {
-    mockSettingsService.getSettings.mockResolvedValue({
-      ...baseSettings,
-      editions: [
-        { key: "2.0", status: "PAST", ticketPrefix: "GBC2" },
-        { key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" },
-      ],
-    });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
     mockPrisma.gBCTicket.count.mockResolvedValue(0);
     mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_abc123" });
     mockPrisma.gBCTicket.update.mockResolvedValue({});
@@ -148,7 +143,7 @@ describe("createTicket", () => {
   });
 
   it("falls back to GBC2 when no edition is marked ACTIVE (defensive)", async () => {
-    mockSettingsService.getSettings.mockResolvedValue({ ...baseSettings, editions: [] });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
     mockPrisma.gBCTicket.count.mockResolvedValue(0);
     mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC2_abc123" });
     mockPrisma.gBCTicket.update.mockResolvedValue({});

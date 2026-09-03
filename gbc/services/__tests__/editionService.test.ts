@@ -1,35 +1,53 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Weighted toward the exactly-one-ACTIVE invariant (new business rule this
- * service owns) and the public/admin stats split (no revenue vs. revenue).
+ * Weighted toward the exactly-one-ACTIVE invariant (this service's own
+ * business rule) and the public/admin stats split (no revenue vs. revenue).
+ * gbc_editions is a real table now (see prisma/schema/gbc.prisma's
+ * GBCEdition model) — mocks prisma.gBCEdition directly rather than
+ * settingsService, which no longer carries editions at all.
  */
 
 const mockPrisma = vi.hoisted(() => ({
+  gBCEdition: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   gBCTicket: { count: vi.fn(), aggregate: vi.fn() },
   gBCSponsor: { findMany: vi.fn() },
   gBCSpeaker: { findMany: vi.fn() },
-}));
-
-const mockSettingsService = vi.hoisted(() => ({
-  getSettings: vi.fn(),
-  replaceEditions: vi.fn(),
+  gBCAuditLog: { create: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
-vi.mock("@/gbc/services/settingsService", () => mockSettingsService);
 
 const { getActiveEdition, getEditionPublicRecap, getEditionAdminStats, createEdition, activateEdition, archiveEdition } =
   await import("@/gbc/services/editionService");
 
-const editions = [
-  { key: "1.0", name: "GBC 1.0", theme: "T1", subTheme: "S1", venue: "V1", startDate: "2025-01-01", endDate: "2025-01-01", status: "PAST", ticketPrefix: "GBC1" },
-  { key: "2.0", name: "GBC 2.0", theme: "T2", subTheme: "S2", venue: "V2", startDate: "2026-03-15", endDate: "2026-03-15", status: "ACTIVE", ticketPrefix: "GBC2" },
-] as const;
+const row = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  key: "2.0",
+  name: "GBC 2.0",
+  theme: "T2",
+  subTheme: "S2",
+  venue: "V2",
+  startDate: new Date("2026-03-15"),
+  endDate: new Date("2026-03-15"),
+  status: "ACTIVE",
+  ticketPrefix: "GBC2",
+  ...overrides,
+});
+
+const rows1_0 = row({ key: "1.0", name: "GBC 1.0", theme: "T1", subTheme: "S1", venue: "V1", startDate: new Date("2025-01-01"), endDate: new Date("2025-01-01"), status: "PAST", ticketPrefix: "GBC1" });
+const rows2_0 = row();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSettingsService.getSettings.mockResolvedValue({ editions: [...editions] });
+  mockPrisma.gBCEdition.findMany.mockResolvedValue([rows2_0, rows1_0]);
+  mockPrisma.gBCEdition.findFirst.mockImplementation(async ({ where }: any) =>
+    where?.status === "ACTIVE" ? rows2_0 : null
+  );
+  mockPrisma.gBCEdition.findUnique.mockImplementation(async ({ where }: any) => {
+    if (where.key === "2.0") return rows2_0;
+    if (where.key === "1.0") return rows1_0;
+    return null;
+  });
   mockPrisma.gBCTicket.count.mockResolvedValue(0);
   mockPrisma.gBCTicket.aggregate.mockResolvedValue({ _sum: { price: 0 } });
   mockPrisma.gBCSponsor.findMany.mockResolvedValue([]);
@@ -43,7 +61,7 @@ describe("getActiveEdition", () => {
   });
 
   it("returns null when nothing is marked ACTIVE", async () => {
-    mockSettingsService.getSettings.mockResolvedValue({ editions: [{ ...editions[0] }] });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
     const result = await getActiveEdition();
     expect(result).toBeNull();
   });
@@ -72,65 +90,62 @@ describe("getEditionPublicRecap vs getEditionAdminStats", () => {
 describe("createEdition", () => {
   it("throws ValidationError on a duplicate key", async () => {
     await expect(
-      createEdition({ key: "2.0", name: "n", theme: "t", subTheme: "s", venue: "v", startDate: "d", endDate: "d", ticketPrefix: "P" }, "u1")
+      createEdition({ key: "2.0", name: "n", theme: "t", subTheme: "s", venue: "v", startDate: "2026-01-01", endDate: "2026-01-01", ticketPrefix: "P" }, "u1")
     ).rejects.toMatchObject({ status: 400 });
   });
 
-  it("defaults status to UPCOMING and appends to the existing list", async () => {
-    mockSettingsService.replaceEditions.mockResolvedValue([]);
+  it("defaults status to UPCOMING and creates the row", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValueOnce(null);
     await createEdition(
-      { key: "3.0", name: "n", theme: "t", subTheme: "s", venue: "v", startDate: "d", endDate: "d", ticketPrefix: "P" },
+      { key: "3.0", name: "n", theme: "t", subTheme: "s", venue: "v", startDate: "2026-01-01", endDate: "2026-01-01", ticketPrefix: "P" },
       "u1"
     );
-    expect(mockSettingsService.replaceEditions).toHaveBeenCalledWith(
-      [...editions, expect.objectContaining({ key: "3.0", status: "UPCOMING" })],
-      "u1",
-      "CREATE_EDITION"
-    );
+    expect(mockPrisma.gBCEdition.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ key: "3.0", status: "UPCOMING" }),
+    });
   });
 });
 
 describe("activateEdition (exactly-one-ACTIVE invariant)", () => {
   it("throws NotFoundError for an unknown key", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValueOnce(null);
     await expect(activateEdition("9.0", "u1")).rejects.toMatchObject({ status: 404 });
   });
 
   it("refuses to activate a second edition while one is already ACTIVE", async () => {
     await expect(activateEdition("1.0", "u1")).rejects.toMatchObject({ status: 409 });
-    expect(mockSettingsService.replaceEditions).not.toHaveBeenCalled();
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
   });
 
   it("is a no-op when the target is already ACTIVE", async () => {
     await activateEdition("2.0", "u1");
-    expect(mockSettingsService.replaceEditions).not.toHaveBeenCalled();
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
   });
 
   it("activates cleanly once no edition is currently ACTIVE", async () => {
-    mockSettingsService.getSettings.mockResolvedValue({
-      editions: [{ ...editions[0] }, { ...editions[1], status: "PAST" }],
-    });
-    mockSettingsService.replaceEditions.mockResolvedValue([]);
-    await activateEdition("2.0", "u1");
-    expect(mockSettingsService.replaceEditions).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ key: "2.0", status: "ACTIVE" })]),
-      "u1",
-      "ACTIVATE_EDITION"
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
+    mockPrisma.gBCEdition.findUnique.mockImplementation(async ({ where }: any) =>
+      where.key === "2.0" ? row({ status: "PAST" }) : null
     );
+    await activateEdition("2.0", "u1");
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "2.0" },
+      data: { status: "ACTIVE" },
+    });
   });
 });
 
 describe("archiveEdition", () => {
   it("throws NotFoundError for an unknown key", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValueOnce(null);
     await expect(archiveEdition("9.0", "u1")).rejects.toMatchObject({ status: 404 });
   });
 
   it("marks the target PAST without touching other editions", async () => {
-    mockSettingsService.replaceEditions.mockResolvedValue([]);
     await archiveEdition("2.0", "u1");
-    expect(mockSettingsService.replaceEditions).toHaveBeenCalledWith(
-      [editions[0], { ...editions[1], status: "PAST" }],
-      "u1",
-      "ARCHIVE_EDITION"
-    );
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "2.0" },
+      data: { status: "PAST" },
+    });
   });
 });
