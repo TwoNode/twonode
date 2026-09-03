@@ -2,14 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  getAndLockBatchForRecordsII,
-  releaseBatchLockForRecordsII,
-  getAndLockBatchForIntake,
-  releaseBatchLockForIntake,
-  getAndLockBatchForAccounts,
-  releaseBatchLockForAccounts,
-} from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 export type BatchLockRole = "RECORDS_II" | "INTAKE" | "ACCOUNTS";
 
@@ -65,15 +58,9 @@ export function useBatchLock({
     setLockError(null);
 
     try {
-      const result = await (
-        role === "INTAKE"
-          ? getAndLockBatchForIntake()
-          : role === "ACCOUNTS"
-          ? getAndLockBatchForAccounts()
-          : getAndLockBatchForRecordsII()
-      );
+      const result = await surfboardApi.cod.locks.claimNextBatch(role as any);
 
-      if (result.success && result.data) {
+      if (result.success) {
         if (result.data.locked && result.data.batchId) {
           setLockedBatchId(result.data.batchId);
           setLockedBatchCode(result.data.batchCode);
@@ -113,13 +100,7 @@ export function useBatchLock({
     if (!lockedBatchId || !hasLock.current) return;
 
     try {
-      if (role === "INTAKE") {
-        await releaseBatchLockForIntake();
-      } else if (role === "ACCOUNTS") {
-        await releaseBatchLockForAccounts();
-      } else {
-        await releaseBatchLockForRecordsII();
-      }
+      await surfboardApi.cod.locks.releaseBatch(role as any);
       setLockedBatchId(null);
       setLockedBatchCode(null);
       setLockedPlanCount(0);
@@ -134,13 +115,7 @@ export function useBatchLock({
   // Release all locks (called on page leave)
   const releaseAllLocks = useCallback(async () => {
     try {
-      if (role === "INTAKE") {
-        await releaseBatchLockForIntake();
-      } else if (role === "ACCOUNTS") {
-        await releaseBatchLockForAccounts();
-      } else {
-        await releaseBatchLockForRecordsII();
-      }
+      await surfboardApi.cod.locks.releaseBatch(role as any);
       setLockedBatchId(null);
       setLockedBatchCode(null);
       setLockedPlanCount(0);

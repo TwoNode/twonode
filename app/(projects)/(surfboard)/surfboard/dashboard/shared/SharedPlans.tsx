@@ -3,10 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Plan } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
-import {
-  getAllSharedSurfPlans,
-  getSharedWithMeSurfPlans,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -112,7 +109,7 @@ export default function SharedPlans() {
         setLoading(true);
         const result =
           activeTab === "myShared"
-            ? await getAllSharedSurfPlans(
+            ? await surfboardApi.plans.shared(
                 page,
                 pageSize,
                 {
@@ -124,7 +121,7 @@ export default function SharedPlans() {
                   order: sort.order,
                 }
               )
-            : await getSharedWithMeSurfPlans(
+            : await surfboardApi.plans.sharedWithMe(
                 page,
                 pageSize,
                 {
@@ -137,7 +134,7 @@ export default function SharedPlans() {
                 }
               );
 
-        if (result?.success && result?.data) {
+        if (result?.success) {
           if (activeTab === "myShared") {
             setSharedPlans(result.data.plans || []);
           } else {

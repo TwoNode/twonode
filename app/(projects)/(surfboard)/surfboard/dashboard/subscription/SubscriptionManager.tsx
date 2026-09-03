@@ -27,13 +27,8 @@ import {
   SUBSCRIPTION_PLANS,
   type PlanId,
 } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import {
-  initiateSubscription,
-  verifySubscription,
-  disableSubscription,
-} from "@/app/(projects)/(surfboard)/actions/paystackActions";
 import PaystackPop from "@paystack/inline-js";
-import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
 
 // Date utilities
@@ -70,8 +65,8 @@ export default function SubscriptionManager() {
     const fetchSubscription = async () => {
       try {
         setIsLoading(true);
-        const subscription = await getUserActiveSubscription();
-        setCurrent(subscription || null);
+        const result = await surfboardApi.subscription.get();
+        setCurrent((result.success ? result.data : null) || null);
       } catch (error) {
         console.error("Error fetching subscription:", error);
         toast.error("Failed to load subscription data");
@@ -88,8 +83,8 @@ export default function SubscriptionManager() {
   useEffect(() => {
     if (success) {
       toast.success("Subscription updated successfully");
-      getUserActiveSubscription().then((sub) => {
-        setCurrent(sub);
+      surfboardApi.subscription.get().then((result) => {
+        setCurrent(result.success ? result.data : null);
         setPendingPlan(null);
       });
       // Refresh layout
@@ -202,8 +197,8 @@ export default function SubscriptionManager() {
 
     setPendingPlan(planId);
     try {
-      const result = await initiateSubscription(planId);
-      if (!result?.success || !result.data) {
+      const result = await surfboardApi.subscription.initiate(planId);
+      if (!result?.success) {
         throw new Error(result?.error || "Failed to initiate subscription");
       }
 
@@ -222,14 +217,14 @@ export default function SubscriptionManager() {
             console.log("Payment successful:", transaction);
             toast.loading("Verifying payment...", { id: "verify-payment" });
 
-            const verification = await verifySubscription(reference);
+            const verification = await surfboardApi.subscription.verify(reference);
 
             toast.dismiss("verify-payment");
 
             if (verification?.success) {
               toast.success("Subscription activated successfully!");
-              const updatedSub = await getUserActiveSubscription();
-              setCurrent(updatedSub);
+              const updatedSubResult = await surfboardApi.subscription.get();
+              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
               setPendingPlan(null);
               globalThis.location.reload();
             } else {
@@ -287,7 +282,7 @@ export default function SubscriptionManager() {
 
     setIsDisabling(true);
     try {
-      const result = await disableSubscription();
+      const result = await surfboardApi.subscription.disable();
 
       if (result.success) {
         toast.success(
@@ -298,15 +293,15 @@ export default function SubscriptionManager() {
           ...current,
           status: "canceled",
           cancelledAt: new Date(),
-          currentEnd: result.data?.currentEnd,
+          currentEnd: result.data?.data?.currentEnd,
         });
 
         setShowConfirmation(false);
-      } else if (result.error === "sync_pending") {
+      } else if (result.error?.toLowerCase().includes("sync pending")) {
         toast.info("Subscription setup is still finalizing. Please try again in 1-2 minutes.");
         setShowConfirmation(false);
       } else {
-        toast.error(result.message || "Failed to cancel subscription");
+        toast.error(result.error || "Failed to cancel subscription");
       }
     } catch (error) {
       console.error("Error cancelling subscription:", error);

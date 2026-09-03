@@ -97,7 +97,7 @@ export const isSurfRegularUser = (role: string | null = "") => {
 };
 
 // MDA (Ministry, Department & Agency) permission helpers
-// These roles are used in the surf-mda portal
+// These roles are used in the surfboard-mda portal
 const MDA_ROLES = {
   accounts: "ACCOUNTS",
   charting: "CHARTING",

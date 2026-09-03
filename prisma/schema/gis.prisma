@@ -1,0 +1,47 @@
+// --------------------------------------------------------------------------------
+// Geospatial reference datasets — PostGIS tables, shared infrastructure for the
+// zone/charting lookups used by Surfboard's CoD fee calculation (see
+// surfboard.prisma's SurfboardPlan.zone/codFee), grouped here since they're
+// standalone GIS reference data, not owned by any one product's user-facing model.
+// --------------------------------------------------------------------------------
+
+model nigeria_ward_admin_boundaries {
+  id         Int                      @id @default(autoincrement())
+  geom       Unsupported("geometry")?
+  wardname   String?                  @db.VarChar(112)
+  lganame    String?                  @db.VarChar(44)
+  statename  String?                  @db.VarChar(22)
+  Shape_Leng Float?
+  Shape_Area Float?
+  lcdaname   String?                  @db.VarChar(254)
+
+  @@index([geom], map: "sidx_nigeria_ward_admin_boundaries_geom", type: Gist)
+}
+
+/// Lagos Zonal Fee Structure - Used for spatial intersection to determine CoD fees
+model Scale_of_fees {
+  id   Int                      @id @default(autoincrement())
+  geom Unsupported("geometry")? // PostGIS geometry for zone boundaries
+  Name String?                  @db.VarChar(254)
+  Zone String?                  @db.VarChar(50) // e.g., "lagosZoneA", "lagosZoneB", etc.
+
+  @@index([geom], map: "sidx_scale_of_fees_geom", type: Gist)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+/// LASG Charting Interpretation - PostGIS Dataset
+model LASG_charting_interpretation {
+  id             Int                      @id @default(autoincrement())
+  geom           Unsupported("geometry")? // PostGIS geometry
+  interpretation String? // Charting interpretation text
+
+  @@index([geom], map: "sidx_lasg_charting_interpretation_geom", type: Gist)
+}

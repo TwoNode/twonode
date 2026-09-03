@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // Relative to this file's own location (prisma/schema/), not the schema
+  // folder's parent — resolves back to prisma/generated, matching every
+  // existing `@/prisma/generated` import across the codebase unchanged.
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------------------------------
+// Genuinely cross-product models — used by more than one of REVA/Surfboard/GBC.
+// See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.3.
+// --------------------------------------------------------------------------------
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  PAYMENT
+  PROPERTY
+}
+
+enum NotificationAudience {
+  SPECIFIC_USERS // Targeted to specific userIds
+  GENERAL_USERS // General notification for regular users
+  GENERAL_ADMINS // General notification for admins
+  SUPERADMIN // General notification for superadmins
+  ALL_USERS // Everyone (users + admins + superadmins)
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  readBy      String[]             @default([]) // List of userIds who read it
+  dismissedBy String[]             @default([]) // List of userIds who dismissed it
+  userIds     String[]             @default([]) // If null/empty => general
+  audience    NotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+}
+
+// --------------------------------------------------------------------------------
+// Native email+password auth (MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.2), running
+// alongside Kinde rather than replacing it. Shared across all products (one
+// RefreshToken/LoginAttempt table, not one per product — proposal §6.1) since a
+// user can already be simultaneously signed into REVA/Surfboard/GBC today via the
+// existing multi-platform session cookie, and revocation/rotation logic is
+// simpler in one place. `platform` is a plain String (not a Prisma enum) —
+// validated against the single canonical Platform enum in utils/platform.ts,
+// deliberately not duplicating it here with different casing.
+// --------------------------------------------------------------------------------
+
+enum AuthProvider {
+  KINDE
+  NATIVE
+}
+
+/// No `user User @relation(...)` here: "User" isn't one model in this schema,
+/// it's RevaUser/SurfboardUser/GBCUser — Prisma has no polymorphic relations,
+/// so userId is a plain reference, scoped by `platform` to know which table
+/// it points into.
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  platform   String
+  tokenHash  String    @unique
+  familyId   String
+  revokedAt  DateTime?
+  replacedBy String?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId, platform])
+}
+
+model LoginAttempt {
+  id         String   @id @default(uuid())
+  identifier String
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  signature   String    @unique // x-paystack-signature; uniquely identifies a delivery payload
+  event       String
+  platform    String
+  entityKey   String? // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  status      String // "pending" | "ok" | "error"
+  error       String?
+
+  @@index([event, platform])
+  @@index([entityKey])
+  @@index([receivedAt])
+}

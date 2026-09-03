@@ -1,9 +1,9 @@
 // src/app/(public)/contact/page.tsx
 import Link from "next/link";
-import { ContactForm } from "../../components/ContactForm";
+import { ContactForm } from "@/gbc/components/ContactForm";
 import { Mail, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
-import { getAllGBCSettings } from "../../actions/settings-actions";
-import GBC2Navbar from "../../components/Navbar";
+import { getSettings } from "@/gbc/services/settingsService";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export const metadata = {
   title: "Contact Us | GBC 2.0",
@@ -13,8 +13,7 @@ export const metadata = {
 
 export default async function ContactPage() {
   // Fetch settings from database
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   // Extract settings with fallbacks
   const eventName =

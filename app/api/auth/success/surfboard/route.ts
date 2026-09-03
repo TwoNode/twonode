@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export async function GET(request: NextRequest) {
@@ -54,6 +55,14 @@ export async function GET(request: NextRequest) {
 
     if (!dbUser) {
       throw new Error("Failed to create or find user in database");
+    }
+
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD);
+    } catch (err) {
+      console.error("issueSession failed for surfboard callback:", err);
     }
 
     // Create encrypted user data with subscription if it exists

@@ -33,7 +33,7 @@ import {
   RefreshCw,
   XCircle,
 } from "lucide-react";
-import { verifyBatchPaymentWithLinks } from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { useRouter } from "next/navigation";
 
 export interface SubmitterInfo {
@@ -163,7 +163,7 @@ export function RemitaPaymentModal({
         remitaReceiptUrl,
       });
 
-      const result = await verifyBatchPaymentWithLinks(
+      const result = await surfboardApi.cod.batches.verifyPaymentLinks(
         batchData.id,
         lasgReceiptUrl.trim(),
         remitaReceiptUrl.trim(),
@@ -171,7 +171,7 @@ export function RemitaPaymentModal({
 
       console.log("verifyBatchPaymentWithLinks result:", result);
 
-      if (result.success && result.data) {
+      if (result.success) {
         if (result.data.status === "LASG_PAID") {
           toast.success("Payment verified! Receipt captured and plans submitted.");
           if (onSuccess) onSuccess();

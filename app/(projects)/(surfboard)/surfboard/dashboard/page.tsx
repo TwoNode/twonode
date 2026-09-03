@@ -11,11 +11,7 @@ import {
   FiAlertCircle,
   FiRefreshCw,
 } from "react-icons/fi";
-import {
-  getAllSharedSurfPlans,
-  getSharedWithMeSurfPlans,
-  getAllSurfPlans,
-} from "../../actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 
 interface Plan {
@@ -55,7 +51,11 @@ export default function DashboardHome() {
       setError(null);
 
       const [plansResult, sharedResult, sharedWithMeResult] = await Promise.all(
-        [getAllSurfPlans(), getAllSharedSurfPlans(), getSharedWithMeSurfPlans()]
+        [
+          surfboardApi.plans.list({ noPagination: true }),
+          surfboardApi.plans.shared(),
+          surfboardApi.plans.sharedWithMe(),
+        ]
       );
 
       if (

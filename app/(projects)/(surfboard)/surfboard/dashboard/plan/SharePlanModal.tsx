@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { searchUsers, sharePlanWithUser, unsharePlanWithUser } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import {type User } from "./SinglePlan"
 
 interface SharePlanModalProps {
@@ -44,7 +44,7 @@ export function SharePlanModal({
 
     setIsSearching(true);
     try {
-      const result = await searchUsers(query);
+      const result = await surfboardApi.users.search(query);
       if (!result.success) {
         throw new Error(result.error || 'Failed to search users');
       }
@@ -72,7 +72,7 @@ export function SharePlanModal({
 
   const handleAddUser = async (user: User) => {
     try {
-      const result = await sharePlanWithUser(planId, user.id);
+      const result = await surfboardApi.plans.share(planId, user.id);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to share plan');
@@ -100,7 +100,7 @@ export function SharePlanModal({
 
   const handleRemoveUser = async (userId: string) => {
     try {
-      const result = await unsharePlanWithUser(planId, userId);
+      const result = await surfboardApi.plans.unshare(planId, userId);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to remove user access');

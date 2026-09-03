@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { convertCoordinates, applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
-import { getCoordinateShifts } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import type { PillarData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
 // Fix for Leaflet marker icons in Next.js
@@ -53,7 +53,8 @@ export default function MapPreview({
         }).addTo(map);
 
         // Fetch coordinate shifts and apply
-        const coordinateShifts = await getCoordinateShifts();
+        const shiftsResult = await surfboardApi.settings.coordinateShifts();
+        const coordinateShifts = shiftsResult.success ? shiftsResult.data : {};
         const visualPillars = applyVisualizationShift(pillars, state, coordinateShifts);
 
         // Convert all coordinates asynchronously

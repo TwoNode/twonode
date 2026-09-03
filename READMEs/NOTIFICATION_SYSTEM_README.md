@@ -175,7 +175,7 @@ await createNotification({
   title: "Payment Confirmed",
   message: "Your payment of ₦40,000 has been confirmed.",
   userIds: [userId],
-  link: `/reva/dashboard/viewdetails?reference=${reference}`,
+  link: `/reva/dashboard/details?reference=${reference}`,
   metadata: {
     propertyReference: reference,
     amount: 40000

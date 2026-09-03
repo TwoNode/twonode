@@ -36,7 +36,7 @@ This document provides a comprehensive review of the OneTime request flow, speci
 
 ### 3. Report Upload Process
 
-**Location**: `app/(projects)/reva-restricted/dashboard/viewdetails/AdminReportUpload.tsx`
+**Location**: `app/(projects)/reva-restricted/dashboard/details/AdminReportUpload.tsx`
 
 **Process**:
 - Admins can upload detailed reports with multiple sections
@@ -79,7 +79,7 @@ This document provides a comprehensive review of the OneTime request flow, speci
 **Problem**: OneTime users have no way to view their requests or reports after submission.
 
 **Current State**:
-- Regular users: `/reva/dashboard/viewdetails?reference=XXX`
+- Regular users: `/reva/dashboard/details?reference=XXX`
 - OneTime users: No equivalent page exists
 
 **Impact**: OneTime users cannot:

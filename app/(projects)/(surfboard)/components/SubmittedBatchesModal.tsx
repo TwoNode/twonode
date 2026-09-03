@@ -42,12 +42,7 @@ import {
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { RemitaPaymentModal, type SubmitterInfo } from "./RemitaPaymentModal";
-import {
-  deleteAllBatches,
-  getUserBatches,
-  retryBatchPayment,
-  getBatchPDFData,
-} from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import type {
   RedCopyBatchPDFData,
 } from "./RedCopySubmissionPDF";
@@ -134,9 +129,9 @@ export function SubmittedBatchesModal({
   const loadBatches = async () => {
     setIsLoading(true);
     try {
-      const result = await getUserBatches();
-      if (result.success && result.data) {
-        setBatches(result.data.batches);
+      const result = await surfboardApi.cod.batches.list();
+      if (result.success) {
+        setBatches(result.data);
       } else {
         toast.error(result.error || "Failed to load batches");
       }
@@ -159,9 +154,9 @@ export function SubmittedBatchesModal({
   const handlePayNow = async (batchId: string) => {
     setPayingBatchId(batchId);
     try {
-      const result = await retryBatchPayment(batchId);
+      const result = await surfboardApi.cod.batches.retryPayment(batchId);
 
-      if (!result.success || !result.data) {
+      if (!result.success) {
         throw new Error(result.error || "Failed to initialize payment");
       }
 
@@ -253,8 +248,8 @@ export function SubmittedBatchesModal({
 
     setLoadingPdfId(batchId);
     try {
-      const result = await getBatchPDFData(batchId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.cod.batches.get(batchId);
+      if (result.success) {
         setPdfDataMap((prev) => ({
           ...prev,
           [batchId]: result.data as RedCopyBatchPDFData,
@@ -281,8 +276,8 @@ export function SubmittedBatchesModal({
 
     setIsDeleting(true);
     try {
-      const result = await deleteAllBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.cod.batches.reset();
+      if (result.success) {
         toast.success(
           `Successfully deleted ${result.data.deletedCount} batch(es)`,
         );

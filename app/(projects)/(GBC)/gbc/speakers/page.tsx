@@ -1,6 +1,6 @@
-import { getSpeakers } from "../../actions/speaker-actions";
-import GBC2Navbar from "../../components/Navbar";
-import { Speaker } from "../../types/speaker";
+import { getSpeakers } from "@/gbc/services/cmsService";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
 
@@ -10,10 +10,7 @@ export const metadata = {
 };
 
 export default async function SpeakersPage() {
-  const speakersResult = await getSpeakers();
-  const allSpeakers: Speaker[] = speakersResult.success
-    ? speakersResult.data || []
-    : [];
+  const allSpeakers = await getSpeakers();
 
   // Group speakers by tier
   const keynoteSpeakers = allSpeakers.filter((s) => s.tier === "KEYNOTE");

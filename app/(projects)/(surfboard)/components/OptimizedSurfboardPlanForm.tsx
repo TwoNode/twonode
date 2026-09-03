@@ -12,13 +12,7 @@ import {
   PILLAR_TYPE_ADJOINING_FILTERS,
   REFERENCE_FILTERS,
 } from "../types/surfboardTypes";
-import {
-  createSurfPlan,
-  updateSurfPlan,
-  checkPlanNumberExists,
-  searchReferencePlanNumbers,
-} from "../actions/surfboardActions";
-import { uploadSurfboardFileWithAuth } from "../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Badge } from "@/components/ui/badge";
 import MaplibreMap from "./maps/MaplibreMap";
 import { File, X, FileText, FileCheck, Save, Loader2 } from "lucide-react";
@@ -187,8 +181,8 @@ export default function OptimizedSurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED);
-        setAdjOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(PLAN_TYPES.DEED);
+        setAdjOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setAdjOptions([]);
@@ -220,8 +214,8 @@ export default function OptimizedSurfboardPlanForm({
     const load = async () => {
       if (!formData.planType) return;
       try {
-        const list = await searchReferencePlanNumbers(formData.planType);
-        setRefOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(formData.planType);
+        setRefOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setRefOptions([]);
@@ -331,7 +325,7 @@ export default function OptimizedSurfboardPlanForm({
 
     for (const file of files) {
       try {
-        const result = await uploadSurfboardFileWithAuth(
+        const result = await surfboardApi.files.uploadSurfboardFileWithAuth(
           file,
           kind,
           formData.planNumber
@@ -378,9 +372,9 @@ export default function OptimizedSurfboardPlanForm({
 
       let result;
       if (mode === "edit" && formData.id) {
-        result = await updateSurfPlan(payload);
+        result = await surfboardApi.plans.update(formData.id, payload as any);
       } else {
-        result = await createSurfPlan(payload);
+        result = await surfboardApi.plans.create(payload as any);
       }
 
       if (result.success) {
@@ -411,10 +405,11 @@ export default function OptimizedSurfboardPlanForm({
 
     setPlanNumberChecking(true);
     try {
-      const exists = await checkPlanNumberExists(
+      const checkResult = await surfboardApi.plans.checkNumberExists(
         formData.planNumber,
         mode === "edit" ? formData.id : undefined
       );
+      const exists = checkResult.success ? checkResult.data.exists : false;
       if (exists) {
         setErrors((prev) => ({
           ...prev,

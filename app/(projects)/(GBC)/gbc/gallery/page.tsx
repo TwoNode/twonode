@@ -1,18 +1,14 @@
 // src/app/(public)/gallery/page.tsx
 import { Play, Image as ImageIcon } from "lucide-react";
-import { getGalleryItems } from "../../actions/gallery-actions";
-import { getAllGBCSettings } from "../../actions/settings-actions";
+import { getGalleryItems } from "@/gbc/services/cmsService";
+import { getSettings } from "@/gbc/services/settingsService";
 import Link from "next/link";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function GalleryPage() {
-  const galleryResult = await getGalleryItems();
-  const items = galleryResult.success ? galleryResult.data : [];
+  const items = await getGalleryItems();
 
-  const settingsResult = await getAllGBCSettings();
-  const socialLinks = settingsResult.success
-    ? settingsResult.data?.contact
-    : null;
+  const socialLinks = (await getSettings()).contact;
 
   // Group by year
   const itemsByYear =

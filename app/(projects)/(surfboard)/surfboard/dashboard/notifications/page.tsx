@@ -2,12 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  getUserNotifications,
-  markNotificationAsRead,
-  dismissNotification,
-  getUnreadNotificationCount,
-} from "@/app/(projects)/(surfboard)/actions/notificationActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -75,21 +70,21 @@ export default function NotificationsPage() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const result = await getUserNotifications({
+      const result = await surfboardApi.notifications.list({
         includeRead: filter === "all",
         includeDismissed: false,
         limit: 50,
       });
 
-      if (result.success && result.data) {
+      if (result.success) {
         setNotifications(result.data);
       } else {
         toast.error("Failed to load notifications");
       }
 
       // Get unread count
-      const countResult = await getUnreadNotificationCount();
-      if (countResult.success && countResult.data) {
+      const countResult = await surfboardApi.notifications.unreadCount();
+      if (countResult.success) {
         setUnreadCount(countResult.data.count);
       }
     } catch (error) {
@@ -105,7 +100,7 @@ export default function NotificationsPage() {
   }, [filter]);
 
   const handleMarkAsRead = async (notificationId: string) => {
-    const result = await markNotificationAsRead(notificationId);
+    const result = await surfboardApi.notifications.markRead(notificationId);
     if (result.success) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
@@ -117,7 +112,7 @@ export default function NotificationsPage() {
   };
 
   const handleDismiss = async (notificationId: string) => {
-    const result = await dismissNotification(notificationId);
+    const result = await surfboardApi.notifications.dismiss(notificationId);
     if (result.success) {
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       toast.success("Notification dismissed");

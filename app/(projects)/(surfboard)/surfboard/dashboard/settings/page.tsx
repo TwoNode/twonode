@@ -16,9 +16,8 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
-import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
-import { getSurveyorEarningsOverview } from "../../../actions/qrEarningsActions";
-import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
+import { surfboardApi } from "@/surfboard/apiClient";
+import { useSurfUserProfile } from "@/surfboard/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { InquiryModal } from "./InquiryModal";
@@ -45,7 +44,7 @@ export default function SettingsPage() {
   const [bankDetails, setBankDetails] = useState<any>(null);
 
   useEffect(() => {
-    getSurveyorEarningsOverview().then((res) => {
+    surfboardApi.qr.earningsOverview().then((res) => {
       if (res.success && res.data) {
         setBankDetails(res.data.bankDetails);
       }
@@ -111,7 +110,7 @@ export default function SettingsPage() {
 
   const handleSendInquiry = async (details: string) => {
     setIsSendingInquiry(true);
-    const res = await sendAccountUpdateInquiry(details);
+    const res = await surfboardApi.settings.sendAccountUpdateInquiry(details);
     setIsSendingInquiry(false);
     if (res.success) {
       toast.success("Request sent to admin.");

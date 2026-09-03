@@ -7,7 +7,7 @@ import { ListChecks, Share2, AlertCircle } from "lucide-react";
 import AllPlans from "./AllPlans";
 import SharedPlans from "../shared/SharedPlans";
 import QueriedPlans from "./QueriedPlans";
-import { getQueriedPlansForUser } from "../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 const VALID_TABS = ["all", "shared", "queried"] as const;
 type TabValue = (typeof VALID_TABS)[number];
@@ -25,10 +25,10 @@ export default function PlansPage() {
 
   const fetchQueriedData = async () => {
     try {
-      const result = await getQueriedPlansForUser();
-      if (result.success && result.data && result.data.plans) {
-        setQueriedCount(result.data.plans.length);
-        setQueriedPlans(result.data.plans);
+      const result = await surfboardApi.plans.queried();
+      if (result.success && result.data) {
+        setQueriedCount(result.data.length);
+        setQueriedPlans(result.data);
       }
     } catch (error) {
       console.error("Error fetching queried data:", error);

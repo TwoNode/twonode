@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { verifySubscription } from "@/app/(projects)/(surfboard)/actions/paystackActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 export default function SubscriptionCallback({ reference }: { reference: string }) {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function SubscriptionCallback({ reference }: { reference: string 
     (async () => {
       try {
         if (!reference) return router.replace("/surfboard/dashboard/subscription?error=invalid_callback");
-        const res = await verifySubscription(reference);
+        const res = await surfboardApi.subscription.verify(reference);
         if (res?.success)
           router.replace("/surfboard/dashboard/subscription?success=true");
         else

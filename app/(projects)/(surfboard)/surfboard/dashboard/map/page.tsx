@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
-import { getAllSurfPlans } from "../../../actions/surfboardActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
 
 const ErrorState = ({ message }: { message: string }) => (
@@ -37,9 +37,9 @@ export default function SurfMapViewerPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await getAllSurfPlans();
-      if (res.success && res.data?.plans) {
-        setAllPlans(res.data.plans);
+      const res = await surfboardApi.plans.list({ noPagination: true });
+      if (res.success) {
+        setAllPlans(res.data?.plans || []);
       } else {
         throw new Error(res.error || "Failed to load plans");
       }

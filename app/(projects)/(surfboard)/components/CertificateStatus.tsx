@@ -144,7 +144,7 @@ export function CertificateOfDepositStatus({
           </CardTitle>
           {batchCode && (
             <Link
-              href={`/surf-restricted/dashboard/certificates/${batchId}`}
+              href={`/surfboard-restricted/dashboard/certificates/${batchId}`}
               className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
             >
               View Batch

@@ -13,15 +13,13 @@ import {
   Zap,
   AlertCircle,
 } from "lucide-react";
-import { getGBCTicketStats } from "../actions/ticket-actions";
-import { getSponsors } from "../actions/sponsor-actions";
-import { getAllGBCSettings } from "../actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
 
 // Import new components
-import HomeSpeakers from "@/app/(projects)/(GBC)/components/HomeSpeakers";
-import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
-import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
-import GBC2Navbar from "../components/Navbar";
+import HomeSpeakers from "@/gbc/components/HomeSpeakers";
+import HomeSponsors from "@/gbc/components/HomeSponsors";
+import HomeGallery from "@/gbc/components/HomeGallery";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 // Loading skeleton component
 const TextSkeleton = ({ className }: { className?: string }) => (
@@ -90,8 +88,8 @@ export default function HomePage() {
       setIsLoading(true);
       try {
         const [statsResult, settingsResult] = await Promise.all([
-          getGBCTicketStats(),
-          getAllGBCSettings(),
+          gbcApi.tickets.availability(),
+          gbcApi.settings.get(),
         ]);
 
         if (statsResult.success) {

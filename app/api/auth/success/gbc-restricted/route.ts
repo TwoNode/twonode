@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, GBCRole } from "@/utils/platform";
 
 export async function GET(request: NextRequest) {
@@ -53,6 +54,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.GBC);
+    } catch (err) {
+      console.error("issueSession failed for gbc-restricted callback:", err);
+    }
+
     // Create encrypted user data
     const userData = {
       platform: Platform.GBC,
@@ -68,10 +77,10 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/gbc/restricted";
+    const fallbackUrl = "/gbc-restricted";
 
     const redirectUrl = (() => {
-      if (postLoginRaw && postLoginRaw.startsWith("/gbc/restricted")) {
+      if (postLoginRaw && postLoginRaw.startsWith("/gbc-restricted")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
       }

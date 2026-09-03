@@ -1,23 +1,21 @@
 import { AlertCircle } from "lucide-react";
-import { getGBCTicketStats } from "../../actions/ticket-actions";
-import { GBCTicketPurchaseForm } from "../../components/TicketPurchaseForm";
-import { getAllGBCSettings } from "../../actions/settings-actions";
-import { TicketCards } from "../../components/admin/TicketCards";
+import { getTicketAvailability } from "@/gbc/services/ticketService";
+import { GBCTicketPurchaseForm } from "@/gbc/components/TicketPurchaseForm";
+import { getSettings } from "@/gbc/services/settingsService";
+import { TicketCards } from "@/gbc/components/admin/TicketCards";
 import Link from "next/link";
 import { Suspense } from "react";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 // Force dynamic rendering - prevents static generation and caching
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function TicketsPage() {
-  const statsResult = await getGBCTicketStats();
-  const stats = statsResult.success ? statsResult.data : null;
+  const stats = await getTicketAvailability();
 
   // Fetch settings from database
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const isSoldOut = stats ? stats.availableTickets <= 0 : false;
   const totalTickets = stats ? stats.maxTickets : 0;

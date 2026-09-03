@@ -17,7 +17,7 @@ import type { Feature, FeatureCollection, Polygon, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Plan, PillarData } from "../../types/surfboardTypes";
 import proj4 from "proj4";
-import { getCoordinateShifts } from "../../actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { applyVisualizationShift } from "../../utils/surfboardUtils";
 
 interface AllPlansMapProps {
@@ -491,7 +491,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       >[] = [];
       const pillarFeatures: Feature<Point>[] = [];
 
-      const shifts = await getCoordinateShifts();
+      const shiftsResult = await surfboardApi.settings.coordinateShifts();
+      const shifts = shiftsResult.success ? shiftsResult.data : {};
 
       filteredPlans.forEach((plan) => {
         const color = generateColor(plan.id);

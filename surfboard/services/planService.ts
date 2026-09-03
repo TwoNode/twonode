@@ -1,0 +1,918 @@
+import prisma from "@/lib/prisma";
+import { Prisma } from "@/prisma/generated";
+import QRCode from "qrcode";
+import { headers } from "next/headers";
+import { computeGeometryDetails, type GeometryInput } from "@/app/(projects)/(surfboard)/utils/dbUtils";
+import { deleteMultipleSurfboardFilesFromS3WithUrl, uploadSurfboardFileToS3 } from "@/surfboard/services/awsService";
+import {
+  notifyPlanCreated,
+  notifyPlanShared,
+  notifyPlanUpdate,
+  notifyPlanUpdated,
+} from "@/surfboard/services/notificationService";
+import { getPlanQRAccessState, incrementPlanQRScanCount } from "@/surfboard/services/qrEarningsService";
+import { PLAN_TYPES } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
+import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
+import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { SurfboardRole } from "@/utils/platform";
+
+/**
+ * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
+ * plan CRUD, QR/public access, sharing, attachments, geo lookups. The
+ * largest remaining piece of Phase 2's `codActions.ts`-adjacent work.
+ *
+ * Three generations of plan-create logic and two of plan-update existed in
+ * the source; only `createSurfPlan`/`updateSurfPlan` are migrated here —
+ * `_createSurfPlan`/`_createPlan`/`_updatePlan`/`_getAllSurfPlans`/
+ * `_deletePlanAttachment`/`addSurfUserToSharedSurfPlan`/
+ * `removeSurfUserFromSharedSurfPlan`/`importDbDataFromCsv` were all
+ * grep-confirmed dead (zero call sites) during the Phase 2 spec audit and
+ * are not carried forward. `__handleIntersect` (exported despite the
+ * naming) is a second, functionally-identical copy of `getAdminBoundaries`
+ * with zero call sites of its own — also dropped, superseded by
+ * `getAdminBoundaries`.
+ */
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+function isGeometryInput(value: any): value is GeometryInput {
+  if (typeof value === "string") return true;
+  if (!value || typeof value !== "object") return false;
+  return value?.type === "Polygon" || value?.type === "MultiPolygon";
+}
+
+/** Every plan list/read function enriches geometry with computed area + centroid the same way. */
+function withGeometry<T extends { id: string; geometry: any }>(plan: T): T & { areaSqM: number; centroid: any } {
+  if (!plan.geometry || !isGeometryInput(plan.geometry)) {
+    return { ...plan, areaSqM: 0, centroid: null };
+  }
+  try {
+    const { areaSqM, centroid } = computeGeometryDetails(plan.geometry);
+    return { ...plan, areaSqM, centroid };
+  } catch (error) {
+    console.error(`Error calculating geometry for plan ${plan.id}:`, error);
+    return { ...plan, areaSqM: 0, centroid: null };
+  }
+}
+
+/**
+ * createSurfPlan/updateSurfPlan/updateSurfPlanStatus/sharePlanWithUser all
+ * need the caller's display name for notification text (the source read
+ * this off the cookie-derived user object) — the native JWT session only
+ * carries {sub, role, platform}, so routes resolve it once via this helper.
+ */
+export async function getUserDisplayName(userId: string): Promise<{ firstName: string; lastName: string }> {
+  const user = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
+  return { firstName: user?.firstName ?? "", lastName: user?.lastName ?? "" };
+}
+
+function isValidPlanId(planId: string): boolean {
+  return typeof planId === "string" && planId.length >= 20 && planId.length <= 100 && /^[a-f0-9-]+$/i.test(planId);
+}
+
+const statusMap: Record<string, "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW"> = {
+  Draft: "PENDING",
+  Pending: "PENDING",
+  Lodged: "LODGED",
+  Submitted: "LODGED",
+  "In Review": "UNDER_REVIEW",
+  Approved: "LODGED",
+  Rejected: "QUERIED",
+  PENDING: "PENDING",
+  LODGED: "LODGED",
+  UNDER_REVIEW: "UNDER_REVIEW",
+  QUERIED: "QUERIED",
+  APPROVED: "LODGED",
+};
+
+export interface PlanFilters {
+  search?: string;
+  status?: string[];
+  planType?: string[];
+  facilitator?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+export interface PlanSort {
+  field: "createdAt" | "updatedAt" | "surveyTitle" | "planNumber" | "status" | "dateOnSurveyPlan";
+  order: "asc" | "desc";
+}
+
+const PLAN_LIST_SELECT = {
+  id: true,
+  planNumber: true,
+  surveyTitle: true,
+  planType: true,
+  referencePlanNumber: true,
+  deededArea: true,
+  facilitator: true,
+  pillarType: true,
+  geometry: true,
+  pdfFilePaths: true,
+  cadFilePaths: true,
+  certificateFilePaths: true,
+  ward: true,
+  lcda: true,
+  lga: true,
+  state: true,
+  locality: true,
+  pillarTypeReferencePlanNumber: true,
+  parcels: true,
+  pillars: true,
+  status: true,
+  isLive: true,
+  dateOnSurveyPlan: true,
+  dateLodged: true,
+  reasonForWithdrawalAndResubmission: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+function buildPlanFilterWhere(filters: PlanFilters | undefined, base: any) {
+  const where: any = { ...base };
+  if (!filters) return where;
+
+  if (filters.search) {
+    where.OR = [
+      { planNumber: { contains: filters.search, mode: "insensitive" } },
+      { surveyTitle: { contains: filters.search, mode: "insensitive" } },
+      { facilitator: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+  if (filters.status?.length) {
+    const dbStatuses = filters.status.map((s) => statusMap[s]).filter((s): s is NonNullable<typeof s> => s !== undefined);
+    if (dbStatuses.length > 0) where.status = { in: dbStatuses };
+  }
+  if (filters.planType?.length) {
+    where.planType = { in: filters.planType };
+  }
+  if (filters.facilitator) {
+    where.facilitator = { contains: filters.facilitator, mode: "insensitive" };
+  }
+  if (filters.dateFrom || filters.dateTo) {
+    where.dateOnSurveyPlan = {};
+    if (filters.dateFrom) where.dateOnSurveyPlan.gte = new Date(filters.dateFrom);
+    if (filters.dateTo) {
+      const endOfDay = new Date(filters.dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      where.dateOnSurveyPlan.lte = endOfDay;
+    }
+  }
+  return where;
+}
+
+// ---------------------------------------------------------------------------
+// QR / public URL
+// ---------------------------------------------------------------------------
+
+interface QRCodeOptions {
+  darkColor?: string;
+  lightColor?: string;
+  minLightAlpha?: number;
+  margin?: number;
+  scale?: number;
+  width?: number;
+  forceOpaque?: boolean;
+}
+
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGBA_RE = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(\d*\.?\d+))?\s*\)$/i;
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } | null {
+  if (!HEX_RE.test(hex)) return null;
+  const h = hex.replace("#", "");
+  if (h.length === 3) {
+    return { r: parseInt(h[0] + h[0], 16), g: parseInt(h[1] + h[1], 16), b: parseInt(h[2] + h[2], 16), a: 1 };
+  }
+  if (h.length === 6) {
+    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+  }
+  if (h.length === 8) {
+    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: parseInt(h.slice(6, 8), 16) / 255 };
+  }
+  return null;
+}
+
+function parseColorToRgba(color: string): { r: number; g: number; b: number; a: number } | null {
+  if (!color) return null;
+  if (color.toLowerCase() === "transparent") return { r: 255, g: 255, b: 255, a: 0 };
+  const hex = hexToRgba(color);
+  if (hex) return hex;
+  const m = color.match(RGBA_RE);
+  if (m) {
+    return {
+      r: clamp(parseInt(m[1], 10), 0, 255),
+      g: clamp(parseInt(m[2], 10), 0, 255),
+      b: clamp(parseInt(m[3], 10), 0, 255),
+      a: m[4] !== undefined ? clamp(parseFloat(m[4]), 0, 1) : 1,
+    };
+  }
+  return null;
+}
+
+function rgbaToHex({ r, g, b, a }: { r: number; g: number; b: number; a: number }): string {
+  const rr = clamp(Math.round(r), 0, 255).toString(16).padStart(2, "0");
+  const gg = clamp(Math.round(g), 0, 255).toString(16).padStart(2, "0");
+  const bb = clamp(Math.round(b), 0, 255).toString(16).padStart(2, "0");
+  const aa = clamp(Math.round(a * 255), 0, 255).toString(16).padStart(2, "0");
+  return aa.toUpperCase() === "FF" ? `#${rr}${gg}${bb}`.toUpperCase() : `#${rr}${gg}${bb}${aa}`.toUpperCase();
+}
+
+function withMinAlpha(color: string, minAlpha: number, fallback = "#ffffff"): string {
+  const parsed = parseColorToRgba(color) || parseColorToRgba(fallback);
+  if (!parsed) return fallback.toUpperCase();
+  const a = Math.max(parsed.a, clamp(minAlpha, 0, 1));
+  return rgbaToHex({ ...parsed, a });
+}
+
+export async function getBaseUrl(): Promise<string> {
+  if (process.env.BASE_URL) return process.env.BASE_URL;
+  if (process.env.NODE_ENV === "production") return "https://www.twonodetechnologies.com";
+
+  try {
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = headersList.get("x-forwarded-proto") || "http";
+    if (host) return `${protocol}://${host}`;
+  } catch (error) {
+    console.error("Error determining base URL from headers:", error);
+  }
+  return "http://localhost:3000";
+}
+
+export async function getPlanPublicUrl(planId: string): Promise<string> {
+  if (!isValidPlanId(planId)) throw new ValidationError({ planId: "Invalid plan ID format" });
+  const baseUrl = await getBaseUrl();
+  return `${baseUrl}/surfboardplan/${planId}`;
+}
+
+export async function generatePlanQRCode(userId: string, planId: string, options: QRCodeOptions = {}): Promise<{ qrCodeDataUrl: string }> {
+  if (!isValidPlanId(planId)) throw new ValidationError({ planId: "Invalid plan ID format" });
+
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { id: true, planNumber: true } });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  const baseUrl = await getBaseUrl();
+  const publicUrl = `${baseUrl}/surfboardplan/${planId}`;
+
+  const minLightAlpha = options.minLightAlpha ?? 0.3;
+  const lightColor = withMinAlpha(options.lightColor ?? "#ffffff", minLightAlpha, "#ffffff");
+  const darkColor = options.darkColor ?? "#000000";
+  const margin = Math.max(options.margin ?? 4, 4);
+  const width = options.width;
+  const scale = width ? undefined : options.scale ?? 8;
+  const type = options.forceOpaque ? ("image/jpeg" as const) : ("image/png" as const);
+
+  const qrOptions: QRCode.QRCodeToDataURLOptions = {
+    errorCorrectionLevel: "H",
+    margin,
+    ...(width ? { width } : { scale }),
+    color: { dark: darkColor, light: lightColor + "70" },
+    type,
+    rendererOpts: type === "image/jpeg" ? { quality: 0.9 } : undefined,
+  } as QRCode.QRCodeToDataURLOptions;
+
+  const qrCodeDataUrl = await QRCode.toDataURL(publicUrl, qrOptions);
+  return { qrCodeDataUrl };
+}
+
+// ---------------------------------------------------------------------------
+// Create / update (production paths only — see file header)
+// ---------------------------------------------------------------------------
+
+export async function createSurfPlan(userId: string, userFirstLastName: { firstName: string; lastName: string }, dto: SurfboardPlanDTO) {
+  if (!dto.planNumber || !dto.surveyTitle || !dto.deededArea || !dto.facilitator || !dto.pillarType || !dto.dateOnSurveyPlan) {
+    throw new ValidationError({ dto: "Missing required fields" });
+  }
+  if (!dto.geometry) throw new ValidationError({ geometry: "Geometry is required" });
+  if (!dto.pillars || (Array.isArray(dto.pillars) && dto.pillars.length < 3)) {
+    throw new ValidationError({ pillars: "At least 3 pillars are required" });
+  }
+  if ((dto.cadFilePaths?.length || 0) < 1) throw new ValidationError({ cadFilePaths: "At least one CAD file is required" });
+  if ((dto.pdfFilePaths?.length || 0) < 1) throw new ValidationError({ pdfFilePaths: "At least one PDF file is required" });
+  if (dto.certificateFilePaths?.length && !dto.dateLodged) {
+    throw new ValidationError({ dateLodged: "dateLodged is required when certificate files are present" });
+  }
+
+  let geometry: any = dto.geometry;
+  try {
+    if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
+    if (typeof geometry === "string") geometry = JSON.parse(geometry);
+  } catch {
+    geometry = dto.geometry;
+  }
+
+  const rec = await prisma.surfboardPlan.create({
+    data: {
+      planNumber: dto.planNumber || "",
+      surveyTitle: dto.surveyTitle,
+      planType: dto.planType,
+      referencePlanNumber: dto.referencePlanNumber || null,
+      deededArea: dto.deededArea,
+      facilitator: dto.facilitator,
+      pillarType: dto.pillarType,
+      geometry,
+      pillars: dto.pillars || undefined,
+      pdfFilePaths: dto.pdfFilePaths,
+      cadFilePaths: dto.cadFilePaths,
+      certificateFilePaths: dto.certificateFilePaths,
+      dateOnSurveyPlan: new Date(dto.dateOnSurveyPlan),
+      dateLodged: dto.dateLodged ? new Date(dto.dateLodged) : null,
+      ward: dto.ward || null,
+      lcda: dto.lcda || null,
+      lga: dto.lga || null,
+      state: dto.state || null,
+      locality: dto.locality || null,
+      isLive: dto.isLive ?? false,
+      status: dto.certificateFilePaths?.length ? "LODGED" : "PENDING",
+      userId,
+      personCount: dto.personCount || 1,
+      personCountVerified: false,
+      withdrawalAndResubmissionStatus: dto.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION ? "Resubmitted" : "No_Action",
+      reasonForWithdrawalAndResubmission: dto.reasonForWithdrawalAndResubmission || null,
+      pillarTypeReferencePlanNumber: dto.pillarTypeReferencePlanNumber || null,
+      parcels: (dto.parcels as any) || undefined,
+    },
+    select: { id: true, planNumber: true, referencePlanNumber: true, planType: true },
+  });
+
+  if (rec.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && rec.referencePlanNumber) {
+    try {
+      await prisma.surfboardPlan.update({ where: { planNumber: rec.referencePlanNumber }, data: { withdrawalAndResubmissionStatus: "Withdrawn" } });
+    } catch {
+      console.warn("Could not find/update referenced plan for withdrawal status:", rec.referencePlanNumber);
+    }
+  }
+
+  try {
+    await notifyPlanCreated({ userId, planId: rec.id, planNumber: rec.planNumber, surveyTitle: dto.surveyTitle, sendEmail: true });
+    await notifyPlanUpdate({
+      planId: rec.id,
+      planNumber: rec.planNumber,
+      title: "New Plan Created",
+      message: `${userFirstLastName.firstName} ${userFirstLastName.lastName} created a new plan: ${rec.planNumber} - ${dto.surveyTitle}`,
+      type: "PLAN",
+      sendEmail: false,
+    });
+  } catch (notifError) {
+    console.error("Error sending notification:", notifError);
+  }
+
+  return { id: rec.id, planNumber: rec.planNumber };
+}
+
+export async function updateSurfPlan(userId: string, userFirstLastName: { firstName: string; lastName: string }, dto: SurfboardPlanDTO) {
+  if (!dto.id) throw new ValidationError({ id: "Missing id" });
+
+  const existing = await prisma.surfboardPlan.findUnique({ where: { id: dto.id } });
+  if (!existing) throw new NotFoundError("Plan");
+
+  if (existing.redCopyStatus && existing.redCopyStatus !== "NOT_SUBMITTED") {
+    throw new ValidationError({ redCopyStatus: "This plan has been submitted and cannot be edited. Please contact support if you need to make changes." });
+  }
+
+  let geometry: any = dto.geometry;
+  try {
+    if (typeof dto.geometry === "string") geometry = JSON.parse(dto.geometry);
+    if (typeof geometry === "string") geometry = JSON.parse(geometry);
+  } catch (error) {
+    console.error("Error parsing geometry:", error);
+    geometry = dto.geometry;
+  }
+
+  // The 24h edit-lock was force-disabled in the source (`enforceLock = false`,
+  // the real check left commented out) — preserved exactly, not re-enabled.
+  const data: any = {};
+  if (dto.planNumber) data.planNumber = dto.planNumber;
+  if (dto.surveyTitle) data.surveyTitle = dto.surveyTitle;
+  if (dto.planType) data.planType = dto.planType;
+  data.referencePlanNumber = dto.referencePlanNumber ?? null;
+  if (dto.deededArea) data.deededArea = dto.deededArea;
+  if (dto.facilitator) data.facilitator = dto.facilitator;
+  if (dto.pillarType) data.pillarType = dto.pillarType;
+  if (dto.geometry) data.geometry = geometry;
+  if (dto.pillars) data.pillars = dto.pillars;
+  if (dto.withdrawalAndResubmissionStatus) data.withdrawalAndResubmissionStatus = dto.withdrawalAndResubmissionStatus;
+  if (dto.reasonForWithdrawalAndResubmission !== undefined) data.reasonForWithdrawalAndResubmission = dto.reasonForWithdrawalAndResubmission || null;
+  if (dto.pillarTypeReferencePlanNumber !== undefined) data.pillarTypeReferencePlanNumber = dto.pillarTypeReferencePlanNumber;
+  if (dto.parcels) data.parcels = dto.parcels;
+  data.ward = dto.ward ?? null;
+  data.lcda = dto.lcda ?? null;
+  data.lga = dto.lga ?? null;
+  if (dto.locality !== undefined) data.locality = dto.locality;
+  if (dto.state !== undefined) data.state = dto.state;
+  if (dto.dateOnSurveyPlan) data.dateOnSurveyPlan = new Date(dto.dateOnSurveyPlan);
+  if (dto.personCount !== undefined) {
+    data.personCount = dto.personCount;
+    if (existing.personCount !== dto.personCount) data.personCountVerified = false;
+  }
+  if (dto.pdfFilePaths) data.pdfFilePaths = dto.pdfFilePaths;
+  if (dto.cadFilePaths) data.cadFilePaths = dto.cadFilePaths;
+  if (dto.certificateFilePaths) data.certificateFilePaths = dto.certificateFilePaths;
+  if (dto.dateLodged !== undefined) data.dateLodged = dto.dateLodged ? new Date(dto.dateLodged) : null;
+
+  const hasCert = (dto.certificateFilePaths?.length ?? existing.certificateFilePaths.length) > 0;
+  const statusChanged = !existing.certificateFilePaths.length && hasCert;
+  data.status = hasCert ? "LODGED" : "PENDING";
+
+  await prisma.surfboardPlan.update({ where: { id: dto.id, userId }, data });
+
+  if (data.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION && data.referencePlanNumber) {
+    try {
+      await prisma.surfboardPlan.update({ where: { planNumber: data.referencePlanNumber }, data: { withdrawalAndResubmissionStatus: "Withdrawn" } });
+    } catch {
+      console.warn("Could not find/update referenced plan for withdrawal status:", data.referencePlanNumber);
+    }
+  }
+
+  try {
+    await notifyPlanUpdated({ userId, planId: dto.id, planNumber: dto.planNumber || existing.planNumber, sendEmail: false });
+    if (statusChanged) {
+      await notifyPlanUpdate({
+        planId: dto.id,
+        planNumber: dto.planNumber || existing.planNumber,
+        title: "Plan Successfully Lodged",
+        message: `Your plan ${dto.planNumber || existing.planNumber} has been successfully lodged with certificate!`,
+        type: "SUCCESS",
+        userIds: [userId],
+        sendEmail: true,
+      });
+      await notifyPlanUpdate({
+        planId: dto.id,
+        planNumber: dto.planNumber || existing.planNumber,
+        title: "Plan Lodged",
+        message: `${userFirstLastName.firstName} ${userFirstLastName.lastName} has lodged plan ${dto.planNumber || existing.planNumber} with certificate.`,
+        type: "PLAN",
+        sendEmail: false,
+      });
+    }
+  } catch (notifError) {
+    console.error("Error sending notification:", notifError);
+  }
+
+  return { id: dto.id, planNumber: dto.planNumber };
+}
+
+// ---------------------------------------------------------------------------
+// Reads / listing
+// ---------------------------------------------------------------------------
+
+export async function getAllSurfPlans(userId: string) {
+  const plans = await prisma.surfboardPlan.findMany({
+    where: { userId, deleted: false },
+    select: PLAN_LIST_SELECT,
+    orderBy: { createdAt: "desc" },
+  });
+  return plans.map(withGeometry);
+}
+
+export async function getPaginatedSurfPlans(
+  userId: string,
+  { page = 1, pageSize = 10, filters, sort, noPagination }: { page?: number; pageSize?: number; filters?: PlanFilters; sort?: PlanSort; noPagination?: boolean } = {}
+) {
+  const skip = noPagination ? undefined : (page - 1) * pageSize;
+  const where = buildPlanFilterWhere(filters, { userId, deleted: false });
+  const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+  const [plans, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({
+      where,
+      select: {
+        ...PLAN_LIST_SELECT,
+        redCopyStatus: true,
+        redCopyFileUrl: true,
+        surconStatus: true,
+        surconComment: true,
+        recordsIStatus: true,
+        recordsIComment: true,
+        recordsIIStatus: true,
+        recordsIIComment: true,
+      },
+      skip,
+      take: noPagination ? undefined : pageSize,
+      orderBy,
+    }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  return { plans: plans.map(withGeometry), total, totalPages: noPagination ? 1 : Math.ceil(total / pageSize) };
+}
+
+export async function getAllSharedSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
+  const skip = (page - 1) * pageSize;
+  const where = buildPlanFilterWhere(filters, { userId, sharedTo: { isEmpty: false }, deleted: false });
+  const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+  const [plans, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({ where, select: PLAN_LIST_SELECT, skip, take: pageSize, orderBy }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  return { plans: plans.map(withGeometry), total, totalPages: Math.ceil(total / pageSize) };
+}
+
+export async function getSharedWithMeSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
+  const skip = (page - 1) * pageSize;
+  const where = buildPlanFilterWhere(filters, { sharedTo: { has: userId }, deleted: false });
+  const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
+
+  const [plans, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({
+      where,
+      select: { ...PLAN_LIST_SELECT, user: { select: { id: true, firstName: true, lastName: true, email: true, companyName: true } } },
+      skip,
+      take: pageSize,
+      orderBy,
+    }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  return { plans: plans.map(withGeometry), total, totalPages: Math.ceil(total / pageSize) };
+}
+
+export async function getSurfPlanById(userId: string, id: string, options?: { forEdit?: boolean }) {
+  const orArray = [{ userId }, !options?.forEdit ? { sharedTo: { has: userId } } : {}].filter((c) => Object.keys(c).length > 0);
+
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id, OR: orArray },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+  });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  return { ...withGeometry(plan), isOwner: plan.userId === userId };
+}
+
+export async function getSurfPlanByIdWithSurveyor(userId: string, id: string) {
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id, OR: [{ userId }] },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true, surconRegName: true, companyName: true } } },
+  });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  return { ...withGeometry(plan), isOwner: plan.userId === userId };
+}
+
+export async function getPublicSurfPlanByIdWithSurveyor(id: string) {
+  const plan = await prisma.surfboardPlan.findUnique({
+    where: { id },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true, surconRegName: true, companyName: true } } },
+  });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  // Fire-and-forget, matches source (scan-count errors never block the read).
+  incrementPlanQRScanCount(plan.id).catch(() => {});
+
+  return withGeometry(plan);
+}
+
+export async function getGatedPublicSurfPlan(id: string, token?: string) {
+  const plan = await getPublicSurfPlanByIdWithSurveyor(id);
+
+  let accessInfo: any;
+  try {
+    accessInfo = { success: true, ...(await getPlanQRAccessState(plan.id, token)) };
+  } catch {
+    accessInfo = { success: false };
+  }
+
+  if (accessInfo.success && (accessInfo.accessState === "PAID_ACTIVE" || accessInfo.accessState === "FREE")) {
+    return { plan, accessInfo };
+  }
+
+  const redactedPlan = { ...plan, pillars: null, centroid: null, geometry: null, areaSqM: 0, user: null };
+  return { plan: redactedPlan, accessInfo };
+}
+
+export async function getDeletedSurfPlans(userId: string, { page = 1, pageSize = 10 }: { page?: number; pageSize?: number } = {}) {
+  const skip = (page - 1) * pageSize;
+  const where = { userId, deleted: true };
+
+  const [plans, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({
+      where,
+      select: { ...PLAN_LIST_SELECT, deleted: true, deletedAt: true, deletedBy: true },
+      skip,
+      take: pageSize,
+      orderBy: { deletedAt: "desc" },
+    }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  return { plans: plans.map(withGeometry), total, totalPages: Math.ceil(total / pageSize) };
+}
+
+export async function checkPlanNumberExists(userId: string, planNumber: string, excludeId?: string): Promise<boolean> {
+  if (!planNumber.trim()) return false;
+  const count = await prisma.surfboardPlan.count({ where: { planNumber: planNumber.trim(), ...(excludeId && { id: { not: excludeId } }), userId } });
+  return count > 0;
+}
+
+export async function getAllFacilitatorsAndPlanNumbers(userId: string) {
+  const plans = await prisma.surfboardPlan.findMany({
+    select: { facilitator: true, planNumber: true },
+    where: {
+      userId,
+      OR: [{ AND: [{ facilitator: { not: undefined } }, { facilitator: { not: "" } }] }, { AND: [{ planNumber: { not: undefined } }, { planNumber: { not: "" } }] }],
+    },
+  });
+
+  const facilitators = Array.from(new Set(plans.map((p) => p.facilitator?.trim()).filter((f): f is string => Boolean(f)))).sort((a, b) => a.localeCompare(b));
+  const planNumbers = Array.from(new Set(plans.map((p) => p.planNumber?.trim()).filter((p): p is string => Boolean(p)))).sort((a, b) => a.localeCompare(b));
+
+  return { facilitators, planNumbers };
+}
+
+export async function getAllFacilitators(userId: string): Promise<string[]> {
+  const plans = await prisma.surfboardPlan.findMany({
+    select: { facilitator: true },
+    distinct: ["facilitator"],
+    where: { userId, AND: [{ facilitator: { not: undefined } }, { facilitator: { not: "" } }] },
+    orderBy: { facilitator: "asc" },
+  });
+
+  return plans
+    .map((p) => p.facilitator?.trim())
+    .filter((f): f is string => Boolean(f))
+    .filter((f, i, self) => i === self.findIndex((x) => x.toLowerCase() === f.toLowerCase()));
+}
+
+export async function searchReferencePlanNumbers(userId: string, planType: string): Promise<string[]> {
+  const { REFERENCE_FILTERS } = await import("@/app/(projects)/(surfboard)/types/surfboardTypes");
+  const conf = (REFERENCE_FILTERS as any)[planType];
+  const where: any = { userId };
+  if (conf?.excludeTypes) where.NOT = conf.excludeTypes.map((t: string) => ({ planType: t }));
+  if (conf?.mustBeType) where.planType = { in: conf.mustBeType };
+
+  const rows = await prisma.surfboardPlan.findMany({ select: { planNumber: true }, where, orderBy: { createdAt: "desc" }, take: 5000 });
+  return rows.map((r) => r.planNumber);
+}
+
+// ---------------------------------------------------------------------------
+// Status / lifecycle
+// ---------------------------------------------------------------------------
+
+export async function updateSurfPlanStatus(userId: string, userRole: SurfboardRole, userFirstLastName: { firstName: string; lastName: string }, id: string, status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW") {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id }, select: { userId: true, planNumber: true, surveyTitle: true, status: true } });
+  if (!plan) throw new NotFoundError("Plan");
+
+  const isOwner = plan.userId === userId;
+  const isAdmin = userRole === SurfboardRole.ADMIN || userRole === SurfboardRole.SUPERADMIN;
+  if (!isOwner && !isAdmin) throw new ForbiddenError();
+
+  const updatedPlan = await prisma.surfboardPlan.update({ where: { id }, data: { status } });
+
+  if (plan.status !== status) {
+    const statusMessages: Record<typeof status, string> = {
+      PENDING: "Your plan has been marked as pending review.",
+      LODGED: "Your plan has been successfully lodged!",
+      QUERIED: "Your plan has been queried and requires attention.",
+      UNDER_REVIEW: "Your plan is now under review.",
+    };
+    const notificationTypes: Record<typeof status, "INFO" | "SUCCESS" | "WARNING" | "ERROR"> = {
+      PENDING: "INFO",
+      LODGED: "SUCCESS",
+      QUERIED: "WARNING",
+      UNDER_REVIEW: "INFO",
+    };
+
+    if (isAdmin && plan.userId) {
+      await notifyPlanUpdate({ planId: id, planNumber: plan.planNumber, title: `Plan Status Updated: ${status}`, message: statusMessages[status], type: notificationTypes[status], userIds: [plan.userId], sendEmail: true });
+    }
+    if (isOwner && !isAdmin) {
+      await notifyPlanUpdate({
+        planId: id,
+        planNumber: plan.planNumber,
+        title: `Plan Status Changed: ${plan.planNumber}`,
+        message: `Plan ${plan.planNumber} (${plan.surveyTitle}) status changed to ${status} by ${userFirstLastName.firstName} ${userFirstLastName.lastName}.`,
+        type: "INFO",
+        sendEmail: false,
+      });
+    }
+  }
+
+  return updatedPlan;
+}
+
+export async function deleteSurfPlan(userId: string, id: string) {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id, userId }, select: { deleted: true, redCopyStatus: true } });
+  if (!plan) throw new NotFoundError("Plan");
+  if (plan.deleted) throw new ValidationError({ id: "Plan already deleted" });
+  if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+    throw new ValidationError({ redCopyStatus: "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes." });
+  }
+
+  await prisma.surfboardPlan.update({ where: { id, userId }, data: { deleted: true, deletedAt: new Date(), deletedBy: userId } });
+  return { success: true };
+}
+
+export async function restoreSurfPlan(userId: string, id: string) {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id, userId }, select: { deleted: true } });
+  if (!plan) throw new NotFoundError("Plan");
+  if (!plan.deleted) throw new ValidationError({ id: "Plan is not deleted" });
+
+  await prisma.surfboardPlan.update({ where: { id, userId }, data: { deleted: false, deletedAt: null, deletedBy: null } });
+  return { success: true };
+}
+
+export async function permanentlyDeleteSurfPlan(userId: string, userRole: SurfboardRole, id: string) {
+  const isAdmin = userRole === SurfboardRole.ADMIN || userRole === SurfboardRole.SUPERADMIN;
+
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id }, select: { userId: true, pdfFilePaths: true, cadFilePaths: true, certificateFilePaths: true, redCopyStatus: true } });
+  if (!plan) throw new NotFoundError("Plan");
+  if (plan.redCopyStatus && plan.redCopyStatus !== "NOT_SUBMITTED") {
+    throw new ValidationError({ redCopyStatus: "This plan has been submitted and cannot be deleted. Please contact support if you need to make changes." });
+  }
+  if (plan.userId !== userId && !isAdmin) throw new ForbiddenError();
+
+  const filesToDeleteUrls = [...(plan.pdfFilePaths || []), ...(plan.cadFilePaths || []), ...(plan.certificateFilePaths || [])]
+    .filter((u): u is string => Boolean(u))
+    .map((url) => ({ url }));
+
+  if (filesToDeleteUrls.length > 0) {
+    const deleteResult = await deleteMultipleSurfboardFilesFromS3WithUrl(filesToDeleteUrls);
+    if (!deleteResult.success) {
+      throw new ValidationError({ files: `Failed to delete files from storage: ${deleteResult.error ?? "Unknown error"}` });
+    }
+  }
+
+  await prisma.surfboardPlan.delete({ where: { id } });
+  return { success: true };
+}
+
+export async function submitRedCopy(userId: string, planId: string, file: File) {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { id: true, planNumber: true, planType: true, status: true, certificateFilePaths: true } });
+  if (!plan) throw new NotFoundError("Plan");
+
+  if (plan.status !== "PENDING" || ["PROVISIONAL", "PROVISIONAL LAYOUT"].includes(plan.planType) || plan.certificateFilePaths?.length === 0) {
+    throw new ValidationError({ plan: "This plan is not eligible for Red Copy submission" });
+  }
+
+  const uploadResult = await uploadSurfboardFileToS3(file, "redcopy", `${plan.planNumber}-${Date.now()}`);
+  if (!uploadResult.url) throw new ValidationError({ file: "Failed to upload Red Copy file" });
+
+  const response = await fetch("https://api.redcopy.com/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ planNumber: plan.planNumber, fileUrl: uploadResult.url, webhookUrl: `${process.env.NEXTAUTH_URL}/api/webhooks/redcopy` }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new ValidationError({ redcopy: error.message || "Failed to submit to Red Copy" });
+  }
+
+  await prisma.surfboardPlan.update({
+    where: { id: planId },
+    data: { status: "UNDER_REVIEW", redCopyStatus: "SUBMITTED", redCopySubmittedAt: new Date(), redCopyFileUrl: uploadResult.url },
+  });
+
+  return { id: planId };
+}
+
+export async function verifyPersonCount(userRole: SurfboardRole, planId: string, count: number) {
+  if (userRole === SurfboardRole.USER) throw new ForbiddenError();
+  await prisma.surfboardPlan.update({ where: { id: planId }, data: { personCount: count, personCountVerified: true } });
+  return { success: true };
+}
+
+export async function queryPlan(userRole: SurfboardRole, planId: string) {
+  if (userRole === SurfboardRole.USER) throw new ForbiddenError();
+  await prisma.surfboardPlan.update({ where: { id: planId }, data: { status: "QUERIED" } });
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Sharing / users
+// ---------------------------------------------------------------------------
+
+type SearchUser = { id: string; firstName: string; lastName: string; email: string; surconRegNumber: string | null };
+
+export async function searchSurfUserByEmailOrSurconRegNumber(email: string, surconRegNumber: string) {
+  const user = await prisma.surfboardUser.findUnique({ where: { email, surconRegNumber } });
+  if (!user) throw new NotFoundError("User");
+  return user;
+}
+
+export async function searchUsers(callerEmail: string, query: string): Promise<SearchUser[]> {
+  if (!query.trim()) return [];
+  return prisma.surfboardUser.findMany({
+    where: { OR: [{ email: { contains: query, mode: "insensitive" } }, { surconRegNumber: { contains: query, mode: "insensitive" } }], email: { not: callerEmail } },
+    select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true },
+    take: 10,
+  });
+}
+
+export async function sharePlanWithUser(userId: string, userFirstLastName: { firstName: string; lastName: string }, planId: string, targetUserId: string) {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true, planNumber: true } });
+  if (!plan) throw new NotFoundError("Plan");
+
+  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: targetUserId }, select: { id: true } });
+  if (!targetUser) throw new NotFoundError("User");
+
+  const updatedPlan = await prisma.surfboardPlan.update({
+    where: { id: planId },
+    data: { sharedTo: { set: [...new Set([...(plan.sharedTo || []), targetUserId])] } },
+    select: { id: true, sharedTo: true },
+  });
+
+  await notifyPlanShared({ planId, planNumber: plan.planNumber, sharedWithUserId: targetUserId, sharedByUser: userFirstLastName, sendEmail: true });
+
+  return updatedPlan;
+}
+
+export async function unsharePlanWithUser(userId: string, planId: string, targetUserId: string) {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true } });
+  if (!plan) throw new NotFoundError("Plan");
+
+  return prisma.surfboardPlan.update({
+    where: { id: planId },
+    data: { sharedTo: { set: (plan.sharedTo || []).filter((id) => id !== targetUserId) } },
+    select: { id: true, sharedTo: true },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Attachments / geo
+// ---------------------------------------------------------------------------
+
+export async function deletePlanAttachment(userId: string, planId: string, fileUrl: string, fileType: "pdf" | "cad" | "certificate") {
+  const fieldName = `${fileType}FilePaths`;
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { id: true, [fieldName]: true } as any });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  const deleteResult = await deleteMultipleSurfboardFilesFromS3WithUrl([fileUrl]);
+  if (!deleteResult.success) throw new ValidationError({ file: deleteResult.error || "Failed to delete file from storage" });
+
+  const currentFiles = (plan as any)[fieldName] as string[];
+  const updatedFiles = currentFiles.filter((url) => url !== fileUrl);
+
+  const updateData: any = { [fieldName]: updatedFiles };
+  if (fileType === "certificate" && updatedFiles.length === 0) updateData.status = "PENDING";
+
+  await prisma.surfboardPlan.update({ where: { id: planId }, data: updateData });
+  return { success: true };
+}
+
+export async function updatePlanRecordCopy(userId: string, planId: string, redCopyFileUrl: string) {
+  const plan = await prisma.surfboardPlan.findFirst({ where: { id: planId, userId }, select: { id: true } });
+  if (!plan) throw new NotFoundError("Plan (or access denied)");
+
+  await prisma.surfboardPlan.update({ where: { id: planId }, data: { redCopyFileUrl } });
+  return { success: true };
+}
+
+type AdminBoundaryResult = { wardname: string; lcdaname: string; lganame: string; statename: string };
+
+export async function getAdminBoundaries(geometry: object): Promise<AdminBoundaryResult | null> {
+  if (!geometry) throw new ValidationError({ geometry: "getAdminBoundaries called with invalid geometry" });
+
+  const geoJsonString = typeof geometry === "string" ? geometry : JSON.stringify(geometry);
+  const result = await prisma.$queryRaw<AdminBoundaryResult[]>`
+    SELECT wardname, lcdaname, lganame, statename
+    FROM "nigeria_ward_admin_boundaries"
+    WHERE ST_Intersects(
+      geom,
+      ST_SetSRID(ST_GeomFromGeoJSON(${geoJsonString}), 4326)
+    )
+    LIMIT 1;
+  `;
+
+  return result?.length ? result[0] : null;
+}
+
+/** Minimal plan data with geometry for the admin map view — ADMIN/SUPERADMIN only, enforced at the route layer. */
+export async function getAllSurfPlansForAdmin() {
+  const plans = await prisma.surfboardPlan.findMany({
+    where: { deleted: false, geometry: { not: Prisma.DbNull as any } },
+    select: {
+      id: true,
+      planNumber: true,
+      surveyTitle: true,
+      ward: true,
+      lga: true,
+      status: true,
+      geometry: true,
+      user: { select: { firstName: true, lastName: true, email: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return plans.map((plan) => ({
+    id: plan.id,
+    planNumber: plan.planNumber,
+    surveyTitle: plan.surveyTitle,
+    location: plan.ward && plan.lga ? `${plan.ward}, ${plan.lga}` : plan.ward || plan.lga,
+    status: plan.status,
+    geometry: plan.geometry,
+    ward: plan.ward,
+    lga: plan.lga,
+    owner: plan.user ?? null,
+  }));
+}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export async function GET(request: NextRequest) {
@@ -75,6 +76,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD);
+    } catch (err) {
+      console.error("issueSession failed for surf-mda callback:", err);
+    }
+
     // Create encrypted user data
     const userData = {
       platform: Platform.SURFBOARD,
@@ -90,10 +99,10 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/surf-mda/dashboard";
+    const fallbackUrl = "/surfboard-mda/dashboard";
 
     const redirectUrl = (() => {
-      if (postLoginRaw && postLoginRaw.startsWith("/surf-mda/dashboard")) {
+      if (postLoginRaw && postLoginRaw.startsWith("/surfboard-mda/dashboard")) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
       }
@@ -108,7 +117,7 @@ export async function GET(request: NextRequest) {
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
-    console.error("Error in GET /auth/success/surf-mda:", error);
-    return NextResponse.redirect(addBaseUrl("/surf-mda/error-login"));
+    console.error("Error in GET /auth/success/surfboard-mda:", error);
+    return NextResponse.redirect(addBaseUrl("/surfboard-mda/error-login"));
   }
 }

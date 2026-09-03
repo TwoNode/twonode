@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,8 +32,6 @@ import {
   AlertTriangle,
   Copy,
 } from "lucide-react";
-import { resubmitQueriedPlan, getCurrentPayerProfile } from "../actions/codActions";
-import { uploadSurfboardFileToS3 } from "../actions/awsActions";
 import { parseCSVContent } from "../utils/surfboardUtils";
 import type { PillarData } from "../types/surfboardTypes";
 import MaplibreMap from "./maps/MaplibreMap";
@@ -104,13 +103,12 @@ export function AmendPlanModal({
   // Fetch settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
-      const { getCodSubmissionSettings } = await import("../actions/settingsActions");
       try {
-        const settings = await getCodSubmissionSettings();
-        if (settings) {
-          setFeePercent(settings.queryResponseFeePercent || 0);
+        const settingsResult = await surfboardApi.settings.codSubmission();
+        if (settingsResult.success) {
+          setFeePercent(settingsResult.data.queryResponseFeePercent || 0);
         }
-        const profileRes = await getCurrentPayerProfile();
+        const profileRes = await surfboardApi.cod.payerProfile();
         if (profileRes.success && profileRes.data) {
           setPayer(profileRes.data);
         }
@@ -297,7 +295,7 @@ export function AmendPlanModal({
       // Upload new record copy if selected
       if (selectedFile) {
         setUploading(true);
-        const uploadResult = await uploadSurfboardFileToS3(
+        const uploadResult = await surfboardApi.files.uploadSurfboardFile(
           selectedFile,
           "redcopy",
           plan.planNumber
@@ -322,14 +320,13 @@ export function AmendPlanModal({
         }
         : undefined;
 
-      const result = await resubmitQueriedPlan(
-        plan.id,
-        pillarsData,
+      const result = await surfboardApi.plans.resubmit(plan.id, {
+        pillars: pillarsData,
         recordCopyUrl,
-        locationData,
-        showPayment ? lasgReceiptUrl : undefined,
-        showPayment ? remitaReceiptUrl : undefined
-      );
+        location: locationData,
+        lasgReceiptUrl: showPayment ? lasgReceiptUrl : undefined,
+        remitaReceiptUrl: showPayment ? remitaReceiptUrl : undefined,
+      });
 
       if (result.success) {
         toast.success(

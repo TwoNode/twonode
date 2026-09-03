@@ -9,8 +9,8 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { verifyGBCPayment } from "@/app/(projects)/(GBC)/actions/ticket-actions";
-import { getAllGBCSettings } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { verifyPayment } from "@/gbc/services/ticketService";
+import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
 
 export default async function TicketSuccessPage({
@@ -25,9 +25,10 @@ export default async function TicketSuccessPage({
   }
 
   // Verify the payment
-  const verification = await verifyGBCPayment(reference);
-
-  if (!verification.success) {
+  let verification: Awaited<ReturnType<typeof verifyPayment>>;
+  try {
+    verification = await verifyPayment(reference);
+  } catch (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
@@ -38,8 +39,9 @@ export default async function TicketSuccessPage({
             Payment Verification Failed
           </h2>
           <p className="mt-2 text-gray-600">
-            {verification.error ||
-              "Unable to verify your payment. Please try again or contact support if the issue persists."}
+            {error instanceof Error
+              ? error.message
+              : "Unable to verify your payment. Please try again or contact support if the issue persists."}
           </p>
           <div className="mt-6">
             <Link href="/gbc/tickets">
@@ -54,19 +56,13 @@ export default async function TicketSuccessPage({
     );
   }
 
-  // Type guard: verification.data should exist after success check
-  if (!verification.data) {
-    redirect("/gbc/tickets");
-  }
-
   // Extract ticket data from verification response
-  const { tickets, count, amount } = verification.data;
+  const { tickets, count, amount } = verification;
   const primaryTicket = tickets[0]; // Get the first ticket (or primary ticket for groups)
   const isGroupTicket = count > 1;
 
   // Fetch settings for event details
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";

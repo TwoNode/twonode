@@ -4,8 +4,8 @@ import { Menu, MenuProps } from "@/components/sidebars/menu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva-colors";
-import { SURFBOARD_COLORS } from "@/surfboard-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 export interface SidebarProps extends MenuProps {
   sideBarWidthClass: string;
@@ -24,7 +24,7 @@ export function Sidebar({
   const isSurfboard =
     typeof window !== "undefined" &&
     (window.location.pathname.includes("/surfboard") ||
-      window.location.pathname.includes("/surf-restricted"));
+      window.location.pathname.includes("/surfboard-restricted"));
 
   return (
     <aside

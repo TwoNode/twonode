@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { getGatedPublicSurfPlan } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getPlanQRAccessState } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import QRPaywallModal from "@/app/(projects)/(surfboard)/components/QRPaywallModal";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -262,7 +261,7 @@ function PlanDetails({ planId }: { planId: string }) {
   useEffect(() => {
     const fetchPlanData = async () => {
       try {
-        const res = await getGatedPublicSurfPlan(planId, token);
+        const res = await surfboardApi.plans.getPublic(planId, token);
         if (!res.success || !res.data) {
           setError("Plan not found");
           return;

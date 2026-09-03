@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { LucideIcon } from "lucide-react";
 import { LucideUser } from "lucide-react";
-import { REVA_COLORS } from "@/reva-colors";
+import { REVA_COLORS } from "@/reva/colors";
 import { useStore } from "@/hooks/use-store";
 import { useSidebar } from "@/hooks/use-sidebar";
 
@@ -29,7 +29,7 @@ export interface MenuProps {
 }
 
 export function Menu({ items, userImageUrl = "", colorPalette }: MenuProps) {
-  const colors = colorPalette || require("@/reva-colors").REVA_COLORS;
+  const colors = colorPalette || require("@/reva/colors").REVA_COLORS;
   const pathname = usePathname();
   const sidebar = useStore(useSidebar, (x) => x);
 

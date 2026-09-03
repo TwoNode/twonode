@@ -1,4 +1,4 @@
-import { getGBCTicketByNumber } from "../../../actions/ticket-actions";
+import { getTicketByNumber } from "@/gbc/services/ticketService";
 import { notFound } from "next/navigation";
 import CertificateClient from "./CertificateClient";
 
@@ -9,15 +9,15 @@ interface PageProps {
 }
 
 export default async function CertificatePage({ params }: PageProps) {
-  const result = await getGBCTicketByNumber(params.ticketNumber);
-  
-  if (!result.success || !result.data) {
+  const ticket = await getTicketByNumber(params.ticketNumber).catch(() => null);
+
+  if (!ticket) {
     notFound();
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-8">
-      <CertificateClient ticket={result.data} />
+      <CertificateClient ticket={ticket} />
     </div>
   );
 }

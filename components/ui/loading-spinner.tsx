@@ -1,6 +1,6 @@
 "use client"
 
-import { REVA_COLORS, REVA_GRADIENTS } from "@/lib/reva-colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import { Loader2, Sparkles } from "lucide-react";
 
 interface LoadingSpinnerProps {

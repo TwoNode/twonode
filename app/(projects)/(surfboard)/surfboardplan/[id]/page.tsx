@@ -1,4 +1,4 @@
-import { getPublicSurfPlanByIdWithSurveyor } from "@/app/(projects)/(surfboard)/actions/surfboardActions";
+import { getPublicSurfPlanByIdWithSurveyor } from "@/surfboard/services/planService";
 import { Metadata } from "next";
 import { SurfPageNotFound } from "@/components/pageNotFound/SurfPageNotFound";
 import PublicSurfboardPlan from "./PublicSurfPlan";
@@ -9,15 +9,17 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const res = await getPublicSurfPlanByIdWithSurveyor(id);
 
-  if (!res.success || !res.data) {
+  let plan;
+  try {
+    plan = await getPublicSurfPlanByIdWithSurveyor(id);
+  } catch {
     return {
       title: "Plan Not Found | Surfboard Plans",
     };
   }
 
-  const { planNumber, surveyTitle, lga, ward } = res.data;
+  const { planNumber, surveyTitle, lga, ward } = plan;
 
   return {
     title: `Survey Plan ${planNumber} | ${surveyTitle}`,

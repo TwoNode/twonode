@@ -1,0 +1,96 @@
+import { FC } from "react";
+import CreateAdminUserForm from "../../components/CreateAdminUserForm";
+import AdminUsersList from "../../components/AdminUsersList";
+import UserRoleManagementForm from "../../components/UserRoleManagementForm";
+import AllUsersList from "../../components/AllUsersList";
+import CreateNotificationForm from "../../components/CreateNotificationForm";
+import { getAllUsers } from "@/reva/services/adminUserService";
+import { canAccessRevaAdminPanel } from "@/permissions";
+
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "USER" | "ADMIN" | "SUPERADMIN";
+  emailVerified: boolean;
+  is_active: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  _count: {
+    properties: number;
+  };
+}
+
+interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: "ADMIN" | "SUPERADMIN";
+  emailVerified: boolean;
+  is_active: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  _count: {
+    properties: number;
+  };
+}
+
+const RevaPage: FC = async () => {
+  let allUsers: User[] = [];
+  let adminUsers: AdminUser[] = [];
+  try {
+    const result = await getAllUsers();
+    allUsers = result.allUsers as User[];
+    adminUsers = result.allUsers.filter((user) =>
+      canAccessRevaAdminPanel(user.role)
+    ) as AdminUser[];
+  } catch {
+    // fall through with empty lists
+  }
+
+  return (
+    <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Super Admin Dashboard
+        </h1>
+        <p className="text-gray-600">
+          Manage admin users, roles, system settings, and notifications
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Create Admin User Form */}
+        <div>
+          <CreateAdminUserForm />
+        </div>
+
+        {/* User Role Management Form */}
+        <div>
+          <UserRoleManagementForm users={allUsers} />
+        </div>
+      </div>
+
+      {/* Notification Creation Form */}
+      <div className="mb-8">
+        <CreateNotificationForm />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Admin Users List */}
+        <div className="w-full">
+          <AdminUsersList users={adminUsers} />
+        </div>
+
+        {/* All Users List */}
+        <div className="w-full">
+          <AllUsersList users={allUsers} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RevaPage;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import RedCopyModal from './RedCopyModal';
-import { submitRedCopy } from '../../../actions/surfboardActions';
+import { surfboardApi } from '@/surfboard/apiClient';
 
 type RedCopyButtonProps = {
   plan: {
@@ -38,7 +38,7 @@ export default function RedCopyButton({ plan, variant = 'button' }: RedCopyButto
       const formData = new FormData();
       formData.append('file', file);
       
-      const result = await submitRedCopy(plan.id, file);
+      const result = await surfboardApi.plans.submitRedCopy(plan.id, formData);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to submit Red Copy');

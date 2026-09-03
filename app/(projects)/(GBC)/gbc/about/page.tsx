@@ -9,13 +9,12 @@ import {
   Globe2,
   TrendingUp,
 } from "lucide-react";
-import { getAllGBCSettings } from "../../actions/settings-actions";
-import GBC2Navbar from "../../components/Navbar";
+import { getSettings } from "@/gbc/services/settingsService";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 export default async function AboutPage() {
   // Fetch settings for dynamic event information
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const eventTheme =
     settings?.event.theme ??

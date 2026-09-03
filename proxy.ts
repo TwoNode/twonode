@@ -2,22 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { withAuth } from "@kinde-oss/kinde-auth-nextjs/middleware";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import {
-  canAccessRevaAdminPanel,
-  canAccessRevaUserPanel,
-  canAccessRevaSuperAdminPanel,
-  canAccessSurfAdminPanel,
-  canAccessSurfUserPanel,
-  canAccessSurfSuperAdminPanel,
-  canAccessGBCAdminPanel,
-  canAccessGBCUserPanel,
-  canAccessGBCSuperAdminPanel,
-} from "@/permissions";
+import { canAccessGBCSuperAdminPanel } from "@/permissions";
 import {
   getAndRefreshUserSession,
 } from "@/utils/encryptedCookies";
-import { Platform } from "@/utils/platform";
-import { getUserAndActiveSub } from "./app/(projects)/(surfboard)/actions/subscriptionActions";
+import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
+import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
+import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
+import { canAccessRoute as canAccessGBCRoute } from "@/gbc/access/routes";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -28,19 +20,16 @@ const protectedRoutes = [
   "/reva-restricted/dashboard",
   "/reva-restricted/superadmin",
   "/surfboard/dashboard",
-  "/surf-restricted/dashboard",
-  "/surf-restricted/superadmin",
-  "/surf-mda/dashboard",
-  "/gbc/restricted",
+  "/surfboard-restricted/dashboard",
+  "/surfboard-restricted/superadmin",
+  "/surfboard-mda/dashboard",
+  "/gbc-restricted",
 ]; 
 
 // Define public routes that bypass authentication
 const publicRoutes = [
   "/surfboardplan/", // This will match /surfboardplan/[id]
 ];
-
-// Define superadmin-only pages for Surfboard (surf-restricted)
-const surfboardSuperadminPages = ["/surf-restricted/dashboard/superadmin"];
 
 type DynamicAuthOptions = any & {
   loginPage?: string | ((req: NextRequest) => string);
@@ -93,8 +82,8 @@ function getActivePlatform(pathname: string): Platform | null {
   if (pathname.startsWith("/reva")) return Platform.REVA;
   if (
     pathname.startsWith("/surfboard") ||
-    pathname.startsWith("/surf-restricted") ||
-    pathname.startsWith("/surf-mda")
+    pathname.startsWith("/surfboard-restricted") ||
+    pathname.startsWith("/surfboard-mda")
   ) return Platform.SURFBOARD;
   if (pathname.startsWith("/gbc")) return Platform.GBC;
   if (pathname.startsWith("/scram")) return Platform.SCRAM;
@@ -110,12 +99,12 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         return "/reva-restricted/login";
       if (pathname.startsWith("/reva")) return "/reva/login";
-      if (pathname.startsWith("/surf-mda")) return "/surf-mda/login";
-      if (pathname.startsWith("/surf-restricted"))
-        return "/surf-restricted/login";
+      if (pathname.startsWith("/surfboard-mda")) return "/surfboard-mda/login";
+      if (pathname.startsWith("/surfboard-restricted"))
+        return "/surfboard-restricted/login";
       if (pathname.startsWith("/surfboard")) return "/surfboard/login";
-      if (pathname.startsWith("/gbc/restricted"))
-        return "/gbc/restricted-login";
+      if (pathname.startsWith("/gbc-restricted"))
+        return "/gbc-restricted/login";
       if (pathname.startsWith("/gbc")) return "/gbc/login";
 
       return "/reva/login"; // Default fallback
@@ -150,14 +139,14 @@ const proxyWithLogic = withDynamicAuth(
       if (pathname.startsWith("/reva-restricted"))
         redirectPath = "/reva-restricted/login";
       else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-      else if (pathname.startsWith("/surf-mda"))
-        redirectPath = "/surf-mda/login";
-      else if (pathname.startsWith("/surf-restricted"))
-        redirectPath = "/surf-restricted/login";
+      else if (pathname.startsWith("/surfboard-mda"))
+        redirectPath = "/surfboard-mda/login";
+      else if (pathname.startsWith("/surfboard-restricted"))
+        redirectPath = "/surfboard-restricted/login";
       else if (pathname.startsWith("/surfboard"))
         redirectPath = "/surfboard/login";
-      else if (pathname.startsWith("/gbc/restricted"))
-        redirectPath = "/gbc/restricted-login";
+      else if (pathname.startsWith("/gbc-restricted"))
+        redirectPath = "/gbc-restricted/login";
       else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
       console.log(
         "🛡️ Proxy - User not authenticated, redirecting to:",
@@ -180,14 +169,14 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - No session data found, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -212,14 +201,14 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - Missing platform session, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -230,97 +219,81 @@ const proxyWithLogic = withDynamicAuth(
       // Check route-specific permissions
       let hasAccess = false;
 
-      if (pathname.startsWith("/reva/dashboard")) {
-        hasAccess = canAccessRevaUserPanel(role);
-      } else if (pathname.startsWith("/reva-restricted/dashboard")) {
-        if (pathname.startsWith("/reva-restricted/dashboard/superadmin")) {
-          hasAccess = canAccessRevaSuperAdminPanel(role);
-        } else {
-          hasAccess = canAccessRevaAdminPanel(role);
-        }
+      if (pathname.startsWith("/reva/dashboard") || pathname.startsWith("/reva-restricted/dashboard")) {
+        // Nav/role access now comes from reva/access/routes.ts (the same
+        // registry the sidebar layouts read) instead of separate
+        // canAccessReva*Panel calls per branch — closes the same
+        // single-source-of-truth gap Phase 2 closed for Surfboard.
+        hasAccess = canAccessRevaRoute(pathname, role);
       } else if (pathname.startsWith("/reva-restricted/superadmin")) {
-        hasAccess = canAccessRevaSuperAdminPanel(role);
+        // Not a registry entry — no real page lives at this exact path
+        // (only /reva-restricted/dashboard/superadmin does); kept as a
+        // direct role check, same treatment as surfboard-restricted's
+        // analogous dead branch below.
+        hasAccess = role === RevaRole.SUPERADMIN;
       } else if (pathname.startsWith("/surfboard/dashboard")) {
+        // Nav/role access now comes from surfboard/access/routes.ts (the
+        // same registry DashboardShell reads) instead of a single blanket
+        // canAccessSurfUserPanel check repeated per-branch — subscription
+        // gating (unrelated to role/nav) stays its own step below.
+        const hasRoleAccess = canAccessSurfboardRoute(pathname, role);
         if (
           pathname == "/surfboard/dashboard" ||
           pathname == "/surfboard/dashboard/settings" ||
           pathname == "/surfboard/dashboard/subscription"
         ) {
-          hasAccess = canAccessSurfUserPanel(role);
+          hasAccess = hasRoleAccess;
+        } else if (!hasRoleAccess) {
+          hasAccess = false;
         } else {
-          const hasRoleAccess = canAccessSurfUserPanel(role);
-          if (!hasRoleAccess) {
+          try {
+            const subData = platformSession.subscription;
+
+            if (!subData || subData.status !== "active") {
+              // Check if it's canceled but still valid
+              const isGracePeriod = subData?.status === "canceled" && subData.expiresAt && new Date(subData.expiresAt) >= new Date();
+
+              if (!isGracePeriod) {
+                  console.log("🛡️ Proxy - No valid subscription in cookie, redirecting to sub page");
+                  return createRedirectResponse(req, "/surfboard/dashboard/subscription");
+              }
+            }
+            hasAccess = true;
+          } catch (error) {
+            console.log("🛡️ Proxy - Error processing sub in proxy:", error);
             hasAccess = false;
-          } else {
-            try {
-              // Note: getUserAndActiveSub uses cookies() which is fine in middleware context if handled correctly,
-              // but we should ideally use the subscription data from the cookie if available
-              const subData = platformSession.subscription;
-
-              if (!subData || subData.status !== "active") {
-                // Check if it's canceled but still valid
-                const isGracePeriod = subData?.status === "canceled" && subData.expiresAt && new Date(subData.expiresAt) >= new Date();
-
-                if (!isGracePeriod) {
-                    console.log("🛡️ Proxy - No valid subscription in cookie, redirecting to sub page");
-                    return createRedirectResponse(req, "/surfboard/dashboard/subscription");
-                }
-              }
-              hasAccess = true;
-            } catch (error) {
-              console.log("🛡️ Proxy - Error processing sub in proxy:", error);
-              hasAccess = false;
-              return createRedirectResponse(req, "/surfboard/dashboard/subscription");
-            }
+            return createRedirectResponse(req, "/surfboard/dashboard/subscription");
           }
         }
-      } else if (pathname.startsWith("/surf-restricted/dashboard")) {
-        const isSuperadminPage = surfboardSuperadminPages.some((page) => pathname.startsWith(page));
-        if (isSuperadminPage) {
-          hasAccess = canAccessSurfSuperAdminPanel(role);
-        } else {
-          hasAccess = canAccessSurfAdminPanel(role);
-        }
-      } else if (pathname.startsWith("/surf-restricted/superadmin")) {
-        hasAccess = canAccessSurfSuperAdminPanel(role);
-      } else if (pathname.startsWith("/surf-mda/dashboard")) {
-        if (canAccessSurfSuperAdminPanel(role)) {
-          hasAccess = true;
-        } else {
-          const mdaRoles = ["ACCOUNTS", "CHARTING", "SURCON", "RECORDS_I", "RECORDS_II", "MDA_SUPERADMIN", "INTAKE", "ARCHIVE"];
-          hasAccess = mdaRoles.includes(role);
-
-          if (hasAccess) {
-            if (role === "MDA_SUPERADMIN") {
-              hasAccess = true;
-            } else {
-              if (pathname.includes("/accounts") && role !== "ACCOUNTS") {
-                hasAccess = false;
-              } else if (pathname.includes("/charting") && role !== "CHARTING") {
-                hasAccess = false;
-              } else if (pathname.includes("/surcon") && role !== "SURCON") {
-                hasAccess = false;
-              } else if (pathname.includes("/records-ii")) {
-                if (role !== "RECORDS_II") {
-                  hasAccess = false;
-                }
-              } else if (pathname.includes("/records-i")) {
-                if (role !== "RECORDS_I") {
-                  hasAccess = false;
-                }
-              } else if (pathname.includes("/intake") && role !== "INTAKE") {
-                hasAccess = false;
-              } else if (pathname.includes("/archive") && role !== "ARCHIVE") {
-                hasAccess = false;
-              }
-            }
-          }
-        }
-      } else if (pathname.startsWith("/gbc/restricted")) {
-        if (pathname.startsWith("/gbc/restricted/superadmin")) {
+      } else if (pathname.startsWith("/surfboard-restricted/dashboard")) {
+        hasAccess = canAccessSurfboardRoute(pathname, role);
+      } else if (pathname.startsWith("/surfboard-restricted/superadmin")) {
+        // Not a registry entry — no real page lives at this exact path
+        // (only /surfboard-restricted/dashboard/superadmin does); kept as a
+        // direct role check since it's in the matcher/protectedRoutes list
+        // and this migration isn't the place to decide it's dead.
+        hasAccess = role === SurfboardRole.SUPERADMIN;
+      } else if (pathname.startsWith("/surfboard-mda/dashboard")) {
+        // Real gap closed here: the source's hand-rolled `pathname.includes`
+        // checks are replaced by the same registry — every MDA stage role
+        // now maps to exactly the pages its `roles` array in
+        // surfboard/access/routes.ts allows, instead of a parallel,
+        // easy-to-drift string-matching table.
+        hasAccess = canAccessSurfboardRoute(pathname, role);
+      } else if (pathname.startsWith("/gbc-restricted")) {
+        if (pathname.startsWith("/gbc-restricted/superadmin")) {
+          // Not a registry entry — no real page lives at this exact path
+          // (confirmed by reading the folder tree while building
+          // gbc/access/routes.ts); kept as a direct role check, same
+          // treatment as REVA's and Surfboard's equivalent dead branches.
           hasAccess = canAccessGBCSuperAdminPanel(role);
         } else {
-          hasAccess = canAccessGBCAdminPanel(role);
+          // Nav/role access now comes from gbc/access/routes.ts (the same
+          // registry AdminSidebar.tsx's nav reads) instead of a single
+          // blanket canAccessGBCAdminPanel check — closes the same
+          // single-source-of-truth gap Phase 2/3 closed for
+          // Surfboard/REVA.
+          hasAccess = canAccessGBCRoute(pathname, role);
         }
       }
 
@@ -331,14 +304,14 @@ const proxyWithLogic = withDynamicAuth(
         if (pathname.startsWith("/reva-restricted"))
           redirectPath = "/reva-restricted/login";
         else if (pathname.startsWith("/reva")) redirectPath = "/reva/login";
-        else if (pathname.startsWith("/surf-mda"))
-          redirectPath = "/surf-mda/login";
-        else if (pathname.startsWith("/surf-restricted"))
-          redirectPath = "/surf-restricted/login";
+        else if (pathname.startsWith("/surfboard-mda"))
+          redirectPath = "/surfboard-mda/login";
+        else if (pathname.startsWith("/surfboard-restricted"))
+          redirectPath = "/surfboard-restricted/login";
         else if (pathname.startsWith("/surfboard"))
           redirectPath = "/surfboard/login";
-        else if (pathname.startsWith("/gbc/restricted"))
-          redirectPath = "/gbc/restricted-login";
+        else if (pathname.startsWith("/gbc-restricted"))
+          redirectPath = "/gbc-restricted/login";
         else if (pathname.startsWith("/gbc")) redirectPath = "/gbc/login";
         console.log("🛡️ Proxy - User does not have required role, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
@@ -361,9 +334,9 @@ export const config = {
     "/reva-restricted/dashboard/:path*",
     "/reva-restricted/superadmin/:path*",
     "/surfboard/dashboard/:path*",
-    "/surf-restricted/dashboard/:path*",
-    "/surf-restricted/superadmin/:path*",
-    "/surf-mda/dashboard/:path*",
-    "/gbc/restricted/:path*",
+    "/surfboard-restricted/dashboard/:path*",
+    "/surfboard-restricted/superadmin/:path*",
+    "/surfboard-mda/dashboard/:path*",
+    "/gbc-restricted/:path*",
   ],
 };
