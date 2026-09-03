@@ -63,6 +63,7 @@ export function DashboardShell({
     icon: r.icon,
     label: r.label,
     url: r.path,
+    section: r.section,
   }));
 
   const sidebarItems: MenuItem[] = [

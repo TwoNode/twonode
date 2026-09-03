@@ -28,6 +28,7 @@ export default function RevaUserPanelLayout({
       icon: r.icon,
       label: r.label,
       url: r.path,
+      section: r.section,
     })),
     {
       element: (

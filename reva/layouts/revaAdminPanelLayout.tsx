@@ -12,7 +12,7 @@ import RevaLoading from "@/reva/components/RevaLoading";
 import { REVA_COLORS } from "@/reva/colors";
 import { getNavItemsForRole } from "@/reva/access/routes";
 
-export const sideBarWidthClass = " lg:w-[130px] ";
+export const sideBarWidthClass = " lg:w-[248px] ";
 
 export default function RevaAdminPanelLayout({
   children,
@@ -31,6 +31,7 @@ export default function RevaAdminPanelLayout({
       icon: r.icon,
       label: r.label,
       url: r.path,
+      section: r.section,
     })),
     {
       element: (
