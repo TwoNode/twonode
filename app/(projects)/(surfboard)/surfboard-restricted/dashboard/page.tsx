@@ -22,6 +22,10 @@ import {
   Zap,
   Eye,
 } from "lucide-react";
+import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
+
+const HERO_GRADIENT = `linear-gradient(135deg, ${SURFBOARD_COLORS.primary.dark} 0%, ${SURFBOARD_COLORS.primary.main} 55%, ${SURFBOARD_COLORS.secondary.dark} 130%)`;
+const ACCENT_GRADIENT = `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 0%, ${SURFBOARD_COLORS.secondary.main} 100%)`;
 
 // Simple counter animation hook
 function useCountUp(end: number, duration: number = 2000) {
@@ -63,9 +67,6 @@ export default function RestrictedDashboardHome() {
       change: "+12.3%",
       trend: "up",
       icon: Database,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-600",
     },
     {
       title: "Active Users",
@@ -73,9 +74,6 @@ export default function RestrictedDashboardHome() {
       change: "+8.1%",
       trend: "up",
       icon: Users,
-      color: "from-emerald-500 to-emerald-600",
-      bgColor: "bg-emerald-50",
-      textColor: "text-emerald-600",
     },
     {
       title: "Pending Reviews",
@@ -83,9 +81,6 @@ export default function RestrictedDashboardHome() {
       change: "-3.2%",
       trend: "down",
       icon: Clock,
-      color: "from-amber-500 to-amber-600",
-      bgColor: "bg-amber-50",
-      textColor: "text-amber-600",
     },
     {
       title: "Active Plans",
@@ -93,9 +88,6 @@ export default function RestrictedDashboardHome() {
       change: "+15.7%",
       trend: "up",
       icon: Activity,
-      color: "from-violet-500 to-violet-600",
-      bgColor: "bg-violet-50",
-      textColor: "text-violet-600",
     },
   ];
 
@@ -105,27 +97,18 @@ export default function RestrictedDashboardHome() {
       description: "View comprehensive insights and data visualizations",
       icon: BarChart3,
       href: "/surfboard-restricted/dashboard/analytics",
-      color: "from-blue-500 to-cyan-500",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
     },
     {
       title: "User Management",
       description: "Manage user roles, permissions, and access control",
       icon: Users,
       href: "/surfboard-restricted/dashboard/user-management",
-      color: "from-emerald-500 to-teal-500",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
     },
     {
       title: "Survey Plans",
       description: "Review, approve, and manage survey plans",
       icon: FileCheck,
       href: "/surfboard-restricted/dashboard/surf-plans",
-      color: "from-violet-500 to-purple-500",
-      iconBg: "bg-violet-100",
-      iconColor: "text-violet-600",
     },
     // {
     //   title: "Security & Permissions",
@@ -158,54 +141,53 @@ export default function RestrictedDashboardHome() {
 
   const recentActivity = [
     {
-      type: "success",
+      type: "success" as const,
       icon: CheckCircle2,
       message: "Survey plan SP-2024-1243 approved by John Doe",
       time: "2 minutes ago",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
     },
     {
-      type: "warning",
+      type: "warning" as const,
       icon: AlertTriangle,
       message: "Pending review: 5 new survey submissions",
       time: "15 minutes ago",
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
     },
     {
-      type: "info",
+      type: "info" as const,
       icon: Eye,
       message: "New user registration: jane.smith@example.com",
       time: "1 hour ago",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
     },
     {
-      type: "error",
+      type: "error" as const,
       icon: XCircle,
       message: "Survey plan SP-2024-1189 flagged for review",
       time: "2 hours ago",
-      color: "text-rose-600",
-      bgColor: "bg-rose-50",
     },
     {
-      type: "success",
+      type: "success" as const,
       icon: CheckCircle2,
       message: "System backup completed successfully",
       time: "3 hours ago",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
     },
   ];
 
   return (
     <div className="min-h-full">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 mb-8 shadow-xl">
+      <div
+        className="relative overflow-hidden rounded-2xl p-8 mb-8 shadow-xl"
+        style={{ background: HERO_GRADIENT }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-400 rounded-full blur-3xl opacity-20" />
-        <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-indigo-400 rounded-full blur-3xl opacity-20" />
+        <div
+          className="absolute -right-10 -top-10 w-64 h-64 rounded-full blur-3xl opacity-20"
+          style={{ backgroundColor: SURFBOARD_COLORS.primary.light }}
+        />
+        <div
+          className="absolute -left-10 -bottom-10 w-64 h-64 rounded-full blur-3xl opacity-20"
+          style={{ backgroundColor: SURFBOARD_COLORS.secondary.light }}
+        />
 
         <div className="relative z-10">
           <motion.div
@@ -214,12 +196,15 @@ export default function RestrictedDashboardHome() {
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center gap-2 mb-3">
-              <Shield className="w-8 h-8 text-cyan-300" />
+              <Shield
+                className="w-8 h-8"
+                style={{ color: SURFBOARD_COLORS.secondary.light }}
+              />
               <h1 className="text-3xl md:text-4xl font-bold text-white">
                 Admin Dashboard
               </h1>
             </div>
-            <p className="text-blue-100 text-lg max-w-2xl">
+            <p className="text-white/85 text-lg max-w-2xl">
               Welcome to the Surfboard administrative control center. Manage
               survey plans, users, and system settings with comprehensive
               oversight and analytics.
@@ -242,13 +227,23 @@ export default function RestrictedDashboardHome() {
             >
               <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                    <Icon className={`w-6 h-6 ${stat.textColor}`} />
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
+                  >
+                    <Icon
+                      className="w-6 h-6"
+                      style={{ color: SURFBOARD_COLORS.primary.main }}
+                    />
                   </div>
                   <div
-                    className={`flex items-center gap-1 text-sm font-medium ${
-                      stat.trend === "up" ? "text-emerald-600" : "text-rose-600"
-                    }`}
+                    className="flex items-center gap-1 text-sm font-medium"
+                    style={{
+                      color:
+                        stat.trend === "up"
+                          ? SURFBOARD_COLORS.success.main
+                          : SURFBOARD_COLORS.error.main,
+                    }}
                   >
                     <TrendingUp
                       className={`w-4 h-4 ${
@@ -267,7 +262,8 @@ export default function RestrictedDashboardHome() {
                   </div>
                 </div>
                 <div
-                  className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${stat.color}`}
+                  className="absolute bottom-0 left-0 right-0 h-1"
+                  style={{ background: ACCENT_GRADIENT }}
                 />
               </div>
             </motion.div>
@@ -297,16 +293,20 @@ export default function RestrictedDashboardHome() {
                     <div className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer">
                       <div className="flex items-start gap-4">
                         <div
-                          className={`p-3 rounded-xl ${action.iconBg} group-hover:scale-110 transition-transform duration-300`}
+                          className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
+                          style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
                         >
-                          <Icon className={`w-6 h-6 ${action.iconColor}`} />
+                          <Icon
+                            className="w-6 h-6"
+                            style={{ color: SURFBOARD_COLORS.primary.main }}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                            <h3 className="text-base font-semibold text-gray-900 group-hover:text-[#0077B6] transition-colors">
                               {action.title}
                             </h3>
-                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-[#0077B6] group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                           </div>
                           <p className="text-sm text-gray-500 line-clamp-2">
                             {action.description}
@@ -314,7 +314,8 @@ export default function RestrictedDashboardHome() {
                         </div>
                       </div>
                       <div
-                        className={`absolute inset-0 bg-linear-to-br ${action.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                        className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300"
+                        style={{ background: ACCENT_GRADIENT }}
                       />
                     </div>
                   </Link>
@@ -348,9 +349,10 @@ export default function RestrictedDashboardHome() {
                     >
                       <div className="flex gap-3">
                         <div
-                          className={`p-2 rounded-lg ${activity.bgColor} shrink-0`}
+                          className="p-2 rounded-lg shrink-0"
+                          style={surfboardStatusBadgeStyle(activity.type)}
                         >
-                          <Icon className={`w-4 h-4 ${activity.color}`} />
+                          <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 mb-1 leading-relaxed">
@@ -370,7 +372,7 @@ export default function RestrictedDashboardHome() {
             <div className="p-4 bg-gray-50 border-t border-gray-100">
               <Link
                 href="/surfboard-restricted/dashboard/analytics"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 group"
+                className="text-sm font-medium text-[#0077B6] hover:text-[#023E8A] flex items-center gap-1 group"
               >
                 View all activity
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />

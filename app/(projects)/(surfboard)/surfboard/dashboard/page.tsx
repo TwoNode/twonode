@@ -13,6 +13,7 @@ import {
 } from "react-icons/fi";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
+import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
 
 interface Plan {
   id: string;
@@ -131,25 +132,37 @@ export default function DashboardHome() {
     switch (status) {
       case "LODGED":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={surfboardStatusBadgeStyle("success")}
+          >
             <FiCheckCircle className="mr-1" /> Lodged
           </span>
         );
       case "PENDING":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={surfboardStatusBadgeStyle("warning")}
+          >
             <FiClock className="mr-1" /> Pending
           </span>
         );
       case "QUERIED":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={surfboardStatusBadgeStyle("error")}
+          >
             <FiAlertCircle className="mr-1" /> Queried
           </span>
         );
       case "UNDER_REVIEW":
         return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          <span
+            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={surfboardStatusBadgeStyle("info")}
+          >
             <FiCheckCircle className="mr-1" /> Under Review
           </span>
         );
@@ -176,7 +189,7 @@ export default function DashboardHome() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiRefreshCw
               className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -185,7 +198,7 @@ export default function DashboardHome() {
           </button>
           <Link
             href="/surfboard/dashboard/newplan"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0077B6] hover:bg-[#023E8A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6]"
           >
             <FiPlus className="mr-2 h-4 w-4" />
             New Plan
@@ -198,7 +211,10 @@ export default function DashboardHome() {
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
-              <div className="shrink-0 bg-blue-500 rounded-md p-3">
+              <div
+                className="shrink-0 rounded-md p-3"
+                style={{ backgroundColor: SURFBOARD_COLORS.primary.main }}
+              >
                 <FiFileText className="h-6 w-6 text-white" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -219,7 +235,7 @@ export default function DashboardHome() {
             <div className="text-sm">
               <Link
                 href="/surfboard/dashboard/plans"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
               >
                 View all plans
               </Link>
@@ -230,7 +246,10 @@ export default function DashboardHome() {
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
-              <div className="shrink-0 bg-green-500 rounded-md p-3">
+              <div
+                className="shrink-0 rounded-md p-3"
+                style={{ backgroundColor: SURFBOARD_COLORS.secondary.main }}
+              >
                 <FiUsers className="h-6 w-6 text-white" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -251,7 +270,7 @@ export default function DashboardHome() {
             <div className="text-sm">
               <Link
                 href="/surfboard/dashboard/shared"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
               >
                 View shared plans
               </Link>
@@ -262,7 +281,10 @@ export default function DashboardHome() {
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
-              <div className="shrink-0 bg-yellow-500 rounded-md p-3">
+              <div
+                className="shrink-0 rounded-md p-3"
+                style={{ backgroundColor: SURFBOARD_COLORS.warning.main }}
+              >
                 <FiClock className="h-6 w-6 text-white" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -283,7 +305,7 @@ export default function DashboardHome() {
             <div className="text-sm">
               <Link
                 href="/surfboard/dashboard/plans?status=PENDING"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
               >
                 View pending
               </Link>
@@ -294,7 +316,10 @@ export default function DashboardHome() {
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
-              <div className="shrink-0 bg-green-500 rounded-md p-3">
+              <div
+                className="shrink-0 rounded-md p-3"
+                style={{ backgroundColor: SURFBOARD_COLORS.success.main }}
+              >
                 <FiCheckCircle className="h-6 w-6 text-white" />
               </div>
               <div className="ml-5 w-0 flex-1">
@@ -315,7 +340,7 @@ export default function DashboardHome() {
             <div className="text-sm">
               <Link
                 href="/surfboard/dashboard/plans?status=LODGED"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-[#0077B6] hover:text-[#0096C7]"
               >
                 View lodged
               </Link>
@@ -331,7 +356,7 @@ export default function DashboardHome() {
             onClick={() => setActiveTab("analytics")}
             className={`${
               activeTab === "analytics"
-                ? "border-blue-500 text-blue-600"
+                ? "border-[#0077B6] text-[#0077B6]"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -341,7 +366,7 @@ export default function DashboardHome() {
             onClick={() => setActiveTab("recent")}
             className={`${
               activeTab === "recent"
-                ? "border-blue-500 text-blue-600"
+                ? "border-[#0077B6] text-[#0077B6]"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -351,7 +376,7 @@ export default function DashboardHome() {
             onClick={() => setActiveTab("shared")}
             className={`${
               activeTab === "shared"
-                ? "border-blue-500 text-blue-600"
+                ? "border-[#0077B6] text-[#0077B6]"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -363,11 +388,18 @@ export default function DashboardHome() {
       {/* Tab Content */}
       <div className="mt-6">
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div
+            className="border-l-4 p-4 mb-6"
+            style={{
+              backgroundColor: `${SURFBOARD_COLORS.error.main}1A`,
+              borderColor: SURFBOARD_COLORS.error.main,
+            }}
+          >
             <div className="flex">
               <div className="shrink-0">
                 <svg
-                  className="h-5 w-5 text-red-400"
+                  className="h-5 w-5"
+                  style={{ color: SURFBOARD_COLORS.error.main }}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -379,7 +411,12 @@ export default function DashboardHome() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p
+                  className="text-sm"
+                  style={{ color: SURFBOARD_COLORS.error.dark }}
+                >
+                  {error}
+                </p>
               </div>
             </div>
           </div>
@@ -399,7 +436,7 @@ export default function DashboardHome() {
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-blue-600 truncate">
+                          <p className="text-sm font-medium text-[#0077B6] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">
@@ -452,13 +489,19 @@ export default function DashboardHome() {
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-blue-600 truncate">
+                          <p className="text-sm font-medium text-[#0077B6] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">
                             {getStatusBadge(plan.status)}
                             {!plan.isOwner && (
-                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              <span
+                                className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                style={{
+                                  backgroundColor: `${SURFBOARD_COLORS.secondary.main}1A`,
+                                  color: SURFBOARD_COLORS.secondary.dark,
+                                }}
+                              >
                                 Shared
                               </span>
                             )}
