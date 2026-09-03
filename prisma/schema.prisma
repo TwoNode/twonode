@@ -237,6 +237,10 @@ model SurfboardUser {
   subscriptionHistory SubscriptionHistory[]
   batches             CertificateOfDepositBatch[]
   settingsUpdates     SurfboardSettings[]
+  wallet              SurveyorWallet?
+  bankDetails         SurveyorBankDetails?
+  withdrawalRequests  WithdrawalRequest[]
+  qrTransactions      QREarningsTransaction[]     @relation("SurveyorQREarnings")
 
   // MDA Approval Relations (reverse)
   plansApprovedAsAccounts   SurfboardPlan[]             @relation("AccountsApprover")
@@ -507,6 +511,10 @@ model SurfboardPlan {
   queryLasgReceiptUrls   String[] @default([])
   queryRemitaReceiptUrls String[] @default([])
 
+  // QR Code Earnings tracking
+  qrScanCount    Int                     @default(0)
+  qrTransactions QREarningsTransaction[]
+
   /// Creation & update timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -660,6 +668,110 @@ model SurfboardSettings {
   updatedBy   SurfboardUser? @relation(fields: [updatedById], references: [id])
 
   @@map("surfboard_settings")
+}
+
+// --------------------------------------------------------------------------------
+// QR Code Earnings Models
+// --------------------------------------------------------------------------------
+
+enum QRServiceType {
+  LOCATION_AUTHENTICITY
+  CERTIFICATE_OF_DEPOSIT
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+model QREarningsTransaction {
+  id              String        @id @default(uuid())
+  reference       String        @unique
+  planId          String        @db.Uuid
+  plan            SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  surveyorId      String
+  surveyor        SurfboardUser @relation("SurveyorQREarnings", fields: [surveyorId], references: [id])
+
+  serviceType     QRServiceType
+  verificationFee Float
+  serviceFee      Float
+  mdaFee          Float         @default(0)
+  totalAmount     Float
+  surveyorEarned  Float
+
+  payerEmail      String?
+  payerName       String?
+  paymentStatus   String        @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentRef      String?
+
+  accessToken     String        @unique @default(uuid())
+  expiresAt       DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([planId])
+  @@index([surveyorId])
+  @@index([reference])
+  @@index([accessToken])
+  @@map("qr_earnings_transactions")
+}
+
+model SurveyorWallet {
+  id                String        @id @default(uuid())
+  userId            String        @unique
+  user              SurfboardUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableBalance  Float         @default(0)
+  pendingWithdrawal Float         @default(0)
+  totalWithdrawn    Float         @default(0)
+  totalEarned       Float         @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("surveyor_wallets")
+}
+
+model SurveyorBankDetails {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          SurfboardUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  recipientCode String? // Paystack Transfer Recipient Code (e.g. RCP_12345)
+  isVerified    Boolean       @default(false)
+  verifiedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("surveyor_bank_details")
+}
+
+model WithdrawalRequest {
+  id            String           @id @default(uuid())
+  requestRef    String           @unique @default(dbgenerated("concat('WD_', substring(replace(gen_random_uuid()::text, '-', ''), 1, 8))"))
+  userId        String
+  user          SurfboardUser    @relation(fields: [userId], references: [id])
+  amount        Float
+  status        WithdrawalStatus @default(PENDING)
+  bankName      String
+  accountNumber String
+  accountName   String
+  recipientCode String?
+  transferCode  String? // Paystack transfer code e.g. TRF_xxx
+  adminComment  String?
+  processedAt   DateTime?
+  processedBy   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("withdrawal_requests")
 }
 
 // --------------------------------------------------------------------------------

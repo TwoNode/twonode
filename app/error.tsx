@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import Link from "next/link";
 
 export default function ErrorPage({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
     // Log the error to an error reporting service

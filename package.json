@@ -79,7 +79,6 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.552.0",
     "maplibre-gl": "^5.8.0",
-    "mongoose": "^8.13.1",
     "next": "^16.2.5",
     "next-sitemap": "^4.2.3",
     "nodemailer": "^7.0.3",
