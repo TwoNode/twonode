@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "../prisma/generated";
 import { computePeriodPerTimestamp } from '../app/(projects)/(surfboard)/utils/computePeriod';
 
 const prisma = new PrismaClient();

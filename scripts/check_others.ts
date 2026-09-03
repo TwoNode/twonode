@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../prisma/generated";
 const prisma = new PrismaClient();
 const invalidHistoryIds = [
   "cffe4e95-126d-46ae-ae9b-7acc3f1fcb4f",
