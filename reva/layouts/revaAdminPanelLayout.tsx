@@ -101,6 +101,14 @@ export default function RevaAdminPanelLayout({
           "flex"
         )}
       >
+        {sidebar.isOpen && (
+          <div
+            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+            onClick={() => sidebar?.toggleOpen()}
+            aria-label="Close sidebar"
+          />
+        )}
+
         <div className={sideBarWidthClass + "h-full max-h-full"}>
           <Sidebar
             items={sidebarItems}
