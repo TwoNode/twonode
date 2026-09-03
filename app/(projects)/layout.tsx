@@ -99,6 +99,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${bricolage.variable} scroll-smooth`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <body className={`${bricolage.variable} ${bricolage.className}`}>
