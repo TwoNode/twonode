@@ -4,6 +4,7 @@ import React from "react";
 import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export default function SurfboardLoginPage() {
@@ -28,8 +29,9 @@ export default function SurfboardLoginPage() {
           <LoginLink postLoginRedirectURL="/api/auth/success/surfboard">
             <Button
               variant="outline"
-              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base border-blue-200 text-blue-900 hover:bg-blue-50"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
             >
+              <GoogleIcon />
               Continue with Google
             </Button>
           </LoginLink>

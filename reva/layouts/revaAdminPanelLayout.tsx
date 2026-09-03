@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
+import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { cn } from "@/lib/utils";
 import { RevaAdminDashboardNavbar } from "@/reva/components/RevaAdminDashboardHeader";
 import { LogOut } from "lucide-react";
@@ -11,6 +12,7 @@ import { useRevaAdminAccess } from "@/reva/hooks/useRevaAdminAccess";
 import RevaLoading from "@/reva/components/RevaLoading";
 import { REVA_COLORS } from "@/reva/colors";
 import { getNavItemsForRole } from "@/reva/access/routes";
+import { Platform } from "@/utils/platform";
 
 export const sideBarWidthClass = " lg:w-[248px] ";
 
@@ -21,6 +23,7 @@ export default function RevaAdminPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const { user, isAdmin, isLoading, userData } = useRevaAdminAccess();
+  useNativeAuthRefresh(Platform.REVA);
 
   const sidebarItems = [
     // reva/access/routes.ts is the single source of truth for which nav

@@ -25,6 +25,8 @@ import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
+import { Platform } from "@/utils/platform";
 
 // Surfboard dashboard navbar with logo and username
 function SurfboardUserDashboardNavbar({
@@ -134,6 +136,7 @@ export default function SurfboardUserPanelLayout({
   const [user, setUser] = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const sidebar = useStore(useSidebar, (x) => x);
+  useNativeAuthRefresh(Platform.SURFBOARD);
   const dashboardUrl = "/surfboard/dashboard";
 
   async function isUserSubscribed(): Promise<boolean> {

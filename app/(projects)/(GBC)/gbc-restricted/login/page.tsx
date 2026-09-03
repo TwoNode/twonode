@@ -4,6 +4,7 @@ import { LoginLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
+import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform } from "@/utils/platform";
 
 export default function GBCAdminLogin() {
@@ -34,8 +35,9 @@ export default function GBCAdminLogin() {
           <LoginLink postLoginRedirectURL="/api/auth/success/gbc-restricted">
             <Button
               variant="outline"
-              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base border-purple-200 text-purple-900 hover:bg-purple-50"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
             >
+              <GoogleIcon />
               Continue with Google
             </Button>
           </LoginLink>
