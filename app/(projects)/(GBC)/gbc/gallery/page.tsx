@@ -4,6 +4,7 @@ import { getGalleryItems } from "@/gbc/services/cmsService";
 import { getSettings } from "@/gbc/services/settingsService";
 import Link from "next/link";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function GalleryPage() {
   const items = await getGalleryItems();
@@ -29,7 +30,7 @@ export default async function GalleryPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link

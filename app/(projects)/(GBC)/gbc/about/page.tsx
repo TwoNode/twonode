@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getSettings } from "@/gbc/services/settingsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function AboutPage() {
   // Fetch settings for dynamic event information
@@ -28,7 +29,7 @@ export default async function AboutPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
+      <section className="relative py-16 sm:py-20 md:py-24 text-white overflow-hidden" style={{ background: GBC_GRADIENTS.hero }}>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -311,7 +312,7 @@ export default async function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
+      <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
             Be Part of the Movement

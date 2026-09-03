@@ -4,6 +4,7 @@ import { ContactForm } from "@/gbc/components/ContactForm";
 import { Mail, MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import { getSettings } from "@/gbc/services/settingsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export const metadata = {
   title: "Contact Us | GBC 2.0",
@@ -40,7 +41,7 @@ export default async function ContactPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
+      <section className="relative py-24 text-white overflow-hidden" style={{ background: GBC_GRADIENTS.hero }}>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
 
         {/* Animated background elements */}
@@ -273,7 +274,7 @@ export default async function ContactPage() {
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-linear-to-br from-purple-600 to-indigo-600 rounded-2xl p-8 text-white shadow-xl">
+              <div className="rounded-2xl p-8 text-white shadow-xl" style={{ background: GBC_GRADIENTS.primary }}>
                 <h3 className="text-2xl font-bold mb-6">Response Time</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>

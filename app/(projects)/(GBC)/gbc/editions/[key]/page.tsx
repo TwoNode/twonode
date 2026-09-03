@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Calendar, MapPin, Users, Mic, Award } from "lucide-react";
 import { getEditionPublicRecap } from "@/gbc/services/editionService";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 type PageProps = { params: Promise<{ key: string }> };
 
@@ -22,7 +23,7 @@ export default async function EditionRecapPage({ params }: PageProps) {
     <div className="min-h-screen bg-gray-50">
       <GBC2Navbar />
 
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link

@@ -5,6 +5,7 @@ import { requireAdmin } from "@/gbc/utils/auth";
 import { StatsCard } from "@/gbc/components/admin/StatsCard";
 import { RecentTickets } from "@/gbc/components/admin/RecentTickets";
 import Link from "next/link";
+import { GBC_COLORS } from "@/gbc/colors";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -29,7 +30,12 @@ export default async function AdminDashboard() {
         </div>
 
         <Link href="/gbc-restricted/tickets">
-          <Button variant="default" size="sm" className="w-fit">
+          <Button
+            variant="default"
+            size="sm"
+            className="w-fit hover:brightness-110"
+            style={{ background: GBC_COLORS.primary.main }}
+          >
             Tickets
           </Button>
         </Link>
@@ -42,14 +48,12 @@ export default async function AdminDashboard() {
           value={stats.completedTickets}
           subtitle={`${stats.availableTickets} remaining`}
           icon="ticket"
-          color="purple"
         />
         <StatsCard
           title="Total Revenue"
           value={`₦${(stats.totalRevenue / 1000).toFixed(0)}K`}
           subtitle="From completed sales"
           icon="money"
-          color="green"
         />
         <StatsCard
           title="Checked In"
@@ -58,14 +62,12 @@ export default async function AdminDashboard() {
             stats.completedTickets - stats.checkedInTickets
           } pending`}
           icon="check"
-          color="blue"
         />
         <StatsCard
           title="Pending Payments"
           value={stats.pendingTickets}
           subtitle="Awaiting payment"
           icon="clock"
-          color="yellow"
         />
       </div>
 
@@ -87,7 +89,8 @@ export default async function AdminDashboard() {
           <div className="space-y-2 sm:space-y-3">
             <a
               href="/gbc-restricted/tickets"
-              className="block p-3 sm:p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: GBC_COLORS.surface.main }}
             >
               <h3 className="font-semibold text-sm sm:text-base">
                 Manage Tickets
@@ -98,7 +101,8 @@ export default async function AdminDashboard() {
             </a>
             <a
               href="/gbc-restricted/check-in"
-              className="block p-3 sm:p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: GBC_COLORS.surface.main }}
             >
               <h3 className="font-semibold text-sm sm:text-base">
                 Check-In Attendees
@@ -108,8 +112,21 @@ export default async function AdminDashboard() {
               </p>
             </a>
             <a
+              href="/gbc-restricted/editions"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: "#FCE7F3" }}
+            >
+              <h3 className="font-semibold text-sm sm:text-base">
+                Manage Editions
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Switch the active edition, review past editions
+              </p>
+            </a>
+            <a
               href="/gbc-restricted/sponsors"
-              className="block p-3 sm:p-4 bg-green-50 hover:bg-green-100 rounded-lg transition"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: GBC_COLORS.surface.main }}
             >
               <h3 className="font-semibold text-sm sm:text-base">
                 Manage Sponsors
@@ -120,7 +137,8 @@ export default async function AdminDashboard() {
             </a>
             <a
               href="/gbc-restricted/speakers"
-              className="block p-3 sm:p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: "#FCE7F3" }}
             >
               <h3 className="font-semibold text-sm sm:text-base">
                 Manage Speakers
@@ -131,7 +149,8 @@ export default async function AdminDashboard() {
             </a>
             <a
               href="/gbc-restricted/gallery"
-              className="block p-3 sm:p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+              className="block p-3 sm:p-4 rounded-lg transition hover:brightness-95"
+              style={{ background: GBC_COLORS.surface.main }}
             >
               <h3 className="font-semibold text-sm sm:text-base">
                 Manage Gallery

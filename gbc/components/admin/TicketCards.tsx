@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Check, AlertCircle } from "lucide-react";
 import { isTicketTypeAvailable } from "@/gbc/utils";
+import { GBC_COLORS } from "@/gbc/colors";
 
 interface TicketCardsProps {
   earlyBirdPrice: number;
@@ -84,14 +85,17 @@ export function TicketCards({
         onClick={() =>
           earlyBirdAvailability.available && scrollToForm("early_bird")
         }
-        className={`bg-linear-to-br from-purple-50 to-indigo-50 rounded-2xl p-4 sm:p-6 border-2 border-purple-200 relative overflow-hidden transition-all duration-200 ${
+        className={`bg-white rounded-2xl p-4 sm:p-6 border-2 relative overflow-hidden transition-all duration-200 ${
           earlyBirdAvailability.available
-            ? "cursor-pointer hover:border-purple-400 hover:shadow-lg"
-            : "opacity-60 cursor-not-allowed"
+            ? "cursor-pointer border-[#EEE1FA] hover:border-[#A78BFA] hover:shadow-lg"
+            : "opacity-60 cursor-not-allowed border-[#EEE1FA]"
         }`}
       >
         {earlyBirdAvailability.available ? (
-          <div className="absolute top-0 right-0 bg-purple-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
+          <div
+            className="absolute top-0 right-0 text-white px-2 sm:px-3 py-1 text-xs font-bold"
+            style={{ background: GBC_COLORS.primary.main }}
+          >
             AVAILABLE
           </div>
         ) : (
@@ -101,8 +105,14 @@ export function TicketCards({
         )}
 
         <div className="text-center mb-3 sm:mb-4">
+          <div
+            className="text-[10px] font-bold uppercase tracking-wider mb-1"
+            style={{ color: GBC_COLORS.secondary.dark }}
+          >
+            Early Bird
+          </div>
           <h3 className="text-xl sm:text-2xl font-bold mb-2">Single Ticket (One Attendee)</h3>
-          <div className="text-3xl sm:text-4xl font-bold text-purple-600 mb-2">
+          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
             ₦{(earlyBirdPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">
@@ -132,25 +142,35 @@ export function TicketCards({
       {/* Regular Ticket */}
       <div
         onClick={() => regularAvailability.available && scrollToForm("regular")}
-        className={`bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 sm:p-6 border-2 border-blue-200 relative overflow-hidden transition-all duration-200 ${
+        className={`rounded-2xl p-4 sm:p-6 border-2 relative overflow-hidden transition-all duration-200 ${
           regularAvailability.available
-            ? "cursor-pointer hover:border-blue-400 hover:shadow-lg"
-            : "opacity-60 cursor-not-allowed"
+            ? "cursor-pointer border-[#7C3AED] hover:shadow-lg"
+            : "opacity-60 cursor-not-allowed border-[#EEE1FA]"
         }`}
+        style={{ background: regularAvailability.available ? GBC_COLORS.surface.main : "#fff" }}
       >
         {regularAvailability.available ? (
-          <div className="absolute top-0 right-0 bg-green-500 text-white px-2 sm:px-3 py-1 text-xs font-bold">
+          <div
+            className="absolute top-0 right-0 text-white px-2 sm:px-3 py-1 text-xs font-bold"
+            style={{ background: GBC_COLORS.secondary.main }}
+          >
             MOST POPULAR
           </div>
         ) : (
-          <div className="absolute top-0 right-0 bg-blue-500 text-white px-2 sm:px-3 py-1 text-xs font-bold">
+          <div className="absolute top-0 right-0 bg-gray-400 text-white px-2 sm:px-3 py-1 text-xs font-bold">
             NOT YET AVAILABLE
           </div>
         )}
 
         <div className="text-center mb-3 sm:mb-4">
+          <div
+            className="text-[10px] font-bold uppercase tracking-wider mb-1"
+            style={{ color: GBC_COLORS.secondary.dark }}
+          >
+            Regular
+          </div>
           <h3 className="text-xl sm:text-2xl font-bold mb-2">Pair Ticket (Two attendees)</h3>
-          <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">
+          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
             ₦{(regularPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">
@@ -170,9 +190,9 @@ export function TicketCards({
         </ul>
 
         {!regularAvailability.available && (
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-800">
+          <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-gray-600">
               {regularAvailability.reason}
             </p>
           </div>
@@ -182,15 +202,24 @@ export function TicketCards({
       {/* Company/Group Ticket */}
       <div
         onClick={() => scrollToForm("company")}
-        className="bg-linear-to-br from-amber-50 to-orange-50 rounded-2xl p-4 sm:p-6 border-2 border-amber-200 relative overflow-hidden cursor-pointer hover:border-amber-400 hover:shadow-lg transition-all duration-200"
+        className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-[#EEE1FA] relative overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+        style={{ borderColor: "#EEE1FA" }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EEE1FA")}
       >
-        <div className="absolute top-0 right-0 bg-amber-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
+        <div className="absolute top-0 right-0 bg-green-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
           ALWAYS AVAILABLE
         </div>
 
         <div className="text-center mb-3 sm:mb-4">
+          <div
+            className="text-[10px] font-bold uppercase tracking-wider mb-1"
+            style={{ color: GBC_COLORS.secondary.dark }}
+          >
+            Company
+          </div>
           <h3 className="text-xl sm:text-2xl font-bold mb-2">Group Ticket (Five Attendees)</h3>
-          <div className="text-3xl sm:text-4xl font-bold text-amber-600 mb-2">
+          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
             ₦{(companyPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">5 attendees</p>
@@ -209,15 +238,24 @@ export function TicketCards({
       {/* Student Ticket */}
       <div
         onClick={() => scrollToForm("student")}
-        className="bg-linear-to-br from-green-50 to-emerald-50 rounded-2xl p-4 sm:p-6 border-2 border-green-200 relative overflow-hidden cursor-pointer hover:border-green-400 hover:shadow-lg transition-all duration-200"
+        className="bg-white rounded-2xl p-4 sm:p-6 border-2 relative overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200"
+        style={{ borderColor: "#EEE1FA" }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = GBC_COLORS.primary.light)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EEE1FA")}
       >
         <div className="absolute top-0 right-0 bg-green-600 text-white px-2 sm:px-3 py-1 text-xs font-bold">
           ALWAYS AVAILABLE
         </div>
 
         <div className="text-center mb-3 sm:mb-4">
+          <div
+            className="text-[10px] font-bold uppercase tracking-wider mb-1"
+            style={{ color: GBC_COLORS.secondary.dark }}
+          >
+            Student
+          </div>
           <h3 className="text-xl sm:text-2xl font-bold mb-2">Student Ticket</h3>
-          <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">
+          <div className="text-3xl sm:text-4xl font-bold mb-2" style={{ color: GBC_COLORS.primary.main }}>
             ₦{(studentPrice / 1000).toFixed(0)}K
           </div>
           <p className="text-sm text-gray-600">Valid ID required</p>

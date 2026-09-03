@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
 import { getPartners, getSponsors } from "@/gbc/services/cmsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function SponsorsPage() {
   const [sponsors, partners] = await Promise.all([getSponsors(), getPartners()]);
@@ -20,7 +21,7 @@ export default async function SponsorsPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+      <section className="relative py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.hero }}>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -170,7 +171,7 @@ export default async function SponsorsPage() {
       )}
 
       {/* Sponsorship Benefits */}
-      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 to-indigo-600 text-white">
+      <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
