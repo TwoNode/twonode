@@ -99,7 +99,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${bricolage.variable}`} data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      className={`${bricolage.variable} scroll-smooth`}
+      data-scroll-behavior="smooth"
+    >
       <body className={`${bricolage.variable} ${bricolage.className}`}>
         {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS} />
