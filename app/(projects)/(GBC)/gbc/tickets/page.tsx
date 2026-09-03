@@ -6,6 +6,7 @@ import { TicketCards } from "@/gbc/components/admin/TicketCards";
 import Link from "next/link";
 import { Suspense } from "react";
 import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_GRADIENTS, GBC_COLORS } from "@/gbc/colors";
 
 // Force dynamic rendering - prevents static generation and caching
 export const dynamic = "force-dynamic";
@@ -72,7 +73,10 @@ export default async function TicketsPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
@@ -222,11 +226,20 @@ export default async function TicketsPage() {
                   </ul>
                 </div>
 
-                <div className="mt-6 sm:mt-8 bg-purple-50 border-l-4 border-purple-600 p-4 sm:p-6 rounded-r-lg">
-                  <h3 className="font-bold text-purple-900 mb-2 sm:mb-3 text-base sm:text-lg">
+                <div
+                  className="mt-6 sm:mt-8 p-4 sm:p-6 rounded-r-lg border-l-4"
+                  style={{ background: GBC_COLORS.surface.main, borderColor: GBC_COLORS.primary.main }}
+                >
+                  <h3
+                    className="font-bold mb-2 sm:mb-3 text-base sm:text-lg"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     📍 Event Details
                   </h3>
-                  <ul className="space-y-1.5 sm:space-y-2 text-sm sm:text-base text-purple-800">
+                  <ul
+                    className="space-y-1.5 sm:space-y-2 text-sm sm:text-base"
+                    style={{ color: GBC_COLORS.primary.dark }}
+                  >
                     <li>
                       <strong>Date:</strong> {eventDate}
                     </li>
