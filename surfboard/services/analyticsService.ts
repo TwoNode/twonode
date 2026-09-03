@@ -17,7 +17,7 @@ import { getRoleFieldPrefix } from "@/surfboard/services/planLockService";
  */
 
 export type AnalyticsScope = { role: SurfboardRole; userId: string };
-export type AnalyticsDimension = "facilitator" | "lga";
+export type AnalyticsDimension = "facilitator" | "lga" | "ward" | "lcda";
 
 const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL_LAYOUT"];
 
@@ -72,16 +72,17 @@ export interface DimensionBreakdownRow {
 }
 
 /**
- * Facilitator-vs-Records / LGA-vs-Records — one function, `dimension`
- * selects the GROUP BY column, matching the source's facilitatorStats/
- * lgaStats (same shape, same exclusion rules), scoped per role.
+ * Facilitator/LGA/Ward/LCDA-vs-Records — one function, `dimension` selects
+ * the GROUP BY column, matching the source's facilitatorStats/lgaStats (same
+ * shape, same exclusion rules), scoped per role. Ward and LCDA follow the
+ * lga path (plain count, no deeded-area sum).
  */
 export async function getDimensionBreakdown(
   scope: AnalyticsScope,
   dimension: AnalyticsDimension
 ): Promise<DimensionBreakdownRow[]> {
   const where = scopeWhere(scope);
-  const column = dimension; // "facilitator" | "lga" — both real SurfboardPlan columns
+  const column = dimension; // "facilitator" | "lga" | "ward" | "lcda" — all real SurfboardPlan columns
 
   const grouped = await prisma.surfboardPlan.groupBy({
     by: [column],
@@ -131,13 +132,19 @@ export interface LodgementTrend {
  * counted separately so the exclusion is visible, not silently dropped.
  */
 export async function getLodgementTrend(scope: AnalyticsScope): Promise<LodgementTrend> {
-  const userFilter = scope.role === SurfboardRole.USER ? Prisma.sql`AND "userId" = ${scope.userId}` : Prisma.empty;
+  const conditions = [
+    Prisma.sql`deleted = false`,
+    Prisma.sql`"dateLodged" IS NOT NULL`,
+    Prisma.sql`"dateOnSurveyPlan" IS NOT NULL`,
+  ];
+  if (scope.role === SurfboardRole.USER) {
+    conditions.push(Prisma.sql`"userId" = ${scope.userId}`);
+  }
 
   const rows = await prisma.$queryRaw<{ days: number; count: bigint }[]>`
     SELECT EXTRACT(DAY FROM ("dateLodged" - "dateOnSurveyPlan"))::integer as days, COUNT(*)::bigint as count
     FROM "SurfboardPlan"
-    WHERE deleted = false AND "dateLodged" IS NOT NULL AND "dateOnSurveyPlan" IS NOT NULL
-    ${userFilter}
+    WHERE ${Prisma.join(conditions, " AND ")}
     GROUP BY days
     ORDER BY days ASC
   `;
@@ -166,13 +173,18 @@ export async function getTimeTrend(scope: AnalyticsScope): Promise<TimeTrendPoin
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-  const userFilter = scope.role === SurfboardRole.USER ? Prisma.sql`AND "userId" = ${scope.userId}` : Prisma.empty;
+  const conditions = [
+    Prisma.sql`"planType" NOT IN (${Prisma.join(PROVISIONAL_TYPES)})`,
+    Prisma.sql`"createdAt" >= ${twelveMonthsAgo}`,
+  ];
+  if (scope.role === SurfboardRole.USER) {
+    conditions.push(Prisma.sql`"userId" = ${scope.userId}`);
+  }
 
   const rows = await prisma.$queryRaw<{ month: string; count: number }[]>`
     SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month, COUNT(*)::integer as count
     FROM "SurfboardPlan"
-    WHERE "planType" NOT IN (${Prisma.join(PROVISIONAL_TYPES)}) AND "createdAt" >= ${twelveMonthsAgo}
-    ${userFilter}
+    WHERE ${Prisma.join(conditions, " AND ")}
     GROUP BY DATE_TRUNC('month', "createdAt")
     ORDER BY month ASC
   `;

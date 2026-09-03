@@ -7,11 +7,14 @@ import { PieChart, generateColors } from './PieChart';
 import { StatsCard } from './StatsCard';
 import { surfboardApi } from '@/surfboard/apiClient';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
+import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
 
 export function AnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wardStats, setWardStats] = useState<DimensionBreakdownRow[]>([]);
+  const [lcdaStats, setLcdaStats] = useState<DimensionBreakdownRow[]>([]);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -33,6 +36,23 @@ export function AnalyticsDashboard() {
     };
 
     fetchAnalytics();
+
+    // Ward/LCDA breakdowns come from the newer generic dimension endpoint —
+    // fetched separately so a failure here never blocks the main dashboard.
+    const fetchAreaBreakdowns = async () => {
+      try {
+        const [wardResult, lcdaResult] = await Promise.all([
+          surfboardApi.analytics.dimension('ward'),
+          surfboardApi.analytics.dimension('lcda'),
+        ]);
+        if (wardResult.success) setWardStats(wardResult.data);
+        if (lcdaResult.success) setLcdaStats(lcdaResult.data);
+      } catch (err) {
+        console.error('Error fetching ward/LCDA breakdowns:', err);
+      }
+    };
+
+    fetchAreaBreakdowns();
   }, []);
 
   if (loading) {
@@ -76,6 +96,16 @@ export function AnalyticsDashboard() {
 
   const lgaData = analytics.lgaStats.map(item => ({
     label: item.lga || 'Unknown',
+    value: item.count,
+  }));
+
+  const wardData = wardStats.map(item => ({
+    label: item.key || 'Unknown',
+    value: item.count,
+  }));
+
+  const lcdaData = lcdaStats.map(item => ({
+    label: item.key || 'Unknown',
     value: item.count,
   }));
 
@@ -125,6 +155,20 @@ export function AnalyticsDashboard() {
           icon={<FiMapPin className="w-6 h-6" />}
           color="green"
         />
+
+        <StatsCard
+          title="Unique LCDAs"
+          value={lcdaStats.length}
+          icon={<FiMapPin className="w-6 h-6" />}
+          color="purple"
+        />
+
+        <StatsCard
+          title="Unique Wards"
+          value={wardStats.length}
+          icon={<FiMapPin className="w-6 h-6" />}
+          color="blue"
+        />
       </div>
 
       {/* Main Charts */}
@@ -143,6 +187,24 @@ export function AnalyticsDashboard() {
           title="Records by LGA"
           subtitle="Records distribution across Local Government Areas"
           data={lgaData}
+          height={400}
+          maxItems={8}
+        />
+
+        {/* LCDA Distribution */}
+        <BarChart
+          title="Records by LCDA"
+          subtitle="Records distribution across Local Council Development Areas"
+          data={lcdaData}
+          height={400}
+          maxItems={8}
+        />
+
+        {/* Ward Distribution */}
+        <BarChart
+          title="Records by Ward"
+          subtitle="Records distribution across wards"
+          data={wardData}
           height={400}
           maxItems={8}
         />
@@ -172,51 +234,51 @@ export function AnalyticsDashboard() {
       </div>
       
       {/* Pending Certificates Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Pending Certificates</h3>
-          <p className="mt-1 text-sm text-gray-500">Recently updated certificates awaiting approval</p>
+      <div className="bg-white rounded-lg shadow overflow-hidden dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pending Certificates</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Recently updated certificates awaiting approval</p>
         </div>
-        
+
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+            <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Plan Number
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Survey Title
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Facilitator
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Last Updated
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-white/10">
               {analytics.pendingCertificates.length > 0 ? (
                 analytics.pendingCertificates.map((cert) => (
-                  <tr key={cert.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={cert.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {cert.planNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {cert.surveyTitle}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {cert.facilitator}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {new Date(cert.updatedAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                     No pending certificates
                   </td>
                 </tr>

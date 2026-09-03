@@ -18,8 +18,9 @@ import { Platform, SurfboardRole } from "@/utils/platform";
  * these platform-wide numbers.
  *
  * ?section=stats|dimension|lodgement-trend|time-trend (default: stats)
- * ?dimension=facilitator|lga (required when section=dimension)
+ * ?dimension=facilitator|lga|ward|lcda (required when section=dimension)
  */
+const DIMENSIONS = ["facilitator", "lga", "ward", "lcda"] as const;
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx) => {
     const section = req.nextUrl.searchParams.get("section") ?? "stats";
@@ -31,8 +32,8 @@ export const GET = withAuth<SurfboardRole>(
 
     if (section === "dimension") {
       const dimension = req.nextUrl.searchParams.get("dimension");
-      if (dimension !== "facilitator" && dimension !== "lga") {
-        throw new ValidationError({ dimension: "must be 'facilitator' or 'lga'" });
+      if (!DIMENSIONS.includes(dimension as (typeof DIMENSIONS)[number])) {
+        throw new ValidationError({ dimension: `must be one of ${DIMENSIONS.join("|")}` });
       }
       return NextResponse.json({
         success: true,

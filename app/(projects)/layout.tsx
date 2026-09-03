@@ -4,6 +4,7 @@ import "../globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { KindeAuthProvider } from "@/providers/KindeAuthProvider";
 import ToasterComponent from "@/components/ToasterComponent";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/hooks/useTheme";
 
 const bricolage = localFont({
   src: [
@@ -102,17 +103,22 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className={`${bricolage.variable} ${bricolage.className}`}>
         <>
-          <KindeAuthProvider>
-            <ToasterComponent />
-            {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
-              <GoogleAnalytics
-                gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
-              />
-            )}
-            <main className="relative">{children}</main>
-          </KindeAuthProvider>
+          <ThemeProvider>
+            <KindeAuthProvider>
+              <ToasterComponent />
+              {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
+                <GoogleAnalytics
+                  gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
+                />
+              )}
+              <main className="relative">{children}</main>
+            </KindeAuthProvider>
+          </ThemeProvider>
         </>
       </body>
     </html>
