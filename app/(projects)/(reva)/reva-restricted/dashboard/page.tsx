@@ -3,6 +3,12 @@ import Welcome from "./components/Welcome";
 import Link from "next/link";
 import { getAllRequestsWithUserByAdmin } from "@/reva/services/reportService";
 import ErrorComponent from "../../reva/dashboard/components/ErrorComponent";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+
+function statusBadgeStyle(tone: "success" | "warning" | "info" | "error") {
+  const color = REVA_COLORS.status[tone];
+  return { backgroundColor: `${color}1A`, color };
+}
 
 const Home = async () => {
   let data, oneTimeRequests;
@@ -27,7 +33,8 @@ const Home = async () => {
 
           <Link
             href="/reva-restricted/dashboard/alluserrequests"
-            className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+            style={{ background: REVA_GRADIENTS.primary }}
           >
             <span>View All Properties</span>
             <svg
@@ -59,34 +66,35 @@ const Home = async () => {
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
                         property.status === "Available"
-                          ? "bg-green-100 text-green-800"
+                          ? "success"
                           : property.status === "Processing"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
+                          ? "warning"
+                          : "info"
+                      )}
                     >
                       {property.status}
                     </span>
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                        property.paymentStatus === "Paid"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
+                        property.paymentStatus === "Paid" ? "success" : "error"
+                      )}
                     >
                       {property.paymentStatus}
                     </span>
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
                         property?.report &&
-                        typeof property?.report === "object" &&
-                        "isApproved" in property?.report &&
-                        property.report.isApproved
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                          typeof property?.report === "object" &&
+                          "isApproved" in property?.report &&
+                          property.report.isApproved
+                          ? "success"
+                          : "error"
+                      )}
                     >
                       {property?.report &&
                       typeof property?.report === "object" &&
@@ -161,13 +169,17 @@ const Home = async () => {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <span className="font-medium text-gray-900">
+                    <span
+                      className="font-semibold"
+                      style={{ color: REVA_COLORS.text.primary }}
+                    >
                       ₦{property.totalCost.toLocaleString()}
                     </span>
                   </div>
                   <Link
                     href={`/reva-restricted/dashboard/details?reference=${property.reference}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium group flex items-center"
+                    className="text-sm font-medium group flex items-center"
+                    style={{ color: REVA_COLORS.primary.light }}
                   >
                     View Details
                     <span className="inline-block transition-transform group-hover:translate-x-1">
@@ -182,7 +194,8 @@ const Home = async () => {
           {oneTimeRequests?.map((property) => (
             <li
               key={property.id}
-              className="border-t-2 border-blue-400 bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border overflow-hidden"
+              className="rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border overflow-hidden bg-white"
+              style={{ borderTopWidth: 2, borderTopColor: REVA_COLORS.secondary.light }}
             >
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
@@ -191,35 +204,36 @@ const Home = async () => {
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
                         property.status === "Completed" ||
-                        property.status === "Available"
-                          ? "bg-green-100 text-green-800"
+                          property.status === "Available"
+                          ? "success"
                           : property.status === "Processing"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
+                          ? "warning"
+                          : "info"
+                      )}
                     >
                       {property.status}
                     </span>
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                        property.paymentStatus === "Paid"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
+                        property.paymentStatus === "Paid" ? "success" : "error"
+                      )}
                     >
                       {property.paymentStatus}
                     </span>
                     <span
-                      className={`self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                      style={statusBadgeStyle(
                         property?.report &&
-                        typeof property?.report === "object" &&
-                        "isApproved" in property?.report &&
-                        property.report.isApproved
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                          typeof property?.report === "object" &&
+                          "isApproved" in property?.report &&
+                          property.report.isApproved
+                          ? "success"
+                          : "error"
+                      )}
                     >
                       {property?.report &&
                       typeof property?.report === "object" &&
@@ -294,13 +308,17 @@ const Home = async () => {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <span className="font-medium text-gray-900">
+                    <span
+                      className="font-semibold"
+                      style={{ color: REVA_COLORS.text.primary }}
+                    >
                       ₦{property.totalCost.toLocaleString()}
                     </span>
                   </div>
                   <Link
                     href={`/reva-restricted/dashboard/details?reference=${property.reference}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium group flex items-center"
+                    className="text-sm font-medium group flex items-center"
+                    style={{ color: REVA_COLORS.primary.light }}
                   >
                     View Details
                     <span className="inline-block transition-transform group-hover:translate-x-1">
