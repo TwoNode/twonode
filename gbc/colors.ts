@@ -62,6 +62,15 @@ export const GBC_COLORS = {
   sidebar: {
     itemBorderLeft: "#7C3AED",
   },
+
+  // Admin nav shell -- dark purple, distinct from the light surface/background
+  // tokens above (matches the GBC Design System artifact's --nav-bg family).
+  nav: {
+    bg: "#3B1370",
+    bgActive: "#6D28D9",
+    text: "#EBDCFB",
+    textMuted: "#A98FCB",
+  },
 } as const;
 
 export const GBC_GRADIENTS = {
