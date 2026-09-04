@@ -1,10 +1,8 @@
-import { Ticket, DollarSign, CheckCircle, Clock } from "lucide-react";
 import { getTicketStats } from "@/gbc/services/ticketService";
 import { requireAdmin } from "@/gbc/utils/auth";
 import { RecentTickets } from "@/gbc/components/admin/RecentTickets";
-import { DashboardHero } from "@/components/dashboard/DashboardHero";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+import { DashboardOverview } from "@/gbc/components/admin/DashboardOverview";
+import { GBC_COLORS } from "@/gbc/colors";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -18,52 +16,7 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <DashboardHero
-        greeting={`Welcome back, ${user.name}.`}
-        title="Dashboard"
-        description="Ticket sales, check-ins, and payments update automatically as attendees register and check in."
-        pills={[
-          `${stats.completedTickets} Sold`,
-          `${stats.checkedInTickets} Checked In`,
-          `${stats.pendingTickets} Pending`,
-        ]}
-        gradient={GBC_GRADIENTS.hero}
-        cta={{ label: "Tickets", href: "/gbc-restricted/tickets", icon: Ticket }}
-        className="mb-6 sm:mb-8"
-      />
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 mb-6 sm:mb-8">
-        <StatCard
-          label="Total Tickets Sold"
-          value={stats.completedTickets}
-          breakdown={`${stats.availableTickets} remaining`}
-          icon={Ticket}
-          tone="brand"
-          accent={{ main: GBC_COLORS.primary.main, light: GBC_COLORS.primary.light }}
-        />
-        <StatCard
-          label="Total Revenue"
-          value={`₦${(stats.totalRevenue / 1000).toFixed(0)}K`}
-          breakdown="From completed sales"
-          icon={DollarSign}
-          tone="success"
-        />
-        <StatCard
-          label="Checked In"
-          value={stats.checkedInTickets}
-          breakdown={`${stats.completedTickets - stats.checkedInTickets} pending`}
-          icon={CheckCircle}
-          tone="info"
-        />
-        <StatCard
-          label="Pending Payments"
-          value={stats.pendingTickets}
-          breakdown="Awaiting payment"
-          icon={Clock}
-          tone="warning"
-        />
-      </div>
+      <DashboardOverview userName={user.name} stats={stats} />
 
       {/* Charts and Lists */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
