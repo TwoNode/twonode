@@ -98,9 +98,9 @@ export default function AuditLogsPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <FileText className="w-8 h-8 text-blue-600" />
+          <FileText className="w-8 h-8 text-blue-600 shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
             <p className="text-sm text-gray-600">{total} total entries</p>
@@ -109,7 +109,7 @@ export default function AuditLogsPage() {
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Filter className="w-4 h-4" />
           {showFilters ? "Hide Filters" : "Show Filters"}

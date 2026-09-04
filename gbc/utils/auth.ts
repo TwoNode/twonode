@@ -2,6 +2,8 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 // import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { getServerSession } from "@/lib/auth/session";
+import { Platform } from "@/utils/platform";
 
 /**
  * Interim security hotfix (2026-08-28): both functions in this file used to
@@ -16,45 +18,60 @@ import prisma from "@/lib/prisma";
  * routes, which will replace requireAdmin() entirely; until that lands,
  * this is the only thing standing between an anonymous request and every
  * ticket/sponsor/speaker/gallery/settings mutation in the product.
+ *
+ * requireAuth() was Kinde-exclusive, so every natively-authenticated GBC
+ * admin 500'd on any page that calls requireAdmin() (speakers, sponsors,
+ * tickets, gallery, attendees, the dashboard root, ...) even though the
+ * proxy middleware had already let them through — same auth-asymmetry bug
+ * found and fixed for REVA's getAuthenticatedRevaUser() and the Surfboard/
+ * REVA nav-role resolution. Falls back to the native JWT session, looked
+ * up by internal id, when there's no Kinde session.
  */
 export async function requireAuth() {
   const { isAuthenticated, getUser } = getKindeServerSession();
 
-  if (!(await isAuthenticated())) {
+  if (await isAuthenticated()) {
+    const kindeUser = await getUser();
+    if (kindeUser) return kindeUser;
+  }
+
+  const nativeSession = await getServerSession(Platform.GBC);
+  if (!nativeSession) {
     throw new Error("Unauthorized: authentication required");
   }
 
-  const kindeUser = await getUser();
-  if (!kindeUser) {
-    throw new Error("Unauthorized: authentication required");
-  }
-
-  return kindeUser;
+  return { id: nativeSession.sub, email: undefined as string | undefined };
 }
 
 export async function requireAdmin() {
-  const kindeUser = await requireAuth();
+  const authUser = await requireAuth();
 
   let user = await prisma.gBCUser.findUnique({
-    where: { kindeId: kindeUser.id },
+    where: { kindeId: authUser.id },
   });
 
   // Reconcile a pre-provisioned account (created by email via addNewAdmin's
   // placeholder kindeId, ahead of that person's first real login) with the
   // real Kinde id — same email-or-kindeId reconciliation admin-actions.ts's
   // getAllAdmins already does for the admin list itself.
-  if (!user && kindeUser.email) {
+  if (!user && authUser.email) {
     const byEmail = await prisma.gBCUser.findUnique({
-      where: { email: kindeUser.email },
+      where: { email: authUser.email },
     });
-    if (byEmail && byEmail.kindeId !== kindeUser.id) {
+    if (byEmail && byEmail.kindeId !== authUser.id) {
       user = await prisma.gBCUser.update({
         where: { id: byEmail.id },
-        data: { kindeId: kindeUser.id },
+        data: { kindeId: authUser.id },
       });
     } else {
       user = byEmail;
     }
+  }
+
+  // requireAuth()'s native-session branch has no Kinde id to look up by —
+  // the JWT's sub is the GBCUser's own primary key.
+  if (!user) {
+    user = await prisma.gBCUser.findUnique({ where: { id: authUser.id } });
   }
 
   if (!user) {

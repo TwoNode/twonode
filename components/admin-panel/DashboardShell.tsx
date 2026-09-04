@@ -8,7 +8,6 @@ import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { useTheme } from "@/hooks/useTheme";
 import { Platform } from "@/utils/platform";
-import { cn } from "@/lib/utils";
 import { Menu, LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
@@ -94,62 +93,51 @@ export function DashboardShell({
   if (!sidebar) return null;
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
-      <header
-        className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-blue-100"
-        style={{ background: colorPalette.primary.dark }}
+    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen flex">
+      {sidebar.isOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+          onClick={() => sidebar?.toggleOpen()}
+          aria-label="Close sidebar"
+        />
+      )}
+
+      <div className={sideBarWidthClass + " relative h-full shrink-0"}>
+        <Sidebar
+          items={sidebarItems}
+          userImageUrl={user?.picture}
+          userName={user?.name}
+          userRole={role ?? undefined}
+          sideBarWidthClass={sideBarWidthClass}
+          title={title}
+          logoSrc={logoSrc}
+        />
+      </div>
+
+      <div
+        className="flex-1 min-w-0 flex flex-col overflow-hidden"
+        style={{ background: theme === "dark" ? "#0B1A26" : colorPalette.background.paper }}
       >
-        <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
+        <header
+          className="w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow bg-white border-b border-blue-100"
+          style={{ background: colorPalette.primary.dark }}
+        >
           <button
             onClick={() => sidebar?.toggleOpen()}
-            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
+            className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
             aria-label="Toggle sidebar"
           >
             <Menu className="w-6 h-6 text-white" />
           </button>
+          <div className="flex-1" />
+          <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
+          {user?.name && (
+            <span className="hidden sm:inline text-sm font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2 truncate max-w-[200px]">
+              {user.name}
+            </span>
+          )}
+        </header>
 
-          <img
-            src={logoSrc}
-            alt={`${title} Logo`}
-            className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
-          />
-          <span className="hidden lg:inline text-xl font-bold text-white tracking-wide drop-shadow">
-            {title}
-          </span>
-        </div>
-        <div className="flex-1" />
-        <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
-        {user?.name && (
-          <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
-            {user.name}
-          </span>
-        )}
-      </header>
-
-      <div
-        className={cn(
-          "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
-          "flex overflow-hidden"
-        )}
-        style={{ background: theme === "dark" ? "#0B1A26" : colorPalette.background.paper }}
-      >
-        {sidebar.isOpen && (
-          <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
-            onClick={() => sidebar?.toggleOpen()}
-            aria-label="Close sidebar"
-          />
-        )}
-
-        <div className={sideBarWidthClass + " h-full max-h-full"}>
-          <Sidebar
-            items={sidebarItems}
-            userImageUrl={user?.picture}
-            userName={user?.name}
-            userRole={role ?? undefined}
-            sideBarWidthClass={sideBarWidthClass}
-          />
-        </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
           {children}
         </div>

@@ -93,6 +93,26 @@ model RefreshToken {
   @@index([userId, platform])
 }
 
+/// One unified token for both a genuine forgotten-password reset and a
+/// first-time password setup for a Kinde-only account — same mechanism,
+/// only the emailed copy differs (utils/email.ts's sendPasswordResetEmail),
+/// decided by whether the user already has a passwordHash when the request
+/// comes in. Deliberately not reusing RefreshToken's shape even though it's
+/// structurally similar: a leaked/forged reset token grants "set this
+/// account's password" rather than "read this session," a meaningfully
+/// different blast radius worth keeping in its own table.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
 model LoginAttempt {
   id         String   @id @default(uuid())
   identifier String

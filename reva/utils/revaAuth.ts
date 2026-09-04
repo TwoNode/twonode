@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
+import { getServerSession } from "@/lib/auth/session";
+import { Platform } from "@/utils/platform";
 import { canAccessRevaAdminPanel, canAccessRevaUserPanel } from "@/permissions";
 
 export async function getUserFromRevaDB(userId: string) {
@@ -17,23 +19,41 @@ export async function getUserFromRevaDB(userId: string) {
   }
 }
 
+/**
+ * Native email+password login never creates a Kinde session, so a
+ * Kinde-only check here left every natively-authenticated user unable to
+ * load their own settings/profile page (getKindeServerSession().isAuthenticated()
+ * is false for them, throwing "Not Authenticated" even though they're
+ * signed in). Falls back to the native JWT session, looked up by internal
+ * id rather than kindeId. Only the plain RevaUser row is spread back either
+ * way — callers here (settings/UserProfile, admin notifications) only ever
+ * read DB columns, never Kinde-SDK-only fields like `picture`.
+ */
 export async function getAuthenticatedRevaUser() {
   const { getUser, isAuthenticated } = getKindeServerSession();
 
   const UserIsAuthenticated = await isAuthenticated();
-  const user = await getUser();
+  const kindeUser = await getUser();
 
-  if (!UserIsAuthenticated || !user || !user.id) {
+  if (UserIsAuthenticated && kindeUser?.id) {
+    const revaUser = await getUserFromRevaDB(kindeUser.id);
+    if (!revaUser) {
+      throw new Error("User not found in Reva DB");
+    }
+    return { ...kindeUser, ...revaUser };
+  }
+
+  const nativeSession = await getServerSession(Platform.REVA);
+  if (!nativeSession) {
     throw new Error("Not Authenticated");
   }
 
-  const revaUser = await getUserFromRevaDB(user.id);
-
+  const revaUser = await prisma.revaUser.findUnique({ where: { id: nativeSession.sub } });
   if (!revaUser) {
     throw new Error("User not found in Reva DB");
   }
 
-  return { ...user, ...revaUser };
+  return revaUser;
 }
 
 // Function to verify if user can access admin panel

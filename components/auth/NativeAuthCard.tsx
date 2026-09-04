@@ -2,13 +2,13 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login, register } from "@/lib/auth/authApiClient";
+import { login, register, requestPasswordReset } from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
 
@@ -45,7 +45,7 @@ export function NativeAuthCard({
 }: NativeAuthCardProps) {
   const router = useRouter();
   const { theme } = useTheme();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -54,6 +54,7 @@ export function NativeAuthCard({
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
 
   const dark = accentDark ?? accent;
   // accentDark is a near-black navy for every product — fine on the light
@@ -66,6 +67,23 @@ export function NativeAuthCard({
 
     if (mode === "register" && password !== confirmPassword) {
       setError("Passwords don't match.");
+      return;
+    }
+
+    if (mode === "forgot") {
+      setIsSubmitting(true);
+      try {
+        await requestPasswordReset({ platform, email });
+        // Always shows the same confirmation regardless of the API result —
+        // the request-password-reset route already returns a generic
+        // response either way (see its doc comment); a distinct UI state
+        // here for a failure would defeat that.
+        setForgotSubmitted(true);
+      } catch {
+        setError("Couldn't reach the server. Check your connection and try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -90,6 +108,12 @@ export function NativeAuthCard({
     }
   }
 
+  function backToLogin() {
+    setError(null);
+    setForgotSubmitted(false);
+    setMode("login");
+  }
+
   return (
     <div className="bg-white dark:bg-[#101F2C] dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full flex flex-col items-center">
       <div className="flex justify-center mb-6">
@@ -104,13 +128,17 @@ export function NativeAuthCard({
         className="text-3xl font-extrabold mb-2 text-center"
         style={{ color: headingColor }}
       >
-        {mode === "login" ? title : `Create your account`}
+        {mode === "login" ? title : mode === "register" ? "Create your account" : "Reset your password"}
       </h1>
       <p
         className="mb-6 text-base font-medium text-center"
         style={{ color: accent }}
       >
-        {mode === "login" ? subtitle : registerNotice ?? subtitle}
+        {mode === "login"
+          ? subtitle
+          : mode === "register"
+            ? (registerNotice ?? subtitle)
+            : "Enter your account email and we'll send you a link to reset your password."}
       </p>
 
       {error && (
@@ -120,6 +148,23 @@ export function NativeAuthCard({
         </Alert>
       )}
 
+      {mode === "forgot" && forgotSubmitted ? (
+        <div className="w-full flex flex-col items-center gap-4 text-center">
+          <MailCheck className="h-10 w-10" style={{ color: accent }} />
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            If <strong>{email}</strong> is registered, we've sent a link to
+            reset your password. It expires in 1 hour.
+          </p>
+          <button
+            type="button"
+            onClick={backToLogin}
+            className="underline font-semibold text-sm hover:opacity-80"
+            style={{ color: accent }}
+          >
+            Back to sign in
+          </button>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4 text-left">
         {mode === "register" && (
           <div className="grid grid-cols-2 gap-3">
@@ -159,17 +204,34 @@ export function NativeAuthCard({
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Password</Label>
-          <PasswordInput
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={mode === "register" ? 6 : undefined}
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-          />
-        </div>
+        {mode !== "forgot" && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              {mode === "login" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setMode("forgot");
+                  }}
+                  className="text-xs font-semibold hover:opacity-80"
+                  style={{ color: accent }}
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
+            <PasswordInput
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={mode === "register" ? 6 : undefined}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+            />
+          </div>
+        )}
 
         {mode === "register" && (
           <div className="flex flex-col gap-1.5">
@@ -207,13 +269,27 @@ export function NativeAuthCard({
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : mode === "login" ? (
             "Sign in"
-          ) : (
+          ) : mode === "register" ? (
             "Create account"
+          ) : (
+            "Send reset link"
           )}
         </Button>
-      </form>
 
-      {allowRegister && (
+        {mode === "forgot" && (
+          <button
+            type="button"
+            onClick={backToLogin}
+            className="text-sm font-semibold hover:opacity-80 text-center"
+            style={{ color: accent }}
+          >
+            Back to sign in
+          </button>
+        )}
+      </form>
+      )}
+
+      {allowRegister && mode !== "forgot" && (
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 text-center">
           {mode === "login" ? "Don't have an account? " : "Already have an account? "}
           <button
@@ -230,7 +306,7 @@ export function NativeAuthCard({
         </p>
       )}
 
-      {alternateAuth && (
+      {alternateAuth && mode !== "forgot" && (
         <>
           <div className="w-full flex items-center gap-3 my-6">
             <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />

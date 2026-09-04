@@ -1,7 +1,8 @@
 import { DashboardShell } from "@/components/admin-panel/DashboardShell";
-import { getEncryptedUserData } from "@/utils/encryptedCookies";
+import { getEffectiveUserData } from "@/lib/auth/session";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import { Platform } from "@/utils/platform";
 
 export const maxDuration = 60;
 
@@ -10,8 +11,9 @@ export default async function MDADashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Fetch user data from encrypted cookies
-  const encryptedUserData = await getEncryptedUserData();
+  // Native session first, legacy Kinde cookie as fallback — see
+  // lib/auth/session.ts's getEffectiveUserData doc comment.
+  const encryptedUserData = await getEffectiveUserData(Platform.SURFBOARD);
 
   // Also get Kinde user for profile picture if available
   const { getUser } = getKindeServerSession();

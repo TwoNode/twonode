@@ -228,9 +228,9 @@ export default function BatchManagementPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Batch Management</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Batch Management</h1>
           <p className="text-gray-600 mt-1">
             View Certificate of Deposit batches with verified Remita payments
           </p>
@@ -239,6 +239,7 @@ export default function BatchManagementPage() {
           variant="outline"
           onClick={handleRefresh}
           disabled={refreshing}
+          className="shrink-0"
         >
           <RefreshCw
             className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`}

@@ -930,9 +930,14 @@ export default function RecordsIIAdminPage() {
           onValueChange={(v) => setActiveTab(v as any)}
         >
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="pending" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Pending ({filteredBatches.length} batches, {totalPendingPlans} plans)
+            <TabsTrigger value="pending" className="flex items-center gap-2 overflow-hidden">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span className="truncate">
+                <span className="sm:hidden">Pending ({filteredBatches.length})</span>
+                <span className="hidden sm:inline">
+                  Pending ({filteredBatches.length} batches, {totalPendingPlans} plans)
+                </span>
+              </span>
             </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <History className="w-4 h-4" />

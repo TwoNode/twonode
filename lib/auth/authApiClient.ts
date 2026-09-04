@@ -32,3 +32,18 @@ export function register(input: {
 }): Promise<ApiResult<SessionUser>> {
   return jsonFetch("/api/v1/auth/register", input);
 }
+
+export function requestPasswordReset(input: {
+  platform: Platform;
+  email: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/request-password-reset", input);
+}
+
+export function resetPassword(input: {
+  platform: Platform;
+  token: string;
+  newPassword: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/reset-password", input);
+}

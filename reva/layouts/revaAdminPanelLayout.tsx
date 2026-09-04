@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
-import { cn } from "@/lib/utils";
 import { RevaAdminDashboardNavbar } from "@/reva/components/RevaAdminDashboardHeader";
 import { LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
@@ -67,36 +66,32 @@ export default function RevaAdminPanelLayout({
   // const { getOpenState, settings } = sidebar;
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen grid grid-rows-[80px_calc(100vh-80px)]">
-      <RevaAdminDashboardNavbar
-        items={sidebarItems}
-        userImageUrl={user?.picture!}
-        userData={userData}
-      />
+    <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen flex">
+      {sidebar.isOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+          onClick={() => sidebar?.toggleOpen()}
+          aria-label="Close sidebar"
+        />
+      )}
 
-      <div
-        className={cn(
-          "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
-          "flex"
-        )}
-      >
-        {sidebar.isOpen && (
-          <div
-            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
-            onClick={() => sidebar?.toggleOpen()}
-            aria-label="Close sidebar"
-          />
-        )}
+      <div className={sideBarWidthClass + " relative h-full shrink-0"}>
+        <Sidebar
+          items={sidebarItems}
+          userImageUrl={user?.picture!}
+          userName={userName}
+          userRole={userData?.role}
+          sideBarWidthClass={sideBarWidthClass}
+          title="REVA Admin"
+          logoSrc="/reva/revaLogo.png"
+        />
+      </div>
 
-        <div className={sideBarWidthClass + "h-full max-h-full"}>
-          <Sidebar
-            items={sidebarItems}
-            userImageUrl={user?.picture!}
-            userName={userName}
-            userRole={userData?.role}
-            sideBarWidthClass={sideBarWidthClass}
-          />
-        </div>
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+        <RevaAdminDashboardNavbar
+          userImageUrl={user?.picture!}
+          userData={userData}
+        />
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
           {children}

@@ -328,9 +328,9 @@ export default function UserManagementPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   User Management
                 </h1>
                 <p className="text-gray-600 mt-2">
@@ -338,10 +338,10 @@ export default function UserManagementPage() {
                 </p>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-0">
                 <button
                   onClick={() => setShowAddAdminModal(true)}
-                  className="mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="sm:mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   {activeTab === "admins" ? "Add New Admin" : "Add MDA User"}
                 </button>
@@ -357,8 +357,8 @@ export default function UserManagementPage() {
 
           {/* Tab Navigation */}
           <div className="bg-white rounded-lg shadow-lg mb-8">
-            <div className="border-b border-gray-200">
-              <nav className="flex space-x-8 px-6">
+            <div className="border-b border-gray-200 overflow-x-auto">
+              <nav className="flex space-x-8 px-6 w-max min-w-full">
                 <button
                   onClick={() => setActiveTab("admins")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${

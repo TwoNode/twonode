@@ -117,8 +117,8 @@ export default function AdminToolsPage() {
 
           {/* Tab Navigation */}
           <div className="bg-white rounded-lg shadow-lg mb-8">
-            <div className="border-b border-gray-200">
-              <nav className="flex space-x-8 px-6">
+            <div className="border-b border-gray-200 overflow-x-auto">
+              <nav className="flex space-x-8 px-6 w-max min-w-full">
                 <button
                   onClick={() => setActiveTab("system")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
