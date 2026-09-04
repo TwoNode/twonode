@@ -77,7 +77,7 @@ export default function RevaAdminPanelLayout({
       <div
         className={cn(
           "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] bg-zinc-50 dark:bg-zinc-900 transition-[margin-left] ease-in-out duration-300",
-          "flex"
+          "flex overflow-hidden"
         )}
       >
         {sidebar.isOpen && (

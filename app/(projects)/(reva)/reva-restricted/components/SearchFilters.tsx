@@ -195,8 +195,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1 relative">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex-1 relative min-w-0">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search by reference, address, requester name, or email..."
@@ -205,36 +205,38 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               className="pl-10"
             />
           </div>
-          <div className="w-48">
+          <div className="w-full sm:w-48 shrink-0">
             <Input
               placeholder="Filter by Parcel ID..."
               value={filters.parcelId}
               onChange={(e) => handleFilterChange("parcelId", e.target.value)}
             />
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2"
-          >
-            <FunnelIcon className="h-4 w-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-          {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="outline"
-              onClick={handleClear}
-              className="flex items-center gap-2"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-2 shrink-0"
             >
-              <XMarkIcon className="h-4 w-4" />
-              Clear
+              <FunnelIcon className="h-4 w-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {activeFilterCount}
+                </Badge>
+              )}
             </Button>
-          )}
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={handleClear}
+                className="flex items-center gap-2 shrink-0"
+              >
+                <XMarkIcon className="h-4 w-4" />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
