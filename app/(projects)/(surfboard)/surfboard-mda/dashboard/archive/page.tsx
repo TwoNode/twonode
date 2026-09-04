@@ -735,20 +735,30 @@ export default function ArchiveDashboard() {
                     <TabsList className="grid w-full max-w-md grid-cols-2">
                         <TabsTrigger
                             value="pending"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 overflow-hidden"
                         >
-                            <Clock className="w-4 h-4" />
-                            Pending ({filteredBatches.length} batch
-                            {filteredBatches.length !== 1 ? "es" : ""},{" "}
-                            {totalPendingPlans} plan
-                            {totalPendingPlans !== 1 ? "s" : ""})
+                            <Clock className="w-4 h-4 shrink-0" />
+                            <span className="truncate">
+                                <span className="sm:hidden">
+                                    Pending ({filteredBatches.length})
+                                </span>
+                                <span className="hidden sm:inline">
+                                    Pending ({filteredBatches.length} batch
+                                    {filteredBatches.length !== 1 ? "es" : ""},{" "}
+                                    {totalPendingPlans} plan
+                                    {totalPendingPlans !== 1 ? "s" : ""})
+                                </span>
+                            </span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="history"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 overflow-hidden"
                         >
-                            <History className="w-4 h-4" />
-                            Archived History
+                            <History className="w-4 h-4 shrink-0" />
+                            <span className="truncate">
+                                <span className="sm:hidden">History</span>
+                                <span className="hidden sm:inline">Archived History</span>
+                            </span>
                         </TabsTrigger>
                     </TabsList>
 
