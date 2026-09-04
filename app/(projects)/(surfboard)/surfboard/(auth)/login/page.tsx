@@ -14,8 +14,8 @@ export default function SurfboardLoginPage() {
       accent="#0077B6"
       accentDark="#023E8A"
       eyebrow="Surfboard"
-      headline="Turn field data into decisions."
-      description="Sign in to create, manage, and analyze your survey plans in real time."
+      headline="Making Your Survey Practice Stand Out."
+      description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
     >
       <NativeAuthCard
         platform={Platform.SURFBOARD}
@@ -36,7 +36,7 @@ export default function SurfboardLoginPage() {
           <LoginLink postLoginRedirectURL="/api/auth/success/surfboard">
             <Button
               variant="outline"
-              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 dark:bg-white/5 dark:border-white/15 dark:text-white dark:hover:bg-white/10 flex items-center justify-center gap-3"
             >
               <GoogleIcon />
               Continue with Google

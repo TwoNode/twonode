@@ -2,12 +2,19 @@
 /* @tailwind base;
 @tailwind components;
 @tailwind utilities; */
-@variant dark (false);
+/* Class-based dark mode (matches tailwind.config.ts's darkMode: "class") —
+   was previously `@variant dark (false);`, which silently disabled every
+   `dark:` utility in the app. Toggled via hooks/useTheme.tsx adding/removing
+   `.dark` on <html>, not the OS media query, so color-scheme below follows
+   the class rather than prefers-color-scheme. */
+@variant dark (&:where(.dark, .dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: light;
-  }
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 /* Import Bricolage Grotesque font */

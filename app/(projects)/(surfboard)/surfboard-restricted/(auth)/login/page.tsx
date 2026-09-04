@@ -42,7 +42,7 @@ export default function SurfRestrictedLoginPage() {
           <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
             <Button
               variant="outline"
-              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 flex items-center justify-center gap-3"
+              className="w-full px-6 py-3 h-auto rounded-lg font-semibold text-base bg-white border-gray-300 text-[#3c4043] hover:bg-gray-50 dark:bg-white/5 dark:border-white/15 dark:text-white dark:hover:bg-white/10 flex items-center justify-center gap-3"
             >
               <GoogleIcon />
               Continue with Google

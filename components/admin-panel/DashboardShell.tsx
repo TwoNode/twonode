@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
+import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import { useTheme } from "@/hooks/useTheme";
 import { Platform } from "@/utils/platform";
 import { cn } from "@/lib/utils";
 import { Menu, LogOut } from "lucide-react";
@@ -60,6 +62,7 @@ export function DashboardShell({
   logoutRedirectUrl = "/api/auth/logout_redirect",
 }: DashboardShellProps) {
   const sidebar = useStore(useSidebar, (x) => x);
+  const { theme } = useTheme();
   // DashboardShell is Surfboard-only today (pilot scope, see doc-comment
   // above) — hardcoded rather than a prop until a second product adopts it.
   useNativeAuthRefresh(Platform.SURFBOARD);
@@ -78,18 +81,11 @@ export function DashboardShell({
         <LogoutLink
           key="logout"
           postLogoutRedirectURL={logoutRedirectUrl}
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-15 rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
-          style={{ backgroundColor: "transparent" }}
+          aria-label="Logout"
+          title="Logout"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
         >
-          <span className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200 bg-blue-50 border border-blue-100">
-            <LogOut
-              className="w-5 h-5 transition-colors duration-200"
-              style={{ color: colorPalette.primary.light }}
-            />
-          </span>
-          <span className="text-center text-[10px] font-medium font-['Eudoxus Sans'] transition-colors duration-200 text-blue-900">
-            Logout
-          </span>
+          <LogOut className="h-4 w-4" />
         </LogoutLink>
       ),
     },
@@ -122,6 +118,7 @@ export function DashboardShell({
           </span>
         </div>
         <div className="flex-1" />
+        <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
         {user?.name && (
           <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
             {user.name}
@@ -134,7 +131,7 @@ export function DashboardShell({
           "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
           "flex"
         )}
-        style={{ background: colorPalette.background.paper }}
+        style={{ background: theme === "dark" ? "#0B1A26" : colorPalette.background.paper }}
       >
         {sidebar.isOpen && (
           <div
@@ -148,6 +145,8 @@ export function DashboardShell({
           <Sidebar
             items={sidebarItems}
             userImageUrl={user?.picture}
+            userName={user?.name}
+            userRole={role ?? undefined}
             sideBarWidthClass={sideBarWidthClass}
           />
         </div>

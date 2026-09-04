@@ -10,7 +10,6 @@ import { LogOut } from "lucide-react";
 import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { useRevaUserAccess } from "@/reva/hooks/useRevaUserAccess";
 import RevaLoading from "@/reva/components/RevaLoading";
-import { REVA_COLORS } from "@/reva/colors";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
@@ -36,38 +35,19 @@ export default function RevaUserPanelLayout({
     {
       element: (
         <LogoutLink
-          key={"logout"}
+          key="logout"
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-[60px] rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
-          style={{
-            backgroundColor: "transparent",
-          }}
+          aria-label="Logout"
+          title="Logout"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
         >
-          <span
-            className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200"
-            style={{
-              backgroundColor: "transparent",
-            }}
-          >
-            <LogOut
-              className="w-5 h-5 transition-colors duration-200"
-              style={{
-                color: REVA_COLORS.text.muted,
-              }}
-            />
-          </span>
-          <span
-            className="text-center text-[10px] font-medium font-['Eudoxus Sans'] transition-colors duration-200"
-            style={{
-              color: REVA_COLORS.text.secondary,
-            }}
-          >
-            Logout
-          </span>
+          <LogOut className="h-4 w-4" />
         </LogoutLink>
       ),
     },
   ];
+
+  const userName = userData ? `${userData.firstName} ${userData.lastName}`.trim() : undefined;
 
   if (isLoading) {
     return <RevaLoading />;
@@ -103,6 +83,8 @@ export default function RevaUserPanelLayout({
           <Sidebar
             items={menuList}
             userImageUrl={user?.picture!}
+            userName={userName}
+            userRole={userData?.role}
             sideBarWidthClass={sideBarWidthClass}
           />
         </div>

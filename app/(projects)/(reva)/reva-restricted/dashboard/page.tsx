@@ -3,7 +3,8 @@ import Welcome from "./components/Welcome";
 import Link from "next/link";
 import { getAllRequestsWithUserByAdmin } from "@/reva/services/reportService";
 import ErrorComponent from "../../reva/dashboard/components/ErrorComponent";
-import { REVA_COLORS, REVA_GRADIENTS, revaStatusBadgeStyle } from "@/reva/colors";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
 
 const Home = async () => {
   let data, oneTimeRequests;
@@ -22,7 +23,7 @@ const Home = async () => {
 
       <div className="propertiesSection mt-8 sm:mt-12 max-w-[95%] mx-auto px-4 sm:px-6">
         <div className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-6 sm:gap-6 lg:gap-0 mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             Recent Property Requests
           </h2>
 
@@ -52,44 +53,37 @@ const Home = async () => {
           {data?.map((property) => (
             <li
               key={property.id}
-              className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
+              className="bg-white dark:bg-white/3 dark:shadow-none rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 overflow-hidden"
             >
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-1">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white line-clamp-1">
                     {property?.title || "Untitled Property"}
                   </h3>
                   <div className="flex gap-2 flex-wrap">
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
+                    <DashboardBadge
+                      tone={
                         property.status === "Available"
                           ? "success"
                           : property.status === "Processing"
                           ? "warning"
                           : "info"
-                      )}
+                      }
                     >
                       {property.status}
-                    </span>
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
-                        property.paymentStatus === "Paid" ? "success" : "error"
-                      )}
-                    >
+                    </DashboardBadge>
+                    <DashboardBadge tone={property.paymentStatus === "Paid" ? "success" : "danger"}>
                       {property.paymentStatus}
-                    </span>
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
+                    </DashboardBadge>
+                    <DashboardBadge
+                      tone={
                         property?.report &&
-                          typeof property?.report === "object" &&
-                          "isApproved" in property?.report &&
-                          property.report.isApproved
+                        typeof property?.report === "object" &&
+                        "isApproved" in property?.report &&
+                        property.report.isApproved
                           ? "success"
-                          : "error"
-                      )}
+                          : "danger"
+                      }
                     >
                       {property?.report &&
                       typeof property?.report === "object" &&
@@ -97,16 +91,16 @@ const Home = async () => {
                       property.report.isApproved
                         ? "Approved"
                         : "Not Approved"}
-                    </span>
+                    </DashboardBadge>
                   </div>
                 </div>
 
-                <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-2">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                   {property.description || "No description available"}
                 </p>
 
                 <div className="flex flex-col gap-3 mb-4">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
                     <svg
                       className="w-5 h-5 text-gray-400 mr-2"
                       fill="none"
@@ -128,7 +122,7 @@ const Home = async () => {
                     </svg>
                     <span className="text-sm">{property.address}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
                     <svg
                       className="w-5 h-5 text-gray-400 mr-2"
                       fill="none"
@@ -149,7 +143,7 @@ const Home = async () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div className="flex items-center">
                     <svg
                       className="w-5 h-5 text-gray-400 mr-2"
@@ -165,8 +159,7 @@ const Home = async () => {
                       />
                     </svg>
                     <span
-                      className="font-semibold"
-                      style={{ color: REVA_COLORS.text.primary }}
+                      className="font-semibold text-[#032740] dark:text-white"
                     >
                       ₦{property.totalCost.toLocaleString()}
                     </span>
@@ -189,46 +182,38 @@ const Home = async () => {
           {oneTimeRequests?.map((property) => (
             <li
               key={property.id}
-              className="rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border overflow-hidden bg-white"
+              className="rounded-xl shadow-sm dark:shadow-none hover:shadow-xl transition-all duration-300 border overflow-hidden bg-white dark:bg-white/3"
               style={{ borderTopWidth: 2, borderTopColor: REVA_COLORS.secondary.light }}
             >
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-1">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white line-clamp-1">
                     {property?.description || "Untitled Property"}
                   </h3>
                   <div className="flex gap-2 flex-wrap">
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
-                        property.status === "Completed" ||
-                          property.status === "Available"
+                    <DashboardBadge
+                      tone={
+                        property.status === "Completed" || property.status === "Available"
                           ? "success"
                           : property.status === "Processing"
                           ? "warning"
                           : "info"
-                      )}
+                      }
                     >
                       {property.status}
-                    </span>
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
-                        property.paymentStatus === "Paid" ? "success" : "error"
-                      )}
-                    >
+                    </DashboardBadge>
+                    <DashboardBadge tone={property.paymentStatus === "Paid" ? "success" : "danger"}>
                       {property.paymentStatus}
-                    </span>
-                    <span
-                      className="self-start sm:self-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                      style={revaStatusBadgeStyle(
+                    </DashboardBadge>
+                    <DashboardBadge
+                      tone={
                         property?.report &&
-                          typeof property?.report === "object" &&
-                          "isApproved" in property?.report &&
-                          property.report.isApproved
+                        typeof property?.report === "object" &&
+                        "isApproved" in property?.report &&
+                        property.report.isApproved
                           ? "success"
-                          : "error"
-                      )}
+                          : "danger"
+                      }
                     >
                       {property?.report &&
                       typeof property?.report === "object" &&
@@ -236,11 +221,11 @@ const Home = async () => {
                       property.report.isApproved
                         ? "Approved"
                         : "Not Approved"}
-                    </span>
+                    </DashboardBadge>
                   </div>
                 </div>
 
-                <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-2">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                   {property.description || "No description available"}
                 </p>
 
@@ -304,8 +289,7 @@ const Home = async () => {
                       />
                     </svg>
                     <span
-                      className="font-semibold"
-                      style={{ color: REVA_COLORS.text.primary }}
+                      className="font-semibold text-[#032740] dark:text-white"
                     >
                       ₦{property.totalCost.toLocaleString()}
                     </span>

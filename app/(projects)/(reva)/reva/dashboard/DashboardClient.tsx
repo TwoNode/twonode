@@ -1,12 +1,23 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import Welcome from "./components/Welcome";
+import React, { useState, useMemo, useEffect } from "react";
+import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
+import { FileText, Clock3, CheckCircle2, FileCheck2, Plus } from "lucide-react";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import Link from "next/link";
 import UserPropertyRequests from "./components/UserPropertyRequests";
 import UserSearchFilters, {
   UserSearchFilters as UserSearchFiltersType,
 } from "./components/UserSearchFilters";
+
+function timeGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 interface Property {
   id: string;
@@ -48,12 +59,28 @@ interface DashboardClientProps {
 }
 
 const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
+  const { user } = useKindeAuth();
+  const [greeting, setGreeting] = useState("Welcome back");
   const [filters, setFilters] = useState<UserSearchFiltersType>({
     searchTerm: "",
     status: [],
     paymentStatus: [],
     hasReport: null,
   });
+
+  // Computed client-side only, after mount, so the server-rendered markup
+  // (a fixed "Welcome back") always matches the initial client render —
+  // avoids a hydration mismatch from the server and browser clocks disagreeing.
+  useEffect(() => {
+    setGreeting(timeGreeting());
+  }, []);
+
+  const portfolioStats = useMemo(() => {
+    const processing = initialData.filter((p) => p.status === "Processing").length;
+    const completed = initialData.filter((p) => p.status === "Completed").length;
+    const withReport = initialData.filter((p) => p.report).length;
+    return { processing, completed, withReport };
+  }, [initialData]);
 
   const filteredData = useMemo(() => {
     let filtered = [...initialData];
@@ -126,9 +153,51 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
   const filteredCount = filteredData.length;
   const recentRequests = filteredData.slice(0, 3); // Show only 3 most recent
 
+  const userName = user?.given_name || user?.family_name || "there";
+
   return (
     <div className="flex flex-col p-[47px_60px] max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-full">
-      <Welcome />
+      <DashboardHero
+        greeting={`${greeting}, ${userName}.`}
+        title="Your Property Requests"
+        description="Track every appraisal from submission to report — see what's processing, what's ready, and what needs a look."
+        pills={[
+          `${totalCount} total`,
+          `${portfolioStats.completed} completed`,
+          `${portfolioStats.processing} processing`,
+        ]}
+        gradient={REVA_GRADIENTS.primary}
+        cta={{ label: "New Request", href: "/reva/dashboard/newrequest", icon: Plus }}
+      />
+
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Requests"
+          value={totalCount}
+          icon={FileText}
+          tone="brand"
+          accent={{ main: REVA_COLORS.primary.main, light: REVA_COLORS.primary.light }}
+        />
+        <StatCard
+          label="Processing"
+          value={portfolioStats.processing}
+          icon={Clock3}
+          tone="warning"
+          breakdown={portfolioStats.processing ? "Awaiting review" : "All caught up"}
+        />
+        <StatCard
+          label="Completed"
+          value={portfolioStats.completed}
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatCard
+          label="Reports Ready"
+          value={portfolioStats.withReport}
+          icon={FileCheck2}
+          tone="info"
+        />
+      </div>
 
       <div className="propertiesSection mt-8">
         <UserSearchFilters

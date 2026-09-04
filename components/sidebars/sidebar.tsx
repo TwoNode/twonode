@@ -22,6 +22,8 @@ const SIDEBAR_INK = "#0A0F16";
 export function Sidebar({
   items,
   userImageUrl,
+  userName,
+  userRole,
   sideBarWidthClass,
 }: SidebarProps) {
   const sidebar = useStore(useSidebar, (x) => x);
@@ -59,6 +61,8 @@ export function Sidebar({
         <Menu
           items={items}
           userImageUrl={userImageUrl}
+          userName={userName}
+          userRole={userRole}
           colorPalette={colorPalette}
           variant="dark"
         />

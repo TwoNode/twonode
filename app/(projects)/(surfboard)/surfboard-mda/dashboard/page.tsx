@@ -266,7 +266,7 @@ export default function MDADashboardHome() {
       <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -457,8 +457,8 @@ export default function MDADashboardHome() {
             >
               <Link href={stat.href}>
                 <div
-                  className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer ${(stat as any).isPrimary
-                    ? "ring-2 ring-offset-2 ring-purple-500"
+                  className={`relative overflow-hidden rounded-2xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer ${(stat as any).isPrimary
+                    ? "ring-2 ring-offset-2 dark:ring-offset-[#0B1A26] ring-purple-500"
                     : ""
                     }`}
                 >
@@ -470,12 +470,12 @@ export default function MDADashboardHome() {
                   </div>
                   <div>
                     <div
-                      className={`font-bold text-gray-900 mb-1 ${(stat as any).isPrimary ? "text-5xl" : "text-3xl"
+                      className={`font-bold text-gray-900 dark:text-white mb-1 ${(stat as any).isPrimary ? "text-5xl" : "text-3xl"
                         }`}
                     >
                       {stat.value.toLocaleString()}
                     </div>
-                    <div className="text-sm text-gray-500 font-medium">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                       {stat.title}
                     </div>
                   </div>
@@ -492,10 +492,10 @@ export default function MDADashboardHome() {
       {/* Quick Actions - Show all for SUPERADMIN, or other sections for specific roles */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isSuperAdmin ? "All Departments" : "Other Departments"}
           </h2>
-          <Layers className="w-6 h-6 text-gray-400" />
+          <Layers className="w-6 h-6 text-gray-400 dark:text-gray-500" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -519,7 +519,7 @@ export default function MDADashboardHome() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <Link href={action.href}>
-                    <div className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer">
+                    <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
                       <div className="flex items-start gap-4">
                         <div
                           className={`p-3 rounded-xl ${action.iconBg} group-hover:scale-110 transition-transform duration-300`}
@@ -528,19 +528,19 @@ export default function MDADashboardHome() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-base font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">
                               {action.title}
                             </h3>
                             <div className="flex items-center gap-2">
                               {pendingCount > 0 && (
-                                <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+                                <span className="px-2 py-1 text-xs font-medium bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-full">
                                   {pendingCount} pending
                                 </span>
                               )}
                               <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                             </div>
                           </div>
-                          <p className="text-sm text-gray-500 line-clamp-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                             {action.description}
                           </p>
                         </div>
@@ -562,19 +562,19 @@ export default function MDADashboardHome() {
             transition={{ duration: 0.3, delay: quickActions.length * 0.05 }}
           >
             <Link href="/surfboard-mda/dashboard/profile">
-              <div className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer">
+              <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl bg-slate-100 group-hover:scale-110 transition-transform duration-300">
-                    <User className="w-6 h-6 text-slate-600" />
+                  <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-500/20 group-hover:scale-110 transition-transform duration-300">
+                    <User className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-base font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">
                         Profile & Settings
                       </h3>
                       <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                       Manage your account and preferences
                     </p>
                   </div>
@@ -588,16 +588,16 @@ export default function MDADashboardHome() {
 
       {/* Role-specific guidance */}
       {!isSuperAdmin && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl p-6 mb-8">
           <div className="flex items-start gap-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Activity className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
+              <Activity className="w-6 h-6 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <h3 className="font-semibold text-blue-900 mb-2">
+              <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
                 Your Role: {roleConfig.title}
               </h3>
-              <p className="text-blue-700 text-sm">
+              <p className="text-blue-700 dark:text-blue-300 text-sm">
                 {currentRole === "ACCOUNTS" &&
                   "Review LASG payment receipts and approve or disapprove batches. After approval, plans become available to other MDA roles."}
                 {currentRole === "CHARTING" &&

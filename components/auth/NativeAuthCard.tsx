@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { login, register } from "@/lib/auth/authApiClient";
+import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
 
 export type NativeAuthCardProps = {
@@ -43,6 +44,7 @@ export function NativeAuthCard({
   registerNotice,
 }: NativeAuthCardProps) {
   const router = useRouter();
+  const { theme } = useTheme();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,6 +56,9 @@ export function NativeAuthCard({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dark = accentDark ?? accent;
+  // accentDark is a near-black navy for every product — fine on the light
+  // card, unreadable on the dark one, so the heading swaps to white instead.
+  const headingColor = theme === "dark" ? "#fff" : dark;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -86,7 +91,7 @@ export function NativeAuthCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full flex flex-col items-center">
+    <div className="bg-white dark:bg-[#101F2C] dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full flex flex-col items-center">
       <div className="flex justify-center mb-6">
         <img
           src={logoSrc}
@@ -97,7 +102,7 @@ export function NativeAuthCard({
       </div>
       <h1
         className="text-3xl font-extrabold mb-2 text-center"
-        style={{ color: dark }}
+        style={{ color: headingColor }}
       >
         {mode === "login" ? title : `Create your account`}
       </h1>
@@ -180,7 +185,7 @@ export function NativeAuthCard({
         )}
 
         {mode === "login" && (
-          <label className="flex items-center gap-2 text-sm text-gray-600 select-none">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 select-none">
             <input
               type="checkbox"
               checked={rememberMe}
@@ -209,7 +214,7 @@ export function NativeAuthCard({
       </form>
 
       {allowRegister && (
-        <p className="text-sm text-gray-600 mt-4 text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 text-center">
           {mode === "login" ? "Don't have an account? " : "Already have an account? "}
           <button
             type="button"
@@ -228,9 +233,9 @@ export function NativeAuthCard({
       {alternateAuth && (
         <>
           <div className="w-full flex items-center gap-3 my-6">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs uppercase tracking-wider text-gray-400">or</span>
-            <div className="h-px flex-1 bg-gray-200" />
+            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+            <span className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">or</span>
+            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
           </div>
           <div className="w-full">{alternateAuth}</div>
         </>
