@@ -210,9 +210,9 @@ export default function SecurePlansPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Secure Plans Management
                 </h1>
                 <p className="text-gray-600 mt-2">
@@ -222,7 +222,7 @@ export default function SecurePlansPage() {
               </div>
               <button
                 onClick={() => router.push("/surfboard-restricted/dashboard")}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Dashboard
               </button>

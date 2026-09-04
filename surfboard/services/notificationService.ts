@@ -324,7 +324,7 @@ export async function notifyPaymentReceived(params: {
       title: "Payment Received",
       message: `Payment of ₦${params.amount.toLocaleString()} received for batch ${params.batchCode} from ${params.paidBy.firstName} ${params.paidBy.lastName}.`,
       audience: "GENERAL_ADMINS",
-      link: `/surfboard-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod/batches`,
       metadata: { batchId: params.batchId, batchCode: params.batchCode, amount: params.amount },
       sendEmail: params.sendEmail ?? true,
     });
@@ -374,7 +374,7 @@ export async function notifyAccountsDisapproval(params: {
       title: "Batch Disapproved by Accounts",
       message: `Batch ${params.batchCode} was disapproved by Accounts. ${params.comment ? `Reason: ${params.comment}` : ""}`,
       audience: "GENERAL_ADMINS",
-      link: `/surfboard-restricted/dashboard/cod`,
+      link: `/surfboard-restricted/dashboard/cod/batches`,
       metadata: { batchId: params.batchId, batchCode: params.batchCode, comment: params.comment },
       sendEmail: params.sendEmail ?? true,
     });
