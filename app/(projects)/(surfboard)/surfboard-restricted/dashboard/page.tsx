@@ -7,11 +7,7 @@ import {
   BarChart3,
   Users,
   FileCheck,
-  Shield,
-  Settings,
-  TrendingUp,
   Activity,
-  MapPin,
   Clock,
   CheckCircle2,
   AlertTriangle,
@@ -19,13 +15,16 @@ import {
   ArrowUpRight,
   Layers,
   Database,
-  Zap,
   Eye,
 } from "lucide-react";
 import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 const HERO_GRADIENT = `linear-gradient(135deg, ${SURFBOARD_COLORS.primary.dark} 0%, ${SURFBOARD_COLORS.primary.main} 55%, ${SURFBOARD_COLORS.secondary.dark} 130%)`;
 const ACCENT_GRADIENT = `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 0%, ${SURFBOARD_COLORS.secondary.main} 100%)`;
+
+const STAT_TONES = ["brand", "info", "warning", "success"] as const;
 
 // Simple counter animation hook
 function useCountUp(end: number, duration: number = 2000) {
@@ -174,108 +173,41 @@ export default function RestrictedDashboardHome() {
 
   return (
     <div className="min-h-full">
-      {/* Hero Section */}
-      <div
-        className="relative overflow-hidden rounded-2xl p-8 mb-8 shadow-xl"
-        style={{ background: HERO_GRADIENT }}
-      >
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div
-          className="absolute -right-10 -top-10 w-64 h-64 rounded-full blur-3xl opacity-20"
-          style={{ backgroundColor: SURFBOARD_COLORS.primary.light }}
-        />
-        <div
-          className="absolute -left-10 -bottom-10 w-64 h-64 rounded-full blur-3xl opacity-20"
-          style={{ backgroundColor: SURFBOARD_COLORS.secondary.light }}
-        />
-
-        <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Shield
-                className="w-8 h-8"
-                style={{ color: SURFBOARD_COLORS.secondary.light }}
-              />
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
-                Admin Dashboard
-              </h1>
-            </div>
-            <p className="text-white/85 text-lg max-w-2xl">
-              Welcome to the Surfboard administrative control center. Manage
-              survey plans, users, and system settings with comprehensive
-              oversight and analytics.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+      <DashboardHero
+        greeting="Admin control center"
+        title="Admin Dashboard"
+        description="Manage survey plans, users, and system settings with comprehensive oversight and analytics."
+        pills={[`${totalPlans.toLocaleString()} Plans`, `${totalUsers} Users`, `${pendingReviews} Pending`]}
+        gradient={HERO_GRADIENT}
+        className="mb-8"
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group"
-            >
-              <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className="p-3 rounded-xl"
-                    style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
-                  >
-                    <Icon
-                      className="w-6 h-6"
-                      style={{ color: SURFBOARD_COLORS.primary.main }}
-                    />
-                  </div>
-                  <div
-                    className="flex items-center gap-1 text-sm font-medium"
-                    style={{
-                      color:
-                        stat.trend === "up"
-                          ? SURFBOARD_COLORS.success.main
-                          : SURFBOARD_COLORS.error.main,
-                    }}
-                  >
-                    <TrendingUp
-                      className={`w-4 h-4 ${
-                        stat.trend === "down" ? "rotate-180" : ""
-                      }`}
-                    />
-                    <span>{stat.change}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {stat.value.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-500 font-medium">
-                    {stat.title}
-                  </div>
-                </div>
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-1"
-                  style={{ background: ACCENT_GRADIENT }}
-                />
-              </div>
-            </motion.div>
-          );
-        })}
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <StatCard
+              label={stat.title}
+              value={stat.value.toLocaleString()}
+              icon={stat.icon}
+              tone={STAT_TONES[index % STAT_TONES.length]}
+              accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
+              trend={{ value: stat.change, direction: stat.trend as "up" | "down" }}
+            />
+          </motion.div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Quick Actions */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Quick Actions</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
             <Layers className="w-6 h-6 text-gray-400" />
           </div>
 
@@ -290,7 +222,7 @@ export default function RestrictedDashboardHome() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <Link href={action.href}>
-                    <div className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer">
+                    <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
                       <div className="flex items-start gap-4">
                         <div
                           className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
@@ -303,12 +235,12 @@ export default function RestrictedDashboardHome() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-base font-semibold text-gray-900 group-hover:text-[#0077B6] transition-colors">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-[#0077B6] transition-colors">
                               {action.title}
                             </h3>
                             <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-[#0077B6] group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                           </div>
-                          <p className="text-sm text-gray-500 line-clamp-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                             {action.description}
                           </p>
                         </div>
@@ -328,14 +260,14 @@ export default function RestrictedDashboardHome() {
         {/* Recent Activity */}
         <div className="lg:col-span-1">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Recent Activity
             </h2>
             <Activity className="w-6 h-6 text-gray-400" />
           </div>
 
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-            <div className="divide-y divide-gray-100">
+          <div className="bg-white dark:bg-white/3 rounded-xl shadow-md dark:shadow-none border border-gray-100 dark:border-white/10 overflow-hidden">
+            <div className="divide-y divide-gray-100 dark:divide-white/10">
               <AnimatePresence>
                 {recentActivity.map((activity, index) => {
                   const Icon = activity.icon;
@@ -345,7 +277,7 @@ export default function RestrictedDashboardHome() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="p-4 hover:bg-gray-50 transition-colors duration-200"
+                      className="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-200"
                     >
                       <div className="flex gap-3">
                         <div
@@ -355,10 +287,10 @@ export default function RestrictedDashboardHome() {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 mb-1 leading-relaxed">
+                          <p className="text-sm text-gray-900 dark:text-gray-100 mb-1 leading-relaxed">
                             {activity.message}
                           </p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {activity.time}
                           </p>
@@ -369,7 +301,7 @@ export default function RestrictedDashboardHome() {
                 })}
               </AnimatePresence>
             </div>
-            <div className="p-4 bg-gray-50 border-t border-gray-100">
+            <div className="p-4 bg-gray-50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10">
               <Link
                 href="/surfboard-restricted/dashboard/analytics"
                 className="text-sm font-medium text-[#0077B6] hover:text-[#023E8A] flex items-center gap-1 group"

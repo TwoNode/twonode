@@ -5,6 +5,7 @@ import React from "react";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
 import Image from "next/image";
 import { User } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 function getInitials(name: string) {
   if (!name) return "U";
@@ -27,6 +28,7 @@ export function Welcome({
   customInstructions,
 }: WelcomeProps) {
   const { user } = useKindeAuth();
+  const { theme } = useTheme();
   const userName = user?.given_name || user?.family_name || "User";
   const userAvatar = user?.picture || null;
   const initials = getInitials(userName);
@@ -50,9 +52,9 @@ export function Welcome({
         style={{ background: REVA_GRADIENTS.header, opacity: 0.9 }}
       />
       <div
-        className="relative w-full max-w-2xl rounded-2xl shadow-xl border"
+        className="relative w-full max-w-2xl rounded-2xl shadow-xl dark:shadow-none border dark:border-white/10"
         style={{
-          background: REVA_COLORS.background.secondary,
+          background: theme === "dark" ? "#101F2C" : REVA_COLORS.background.secondary,
           borderColor: REVA_COLORS.border.light,
         }}
       >
@@ -94,24 +96,24 @@ export function Welcome({
               <User size={28} style={{ color: REVA_COLORS.primary.light }} />
               <h1
                 className="text-3xl md:text-4xl font-extrabold"
-                style={{ color: REVA_COLORS.text.dark }}
+                style={{ color: theme === "dark" ? "#fff" : REVA_COLORS.text.dark }}
               >
                 {defaultGreeting}
               </h1>
             </div>
             <p
               className="text-base md:text-lg font-medium"
-              style={{ color: REVA_COLORS.text.secondary }}
+              style={{ color: theme === "dark" ? "#9CB3C4" : REVA_COLORS.text.secondary }}
             >
               {defaultDescription}
             </p>
-            <div className="mt-4 w-full bg-linear-to-r from-transparent via-blue-100 to-transparent h-0.5 rounded-full opacity-60" />
+            <div className="mt-4 w-full bg-linear-to-r from-transparent via-blue-100 dark:via-white/10 to-transparent h-0.5 rounded-full opacity-60" />
             <div className="mt-4 flex flex-col gap-2 w-full">
               {defaultInstructions.map((instruction, index) => (
                 <p
                   key={index}
                   className="text-base md:text-lg font-medium leading-relaxed"
-                  style={{ color: REVA_COLORS.text.dark }}
+                  style={{ color: theme === "dark" ? "#E7EEF3" : REVA_COLORS.text.dark }}
                 >
                   {instruction}
                 </p>

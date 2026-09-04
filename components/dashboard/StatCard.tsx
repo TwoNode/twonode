@@ -1,6 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 import type { BadgeTone } from "./DashboardBadge";
@@ -30,6 +31,8 @@ export interface StatCardProps {
   tone?: "brand" | Exclude<BadgeTone, "danger">;
   /** Required when tone="brand" — the platform's own primary color. */
   accent?: StatCardAccent;
+  /** Optional up/down change indicator, e.g. { value: "+12%", direction: "up" }. */
+  trend?: { value: string; direction: "up" | "down" };
   className?: string;
 }
 
@@ -45,6 +48,7 @@ export function StatCard({
   icon: Icon,
   tone = "brand",
   accent,
+  trend,
   className,
 }: StatCardProps) {
   const { theme } = useTheme();
@@ -62,9 +66,24 @@ export function StatCard({
       )}
     >
       <div className="min-w-0">
-        <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-          {label}
-        </span>
+        <div className="flex items-center justify-between gap-3">
+          <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+            {label}
+          </span>
+          {trend && (
+            <span
+              className={cn(
+                "flex items-center gap-1 text-xs font-semibold shrink-0",
+                trend.direction === "up"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-600 dark:text-rose-400"
+              )}
+            >
+              <TrendingUp className={cn("h-3.5 w-3.5", trend.direction === "down" && "rotate-180")} />
+              {trend.value}
+            </span>
+          )}
+        </div>
         <strong className="mt-2 block text-[28px] font-bold leading-none tracking-tight text-gray-900 tabular-nums dark:text-white">
           {value}
         </strong>

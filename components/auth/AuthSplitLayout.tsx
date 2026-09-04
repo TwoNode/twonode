@@ -25,11 +25,11 @@ export function AuthSplitLayout({
 }: AuthSplitLayoutProps) {
   return (
     <div className="min-h-screen flex">
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white dark:bg-[#0B1A26]">
         {notice && <div className="w-full max-w-md mb-4">{notice}</div>}
         {children}
         {footerNote && (
-          <p className="text-sm text-gray-500 mt-4">{footerNote}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{footerNote}</p>
         )}
       </div>
 
