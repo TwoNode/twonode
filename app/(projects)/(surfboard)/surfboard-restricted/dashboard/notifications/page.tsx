@@ -177,10 +177,10 @@ export default function AdminNotificationsPage() {
     <div className="max-w-6xl mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <Bell className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">
+            <Bell className="h-8 w-8 text-blue-600 shrink-0" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Notification Management
             </h1>
           </div>
