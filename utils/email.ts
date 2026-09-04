@@ -138,6 +138,52 @@ export const sendEmailToAllSuperAdmins = async ({
 };
 
 /**
+ * One template, two copies. `isFirstTimeSetup` is decided by the caller
+ * (POST /api/v1/auth/request-password-reset) from whether the account had a
+ * passwordHash *before* this token was issued — a Kinde-only account gets
+ * "set up a password" framing instead of "reset your password" wording, so
+ * they don't read it as a warning that someone's trying to break in. Same
+ * link, same token, same expiry either way; only the words differ, and only
+ * the account owner (who receives the email) ever sees which variant was
+ * sent — the API response that triggered it stays identical for both to
+ * avoid revealing account state to anyone probing by email address.
+ */
+export const sendPasswordResetEmail = async ({
+  to,
+  firstName,
+  resetUrl,
+  isFirstTimeSetup,
+}: {
+  to: string;
+  firstName: string;
+  resetUrl: string;
+  isFirstTimeSetup: boolean;
+}) => {
+  const subject = isFirstTimeSetup
+    ? "Set up your password"
+    : "Reset your password";
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const bodyLine = isFirstTimeSetup
+    ? "Your account was originally set up with Google sign-in and doesn't have a password yet. Use the link below to set one — you'll then be able to sign in with either method."
+    : "We received a request to reset your password. Use the link below to choose a new one.";
+  const buttonLabel = isFirstTimeSetup ? "Set up password" : "Reset password";
+
+  const text = `${greeting}\n\n${bodyLine}\n\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can safely ignore this email.`;
+  const html = `
+    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto;">
+      <p>${greeting}</p>
+      <p>${bodyLine}</p>
+      <p style="margin: 24px 0;">
+        <a href="${resetUrl}" style="background:#0077B6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">${buttonLabel}</a>
+      </p>
+      <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  return sendMail({ to, subject, text, html });
+};
+
+/**
  * Send email using Surfboard notification credentials (NOTIF_EMAIL)
  */
 export const sendNotificationMail = async ({
