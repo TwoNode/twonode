@@ -296,20 +296,13 @@ export default function SurfboardUserPanelLayout({
     {
       element: (
         <LogoutLink
-          key={"logout"}
+          key="logout"
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="group flex flex-col items-center justify-center gap-2.5 w-full h-15 rounded-xl transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-sm"
-          style={{ backgroundColor: "transparent" }}
+          aria-label="Logout"
+          title="Logout"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
         >
-          <span className="w-max lg:mx-auto p-1.5 rounded-lg transition-all duration-200 bg-blue-50 border border-blue-100">
-            <LogOut
-              className="w-5 h-5 transition-colors duration-200"
-              style={{ color: SURFBOARD_COLORS.primary.light }}
-            />
-          </span>
-          <span className="text-center text-[10px] font-medium font-['Eudoxus Sans'] transition-colors duration-200 text-blue-900">
-            Logout
-          </span>
+          <LogOut className="h-4 w-4" />
         </LogoutLink>
       ),
       requiresSubscription: false,
@@ -365,6 +358,8 @@ export default function SurfboardUserPanelLayout({
           <Sidebar
             items={menuList}
             userImageUrl={user?.picture}
+            userName={user?.firstName || user?.given_name}
+            userRole="Facilitator"
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
           />

@@ -31,6 +31,9 @@ export type MenuItem = LinkItem | ElementItem;
 export interface MenuProps {
   items: MenuItem[];
   userImageUrl?: string;
+  /** Shown next to the avatar in the bottom footer, alongside userRole. */
+  userName?: string;
+  userRole?: string;
   colorPalette?: any; // Accepts a color palette object (REVA_COLORS or SURFBOARD_COLORS)
   /**
    * "auto" (default) keeps the original behavior: text color depends on
@@ -43,11 +46,24 @@ export interface MenuProps {
   variant?: "auto" | "dark";
 }
 
-export function Menu({ items, userImageUrl = "", colorPalette, variant = "auto" }: MenuProps) {
+export function Menu({
+  items,
+  userImageUrl = "",
+  userName,
+  userRole,
+  colorPalette,
+  variant = "auto",
+}: MenuProps) {
   const colors = colorPalette || require("@/reva/colors").REVA_COLORS;
   const pathname = usePathname();
   const sidebar = useStore(useSidebar, (x) => x);
   const isDark = variant === "dark";
+
+  // The trailing Logout element item is pulled out of the scrollable nav
+  // list and rendered together with the avatar in the pinned-bottom footer
+  // instead — see the footer block below.
+  const linkItems = items.filter((item): item is LinkItem => !("element" in item));
+  const elementItems = items.filter((item): item is ElementItem => "element" in item);
 
   const isActive = (url: string) => pathname === url;
 
@@ -63,27 +79,21 @@ export function Menu({ items, userImageUrl = "", colorPalette, variant = "auto" 
 
   let previousSection: string | undefined;
 
+  // The footer (avatar + logout) needs to sit flush against the sidebar's
+  // real bottom edge regardless of how many nav items there are above it.
+  // Radix's ScrollArea Viewport wraps its content in an unstyled div that
+  // shrinks to fit its content rather than stretching to fill its parent —
+  // so putting `justify-between` on a `<nav>` *inside* the ScrollArea (the
+  // previous approach) never had real leftover space to distribute, and the
+  // footer ended up sitting right under the last nav item instead of at the
+  // bottom. Scoping ScrollArea to just the scrollable link list, and letting
+  // the footer live outside it as a `shrink-0` sibling in a `nav` that
+  // itself gets the sidebar's full real height, fixes that.
   return (
-    <ScrollArea className="bg-transparent [&>div>div[style]]:block! h-full">
-      <nav className="pt-4 h-full w-full flex flex-col justify-between overflow-y-auto box-border max-h-[85vh]">
+    <nav className="pt-4 h-full w-full flex flex-col box-border">
+      <ScrollArea className="bg-transparent [&>div>div[style]]:block! min-h-0 flex-1">
         <ul className="flex flex-col gap-1 items-start px-2 justify-center w-full">
-          {items.map((item, index) => {
-            if ("element" in item) {
-              // Element items (e.g. Logout) always render trailing today —
-              // give them a bit of visual separation from the nav list above.
-              const el = (
-                <div
-                  key={index}
-                  className="w-full pt-2 mt-2 border-t"
-                  style={{ borderColor: `${colors.primary.light}22` }}
-                >
-                  {item?.element}
-                </div>
-              );
-              previousSection = undefined;
-              return el;
-            }
-
+          {linkItems.map((item, index) => {
             const showHeading =
               !!item.section && item.section !== previousSection;
             previousSection = item.section;
@@ -217,70 +227,86 @@ export function Menu({ items, userImageUrl = "", colorPalette, variant = "auto" 
             );
           })}
         </ul>
+      </ScrollArea>
 
-        <div className="mt-8 pb-6 w-full">
-          <div className="relative w-full flex justify-center">
-            {userImageUrl ? (
-              <div className="relative group">
+      {/* Footer — a shrink-0 sibling of the scrollable link list above, so it
+          always sits flush against the sidebar's bottom edge. Avatar,
+          name/role, and the Logout action (pulled out of the item list
+          above) render together as one row instead of a lone avatar with
+          Logout buried mid-list. */}
+      <div
+        className="mt-2 w-full shrink-0 border-t px-2.5 pt-3 pb-3"
+        style={{
+          borderColor: isDark ? "rgba(255,255,255,0.1)" : `${colors.primary.light}22`,
+        }}
+      >
+          <div className="flex items-center gap-2.5">
+            <div className="relative shrink-0">
+              {userImageUrl ? (
                 <img
-                  className="w-16 h-16 rounded-full border-2 shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-125"
+                  className="h-10 w-10 rounded-full border-2 object-cover shadow-md"
                   style={{
-                    borderColor: REVA_COLORS.border.light,
-                    objectFit: "cover",
+                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
                   }}
                   src={userImageUrl}
-                  alt="User Avatar"
+                  alt="User avatar"
                   onError={(e) => {
-                    e.currentTarget.src = ""; // Fallback to no image
-                    e.currentTarget.alt = "No Image";
+                    e.currentTarget.style.display = "none";
                   }}
                 />
-                {/* Subtle glow effect on hover */}
+              ) : (
                 <div
-                  className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 blur-sm"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-md"
                   style={{
-                    background: `linear-gradient(to right, ${REVA_COLORS.transparency.blue20}, ${REVA_COLORS.transparency.blue30})`,
-                  }}
-                ></div>
-              </div>
-            ) : (
-              <div className="relative group">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center border-2 shadow-md transition-all duration-200 group-hover:shadow-lg"
-                  style={{
-                    background: `linear-gradient(to bottom right, ${REVA_COLORS.background.tertiary}, ${REVA_COLORS.gray[200]})`,
-                    borderColor: REVA_COLORS.border.light,
+                    background: isDark
+                      ? "rgba(255,255,255,0.08)"
+                      : `linear-gradient(to bottom right, ${colors.background.tertiary}, ${colors.gray[200]})`,
+                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
                   }}
                 >
                   <LucideUser
-                    size={32}
-                    className="transition-colors duration-200"
-                    style={{
-                      color: REVA_COLORS.text.muted,
-                    }}
+                    size={18}
+                    style={{ color: isDark ? "rgba(255,255,255,0.55)" : colors.text.muted }}
                   />
                 </div>
-                {/* Subtle glow effect on hover */}
-                <div
-                  className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 blur-sm"
-                  style={{
-                    background: `linear-gradient(to right, ${REVA_COLORS.transparency.blue20}, ${REVA_COLORS.transparency.blue30})`,
-                  }}
-                ></div>
+              )}
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2"
+                style={{
+                  backgroundColor: colors.status?.success ?? "#10b981",
+                  borderColor: isDark ? "#0A0F16" : "#fff",
+                }}
+              />
+            </div>
+
+            {userName && (
+              <div className="min-w-0 flex-1">
+                <strong
+                  className="block truncate text-[12.5px] font-semibold"
+                  style={{ color: isDark ? "#fff" : colors.text?.primary ?? colors.primary.dark }}
+                >
+                  {userName}
+                </strong>
+                {userRole && (
+                  <span
+                    className="block truncate text-[10.5px]"
+                    style={{
+                      color: isDark ? "rgba(255,255,255,0.45)" : colors.text?.muted ?? colors.primary.light,
+                    }}
+                  >
+                    {userRole}
+                  </span>
+                )}
               </div>
             )}
 
-            {/* Status indicator */}
-            <div
-              className="absolute -bottom-1 right-[calc(50%-32px)] w-4 h-4 border-2 rounded-full shadow-sm"
-              style={{
-                backgroundColor: REVA_COLORS.status.success,
-                borderColor: REVA_COLORS.text.light,
-              }}
-            ></div>
+            {elementItems.map((item, index) => (
+              <div key={index} className="ml-auto shrink-0">
+                {item.element}
+              </div>
+            ))}
           </div>
         </div>
-      </nav>
-    </ScrollArea>
+    </nav>
   );
 }

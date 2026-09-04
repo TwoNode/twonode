@@ -14,8 +14,8 @@ export default function SurfboardLoginPage() {
       accent="#0077B6"
       accentDark="#023E8A"
       eyebrow="Surfboard"
-      headline="Turn field data into decisions."
-      description="Sign in to create, manage, and analyze your survey plans in real time."
+      headline="Making Your Survey Practice Stand Out."
+      description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
     >
       <NativeAuthCard
         platform={Platform.SURFBOARD}
