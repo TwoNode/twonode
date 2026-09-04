@@ -1,5 +1,19 @@
 import { createTransport } from "nodemailer";
 import prisma from "@/lib/prisma";
+import { Platform } from "@/utils/platform";
+
+/**
+ * Per-platform branding for transactional auth emails (password reset,
+ * email verification) — matches each product's own login/reset-password
+ * page accent exactly, so the email and the page it links to feel like
+ * one flow instead of a generic shared template.
+ */
+const PLATFORM_BRAND: Record<Platform, { name: string; accent: string; accentDark: string }> = {
+  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#0077B6", accentDark: "#023E8A" },
+  [Platform.REVA]: { name: "REVA", accent: "#008cff", accentDark: "#032740" },
+  [Platform.GBC]: { name: "GBC", accent: "#7C3AED", accentDark: "#5B21B6" },
+  [Platform.SCRAM]: { name: "TwoNode", accent: "#0077B6", accentDark: "#023E8A" },
+};
 
 export const sendEmailToAdmin = async ({
   to,
@@ -44,6 +58,8 @@ interface EmailOptions {
   subject: string;
   text?: string;
   html?: string;
+  /** Overrides the "From" display name shown in the recipient's inbox — the address itself is still EMAIL_USER, only the human-readable name changes (e.g. "REVA · TwoNode Technologies"). */
+  fromName?: string;
 }
 
 export const sendMail = async ({
@@ -51,6 +67,7 @@ export const sendMail = async ({
   subject,
   text = "",
   html = "",
+  fromName,
 }: EmailOptions) => {
   try {
     const transporter = createTransport({
@@ -62,7 +79,7 @@ export const sendMail = async ({
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: fromName ? `"${fromName}" <${process.env.EMAIL_USER}>` : process.env.EMAIL_USER,
       to,
       subject,
       text,
@@ -153,34 +170,48 @@ export const sendPasswordResetEmail = async ({
   firstName,
   resetUrl,
   isFirstTimeSetup,
+  platform,
 }: {
   to: string;
   firstName: string;
   resetUrl: string;
   isFirstTimeSetup: boolean;
+  platform: Platform;
 }) => {
+  const brand = PLATFORM_BRAND[platform];
   const subject = isFirstTimeSetup
-    ? "Set up your password"
-    : "Reset your password";
+    ? `Set up your ${brand.name} password`
+    : `Reset your ${brand.name} password`;
   const greeting = firstName ? `Hi ${firstName},` : "Hi,";
   const bodyLine = isFirstTimeSetup
     ? "Your account was originally set up with Google sign-in and doesn't have a password yet. Use the link below to set one — you'll then be able to sign in with either method."
     : "We received a request to reset your password. Use the link below to choose a new one.";
   const buttonLabel = isFirstTimeSetup ? "Set up password" : "Reset password";
 
-  const text = `${greeting}\n\n${bodyLine}\n\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can safely ignore this email.`;
+  const text = `${greeting}\n\n${bodyLine}\n\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
   const html = `
-    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto;">
-      <p>${greeting}</p>
-      <p>${bodyLine}</p>
-      <p style="margin: 24px 0;">
-        <a href="${resetUrl}" style="background:#0077B6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">${buttonLabel}</a>
-      </p>
-      <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${greeting}</p>
+        <p>${bodyLine}</p>
+        <p style="margin: 24px 0;">
+          <a href="${resetUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">${buttonLabel}</a>
+        </p>
+        <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
     </div>
   `;
 
-  return sendMail({ to, subject, text, html });
+  return sendMail({ to, subject, text, html, fromName: `${brand.name} · TwoNode Technologies` });
 };
 
 /**
@@ -194,25 +225,45 @@ export const sendVerificationEmail = async ({
   to,
   firstName,
   verifyUrl,
+  platform,
 }: {
   to: string;
   firstName: string;
   verifyUrl: string;
+  platform: Platform;
 }) => {
+  const brand = PLATFORM_BRAND[platform];
   const greeting = firstName ? `Hi ${firstName},` : "Hi,";
-  const text = `${greeting}\n\nPlease confirm your email address by clicking the link below.\n\n${verifyUrl}\n\nThis link expires in 1 hour. If you didn't create this account, you can safely ignore this email.`;
+  const text = `${greeting}\n\nPlease confirm your email address for your ${brand.name} account by clicking the link below.\n\n${verifyUrl}\n\nThis link expires in 1 hour. If you didn't create this account, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
   const html = `
-    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto;">
-      <p>${greeting}</p>
-      <p>Please confirm your email address by clicking the button below.</p>
-      <p style="margin: 24px 0;">
-        <a href="${verifyUrl}" style="background:#0077B6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email</a>
-      </p>
-      <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${greeting}</p>
+        <p>Please confirm your email address for your ${brand.name} account by clicking the button below.</p>
+        <p style="margin: 24px 0;">
+          <a href="${verifyUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email</a>
+        </p>
+        <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
     </div>
   `;
 
-  return sendMail({ to, subject: "Verify your email address", text, html });
+  return sendMail({
+    to,
+    subject: `Verify your email address for ${brand.name}`,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
 };
 
 /**

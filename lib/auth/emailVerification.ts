@@ -45,6 +45,7 @@ export async function issueAndSendVerificationEmail(
     to: user.email,
     firstName: user.firstName ?? "",
     verifyUrl,
+    platform,
   });
 
   // Local/dev convenience only — SMTP creds aren't always configured in

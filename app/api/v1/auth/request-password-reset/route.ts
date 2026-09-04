@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
         firstName: user.firstName ?? "",
         resetUrl,
         isFirstTimeSetup: !user.passwordHash,
+        platform,
       });
 
       // Local/dev convenience only — SMTP creds aren't always configured in
