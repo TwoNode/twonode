@@ -22,6 +22,7 @@ export type ProfileData = {
   payerID: number | null;
   payerIDType: string | null;
   isKycValidated: boolean;
+  emailVerified: boolean;
 };
 
 const PROFILE_SELECT = {
@@ -42,6 +43,7 @@ const PROFILE_SELECT = {
   payerID: true,
   payerIDType: true,
   isKycValidated: true,
+  emailVerified: true,
 } as const;
 
 export async function getProfile(userId: string) {

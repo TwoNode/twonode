@@ -17,6 +17,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { resendVerification } from "@/lib/auth/authApiClient";
+import { Platform } from "@/utils/platform";
 import { useSurfUserProfile } from "@/surfboard/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,7 @@ export default function SettingsPage() {
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [inquiryText, setInquiryText] = useState("");
   const [isSendingInquiry, setIsSendingInquiry] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [bankDetails, setBankDetails] = useState<any>(null);
 
   useEffect(() => {
@@ -117,6 +120,22 @@ export default function SettingsPage() {
       setInquiryModalOpen(false);
     } else {
       toast.error("Failed to send request.");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      const result = await resendVerification({ platform: Platform.SURFBOARD, email: userData.email });
+      if (result.success) {
+        toast.success("If your email isn't verified yet, a new link is on its way.");
+      } else {
+        toast.error(result.error || "Failed to resend verification email");
+      }
+    } catch {
+      toast.error("An error occurred while resending the verification email");
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -357,6 +376,28 @@ export default function SettingsPage() {
                         <p className="text-xs text-gray-500">
                           Contact support to change your email address
                         </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              userData.emailVerified
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {userData.emailVerified ? "Verified" : "Not Verified"}
+                          </span>
+                          {!userData.emailVerified && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResendVerification}
+                              disabled={isResendingVerification}
+                            >
+                              {isResendingVerification ? "Sending..." : "Resend verification email"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">

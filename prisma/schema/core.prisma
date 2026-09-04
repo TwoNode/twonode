@@ -113,6 +113,25 @@ model PasswordResetToken {
   @@index([userId, platform])
 }
 
+/// Same shape as PasswordResetToken (hashed token, expiry, single-use,
+/// platform-scoped) but kept as its own table rather than reused — a
+/// leaked/forged token here only lets someone mark an email "verified,"
+/// a much smaller blast radius than PasswordResetToken's "set this
+/// account's password," and reset's on-use side effects (burning every
+/// other outstanding token, revoking every refresh token) are specific to
+/// a credential change and don't belong on a verification action.
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
 model LoginAttempt {
   id         String   @id @default(uuid())
   identifier String

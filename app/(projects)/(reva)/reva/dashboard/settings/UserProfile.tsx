@@ -25,6 +25,8 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
+import { resendVerification } from "@/lib/auth/authApiClient";
+import { Platform } from "@/utils/platform";
 
 interface UserProfileProps {
   user: {
@@ -47,6 +49,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [formData, setFormData] = useState({
     firstName: currentUser.firstName,
     lastName: currentUser.lastName,
@@ -135,6 +138,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
       toast.error("An error occurred while updating password");
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      const result = await resendVerification({ platform: Platform.REVA, email: currentUser.email });
+      if (result.success) {
+        toast.success("If your email isn't verified yet, a new link is on its way.");
+      } else {
+        toast.error(result.error || "Failed to resend verification email");
+      }
+    } catch {
+      toast.error("An error occurred while resending the verification email");
+    } finally {
+      setIsResendingVerification(false);
     }
   };
 
@@ -391,10 +410,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-gray-500" />
-                  <div>
+              <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Mail className="h-5 w-5 text-gray-500 shrink-0" />
+                  <div className="min-w-0">
                     <p className="font-medium">Email Verification</p>
                     <p className="text-sm text-gray-600">
                       {currentUser.emailVerified
@@ -403,9 +422,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     </p>
                   </div>
                 </div>
-                <Badge variant={currentUser.emailVerified ? "default" : "secondary"}>
-                  {currentUser.emailVerified ? "Verified" : "Not Verified"}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {!currentUser.emailVerified && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendVerification}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? "Sending..." : "Resend verification email"}
+                    </Button>
+                  )}
+                  <Badge variant={currentUser.emailVerified ? "default" : "secondary"}>
+                    {currentUser.emailVerified ? "Verified" : "Not Verified"}
+                  </Badge>
+                </div>
               </div>
             </CardContent>
           </Card>

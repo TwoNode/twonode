@@ -184,6 +184,38 @@ export const sendPasswordResetEmail = async ({
 };
 
 /**
+ * POST /api/v1/auth/verify-email's counterpart. Sent on native registration
+ * and from POST /api/v1/auth/resend-verification — same token shape as the
+ * password-reset flow (EmailVerificationToken, hashed, 1hr expiry,
+ * single-use) but a separate table/link, since a leaked token here only
+ * lets someone mark an address "verified," not take over the account.
+ */
+export const sendVerificationEmail = async ({
+  to,
+  firstName,
+  verifyUrl,
+}: {
+  to: string;
+  firstName: string;
+  verifyUrl: string;
+}) => {
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const text = `${greeting}\n\nPlease confirm your email address by clicking the link below.\n\n${verifyUrl}\n\nThis link expires in 1 hour. If you didn't create this account, you can safely ignore this email.`;
+  const html = `
+    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto;">
+      <p>${greeting}</p>
+      <p>Please confirm your email address by clicking the button below.</p>
+      <p style="margin: 24px 0;">
+        <a href="${verifyUrl}" style="background:#0077B6;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email</a>
+      </p>
+      <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.</p>
+    </div>
+  `;
+
+  return sendMail({ to, subject: "Verify your email address", text, html });
+};
+
+/**
  * Send email using Surfboard notification credentials (NOTIF_EMAIL)
  */
 export const sendNotificationMail = async ({
