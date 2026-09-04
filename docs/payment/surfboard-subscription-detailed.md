@@ -9,7 +9,7 @@ This document provides a deep dive into the Surfboard subscription engine, cover
 | **`active`** | Full access to premium features. | Successful payment (`verifySubscription` or `charge.success`). |
 | **`past_due`** | Access continues, but renewal payment failed. | `invoice.payment_failed` webhook event. |
 | **`canceled`** | User turned off auto-renewal. Access continues until `currentEnd`. | `disableSubscription` call or `subscription.disable` webhook. |
-| **`expired`** | Access revoked. `currentEnd` + 1 day grace period has passed. | `isUserSubscribed()` check returns `false`. |
+| **`expired`** | Access revoked. `currentEnd` + 1 day grace period has passed. | `isSubActiveOrGrace()` check returns `false`. |
 
 ### Lifecycle Diagram
 ```mermaid
@@ -27,27 +27,32 @@ stateDiagram-v2
 
 ## 2. Technical Component Map
 
+*(Paths current as of the 2026-08 architecture rebuild — see `docs/development-history/phases/phase-2-surfboard.md`. The old `app/(projects)/(surfboard)/actions/{paystackActions,subscriptionActions}.ts` action files this section used to reference are deleted; their logic now lives in `surfboard/services/*` behind `/api/v1/surfboard/*` routes.)*
+
 ### A. Initiation & Client Flow
-- **`SubscriptionManager.tsx`**: The primary UI.
+- **`SubscriptionManager.tsx`** (`app/(projects)/(surfboard)/surfboard/dashboard/subscription/SubscriptionManager.tsx`): The primary UI.
   - Handles plan selection and triggers the `PaystackPop` inline checkout.
   - On success, redirects or calls `verifySubscription`.
-- **`paystackActions.ts`**: Server-side logic for interacting with Paystack.
+- **`surfboard/services/paystackSubscriptionService.ts`**: Paystack-facing logic.
   - `initiateSubscription`: Initializes the transaction with `metadata.platform = "surfboard"`.
   - `verifySubscription`: Finalizes the transaction and updates the local DB.
-- **`callback/SubCallback.tsx`**: Handles the redirect after external payment (if not using inline).
+  - `disableSubscription`: Cancels auto-renewal via Paystack.
+  - `getOrCreatePaystackPlan`: Resolves/creates the Paystack-side plan record.
+- **`app/(projects)/(surfboard)/surfboard/dashboard/subscription/callback/SubCallback.tsx`**: Handles the redirect after external payment (if not using inline).
 
 ### B. Background Sync (Webhooks)
-- **`route.ts` (Webhook Handler)**: The core "brain" for async updates.
+- **`app/api/webhooks/paystack/route.ts`**: The core "brain" for async updates — shared across Surfboard/REVA/GBC, kept as one file deliberately rather than split per-product, since its platform-detection logic (§ "Platform Detection Logic" below) needs one place to reconcile ambiguous references. The handler functions below live inline in this file, not in a service:
   - `onSubscriptionCreate`: Upserts the `Subscription` and logs history.
   - `onSubscriptionChargeSuccess`: Handles recurring billing (renewals).
   - `onSubscriptionDisable`: Marks subscription as canceled in DB.
   - `onInvoicePaymentFailed`: Marks subscription as `past_due`.
 
 ### C. Domain Logic
-- **`subscriptionActions.ts`**: Low-level DB interactions.
+- **`surfboard/services/subscriptionService.ts`**: Low-level DB interactions.
   - `createOrUpdateSubscription`: The source of truth for DB state transitions.
-  - `isUserSubscribed`: Logic for access control (includes 1-day grace period).
-- **`computePeriod.ts`**: Date calculation engine.
+  - `getUserActiveSubscription` / `getUserAndActiveSub`: Access-control reads (grace-period logic, see §5).
+- **`surfboard/services/subscriptionAnalyticsService.ts`**: Admin-facing subscription analytics/reporting.
+- **`app/(projects)/(surfboard)/utils/computePeriod.ts`**: Date calculation engine (not moved into `surfboard/` — a small, dependency-free utility left in place during the Phase 2 folder move).
   - Determines `currentStart` and `currentEnd` based on `monthly`, `quarterly`, or `annually` intervals.
 
 ---
@@ -114,7 +119,7 @@ Sent every time a recurring payment succeeds.
 ## 5. Critical Logic & Business Rules
 
 ### The 1-Day Grace Period
-In `subscriptionActions.ts:isUserSubscribed()`, we allow users to access the platform for **24 hours** after their `currentEnd` date. This prevents immediate lockout due to minor payment delays or time-zone differences.
+`surfboard/services/subscriptionService.ts`'s internal `isSubActiveOrGrace()` (`GRACE_PERIOD_MS = 24 * 60 * 60 * 1000`) allows users to access the platform for **24 hours** after their `currentEnd` date. This prevents immediate lockout due to minor payment delays or time-zone differences. (The pre-rebuild source had a same-purpose `isUserSubscribed()` in `subscriptionActions.ts` — grep-confirmed dead with zero consumers during the Phase 2 migration, so it wasn't carried over; this is the function that actually runs today.)
 
 ### Platform Detection Logic (Hardened)
 

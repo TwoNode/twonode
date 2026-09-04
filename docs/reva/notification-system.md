@@ -1,5 +1,7 @@
 # REVA Notification System
 
+> **Paths current as of the 2026-08 rebuild, function list still accurate.** All functions listed below now live in `reva/services/notificationService.ts` (migrated from `revaActions.ts`, unchanged names/logic — see `docs/development-history/phases/phase-3-reva.md`), served through `GET/POST /api/v1/reva/notifications*`. `notifyReportReady`/`notifySystemAlert` were also extended during that migration to accept an email-keyed guest identity, not just `user.id` — closing the `OneTimeUserProperty` notification gap described in `./onetime-request-flow-review.md`.
+
 ## Overview
 
 A comprehensive notification system has been implemented for the REVA platform, providing real-time notifications for both users and administrators. The system includes beautiful UI components, database integration, and automatic notification triggers for various system events.

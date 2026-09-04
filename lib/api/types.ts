@@ -2,7 +2,7 @@ import type { NextResponse } from "next/server";
 
 /**
  * The one response envelope every /api/v1 route returns, across every product.
- * See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.1.
+ * See docs/development-history/ARCHITECTURE_REBUILD_PROPOSAL.md §4.1.
  */
 export type ApiSuccess<T> = { success: true; data: T; meta?: PaginationMeta };
 export type ApiFailure = {

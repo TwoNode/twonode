@@ -7,7 +7,7 @@ import { logger, type LogContext } from "@/lib/observability/logger";
  * Base class for anything a service or route handler intentionally throws
  * with a known HTTP mapping. withAuth() (and any route not using withAuth)
  * only ever needs to catch this one type, plus Prisma's own error class.
- * See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.7.
+ * See docs/development-history/ARCHITECTURE_REBUILD_PROPOSAL.md §4.7.
  */
 export class ApiError extends Error {
   status: number;

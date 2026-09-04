@@ -143,10 +143,16 @@ The system includes comprehensive error handling:
 
 The feature integrates with existing Paystack utilities:
 
+`PaymentVerification.tsx` itself calls the typed API client (not a direct server-action import — repointed during Phase 5's action-file retirement, see `docs/development-history/phases/phase-5-retirement.md`):
+
 ```typescript
-import { verifyPaystackTransaction } from "../../../reva/actions/paystackActions";
-import { updatePropertyTransactionStatus, updateOneTimeTransactionStatus } from "../../../reva/actions/dbActions";
+import { revaApi } from "@/reva/apiClient";
+
+await revaApi.admin.requests.verifyPayment(reference, isLive, "authenticated" /* or "oneTime" */);
+// → POST /api/v1/reva/admin/requests/:reference/verify-payment
 ```
+
+Server-side, that route still verifies against Paystack via `verifyPaystackTransaction` (`app/(projects)/(reva)/reva/actions/paystackActions.ts` — deliberately kept as a thin, shared server-side utility rather than migrated into a service, since Phase 5 confirmed it's still imported directly by `reva/services/paymentService.ts` too) and updates state through `reva/services/propertyRequestService.ts`'s `updatePropertyTransactionStatus`/`updateOneTimeTransactionStatus`.
 
 ## Future Enhancements
 
