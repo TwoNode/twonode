@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth/cookies";
 import { findUserById } from "@/lib/auth/userLookup";
 import {
+  getEncryptedUserData,
   getUserActiveSubscription,
   type EncryptedUserData,
 } from "@/utils/encryptedCookies";
@@ -61,6 +62,29 @@ export async function getNativeSessionAsLegacyUserData(
     role: user.role as any,
     subscription,
   };
+}
+
+/**
+ * Resolves session/role data for server components that need it in-process
+ * (dashboard shells, admin route guards), preferring the native session over
+ * the legacy Kinde cookie. Native login never writes the legacy cookie, so a
+ * legacy-only read leaves natively-authenticated users with no role data at
+ * all — an empty sidebar at best (DashboardShell) or a full lockout at worst
+ * (ServerProtectedAdminRoute redirecting them straight back to login). A
+ * Kinde login still gets an equivalent, current result either way, since its
+ * callback route dual-writes a native session alongside the legacy cookie.
+ *
+ * The /api/v1/{reva,surfboard}/session API routes intentionally keep the
+ * opposite (legacy-first) order for their own established reasons — this is
+ * a separate, in-process-only helper, not a replacement for those.
+ */
+export async function getEffectiveUserData(
+  platform: Platform
+): Promise<EncryptedUserData | null> {
+  return (
+    (await getNativeSessionAsLegacyUserData(platform)) ??
+    (await getEncryptedUserData())
+  );
 }
 
 /**

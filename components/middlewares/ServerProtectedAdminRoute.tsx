@@ -1,4 +1,5 @@
-import { getEncryptedUserData, isPlatformUser } from "@/utils/encryptedCookies";
+import { isPlatformUser } from "@/utils/encryptedCookies";
+import { getEffectiveUserData } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { Platform } from "@/utils/platform";
 import { canAccessRevaAdminPanel } from "@/permissions";
@@ -11,7 +12,11 @@ export default async function ServerProtectedAdminRoute({
   children,
 }: ServerProtectedAdminRouteProps) {
   try {
-    const userData = await getEncryptedUserData();
+    // Native session first, legacy Kinde cookie as fallback — a legacy-only
+    // read here locked natively-authenticated REVA admins out entirely
+    // (redirected to login regardless of their real role). See
+    // lib/auth/session.ts's getEffectiveUserData doc comment.
+    const userData = await getEffectiveUserData(Platform.REVA);
 
     if (!userData) {
       redirect("/reva-restricted/login");
