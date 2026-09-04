@@ -41,8 +41,8 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "absolute inset-0 z-50 h-screen transition-all ease-in-out duration-300",
-        "w-[240px] max-h-[944px] border-r shadow-lg",
+        "absolute inset-0 z-50 transition-all ease-in-out duration-300",
+        "w-[240px] border-r shadow-lg",
         sideBarWidthClass,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}

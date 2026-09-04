@@ -2,6 +2,14 @@
 
 This document describes the end-to-end journey of a survey plan, from the surveyor's dashboard to the final lodging with the Office of the State Surveyor General (OSSG), detailing both the user experience and the underlying technical architecture.
 
+> **Current file locations** (post 2026-08 rebuild — see `docs/development-history/phases/phase-2-surfboard.md`): every function named below now lives in one of four services under `surfboard/services/`, migrated with the same names, unchanged logic. There's no `codActions.ts` any more (deleted, see `docs/development-history/phases/phase-5-retirement.md`) — every "Function: `x`" reference below resolves to whichever of these four files owns it:
+> - **`planLockService.ts`** — `acquirePlanLock`, `releasePlanLock`, `getAndLockOldestAvailablePlan`, `canWorkOnPlan`, `getAndLockBatchForAccounts`/`ForIntake`/`ForRecordsII`, and the release/status counterparts of each.
+> - **`codFeeService.ts`** — `getChartingInterpretation`, `getZoneFromGeometry`, `calculatePlanFeeByZone`.
+> - **`remitaVerificationService.ts`** — `submitRedCopyBatch`, `verifyBatchPayment`, `verifyBatchPaymentWithLinks`, `verifyLASGReceiptLink`, `retryBatchPayment`, `uploadLASGReceipt`, `getCurrentPayerProfile`, and the batch list/read functions.
+> - **`batchApprovalService.ts`** — `updateAccountsApproval`, `updateChartingStatus`, `updateSurconStatus`, `updateRecordsIStatus`, `updateIntakeStatus`, `updateIntakeBatchStatus`, `updateRecordsIIStatus`, `markPlanArchived`, `checkAndDispatchQueries`, `resubmitQueriedPlan`, `submitPhysicalCopies`, and every per-role queue/history read.
+>
+> All four sit behind typed `/api/v1/surfboard/{cod,mda}/*` routes — see `docs/development-history/route-inventory.md` for the full route table. Every "Function: `x`" below is that function's *service-side* name; a client component reaches it via `surfboardApi.*` (`surfboard/apiClient.ts`) hitting the matching route, never by importing the service directly — see `docs/payment/subscription-payments-flow.md`'s note on this same pattern.
+
 ---
 
 ## 1. Constants & Configuration
@@ -11,7 +19,7 @@ This document describes the end-to-end journey of a survey plan, from the survey
 *   **Plan Types**: `PLAN_TYPES` (e.g., "APPROVED LAYOUT", "DEED").
 *   **Fee Rates**: `SURB_LGA_RATES` (Stored in `SurfboardSettings`).
 *   **System Charge**: `SYSTEM_CHARGE_PERCENT` (Default: 10%).
-*   **Lock Duration**: `LOCK_DURATION_MINUTES = 30`.
+*   **Lock Duration**: `LOCK_DURATION_MINUTES = 6` (per-plan locks — Accounts, Charting, SURCON, Records I). Intake and Records II use per-plan-in-batch locks instead, `3` minutes × the number of plans in the batch (`surfboard/services/planLockService.ts` — confirmed current values; both durations were previously misdocumented, as 3 and 30 minutes respectively, in different copies of this doc).
 
 ### B. Database Schema (Prisma)
 *   **`SurfboardPlan`**: Tracks approval status for all 6 roles (`accountsStatus`, `chartingStatus`, `surconStatus`, `recordsIStatus`, `intakeStatus`, `recordsIIStatus`) and lock metadata (`{role}LockedBy`, `{role}LockExpiresAt`).
@@ -91,7 +99,7 @@ This document describes the end-to-end journey of a survey plan, from the survey
 *   **Effect**: Once the user's receipt links are verified and the batch status moves to `LASG_PAID`, all MDA roles (Accounts, Charting, SURCON, Records I) are automatically notified, and plans become visible for review.
 
 #### Role-Based Review (Parallel)
-MDA admins process plans simultaneously. Each plan is **Locked** for 30 minutes when an admin starts reviewing it to prevent double-work.
+MDA admins process plans simultaneously. Each plan is **Locked** for 6 minutes when an admin starts reviewing it, to prevent double-work.
 *   **A. Accounts Admin**: Verify the payment via LASG receipt.
 *   **B. Charting Admin**: Confirm or edit **Charting Remarks**, copy coordinates.
 *   **C. SURCON Admin**: Confirm pillar numbers and coordinates against the database.

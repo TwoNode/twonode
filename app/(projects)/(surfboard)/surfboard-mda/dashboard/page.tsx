@@ -457,7 +457,7 @@ export default function MDADashboardHome() {
             >
               <Link href={stat.href}>
                 <div
-                  className={`relative overflow-hidden rounded-2xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer ${(stat as any).isPrimary
+                  className={`relative overflow-hidden rounded-2xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer ${(stat as any).isPrimary
                     ? "ring-2 ring-offset-2 dark:ring-offset-[#0B1A26] ring-purple-500"
                     : ""
                     }`}
@@ -519,7 +519,7 @@ export default function MDADashboardHome() {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <Link href={action.href}>
-                    <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
+                    <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
                       <div className="flex items-start gap-4">
                         <div
                           className={`p-3 rounded-xl ${action.iconBg} group-hover:scale-110 transition-transform duration-300`}
@@ -562,7 +562,7 @@ export default function MDADashboardHome() {
             transition={{ duration: 0.3, delay: quickActions.length * 0.05 }}
           >
             <Link href="/surfboard-mda/dashboard/profile">
-              <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/[0.03] p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
+              <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-white/3 p-6 shadow-md dark:shadow-none hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-white/10 cursor-pointer">
                 <div className="flex items-start gap-4">
                   <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-500/20 group-hover:scale-110 transition-transform duration-300">
                     <User className="w-6 h-6 text-slate-600 dark:text-slate-300" />

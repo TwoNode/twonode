@@ -85,7 +85,7 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: `${ADMIN_BASE}/user-management`, label: "User Management", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/kyc`, label: "Surveyor's KYC", icon: Shield, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
-  { path: `${ADMIN_BASE}/cod`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/cod/batches`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights" },
   { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights" },

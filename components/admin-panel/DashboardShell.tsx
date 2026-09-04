@@ -129,7 +129,7 @@ export function DashboardShell({
       <div
         className={cn(
           "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
-          "flex"
+          "flex overflow-hidden"
         )}
         style={{ background: theme === "dark" ? "#0B1A26" : colorPalette.background.paper }}
       >

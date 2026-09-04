@@ -1,5 +1,7 @@
 # OneTime Request Flow Review
 
+> **Historical — the critical issues below are resolved.** This review pre-dates the 2026-08 architecture rebuild. Per `docs/development-history/phases/phase-3-reva.md`: the guest tracking page **does exist** (`app/(projects)/reva/onetimerequest/page.tsx` — the review below was written before this was found), and the email-notification gap for `OneTimeUserProperty` approvals was closed with a real email-keyed `Notification` path (no longer silently commented out). See [`./user-flow.md`](./user-flow.md) for REVA's current guest-request flow, and the phase-3 doc for exactly what was fixed and why. Kept here for the historical problem analysis, not as current status.
+
 ## Overview
 This document provides a comprehensive review of the OneTime request flow, specifically focusing on report upload, approval, and client notification processes in the REVA system.
 

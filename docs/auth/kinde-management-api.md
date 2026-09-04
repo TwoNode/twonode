@@ -1,5 +1,7 @@
 # Enhanced Kinde Management API Implementation
 
+> **Retired — kept for historical record only.** `adminDbActions.ts`, the file this document describes, was deleted during Phase 5 (Retirement) of the 2026-08 rebuild (`docs/development-history/phases/phase-5-retirement.md`); its callers were repointed onto `reva/services/adminUserService.ts` / `/api/v1/reva/admin/users*`, which manage admin accounts directly against `RevaUser` in this app's own database rather than through Kinde's separate Management API. Confirmed via a repo-wide search: no `KindeApiClient` class, nor any of the methods below, exists anywhere in the current codebase. If REVA admin-user management via Kinde's API is needed again in the future, this document is a reasonable starting reference for re-implementing it — it does not describe anything currently running.
+
 ## Overview
 
 This document describes the comprehensive implementation of the Kinde Management API in the `adminDbActions.ts` file, following the official [Kinde Management API documentation](https://docs.kinde.com/kinde-apis/management/#tag/users).

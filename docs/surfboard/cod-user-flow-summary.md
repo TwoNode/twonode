@@ -58,7 +58,7 @@ This document describes the end-to-end journey of a survey plan, from the survey
 
 ### Role-Based Review (Parallel)
 
-MDA admins process plans simultaneously. Each plan is **Locked** for 3 minutes when an admin starts reviewing it to prevent double-work.
+MDA admins process plans simultaneously. Each plan is **Locked** for 6 minutes when an admin starts reviewing it to prevent double-work (`surfboard/services/planLockService.ts:LOCK_DURATION_MINUTES`).
 
 #### A. Accounts Admin
 
