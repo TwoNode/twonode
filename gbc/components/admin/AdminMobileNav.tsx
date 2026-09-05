@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { GBC_ROUTES } from "@/gbc/access/routes";
@@ -34,11 +34,14 @@ export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
       </button>
       <h1 className="text-lg font-bold text-gray-900">{title}</h1>
 
-      <LogoutLink postLogoutRedirectURL="/api/auth/logout_redirect" className="ml-auto">
-        <Button variant="outline" size="sm" className="w-full sm:w-auto">
-          Sign Out
-        </Button>
-      </LogoutLink>
+      <ConfirmedLogoutLink
+        postLogoutRedirectURL="/api/auth/logout_redirect"
+        trigger={
+          <Button variant="outline" size="sm" className="ml-auto w-full sm:w-auto">
+            Sign Out
+          </Button>
+        }
+      />
     </div>
   );
 }

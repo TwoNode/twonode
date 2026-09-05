@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Platform } from "@/utils/platform";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 
 interface UserData {
   platform: string;
@@ -97,15 +98,17 @@ export default function SurfboardSuperAdminPage() {
                 >
                   Admin Dashboard
                 </button>
-                <button
-                  onClick={() => {
+                <ConfirmedLogoutLink
+                  onConfirm={() => {
                     fetch("/api/auth/logout_redirect");
                     router.push("/surfboard-restricted/login");
                   }}
-                  className="shrink-0 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
+                  trigger={
+                    <button className="shrink-0 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                      Logout
+                    </button>
+                  }
+                />
               </div>
             </div>
           </div>

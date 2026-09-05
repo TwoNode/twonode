@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { Button } from "@/components/ui/button";
 import { GBC_ROUTES } from "@/gbc/access/routes";
 import { GBC_COLORS } from "@/gbc/colors";
@@ -112,18 +112,18 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
           );
         })}
 
-        <LogoutLink
+        <ConfirmedLogoutLink
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          className="mt-5 flex items-center gap-3 rounded-lg transition text-sm sm:text-base"
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full px-3 py-2.5 sm:py-2 bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white"
-          >
-            Sign Out
-          </Button>
-        </LogoutLink>
+          trigger={
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-5 w-full px-3 py-2.5 sm:py-2 bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white"
+            >
+              Sign Out
+            </Button>
+          }
+        />
       </nav>
     </aside>
   );

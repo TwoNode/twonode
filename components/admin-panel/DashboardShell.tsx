@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { useTheme } from "@/hooks/useTheme";
 import { Platform } from "@/utils/platform";
 import { Menu, LogOut } from "lucide-react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import type { MenuItem } from "@/components/sidebars/menu";
 import {
@@ -77,15 +77,20 @@ export function DashboardShell({
     ...navItems,
     {
       element: (
-        <LogoutLink
+        <ConfirmedLogoutLink
           key="logout"
           postLogoutRedirectURL={logoutRedirectUrl}
-          aria-label="Logout"
-          title="Logout"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
-        >
-          <LogOut className="h-4 w-4" />
-        </LogoutLink>
+          trigger={
+            <button
+              type="button"
+              aria-label="Logout"
+              title="Logout"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          }
+        />
       ),
     },
   ];

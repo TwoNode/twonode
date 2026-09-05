@@ -19,7 +19,7 @@ import {
   Menu,
   QrCode,
 } from "lucide-react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
@@ -295,15 +295,20 @@ export default function SurfboardUserPanelLayout({
     },
     {
       element: (
-        <LogoutLink
+        <ConfirmedLogoutLink
           key="logout"
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          aria-label="Logout"
-          title="Logout"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
-        >
-          <LogOut className="h-4 w-4" />
-        </LogoutLink>
+          trigger={
+            <button
+              type="button"
+              aria-label="Logout"
+              title="Logout"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          }
+        />
       ),
       requiresSubscription: false,
     },
