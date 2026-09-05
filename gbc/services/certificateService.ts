@@ -17,7 +17,10 @@ export async function sendBulkCertificates(ticketNumbers: string[], emailBody: s
     throw new ValidationError({ ticketNumbers: "No tickets selected" });
   }
 
-  const tickets = await prisma.gBCTicket.findMany({ where: { ticketNumber: { in: ticketNumbers } } });
+  const tickets = await prisma.gBCTicket.findMany({
+    where: { ticketNumber: { in: ticketNumbers } },
+    include: { editionRef: true },
+  });
   if (!tickets.length) {
     throw new ValidationError({ ticketNumbers: "No valid tickets found" });
   }
@@ -26,7 +29,7 @@ export async function sendBulkCertificates(ticketNumbers: string[], emailBody: s
   let failCount = 0;
 
   for (const ticket of tickets) {
-    const emailResult = await sendGBCCertificateEmail(ticket.name, ticket.email, ticket.ticketNumber, emailBody);
+    const emailResult = await sendGBCCertificateEmail(ticket, emailBody);
     if (emailResult.success) {
       await prisma.gBCTicket.update({ where: { id: ticket.id }, data: { certificateSentCount: { increment: 1 } } });
       successCount++;

@@ -367,7 +367,7 @@ export async function getTicketAvailability() {
 }
 
 export async function getTicketByNumber(ticketNumber: string) {
-  const ticket = await prisma.gBCTicket.findFirst({ where: { ticketNumber } });
+  const ticket = await prisma.gBCTicket.findFirst({ where: { ticketNumber }, include: { editionRef: true } });
   if (!ticket) throw new NotFoundError("Ticket");
   return ticket;
 }

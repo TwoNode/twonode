@@ -71,6 +71,23 @@ export async function generateQRCode(ticketData: TicketData): Promise<string> {
 }
 
 /**
+ * Generate a plain verification QR code for a URL — used by the certificate
+ * PDF, distinct from generateQRCode/generateQRData above which encode a
+ * signed check-in payload for gate scanning. A certificate's QR just needs
+ * to open the public certificate page, which does its own ticket lookup, so
+ * there's no hash/timestamp payload to verify here.
+ */
+export async function generateVerificationQRDataURL(url: string): Promise<string> {
+  return QRCode.toDataURL(url, {
+    errorCorrectionLevel: "M",
+    type: "image/png",
+    width: 300,
+    margin: 1,
+    color: { dark: "#1A1024", light: "#FFFFFF" },
+  });
+}
+
+/**
  * Generate QR code as buffer (for email attachments)
  */
 export async function generateQRCodeBuffer(
