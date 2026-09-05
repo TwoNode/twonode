@@ -92,7 +92,7 @@ export function Menu({
   // the footer live outside it as a `shrink-0` sibling in a `nav` that
   // itself gets the sidebar's full real height, fixes that.
   return (
-    <nav className="pt-4 h-full w-full flex flex-col box-border">
+    <nav className="pt-4 pb-4 h-full w-full flex flex-col box-border">
       <ScrollArea className="bg-transparent [&>div>div[style]]:block! min-h-0 flex-1">
         <ul className="flex flex-col gap-1 items-start px-2 justify-center w-full">
           {linkItems.map((item, index) => {
