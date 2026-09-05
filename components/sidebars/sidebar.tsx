@@ -65,7 +65,7 @@ export function Sidebar({
         "absolute inset-0 z-50 transition-all ease-in-out duration-300",
         "w-[240px] border-r shadow-lg",
         sideBarWidthClass,
-        sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
       style={{
         background: SIDEBAR_INK,
@@ -100,7 +100,7 @@ export function Sidebar({
           </div>
         )}
 
-        <div className="flex-1 min-h-0 px-2">
+        <div className="flex-1 flex flex-col min-h-0 px-2">
           {primaryAction && (
             <div className="px-1 pb-2 pt-3">
               <Link
@@ -115,19 +115,24 @@ export function Sidebar({
                   }, ${colorPalette.primary.main})`,
                 }}
               >
-                {primaryAction.icon && <primaryAction.icon className="h-4 w-4" />}
+                {primaryAction.icon && (
+                  <primaryAction.icon className="h-4 w-4" />
+                )}
                 {primaryAction.label}
               </Link>
             </div>
           )}
-          <Menu
-            items={items}
-            userImageUrl={userImageUrl}
-            userName={userName}
-            userRole={userRole}
-            colorPalette={colorPalette}
-            variant="dark"
-          />
+
+          <div className="flex-1">
+            <Menu
+              items={items}
+              userImageUrl={userImageUrl}
+              userName={userName}
+              userRole={userRole}
+              colorPalette={colorPalette}
+              variant="dark"
+            />
+          </div>
         </div>
       </div>
     </aside>
