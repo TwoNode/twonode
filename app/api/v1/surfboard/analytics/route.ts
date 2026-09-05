@@ -8,6 +8,7 @@ import {
   getTimeTrend,
   getUserDashboardAnalytics,
   type AnalyticsDimension,
+  type AnalyticsDateRange,
 } from "@/surfboard/services/analyticsService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
@@ -26,6 +27,16 @@ export const GET = withAuth<SurfboardRole>(
     const section = req.nextUrl.searchParams.get("section") ?? "stats";
     const scope = { role: ctx.session.role, userId: ctx.session.sub };
 
+    const dateFromParam = req.nextUrl.searchParams.get("dateFrom");
+    const dateToParam = req.nextUrl.searchParams.get("dateTo");
+    const range: AnalyticsDateRange | undefined =
+      dateFromParam || dateToParam
+        ? {
+            from: dateFromParam ? new Date(dateFromParam) : undefined,
+            to: dateToParam ? new Date(dateToParam) : undefined,
+          }
+        : undefined;
+
     if (section === "stats") {
       return NextResponse.json({ success: true, data: await getStatCards(scope) });
     }
@@ -37,7 +48,7 @@ export const GET = withAuth<SurfboardRole>(
       }
       return NextResponse.json({
         success: true,
-        data: await getDimensionBreakdown(scope, dimension as AnalyticsDimension),
+        data: await getDimensionBreakdown(scope, dimension as AnalyticsDimension, range),
       });
     }
 
@@ -50,7 +61,10 @@ export const GET = withAuth<SurfboardRole>(
     }
 
     if (section === "dashboard") {
-      return NextResponse.json({ success: true, data: await getUserDashboardAnalytics(ctx.session.sub) });
+      return NextResponse.json({
+        success: true,
+        data: await getUserDashboardAnalytics(ctx.session.sub, range),
+      });
     }
 
     throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend|dashboard" });

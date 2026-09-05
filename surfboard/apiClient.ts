@@ -71,6 +71,17 @@ function buildPlanListQuery(
   return sp.toString();
 }
 
+export type AnalyticsDateRangeParam = { dateFrom?: string | Date; dateTo?: string | Date };
+
+/** Appends `&dateFrom=...&dateTo=...` (URL-encoded, ISO) when either bound is set — shared by every analytics.* call that takes a date range. */
+function dateRangeQuery(range?: AnalyticsDateRangeParam): string {
+  const sp = new URLSearchParams();
+  if (range?.dateFrom) sp.set("dateFrom", new Date(range.dateFrom).toISOString());
+  if (range?.dateTo) sp.set("dateTo", new Date(range.dateTo).toISOString());
+  const qs = sp.toString();
+  return qs ? `&${qs}` : "";
+}
+
 export type PlanFilters = {
   search?: string;
   status?: string[];
@@ -888,9 +899,9 @@ export const surfboardApi = {
     /** ADMIN/SUPERADMIN get the full-population view, USER gets their own plans only (scoped server-side). */
     stats: () => jsonFetch<StatCards>(`${BASE}/analytics?section=stats`),
 
-    dimension: (dimension: AnalyticsDimension) =>
+    dimension: (dimension: AnalyticsDimension, range?: AnalyticsDateRangeParam) =>
       jsonFetch<DimensionBreakdownRow[]>(
-        `${BASE}/analytics?section=dimension&dimension=${dimension}`,
+        `${BASE}/analytics?section=dimension&dimension=${dimension}${dateRangeQuery(range)}`,
       ),
 
     lodgementTrend: () =>
@@ -899,8 +910,9 @@ export const surfboardApi = {
     timeTrend: () =>
       jsonFetch<TimeTrendPoint[]>(`${BASE}/analytics?section=time-trend`),
 
-    /** Own-plans-only dashboard analytics (facilitator/LGA/pillar breakdowns + pending certificates). */
-    dashboard: () => jsonFetch<any>(`${BASE}/analytics?section=dashboard`),
+    /** Own-plans-only dashboard analytics (facilitator/LGA/pillar breakdowns + pending certificates). Filtered by `dateOnSurveyPlan` when a range is given. */
+    dashboard: (range?: AnalyticsDateRangeParam) =>
+      jsonFetch<any>(`${BASE}/analytics?section=dashboard${dateRangeQuery(range)}`),
 
     /** MDA stage roles use this instead — queue depth/time-in-stage, not the platform-wide numbers above. */
     mdaStageStats: () =>

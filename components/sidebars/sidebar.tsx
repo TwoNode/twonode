@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Menu, MenuProps } from "@/components/sidebars/menu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -19,6 +21,12 @@ export interface SidebarProps extends MenuProps {
    */
   title?: string;
   logoSrc?: string;
+  /**
+   * Big call-to-action button pinned above the nav list (e.g. "New Plan"),
+   * pulled out of the ordinary link items so it reads as the primary action
+   * instead of just another menu row.
+   */
+  primaryAction?: { label: string; href: string; icon?: LucideIcon };
 }
 
 /**
@@ -37,6 +45,7 @@ export function Sidebar({
   sideBarWidthClass,
   title,
   logoSrc,
+  primaryAction,
 }: SidebarProps) {
   const sidebar = useStore(useSidebar, (x) => x);
 
@@ -64,12 +73,6 @@ export function Sidebar({
       }}
     >
       <div className="relative h-full justify-between flex flex-col overflow-y-auto">
-        {/* Top decorative element — tinted by the active product's accent */}
-        <div
-          className="absolute top-0 left-0 right-0 h-1 rounded-b-full opacity-70"
-          style={{ background: colorPalette.sidebar.itemBorderLeft }}
-        ></div>
-
         {title && (
           <div
             className="shrink-0 flex items-center justify-between gap-2 px-4 py-4 border-b"
@@ -98,6 +101,25 @@ export function Sidebar({
         )}
 
         <div className="flex-1 min-h-0 px-2">
+          {primaryAction && (
+            <div className="px-1 pb-2 pt-3">
+              <Link
+                href={primaryAction.href}
+                onClick={() => sidebar?.toggleOpen()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg shadow-black/30 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: `linear-gradient(120deg, ${
+                    "dark" in colorPalette.primary
+                      ? colorPalette.primary.dark
+                      : colorPalette.primary.main
+                  }, ${colorPalette.primary.main})`,
+                }}
+              >
+                {primaryAction.icon && <primaryAction.icon className="h-4 w-4" />}
+                {primaryAction.label}
+              </Link>
+            </div>
+          )}
           <Menu
             items={items}
             userImageUrl={userImageUrl}
@@ -107,12 +129,6 @@ export function Sidebar({
             variant="dark"
           />
         </div>
-
-        {/* Bottom decorative element */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full opacity-40"
-          style={{ background: colorPalette.sidebar.itemBorderLeft }}
-        ></div>
       </div>
     </aside>
   );

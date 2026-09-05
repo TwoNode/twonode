@@ -1,26 +1,38 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { FiUsers, FiMapPin, FiClock, FiFileText, FiPieChart, FiLayers } from 'react-icons/fi';
+import { Layers, FileText, Clock, MapPin } from 'lucide-react';
 import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
-import { StatsCard } from './StatsCard';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { surfboardApi } from '@/surfboard/apiClient';
+import { SURFBOARD_COLORS } from '@/surfboard/colors';
+import type { DateRangeValue } from '@/components/dashboard/DateRangeFilter';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
 import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
 
-export function AnalyticsDashboard() {
+const AREA_DIMENSIONS = [
+  { id: 'lga', label: 'LGA' },
+  { id: 'lcda', label: 'LCDA' },
+  { id: 'ward', label: 'Ward' },
+] as const;
+type AreaDimension = (typeof AREA_DIMENSIONS)[number]['id'];
+
+export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wardStats, setWardStats] = useState<DimensionBreakdownRow[]>([]);
   const [lcdaStats, setLcdaStats] = useState<DimensionBreakdownRow[]>([]);
+  const [areaDimension, setAreaDimension] = useState<AreaDimension>('lga');
 
   useEffect(() => {
+    const range = { dateFrom: dateRange?.from, dateTo: dateRange?.to };
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const result = await surfboardApi.analytics.dashboard();
+        const result = await surfboardApi.analytics.dashboard(range);
 
         if (result.success) {
           setAnalytics(result.data);
@@ -39,11 +51,14 @@ export function AnalyticsDashboard() {
 
     // Ward/LCDA breakdowns come from the newer generic dimension endpoint —
     // fetched separately so a failure here never blocks the main dashboard.
+    // Both are fetched unconditionally (not just the selected one) so the
+    // "Unique Wards/LCDAs" tiles and the dimension toggle below never need
+    // a second round-trip when the user switches tabs.
     const fetchAreaBreakdowns = async () => {
       try {
         const [wardResult, lcdaResult] = await Promise.all([
-          surfboardApi.analytics.dimension('ward'),
-          surfboardApi.analytics.dimension('lcda'),
+          surfboardApi.analytics.dimension('ward', range),
+          surfboardApi.analytics.dimension('lcda', range),
         ]);
         if (wardResult.success) setWardStats(wardResult.data);
         if (lcdaResult.success) setLcdaStats(lcdaResult.data);
@@ -53,19 +68,19 @@ export function AnalyticsDashboard() {
     };
 
     fetchAreaBreakdowns();
-  }, []);
+  }, [dateRange?.from, dateRange?.to]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0077B6]"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-400 p-4">
+      <div className="bg-red-50 border-l-4 border-red-400 p-4 dark:bg-red-500/10 dark:border-red-500/60">
         <div className="flex">
           <div className="shrink-0">
             <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -73,7 +88,7 @@ export function AnalyticsDashboard() {
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         </div>
       </div>
@@ -83,7 +98,7 @@ export function AnalyticsDashboard() {
   if (!analytics) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No analytics data available</p>
+        <p className="text-gray-500 dark:text-gray-400">No analytics data available</p>
       </div>
     );
   }
@@ -109,65 +124,94 @@ export function AnalyticsDashboard() {
     value: item.count,
   }));
 
-  const pillarData = analytics.pillarStats.map((item, index) => ({
-    label: item.type,
-    value: item.count,
-    color: generateColors(analytics.pillarStats.length)[index],
-  }));
+  const areaDataByDimension: Record<AreaDimension, typeof lgaData> = {
+    lga: lgaData,
+    lcda: lcdaData,
+    ward: wardData,
+  };
 
-  const regularPillars = analytics.pillarStats.find(p => p.isRegular)?.count || 0;
-  const specialPillars = analytics.pillarStats.reduce((sum, p) => sum + (p.isRegular ? 0 : p.count), 0);
+  const areaCountByDimension: Record<AreaDimension, number> = {
+    lga: analytics.lgaStats.length,
+    lcda: lcdaStats.length,
+    ward: wardStats.length,
+  };
+
+  const regularPillars = analytics.pillarStats.find((p: any) => p.isRegular)?.count || 0;
+  const specialPillars = analytics.pillarStats.reduce((sum: number, p: any) => sum + (p.isRegular ? 0 : p.count), 0);
   const totalPillars = regularPillars + specialPillars;
-  
+
   const pillarTypeData = [
     { label: 'Regular', value: regularPillars, color: '#10B981' },
     { label: 'Special', value: specialPillars, color: '#F59E0B' },
   ];
 
+  const totalRecords = analytics.totalPlansCount + analytics.provisionalPlansCount;
+  const provisionalShare = totalRecords > 0 ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100) : 0;
+  const avgPerArea = (count: number) => (count > 0 ? (analytics.totalPlansCount / count).toFixed(1) : '—');
+
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
+      {/* Stats Overview — each tile now carries a breakdown line for context instead of a bare number */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Plans"
+        <StatCard
+          label="Total Plans"
           value={analytics.totalPlansCount}
-          icon={<FiLayers className="w-6 h-6" />}
-          color="blue"
+          breakdown={`${analytics.provisionalPlansCount} provisional (${provisionalShare}% of all records)`}
+          icon={Layers}
+          tone="brand"
+          accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
         />
-        
-        <StatsCard
-          title="Provisional Plans"
+
+        <StatCard
+          label="Provisional Plans"
           value={analytics.provisionalPlansCount}
-          icon={<FiFileText className="w-6 h-6" />}
-          color="orange"
+          breakdown={`${provisionalShare}% of ${totalRecords} total records`}
+          icon={FileText}
+          tone="warning"
         />
-        
-        <StatsCard
-          title="Pending Certificates"
+
+        <StatCard
+          label="Pending Certificates"
           value={analytics.pendingCertificates.length}
-          icon={<FiClock className="w-6 h-6" />}
-          color="red"
+          breakdown="Awaiting approval"
+          icon={Clock}
+          tone="warning"
         />
-        
-        <StatsCard
-          title="Unique LGAs"
+
+        <StatCard
+          label="Facilitators"
+          value={analytics.facilitatorStats.length}
+          breakdown={
+            analytics.facilitatorStats[0]
+              ? `Top: ${analytics.facilitatorStats[0].facilitator} (${analytics.facilitatorStats[0].count})`
+              : undefined
+          }
+          icon={Layers}
+          tone="info"
+        />
+
+        <StatCard
+          label="Unique LGAs"
           value={analytics.lgaStats.length}
-          icon={<FiMapPin className="w-6 h-6" />}
-          color="green"
+          breakdown={`~${avgPerArea(analytics.lgaStats.length)} records per LGA`}
+          icon={MapPin}
+          tone="success"
         />
 
-        <StatsCard
-          title="Unique LCDAs"
+        <StatCard
+          label="Unique LCDAs"
           value={lcdaStats.length}
-          icon={<FiMapPin className="w-6 h-6" />}
-          color="purple"
+          breakdown={`~${avgPerArea(lcdaStats.length)} records per LCDA`}
+          icon={MapPin}
+          tone="success"
         />
 
-        <StatsCard
-          title="Unique Wards"
+        <StatCard
+          label="Unique Wards"
           value={wardStats.length}
-          icon={<FiMapPin className="w-6 h-6" />}
-          color="blue"
+          breakdown={`~${avgPerArea(wardStats.length)} records per ward`}
+          icon={MapPin}
+          tone="success"
         />
       </div>
 
@@ -182,31 +226,32 @@ export function AnalyticsDashboard() {
           maxItems={8}
         />
 
-        {/* LGA Distribution */}
+        {/* Area distribution — one chart, switchable between LGA / LCDA / Ward instead of three parallel copies */}
         <BarChart
-          title="Records by LGA"
-          subtitle="Records distribution across Local Government Areas"
-          data={lgaData}
+          title={`Records by ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}`}
+          subtitle={`${areaCountByDimension[areaDimension]} unique ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}${areaCountByDimension[areaDimension] === 1 ? '' : 's'} · toggle to compare`}
+          data={areaDataByDimension[areaDimension]}
           height={400}
           maxItems={8}
-        />
-
-        {/* LCDA Distribution */}
-        <BarChart
-          title="Records by LCDA"
-          subtitle="Records distribution across Local Council Development Areas"
-          data={lcdaData}
-          height={400}
-          maxItems={8}
-        />
-
-        {/* Ward Distribution */}
-        <BarChart
-          title="Records by Ward"
-          subtitle="Records distribution across wards"
-          data={wardData}
-          height={400}
-          maxItems={8}
+          showMultiVariable={areaDimension !== 'lga'} // Show multi-variable for LCDA and Ward
+          actions={
+            <div className="inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/10 dark:bg-white/5">
+              {AREA_DIMENSIONS.map((dim) => (
+                <button
+                  key={dim.id}
+                  type="button"
+                  onClick={() => setAreaDimension(dim.id)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    areaDimension === dim.id
+                      ? 'bg-white text-[#023E8A] shadow-sm dark:bg-white/10 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {dim.label}
+                </button>
+              ))}
+            </div>
+          }
         />
 
         {/* Pillar Type Analysis */}
@@ -232,7 +277,7 @@ export function AnalyticsDashboard() {
           maxItems={12}
         />
       </div>
-      
+
       {/* Pending Certificates Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">

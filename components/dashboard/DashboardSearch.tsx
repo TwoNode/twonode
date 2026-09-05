@@ -23,6 +23,12 @@ export interface DashboardSearchProps {
   minChars?: number;
   debounceMs?: number;
   className?: string;
+  /**
+   * "default" (light input, adapts to page dark mode) or "translucent" —
+   * frosted glass on a dark/colored navbar, so the field reads as part of
+   * the bar instead of a plain white box floating on top of it.
+   */
+  variant?: "default" | "translucent";
 }
 
 /**
@@ -37,6 +43,7 @@ export function DashboardSearch({
   minChars = 2,
   debounceMs = 300,
   className,
+  variant = "default",
 }: DashboardSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -91,6 +98,7 @@ export function DashboardSearch({
 
   const trimmed = query.trim();
   const showDropdown = open && trimmed.length >= minChars;
+  const isTranslucent = variant === "translucent";
 
   function goTo(href: string) {
     setOpen(false);
@@ -101,12 +109,13 @@ export function DashboardSearch({
     <div ref={containerRef} className={cn("relative w-full max-w-xs", className)}>
       <div
         className={cn(
-          "flex h-10 items-center gap-2 rounded-xl border px-3 text-sm",
-          "border-gray-200 bg-white text-gray-500 focus-within:border-gray-300",
-          "dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:focus-within:border-white/20"
+          "flex h-10 items-center gap-2 rounded-xl border px-3 text-sm transition-colors",
+          isTranslucent
+            ? "border-white/15 bg-white/10 text-white/70 focus-within:border-white/30 focus-within:bg-white/15"
+            : "border-gray-200 bg-white text-gray-500 focus-within:border-gray-300 dark:border-white/10 dark:bg-white/5 dark:text-gray-400 dark:focus-within:border-white/20"
         )}
       >
-        <Search className="h-4 w-4 flex-shrink-0" />
+        <Search className={cn("h-4 w-4 shrink-0", isTranslucent && "text-white/60")} />
         <input
           value={query}
           onChange={(e) => {
@@ -121,9 +130,18 @@ export function DashboardSearch({
             }
           }}
           placeholder={placeholder}
-          className="w-full bg-transparent text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
+          className={cn(
+            "w-full bg-transparent outline-none",
+            isTranslucent
+              ? "text-white placeholder:text-white/50"
+              : "text-gray-900 placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-500"
+          )}
         />
-        {loading && <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin" />}
+        {loading && (
+          <Loader2
+            className={cn("h-3.5 w-3.5 shrink-0 animate-spin", isTranslucent && "text-white/70")}
+          />
+        )}
       </div>
 
       {showDropdown && (
