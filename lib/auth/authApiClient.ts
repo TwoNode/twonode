@@ -47,3 +47,17 @@ export function resetPassword(input: {
 }): Promise<ApiResult<{ message: string }>> {
   return jsonFetch("/api/v1/auth/reset-password", input);
 }
+
+export function verifyEmail(input: {
+  platform: Platform;
+  token: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/verify-email", input);
+}
+
+export function resendVerification(input: {
+  platform: Platform;
+  email: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/resend-verification", input);
+}

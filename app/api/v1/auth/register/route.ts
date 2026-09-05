@@ -11,6 +11,7 @@ import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit
 import { validateBody } from "@/lib/api/validate";
 import { ConflictError, handleApiError } from "@/lib/api/errors";
 import { findUserByEmail, createNativeUser } from "@/lib/auth/userLookup";
+import { issueAndSendVerificationEmail } from "@/lib/auth/emailVerification";
 
 const registerSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -45,6 +46,16 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await createNativeUser(platform, { email, passwordHash, firstName, lastName });
+
+    // Nudge-only (§ email-verification decision): a delivery hiccup here
+    // must never block account creation, so this is best-effort — the
+    // account is still usable unverified, and the resend endpoint covers
+    // a lost/failed email.
+    try {
+      await issueAndSendVerificationEmail(platform, user);
+    } catch (err) {
+      console.error("Failed to send verification email on registration:", err);
+    }
 
     const familyId = crypto.randomUUID();
     const rawRefreshToken = crypto.randomBytes(32).toString("hex");
