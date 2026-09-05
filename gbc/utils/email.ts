@@ -24,6 +24,8 @@ interface GBCTicketEmailData {
   eventDate: string;
   eventLocation: string;
   eventVenue: string;
+  /** Attached alongside the QR ticket when payment verification generated one — see ensureQRAndEmail. */
+  receiptPdfBuffer?: Buffer;
 }
 
 /**
@@ -279,7 +281,10 @@ export async function sendGBCTicketConfirmation(
           content: base64Data,
           encoding: 'base64',
           cid: 'qrcode@twonodetechnologies.com'
-        }
+        },
+        ...(data.receiptPdfBuffer
+          ? [{ filename: `GBC-Receipt-${data.ticketNumber}.pdf`, content: data.receiptPdfBuffer, contentType: "application/pdf" }]
+          : [])
       ]
     });
 
