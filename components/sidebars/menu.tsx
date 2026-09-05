@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export function Menu({
   const pathname = usePathname();
   const sidebar = useStore(useSidebar, (x) => x);
   const isDark = variant === "dark";
+  const [avatarError, setAvatarError] = useState(false);
 
   // The trailing Logout element item is pulled out of the scrollable nav
   // list and rendered together with the avatar in the pinned-bottom footer
@@ -242,7 +244,7 @@ export function Menu({
       >
           <div className="flex items-center gap-2.5">
             <div className="relative shrink-0">
-              {userImageUrl ? (
+              {userImageUrl && !avatarError ? (
                 <img
                   className="h-10 w-10 rounded-full border-2 object-cover shadow-md"
                   style={{
@@ -250,10 +252,22 @@ export function Menu({
                   }}
                   src={userImageUrl}
                   alt="User avatar"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
+                  onError={() => setAvatarError(true)}
                 />
+              ) : userName ? (
+                // Google-style fallback: first letter of the user's name on a colored circle.
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold shadow-md"
+                  style={{
+                    background: `linear-gradient(to bottom right, ${colors.primary.main}, ${
+                      "dark" in colors.primary ? colors.primary.dark : colors.primary.main
+                    })`,
+                    borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
+                    color: "#fff",
+                  }}
+                >
+                  {userName.charAt(0).toUpperCase()}
+                </div>
               ) : (
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-md"

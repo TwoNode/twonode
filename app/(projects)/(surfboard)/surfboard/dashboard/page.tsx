@@ -17,6 +17,7 @@ import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
+import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -51,6 +52,7 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRangeValue>({});
 
   const fetchData = async () => {
     try {
@@ -58,11 +60,12 @@ export default function DashboardHome() {
       setRefreshing(true);
       setError(null);
 
+      const dateFilters = { dateFrom: dateRange.from, dateTo: dateRange.to };
       const [plansResult, sharedResult, sharedWithMeResult] = await Promise.all(
         [
-          surfboardApi.plans.list({ noPagination: true }),
-          surfboardApi.plans.shared(),
-          surfboardApi.plans.sharedWithMe(),
+          surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
+          surfboardApi.plans.shared(undefined, undefined, dateFilters),
+          surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
         ]
       );
 
@@ -129,7 +132,8 @@ export default function DashboardHome() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange.from, dateRange.to]);
 
   const handleRefresh = () => {
     fetchData();
@@ -150,20 +154,6 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-6">
-      {/* Utility row — refresh sits above the hero since the hero's one CTA slot is New Plan */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FiRefreshCw
-            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </button>
-      </div>
-
       <DashboardHero
         greeting="Welcome back."
         title="Dashboard"
@@ -173,9 +163,14 @@ export default function DashboardHome() {
           `${stats.sharedPlans} Shared`,
           `${stats.pending} Pending`,
         ]}
-        gradient={`linear-gradient(120deg, ${SURFBOARD_COLORS.primary.dark}, ${SURFBOARD_COLORS.primary.main})`}
+        gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
         cta={{ label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus }}
       />
+
+      {/* Date-range filter — scopes every stat, chart, and list below to plans whose dateOnSurveyPlan falls in range */}
+      <div className="flex justify-end">
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,40 +203,40 @@ export default function DashboardHome() {
         </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-white/10">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`${
-              activeTab === "analytics"
-                ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab("recent")}
-            className={`${
-              activeTab === "recent"
-                ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Recent Activity
-          </button>
-          <button
-            onClick={() => setActiveTab("shared")}
-            className={`${
-              activeTab === "shared"
-                ? "border-[#0077B6] text-[#0077B6]"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Shared with Me
-          </button>
+      {/* Tabs + Refresh */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
+          {(
+            [
+              { id: "analytics", label: "Analytics" },
+              { id: "recent", label: "Recent Activity" },
+              { id: "shared", label: "Shared with Me" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === tab.id
+                  ? "bg-white text-[#023E8A] shadow-sm dark:bg-white/10 dark:text-white"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
+
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <FiRefreshCw
+            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -281,10 +276,10 @@ export default function DashboardHome() {
           </div>
         )}
 
-        {activeTab === "analytics" && <AnalyticsDashboard />}
+        {activeTab === "analytics" && <AnalyticsDashboard dateRange={dateRange} />}
 
         {activeTab === "recent" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+          <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
             <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {recentPlans.length > 0 ? (
                 recentPlans.map((plan) => (
@@ -337,7 +332,7 @@ export default function DashboardHome() {
         )}
 
         {activeTab === "shared" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+          <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
             <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {sharedPlans.length > 0 ? (
                 sharedPlans.map((plan) => (

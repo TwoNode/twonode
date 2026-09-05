@@ -18,8 +18,18 @@ import { getRoleFieldPrefix } from "@/surfboard/services/planLockService";
 
 export type AnalyticsScope = { role: SurfboardRole; userId: string };
 export type AnalyticsDimension = "facilitator" | "lga" | "ward" | "lcda";
+/** Dashboard-wide date filter, applied against `dateOnSurveyPlan` (not createdAt) — matches the same field the plans list/shared endpoints already filter on. */
+export type AnalyticsDateRange = { from?: Date; to?: Date };
 
 const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL_LAYOUT"];
+
+function dateRangeWhere(range?: AnalyticsDateRange) {
+  if (!range || (!range.from && !range.to)) return {};
+  const dateOnSurveyPlan: Prisma.DateTimeFilter = {};
+  if (range.from) dateOnSurveyPlan.gte = range.from;
+  if (range.to) dateOnSurveyPlan.lte = range.to;
+  return { dateOnSurveyPlan };
+}
 
 /** ADMIN/SUPERADMIN see the full population; USER is scoped to their own plans. */
 function scopeWhere(scope: AnalyticsScope) {
@@ -79,9 +89,10 @@ export interface DimensionBreakdownRow {
  */
 export async function getDimensionBreakdown(
   scope: AnalyticsScope,
-  dimension: AnalyticsDimension
+  dimension: AnalyticsDimension,
+  range?: AnalyticsDateRange
 ): Promise<DimensionBreakdownRow[]> {
-  const where = scopeWhere(scope);
+  const where = { ...scopeWhere(scope), ...dateRangeWhere(range) };
   const column = dimension; // "facilitator" | "lga" | "ward" | "lcda" — all real SurfboardPlan columns
 
   const grouped = await prisma.surfboardPlan.groupBy({
@@ -211,38 +222,42 @@ export interface UserDashboardAnalytics {
 }
 
 /** Own-plans-only dashboard analytics for a single surveyor — ported unchanged from surfboardActions.ts's getDashboardAnalytics. */
-export async function getUserDashboardAnalytics(userId: string): Promise<UserDashboardAnalytics> {
+export async function getUserDashboardAnalytics(
+  userId: string,
+  range?: AnalyticsDateRange
+): Promise<UserDashboardAnalytics> {
   const excludeProvisional = { notIn: PROVISIONAL_TYPES };
+  const dateWhere = dateRangeWhere(range);
 
   const [totalPlansCount, provisionalPlansCount, facilitatorStats, plansWithDeededArea, lgaStats, pendingCertificates, pillarStats, timeTrends] =
     await Promise.all([
-      prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional } }),
-      prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES } } }),
+      prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional, ...dateWhere } }),
+      prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES }, ...dateWhere } }),
       prisma.surfboardPlan.groupBy({
         by: ["facilitator"],
-        where: { userId, planType: excludeProvisional, facilitator: { not: "" } },
+        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, ...dateWhere },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
       }),
       prisma.surfboardPlan.findMany({
-        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, deededArea: { not: "" } },
+        where: { userId, planType: excludeProvisional, facilitator: { not: "" }, deededArea: { not: "" }, ...dateWhere },
         select: { facilitator: true, deededArea: true },
       }),
       prisma.surfboardPlan.groupBy({
         by: ["lga"],
-        where: { userId, planType: excludeProvisional, lga: { not: "" } },
+        where: { userId, planType: excludeProvisional, lga: { not: "" }, ...dateWhere },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
       }),
       prisma.surfboardPlan.findMany({
-        where: { userId, status: "PENDING", planType: excludeProvisional, surveyTitle: { not: "" } },
+        where: { userId, status: "PENDING", planType: excludeProvisional, surveyTitle: { not: "" }, ...dateWhere },
         select: { id: true, planNumber: true, surveyTitle: true, facilitator: true, updatedAt: true, planType: true, status: true },
         orderBy: { updatedAt: "desc" },
         take: 10,
       }),
       prisma.surfboardPlan.groupBy({
         by: ["pillarType"],
-        where: { userId, planType: excludeProvisional, pillarType: { not: "" } },
+        where: { userId, planType: excludeProvisional, pillarType: { not: "" }, ...dateWhere },
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
       }),

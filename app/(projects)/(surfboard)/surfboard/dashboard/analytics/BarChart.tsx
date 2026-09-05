@@ -11,6 +11,8 @@ interface BarChartProps {
   height?: number;
   maxItems?: number;
   formatValue?: (value: number) => string;
+  /** Rendered top-right of the header, alongside the title — e.g. a dimension toggle. */
+  actions?: React.ReactNode;
 }
 
 export function BarChart({
@@ -20,14 +22,20 @@ export function BarChart({
   height = 300,
   maxItems = 10,
   formatValue = (value) => value.toString(),
+  actions,
 }: BarChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mb-4">{subtitle}</p>}
+      <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
+            {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+          </div>
+          {actions}
+        </div>
         <div className="flex items-center justify-center" style={{ height }}>
-          <p className="text-gray-500">No data available</p>
+          <p className="text-gray-500 dark:text-gray-400">No data available</p>
         </div>
       </div>
     );
@@ -39,31 +47,33 @@ export function BarChart({
     .slice(0, maxItems);
 
   const maxValue = Math.max(...sortedData.map((item) => item.value), 0);
-  const barHeight = Math.min(300, Math.max(30, height / sortedData.length - 8));
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+    <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
+          {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+        </div>
+        {actions}
       </div>
-      
-      <div className="space-y-3">
+
+      <div className="space-y-3" style={{ minHeight: height }}>
         {sortedData.map((item, index) => {
           const width = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
           const color = item.color || getColorForIndex(index);
-          
+
           return (
             <div key={item.label} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-gray-700 truncate max-w-[40%]">
+                <span className="font-medium text-gray-700 truncate max-w-[40%] dark:text-gray-300">
                   {item.label}
                 </span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-white tabular-nums">
                   {formatValue(item.value)}
                 </span>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden dark:bg-white/10">
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -93,6 +103,6 @@ function getColorForIndex(index: number): string {
     '#f97316', // orange-500
     '#6366f1', // indigo-500
   ];
-  
+
   return colors[index % colors.length];
 }

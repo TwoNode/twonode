@@ -9,7 +9,6 @@ import {
   Home,
   ListChecks,
   Map,
-  FilePlus,
   Settings,
   LogOut,
   CreditCard,
@@ -18,13 +17,13 @@ import {
   Bell,
   Menu,
   QrCode,
+  User as UserIcon,
 } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
@@ -68,11 +67,14 @@ function SurfboardUserDashboardNavbar({
   showSubscriptionBadge?: boolean;
   sidebar?: any;
 }) {
+  const [avatarError, setAvatarError] = useState(false);
+  const initial = (user?.firstName || user?.given_name)?.charAt(0)?.toUpperCase();
+
   return (
     <header
-      className="w-full h-20 flex items-center px-6 shadow bg-white border-b border-blue-100 relative"
+      className="w-full h-20 flex items-center px-6 shadow-md border-b border-white/10 relative"
       style={{
-        background: `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 60%, ${SURFBOARD_COLORS.secondary.main} 100%)`,
+        background: `linear-gradient(100deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`,
       }}
     >
       <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
@@ -88,7 +90,7 @@ function SurfboardUserDashboardNavbar({
         <img
           src="/surfboard/surf_logo.svg"
           alt="Surfboard Logo"
-          className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
+          className="w-12 h-12 rounded-full shadow border-2 border-white/15 bg-white object-contain"
         />
         <span className="hidden lg:inline text-xl font-bold text-white tracking-wide drop-shadow">
           Surfboard
@@ -102,37 +104,19 @@ function SurfboardUserDashboardNavbar({
             `/surfboard/dashboard/plans?tab=all&search=${encodeURIComponent(q)}`
           }
           className="max-w-sm"
+          variant="translucent"
         />
       </div>
       <div className="flex-1 md:hidden" />
 
-      {showSubscriptionBadge ? (
+      {showSubscriptionBadge && (
         <Link href="/surfboard/dashboard/subscription" className="pointer">
           <div className="flex items-center mr-4 bg-yellow-50 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
             <AlertTriangle className="w-4 h-4 mr-1" />
             Subscription Required
           </div>
         </Link>
-      ) : (
-        <Link href="/surfboard/dashboard/newplan" className="pointer">
-          <Button
-            variant="default"
-            className="mr-4 bg-blue-300 text-blue-900 cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              <span>New Plan</span>
-            </div>
-          </Button>
-        </Link>
       )}
-
-      {/* {user?.firstName ||
-        (user?.given_name && (
-          <span className="text-base font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2">
-            {user?.firstName || user?.given_name}
-          </span>
-        ))} */}
 
       <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
 
@@ -143,16 +127,18 @@ function SurfboardUserDashboardNavbar({
         iconClassName="h-6 w-6 text-white"
       />
 
-      {!user?.picture ? (
+      {user?.picture && !avatarError ? (
         <img
-          src={user?.picture || "#"}
+          src={user.picture}
           alt="Profile"
-          className="w-12 h-12 rounded-full shadow border-2 border-blue-100 bg-white object-contain"
+          className="w-12 h-12 rounded-full shadow border-2 border-white/15 bg-white object-cover"
+          onError={() => setAvatarError(true)}
         />
       ) : (
-        <div className="flex items-center gap-1 rounded-lg bg-blue-900/60 px-2.5 py-1 shadow ml-2">
+        // Google-style fallback: first letter of the user's name on a colored circle.
+        <div className="flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 shadow ml-2">
           <div className="bg-white text-blue-900 font-bold text-lg rounded-full w-10 h-10 flex justify-center items-center">
-            {(user?.firstName || user?.given_name)?.charAt(0)}
+            {initial || <UserIcon className="h-5 w-5 text-blue-900" />}
           </div>
         </div>
       )}
@@ -229,13 +215,6 @@ export default function SurfboardUserPanelLayout({
       icon: Map,
       label: "Map Viewer",
       url: `${dashboardUrl}/map`,
-      section: "Plans",
-      requiresSubscription: true,
-    },
-    {
-      icon: FilePlus,
-      label: "New Plan",
-      url: `${dashboardUrl}/newplan`,
       section: "Plans",
       requiresSubscription: true,
     },
@@ -340,6 +319,11 @@ export default function SurfboardUserPanelLayout({
             userRole="Facilitator"
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
+            primaryAction={{
+              label: "New Plan",
+              href: `${dashboardUrl}/newplan`,
+              icon: Plus,
+            }}
           />
         </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
