@@ -19,7 +19,8 @@ import {
   Menu,
   QrCode,
 } from "lucide-react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
+import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
+import NotificationBell from "@/components/NotificationBell";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
@@ -62,12 +63,10 @@ function SurfboardUserDashboardNavbar({
   user,
   showSubscriptionBadge = false,
   sidebar,
-  unreadCount = 0,
 }: {
   user?: { picture?: string; firstName?: string; id?: string } | any;
   showSubscriptionBadge?: boolean;
   sidebar?: any;
-  unreadCount?: number;
 }) {
   return (
     <header
@@ -137,18 +136,12 @@ function SurfboardUserDashboardNavbar({
 
       <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
 
-      {/* Notification Bell */}
-      <Link
-        href="/surfboard/dashboard/notifications"
-        className="relative p-2 mr-2 rounded-lg hover:bg-white/10 transition-all duration-200"
-      >
-        <Bell className="w-6 h-6 text-white" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1 shadow-lg">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </Link>
+      <NotificationBell
+        platform="surfboard"
+        viewAllHref="/surfboard/dashboard/notifications"
+        className="mr-2"
+        iconClassName="h-6 w-6 text-white"
+      />
 
       {!user?.picture ? (
         <img
@@ -175,7 +168,6 @@ export default function SurfboardUserPanelLayout({
   const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
   const sidebar = useStore(useSidebar, (x) => x);
   const { theme } = useTheme();
   useNativeAuthRefresh(Platform.SURFBOARD);
@@ -217,24 +209,6 @@ export default function SurfboardUserPanelLayout({
     checkSubscription();
   }, []);
 
-  // Fetch unread notification count
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const result = await surfboardApi.notifications.unreadCount();
-        if (result.success) {
-          setUnreadCount(result.data.count);
-        }
-      } catch (error) {
-        console.error("Error fetching unread count:", error);
-      }
-    };
-
-    fetchUnreadCount();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const menuList = [
     {
@@ -295,15 +269,20 @@ export default function SurfboardUserPanelLayout({
     },
     {
       element: (
-        <LogoutLink
+        <ConfirmedLogoutLink
           key="logout"
           postLogoutRedirectURL="/api/auth/logout_redirect"
-          aria-label="Logout"
-          title="Logout"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
-        >
-          <LogOut className="h-4 w-4" />
-        </LogoutLink>
+          trigger={
+            <button
+              type="button"
+              aria-label="Logout"
+              title="Logout"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/12 text-white/55 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          }
+        />
       ),
       requiresSubscription: false,
     },
@@ -336,7 +315,6 @@ export default function SurfboardUserPanelLayout({
         user={user}
         showSubscriptionBadge={!hasSubscriptionAccess}
         sidebar={sidebar}
-        unreadCount={unreadCount}
       />
       <div
         className={cn(

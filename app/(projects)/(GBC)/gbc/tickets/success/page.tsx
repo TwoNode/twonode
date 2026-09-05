@@ -164,6 +164,26 @@ export default async function TicketSuccessPage({
                 </div>
               </div>
 
+              <div className="flex items-start gap-3 text-gray-700">
+                <div className="mt-0.5">
+                  <div className="p-2 bg-purple-100 rounded-full">
+                    <Download className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium">Payment receipt</h3>
+                  <p className="text-sm text-gray-500">
+                    <a
+                      href={`/api/v1/gbc/tickets/${primaryTicket.ticketNumber}/receipt-pdf`}
+                      className="text-purple-600 hover:underline"
+                    >
+                      Download your receipt
+                    </a>
+                    {isGroupTicket && " (also attached to each attendee's confirmation email)"}
+                  </p>
+                </div>
+              </div>
+
               {primaryTicket.qrCode && (
                 <div className="flex items-start gap-3 text-gray-700">
                   <div className="mt-0.5">

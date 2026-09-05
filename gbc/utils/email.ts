@@ -1,5 +1,6 @@
 // src/lib/email.ts
 import nodemailer from "nodemailer";
+import type { GBCCertificateTicket } from "@/gbc/components/certificates/types";
 
 // Create Zoho SMTP transporter - using same config as working email utility
 const transporter = nodemailer.createTransport({
@@ -23,6 +24,8 @@ interface GBCTicketEmailData {
   eventDate: string;
   eventLocation: string;
   eventVenue: string;
+  /** Attached alongside the QR ticket when payment verification generated one — see ensureQRAndEmail. */
+  receiptPdfBuffer?: Buffer;
 }
 
 /**
@@ -278,7 +281,10 @@ export async function sendGBCTicketConfirmation(
           content: base64Data,
           encoding: 'base64',
           cid: 'qrcode@twonodetechnologies.com'
-        }
+        },
+        ...(data.receiptPdfBuffer
+          ? [{ filename: `GBC-Receipt-${data.ticketNumber}.pdf`, content: data.receiptPdfBuffer, contentType: "application/pdf" }]
+          : [])
       ]
     });
 
@@ -540,16 +546,22 @@ export async function verifyEmailConfig(): Promise<boolean> {
 }
 
 /**
- * Send Certificate of Attendance email
+ * Send Certificate of Attendance email. Generates the certificate PDF
+ * server-side (same renderer the download route uses — see
+ * certificatePdfService) and attaches it directly, instead of only linking to
+ * the print-only web page as before.
  */
 export async function sendGBCCertificateEmail(
-  name: string,
-  email: string,
-  ticketNumber: string,
+  ticket: GBCCertificateTicket & { email: string },
   customMessage: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://www.twonodetechnologies.com"}/gbc/certificate/${ticketNumber}`;
+    const { generateCertificatePdfBuffer, getCertificateVerificationUrl } = await import(
+      "@/gbc/services/certificatePdfService"
+    );
+    const certificateUrl = getCertificateVerificationUrl(ticket.ticketNumber);
+    const pdfBuffer = await generateCertificatePdfBuffer(ticket);
+
     const html = `
       <!DOCTYPE html>
       <html lang="en">
@@ -557,51 +569,50 @@ export async function sendGBCCertificateEmail(
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-          .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px 20px; text-align: center; }
-          .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1A1024; margin: 0; padding: 0; background-color: #f4f4f4; }
+          .container { max-width: 600px; margin: 20px auto; background: #FBF8F2; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .header { background: #1A1024; color: white; padding: 30px 20px; text-align: center; border-bottom: 3px solid #C9A24B; }
+          .header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
+          .header p { margin: 6px 0 0; font-size: 12px; color: #C9A24B; letter-spacing: 1px; }
           .content { padding: 40px 30px; text-align: center; }
-          .message-box { background: #f8f9fa; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: left; white-space: pre-wrap; word-wrap: break-word; color: #4b5563; }
-          .button { display: inline-block; background: #10b981; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 30px 0; font-size: 16px; }
-          .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #6c757d; font-size: 14px; }
-          .footer a { color: #10b981; text-decoration: none; }
+          .message-box { background: #ffffff; border-left: 4px solid #5B21B6; padding: 20px; margin: 20px 0; border-radius: 4px; text-align: left; white-space: pre-wrap; word-wrap: break-word; color: #4b5563; }
+          .button { display: inline-block; background: #5B21B6; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 30px 0; font-size: 16px; }
+          .attach-note { font-size: 13px; color: #6B6472; }
+          .footer { background: #ffffff; padding: 30px; text-align: center; color: #6c757d; font-size: 14px; border-top: 1px solid #e5e5e5; }
+          .footer a { color: #5B21B6; text-decoration: none; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>GBC 2.0 - Certificate of Attendance</h1>
+            <h1>${ticket.editionRef.name} — Certificate of Attendance</h1>
+            <p>GEOSPATIAL BUILDERS COURSE</p>
           </div>
           <div class="content">
-            <p style="font-size: 18px;">Dear <strong>${name}</strong>,</p>
-            
+            <p style="font-size: 18px;">Dear <strong>${ticket.name}</strong>,</p>
+
             <div class="message-box">
               ${customMessage.replace(/\n/g, "<br>")}
             </div>
-            
-            <p>You can view and download your official Certificate of Attendance using the button below:</p>
-            
-            <a href="${certificateUrl}" class="button" style="color: #ffffff;">View & Download Certificate</a>
-            
+
+            <p class="attach-note">Your certificate is attached to this email as a PDF. You can also view and verify it online:</p>
+
+            <a href="${certificateUrl}" class="button" style="color: #ffffff;">View & Verify Certificate</a>
+
             <p style="margin-top: 30px; text-align: left;">
               Best regards,<br>
               <strong>The GBC Team</strong><br>
-              Two Node Technologies
+              TwoNode Technologies
             </p>
           </div>
           <div class="footer">
-            <p><strong>Contact Us</strong></p>
             <p>
-              📧 <a href="mailto:info@twonodetechnologies.com">info@twonodetechnologies.com</a><br>
-              📞 +234-916-0002-740<br>
-              📍 No. 58 Kudirat Abiola Way, Oregun, Ikeja, Lagos State
-            </p>
-            <p style="margin-top: 20px; font-size: 12px;">
-              #GBC2.0 | Theme: "Geospatial Capital: A Catalyst for Inclusive Growth"
+              <a href="https://www.twonodetechnologies.com">twonodetechnologies.com</a>
+              &nbsp;&middot;&nbsp;
+              <a href="mailto:info@twonodetechnologies.com">info@twonodetechnologies.com</a>
             </p>
             <p style="margin-top: 15px; font-size: 12px;">
-              © 2025 Two Node Technologies. All rights reserved.
+              #${ticket.editionRef.name.replace(/\s+/g, "")} | Theme: "${ticket.editionRef.theme}"
             </p>
           </div>
         </div>
@@ -610,10 +621,17 @@ export async function sendGBCCertificateEmail(
     `;
 
     await transporter.sendMail({
-      from: '"GBC 2.0" <' + FROM_EMAIL + '>',
-      to: email,
-      subject: "Your GBC 2.0 Certificate of Attendance",
+      from: `"${ticket.editionRef.name} · TwoNode Technologies" <${FROM_EMAIL}>`,
+      to: ticket.email,
+      subject: `Your ${ticket.editionRef.name} Certificate of Attendance`,
       html,
+      attachments: [
+        {
+          filename: `${ticket.editionRef.name.replace(/\s+/g, "-")}-Certificate-${ticket.ticketNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
     });
 
     return { success: true };

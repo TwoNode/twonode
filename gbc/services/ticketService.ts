@@ -13,6 +13,8 @@ import { sendGBCTicketConfirmation } from "@/gbc/utils/email";
 import { sendGBCTicketSMS } from "@/gbc/utils/sms";
 import { calculateTicketPrice, isTicketTypeAvailable } from "@/gbc/utils";
 import type { TicketPurchaseInput } from "@/gbc/utils/validations";
+import { generateTicketReceiptPdfBuffer } from "@/gbc/services/receiptPdfService";
+import type { GBCEdition, GBCTicket } from "@/prisma/generated";
 
 /**
  * Migrated from app/(projects)/(GBC)/actions/ticket-actions.ts. Pure Prisma,
@@ -251,7 +253,11 @@ const EXPECTED_TICKET_COUNT: Record<string, number> = {
   COMPANY: 5,
 };
 
-async function ensureQRAndEmail(ticket: Awaited<ReturnType<typeof prisma.gBCTicket.update>>, settings: Awaited<ReturnType<typeof getSettings>>, forceSendEmail?: boolean) {
+async function ensureQRAndEmail(
+  ticket: GBCTicket & { editionRef: GBCEdition },
+  settings: Awaited<ReturnType<typeof getSettings>>,
+  forceSendEmail?: boolean
+) {
   let qrJustGenerated = false;
   let qrBuffer: Buffer | null = null;
 
@@ -291,6 +297,18 @@ async function ensureQRAndEmail(ticket: Awaited<ReturnType<typeof prisma.gBCTick
       const eventLocation = settings?.contact.city || process.env.NEXT_PUBLIC_EVENT_LOCATION || "Lagos, Nigeria";
       const eventVenue = settings?.event.venue || process.env.NEXT_PUBLIC_EVENT_VENUE || "Conference Center, Lagos";
 
+      // Receipt generation is best-effort — a failure here shouldn't block
+      // the ticket confirmation email (which has the QR code attendees
+      // actually need at the door) from going out.
+      let receiptPdfBuffer: Buffer | undefined;
+      if (ticket.paymentStatus === "COMPLETED") {
+        try {
+          receiptPdfBuffer = await generateTicketReceiptPdfBuffer(ticket);
+        } catch (error) {
+          console.error(`Receipt PDF generation failed for ticket ${ticket.ticketNumber}:`, error);
+        }
+      }
+
       const emailResult = await sendGBCTicketConfirmation({
         name: ticket.name,
         email: ticket.email,
@@ -302,6 +320,7 @@ async function ensureQRAndEmail(ticket: Awaited<ReturnType<typeof prisma.gBCTick
         eventDate,
         eventLocation,
         eventVenue,
+        receiptPdfBuffer,
       });
       if (!emailResult.success) {
         console.error(`Failed to send confirmation email to ${ticket.email}:`, emailResult.error);
@@ -321,7 +340,7 @@ export async function verifyPayment(reference: string, sendEmail?: boolean) {
     throw new ConflictError(verification.message || "Payment verification failed");
   }
 
-  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference } });
+  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference }, include: { editionRef: true } });
   if (!tickets || tickets.length === 0) throw new NotFoundError("Tickets for this payment");
 
   const firstTicketType = tickets[0].ticketType;
@@ -345,6 +364,7 @@ export async function verifyPayment(reference: string, sendEmail?: boolean) {
           paymentMethod: "paystack",
           paymentDetails: JSON.stringify(verification.data),
         },
+        include: { editionRef: true },
       })
     )
   );
@@ -367,7 +387,7 @@ export async function getTicketAvailability() {
 }
 
 export async function getTicketByNumber(ticketNumber: string) {
-  const ticket = await prisma.gBCTicket.findFirst({ where: { ticketNumber } });
+  const ticket = await prisma.gBCTicket.findFirst({ where: { ticketNumber }, include: { editionRef: true } });
   if (!ticket) throw new NotFoundError("Ticket");
   return ticket;
 }

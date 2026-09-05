@@ -14,12 +14,23 @@ import type { Role, NotificationAudience, NotificationType } from "@/prisma/gene
  */
 export const GET = withAuth<RevaRole>(
   async (_req, ctx) => {
-    const data =
+    const notifications =
       ctx.session.role === RevaRole.SUPERADMIN
         ? await getSuperAdminNotifications()
         : ctx.session.role === RevaRole.ADMIN
         ? await getAdminNotifications()
         : await getUserNotifications(ctx.session.sub, ctx.session.role as unknown as Role);
+
+    // getAdminNotifications/getSuperAdminNotifications don't take a userId
+    // (unlike getUserNotifications), so they return bare readBy/dismissedBy
+    // arrays with no per-viewer read state — computed here instead, for all
+    // three roles uniformly, rather than threading userId into two more
+    // service functions for a one-field difference.
+    const data = notifications.map((n) => ({
+      ...n,
+      isRead: n.readBy.includes(ctx.session.sub),
+      isDismissed: n.dismissedBy.includes(ctx.session.sub),
+    }));
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.REVA, roles: [RevaRole.USER, RevaRole.ADMIN, RevaRole.SUPERADMIN] }

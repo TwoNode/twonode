@@ -72,6 +72,7 @@ const ViewDetailsPage = async ({
         <AdminMiniHeader title="User Request Details" />
         <div>{JSON.stringify(transformedProperty)}</div>
 
+        <PDFDownloadButton property={transformedProperty} type="receipt" />
         <PDFDownloadButton property={transformedProperty} type="report" />
 
         <div className="mt-6">

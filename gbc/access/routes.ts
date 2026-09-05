@@ -19,6 +19,7 @@ import {
   Info,
   Mail,
   Search,
+  Bell,
 } from "lucide-react";
 import { GBCRole } from "@/utils/platform";
 
@@ -84,6 +85,7 @@ export const GBC_ROUTES: GBCRouteEntry[] = [
   { path: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: FileText, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/users`, label: "Users", icon: Users, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings, roles: ADMIN_ROLES, group: "admin" },
 
   // --- Guest-facing (public — GBCTicket has no relation to GBCUser, there's no session to check) ---

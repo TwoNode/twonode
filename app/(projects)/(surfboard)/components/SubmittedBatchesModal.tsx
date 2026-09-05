@@ -242,6 +242,11 @@ export function SubmittedBatchesModal({
     ].includes(status);
   };
 
+  /** Matches RECEIPT_ELIGIBLE_STATUSES in surfboard/services/receiptPdfService.ts. */
+  const canDownloadReceipt = (status: string) => {
+    return ["ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"].includes(status);
+  };
+
   const handleFetchPdfData = useCallback(async (batchId: string) => {
     // If we already have data for this batch, do nothing
     if (pdfDataMap[batchId]) return;
@@ -482,6 +487,19 @@ export function SubmittedBatchesModal({
                               </Button>
                             )}
                           </>
+                        )}
+
+                        {canDownloadReceipt(batch.paymentStatus) && (
+                          <a href={`/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Receipt
+                            </Button>
+                          </a>
                         )}
                       </div>
                     </div>

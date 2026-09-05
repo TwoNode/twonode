@@ -29,9 +29,9 @@ export const RevaUserDashboardNavbar = ({
         <SheetMenu items={items} userImageUrl={userImageUrl} />
 
         <NotificationBell
-          href="/reva/dashboard/notifications"
-          size={30}
-          color="#fff"
+          platform="reva"
+          viewAllHref="/reva/dashboard/notifications"
+          iconClassName="h-[30px] w-[30px] text-white"
         />
 
         {/* <ModeToggle /> */}

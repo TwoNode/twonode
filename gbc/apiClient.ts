@@ -3,7 +3,20 @@ import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
 import type { Sponsor } from "@/gbc/types/sponsor";
-import type { GBCTicket } from "@/prisma/generated";
+import type { GBCTicket, GBCUserNotificationType, GBCUserNotificationAudience } from "@/prisma/generated";
+import type { EncryptedUserData } from "@/utils/encryptedCookies";
+
+export type GBCNotificationItem = {
+  id: string;
+  type: GBCUserNotificationType;
+  title: string;
+  message: string;
+  audience: GBCUserNotificationAudience;
+  link: string | null;
+  createdAt: string;
+  isRead: boolean;
+  isDismissed: boolean;
+};
 
 /**
  * Thin typed wrapper around /api/v1/gbc/* — starts with just the editions
@@ -229,6 +242,43 @@ export const gbcApi = {
 
     remove: (id: string) =>
       jsonFetch<undefined>(`${BASE}/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  session: {
+    /** Legacy multi-platform cookie session, native-JWT-adapted fallback — see app/api/v1/gbc/session/route.ts. */
+    get: () => jsonFetch<EncryptedUserData>(`${BASE}/session`),
+  },
+
+  notifications: {
+    list: (params?: { includeRead?: boolean; includeDismissed?: boolean; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.includeRead === false) qs.set("includeRead", "false");
+      if (params?.includeDismissed) qs.set("includeDismissed", "true");
+      if (params?.limit) qs.set("limit", String(params.limit));
+      const query = qs.toString();
+      return jsonFetch<GBCNotificationItem[]>(`${BASE}/notifications${query ? `?${query}` : ""}`);
+    },
+
+    create: (input: {
+      type: GBCUserNotificationType;
+      title: string;
+      message: string;
+      audience: GBCUserNotificationAudience;
+      userIds?: string[];
+      link?: string;
+      metadata?: any;
+    }) => jsonFetch<{ id: string }>(`${BASE}/notifications`, { method: "POST", body: JSON.stringify(input) }),
+
+    unreadCount: () => jsonFetch<{ count: number }>(`${BASE}/notifications/unread-count`),
+
+    markRead: (id: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }),
+
+    dismiss: (id: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+
+    remove: (id: string) =>
+      jsonFetch<{ success: boolean }>(`${BASE}/notifications/${encodeURIComponent(id)}`, { method: "DELETE" }),
   },
 
   uploads: {
