@@ -79,6 +79,8 @@ export interface DimensionBreakdownRow {
   key: string;
   count: number;
   totalDeededArea?: number;
+  // Multi-variable breakdown support
+  subBreakdowns?: Array<{ key: string; count: number }>;
 }
 
 /**

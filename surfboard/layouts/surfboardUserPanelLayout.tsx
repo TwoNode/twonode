@@ -74,7 +74,7 @@ function SurfboardUserDashboardNavbar({
     <header
       className="w-full h-20 flex items-center px-6 shadow-md border-b border-white/10 relative"
       style={{
-        background: `linear-gradient(100deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`,
+        background: `linear-gradient(135deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 40%, ${SURFBOARD_COLORS.primary.main} 100%)`,
       }}
     >
       <div className="flex flex-row-reverse lg:flex-row items-center gap-3">

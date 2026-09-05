@@ -59,6 +59,19 @@ export function AuthSplitLayout({
           style={{ background: "white", opacity: 0.12 }}
         />
 
+        {/* Network/Node Logo Background Image */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-20">
+          <img
+            src="/twonode-network.svg"
+            alt="Twonode Network"
+            className="w-3/4 h-3/4 object-contain"
+            onError={(e) => {
+              // Fallback if image doesn't exist
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+
         <div className="relative z-10 flex flex-col justify-end w-full p-12 xl:p-16">
           <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-8 max-w-md">
             <p className="text-xs font-semibold tracking-widest uppercase text-white/70 mb-3">
