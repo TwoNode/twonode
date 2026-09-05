@@ -122,6 +122,7 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: `${MDA_BASE}/records-i`, label: "Records I", icon: FileText, roles: [SurfboardRole.RECORDS_I, ...MDA_SUPERVISORS], group: "mda" },
   { path: `${MDA_BASE}/records-ii`, label: "Records II", icon: FileCheck2, roles: [SurfboardRole.RECORDS_II, ...MDA_SUPERVISORS], group: "mda" },
   { path: `${MDA_BASE}/archive`, label: "Archive", icon: Archive, roles: [SurfboardRole.ARCHIVE, ...MDA_SUPERVISORS], group: "mda" },
+  { path: `${MDA_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ALL_MDA_ROLES, group: "mda" },
   { path: `${MDA_BASE}/profile`, label: "Profile", icon: UserCircle, roles: ALL_MDA_ROLES, group: "mda" },
   { path: `${MDA_BASE}/settings`, label: "Settings", icon: Cog, roles: ALL_MDA_ROLES, group: "mda" },
 ];

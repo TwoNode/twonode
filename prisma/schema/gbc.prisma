@@ -362,6 +362,48 @@ enum GBCNotificationStatus {
   QUEUED
 }
 
+/**
+ * In-app admin notification inbox (bell dropdown), distinct from
+ * GBCNotification above (an outbound email/SMS send-log, not a user-facing
+ * inbox). Mirrors SurfboardNotification's shape exactly — same
+ * readBy/dismissedBy-array-of-userIds pattern, same audience targeting —
+ * since GBC's admin area is the only logged-in area this product has (no
+ * separate ticket-holder dashboard), audience here means "which admins."
+ */
+model GBCUserNotification {
+  id          String                      @id @default(cuid())
+  type        GBCUserNotificationType
+  title       String
+  message     String
+  readBy      String[]                    @default([])
+  dismissedBy String[]                    @default([])
+  userIds     String[]                    @default([])
+  audience    GBCUserNotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+  @@map("gbc_user_notifications")
+}
+
+enum GBCUserNotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+}
+
+enum GBCUserNotificationAudience {
+  SPECIFIC_USERS
+  GENERAL_ADMINS
+  SUPERADMIN
+  ALL_USERS
+}
+
 model GBCAuditLog {
   id        String   @id @default(cuid())
   userId    String?

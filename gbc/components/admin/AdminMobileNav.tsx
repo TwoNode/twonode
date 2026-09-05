@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
+import NotificationBell from "@/components/NotificationBell";
+import UserAvatar from "@/components/UserAvatar";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { GBC_ROUTES } from "@/gbc/access/routes";
@@ -34,14 +36,18 @@ export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
       </button>
       <h1 className="text-lg font-bold text-gray-900">{title}</h1>
 
-      <ConfirmedLogoutLink
-        postLogoutRedirectURL="/api/auth/logout_redirect"
-        trigger={
-          <Button variant="outline" size="sm" className="ml-auto w-full sm:w-auto">
-            Sign Out
-          </Button>
-        }
-      />
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationBell platform="gbc" viewAllHref="/gbc-restricted/notifications" iconClassName="h-5 w-5 text-gray-600" />
+        <UserAvatar platform="gbc" size={28} />
+        <ConfirmedLogoutLink
+          postLogoutRedirectURL="/api/auth/logout_redirect"
+          trigger={
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+              Sign Out
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 }

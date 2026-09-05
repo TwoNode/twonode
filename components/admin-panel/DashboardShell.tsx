@@ -10,6 +10,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Platform } from "@/utils/platform";
 import { Menu, LogOut } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
+import NotificationBell from "@/components/NotificationBell";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import type { MenuItem } from "@/components/sidebars/menu";
 import {
@@ -135,6 +136,12 @@ export function DashboardShell({
             <Menu className="w-6 h-6 text-white" />
           </button>
           <div className="flex-1" />
+          <NotificationBell
+            platform="surfboard"
+            viewAllHref={group === "mda" ? "/surfboard-mda/dashboard/notifications" : "/surfboard-restricted/dashboard/notifications"}
+            className="mr-1"
+            iconClassName="h-5 w-5 text-white"
+          />
           <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
           {user?.name && (
             <span className="hidden sm:inline text-sm font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2 truncate max-w-[200px]">

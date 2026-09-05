@@ -129,7 +129,7 @@ export const revaApi = {
   },
 
   notifications: {
-    list: () => jsonFetch<Notification[]>(`${BASE}/notifications`),
+    list: () => jsonFetch<Array<Notification & { isRead: boolean; isDismissed: boolean }>>(`${BASE}/notifications`),
 
     create: (input: CreateNotificationInput) =>
       jsonFetch<Notification>(`${BASE}/notifications`, { method: "POST", body: JSON.stringify(input) }),

@@ -34,7 +34,7 @@ const GROUPS: { label: string; items: string[] }[] = [
   { label: "Overview", items: ["Dashboard", "Tickets", "Check-In", "Attendees"] },
   { label: "Program", items: ["Editions"] },
   { label: "Content", items: ["Speakers", "Sponsors", "Gallery"] },
-  { label: "System", items: ["Inquiries", "Certificates", "Users", "Settings"] },
+  { label: "System", items: ["Inquiries", "Certificates", "Users", "Notifications", "Settings"] },
 ];
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {

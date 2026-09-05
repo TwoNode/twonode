@@ -49,9 +49,9 @@ export const RevaAdminDashboardNavbar = ({ userData }: DashboardNavbarProps) => 
 
       <div className="justify-start items-center gap-2.5 flex">
         <NotificationBell
-          href="/reva-restricted/dashboard/notifications"
-          size={30}
-          color="#fff"
+          platform="reva"
+          viewAllHref="/reva-restricted/dashboard/notifications"
+          iconClassName="h-[30px] w-[30px] text-white"
         />
 
         {userData &&
