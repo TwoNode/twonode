@@ -19,6 +19,7 @@ const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View, Image, Svg
 const { format } = require("date-fns");
 
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
 
 Font.register({
   family: "Bricolage",
@@ -39,6 +40,7 @@ const MUTED = "#6B6472";
 
 const styles = StyleSheet.create({
   page: { backgroundColor: PAPER, fontFamily: "Bricolage", padding: 0 },
+  bgImage: { position: "absolute", top: 0, left: 0, width: 842, height: 595, opacity: 0.3, objectFit: "cover" },
   frame: { position: "absolute", top: 22, left: 22, right: 22, bottom: 22, borderWidth: 1.25, borderColor: GOLD },
   frameInner: { position: "absolute", top: 27, left: 27, right: 27, bottom: 27, borderWidth: 0.5, borderColor: PURPLE },
   content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 48, display: "flex", flexDirection: "column" },
@@ -167,6 +169,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
   const page = React.createElement(
     Page,
     { size: "A4", orientation: "landscape", style: styles.page },
+    React.createElement(Image, { src: BACKGROUND_IMAGE_PATH, style: styles.bgImage }),
     cableMotif("topRight"),
     cableMotif("bottomLeft"),
     React.createElement(View, { style: styles.frame }),
