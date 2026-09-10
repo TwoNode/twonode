@@ -233,7 +233,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
           data={areaDataByDimension[areaDimension]}
           height={400}
           maxItems={8}
-          showMultiVariable={areaDimension !== 'lga'} // Show multi-variable for LCDA and Ward
           actions={
             <div className="inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/10 dark:bg-white/5">
               {AREA_DIMENSIONS.map((dim) => (
