@@ -20,6 +20,7 @@ const { format } = require("date-fns");
 
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
 const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
+const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
 
 Font.register({
   family: "Bricolage",
@@ -32,19 +33,27 @@ Font.register({
   ],
 });
 
-const INK = "#1A1024";
-const PURPLE = "#5B21B6";
+// Dark treatment: a near-black plum base (same hue family as the old
+// light-mode INK color, just inverted in role) with a translucent black
+// scrim over the venue photo for depth, gold + soft lavender accents,
+// and near-white body text in place of the old dark INK.
+const BG_DARK = "#160E22";
+const SCRIM = "#000000";
+const INK = "#F7F4FB";
+const PURPLE = "#C4B5FD";
 const GOLD = "#C9A24B";
-const PAPER = "#FBF8F2";
-const MUTED = "#6B6472";
+const MUTED = "#B4A9C4";
 
 const styles = StyleSheet.create({
-  page: { backgroundColor: PAPER, fontFamily: "Bricolage", padding: 0 },
-  bgImage: { position: "absolute", top: 0, left: 0, width: 842, height: 595, opacity: 0.3, objectFit: "cover" },
+  page: { backgroundColor: BG_DARK, fontFamily: "Bricolage", padding: 0 },
+  bgImage: { position: "absolute", top: 0, left: 0, width: 842, height: 595, opacity: 0.22, objectFit: "cover" },
+  scrim: { position: "absolute", top: 0, left: 0, width: 842, height: 595, backgroundColor: SCRIM, opacity: 0.4 },
   frame: { position: "absolute", top: 22, left: 22, right: 22, bottom: 22, borderWidth: 1.25, borderColor: GOLD },
-  frameInner: { position: "absolute", top: 27, left: 27, right: 27, bottom: 27, borderWidth: 0.5, borderColor: PURPLE },
-  content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 48, display: "flex", flexDirection: "column" },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  frameInner: { position: "absolute", top: 27, left: 27, right: 27, bottom: 27, borderWidth: 0.5, borderColor: "#6D5490" },
+  content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 40, display: "flex", flexDirection: "column" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  brandRow: { flexDirection: "row", alignItems: "center" },
+  logo: { width: 62, height: 15.2, marginRight: 12, objectFit: "contain" },
   wordmark: { fontSize: 13, fontWeight: 800, color: INK, letterSpacing: 1 },
   wordmarkSub: { fontSize: 8, fontWeight: 500, color: MUTED, marginTop: 2, letterSpacing: 0.5 },
   ticketNo: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 1, textAlign: "right" },
@@ -63,13 +72,16 @@ const styles = StyleSheet.create({
   },
   body: { fontSize: 11, fontWeight: 500, color: INK, lineHeight: 1.6, maxWidth: 420 },
   bodyEm: { fontWeight: 700, color: PURPLE },
-  bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  verifyBlock: { flexDirection: "row", alignItems: "center", width: 280 },
+  bottomRow: { flexDirection: "row", alignItems: "flex-end" },
+  verifyBlock: { flexDirection: "row", alignItems: "center", width: 260 },
   qr: { width: 46, height: 46, marginRight: 10, flexShrink: 0 },
-  verifyText: { width: 224 },
+  verifyText: { width: 204 },
   verifyLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5, marginBottom: 2 },
   verifyUrl: { fontSize: 8, fontWeight: 500, color: PURPLE },
-  issuerBlock: { width: 180, textAlign: "right" },
+  signatureBlock: { flexGrow: 1, alignItems: "center" },
+  signatureLine: { width: 140, borderBottomWidth: 0.75, borderBottomColor: MUTED, marginBottom: 5 },
+  signatureLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5 },
+  issuerBlock: { width: 230, textAlign: "right" },
   issuerName: { fontSize: 10, fontWeight: 700, color: INK, marginBottom: 2 },
   issuerDate: { fontSize: 8, fontWeight: 500, color: MUTED },
 });
@@ -123,9 +135,14 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       { style: styles.topRow },
       React.createElement(
         View,
-        null,
-        React.createElement(Text, { style: styles.wordmark }, edition.name.toUpperCase()),
-        React.createElement(Text, { style: styles.wordmarkSub }, "GEOSPATIAL BUILDERS COURSE · TWONODE TECHNOLOGIES")
+        { style: styles.brandRow },
+        React.createElement(Image, { style: styles.logo, src: LOGO_PATH }),
+        React.createElement(
+          View,
+          null,
+          React.createElement(Text, { style: styles.wordmark }, edition.name.toUpperCase()),
+          React.createElement(Text, { style: styles.wordmarkSub }, "GEOSPATIAL BUILDERS CONFERENCE · TWONODE TECHNOLOGIES")
+        )
       ),
       React.createElement(Text, { style: styles.ticketNo }, `CERTIFICATE ${ticket.ticketNumber}`)
     ),
@@ -159,6 +176,12 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       ),
       React.createElement(
         View,
+        { style: styles.signatureBlock },
+        React.createElement(View, { style: styles.signatureLine }),
+        React.createElement(Text, { style: styles.signatureLabel }, "AUTHORIZED SIGNATURE")
+      ),
+      React.createElement(
+        View,
         { style: styles.issuerBlock },
         React.createElement(Text, { style: styles.issuerName }, "TwoNode Technologies"),
         React.createElement(Text, { style: styles.issuerDate }, format(attendedDate, "MMMM d, yyyy"))
@@ -170,6 +193,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
     Page,
     { size: "A4", orientation: "landscape", style: styles.page },
     React.createElement(Image, { src: BACKGROUND_IMAGE_PATH, style: styles.bgImage }),
+    React.createElement(View, { style: styles.scrim }),
     cableMotif("topRight"),
     cableMotif("bottomLeft"),
     React.createElement(View, { style: styles.frame }),
