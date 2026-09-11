@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Bell,
+  BellRing,
   Plus,
   Trash2,
   Send,
@@ -34,9 +35,19 @@ import {
   Shield,
   Globe,
   Loader2,
+  Search,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Cog,
+  FileText,
+  Share2,
+  X,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { useConfirm } from "@/hooks/useConfirm";
+import { PageLoader } from "@/components/ui/spinner";
 
 type NotificationType =
   | "INFO"
@@ -65,10 +76,10 @@ interface Notification {
 }
 
 const audienceIcons: Record<NotificationAudience, React.ReactNode> = {
-  SPECIFIC_USERS: <UserCheck className="h-4 w-4" />,
-  GENERAL_ADMINS: <Users className="h-4 w-4" />,
-  SUPERADMIN: <Shield className="h-4 w-4" />,
-  ALL_USERS: <Globe className="h-4 w-4" />,
+  SPECIFIC_USERS: <UserCheck className="h-3.5 w-3.5" />,
+  GENERAL_ADMINS: <Users className="h-3.5 w-3.5" />,
+  SUPERADMIN: <Shield className="h-3.5 w-3.5" />,
+  ALL_USERS: <Globe className="h-3.5 w-3.5" />,
 };
 
 const audienceLabels: Record<NotificationAudience, string> = {
@@ -78,12 +89,35 @@ const audienceLabels: Record<NotificationAudience, string> = {
   ALL_USERS: "All Users",
 };
 
+const TYPE_TONE: Record<NotificationType, string> = {
+  INFO: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+  SUCCESS: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
+  WARNING: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
+  ERROR: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30",
+  SYSTEM: "bg-slate-100 dark:bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-500/30",
+  PLAN: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30",
+  SHARING: "bg-teal-100 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-500/30",
+};
+
+const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
+  INFO: <Info className="h-3.5 w-3.5" />,
+  SUCCESS: <CheckCircle2 className="h-3.5 w-3.5" />,
+  WARNING: <AlertTriangle className="h-3.5 w-3.5" />,
+  ERROR: <XCircle className="h-3.5 w-3.5" />,
+  SYSTEM: <Cog className="h-3.5 w-3.5" />,
+  PLAN: <FileText className="h-3.5 w-3.5" />,
+  SHARING: <Share2 className="h-3.5 w-3.5" />,
+};
+
 export default function AdminNotificationsPage() {
   const { confirm, ConfirmDialog } = useConfirm();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
+  const [audienceFilter, setAudienceFilter] = useState<NotificationAudience | "ALL">("ALL");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -182,17 +216,67 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  const stats = [
+    {
+      label: "Total Notifications",
+      value: notifications.length,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
+    },
+    {
+      label: "Unread",
+      value: notifications.filter((n) => !n.isRead).length,
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
+    },
+    {
+      label: "Sent Today",
+      value: notifications.filter((n) => isToday(new Date(n.createdAt))).length,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
+    },
+    {
+      label: "Broadcast to All Users",
+      value: notifications.filter((n) => n.audience === "ALL_USERS").length,
+      color: "text-violet-600 dark:text-violet-400",
+      bgColor: "bg-violet-50 dark:bg-violet-500/10",
+    },
+  ];
+
+  const filteredNotifications = notifications.filter((n) => {
+    const matchesSearch =
+      !search.trim() ||
+      n.title.toLowerCase().includes(search.trim().toLowerCase()) ||
+      n.message.toLowerCase().includes(search.trim().toLowerCase());
+    const matchesType = typeFilter === "ALL" || n.type === typeFilter;
+    const matchesAudience = audienceFilter === "ALL" || n.audience === audienceFilter;
+    return matchesSearch && matchesType && matchesAudience;
+  });
+
+  const hasActiveFilters = !!search.trim() || typeFilter !== "ALL" || audienceFilter !== "ALL";
+
+  const clearFilters = () => {
+    setSearch("");
+    setTypeFilter("ALL");
+    setAudienceFilter("ALL");
+  };
+
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
+    <div className="min-h-full space-y-6">
       {ConfirmDialog}
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-2">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <Bell className="h-8 w-8 text-blue-600 shrink-0" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Notification Management
-            </h1>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <Bell className="h-8 w-8 text-blue-600 shrink-0" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                Notification Management
+              </h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Create and manage system-wide notifications
+            </p>
           </div>
 
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -339,22 +423,85 @@ export default function AdminNotificationsPage() {
             </DialogContent>
           </Dialog>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Create and manage system-wide notifications
-        </p>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 dark:border-white/10`}
+            >
+              <div className={`text-2xl font-bold ${stat.color} mb-1`}>
+                {stat.value}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-surface rounded-lg border border-gray-100 dark:border-white/10 p-4">
+        <div className="flex flex-col lg:flex-row gap-3">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title or message…"
+              className="pl-9"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}>
+            <SelectTrigger className="w-full lg:w-44">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Types</SelectItem>
+              <SelectItem value="INFO">Info</SelectItem>
+              <SelectItem value="SUCCESS">Success</SelectItem>
+              <SelectItem value="WARNING">Warning</SelectItem>
+              <SelectItem value="ERROR">Error</SelectItem>
+              <SelectItem value="SYSTEM">System</SelectItem>
+              <SelectItem value="PLAN">Plan</SelectItem>
+              <SelectItem value="SHARING">Sharing</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={audienceFilter} onValueChange={(v) => setAudienceFilter(v as NotificationAudience | "ALL")}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder="Audience" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Audiences</SelectItem>
+              <SelectItem value="ALL_USERS">All Users</SelectItem>
+              <SelectItem value="GENERAL_ADMINS">All Admins</SelectItem>
+              <SelectItem value="SUPERADMIN">Superadmins Only</SelectItem>
+              <SelectItem value="SPECIFIC_USERS">Specific Users</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={clearFilters}
+              className="shrink-0"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      )}
+      {loading && <PageLoader label="Loading notifications…" />}
 
       {/* Notifications Table */}
       {!loading && (
-        <div className="bg-white dark:bg-surface rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
+        <div className="bg-white dark:bg-surface rounded-lg border border-gray-100 dark:border-white/10 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
             <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -374,26 +521,53 @@ export default function AdminNotificationsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
-              {notifications.length === 0 ? (
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
+              {filteredNotifications.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <Bell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">No notifications yet</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {notifications.length === 0
+                        ? "No notifications yet"
+                        : "No notifications match your filters"}
+                    </p>
+                    {hasActiveFilters && notifications.length > 0 && (
+                      <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                        Clear filters
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ) : (
-                notifications.map((notification) => (
-                  <tr key={notification.id} className="hover:bg-gray-50">
+                filteredNotifications.map((notification) => (
+                  <tr
+                    key={notification.id}
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="outline">{notification.type}</Badge>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-full border ${TYPE_TONE[notification.type]}`}
+                      >
+                        {TYPE_ICONS[notification.type]}
+                        {notification.type}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {notification.title}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-md">
-                        {notification.message}
+                      <div className="flex items-center gap-2">
+                        {!notification.isRead && (
+                          <BellRing
+                            className="h-3.5 w-3.5 text-blue-500 shrink-0"
+                            aria-label="Unread"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {notification.title}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-md">
+                            {notification.message}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -410,7 +584,7 @@ export default function AdminNotificationsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(notification.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
