@@ -142,17 +142,17 @@ export default function OptimizedSinglePlanDetails({
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         {/* Header Card with Gradient Background */}
-        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100 dark:border-white/10">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-surface dark:to-surface rounded-xl p-6 mb-6 shadow-sm border border-gray-100 dark:border-white/10">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
               {/* Plan Info */}
               <div className="space-y-2">
-                <div className="inline-block bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full mb-2 shadow-sm">
-                  <span className="text-xs font-medium text-blue-700 uppercase tracking-wider">
+                <div className="inline-block bg-white/80 dark:bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full mb-2 shadow-sm">
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider">
                     Survey Plan
                   </span>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                   {planData.planNumber}
                 </h1>
                 <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
@@ -161,10 +161,10 @@ export default function OptimizedSinglePlanDetails({
 
                 {/* Plan Type Badges */}
                 <div className="flex flex-wrap gap-2 mt-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
                     {planData.planType}
                   </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300">
                     {planData.pillarType}
                   </span>
                   <span
@@ -246,7 +246,7 @@ export default function OptimizedSinglePlanDetails({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Plan Information Card */}
           <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+            <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-blue-500 mr-2"
@@ -383,7 +383,7 @@ export default function OptimizedSinglePlanDetails({
 
           {/* Location Details Card */}
           <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+            <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-green-500 mr-2"
@@ -498,7 +498,7 @@ export default function OptimizedSinglePlanDetails({
 
           {/* Timestamps Card */}
           <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+            <div className="bg-linear-to-r from-purple-50 to-violet-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-purple-500 mr-2"
@@ -602,7 +602,7 @@ export default function OptimizedSinglePlanDetails({
         planData.cadFilePaths?.length > 0 ||
         planData.certificateFilePaths?.length > 0) && (
         <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm mb-6">
-          <div className="bg-linear-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+          <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Uploaded Files
             </h3>

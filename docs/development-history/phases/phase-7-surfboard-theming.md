@@ -1,6 +1,7 @@
 # Phase: Design System Rebuild Phase 7 — Surfboard Theming & Responsiveness
 
-**Status:** In progress — batch 1 shipped (PR #67). **Date:** 2026-09-11.
+**Status:** Complete — batches 1-3 shipped (PR #67, #68, #69, and this
+session's follow-up PR). **Date:** 2026-09-11.
 
 ## Why
 
@@ -154,9 +155,49 @@ instead of this one's login page. Stopped that process and moved this
 project's dev server onto port 3000 to match `KINDE_SITE_URL`; confirmed
 the redirect now resolves to a same-origin relative path.
 
-**Still open:** ~14 of the ~45 remaining pages not yet individually
-verified (this batch covered the highest-risk list/table/form/settings
-pages; the rest are lower-traffic pages — map viewers, callback pages,
-profile pages — expected to be fine given the sweep now also covers
-`slate-*`, but not screenshotted). Next session should finish that sample
-or do a full pass before marking this phase complete.
+**Batch 3 (this session, follow-up): remaining ~14 pages covered** — all
+auth pages (login/error-login/reset-password/verify-email across all three
+shells), the public homepage, the badge page, both plan-detail pages
+(single view + edit, via a temporary seeded test plan), the payment and
+subscription callback pages, and the admin plan-update page (confirmed its
+access-guard redirect works correctly, couldn't view its authenticated
+content without re-elevating the test account's role, which this session
+chose not to do again for a single page). Two more real bugs found and
+fixed:
+
+- **Admin `error-login` page** (`surfboard-restricted/(auth)/error-login/page.tsx`)
+  had zero dark-mode treatment at all — a standalone page (not using
+  `AuthSplitLayout`), entirely light regardless of theme. Contrast with the
+  surveyor/MDA equivalents, which already show a dark card on a
+  (deliberately theme-independent, brand-gradient) light backdrop and are
+  fine. Added `dark:` variants directly rather than rebuilding it onto
+  `AuthSplitLayout` (a bigger change than this bug warranted).
+- **Single-plan detail page's header card and section banners** — the same
+  `from-{color}-50 to-{color}-50` gradient-strip pattern as the Settings/
+  QR-Earnings hero fixes in batch 2, this time in `SinglePlan.tsx` (the
+  page actually wired to `/surfboard/dashboard/plan`) — the near-identical
+  `OptimizedSinglePlanDetails.tsx` in `components/` looked like the same
+  component at a glance and was fixed too, but turned out to be unused by
+  any route; fixed for consistency in case it's wired up later, but the
+  real bug was only visible through `SinglePlan.tsx`. Also fixed the
+  payment-callback page's success/error info boxes (`bg-green-50`/
+  `bg-red-50`, no `dark:` variant).
+
+**Confirmed fine, no changes needed:** all auth pages (already routed
+through the Phase 6-fixed `AuthSplitLayout`/`NativeAuthCard` family), the
+badge page, both subscription-related pages (the subscription/callback
+page in particular already fully dark-themed with no gaps).
+
+**Out of scope, noted for later phases (not fixed here):**
+- The public marketing homepage (`/surfboard`) has an un-migrated light
+  section below its hero (`bg-white`-ish, `text-white` heading rendering
+  invisible-on-light) — belongs to Phase 10 (public/marketing sites), not
+  this dashboard-focused phase.
+- The public plan-verification page (`/surfboardplan/[id]`) has no dark
+  mode treatment either — same reasoning, it's a public page outside
+  Phase 7's three authenticated shells.
+
+**Phase 7 status:** every page in `docs/pages/surfboard.md` across all
+three shells has now been individually verified at least once (the ~45
+count from batch 1 is fully worked through across all three batches).
+Ready to move to Phase 8 (REVA) once this batch's PR lands.

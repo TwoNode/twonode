@@ -117,7 +117,7 @@ function PaymentCallbackContent() {
           <p className="text-center text-gray-600 dark:text-gray-400">{message}</p>
 
           {status === "success" && (
-            <div className="bg-green-50 p-4 rounded-lg text-sm text-green-800">
+            <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg text-sm text-green-800 dark:text-green-300">
               <p className="font-medium mb-2">What happens next?</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>
@@ -132,7 +132,7 @@ function PaymentCallbackContent() {
           )}
 
           {status === "error" && (
-            <div className="bg-red-50 p-4 rounded-lg text-sm text-red-800">
+            <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-lg text-sm text-red-800 dark:text-red-300">
               <p className="font-medium mb-2">Need help?</p>
               <p>
                 If you believe this is an error, please contact our support team
