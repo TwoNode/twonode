@@ -2,6 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { Search, ShieldAlert, X, Eye } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface SecurePlan {
   id: string;
@@ -19,6 +30,46 @@ interface SecurePlan {
   tags: string[];
 }
 
+const STATUS_LABEL: Record<SecurePlan["status"], string> = {
+  pending: "Pending",
+  lodged: "Lodged",
+  queried: "Queried",
+  under_review: "Under Review",
+};
+
+const STATUS_TONE: Record<SecurePlan["status"], string> = {
+  pending:
+    "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
+  lodged:
+    "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30",
+  queried:
+    "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30",
+  under_review:
+    "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
+};
+
+const PRIORITY_TONE: Record<SecurePlan["priority"], string> = {
+  critical:
+    "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
+  high:
+    "bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  medium:
+    "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  low:
+    "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+};
+
+const CONFIDENTIALITY_TONE: Record<SecurePlan["confidentiality"], string> = {
+  top_secret:
+    "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30",
+  secret:
+    "bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-500/30",
+  confidential:
+    "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
+  public:
+    "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30",
+};
+
 export default function SecurePlansPage() {
   const [plans, setPlans] = useState<SecurePlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<SecurePlan | null>(null);
@@ -27,6 +78,7 @@ export default function SecurePlansPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   useEffect(() => {
     // Simulate fetching secure plans data
@@ -134,58 +186,25 @@ export default function SecurePlansPage() {
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "queried":
-        return "bg-red-100 text-red-800";
-      case "under_review":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 dark:bg-white/10 text-gray-800";
-    }
-  };
+  const handleStatusChange = async (
+    planId: string,
+    newStatus: SecurePlan["status"],
+    label: string
+  ) => {
+    const ok = await confirm({
+      title: `${label} this plan?`,
+      description:
+        "This updates the plan's status for every reviewer with access to this record.",
+      confirmLabel: label,
+    });
+    if (!ok) return;
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "critical":
-        return "bg-red-100 text-red-800";
-      case "high":
-        return "bg-orange-100 text-orange-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 dark:bg-white/10 text-gray-800";
-    }
-  };
-
-  const getConfidentialityColor = (confidentiality: string) => {
-    switch (confidentiality) {
-      case "top_secret":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "secret":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "confidential":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "public":
-        return "bg-green-100 text-green-800 border-green-300";
-      default:
-        return "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-300 dark:border-white/15";
-    }
-  };
-
-  const handleStatusChange = async (planId: string, newStatus: string) => {
     setPlans((prev) =>
       prev.map((plan) =>
         plan.id === planId
           ? {
               ...plan,
-              status: newStatus as any,
+              status: newStatus,
               lastModified: new Date().toISOString(),
             }
           : plan
@@ -195,395 +214,388 @@ export default function SecurePlansPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
+      <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading secure plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading secure plans...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  Secure Plans Management
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Review, approve, and manage confidential survey plans with
-                  enhanced security
-                </p>
-              </div>
-              <button
-                onClick={() => router.push("/surfboard-restricted/dashboard")}
-                className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Back to Dashboard
-              </button>
+    <div className="min-h-full space-y-6">
+      {ConfirmDialog}
+
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <ShieldAlert className="w-7 h-7 text-red-500 dark:text-red-400" />
+            Secure Plans
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Review, approve, and manage confidential survey plans with
+            enhanced security
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/surfboard-restricted/dashboard")}
+        >
+          Back to Dashboard
+        </Button>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-surface p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+              Search
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by title, ID, or submitter..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
 
-          {/* Filters and Search */}
-          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Search Plans
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search by title, ID, or submitter..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+              Status
+            </label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="lodged">Lodged</SelectItem>
+                <SelectItem value="queried">Queried</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+              Priority
+            </label>
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Plans List */}
+      <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-surface overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+            Secure Plans ({filteredPlans.length})
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+            <thead className="bg-gray-50 dark:bg-white/5">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Plan Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
-                </label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="lodged">Lodged</option>
-                  <option value="queried">Queried</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Priority
-                </label>
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Confidentiality
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Assigned To
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+              {filteredPlans.map((plan) => (
+                <motion.tr
+                  key={plan.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
-                  <option value="all">All Priorities</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {plan.title}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {plan.id} • {plan.location}
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        Submitted by {plan.submittedBy} on{" "}
+                        {new Date(plan.submittedDate).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        Value: R{plan.estimatedValue.toLocaleString()}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${STATUS_TONE[plan.status]}`}
+                    >
+                      {STATUS_LABEL[plan.status]}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${PRIORITY_TONE[plan.priority]}`}
+                    >
+                      {plan.priority.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${CONFIDENTIALITY_TONE[plan.confidentiality]}`}
+                    >
+                      {plan.confidentiality.replace("_", " ").toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {plan.assignedTo}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSelectedPlan(plan)}
+                        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        View
+                      </button>
+                      {plan.status === "pending" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              handleStatusChange(plan.id, "lodged", "Lodge")
+                            }
+                            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 text-sm font-medium"
+                          >
+                            Lodge
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleStatusChange(
+                                plan.id,
+                                "under_review",
+                                "Review"
+                              )
+                            }
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+                          >
+                            Review
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleStatusChange(plan.id, "queried", "Query")
+                            }
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
+                          >
+                            Query
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+              {filteredPlans.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    No secure plans match your filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              <div className="flex items-end">
-                <button className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                  Create New Plan
+      {/* Plan Details Modal */}
+      {selectedPlan && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedPlan(null)}
+        >
+          <div
+            className="bg-white dark:bg-surface rounded-xl border border-gray-200 dark:border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Plan Details: {selectedPlan.id}
+                </h2>
+                <button
+                  onClick={() => setSelectedPlan(null)}
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Plans List */}
-          <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Secure Plans ({filteredPlans.length})
-              </h2>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 dark:bg-white/5">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Plan Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Priority
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Confidentiality
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Assigned To
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
-                  {filteredPlans.map((plan) => (
-                    <tr key={plan.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {plan.title}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {plan.id} • {plan.location}
-                          </div>
-                          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            Submitted by {plan.submittedBy} on{" "}
-                            {new Date(plan.submittedDate).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-gray-400 dark:text-gray-500">
-                            Value: R{plan.estimatedValue.toLocaleString()}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                            plan.status
-                          )}`}
-                        >
-                          {plan.status.replace("_", " ").toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(
-                            plan.priority
-                          )}`}
-                        >
-                          {plan.priority.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getConfidentialityColor(
-                            plan.confidentiality
-                          )}`}
-                        >
-                          {plan.confidentiality.replace("_", " ").toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                        {plan.assignedTo}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setSelectedPlan(plan)}
-                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                          >
-                            View
-                          </button>
-                          {plan.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  handleStatusChange(plan.id, "lodged")
-                                }
-                                className="text-green-600 hover:text-green-900 text-sm font-medium"
-                              >
-                                Lodge
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleStatusChange(plan.id, "rejected")
-                                }
-                                className="text-red-600 hover:text-red-900 text-sm font-medium"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-                          {plan.status === "pending" && (
-                            <button
-                              onClick={() =>
-                                handleStatusChange(plan.id, "under_review")
-                              }
-                              className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                            >
-                              Review
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Plan Details Modal */}
-          {selectedPlan && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white dark:bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200 dark:border-white/10">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Plan Details: {selectedPlan.id}
-                    </h2>
-                    <button
-                      onClick={() => setSelectedPlan(null)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600"
-                    >
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+                    Plan Information
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Title
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedPlan.title}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Description
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedPlan.description}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Location
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedPlan.location}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Estimated Value
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        R{selectedPlan.estimatedValue.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+                    Status &amp; Assignment
+                  </h3>
+                  <div className="space-y-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Plan Information
-                      </h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Title
-                          </label>
-                          <p className="text-gray-900 dark:text-white">{selectedPlan.title}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Description
-                          </label>
-                          <p className="text-gray-900 dark:text-white">
-                            {selectedPlan.description}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Location
-                          </label>
-                          <p className="text-gray-900 dark:text-white">
-                            {selectedPlan.location}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Estimated Value
-                          </label>
-                          <p className="text-gray-900 dark:text-white">
-                            R{selectedPlan.estimatedValue.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                        Status
+                      </label>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${STATUS_TONE[selectedPlan.status]}`}
+                      >
+                        {STATUS_LABEL[selectedPlan.status]}
+                      </span>
                     </div>
-
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        Status & Assignment
-                      </h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Status
-                          </label>
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                              selectedPlan.status
-                            )}`}
-                          >
-                            {selectedPlan.status
-                              .replace("_", " ")
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Priority
-                          </label>
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(
-                              selectedPlan.priority
-                            )}`}
-                          >
-                            {selectedPlan.priority.toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Confidentiality
-                          </label>
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getConfidentialityColor(
-                              selectedPlan.confidentiality
-                            )}`}
-                          >
-                            {selectedPlan.confidentiality
-                              .replace("_", " ")
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Submitted By
-                          </label>
-                          <p className="text-gray-900 dark:text-white">
-                            {selectedPlan.submittedBy}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Assigned To
-                          </label>
-                          <p className="text-gray-900 dark:text-white">
-                            {selectedPlan.assignedTo}
-                          </p>
-                        </div>
-                      </div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                        Priority
+                      </label>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${PRIORITY_TONE[selectedPlan.priority]}`}
+                      >
+                        {selectedPlan.priority.toUpperCase()}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      Tags
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedPlan.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">
+                        Confidentiality
+                      </label>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${CONFIDENTIALITY_TONE[selectedPlan.confidentiality]}`}
+                      >
+                        {selectedPlan.confidentiality
+                          .replace("_", " ")
+                          .toUpperCase()}
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="mt-6 flex justify-end space-x-4">
-                    <button
-                      onClick={() => setSelectedPlan(null)}
-                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                      Edit Plan
-                    </button>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Submitted By
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedPlan.submittedBy}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Assigned To
+                      </label>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {selectedPlan.assignedTo}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+                  Tags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPlan.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 text-xs rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="outline" onClick={() => setSelectedPlan(null)}>
+                  Close
+                </Button>
+                <Button>Edit Plan</Button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
