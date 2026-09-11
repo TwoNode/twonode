@@ -186,7 +186,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                     variant={
                       filters.status.includes(status) ? "default" : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-surface transition-colors"
                     onClick={() => handleStatusToggle(status)}
                   >
                     {status}
@@ -208,7 +208,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                         ? "default"
                         : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-surface transition-colors"
                     onClick={() => handlePaymentStatusToggle(status)}
                   >
                     {status}
@@ -224,7 +224,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant={filters.hasReport === true ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-surface transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",
@@ -236,7 +236,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                 </Badge>
                 <Badge
                   variant={filters.hasReport === false ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-surface transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",

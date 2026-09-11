@@ -179,7 +179,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                   setMapCenter({ lat: 6.5244, lng: 3.3792 });
                   setMapZoom(12);
                 }}
-                className="px-4 py-3 bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-surface-muted transition-colors"
+                className="px-4 py-3 bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-muted transition-colors"
               >
                 Clear
               </button>
@@ -273,7 +273,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
             {filteredProperties.slice(0, 6).map((property) => (
               <div
                 key={property.id}
-                className="p-3 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:bg-surface cursor-pointer transition-colors"
+                className="p-3 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors"
                 onClick={() => {
                   if (property.lat && property.lng) {
                     setMapCenter({ lat: property.lat, lng: property.lng });

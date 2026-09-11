@@ -437,7 +437,7 @@ const SingleRequestPage = ({
           <Link href="/reva/dashboard">
             <Button
               variant="outline"
-              className="max-sm:w-full rounded-lg hover:bg-gray-100 dark:bg-surface transition-colors"
+              className="max-sm:w-full rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors"
             >
               ← Back to All Requests
             </Button>
@@ -477,7 +477,7 @@ const SingleRequestPage = ({
           <AlertDialogFooter className="gap-3">
             <AlertDialogCancel
               onClick={toggleDeleteModal}
-              className="rounded-lg hover:bg-gray-100 dark:bg-surface"
+              className="rounded-lg hover:bg-gray-100 dark:hover:bg-surface"
             >
               Cancel
             </AlertDialogCancel>

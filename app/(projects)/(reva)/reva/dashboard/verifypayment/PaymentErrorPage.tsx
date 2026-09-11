@@ -12,7 +12,7 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
   reference,
 }) => {
   return (
-    <div className="min-h-screen bg-linear-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-red-50 via-white to-red-50 dark:from-background dark:via-background dark:to-background flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Error Card */}
         <div className="bg-white dark:bg-surface rounded-2xl shadow-xl border border-red-100 overflow-hidden">
@@ -74,7 +74,7 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
 
               <button
                 onClick={() => window.history.back()}
-                className="w-full bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:bg-surface-muted text-gray-700 dark:text-gray-300 font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="w-full bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-surface-muted text-gray-700 dark:text-gray-300 font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 <div className="flex items-center justify-center space-x-2">
                   <svg
