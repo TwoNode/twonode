@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from "next/server";
-import { addBaseUrl } from "@/utils/addBaseUrl";
 import { Platform } from "@/utils/platform";
 import {
   clearEncryptedUserCookie,
@@ -63,7 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Clear the cookie and redirect
-    const response = NextResponse.redirect(addBaseUrl(redirectUrl));
+    const response = NextResponse.redirect(new URL(redirectUrl, request.url));
 
     // Apply cookie clearing to the response
     const clearedResponse = await clearEncryptedUserCookie(response);
@@ -72,7 +71,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error in logout handler:", error);
     // Fallback redirect to home page
-    const response = NextResponse.redirect(addBaseUrl("/"));
+    const response = NextResponse.redirect(new URL("/", request.url));
     return await clearEncryptedUserCookie(response);
   }
 }

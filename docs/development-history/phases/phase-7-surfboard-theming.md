@@ -44,18 +44,41 @@ Work through every page listed in `docs/pages/surfboard.md`:
       those pages' existing responsive behavior (mostly pre-dating this
       phase) is assumed fine but unverified.
 
-## Known dev-environment flake (not a code bug)
+## Fixes landed after batch 1
 
-Hit the same `getTimeTrend` raw-query error from Phase 6's verification
-twice more during this phase's testing — including once immediately after
-a full dev-server restart, which ruled out the "stale long-lived
-connection" explanation from Phase 6. Isolated reproduction (the exact
-same query, run standalone) succeeds every time; it only fails under the
-dashboard's real concurrent request load (8 parallel queries fired via
-`Promise.all` in `getUserDashboardAnalytics`). Most likely a Postgres
-prepared-statement/connection-pool interaction under concurrency, not a
-logic bug — flagged here in case it recurs, not fixed (out of scope for a
-styling phase, and not reproducible in isolation to actually debug).
+Two issues flagged as out-of-scope during batch 1 were fixed in a follow-up
+pass, since both were real bugs rather than styling work:
+
+- **Hardcoded `http://localhost:3000` in auth redirects.** All ten
+  `NextResponse.redirect(addBaseUrl(...))` call sites (`login_redirect`,
+  `logout_redirect`, and all eight `success/*` platform callback routes)
+  built their redirect target from `process.env.BASE_URL`, which `.env` has
+  pinned to `http://localhost:3000` — wrong whenever the app runs on a
+  different host/port (e.g. this dev server on 3101), and generally fragile
+  since it couples every redirect to one env value instead of the actual
+  incoming request. Replaced with `new URL(path, request.url)` everywhere,
+  so each redirect resolves relative to whatever host/port/protocol the
+  request actually arrived on. `utils/addBaseUrl.ts` itself is untouched —
+  it's still correct for the two remaining non-redirect callers
+  (`paystackActions.ts`'s webhook callback URL, `notificationService.ts`'s
+  email links) that genuinely need an absolute, externally-reachable URL
+  rather than one relative to an internal request.
+- **`getTimeTrend` concurrency flake.** Previously a `$queryRaw` tagged-SQL
+  call (`DATE_TRUNC`/`TO_CHAR` grouping); reproduced the
+  `argument of WHERE must be type boolean, not type jsonb` error twice more
+  during this phase's testing, including once immediately after a full
+  dev-server restart (ruling out Phase 6's "stale connection" theory).
+  Isolated reproduction of the exact query always succeeded — it only broke
+  under `getUserDashboardAnalytics`'s real concurrent load (8 parallel
+  queries via `Promise.all`), pointing at a Postgres
+  prepared-statement/connection-pool collision between concurrent
+  `$queryRaw` calls, not a logic bug. Fixed by removing the raw query
+  entirely: `getTimeTrend` now uses a type-safe `findMany` (same
+  `planType`/`createdAt`/`userId` filters) and buckets by month in JS. Same
+  output shape, no raw SQL left in the concurrent batch, so the collision
+  surface is gone. `tsc --noEmit` clean; not able to re-trigger the original
+  concurrency scenario for a before/after comparison since this dev
+  database currently has zero seeded `SurfboardPlan` rows.
 
 ## Verification plan
 
