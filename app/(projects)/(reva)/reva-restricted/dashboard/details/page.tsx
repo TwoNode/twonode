@@ -48,7 +48,7 @@ const ViewDetailsPage = async ({
             <AdminReport property={transformedProperty} user={user} />
           </div>
 
-          <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+          <div className="mt-8 bg-gray-50 dark:bg-surface p-6 rounded-lg">
             <AdminMiniHeader title="Admin Actions" />
 
             <div className="mt-4">

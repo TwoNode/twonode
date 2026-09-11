@@ -178,8 +178,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-2">
           Manage your account information and preferences
         </p>
       </div>
@@ -261,7 +261,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       placeholder="Enter your first name"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">
+                    <p className="text-gray-900 dark:text-white font-medium">
                       {currentUser.firstName}
                     </p>
                   )}
@@ -278,7 +278,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                       placeholder="Enter your last name"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{currentUser.lastName}</p>
+                    <p className="text-gray-900 dark:text-white font-medium">{currentUser.lastName}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -295,7 +295,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-900 font-medium">{currentUser.email}</p>
+                      <p className="text-gray-900 dark:text-white font-medium">{currentUser.email}</p>
                       {currentUser.emailVerified && (
                         <Badge variant="outline" className="text-green-600">
                           Verified
@@ -306,7 +306,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                 </div>
                 <div className="space-y-2">
                   <Label>User ID</Label>
-                  <p className="text-gray-500 text-sm font-mono">{currentUser.id}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-mono">{currentUser.id}</p>
                 </div>
               </div>
 
@@ -327,13 +327,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Member Since</Label>
-                  <p className="text-gray-900">
+                  <p className="text-gray-900 dark:text-white">
                     {new Date(currentUser.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Last Updated</Label>
-                  <p className="text-gray-900">
+                  <p className="text-gray-900 dark:text-white">
                     {new Date(currentUser.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -412,10 +412,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3 min-w-0">
-                  <Mail className="h-5 w-5 text-gray-500 shrink-0" />
+                  <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="font-medium">Email Verification</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       {currentUser.emailVerified
                         ? "Email is verified"
                         : "Email not verified"}
@@ -455,19 +455,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="font-medium">Account Created</span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {new Date(currentUser.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="font-medium">Last Updated</span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {new Date(currentUser.updatedAt).toLocaleString()}
                   </p>
                 </div>

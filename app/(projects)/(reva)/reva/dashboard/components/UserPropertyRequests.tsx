@@ -206,10 +206,10 @@ export default function UserPropertyRequests({
           <div className="mx-auto h-24 w-24 text-gray-300 mb-4">
             <DocumentTextIcon className="h-full w-full" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No requests found
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             You haven't submitted any property requests yet.
           </p>
         </div>
@@ -235,7 +235,7 @@ export default function UserPropertyRequests({
               >
                 {title ?? "Property Requests"}
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 Showing {properties.length}{" "}
                 {properties.length === 1 ? "request" : "requests"}
               </p>
@@ -277,7 +277,7 @@ export default function UserPropertyRequests({
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gray-50 rounded-lg">
+                      <div className="p-2 bg-gray-50 dark:bg-surface rounded-lg">
                         {getPropertyIcon(propertyType)}
                       </div>
                       <div>
@@ -299,12 +299,12 @@ export default function UserPropertyRequests({
                             </Badge>
                           )}
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
                           {property.title ||
                             property.description ||
                             "Untitled Request"}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           REF: {property.reference}
                         </p>
                       </div>
@@ -335,10 +335,10 @@ export default function UserPropertyRequests({
 
                   {/* Requester Information */}
                   {requestType === "OneTime" && (
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-gray-50 dark:bg-surface rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <UserIcon className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <UserIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Requester
                         </span>
                       </div>
@@ -349,13 +349,13 @@ export default function UserPropertyRequests({
                           </span>
                         </div>
                         {requesterInfo.email && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                             <EnvelopeIcon className="h-4 w-4" />
                             <span>{requesterInfo.email}</span>
                           </div>
                         )}
                         {requesterInfo.phone && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                             <PhoneIcon className="h-4 w-4" />
                             <span>{requesterInfo.phone}</span>
                           </div>
@@ -368,16 +368,16 @@ export default function UserPropertyRequests({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <MapPinIcon className="h-4 w-4 text-gray-400" />
+                        <MapPinIcon className="h-4 w-4 text-gray-400 dark:text-gray-400" />
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Address
                           </p>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm text-gray-900 dark:text-white">
                             {property.address}
                           </p>
                           {property.lga && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {property.lga}
                             </p>
                           )}
@@ -386,12 +386,12 @@ export default function UserPropertyRequests({
 
                       {property.parcelId && (
                         <div className="flex items-center gap-2">
-                          <DocumentTextIcon className="h-4 w-4 text-gray-400" />
+                          <DocumentTextIcon className="h-4 w-4 text-gray-400 dark:text-gray-400" />
                           <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Parcel ID
                             </p>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm text-gray-900 dark:text-white">
                               {property.parcelId}
                             </p>
                           </div>
@@ -401,9 +401,9 @@ export default function UserPropertyRequests({
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <NairaIcon className="h-4 w-4 text-gray-400" />
+                        <NairaIcon className="h-4 w-4 text-gray-400 dark:text-gray-400" />
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Total Cost
                           </p>
                           <p className="text-lg font-bold text-blue-600">
@@ -413,12 +413,12 @@ export default function UserPropertyRequests({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-gray-400" />
+                        <CalendarIcon className="h-4 w-4 text-gray-400 dark:text-gray-400" />
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             {property.updatedAt ? "Last Updated" : "Created"}
                           </p>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm text-gray-900 dark:text-white">
                             {formatDate(
                               property?.updatedAt
                                 ? new Date(property.updatedAt)
@@ -436,8 +436,8 @@ export default function UserPropertyRequests({
                   {property.documentsUrls.length > 0 && (
                     <div className="border-t pt-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <DocumentTextIcon className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">
+                        <DocumentTextIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Supporting Documents
                         </span>
                         <Badge variant="outline" className="text-xs">
@@ -467,7 +467,7 @@ export default function UserPropertyRequests({
                             </a>
                           ))}
                         {property.documentsUrls.length > 4 && (
-                          <div className="text-xs text-gray-500 col-span-full">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 col-span-full">
                             +{property.documentsUrls.length - 4} more documents
                           </div>
                         )}

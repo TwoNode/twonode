@@ -122,7 +122,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
       <CardContent className="p-6">
         <div className="flex gap-3 mb-4">
           <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-400" />
             <Input
               placeholder="Search by reference, address, or property title..."
               value={filters.searchTerm}
@@ -155,7 +155,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-4">
           <span>
             Showing {filteredCount} of {totalCount} requests
             {hasActiveFilters && (
@@ -175,7 +175,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
         {isExpanded && (
           <div className="border-t pt-4 space-y-4">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <AdjustmentsHorizontalIcon className="h-4 w-4" />
                 Status
               </h4>
@@ -186,7 +186,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                     variant={
                       filters.status.includes(status) ? "default" : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
                     onClick={() => handleStatusToggle(status)}
                   >
                     {status}
@@ -196,7 +196,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Payment Status
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -208,7 +208,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                         ? "default"
                         : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
                     onClick={() => handlePaymentStatusToggle(status)}
                   >
                     {status}
@@ -218,13 +218,13 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Report Status
               </h4>
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant={filters.hasReport === true ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",
@@ -236,7 +236,7 @@ const UserSearchFilters: React.FC<UserSearchFiltersProps> = ({
                 </Badge>
                 <Badge
                   variant={filters.hasReport === false ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:bg-surface transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",

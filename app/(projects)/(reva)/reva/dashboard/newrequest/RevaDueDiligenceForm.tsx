@@ -834,7 +834,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
               onSubmit={handleSubmit}
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Title
                 </label>
 
@@ -862,9 +862,9 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                     placeholder="Enter the property address"
                   />
                 </Autocomplete>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   If address isn't available and you're at the property, use{" "}
-                  <span className="bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="bg-slate-100 dark:bg-surface px-2 py-0.5 rounded">
                     Use My Location
                   </span>
                 </p>
@@ -908,9 +908,9 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                 <h3 className="font-semibold text-green-700">
                   Parcel Information
                 </h3>
-                <p className="text-sm text-gray-700 mt-1">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                   Parcel ID:{" "}
-                  <span className="text-gray-900 font-medium">{parcelId}</span>
+                  <span className="text-gray-900 dark:text-white font-medium">{parcelId}</span>
                 </p>
               </div>
 
@@ -1020,42 +1020,42 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
             </h2>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Requester:</span>
-                <span className="font-medium text-gray-900">{title}</span>
+                <span className="text-gray-600 dark:text-gray-300">Requester:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Address:</span>
-                <span className="font-medium text-gray-900">{address}</span>
+                <span className="text-gray-600 dark:text-gray-300">Address:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{address}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Location:</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-gray-600 dark:text-gray-300">Location:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
                   {location ? `${location.lat}, ${location.lng}` : "Not set"}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Parcel ID:</span>
-                <span className="font-medium text-gray-900">{parcelId}</span>
+                <span className="text-gray-600 dark:text-gray-300">Parcel ID:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{parcelId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">LGA:</span>
-                <span className="font-medium text-gray-900">{lga}</span>
+                <span className="text-gray-600 dark:text-gray-300">LGA:</span>
+                <span className="font-medium text-gray-900 dark:text-white">{lga}</span>
               </div>
               <div>
-                <span className="text-gray-600 block mb-1">Files:</span>
+                <span className="text-gray-600 dark:text-gray-300 block mb-1">Files:</span>
                 <div className="space-y-1">
                   {fileNames.map((name, index) => (
-                    <div key={index} className="text-gray-800 border-b text-sm">
+                    <div key={index} className="text-gray-800 dark:text-gray-200 border-b text-sm">
                       {name}
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <span className="text-gray-600 block mb-1">Site Images:</span>
+                <span className="text-gray-600 dark:text-gray-300 block mb-1">Site Images:</span>
                 <div className="space-y-1">
                   {siteImageNames.map((name, index) => (
-                    <div key={index} className="text-gray-800 border-b text-sm">
+                    <div key={index} className="text-gray-800 dark:text-gray-200 border-b text-sm">
                       {name}
                     </div>
                   ))}
@@ -1083,7 +1083,7 @@ const RevaDueDiligenceForm = ({ defaultData = {} }: { defaultData?: {} }) => {
                   required
                   className="form-checkbox mt-1 h-5 w-5 text-blue-600"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   I agree to the{" "}
                   <Link
                     href="#"
@@ -1155,7 +1155,7 @@ const PrivacyPolicyModal = ({
               Privacy Policy & Terms and Conditions
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 text-gray-700 overflow-y-auto max-h-[70vh]">
+          <div className="space-y-6 text-gray-700 dark:text-gray-300 overflow-y-auto max-h-[70vh]">
             {/* --- Privacy Policy --- */}
             <section>
               <h2 className="text-2xl font-bold mb-2">Privacy Policy</h2>

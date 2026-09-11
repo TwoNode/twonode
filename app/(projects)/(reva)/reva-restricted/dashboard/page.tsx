@@ -102,7 +102,7 @@ const Home = async () => {
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -124,7 +124,7 @@ const Home = async () => {
                   </div>
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -146,7 +146,7 @@ const Home = async () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div className="flex items-center">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -230,9 +230,9 @@ const Home = async () => {
                 </p>
 
                 <div className="flex flex-col gap-3 mb-4">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -252,9 +252,9 @@ const Home = async () => {
                     </svg>
                     <span className="text-sm">{property.address}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -276,7 +276,7 @@ const Home = async () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-gray-100">
                   <div className="flex items-center">
                     <svg
-                      className="w-5 h-5 text-gray-400 mr-2"
+                      className="w-5 h-5 text-gray-400 dark:text-gray-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

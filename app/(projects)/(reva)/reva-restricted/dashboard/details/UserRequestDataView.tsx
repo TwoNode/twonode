@@ -24,7 +24,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
               {property?.title || "Untitled Request"}
             </h1>
 
@@ -122,7 +122,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                 {property.site_images.map((url: string, idx: number) => (
                   <div
                     key={idx}
-                    className="rounded-lg overflow-hidden border bg-white shadow hover:shadow-lg transition-shadow"
+                    className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
                     <img
                       src={url}
@@ -134,7 +134,7 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+              <div className="flex flex-col items-center justify-center p-8 text-gray-400 dark:text-gray-400">
                 <svg
                   className="w-12 h-12 mb-2"
                   fill="none"
@@ -214,9 +214,9 @@ const UserRequestDataView = ({ property }: { property: any }) => {
                 ))}
               </ul>
             ) : (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-gray-300 dark:border-white/10 rounded-lg p-6 text-center">
                 <svg
-                  className="mx-auto h-8 w-8 text-gray-400"
+                  className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

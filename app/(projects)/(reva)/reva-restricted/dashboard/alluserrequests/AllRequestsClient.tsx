@@ -301,7 +301,7 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <p>No requests found matching your criteria.</p>
           </div>
         )}
