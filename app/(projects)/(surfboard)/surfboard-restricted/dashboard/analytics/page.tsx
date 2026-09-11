@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading analytics...</p>
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
 
   if (!analyticsData) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 dark:text-gray-400">Failed to load analytics data</p>
         </div>
@@ -116,11 +116,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 mb-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
@@ -153,9 +153,9 @@ export default function AnalyticsPage() {
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -181,9 +181,9 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                <div className="p-3 rounded-full bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -209,9 +209,9 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -237,9 +237,9 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <div className="flex items-center">
-                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
                   <svg
                     className="w-6 h-6"
                     fill="none"
@@ -269,7 +269,7 @@ export default function AnalyticsPage() {
           {/* Charts and Detailed Analytics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Top Performing Regions */}
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Top Performing Regions
               </h2>
@@ -280,7 +280,7 @@ export default function AnalyticsPage() {
                     className="flex items-center justify-between"
                   >
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm">
                         {index + 1}
                       </div>
                       <span className="ml-3 text-gray-700 dark:text-gray-300">
@@ -301,7 +301,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Recent Activity
               </h2>
@@ -334,7 +334,7 @@ export default function AnalyticsPage() {
           {/* Additional Analytics Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Plan Status Distribution */}
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Plan Status Distribution
               </h3>
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
                     {analyticsData.activePlans}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
                     style={{
@@ -363,7 +363,7 @@ export default function AnalyticsPage() {
                     {analyticsData.completedPlans}
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-2">
                   <div
                     className="bg-green-600 h-2 rounded-full"
                     style={{
@@ -379,7 +379,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* User Engagement */}
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 User Engagement
               </h3>
@@ -399,7 +399,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Quick Actions
               </h3>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { SurfboardRole } from "@/prisma/generated";
+import { Eye, ArrowUpCircle, CreditCard } from "lucide-react";
 
 interface Subscription {
   id?: string;
@@ -272,40 +273,40 @@ export default function UserManagementPage() {
   const getRoleColor = (role: SurfboardRole) => {
     switch (role) {
       case "SUPERADMIN":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300";
       case "ADMIN":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300";
       case "USER":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300";
       case "RECORDS_I":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 dark:bg-orange-500/15 text-orange-800 dark:text-orange-300";
       case "RECORDS_II":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 dark:bg-orange-500/15 text-orange-800 dark:text-orange-300";
       case "ACCOUNTS":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300";
       case "CHARTING":
-        return "bg-teal-100 text-teal-800";
+        return "bg-teal-100 dark:bg-teal-500/15 text-teal-800 dark:text-teal-300";
       case "SURCON":
-        return "bg-cyan-100 text-cyan-800";
+        return "bg-cyan-100 dark:bg-cyan-500/15 text-cyan-800 dark:text-cyan-300";
       case "INTAKE":
-        return "bg-amber-100 text-amber-800";
+        return "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300";
       case "ARCHIVE":
-        return "bg-stone-100 text-stone-800";
+        return "bg-stone-100 dark:bg-stone-500/15 text-stone-800 dark:text-stone-300";
       case "MDA_SUPERADMIN":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300";
       default:
-        return "bg-gray-100 dark:bg-white/10 text-gray-800";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-gray-300";
     }
   };
 
   const getSubscriptionStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300";
       case "canceled":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300";
       case "expired":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300";
       default:
         return "bg-gray-100 dark:bg-white/10 text-gray-800";
     }
@@ -313,7 +314,7 @@ export default function UserManagementPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading user management...</p>
@@ -323,7 +324,7 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -388,9 +389,9 @@ export default function UserManagementPage() {
           {/* Stats Overview */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
                 <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                  <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
                     <svg
                       className="w-6 h-6"
                       fill="none"
@@ -409,16 +410,16 @@ export default function UserManagementPage() {
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Total Users
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {stats.totalUsers}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
                 <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <div className="p-3 rounded-full bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400">
                     <svg
                       className="w-6 h-6"
                       fill="none"
@@ -437,16 +438,16 @@ export default function UserManagementPage() {
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Active Users
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {stats.activeUsers}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
                 <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                  <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400">
                     <svg
                       className="w-6 h-6"
                       fill="none"
@@ -463,16 +464,16 @@ export default function UserManagementPage() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {stats.admins + stats.superAdmins}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
                 <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                  <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
                     <svg
                       className="w-6 h-6"
                       fill="none"
@@ -492,7 +493,7 @@ export default function UserManagementPage() {
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Active Subscriptions
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {stats.usersWithActiveSubscriptions}
                     </p>
                   </div>
@@ -574,7 +575,7 @@ export default function UserManagementPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
                 <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -597,9 +598,9 @@ export default function UserManagementPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="shrink-0 h-10 w-10">
@@ -676,8 +677,8 @@ export default function UserManagementPage() {
                           }
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             user.isActive
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                              : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                           }`}
                         >
                           {user.isActive ? "Active" : "Inactive"}
@@ -711,27 +712,29 @@ export default function UserManagementPage() {
                         {user.plansCount}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex space-x-2">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => setSelectedUser(user)}
-                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                            title="View details"
+                            className="p-1.5 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
                           >
-                            View
+                            <Eye className="h-4 w-4" />
                           </button>
                           {user.role === "USER" && (
                             <button
                               onClick={() => handlePromoteToAdmin(user.id)}
-                              className="text-purple-600 hover:text-purple-900 text-sm font-medium"
+                              title="Promote to admin"
+                              className="p-1.5 rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors"
                             >
-                              Promote
+                              <ArrowUpCircle className="h-4 w-4" />
                             </button>
                           )}
                           <button
                             onClick={() => openSubscriptionModal(user)}
-                            className="text-green-600 hover:text-green-900 text-sm font-medium"
-                            title="Manage Subscription"
+                            title="Manage subscription"
+                            className="p-1.5 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
                           >
-                            Subscription
+                            <CreditCard className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -837,8 +840,8 @@ export default function UserManagementPage() {
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               selectedUser.isActive
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
+                                ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                                : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                             }`}
                           >
                             {selectedUser.isActive ? "Active" : "Inactive"}
@@ -877,7 +880,7 @@ export default function UserManagementPage() {
                   <div className="mt-6 flex justify-end space-x-4">
                     <button
                       onClick={() => setSelectedUser(null)}
-                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                     >
                       Close
                     </button>
@@ -1046,7 +1049,7 @@ export default function UserManagementPage() {
                         onClick={() =>
                           handleCancelSubscription(editingSubscription.id)
                         }
-                        className="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white dark:bg-surface hover:bg-red-50"
+                        className="px-4 py-2 border border-red-300 dark:border-red-500/30 rounded-md text-sm font-medium text-red-700 dark:text-red-400 bg-white dark:bg-surface hover:bg-red-50 dark:hover:bg-red-500/10"
                       >
                         Cancel Subscription
                       </button>
@@ -1056,7 +1059,7 @@ export default function UserManagementPage() {
                         setShowSubscriptionModal(false);
                         setEditingSubscription(null);
                       }}
-                      className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-white/5"
                     >
                       Close
                     </button>
@@ -1193,7 +1196,7 @@ export default function UserManagementPage() {
                       <button
                         type="button"
                         onClick={() => setShowAddAdminModal(false)}
-                        className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50"
+                        className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-white/5"
                       >
                         Cancel
                       </button>
