@@ -1,6 +1,6 @@
 # Twonodes Architecture Rebuild — Progress Tracker
 
-Last Updated: 2026-09-03
+Last Updated: 2026-09-11
 
 See also: `docs/development-history/route-inventory.md` — the full list of every route (pages + API) across all three products, kept current as each phase renames/adds/retires routes.
 
@@ -22,6 +22,34 @@ See also: `docs/development-history/route-inventory.md` — the full list of eve
 - **Phase 4 — GBC**: Complete. All 8 planned services shipped and live-verified — 53 routes, 242/242 tests passing. The edition-metadata schema migration is done — `edition` columns live on 5 tables, ticket-number generation moved out of the DB into `ticketService.ts`. The Past Editions public page and admin event-switcher are both built. The shared Paystack webhook's GBC branch is repointed and live-verified with a real signed request — GBC tickets now have a server-side fallback if the client-side payment-success redirect never reaches the browser, the same class of gap REVA's Phase 3 webhook repoint closed. The My Ticket guest-lookup entry point is built, repurposing the already-disabled `/gbc/login` route. The `gbc/access/routes.ts` registry now backs `proxy.ts`'s GBC branch and the *real* admin sidebar (`AdminSidebar.tsx`/`AdminMobileNav.tsx`, after a same-day self-correction — the first pass targeted an unused scaffolding component instead), closing two real nav gaps found along the way (Attendees and Editions were both unreachable from the live sidebar). Naming standardization is done — `gbc/restricted` is now `gbc-restricted`, with old-prefix redirects in place. The folder move is done too — GBC-specific components/types/utils now live under `gbc/`, and five confirmed-dead scaffolding files (two unused layouts, two unused hooks, two unused color/auth-helper files) were deleted rather than moved. Two independent auth gaps found and closed along the way — `sendBulkCertificates` and (before the hotfix) every other GBC admin mutation had no real check. Also surfaced: `prisma db push` is broken on this machine's local Postgres (missing PostGIS, unrelated to GBC) — worked around via direct SQL this time, will need a real fix (extension install) before the next schema change. A final integration pass (real guest purchase → webhook → My Ticket lookup, admin check-in, sponsor/speaker/gallery CRUD, settings update, a two-edition switcher round-trip, full admin user-management lifecycle) confirmed everything works together post-refactor; all test data cleaned up afterward. Full writeup in `docs/development-history/phases/phase-4-gbc.md`'s Completion Report. An interim security hotfix already shipped ahead of the spec — GBC's `requireAdmin()` was a hardcoded stub with zero real auth check, live on every admin mutation — see details below.
 - **Phase 5 — Retirement**: Complete (spec `docs/development-history/phases/phase-5-retirement.md`). GBC, REVA, and Surfboard are all fully retired — every real `"use server"` action file across all three products repointed onto `/api/v1/*` routes and deleted, live smoke-tested. **This closed out the whole 5-phase rebuild**, merged to `main` via [PR #34](https://github.com/roji-tech/twonodes/pull/34).
 - **Post-merge follow-up (all against `main` directly, not the old worktree)**: a post-Phase-5 auth audit (2 real bugs fixed, Kinde confirmed still deliberately live alongside native auth), GBC editions moved to a relational table then that migration extended to a real tracked, deployed migration on the AWS staging DB (`test_db`) — [PR #43](https://github.com/roji-tech/twonodes/pull/43) — new CI/CD for future migrations ([PR #44](https://github.com/roji-tech/twonodes/pull/44)), and the native-JWT auth backend finally wired into real login/register UI end-to-end across all three products ([PR #46](https://github.com/roji-tech/twonodes/pull/46), awaiting review). Production (`twonode_db`) migration is proven-ready but deliberately not run — needs your go-ahead.
+
+---
+
+## Design System Rebuild — Phases 6–11 (new initiative, planned 2026-09-11)
+
+Separate from the 5-phase architecture rebuild above (which never touched
+styling) — dark/light mode, cross-product color consistency, and
+responsiveness, done properly across every page. Numbered 6–11 to continue
+after the original rebuild's Phases 0–5. Full context and design principles
+in `docs/development-history/phases/phase-6-design-tokens.md`; every phase
+doc lives in that same folder.
+
+- **Phase 6 — Design Token Foundation**: Planned, not started. Builds the
+  shared semantic + per-product brand CSS tokens and migrates the shared
+  component library (`components/sidebars/*`, `components/dashboard/*`,
+  `components/admin-panel/*`, `components/auth/*`) off inline hex onto
+  them. Blocks every phase below.
+- **Phase 7 — Surfboard theming**: Planned, blocked on Phase 6.
+- **Phase 8 — REVA theming**: Planned, blocked on Phase 6 (and ideally 7).
+- **Phase 9 — GBC theming**: Planned, blocked on Phase 6 (and ideally 7–8).
+- **Phase 10 — Public/marketing sites theming**: Planned, blocked on
+  Phases 6–9 — dashboards come first per your call, public sites after.
+- **Phase 11 — Cross-cutting QA & regression pass**: Planned, blocked on
+  Phases 6–10. Full click-through, light+dark, at 375px/768px/1440px.
+
+Each phase verified with `tsc --noEmit` plus light+dark screenshots at
+mobile/tablet/desktop widths before moving to the next, and ships as its
+own branch + PR off `main`.
 
 ---
 
