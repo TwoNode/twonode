@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { revaApi } from "@/reva/apiClient";
@@ -58,6 +59,8 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
+  const lastSeenAtRef = useRef<number>(0);
+  const isFirstPollRef = useRef(true);
 
   const refreshUnreadCount = useCallback(async () => {
     try {
@@ -68,11 +71,50 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
     }
   }, [api]);
 
+  // Toast pop-ups for genuinely new notifications, independent of whether
+  // the dropdown is open — the badge alone is easy to miss. The first poll
+  // only records the current latest timestamp rather than toasting it, so
+  // opening the app doesn't dump every historical notification as a toast.
+  const pollForNewNotifications = useCallback(async () => {
+    try {
+      const result = await api.list({ limit: 5 });
+      if (!result.success || !result.data?.length) return;
+      const sorted = [...result.data].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      if (isFirstPollRef.current) {
+        isFirstPollRef.current = false;
+        lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
+        return;
+      }
+
+      const fresh = sorted.filter((n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current);
+      fresh
+        .slice()
+        .reverse()
+        .forEach((n) => {
+          toast(n.title, {
+            description: n.message,
+            action: n.link ? { label: "View", onClick: () => (window.location.href = n.link!) } : undefined,
+          });
+        });
+
+      if (fresh.length) lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
+    } catch {
+      // Non-fatal — a missed poll just means fewer toasts, the bell badge still works.
+    }
+  }, [api]);
+
   useEffect(() => {
     refreshUnreadCount();
-    const interval = setInterval(refreshUnreadCount, 60000);
+    pollForNewNotifications();
+    const interval = setInterval(() => {
+      refreshUnreadCount();
+      pollForNewNotifications();
+    }, 60000);
     return () => clearInterval(interval);
-  }, [refreshUnreadCount]);
+  }, [refreshUnreadCount, pollForNewNotifications]);
 
   useEffect(() => {
     if (!open) return;

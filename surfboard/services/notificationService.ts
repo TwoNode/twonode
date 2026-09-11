@@ -1,6 +1,7 @@
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { sendNotificationMail } from "@/utils/email";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { SurfboardNotificationType, SurfboardNotificationAudience, SurfboardRole } from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
 
@@ -29,6 +30,9 @@ export type CreateNotificationInput = {
   link?: string;
   metadata?: any;
   sendEmail?: boolean;
+  /** Best-effort WhatsApp copy of the notification — silently a no-op for
+   * recipients with no phone on file, or when no provider is configured. */
+  sendWhatsApp?: boolean;
 };
 
 export type NotificationWithUser = {
@@ -58,6 +62,11 @@ export async function createNotification(input: CreateNotificationInput) {
 
   if (input.sendEmail) {
     await sendNotificationEmails(notification.id);
+  }
+  if (input.sendWhatsApp) {
+    sendNotificationWhatsApp(notification.id).catch((error) =>
+      console.error("Error sending notification WhatsApp messages:", error)
+    );
   }
 
   return { id: notification.id };
@@ -90,7 +99,7 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 async function getNotificationRecipients(notification: {
   audience: SurfboardNotificationAudience;
   userIds: string[];
-}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string }>> {
+}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string; phoneNumber: string | null }>> {
   const where: any = { isActive: true };
 
   switch (notification.audience) {
@@ -107,7 +116,22 @@ async function getNotificationRecipients(notification: {
       break;
   }
 
-  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true } });
+  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true } });
+}
+
+async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
+  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+  if (!notification) {
+    console.error("Notification not found:", notificationId);
+    return;
+  }
+
+  const recipients = await getNotificationRecipients(notification);
+  const sends = recipients
+    .filter((r) => r.phoneNumber)
+    .map((r) => sendWhatsAppMessage(r.phoneNumber!, `${notification.title}\n\n${notification.message}`));
+
+  await Promise.allSettled(sends);
 }
 
 function generateNotificationEmailHtml(
@@ -449,6 +473,7 @@ export async function notifyPlanApproved(params: {
       link: `/surfboard/dashboard/plans`,
       metadata: { planId: params.planId, planNumber: params.planNumber, batchCode: params.batchCode },
       sendEmail: params.sendEmail ?? true,
+      sendWhatsApp: true,
     });
   } catch (error) {
     console.error("Error sending plan approval notification:", error);
@@ -472,6 +497,7 @@ export async function notifyPlanCreated(params: {
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
       metadata: { planId: params.planId, planNumber: params.planNumber, surveyTitle: params.surveyTitle },
       sendEmail: params.sendEmail ?? true,
+      sendWhatsApp: true,
     });
   } catch (error) {
     console.error("Error sending plan created notification:", error);
