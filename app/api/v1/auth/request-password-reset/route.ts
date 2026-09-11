@@ -9,6 +9,7 @@ import { validateBody } from "@/lib/api/validate";
 import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
 import { sendPasswordResetEmail } from "@/utils/email";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 
 const requestSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -76,6 +77,16 @@ export async function POST(req: NextRequest) {
         isFirstTimeSetup: !user.passwordHash,
         platform,
       });
+
+      // Best-effort second channel — never blocks or fails the request;
+      // silently a no-op when the user has no phone on file, or no
+      // WhatsApp provider is configured (see lib/whatsapp).
+      if (user.phone) {
+        sendWhatsAppMessage(
+          user.phone,
+          `Hi ${user.firstName || ""}, here's your TwoNode password reset link:\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, ignore this message.`
+        ).catch(() => {});
+      }
 
       // Local/dev convenience only — SMTP creds aren't always configured in
       // dev, and the raw token is never persisted anywhere (only its hash

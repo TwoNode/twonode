@@ -127,6 +127,11 @@ model Subscription {
   status          String // active, canceled, expired, etc.
   platform        String    @default("surfboard") // surfboard or twonodes or reva or scram
 
+  // Dedupe marker for the expiry-reminder cron (email + WhatsApp) — set once
+  // a reminder has gone out for the subscription's *current* expiry date, so
+  // a renewal (which bumps currentEnd) naturally allows a fresh reminder later.
+  expiryReminderSentAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
