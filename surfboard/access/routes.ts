@@ -51,6 +51,8 @@ export interface SurfboardRouteEntry {
   group: SurfboardRouteGroup;
   /** Visual sidebar section heading — display-only, no bearing on access control. */
   section?: string;
+  /** Section starts collapsed on first visit (still one click away) — for less-frequently-used groups, so the sidebar's default view is shorter. */
+  sectionCollapsedByDefault?: boolean;
 }
 
 const ADMIN_ROLES = [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN];
@@ -87,12 +89,12 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/cod/batches`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
-  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights" },
-  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights" },
-  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin", section: "System" },
+  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin", section: "System", sectionCollapsedByDefault: true },
 
   // --- User (surveyor) panel ---
   { path: USER_BASE, label: "Home", icon: Home, roles: USER_PANEL_ROLES, group: "user", section: "Overview" },
