@@ -42,5 +42,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="relative">{children}</div>;
+  return (
+    <div className="relative" data-product="surfboard">
+      {children}
+    </div>
+  );
 }

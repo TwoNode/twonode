@@ -9,12 +9,100 @@
    the class rather than prefers-color-scheme. */
 @variant dark (&:where(.dark, .dark *));
 
+/* ===================================
+   Design tokens (Phase 6 — design-system rebuild)
+
+   Tailwind v4 note: there is no `@config` directive anywhere in this repo,
+   so tailwind.config.ts's `theme.extend` is NOT read by the build at all
+   (verified: its keyframes/utilities never appear in compiled output).
+   New tokens/utilities must be declared here via `@theme`, not in the
+   .ts config.
+
+   Two layers:
+   - Shared semantic tokens (background/foreground/surface/border/status
+     colors) — same names, different values per theme, flipped by `.dark`.
+     These back shadcn `ui/*` primitives and anything that isn't
+     brand-colored.
+   - Per-product brand tokens, scoped under `[data-product="surfboard|reva|gbc"]`
+     (set on each product's root layout). Values mirror the corresponding
+     `*_COLORS` TS file — those files stay the source of truth for
+     PDF/canvas rendering, which can't read CSS vars, so keep both in sync
+     if a brand color changes.
+   =================================== */
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-surface: #f8fafc;
+  --color-surface-muted: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-muted-foreground: #64748b;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #0284c7;
+
+  /* Fallback brand tokens for anything rendered outside a [data-product]
+     subtree — mirrors surfboard/colors.ts. Every product layout should set
+     data-product so these get overridden below. */
+  --color-brand-primary: #0077b6;
+  --color-brand-primary-dark: #023e8a;
+  --color-brand-primary-light: #48cae4;
+  --color-brand-secondary: #00b4d8;
+  --color-brand-accent: #43aa8b;
+}
+
 :root {
   color-scheme: light;
 }
 
 .dark {
   color-scheme: dark;
+
+  /* Dark theme leans on borders + slightly-lighter surfaces for
+     separation instead of drop-shadows (shadows read as noise on dark
+     backgrounds) — keep that in mind when styling cards/panels. */
+  --color-background: #0b1120;
+  --color-foreground: #f1f5f9;
+  --color-surface: #111827;
+  --color-surface-muted: #1e293b;
+  --color-border: #334155;
+  --color-muted-foreground: #94a3b8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #f87171;
+  --color-info: #38bdf8;
+}
+
+/* Brand tokens — mirrors surfboard/colors.ts's SURFBOARD_COLORS */
+[data-product="surfboard"] {
+  --color-brand-primary: #0077b6;
+  --color-brand-primary-dark: #023e8a;
+  --color-brand-primary-light: #48cae4;
+  --color-brand-secondary: #00b4d8;
+  --color-brand-accent: #43aa8b;
+}
+
+/* Brand tokens — mirrors reva/colors.ts's REVA_COLORS.
+   REVA's file shape differs from the other two products: primary.main
+   (#032740) is a dark ink used for headers/sidebars, not a mid-tone brand
+   color, so it maps to brand-primary-dark here; primary.light (#008cff) is
+   the vivid blue actually used for CTAs/accents in the UI, so it maps to
+   brand-primary. */
+[data-product="reva"] {
+  --color-brand-primary: #008cff;
+  --color-brand-primary-dark: #032740;
+  --color-brand-primary-light: #00bfff;
+  --color-brand-secondary: #1e40af;
+  --color-brand-accent: #3b82f6;
+}
+
+/* Brand tokens — mirrors gbc/colors.ts's GBC_COLORS */
+[data-product="gbc"] {
+  --color-brand-primary: #7c3aed;
+  --color-brand-primary-dark: #5b21b6;
+  --color-brand-primary-light: #a78bfa;
+  --color-brand-secondary: #ec4899;
+  --color-brand-accent: #ec4899;
 }
 
 /* Import Bricolage Grotesque font */
