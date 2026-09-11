@@ -1,7 +1,6 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
 import { Platform, GBCRole } from "@/utils/platform";
 
@@ -69,14 +68,15 @@ export async function GET(request: NextRequest) {
     })();
 
     // Redirect to the beautiful redirect page with redirectionPage param
-    const redirectPageUrl = addBaseUrl(
-      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`
+    const redirectPageUrl = new URL(
+      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`,
+      request.url
     );
     const response = NextResponse.redirect(redirectPageUrl);
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
     console.error("Error in GET /auth/success/gbc:", error);
-    return NextResponse.redirect(addBaseUrl("/gbc/error-login"));
+    return NextResponse.redirect(new URL("/gbc/error-login", request.url));
   }
 }

@@ -181,28 +181,40 @@ export interface TimeTrendPoint {
   count: number;
 }
 
-/** 12-month creation trend — ported from the source unchanged, scoped per role. */
+/**
+ * 12-month creation trend, scoped per role. Uses a type-safe Prisma query
+ * (not $queryRaw) — the original raw-SQL version intermittently threw
+ * `argument of WHERE must be type boolean, not type jsonb` under concurrent
+ * load (part of the same Promise.all batch as several other queries in
+ * `getUserDashboardAnalytics`); reproduced only under that concurrency, never
+ * in isolation, pointing at a prepared-statement/connection-pool collision
+ * between concurrent $queryRaw calls rather than a logic bug. Bucketing in
+ * JS instead of via DATE_TRUNC/TO_CHAR removes the raw query — and that
+ * collision surface — entirely.
+ */
 export async function getTimeTrend(scope: AnalyticsScope): Promise<TimeTrendPoint[]> {
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-  const conditions = [
-    Prisma.sql`"planType" NOT IN (${Prisma.join(PROVISIONAL_TYPES)})`,
-    Prisma.sql`"createdAt" >= ${twelveMonthsAgo}`,
-  ];
+  const where: Prisma.SurfboardPlanWhereInput = {
+    planType: { notIn: PROVISIONAL_TYPES },
+    createdAt: { gte: twelveMonthsAgo },
+  };
   if (scope.role === SurfboardRole.USER) {
-    conditions.push(Prisma.sql`"userId" = ${scope.userId}`);
+    where.userId = scope.userId;
   }
 
-  const rows = await prisma.$queryRaw<{ month: string; count: number }[]>`
-    SELECT TO_CHAR(DATE_TRUNC('month', "createdAt"), 'YYYY-MM') as month, COUNT(*)::integer as count
-    FROM "SurfboardPlan"
-    WHERE ${Prisma.join(conditions, " AND ")}
-    GROUP BY DATE_TRUNC('month', "createdAt")
-    ORDER BY month ASC
-  `;
+  const plans = await prisma.surfboardPlan.findMany({ where, select: { createdAt: true } });
 
-  return rows.map((r) => ({ period: r.month, count: r.count }));
+  const counts = new Map<string, number>();
+  for (const { createdAt } of plans) {
+    const month = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, "0")}`;
+    counts.set(month, (counts.get(month) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([period, count]) => ({ period, count }));
 }
 
 export interface UserDashboardAnalytics {
