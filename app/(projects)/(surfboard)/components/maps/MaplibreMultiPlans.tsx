@@ -685,15 +685,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
       {notification && (
         <div
-          className={`absolute z-60 top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-xl text-sm font-semibold
+          className={`absolute z-60 top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-md text-sm font-semibold
             ${
               notification.type === "info"
-                ? "bg-blue-100 border border-blue-400 text-blue-800"
+                ? "bg-blue-100 dark:bg-blue-500/15 border border-blue-400 dark:border-blue-500/30 text-blue-800 dark:text-blue-300"
                 : ""
             }
             ${
               notification.type === "error"
-                ? "bg-red-100 border border-red-400 text-red-800"
+                ? "bg-red-100 dark:bg-red-500/15 border border-red-400 dark:border-red-500/30 text-red-800 dark:text-red-300"
                 : ""
             }`}
         >
@@ -702,7 +702,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       )}
 
       {/* Controls Panel */}
-      <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 rounded-xl shadow-lg p-3 space-y-2">
+      <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 space-y-2">
         <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
           <div className="relative">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -714,7 +714,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 value={locQuery}
                 onChange={(e) => setLocQuery(e.target.value)}
                 placeholder="Search location..."
-                className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
               />
               {locLoading && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -723,11 +723,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               )}
             </div>
             {locResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
                 {locResults.map((r, i) => (
                   <button
                     key={`${r.lon}-${i}`}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                    className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
                     onClick={() => {
                       flyToLoc(r.lat, r.lon);
                       setLocResults([]);
@@ -749,7 +749,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Plan number, title, facilitator..."
-              className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
             />
           </div>
 
@@ -765,20 +765,20 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             />{" "}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 text-green-700 border border-green-500 hover:bg-green-100 transition-colors whitespace-nowrap"
+              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
             >
               Upload CSV
             </button>
             <button
               onClick={clearAll}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 hover:bg-red-200 transition-colors"
+              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
             >
               Clear Filters
             </button>
           </div>
         </div>
         <div className="flex flex-wrap gap-4">
-          <div className="shadow-md p-2 rounded-md">
+          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Status
             </label>
@@ -794,7 +794,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     statusFilter.includes(s)
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
                 >
                   {s}
@@ -802,7 +802,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               ))}
             </div>
           </div>
-          <div className="shadow-md p-2 rounded-md">
+          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Plan Type
             </label>
@@ -818,7 +818,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     typeFilter.includes(t)
                       ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
                 >
                   {t}
@@ -830,13 +830,13 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       </div>
 
       {/* Basemap and Plan Visibility */}
-      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 rounded-xl shadow-lg p-3">
-        <div className="text-sm font-semibold mb-1">Basemap</div>
+      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
         {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
           (k) => (
             <label
               key={k}
-              className="flex items-center gap-2 cursor-pointer text-sm"
+              className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
             >
               <input
                 type="radio"
@@ -849,8 +849,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </label>
           ),
         )}
-        <hr className="my-2" />
-        <div className="text-sm font-semibold mb-1">
+        <hr className="my-2 border-gray-200 dark:border-white/10" />
+        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
           Database Plans ({visiblePlanIds.length})
         </div>
         <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
@@ -859,7 +859,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             .map((p) => (
               <label
                 key={p.id}
-                className="flex items-center gap-2 cursor-pointer text-sm"
+                className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
               >
                 <input
                   type="checkbox"
@@ -888,21 +888,21 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         </div>
         {tempPlans.length > 0 && (
           <>
-            <hr className="my-2" />
+            <hr className="my-2 border-gray-200 dark:border-white/10" />
             <div className="flex justify-between items-center">
-              <div className="text-sm font-semibold">
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
                 Uploaded Layers ({visibleTempPlanIds.length})
               </div>
               <button
                 onClick={clearTempPlans}
-                className="text-xs text-red-500 hover:underline"
+                className="text-xs text-red-500 dark:text-red-400 hover:underline"
               >
                 Clear All
               </button>
             </div>
             <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
               {tempPlans.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 text-sm">
+                <div key={p.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <label className="flex items-center gap-2 cursor-pointer grow truncate">
                     <input
                       type="checkbox"
@@ -943,15 +943,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
       {/* Summary Strip */}
       {filteredPlans.length > 0 && (
-        <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 rounded-xl shadow-lg p-3">
-          <div className="text-sm font-semibold mb-2">
+        <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
             Filtered Plans ({filteredPlans.length})
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
             {filteredPlans.map((p) => (
               <button
                 key={p.id}
-                className="p-2 border rounded-lg text-left hover:bg-gray-50 overflow-hidden"
+                className="p-2 border border-gray-200 dark:border-white/10 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-white/5 overflow-hidden"
                 onClick={() => {
                   const allVisible = [...visiblePlanIds, ...visibleTempPlanIds];
                   if (!allVisible.includes(p.id)) {
@@ -969,7 +969,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                     className="inline-block w-3 h-3 rounded-sm"
                     style={{ background: generateColor(p.id) }}
                   />
-                  <span className="font-medium text-sm">{p.planNumber}</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{p.planNumber}</span>
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                   {p.planType as string} · {p.status}
