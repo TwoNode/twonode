@@ -56,9 +56,7 @@ const styles = StyleSheet.create({
   content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 40, display: "flex", flexDirection: "column" },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   brandRow: { flexDirection: "row", alignItems: "center" },
-  logo: { width: 62, height: 15.2, marginRight: 12, objectFit: "contain" },
-  wordmark: { fontSize: 13, fontWeight: 800, color: INK, letterSpacing: 1 },
-  wordmarkSub: { fontSize: 8, fontWeight: 500, color: MUTED, marginTop: 2, letterSpacing: 0.5 },
+  logo: { width: 90, height: 22.1, objectFit: "contain" },
   ticketNo: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 1, textAlign: "right" },
   center: { flexGrow: 1, alignItems: "center", justifyContent: "center", textAlign: "center" },
   eyebrow: { fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 3, marginBottom: 18 },
@@ -140,13 +138,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       React.createElement(
         View,
         { style: styles.brandRow },
-        React.createElement(Image, { style: styles.logo, src: LOGO_PATH }),
-        React.createElement(
-          View,
-          null,
-          React.createElement(Text, { style: styles.wordmark }, edition.name.toUpperCase()),
-          React.createElement(Text, { style: styles.wordmarkSub }, "GEOSPATIAL BUILDERS CONFERENCE · TWONODE TECHNOLOGIES")
-        )
+        React.createElement(Image, { style: styles.logo, src: LOGO_PATH })
       ),
       React.createElement(Text, { style: styles.ticketNo }, `CERTIFICATE ${ticket.ticketNumber}`)
     ),
