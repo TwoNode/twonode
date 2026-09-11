@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   verifyText: { width: 204 },
   verifyLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5, marginBottom: 2 },
   verifyUrl: { fontSize: 8, fontWeight: 500, color: PURPLE },
-  signatureBlock: { flexGrow: 1, alignItems: "center" },
+  signatureBlock: { flexGrow: 1, flexBasis: 0, alignItems: "center" },
   signatureImage: { width: 100, height: 32, marginBottom: -6, objectFit: "contain" },
   signatureLine: { width: 140, borderBottomWidth: 0.75, borderBottomColor: MUTED, marginBottom: 5 },
   signatureLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5 },
