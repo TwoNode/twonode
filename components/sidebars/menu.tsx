@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { LucideIcon } from "lucide-react";
@@ -17,10 +18,24 @@ interface LinkItem {
   url: string;
   /** Visual sidebar section heading — rendered above this item when it differs from the previous item's section. */
   section?: string;
+  /** Sections start collapsed on first visit (still one click away, and auto-expand if the active page lives in them) — used to keep less-frequently-used groups from adding to the sidebar's default visual weight. */
+  sectionCollapsedByDefault?: boolean;
   /** Small count pill rendered at the end of the row, e.g. a pending-items count. */
   badge?: number | string;
   /** Tints the badge to draw the eye (e.g. items needing action) instead of the neutral default. */
   badgeAttention?: boolean;
+}
+
+const COLLAPSED_SECTIONS_STORAGE_KEY = "sidebar:collapsed-sections";
+
+function readStoredCollapsedSections(): Set<string> | null {
+  try {
+    const raw = localStorage.getItem(COLLAPSED_SECTIONS_STORAGE_KEY);
+    if (!raw) return null;
+    return new Set(JSON.parse(raw));
+  } catch {
+    return null;
+  }
 }
 
 interface ElementItem {
@@ -69,6 +84,45 @@ export function Menu({
 
   const isActive = (url: string) => pathname === url;
 
+  // Never collapse the section the current page lives in — landing on a
+  // page and having its own nav entry hidden would be worse than the
+  // clutter this is meant to fix.
+  const activeSection = linkItems.find((item) => isActive(item.url))?.section;
+
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () =>
+      new Set(
+        linkItems
+          .filter((i): i is LinkItem & { section: string } => !!i.section && !!i.sectionCollapsedByDefault)
+          .map((i) => i.section)
+      )
+  );
+
+  // Defaults above run identically on server and client (same `items` prop),
+  // so this only overrides with the user's actual saved preference once the
+  // browser's localStorage is available — no hydration mismatch.
+  useEffect(() => {
+    const stored = readStoredCollapsedSections();
+    if (stored) setCollapsedSections(stored);
+  }, []);
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      try {
+        localStorage.setItem(COLLAPSED_SECTIONS_STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        // Non-fatal — the toggle still works for the current session.
+      }
+      return next;
+    });
+  };
+
+  const isSectionCollapsed = (section: string | undefined) =>
+    !!section && section !== activeSection && collapsedSections.has(section);
+
   // contrastText in this codebase's palettes is always a 3-digit hex ("#fff"),
   // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
   // invalid 5-digit "#fff99"). Use a literal translucent white instead of
@@ -99,18 +153,32 @@ export function Menu({
             const showHeading =
               !!item.section && item.section !== previousSection;
             previousSection = item.section;
+            const collapsed = isSectionCollapsed(item.section);
 
             return (
               <li key={index} className="w-full list-none">
                 {showHeading && (
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-wider px-3 pt-3 pb-1.5"
-                    style={{ color: mutedTextColor }}
+                  <button
+                    type="button"
+                    onClick={() => item.section && toggleSection(item.section)}
+                    className="flex w-full items-center justify-between gap-1 px-3 pt-3 pb-1.5"
                   >
-                    {item.section}
-                  </div>
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: mutedTextColor }}
+                    >
+                      {item.section}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-3 w-3 transition-transform duration-200",
+                        collapsed && "-rotate-90"
+                      )}
+                      style={{ color: mutedTextColor }}
+                    />
+                  </button>
                 )}
-                <Link
+                {!collapsed && <Link
                   href={item.url}
                   onClick={() => {
                     sidebar?.toggleOpen();
@@ -224,7 +292,7 @@ export function Menu({
                       {item.badge}
                     </span>
                   )}
-                </Link>
+                </Link>}
               </li>
             );
           })}

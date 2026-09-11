@@ -62,6 +62,7 @@ export function DashboardShell({
     label: r.label,
     url: r.path,
     section: r.section,
+    sectionCollapsedByDefault: r.sectionCollapsedByDefault,
   }));
 
   const sidebarItems: MenuItem[] = [
