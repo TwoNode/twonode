@@ -431,7 +431,7 @@ export default function SubscriptionManager() {
                       variant="ghost"
                       onClick={() => setShowConfirmation(true)}
                       disabled={isDisabling}
-                      className="w-full h-12 px-8 rounded-xl font-semibold text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="w-full h-12 px-8 rounded-xl font-semibold text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >
                       {isDisabling ? (
                         <>

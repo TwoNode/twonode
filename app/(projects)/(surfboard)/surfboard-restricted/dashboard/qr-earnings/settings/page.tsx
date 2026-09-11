@@ -97,11 +97,11 @@ export default function QREarningsSettingsPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+        <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-gray-200">
           <QrCode className="h-6 w-6 text-blue-600" />
           QR Earnings Settings
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
           Configure the free-scan quota and service fees charged when a
           member of the public unlocks a survey plan via its QR code.
         </p>
@@ -236,7 +236,7 @@ export default function QREarningsSettingsPage() {
           {settings.customFees.map((fee, i) => (
             <div
               key={i}
-              className="flex flex-wrap items-end gap-3 p-3 rounded-lg border border-slate-200"
+              className="flex flex-wrap items-end gap-3 p-3 rounded-lg border border-slate-200 dark:border-white/10"
             >
               <div className="space-y-1 flex-1 min-w-[140px]">
                 <Label className="text-xs">Name</Label>
@@ -266,7 +266,7 @@ export default function QREarningsSettingsPage() {
                     updateCustomFee(i, "isPercentage", checked)
                   }
                 />
-                <Label className="text-xs text-slate-500">Percentage</Label>
+                <Label className="text-xs text-slate-500 dark:text-gray-400">Percentage</Label>
               </div>
               <Button
                 type="button"
