@@ -200,4 +200,37 @@ page in particular already fully dark-themed with no gaps).
 **Phase 7 status:** every page in `docs/pages/surfboard.md` across all
 three shells has now been individually verified at least once (the ~45
 count from batch 1 is fully worked through across all three batches).
-Ready to move to Phase 8 (REVA) once this batch's PR lands.
+
+**Follow-up (this session): admin-panel visual polish pass**, prompted by
+user feedback that several admin pages "looked bad" and had a dark-mode
+hover bug. Covered `user-management`, `certificates`, `cod/batches`,
+`analytics`, plus (found via a systemic grep for the same pattern)
+`secure-plans`, `admin-tools`, `superadmin`, `settings`:
+
+- **Root cause of the "clashing pastel" look**: bespoke stat-card icon
+  circles and status badges (`bg-blue-100 text-blue-600` etc.) had zero
+  `dark:` variants — bright light-mode pastels stayed bright in dark mode,
+  clashing with the surrounding dark surface. Added tinted
+  `dark:bg-{color}-500/15 dark:text-{color}-400` variants throughout, plus
+  elevated the stat-card shell (border, shadow, hover-lift, `tabular-nums`)
+  for a more polished look consistent with the rest of the admin panel.
+- **Real dark-mode bug**: `user-management`'s table row hover
+  (`hover:bg-gray-50`, no `dark:` variant) flashed the row solid white on
+  hover in dark mode. Fixed, along with several other un-dark'd
+  `hover:bg-gray-50`/`hover:text-{color}-900` states in the same file.
+- **UX improvement**: `user-management`'s Actions column was three bare
+  text links crammed together (`View` `Promote` `Subscription`) — replaced
+  with icon buttons (`Eye`/`ArrowUpCircle`/`CreditCard`) with tooltips,
+  better scannability and touch targets.
+- **A second root-wrapper bug, same shape as Phase 6/7's earlier
+  gradient-strip findings**: 8 admin pages' outer `<div>` used
+  `bg-linear-to-br from-blue-50 to-indigo-100` with no `dark:` variant —
+  the entire page content area (everything outside individual cards)
+  stayed light regardless of theme. Caught only by live-reload
+  verification (a static grep for `bg-gray-*`/`slate-*` doesn't match
+  gradient utilities); fixed all 8 with `dark:from-background
+  dark:to-background` once the pattern was found via a targeted grep
+  across the whole admin panel.
+
+Not yet started: REVA/GBC admin panels almost certainly have the same
+bespoke-stat-card and gradient-wrapper patterns (Phase 8/9's job).

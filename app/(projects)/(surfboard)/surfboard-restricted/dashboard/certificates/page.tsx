@@ -77,15 +77,15 @@ export default function CertificatesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING_USER_PAYMENT":
-        return "bg-amber-100 text-amber-700 border-amber-200";
+        return "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/20";
       case "LASG_PAID":
-        return "bg-purple-100 text-purple-700 border-purple-200";
+        return "bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/20";
       case "ACCOUNTS_APPROVED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        return "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20";
       case "ACCOUNTS_DISAPPROVED":
-        return "bg-rose-100 text-rose-700 border-rose-200";
+        return "bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/20";
       case "COMPLETED":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/20";
       default:
         return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
@@ -124,27 +124,27 @@ export default function CertificatesPage() {
     {
       label: "Total Batches",
       value: batches.length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Pending Payment",
       value: batches.filter((b) => b.paymentStatus === "PENDING_USER_PAYMENT")
         .length,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Awaiting Approval",
       value: batches.filter((b) => b.paymentStatus === "LASG_PAID").length,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-500/10",
     },
     {
       label: "Completed",
       value: batches.filter((b) => b.paymentStatus === "COMPLETED").length,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
     },
   ];
 
@@ -176,7 +176,7 @@ export default function CertificatesPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -245,7 +245,7 @@ export default function CertificatesPage() {
       {/* Batches Table */}
       <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
             <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -271,7 +271,7 @@ export default function CertificatesPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
               {filteredBatches.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
@@ -289,12 +289,12 @@ export default function CertificatesPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                          <FileText className="w-5 h-5 text-blue-600" />
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+                          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div className="font-semibold text-gray-900 dark:text-white">
                           {batch.batchCode}
@@ -341,7 +341,7 @@ export default function CertificatesPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/surfboard-restricted/dashboard/certificates/${batch.id}`}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -351,7 +351,7 @@ export default function CertificatesPage() {
                             href={batch.lasgReceiptUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                             title="Download Receipt"
                           >
                             <Download className="w-4 h-4" />

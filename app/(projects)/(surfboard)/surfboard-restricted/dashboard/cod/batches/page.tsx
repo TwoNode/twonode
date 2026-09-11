@@ -103,21 +103,21 @@ export default function BatchManagementPage() {
         );
       case "LASG_PAID":
         return (
-          <Badge className="bg-green-100 text-green-700">
+          <Badge className="bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300">
             <CheckCircle className="w-3 h-3 mr-1" />
             Paid via Remita
           </Badge>
         );
       case "ACCOUNTS_APPROVED":
         return (
-          <Badge className="bg-blue-100 text-blue-700">
+          <Badge className="bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300">
             <CheckCircle className="w-3 h-3 mr-1" />
             Accounts Approved
           </Badge>
         );
       case "ACCOUNTS_DISAPPROVED":
         return (
-          <Badge className="bg-red-100 text-red-700">
+          <Badge className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300">
             <Clock className="w-3 h-3 mr-1" />
             Accounts Disapproved
           </Badge>
@@ -159,7 +159,7 @@ export default function BatchManagementPage() {
             </CardDescription>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {formatCurrency(batch.totalAmount)}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -197,10 +197,10 @@ export default function BatchManagementPage() {
 
         {/* Submitter Info */}
         {batch.submitter && (
-          <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
-            <Users className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-500/10 p-3 rounded-lg">
+            <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {batch.submitter.firstName} {batch.submitter.lastName}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{batch.submitter.email}</p>
@@ -210,13 +210,13 @@ export default function BatchManagementPage() {
 
         {/* Payment Info */}
         {batch.userPaymentDate && (
-          <div className="flex items-center gap-3 bg-green-50 p-3 rounded-lg">
-            <CheckCircle className="w-5 h-5 text-green-600" />
+          <div className="flex items-center gap-3 bg-green-50 dark:bg-green-500/10 p-3 rounded-lg">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             <div>
-              <p className="text-sm font-medium text-green-800">
+              <p className="text-sm font-medium text-green-800 dark:text-green-300">
                 Payment Verified via Remita
               </p>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 {new Date(batch.userPaymentDate).toLocaleString()}
               </p>
             </div>
@@ -264,8 +264,8 @@ export default function BatchManagementPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-green-100 dark:bg-green-500/15 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{paidBatches.length}</p>
@@ -275,8 +275,8 @@ export default function BatchManagementPage() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/15 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -288,8 +288,8 @@ export default function BatchManagementPage() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-green-100 dark:bg-green-500/15 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -330,8 +330,8 @@ export default function BatchManagementPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/15 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{approvedBatches.length}</p>
@@ -341,8 +341,8 @@ export default function BatchManagementPage() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/15 rounded-lg">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -354,8 +354,8 @@ export default function BatchManagementPage() {
             </Card>
             <Card>
               <CardContent className="flex items-center gap-4 pt-6">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-green-100 dark:bg-green-500/15 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
