@@ -22,10 +22,8 @@ const { format } = require("date-fns");
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
 const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
 const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
-// Optional — drop a transparent-background PNG here to have it render above the
-// signature line. Falls back to a blank line (no image) when the file is absent,
-// so this doesn't need to ship before the rest of the redesign does.
-const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbcSignature.png");
+// Falls back to a blank line (no image) if this file is ever removed.
+const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "olamide_Signature.png");
 
 Font.register({
   family: "Bricolage",
