@@ -294,7 +294,7 @@ export default function UserManagementPage() {
       case "MDA_SUPERADMIN":
         return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800";
     }
   };
 
@@ -307,7 +307,7 @@ export default function UserManagementPage() {
       case "expired":
         return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800";
     }
   };
 
@@ -316,7 +316,7 @@ export default function UserManagementPage() {
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading user management...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading user management...</p>
         </div>
       </div>
     );
@@ -327,13 +327,13 @@ export default function UserManagementPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                   User Management
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Manage users, roles, and subscriptions
                 </p>
               </div>
@@ -356,15 +356,15 @@ export default function UserManagementPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-lg shadow-lg mb-8">
-            <div className="border-b border-gray-200 overflow-x-auto">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg mb-8">
+            <div className="border-b border-gray-200 dark:border-white/10 overflow-x-auto">
               <nav className="flex space-x-8 px-6 w-max min-w-full">
                 <button
                   onClick={() => setActiveTab("admins")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "admins"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Admins
@@ -375,7 +375,7 @@ export default function UserManagementPage() {
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "mda"
                         ? "border-purple-500 text-purple-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     MDA Users
@@ -388,7 +388,7 @@ export default function UserManagementPage() {
           {/* Stats Overview */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                     <svg
@@ -406,17 +406,17 @@ export default function UserManagementPage() {
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Total Users
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {stats.totalUsers}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-green-100 text-green-600">
                     <svg
@@ -434,17 +434,17 @@ export default function UserManagementPage() {
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Active Users
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {stats.activeUsers}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-purple-100 text-purple-600">
                     <svg
@@ -462,15 +462,15 @@ export default function UserManagementPage() {
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Admins</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {stats.admins + stats.superAdmins}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                     <svg
@@ -489,10 +489,10 @@ export default function UserManagementPage() {
                   </div>
 
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       Active Subscriptions
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {stats.usersWithActiveSubscriptions}
                     </p>
                   </div>
@@ -502,10 +502,10 @@ export default function UserManagementPage() {
           )}
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Users
                 </label>
                 <input
@@ -513,18 +513,18 @@ export default function UserManagementPage() {
                   placeholder="Search by name, email, or company..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Status
                 </label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Statuses</option>
                   <option value="active">Active</option>
@@ -533,13 +533,13 @@ export default function UserManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Role
                 </label>
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Roles</option>
                   {activeTab === "admins" ? (
@@ -566,38 +566,38 @@ export default function UserManagementPage() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Users ({filteredUsers.length})
               </h2>
             </div>
 
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Subscription
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Plans
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
@@ -611,14 +611,14 @@ export default function UserManagementPage() {
                             </div>
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
                               {user.email}
                             </div>
                             {user.companyName && (
-                              <div className="text-xs text-gray-400">
+                              <div className="text-xs text-gray-400 dark:text-gray-500">
                                 {user.companyName}
                               </div>
                             )}
@@ -693,7 +693,7 @@ export default function UserManagementPage() {
                             >
                               {user.subscription.planName}
                             </span>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               ₦
                               {(
                                 user.subscription.amount / 100
@@ -702,12 +702,12 @@ export default function UserManagementPage() {
                             </div>
                           </div>
                         ) : (
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
                             No Subscription
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {user.plansCount}
                       </td>
                       <td className="px-6 py-4">
@@ -745,16 +745,16 @@ export default function UserManagementPage() {
           {/* User Details Modal */}
           {selectedUser && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
+              <div className="bg-white dark:bg-surface rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-gray-200 dark:border-white/10">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                       User Details: {selectedUser.firstName}{" "}
                       {selectedUser.lastName}
                     </h2>
                     <button
                       onClick={() => setSelectedUser(null)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600"
                     >
                       <svg
                         className="w-6 h-6"
@@ -776,37 +776,37 @@ export default function UserManagementPage() {
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         User Information
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Full Name
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedUser.firstName} {selectedUser.lastName}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Email
                           </label>
-                          <p className="text-gray-900">{selectedUser.email}</p>
+                          <p className="text-gray-900 dark:text-white">{selectedUser.email}</p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Company
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedUser.companyName || "N/A"}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             SURCON Number
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedUser.surconRegNumber || "N/A"}
                           </p>
                         </div>
@@ -814,12 +814,12 @@ export default function UserManagementPage() {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Account Status
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Role
                           </label>
                           <span
@@ -831,7 +831,7 @@ export default function UserManagementPage() {
                           </span>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Status
                           </label>
                           <span
@@ -845,26 +845,26 @@ export default function UserManagementPage() {
                           </span>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Email Verified
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedUser.emailVerified ? "Yes" : "No"}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Total Plans
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedUser.plansCount}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Created
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {new Date(
                               selectedUser.createdAt
                             ).toLocaleDateString()}
@@ -877,7 +877,7 @@ export default function UserManagementPage() {
                   <div className="mt-6 flex justify-end space-x-4">
                     <button
                       onClick={() => setSelectedUser(null)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Close
                     </button>
@@ -890,10 +890,10 @@ export default function UserManagementPage() {
           {/* Subscription Management Modal */}
           {showSubscriptionModal && editingSubscription && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-xl max-w-md w-full">
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       {editingSubscription.subscription
                         ? "Update Subscription"
                         : "Add Subscription"}
@@ -903,7 +903,7 @@ export default function UserManagementPage() {
                         setShowSubscriptionModal(false);
                         setEditingSubscription(null);
                       }}
-                      className="text-gray-400 hover:text-gray-500"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-500"
                     >
                       <svg
                         className="h-6 w-6"
@@ -923,7 +923,7 @@ export default function UserManagementPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Plan Code
                       </label>
                       <input
@@ -935,13 +935,13 @@ export default function UserManagementPage() {
                             planCode: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., PLN_basic"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Plan Name
                       </label>
                       <input
@@ -953,13 +953,13 @@ export default function UserManagementPage() {
                             planName: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., Basic Plan"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Amount (in kobo)
                       </label>
                       <input
@@ -971,13 +971,13 @@ export default function UserManagementPage() {
                             amount: parseInt(e.target.value),
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., 500000 (₦5,000)"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Interval
                       </label>
                       <select
@@ -988,7 +988,7 @@ export default function UserManagementPage() {
                             interval: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="monthly">Monthly</option>
                         <option value="quarterly">Quarterly</option>
@@ -997,7 +997,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         End Date
                       </label>
                       <input
@@ -1015,12 +1015,12 @@ export default function UserManagementPage() {
                             currentEnd: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status
                       </label>
                       <select
@@ -1031,7 +1031,7 @@ export default function UserManagementPage() {
                             status: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="active">Active</option>
                         <option value="canceled">Canceled</option>
@@ -1046,7 +1046,7 @@ export default function UserManagementPage() {
                         onClick={() =>
                           handleCancelSubscription(editingSubscription.id)
                         }
-                        className="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50"
+                        className="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white dark:bg-surface hover:bg-red-50"
                       >
                         Cancel Subscription
                       </button>
@@ -1056,7 +1056,7 @@ export default function UserManagementPage() {
                         setShowSubscriptionModal(false);
                         setEditingSubscription(null);
                       }}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50"
                     >
                       Close
                     </button>
@@ -1075,15 +1075,15 @@ export default function UserManagementPage() {
           {/* Add Admin Modal */}
           {showAddAdminModal && (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="bg-white dark:bg-surface rounded-lg shadow-xl max-w-md w-full">
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                       Add New Admin
                     </h3>
                     <button
                       onClick={() => setShowAddAdminModal(false)}
-                      className="text-gray-400 hover:text-gray-500"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-500"
                     >
                       <svg
                         className="h-6 w-6"
@@ -1103,7 +1103,7 @@ export default function UserManagementPage() {
 
                   <form onSubmit={handleAddAdmin} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         First Name
                       </label>
                       <input
@@ -1116,12 +1116,12 @@ export default function UserManagementPage() {
                             firstName: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Last Name
                       </label>
                       <input
@@ -1134,12 +1134,12 @@ export default function UserManagementPage() {
                             lastName: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Email
                       </label>
                       <input
@@ -1152,12 +1152,12 @@ export default function UserManagementPage() {
                             email: e.target.value,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {activeTab === "admins" ? "Role" : "Department"}
                       </label>
                       <select
@@ -1168,7 +1168,7 @@ export default function UserManagementPage() {
                             role: e.target.value as SurfboardRole,
                           })
                         }
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500"
                       >
                         {activeTab === "admins" ? (
                           <>
@@ -1193,7 +1193,7 @@ export default function UserManagementPage() {
                       <button
                         type="button"
                         onClick={() => setShowAddAdminModal(false)}
-                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface hover:bg-gray-50"
                       >
                         Cancel
                       </button>

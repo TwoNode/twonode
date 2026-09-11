@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading analytics...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading analytics...</p>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Failed to load analytics data</p>
+          <p className="text-gray-600 dark:text-gray-400">Failed to load analytics data</p>
         </div>
       </div>
     );
@@ -120,13 +120,13 @@ export default function AnalyticsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                   Analytics Dashboard
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Comprehensive insights into platform usage and performance
                 </p>
               </div>
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="7d">Last 7 days</option>
                   <option value="30d">Last 30 days</option>
@@ -153,7 +153,7 @@ export default function AnalyticsPage() {
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                   <svg
@@ -171,17 +171,17 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Plans
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {analyticsData.totalPlans.toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                   <svg
@@ -199,17 +199,17 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Active Users
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {analyticsData.activeUsers}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-purple-100 text-purple-600">
                   <svg
@@ -227,17 +227,17 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Monthly Growth
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     +{analyticsData.monthlyGrowth}%
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
                   <svg
@@ -255,10 +255,10 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Surveys
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {analyticsData.totalSurveys.toLocaleString()}
                   </p>
                 </div>
@@ -269,8 +269,8 @@ export default function AnalyticsPage() {
           {/* Charts and Detailed Analytics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* Top Performing Regions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Top Performing Regions
               </h2>
               <div className="space-y-4">
@@ -283,12 +283,12 @@ export default function AnalyticsPage() {
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
                         {index + 1}
                       </div>
-                      <span className="ml-3 text-gray-700">
+                      <span className="ml-3 text-gray-700 dark:text-gray-300">
                         {region.region}
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="text-gray-900 font-semibold">
+                      <div className="text-gray-900 dark:text-white font-semibold">
                         {region.plans} plans
                       </div>
                       <div className="text-green-600 text-sm">
@@ -301,8 +301,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Recent Activity
               </h2>
               <div className="space-y-4">
@@ -313,15 +313,15 @@ export default function AnalyticsPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-gray-900 font-medium">
+                        <p className="text-gray-900 dark:text-white font-medium">
                           {activity.action}
                         </p>
-                        <p className="text-gray-600 text-sm">{activity.user}</p>
-                        <p className="text-gray-500 text-xs">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">{activity.user}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">
                           {activity.details}
                         </p>
                       </div>
-                      <div className="text-gray-400 text-xs">
+                      <div className="text-gray-400 dark:text-gray-500 text-xs">
                         {new Date(activity.timestamp).toLocaleDateString()}
                       </div>
                     </div>
@@ -334,13 +334,13 @@ export default function AnalyticsPage() {
           {/* Additional Analytics Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Plan Status Distribution */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Plan Status Distribution
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Active Plans</span>
+                  <span className="text-gray-600 dark:text-gray-400">Active Plans</span>
                   <span className="font-semibold">
                     {analyticsData.activePlans}
                   </span>
@@ -358,7 +358,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Completed Plans</span>
+                  <span className="text-gray-600 dark:text-gray-400">Completed Plans</span>
                   <span className="font-semibold">
                     {analyticsData.completedPlans}
                   </span>
@@ -379,8 +379,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* User Engagement */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 User Engagement
               </h3>
               <div className="text-center">
@@ -390,8 +390,8 @@ export default function AnalyticsPage() {
                   )}
                   %
                 </div>
-                <p className="text-gray-600">Active User Rate</p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-gray-600 dark:text-gray-400">Active User Rate</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   {analyticsData.activeUsers} of {analyticsData.totalUsers}{" "}
                   users
                 </p>
@@ -399,8 +399,8 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Quick Actions
               </h3>
               <div className="space-y-3">

@@ -134,7 +134,7 @@ export default function SurfboardLandingPage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/surfboard/login"
-                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:opacity-90"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-white dark:bg-surface px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:opacity-90"
                 style={{ color: SURFBOARD_COLORS.primary.dark }}
               >
                 Get Started <ArrowRight className="h-4 w-4" />
@@ -147,7 +147,7 @@ export default function SurfboardLandingPage() {
                   <Menu className="h-5 w-5 text-white" />
                 </summary>
                 <div
-                  className="absolute right-0 top-12 w-56 rounded-xl border border-white/10 bg-white p-2 shadow-2xl z-50"
+                  className="absolute right-0 top-12 w-56 rounded-xl border border-white/10 bg-white dark:bg-surface p-2 shadow-2xl z-50"
                   style={{ color: SURFBOARD_COLORS.primary.dark }}
                 >
                   <Link
@@ -174,7 +174,7 @@ export default function SurfboardLandingPage() {
                   >
                     Badge Video
                   </Link>
-                  <div className="my-1 border-t border-gray-100 sm:hidden" />
+                  <div className="my-1 border-t border-gray-100 dark:border-white/10 sm:hidden" />
                   <Link
                     href="/surfboard/login"
                     className="sm:hidden block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-gray-100"
@@ -215,7 +215,7 @@ export default function SurfboardLandingPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/surfboard/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-surface px-4 py-2 text-sm font-semibold hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 style={{ color: SURFBOARD_COLORS.primary.dark }}
               >
                 Get Started Now <ArrowRight className="h-4 w-4" />
@@ -273,10 +273,10 @@ export default function SurfboardLandingPage() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">
               Built for surveyors and land admins
             </h2>
-            <p className="mt-3 text-gray-600">
+            <p className="mt-3 text-gray-600 dark:text-gray-400">
               Everything you need from CSV to certificate in one flow.
             </p>
           </div>
@@ -291,7 +291,7 @@ export default function SurfboardLandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ duration: 0.35 }}
-                  className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ring-1 ring-black/2 transition-shadow hover:shadow-lg"
+                  className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-surface p-6 shadow-sm ring-1 ring-black/2 transition-shadow hover:shadow-lg"
                 >
                   <div
                     className="mb-3 inline-flex rounded-lg p-2"
@@ -310,10 +310,10 @@ export default function SurfboardLandingPage() {
                       }}
                     />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {f.title}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-600">{f.desc}</p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{f.desc}</p>
                 </motion.div>
               );
             })}
@@ -325,10 +325,10 @@ export default function SurfboardLandingPage() {
       <section id="how" className="py-20" style={{ backgroundColor: "#FFFFFF" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">
               From CSV to certificate
             </h2>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
               A minimal, auditable pipeline that just works.
             </p>
           </div>
@@ -339,7 +339,7 @@ export default function SurfboardLandingPage() {
               return (
                 <li
                   key={s.title}
-                  className="group basis-1/4 min-w-50 relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:border-gray-200 hover:shadow-lg"
+                  className="group basis-1/4 min-w-50 relative overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-surface p-5 text-center shadow-sm transition-all duration-300 hover:border-gray-200 hover:shadow-lg"
                 >
                   <div className="absolute -right-6 -top-6 text-7xl font-bold text-gray-100 transition-all duration-300 group-hover:text-gray-200">
                     {index + 1}
@@ -361,10 +361,10 @@ export default function SurfboardLandingPage() {
                       }}
                     />
                   </div>
-                  <h3 className="mb-2 text-base font-semibold text-gray-900">
+                  <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-white">
                     {s.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-gray-600">
+                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                     {s.desc}
                   </p>
                 </li>
@@ -390,10 +390,10 @@ export default function SurfboardLandingPage() {
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-medium text-gray-900">
+                <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
                   Empowering Land Professionals
                 </h3>
-                <p className="text-sm leading-relaxed text-gray-600">
+                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                   As land data becomes increasingly central to modern
                   administration and planning, Surfboard provides the essential
                   tools you need to stay ahead. Our comprehensive platform
@@ -420,7 +420,7 @@ export default function SurfboardLandingPage() {
         style={{ backgroundColor: SURFBOARD_COLORS.background.default }}
       >
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Frequently asked
           </h2>
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -480,7 +480,7 @@ export default function SurfboardLandingPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/surfboard/login"
-              className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold hover:opacity-90"
+              className="rounded-xl bg-white dark:bg-surface px-5 py-2.5 text-sm font-semibold hover:opacity-90"
               style={{ color: SURFBOARD_COLORS.primary.dark }}
             >
               Get Started Now
@@ -499,7 +499,7 @@ export default function SurfboardLandingPage() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <div className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <Image
                 src="/surfboard/surf_light_logo.svg"
                 alt="Surfboard"
@@ -511,12 +511,12 @@ export default function SurfboardLandingPage() {
                 href="https://www.twonodetechnologies.com/surfboard"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-900 hover:opacity-80"
+                className="text-gray-900 dark:text-white hover:opacity-80"
               >
                 TwoNode Technologies
               </Link>
             </div>
-            <nav className="flex flex-wrap items-center justify-center gap-5 text-xs text-gray-700">
+            <nav className="flex flex-wrap items-center justify-center gap-5 text-xs text-gray-700 dark:text-gray-300">
               <Link href="#features" className="hover:text-gray-900">
                 Features
               </Link>
@@ -531,7 +531,7 @@ export default function SurfboardLandingPage() {
               </Link>
             </nav>
           </div>
-          <p className="mt-6 text-center text-xs text-gray-500">
+          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
             {new Date().getFullYear()} TwoNode Technologies. All rights
             reserved.
           </p>
@@ -543,12 +543,12 @@ export default function SurfboardLandingPage() {
 
 function FAQ({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm open:shadow-md">
+    <details className="group rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-surface p-4 shadow-sm open:shadow-md">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-        <span className="text-sm font-medium text-gray-900">{q}</span>
-        <ArrowRight className="h-4 w-4 text-gray-500 transition group-open:rotate-90" />
+        <span className="text-sm font-medium text-gray-900 dark:text-white">{q}</span>
+        <ArrowRight className="h-4 w-4 text-gray-500 dark:text-gray-400 transition group-open:rotate-90" />
       </summary>
-      <p className="mt-2 text-sm text-gray-600">{a}</p>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{a}</p>
     </details>
   );
 }

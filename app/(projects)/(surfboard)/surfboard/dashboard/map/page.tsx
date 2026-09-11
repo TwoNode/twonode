@@ -14,7 +14,7 @@ const ErrorState = ({ message }: { message: string }) => (
     <h2 className="text-2xl font-semibold text-gray-800">
       Oops! Something went wrong
     </h2>
-    <p className="max-w-md text-gray-600">{message}</p>
+    <p className="max-w-md text-gray-600 dark:text-gray-400">{message}</p>
     <button
       onClick={() => window.location.reload()}
       className="mt-4 rounded-md bg-[#0077B6] px-4 py-2 text-white hover:bg-[#023E8A] transition-colors"
@@ -30,8 +30,8 @@ const LoadingState = () => (
       className="h-12 w-12 animate-spin"
       style={{ color: SURFBOARD_COLORS.primary.main }}
     />
-    <h2 className="text-xl font-medium text-gray-700">Loading Surf Plans</h2>
-    <p className="text-gray-500">Hang tight while we fetch your data...</p>
+    <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">Loading Surf Plans</h2>
+    <p className="text-gray-500 dark:text-gray-400">Hang tight while we fetch your data...</p>
   </div>
 );
 
@@ -75,11 +75,11 @@ export default function SurfMapViewerPage() {
   if (!allPlans || allPlans.length === 0) {
     return (
       <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 p-6 text-center">
-        <MapPinOff className="h-12 w-12 text-gray-400" />
-        <h2 className="text-xl font-medium text-gray-700">
+        <MapPinOff className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+        <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">
           No Surf Plans Available
         </h2>
-        <p className="max-w-md text-gray-500">
+        <p className="max-w-md text-gray-500 dark:text-gray-400">
           It looks like there are no surf plans to display. Check back later or
           create a new plan.
         </p>

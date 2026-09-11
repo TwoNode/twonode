@@ -87,7 +87,7 @@ export default function CertificatesPage() {
       case "COMPLETED":
         return "bg-green-100 text-green-700 border-green-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -153,7 +153,7 @@ export default function CertificatesPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading certificate batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading certificate batches...</p>
         </div>
       </div>
     );
@@ -165,10 +165,10 @@ export default function CertificatesPage() {
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               Certificate of Deposit
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage batch submissions and approval workflows
             </p>
           </div>
@@ -176,7 +176,7 @@ export default function CertificatesPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -201,28 +201,28 @@ export default function CertificatesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100`}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 dark:border-white/10`}
             >
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by batch code or submitter..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function CertificatesPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              className="appearance-none px-4 py-2 pr-10 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-surface"
             >
               <option value="ALL">All Status</option>
               <option value="PENDING_USER_PAYMENT">Pending Payment</option>
@@ -243,41 +243,41 @@ export default function CertificatesPage() {
       </div>
 
       {/* Batches Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Batch Code
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Submitter
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Plans
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Total Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Submitted
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
               {filteredBatches.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No batches found</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-gray-500 dark:text-gray-400">No batches found</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       Try adjusting your search or filters
                     </p>
                   </td>
@@ -296,29 +296,29 @@ export default function CertificatesPage() {
                         <div className="p-2 bg-blue-50 rounded-lg">
                           <FileText className="w-5 h-5 text-blue-600" />
                         </div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {batch.batchCode}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-gray-900 dark:text-white">
                           {batch.submittedBy.firstName}{" "}
                           {batch.submittedBy.lastName}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {batch.submittedBy.email}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {batch.planCount} plans
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
                         ₦{batch.totalAmount.toLocaleString()}
                       </div>
                     </td>
@@ -333,7 +333,7 @@ export default function CertificatesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {new Date(batch.createdAt).toLocaleDateString()}
                       </div>
                     </td>
@@ -351,7 +351,7 @@ export default function CertificatesPage() {
                             href={batch.lasgReceiptUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Download Receipt"
                           >
                             <Download className="w-4 h-4" />

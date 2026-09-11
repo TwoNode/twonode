@@ -145,7 +145,7 @@ export default function SecurePlansPage() {
       case "under_review":
         return "bg-blue-100 text-blue-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800";
     }
   };
 
@@ -160,7 +160,7 @@ export default function SecurePlansPage() {
       case "low":
         return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800";
     }
   };
 
@@ -175,7 +175,7 @@ export default function SecurePlansPage() {
       case "public":
         return "bg-green-100 text-green-800 border-green-300";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-300 dark:border-white/15";
     }
   };
 
@@ -198,7 +198,7 @@ export default function SecurePlansPage() {
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading secure plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading secure plans...</p>
         </div>
       </div>
     );
@@ -209,13 +209,13 @@ export default function SecurePlansPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                   Secure Plans Management
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Review, approve, and manage confidential survey plans with
                   enhanced security
                 </p>
@@ -230,10 +230,10 @@ export default function SecurePlansPage() {
           </div>
 
           {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Plans
                 </label>
                 <input
@@ -241,18 +241,18 @@ export default function SecurePlansPage() {
                   placeholder="Search by title, ID, or submitter..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Status
                 </label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -263,13 +263,13 @@ export default function SecurePlansPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Priority
                 </label>
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Priorities</option>
                   <option value="critical">Critical</option>
@@ -288,53 +288,53 @@ export default function SecurePlansPage() {
           </div>
 
           {/* Plans List */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Secure Plans ({filteredPlans.length})
               </h2>
             </div>
 
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-white/5">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Plan Details
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Priority
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Confidentiality
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Assigned To
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                   {filteredPlans.map((plan) => (
                     <tr key={plan.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {plan.title}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {plan.id} • {plan.location}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                             Submitted by {plan.submittedBy} on{" "}
                             {new Date(plan.submittedDate).toLocaleDateString()}
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-gray-400 dark:text-gray-500">
                             Value: R{plan.estimatedValue.toLocaleString()}
                           </div>
                         </div>
@@ -366,7 +366,7 @@ export default function SecurePlansPage() {
                           {plan.confidentiality.replace("_", " ").toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {plan.assignedTo}
                       </td>
                       <td className="px-6 py-4">
@@ -419,15 +419,15 @@ export default function SecurePlansPage() {
           {/* Plan Details Modal */}
           {selectedPlan && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
+              <div className="bg-white dark:bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-gray-200 dark:border-white/10">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                       Plan Details: {selectedPlan.id}
                     </h2>
                     <button
                       onClick={() => setSelectedPlan(null)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600"
                     >
                       <svg
                         className="w-6 h-6"
@@ -449,37 +449,37 @@ export default function SecurePlansPage() {
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Plan Information
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Title
                           </label>
-                          <p className="text-gray-900">{selectedPlan.title}</p>
+                          <p className="text-gray-900 dark:text-white">{selectedPlan.title}</p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Description
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedPlan.description}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Location
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedPlan.location}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Estimated Value
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             R{selectedPlan.estimatedValue.toLocaleString()}
                           </p>
                         </div>
@@ -487,12 +487,12 @@ export default function SecurePlansPage() {
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Status & Assignment
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Status
                           </label>
                           <span
@@ -506,7 +506,7 @@ export default function SecurePlansPage() {
                           </span>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Priority
                           </label>
                           <span
@@ -518,7 +518,7 @@ export default function SecurePlansPage() {
                           </span>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Confidentiality
                           </label>
                           <span
@@ -532,18 +532,18 @@ export default function SecurePlansPage() {
                           </span>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Submitted By
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedPlan.submittedBy}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Assigned To
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {selectedPlan.assignedTo}
                           </p>
                         </div>
@@ -552,7 +552,7 @@ export default function SecurePlansPage() {
                   </div>
 
                   <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Tags
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -570,7 +570,7 @@ export default function SecurePlansPage() {
                   <div className="mt-6 flex justify-end space-x-4">
                     <button
                       onClick={() => setSelectedPlan(null)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Close
                     </button>

@@ -136,7 +136,7 @@ export default function QueriedPlans({
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading queried plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading queried plans...</p>
         </div>
       </div>
     );
@@ -164,8 +164,8 @@ export default function QueriedPlans({
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg">No queried plans</p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No queried plans</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
               All your plans are in good standing
             </p>
           </CardContent>
@@ -212,25 +212,25 @@ export default function QueriedPlans({
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   {/* Location Info */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                     <div>
-                      <p className="text-xs text-gray-500">LGA</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">LGA</p>
                       <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Ward</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Ward</p>
                       <p className="text-sm font-medium">
                         {plan.ward || "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">LCDA</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">LCDA</p>
                       <p className="text-sm font-medium">
                         {plan.lcda || "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Deeded Area</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Deeded Area</p>
                       <p className="text-sm font-medium">{plan.deededArea}</p>
                     </div>
                   </div>
@@ -238,7 +238,7 @@ export default function QueriedPlans({
                   {/* Query Comments */}
                   {queryComments.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         Query Reasons:
                       </p>
                       {queryComments.map((item, index) => (

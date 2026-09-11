@@ -95,13 +95,13 @@ export default function AdminToolsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Admin Tools
                 </h1>
-                <p className="text-gray-600 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Manage system settings, user roles, and administrative
                   controls
                 </p>
@@ -116,15 +116,15 @@ export default function AdminToolsPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-lg shadow-lg mb-8">
-            <div className="border-b border-gray-200 overflow-x-auto">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg mb-8">
+            <div className="border-b border-gray-200 dark:border-white/10 overflow-x-auto">
               <nav className="flex space-x-8 px-6 w-max min-w-full">
                 <button
                   onClick={() => setActiveTab("system")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "system"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   System Settings
@@ -134,7 +134,7 @@ export default function AdminToolsPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "roles"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   User Roles & Permissions
@@ -144,7 +144,7 @@ export default function AdminToolsPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "security"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Security & Access
@@ -156,7 +156,7 @@ export default function AdminToolsPage() {
               {/* System Settings Tab */}
               {activeTab === "system" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                     System Configuration
                   </h2>
 
@@ -164,10 +164,10 @@ export default function AdminToolsPage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Maintenance Mode
                           </label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Temporarily disable user access for maintenance
                           </p>
                         </div>
@@ -185,7 +185,7 @@ export default function AdminToolsPage() {
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                               systemSettings.maintenanceMode
                                 ? "translate-x-6"
                                 : "translate-x-1"
@@ -196,10 +196,10 @@ export default function AdminToolsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Allow New Registrations
                           </label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Enable or disable new user registrations
                           </p>
                         </div>
@@ -217,7 +217,7 @@ export default function AdminToolsPage() {
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                               systemSettings.allowNewRegistrations
                                 ? "translate-x-6"
                                 : "translate-x-1"
@@ -228,10 +228,10 @@ export default function AdminToolsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Enable Notifications
                           </label>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             System-wide notification settings
                           </p>
                         </div>
@@ -249,7 +249,7 @@ export default function AdminToolsPage() {
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                               systemSettings.enableNotifications
                                 ? "translate-x-6"
                                 : "translate-x-1"
@@ -261,7 +261,7 @@ export default function AdminToolsPage() {
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Max File Upload Size (MB)
                         </label>
                         <input
@@ -273,12 +273,12 @@ export default function AdminToolsPage() {
                               parseInt(e.target.value)
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Session Timeout (minutes)
                         </label>
                         <input
@@ -290,12 +290,12 @@ export default function AdminToolsPage() {
                               parseInt(e.target.value)
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Backup Frequency
                         </label>
                         <select
@@ -306,7 +306,7 @@ export default function AdminToolsPage() {
                               e.target.value
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           {backupFrequencyOptions.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -318,7 +318,7 @@ export default function AdminToolsPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
                     <button
                       onClick={() =>
                         setSystemSettings({
@@ -330,7 +330,7 @@ export default function AdminToolsPage() {
                           backupFrequency: "daily",
                         })
                       }
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Reset to Defaults
                     </button>
@@ -349,7 +349,7 @@ export default function AdminToolsPage() {
               {activeTab === "roles" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                       User Roles & Permissions
                     </h2>
                     <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
@@ -359,9 +359,9 @@ export default function AdminToolsPage() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {userRoles.map((role) => (
-                      <div key={role.id} className="bg-gray-50 rounded-lg p-6">
+                      <div key={role.id} className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {role.name}
                           </h3>
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -369,19 +369,19 @@ export default function AdminToolsPage() {
                           </span>
                         </div>
 
-                        <p className="text-gray-600 text-sm mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                           {role.description}
                         </p>
 
                         <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Permissions:
                           </h4>
                           <div className="space-y-1">
                             {role.permissions.map((permission, index) => (
                               <div
                                 key={index}
-                                className="text-xs text-gray-600 bg-white px-2 py-1 rounded"
+                                className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-surface px-2 py-1 rounded"
                               >
                                 {permission}
                               </div>
@@ -406,7 +406,7 @@ export default function AdminToolsPage() {
               {/* Security Tab */}
               {activeTab === "security" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Security & Access Controls
                   </h2>
 
@@ -444,25 +444,25 @@ export default function AdminToolsPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Access Logs
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">
+                        <span className="text-gray-600 dark:text-gray-400">
                           Admin login - 10:30 AM
                         </span>
-                        <span className="text-gray-500">IP: 192.168.1.50</span>
+                        <span className="text-gray-500 dark:text-gray-400">IP: 192.168.1.50</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">
+                        <span className="text-gray-600 dark:text-gray-400">
                           User logout - 10:25 AM
                         </span>
-                        <span className="text-gray-500">IP: 192.168.1.75</span>
+                        <span className="text-gray-500 dark:text-gray-400">IP: 192.168.1.75</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">
+                        <span className="text-gray-600 dark:text-gray-400">
                           Failed login attempt - 10:20 AM
                         </span>
                         <span className="text-red-500">IP: 192.168.1.100</span>

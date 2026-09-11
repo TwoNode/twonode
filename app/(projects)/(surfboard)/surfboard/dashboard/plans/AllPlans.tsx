@@ -556,7 +556,7 @@ export default function AllPlans() {
       case "UNDER_REVIEW":
         return "bg-blue-100 text-blue-700 border-blue-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -632,26 +632,26 @@ export default function AllPlans() {
     {
       label: "Total Plans",
       value: pagination.total,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Pending",
       value: plans.filter((p) => p.status === "PENDING").length,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Lodged",
       value: plans.filter((p) => p.status === "LODGED").length,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
     },
     {
       label: "Red Copy",
       value: plans.filter((p) => p.redCopyStatus === "APPROVED").length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
   ];
 
@@ -661,7 +661,7 @@ export default function AllPlans() {
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm"
+          className="bg-white dark:bg-surface rounded-lg p-4 border border-gray-100 dark:border-white/10 shadow-sm"
         >
           <Skeleton className="h-8 w-16 mb-2" />
           <Skeleton className="h-4 w-24" />
@@ -671,7 +671,7 @@ export default function AllPlans() {
   );
 
   const TableRowSkeleton = () => (
-    <tr className="border-b border-gray-200">
+    <tr className="border-b border-gray-200 dark:border-white/10">
       <td className="px-6 py-4">
         <Skeleton className="h-4 w-4" />
       </td>
@@ -758,10 +758,10 @@ export default function AllPlans() {
   );
 
   const PlansListSkeleton = () => (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-white/5">
             <tr>
               <th className="px-6 py-3 text-left">
                 <Skeleton className="h-4 w-4" />
@@ -827,7 +827,7 @@ export default function AllPlans() {
         </div>
 
         {/* Filters Skeleton */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <Skeleton className="flex-1 h-10" />
             <div className="flex gap-3">
@@ -850,7 +850,7 @@ export default function AllPlans() {
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Survey Plans</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Survey Plans</h1>
             {!isKycValidated && (
               <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-start gap-3 mt-4">
                 <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
@@ -862,7 +862,7 @@ export default function AllPlans() {
                 </div>
               </div>
             )}
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage and review all survey plan submissions
             </p>
           </div>
@@ -870,7 +870,7 @@ export default function AllPlans() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -906,28 +906,28 @@ export default function AllPlans() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 shadow-sm`}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 dark:border-white/10 shadow-sm`}
             >
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by plan number, title, or location..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -940,7 +940,7 @@ export default function AllPlans() {
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">Filters</span>
               {hasActiveFilters() && (
-                <Badge className="ml-1 bg-white text-blue-600 hover:bg-white">
+                <Badge className="ml-1 bg-white dark:bg-surface text-blue-600 hover:bg-white">
                   {filters.status.length +
                     filters.planType.length +
                     (filters.dateFrom ? 1 : 0) +
@@ -949,14 +949,14 @@ export default function AllPlans() {
               )}
             </Button>
 
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <div className="flex border border-gray-300 dark:border-white/15 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
                   "px-3 py-2 transition-colors",
                   viewMode === "list"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    : "bg-white dark:bg-surface text-gray-600 dark:text-gray-400 hover:bg-gray-50"
                 )}
                 title="List view"
               >
@@ -965,10 +965,10 @@ export default function AllPlans() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "px-3 py-2 transition-colors border-l border-gray-300",
+                  "px-3 py-2 transition-colors border-l border-gray-300 dark:border-white/15",
                   viewMode === "grid"
                     ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    : "bg-white dark:bg-surface text-gray-600 dark:text-gray-400 hover:bg-gray-50"
                 )}
                 title="Grid view"
               >
@@ -979,7 +979,7 @@ export default function AllPlans() {
             <button
               onClick={handleExport}
               disabled={plans.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
@@ -1002,7 +1002,7 @@ export default function AllPlans() {
                 <Badge
                   key={status}
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">Status: {status}</span>
                   <X
@@ -1015,7 +1015,7 @@ export default function AllPlans() {
                 <Badge
                   key={type}
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">Type: {type}</span>
                   <X
@@ -1027,7 +1027,7 @@ export default function AllPlans() {
               {filters.dateFrom && (
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">
                     From: {format(filters.dateFrom, "MMM d, yyyy")}
@@ -1041,7 +1041,7 @@ export default function AllPlans() {
               {filters.dateTo && (
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">
                     To: {format(filters.dateTo, "MMM d, yyyy")}
@@ -1074,11 +1074,11 @@ export default function AllPlans() {
             exit={{ opacity: 0, height: 0 }}
             className="mb-6 overflow-hidden"
           >
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Status
                   </label>
                   <div className="space-y-2.5">
@@ -1091,9 +1091,9 @@ export default function AllPlans() {
                           type="checkbox"
                           checked={filters.status.includes(status)}
                           onChange={() => handleStatusChange(status)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         />
-                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 transition-colors">
                           {status.replace("_", " ")}
                         </span>
                       </label>
@@ -1103,7 +1103,7 @@ export default function AllPlans() {
 
                 {/* Plan Type Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Plan Type
                   </label>
                   <div className="space-y-2.5 max-h-48 overflow-y-auto pr-2">
@@ -1116,9 +1116,9 @@ export default function AllPlans() {
                           type="checkbox"
                           checked={filters.planType.includes(type)}
                           onChange={() => handlePlanTypeChange(type)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         />
-                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 transition-colors">
                           {type}
                         </span>
                       </label>
@@ -1128,7 +1128,7 @@ export default function AllPlans() {
 
                 {/* Date Range Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Date Range
                   </label>
 
@@ -1140,8 +1140,8 @@ export default function AllPlans() {
                           "w-full h-auto transition-all duration-200",
                           "py-2 px-3 sm:py-3 sm:px-4",
                           "justify-between text-left font-normal",
-                          "bg-white hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
-                          "border-2 border-gray-200 hover:border-blue-300",
+                          "bg-white dark:bg-surface hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
+                          "border-2 border-gray-200 dark:border-white/10 hover:border-blue-300",
                           "shadow-sm hover:shadow-md",
                           !filters.dateFrom &&
                           !filters.dateTo &&
@@ -1170,7 +1170,7 @@ export default function AllPlans() {
                                   </span>
                                 </div>
                                 <svg
-                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 shrink-0"
+                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500 shrink-0"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1199,10 +1199,10 @@ export default function AllPlans() {
                               </div>
                             ) : (
                               <div className="flex flex-col">
-                                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                                   Select Date Range
                                 </span>
-                                <span className="text-[0.65rem] sm:text-xs text-gray-500 hidden sm:block">
+                                <span className="text-[0.65rem] sm:text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
                                   Choose from presets or custom dates
                                 </span>
                               </div>
@@ -1210,7 +1210,7 @@ export default function AllPlans() {
                           </div>
                         </div>
                         <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0"
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500 shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1225,13 +1225,13 @@ export default function AllPlans() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200"
+                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200 dark:border-white/10"
                       align="start"
                     >
                       <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
                         {/* Preset Options - Enhanced Design */}
-                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
-                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-white">
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-surface">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
                                 <svg
@@ -1248,7 +1248,7 @@ export default function AllPlans() {
                                   />
                                 </svg>
                               </div>
-                              <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
                                 Quick Select
                               </h3>
                             </div>
@@ -1354,7 +1354,7 @@ export default function AllPlans() {
                               <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 mr-2 sm:mr-3"></span>
                               Last year
                             </Button>
-                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200">
+                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200 dark:border-white/10">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1384,14 +1384,14 @@ export default function AllPlans() {
                         </div>
 
                         {/* Calendar Pickers - Side by Side on Desktop */}
-                        <div className="bg-white flex-1">
-                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-linear-to-r from-blue-50 to-purple-50">
+                        <div className="bg-white dark:bg-surface flex-1">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-linear-to-r from-blue-50 to-purple-50">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-md shadow-sm">
                                   <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                                 </div>
-                                <span className="text-xs sm:text-sm font-bold text-gray-900">
+                                <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                                   Custom Range
                                 </span>
                               </div>
@@ -1402,7 +1402,7 @@ export default function AllPlans() {
                               <div>
                                 <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
                                   <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-blue-500 to-blue-600 rounded-full"></div>
-                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                                     Start Date
                                   </label>
                                 </div>
@@ -1427,7 +1427,7 @@ export default function AllPlans() {
                               <div>
                                 <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
                                   <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-purple-500 to-purple-600 rounded-full"></div>
-                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                                     End Date
                                   </label>
                                 </div>
@@ -1463,10 +1463,10 @@ export default function AllPlans() {
 
       {/* Plans Table/Grid */}
       {viewMode === "list" ? (
-        <div className="grid grid-cols-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="grid grid-cols-1 bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-white/5">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <Checkbox
@@ -1478,37 +1478,37 @@ export default function AllPlans() {
                       aria-label="Select all"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Plan Details
                   </th>
-                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Location
                   </th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Facilitator
                   </th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Survey Date
                   </th>
-                  <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Updated
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                 {plans.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No plans found</p>
-                      <p className="text-sm text-gray-400 mt-1">
+                      <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                         Try adjusting your search or filters
                       </p>
                     </td>
@@ -1537,20 +1537,20 @@ export default function AllPlans() {
                           <div className="min-w-0">
                             <Link
                               href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                              className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors block max-w-xs"
+                              className="font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 transition-colors block max-w-xs"
                               title={plan.planNumber || "N/A"}
                             >
                               {plan.planNumber || "N/A"}
                             </Link>
 
                             <div
-                              className="text-sm text-gray-600 truncate max-w-xs"
+                              className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs"
                               title={plan.surveyTitle || "Untitled"}
                             >
                               {plan.surveyTitle || "Untitled"}
                             </div>
 
-                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                               <span>{plan?.pillars?.length || 0} pillars</span>
                               <span>•</span>
                               <span>
@@ -1594,29 +1594,29 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden lg:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div className="min-w-0">
                             {plan.ward && (
-                              <div className="text-sm text-gray-900 truncate">
+                              <div className="text-sm text-gray-900 dark:text-white truncate">
                                 {plan.ward}
                               </div>
                             )}
                             {plan.lga && (
-                              <div className="text-xs text-gray-500 truncate">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {plan.lga}
                               </div>
                             )}
                             {!plan.ward && !plan.lga && (
-                              <div className="text-sm text-gray-500">N/A</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">N/A</div>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div
-                            className="text-sm text-gray-900 truncate max-w-[150px]"
+                            className="text-sm text-gray-900 dark:text-white truncate max-w-[150px]"
                             title={plan.facilitator || "N/A"}
                           >
                             {plan.facilitator || "N/A"}
@@ -1651,8 +1651,8 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div className="text-sm text-gray-900">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {plan.dateOnSurveyPlan
                               ? new Date(
                                 plan.dateOnSurveyPlan
@@ -1663,8 +1663,8 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden xl:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div className="text-sm text-gray-900">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {plan.updatedAt
                               ? new Date(plan.updatedAt).toLocaleDateString()
                               : "N/A"}
@@ -1676,7 +1676,7 @@ export default function AllPlans() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
                                 title="More actions"
                               >
                                 <MoreVertical className="w-4 h-4" />
@@ -1757,8 +1757,8 @@ export default function AllPlans() {
 
           {/* Pagination */}
           {plans.length > 0 && (
-            <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
-              <div className="text-sm text-gray-600">
+            <div className="bg-gray-50 dark:bg-white/5 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 dark:border-white/10 gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
                 Showing{" "}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.pageSize + 1}
@@ -1807,7 +1807,7 @@ export default function AllPlans() {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+                  <span className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded min-w-[100px] text-center">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <Button
@@ -1839,8 +1839,8 @@ export default function AllPlans() {
           {plans.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-12">
               <FileText className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-gray-500">No plans found</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Try adjusting your search or filters
               </p>
             </div>
@@ -1858,7 +1858,7 @@ export default function AllPlans() {
                     <Checkbox
                       checked={selectedPlans.includes(plan.id)}
                       onCheckedChange={() => handleSelectPlan(plan.id)}
-                      className="bg-white/80 backdrop-blur-xs border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="bg-white/80 backdrop-blur-xs border-gray-300 dark:border-white/15 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                   </div>
                   <CardHeader className="pb-3">
@@ -1907,29 +1907,29 @@ export default function AllPlans() {
                   <CardContent className="space-y-3">
                     {/* Location with LGA/Ward hierarchy like list view */}
                     <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         {plan.ward && (
-                          <div className="text-sm text-gray-900 truncate">
+                          <div className="text-sm text-gray-900 dark:text-white truncate">
                             {plan.ward}
                           </div>
                         )}
                         {plan.lga && (
-                          <div className="text-xs text-gray-500 truncate">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {plan.lga}
                           </div>
                         )}
                         {!plan.ward && !plan.lga && (
-                          <span className="text-gray-600">N/A</span>
+                          <span className="text-gray-600 dark:text-gray-400">N/A</span>
                         )}
                       </div>
                     </div>
 
                     {/* Facilitator */}
                     <div className="flex items-start gap-2 text-sm">
-                      <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                      <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                       <span
-                        className="text-gray-600 truncate"
+                        className="text-gray-600 dark:text-gray-400 truncate"
                         title={plan.facilitator || "N/A"}
                       >
                         {plan.facilitator || "N/A"}
@@ -1937,7 +1937,7 @@ export default function AllPlans() {
                     </div>
 
                     {/* Pillars and Area */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <span>{plan.pillars?.length || 0} pillars</span>
                       <span>•</span>
                       <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
@@ -1959,9 +1959,9 @@ export default function AllPlans() {
                     </div>
 
                     {/* Survey Date */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-gray-600">Survey:</span>
+                      <span className="font-medium text-gray-600 dark:text-gray-400">Survey:</span>
                       <span>
                         {plan.dateOnSurveyPlan
                           ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
@@ -1970,9 +1970,9 @@ export default function AllPlans() {
                     </div>
 
                     {/* Updated Date */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-gray-600">
+                      <span className="font-medium text-gray-600 dark:text-gray-400">
                         Updated:
                       </span>
                       <span>
@@ -2074,8 +2074,8 @@ export default function AllPlans() {
 
       {/* Pagination for Grid View */}
       {viewMode === "grid" && plans.length > 0 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
+        <div className="mt-6 bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Showing{" "}
             <span className="font-medium">
               {(pagination.page - 1) * pagination.pageSize + 1}
@@ -2124,7 +2124,7 @@ export default function AllPlans() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+              <span className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded min-w-[100px] text-center">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button
@@ -2180,10 +2180,10 @@ export default function AllPlans() {
                         </div>
 
                         <div className="text-center space-y-1">
-                          <p className="text-base font-semibold text-gray-900">
+                          <p className="text-base font-semibold text-gray-900 dark:text-white">
                             Refreshing Plan Data
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Please wait while we update the information...
                           </p>
                         </div>
@@ -2236,10 +2236,10 @@ export default function AllPlans() {
                           </div>
                         </div>
                         <div className="text-center space-y-1">
-                          <p className="text-base font-semibold text-gray-900">
+                          <p className="text-base font-semibold text-gray-900 dark:text-white">
                             Saving Changes
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Please wait while we save your updates...
                           </p>
                         </div>
@@ -2288,11 +2288,11 @@ export default function AllPlans() {
             <DialogTitle>Plan QR Code</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            <div className="p-4 bg-white rounded-lg border">
+            <div className="p-4 bg-white dark:bg-surface rounded-lg border">
               {isGeneratingQr || !qrCodeDataUrl ? (
                 <div className="w-64 h-64 flex flex-col items-center justify-center gap-3">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-                  <p className="text-sm text-gray-600 font-medium">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                     Generating QR Code...
                   </p>
                 </div>

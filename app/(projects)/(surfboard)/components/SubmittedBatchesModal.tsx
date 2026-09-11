@@ -222,7 +222,7 @@ export function SubmittedBatchesModal({
         return (
           <Badge
             variant="outline"
-            className="bg-gray-50 text-gray-700 border-gray-300"
+            className="bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15"
           >
             {status}
           </Badge>
@@ -348,7 +348,7 @@ export function SubmittedBatchesModal({
                 <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 absolute top-0 left-0" />
               </div>
-              <p className="text-gray-500 mt-4 font-medium">
+              <p className="text-gray-500 dark:text-gray-400 mt-4 font-medium">
                 Loading batches...
               </p>
             </div>
@@ -357,10 +357,10 @@ export function SubmittedBatchesModal({
               <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
                 <FileText className="w-20 h-20 text-gray-300" />
               </div>
-              <p className="text-gray-700 text-xl font-semibold mb-2">
+              <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
                 No batches submitted yet
               </p>
-              <p className="text-gray-500 text-sm max-w-md mx-auto">
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">
                 Submit plans for Certificate of Deposit to see them displayed
                 here with full details
               </p>
@@ -371,7 +371,7 @@ export function SubmittedBatchesModal({
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
-                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
+                  className="group border-2 border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="p-5 hover:bg-linear-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
@@ -383,7 +383,7 @@ export function SubmittedBatchesModal({
                               <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
                                 <Package className="w-4 h-4 text-blue-700" />
                               </div>
-                              <h3 className="text-lg font-bold text-gray-900 group-hover/trigger:text-blue-700 transition-colors duration-200">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover/trigger:text-blue-700 transition-colors duration-200">
                                 {batch.batchCode}
                               </h3>
                             </div>
@@ -392,8 +392,8 @@ export function SubmittedBatchesModal({
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <div className="p-1 bg-white rounded">
+                          <div className="flex items-center gap-2.5 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded">
                               <Package className="w-3.5 h-3.5 text-blue-600" />
                             </div>
                             <span className="font-medium">
@@ -402,8 +402,8 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <div className="p-1 bg-white rounded">
+                          <div className="flex items-center gap-2.5 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded">
                               <Calendar className="w-3.5 h-3.5 text-purple-600" />
                             </div>
                             <span className="font-medium">
@@ -411,8 +411,8 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-900 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
-                            <div className="p-1 bg-white rounded shadow-sm">
+                          <div className="flex items-center gap-2.5 text-gray-900 dark:text-white bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded shadow-sm">
                               <CreditCard className="w-3.5 h-3.5 text-green-700" />
                             </div>
                             <span className="font-bold text-green-900">
@@ -505,7 +505,7 @@ export function SubmittedBatchesModal({
                     </div>
 
                     <AccordionContent className="pt-1">
-                      <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200">
+                      <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200 dark:border-white/10">
                         <div className="flex items-center justify-between gap-4 mb-4">
                           <div className="flex items-center gap-2">
                             <div className="h-1 w-1 bg-blue-500 rounded-full"></div>
@@ -537,7 +537,7 @@ export function SubmittedBatchesModal({
                           {batch.plans.map((plan, planIndex) => (
                             <div
                               key={plan.id}
-                              className="group/plan bg-white border-2 border-gray-100 rounded-lg p-4 flex items-start justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:translate-x-1"
+                              className="group/plan bg-white dark:bg-surface border-2 border-gray-100 dark:border-white/10 rounded-lg p-4 flex items-start justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:translate-x-1"
                               style={{ animationDelay: `${planIndex * 30}ms` }}
                             >
                               <div className="flex-1 min-w-0">
@@ -545,18 +545,18 @@ export function SubmittedBatchesModal({
                                   <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
                                     <FileText className="w-4 h-4 text-blue-700" />
                                   </div>
-                                  <span className="font-bold text-sm text-gray-900 group-hover/plan:text-blue-700 transition-colors duration-200">
+                                  <span className="font-bold text-sm text-gray-900 dark:text-white group-hover/plan:text-blue-700 transition-colors duration-200">
                                     {plan.planNumber}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 ml-8 line-clamp-1">
+                                <p className="text-xs text-gray-600 dark:text-gray-400 ml-8 line-clamp-1">
                                   {plan.surveyTitle}
                                 </p>
                               </div>
                               <div className="flex gap-2 shrink-0">
                                 <Badge
                                   variant="outline"
-                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
+                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 dark:border-white/15 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
                                 >
                                   {plan.status}
                                 </Badge>

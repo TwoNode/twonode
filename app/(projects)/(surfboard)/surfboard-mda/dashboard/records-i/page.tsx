@@ -344,7 +344,7 @@ export default function RecordsIAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
         </div>
       </div>
     );
@@ -387,7 +387,7 @@ export default function RecordsIAdminPage() {
                   </Badge>
                 )}
                 {plan.referencePlanNumber && (
-                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
+                  <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md border border-gray-200 dark:border-white/10">
                     Ref: {plan.referencePlanNumber}
                   </span>
                 )}
@@ -401,15 +401,15 @@ export default function RecordsIAdminPage() {
             {!isHistory && (
               <div className="flex flex-col items-end gap-1">
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500">Accounts:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Accounts:</span>
                   {getStatusBadge(plan.accountsStatus)}
                 </div>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500">Charting:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Charting:</span>
                   {getStatusBadge(plan.chartingStatus)}
                 </div>
                 <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-500">SURCON:</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">SURCON:</span>
                   {getStatusBadge(plan.surconStatus)}
                 </div>
               </div>
@@ -418,35 +418,35 @@ export default function RecordsIAdminPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Location Info */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
             <div>
-              <p className="text-xs text-gray-500">LGA</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">LGA</p>
               <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Ward</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Ward</p>
               <p className="text-sm font-medium">{plan.ward || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">LCDA</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">LCDA</p>
               <p className="text-sm font-medium">{plan.lcda || "N/A"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Deeded Area</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Deeded Area</p>
               <p className="text-sm font-medium">{plan.deededArea}</p>
             </div>
           </div>
 
           {/* Review Info (for history) */}
           {isHistory && plan.recordsIApprovedAt && (
-            <div className="bg-gray-50 p-3 rounded-lg text-sm">
-              <p className="text-gray-600">
+            <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-lg text-sm">
+              <p className="text-gray-600 dark:text-gray-400">
                 <span className="font-medium">Reviewed by:</span>{" "}
                 {plan.recordsIApprovedByUser
                   ? `${plan.recordsIApprovedByUser.firstName} ${plan.recordsIApprovedByUser.lastName}`
                   : "Unknown"}
               </p>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 <span className="font-medium">Date:</span>{" "}
                 {formatDate(plan.recordsIApprovedAt)}
               </p>
@@ -482,7 +482,7 @@ export default function RecordsIAdminPage() {
                       alt="Record Copy Preview"
                       className="max-h-48 rounded-lg border shadow-sm hover:shadow-md transition-shadow"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Click to view full size
                     </p>
                   </div>
@@ -492,7 +492,7 @@ export default function RecordsIAdminPage() {
                   href={plan.redCopyFileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
                 >
                   {isImageUrl(plan.redCopyFileUrl) ? (
                     <ImageIcon className="w-4 h-4" />
@@ -522,7 +522,7 @@ export default function RecordsIAdminPage() {
                   <User className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
                     <p className="text-xs text-emerald-600">Submitted By</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {plan.user.firstName} {plan.user.lastName}
                     </p>
                   </div>
@@ -532,7 +532,7 @@ export default function RecordsIAdminPage() {
                     <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">SURCON Number</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {plan.user.surconRegNumber}
                       </p>
                     </div>
@@ -543,7 +543,7 @@ export default function RecordsIAdminPage() {
                     <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">Company</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {plan.user.companyName}
                       </p>
                     </div>
@@ -553,7 +553,7 @@ export default function RecordsIAdminPage() {
                   <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
                     <p className="text-xs text-emerald-600">Email</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {plan.user.email}
                     </p>
                   </div>
@@ -563,7 +563,7 @@ export default function RecordsIAdminPage() {
                     <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">Phone</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {plan.user.phoneNumber}
                       </p>
                     </div>
@@ -621,8 +621,8 @@ export default function RecordsIAdminPage() {
 
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Records I Admin</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Records I Admin</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review uploaded record copies for quality and completeness
           </p>
         </div>
@@ -638,9 +638,9 @@ export default function RecordsIAdminPage() {
         )}
 
         {isLocking && (
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
             <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring plan lock...
             </span>
           </div>
@@ -648,7 +648,7 @@ export default function RecordsIAdminPage() {
 
         {/* Search Input */}
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <Input
             type="text"
             placeholder="Search by plan number, title, LGA, surveyor, SURCON #..."
@@ -675,12 +675,12 @@ export default function RecordsIAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FileText className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery
                       ? "No matching plans found"
                       : "No plans awaiting Records I review"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Submitted plans will appear here"}
@@ -703,10 +703,10 @@ export default function RecordsIAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <History className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery ? "No matching plans found" : "No history yet"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Approved and queried plans will appear here"}
@@ -749,7 +749,7 @@ export default function RecordsIAdminPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Query Reason *
                   </label>
                   <div className="mb-2 mt-2">
@@ -767,7 +767,7 @@ export default function RecordsIAdminPage() {
                     className="mt-1"
                     rows={4}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     The surveyor will be notified and can upload a new record
                     copy
                   </p>

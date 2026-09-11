@@ -42,7 +42,7 @@ const FileCard: React.FC<FileCardProps> = ({
       case "cert":
         return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
       default:
-        return <File className="h-5 w-5 text-gray-500 mr-2" />;
+        return <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />;
     }
   };
 
@@ -126,14 +126,14 @@ export default function OptimizedSinglePlanDetails({
       case "UNDER_REVIEW":
         return "bg-blue-100 text-blue-700 border-blue-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
   if (!planData) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">No plan data available</p>
+        <p className="text-gray-500 dark:text-gray-400">No plan data available</p>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function OptimizedSinglePlanDetails({
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         {/* Header Card with Gradient Background */}
-        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+        <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100 dark:border-white/10">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
               {/* Plan Info */}
@@ -155,7 +155,7 @@ export default function OptimizedSinglePlanDetails({
                 <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   {planData.planNumber}
                 </h1>
-                <p className="text-lg text-gray-600 max-w-2xl">
+                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
                   {planData.surveyTitle}
                 </p>
 
@@ -182,7 +182,7 @@ export default function OptimizedSinglePlanDetails({
                 {onRefresh && (
                   <button
                     onClick={onRefresh}
-                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     <span>Refresh</span>
@@ -191,7 +191,7 @@ export default function OptimizedSinglePlanDetails({
 
                 <button
                   onClick={toggleMap}
-                  className="px-4 py-2 bg-white border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                  className="px-4 py-2 bg-white dark:bg-surface border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                 >
                   <MapPin className="w-4 h-4 mr-2" />
                   <span>{showMap ? "Hide Map" : "View Map"}</span>
@@ -224,7 +224,7 @@ export default function OptimizedSinglePlanDetails({
 
       {/* Map Section */}
       {!showMap && planData && (
-        <div className="bg-white rounded-2xl shadow p-6 mb-6">
+        <div className="bg-white dark:bg-surface rounded-2xl shadow p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">
             Map Preview
           </h2>
@@ -245,9 +245,9 @@ export default function OptimizedSinglePlanDetails({
       <div className="space-y-6 mb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Plan Information Card */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+          <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-blue-500 mr-2"
                   fill="none"
@@ -267,25 +267,25 @@ export default function OptimizedSinglePlanDetails({
             <div className="p-6 space-y-4">
               <div className="flex items-start">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-500">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Plan Number
                   </p>
-                  <p className="mt-1 text-gray-900 font-medium">
+                  <p className="mt-1 text-gray-900 dark:text-white font-medium">
                     {planData.planNumber}
                   </p>
                   {planData.referencePlanNumber && (
                     <div className="mt-2">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Reference Number
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {planData.referencePlanNumber}
                       </p>
                     </div>
                   )}
                   {planData.withdrawalAndResubmissionStatus && planData.withdrawalAndResubmissionStatus !== "No_Action" && (
                     <div className="mt-2">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Withdrawal Status
                       </p>
                       <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -297,10 +297,10 @@ export default function OptimizedSinglePlanDetails({
                   )}
                   {planData.reasonForWithdrawalAndResubmission && (
                     <div className="mt-2">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Reason for Withdrawal
                       </p>
-                      <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
                         {planData.reasonForWithdrawalAndResubmission}
                       </p>
                     </div>
@@ -308,9 +308,9 @@ export default function OptimizedSinglePlanDetails({
                 </div>
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Survey Title
                   </p>
                   {/* @ts-ignore */}
@@ -318,47 +318,47 @@ export default function OptimizedSinglePlanDetails({
                     <div className="mt-2 space-y-2">
                       {/* @ts-ignore */}
                       {planData.parcels.map((parcel: any, idx: number) => (
-                        <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
-                          <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
-                          <span className="text-gray-700">{parcel.surveyTitle || planData.surveyTitle}</span>
+                        <div key={idx} className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
+                          <span className="font-medium text-gray-600 dark:text-gray-400">Polygon {idx + 1}: </span>
+                          <span className="text-gray-700 dark:text-gray-300">{parcel.surveyTitle || planData.surveyTitle}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-1 text-gray-700">{planData.surveyTitle}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.surveyTitle}</p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan Type
                     </p>
-                    <p className="mt-1 text-gray-700">{planData.planType}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.planType}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Pillar Type
                     </p>
-                    <p className="mt-1 text-gray-700">{planData.pillarType}</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.pillarType}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-gray-500">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Facilitator
                   </p>
-                  <p className="mt-1 text-gray-700">
+                  <p className="mt-1 text-gray-700 dark:text-gray-300">
                     {planData.facilitator || "N/A"}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Date on Plan
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {planData.dateOnSurveyPlan
                         ? new Date(
                             planData.dateOnSurveyPlan
@@ -367,10 +367,10 @@ export default function OptimizedSinglePlanDetails({
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Date Lodged
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {planData.dateLodged
                         ? new Date(planData.dateLodged).toLocaleDateString()
                         : "Not lodged"}
@@ -382,9 +382,9 @@ export default function OptimizedSinglePlanDetails({
           </div>
 
           {/* Location Details Card */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+          <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-green-500 mr-2"
                   fill="none"
@@ -411,26 +411,26 @@ export default function OptimizedSinglePlanDetails({
               <div className="space-y-4">
                 {planData.ward && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Ward</p>
-                    <p className="mt-1 text-gray-700">{planData.ward}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ward</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.ward}</p>
                   </div>
                 )}
                 {planData.lcda && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500">LCDA</p>
-                    <p className="mt-1 text-gray-700">{planData.lcda}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LCDA</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.lcda}</p>
                   </div>
                 )}
                 {planData.lga && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500">LGA</p>
-                    <p className="mt-1 text-gray-700">{planData.lga}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LGA</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">{planData.lga}</p>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Area</p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Area</p>
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {planData.areaSqM
                         ? planData.areaSqM < 10000
                           ? `${planData.areaSqM.toLocaleString(undefined, {
@@ -444,10 +444,10 @@ export default function OptimizedSinglePlanDetails({
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Deeded Area
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {planData.deededArea || "N/A"}
                     </p>
                   </div>
@@ -455,11 +455,11 @@ export default function OptimizedSinglePlanDetails({
                 {planData.centroid &&
                   Array.isArray(planData.centroid) &&
                   planData.centroid.length >= 2 && (
-                    <div className="pt-4 border-t border-gray-100">
-                      <p className="text-sm font-medium text-gray-500">
+                    <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Centroid Coordinates
                       </p>
-                      <p className="mt-1 text-gray-700 font-mono text-sm">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300 font-mono text-sm">
                         {`${planData.centroid[1].toFixed(
                           6
                         )}°N, ${planData.centroid[0].toFixed(6)}°E`}
@@ -497,9 +497,9 @@ export default function OptimizedSinglePlanDetails({
           </div>
 
           {/* Timestamps Card */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+          <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                 <svg
                   className="w-5 h-5 text-purple-500 mr-2"
                   fill="none"
@@ -535,8 +535,8 @@ export default function OptimizedSinglePlanDetails({
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Created</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(planData.createdAt).toLocaleString(undefined, {
                         year: "numeric",
                         month: "short",
@@ -565,10 +565,10 @@ export default function OptimizedSinglePlanDetails({
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Last Updated
                     </p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(planData.updatedAt).toLocaleString(undefined, {
                         year: "numeric",
                         month: "short",
@@ -580,13 +580,13 @@ export default function OptimizedSinglePlanDetails({
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <p className="text-sm font-medium text-gray-500 mb-2">
+                <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                     Pillars Count
                   </p>
                   <div className="flex items-center gap-2">
                     <Layers className="w-5 h-5 text-green-600" />
-                    <span className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
                       {planData?.pillars?.length || 0}
                     </span>
                   </div>
@@ -601,16 +601,16 @@ export default function OptimizedSinglePlanDetails({
       {(planData.pdfFilePaths?.length > 0 ||
         planData.cadFilePaths?.length > 0 ||
         planData.certificateFilePaths?.length > 0) && (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm mb-6">
-          <div className="bg-linear-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm mb-6">
+          <div className="bg-linear-to-r from-amber-50 to-orange-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Uploaded Files
             </h3>
           </div>
           <div className="p-6 space-y-6">
             {planData.pdfFilePaths?.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   PDF Documents
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -623,7 +623,7 @@ export default function OptimizedSinglePlanDetails({
 
             {planData.cadFilePaths?.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   CAD Files
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -636,7 +636,7 @@ export default function OptimizedSinglePlanDetails({
 
             {planData.certificateFilePaths?.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                   Certificates
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

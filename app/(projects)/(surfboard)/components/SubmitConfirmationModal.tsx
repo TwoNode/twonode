@@ -63,17 +63,17 @@ export function SubmitConfirmationModal({
 
         <div className="grid gap-6 py-4">
           {/* Plan Number & Status */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/10">
             <div>
-              <div className="text-xs text-gray-500 uppercase font-medium">
+              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">
                 Plan Number
               </div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-lg font-bold text-gray-900 dark:text-white">
                 {data.planNumber}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-gray-500 uppercase font-medium">
+              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-medium">
                 Type
               </div>
               <div className="text-sm font-semibold text-blue-600">
@@ -85,7 +85,7 @@ export function SubmitConfirmationModal({
           {/* Survey Title & Person Count Validation */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <User className="w-4 h-4" />
                 Survey Title / Owners
               </div>
@@ -110,16 +110,16 @@ export function SubmitConfirmationModal({
               </div>
             </div>
 
-            <div className="bg-white border rounded-md p-3 max-h-40 overflow-y-auto shadow-sm">
+            <div className="bg-white dark:bg-surface border rounded-md p-3 max-h-40 overflow-y-auto shadow-sm">
               {titleLines.map((line, i) => (
                 <div
                   key={i}
-                  className="py-1 border-b last:border-0 border-gray-100 flex gap-3 text-sm"
+                  className="py-1 border-b last:border-0 border-gray-100 dark:border-white/10 flex gap-3 text-sm"
                 >
-                  <span className="text-gray-400 w-4 text-xs select-none">
+                  <span className="text-gray-400 dark:text-gray-500 w-4 text-xs select-none">
                     {i + 1}.
                   </span>
-                  <span className="font-medium text-gray-900">{line}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{line}</span>
                 </div>
               ))}
             </div>
@@ -136,13 +136,13 @@ export function SubmitConfirmationModal({
           {/* Core Details Grid */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <Ruler className="w-3.5 h-3.5" /> Deeded Area
               </div>
               <div className="text-sm font-medium">{data.deededArea}</div>
             </div>
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <Calendar className="w-3.5 h-3.5" /> Survey Date
               </div>
               <div className="text-sm font-medium">
@@ -152,7 +152,7 @@ export function SubmitConfirmationModal({
               </div>
             </div>
             <div className="space-y-1 col-span-2">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <MapPin className="w-3.5 h-3.5" /> Locality
               </div>
               <div className="text-sm font-medium truncate">
@@ -163,25 +163,25 @@ export function SubmitConfirmationModal({
 
           {/* Files Summary */}
           <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-            <div className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wide">
+            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2 uppercase tracking-wide">
               Files to Upload
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center bg-white p-2 rounded border border-gray-100">
-                <span className="text-xs text-gray-500">CAD</span>
-                <span className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
+                <span className="text-xs text-gray-500 dark:text-gray-400">CAD</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.cad}
                 </span>
               </div>
-              <div className="flex flex-col items-center bg-white p-2 rounded border border-gray-100">
-                <span className="text-xs text-gray-500">PDF</span>
-                <span className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
+                <span className="text-xs text-gray-500 dark:text-gray-400">PDF</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.pdf}
                 </span>
               </div>
-              <div className="flex flex-col items-center bg-white p-2 rounded border border-gray-100">
-                <span className="text-xs text-gray-500">Cert</span>
-                <span className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col items-center bg-white dark:bg-surface p-2 rounded border border-gray-100 dark:border-white/10">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Cert</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
                   {fileCounts.cert}
                 </span>
               </div>
