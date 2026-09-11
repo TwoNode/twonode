@@ -121,7 +121,7 @@ export function Menu({
                   style={{
                     background: isDark
                       ? isActive(item.url)
-                        ? `${colors.sidebar.itemBorderLeft}47`
+                        ? "color-mix(in srgb, var(--color-brand-primary) 28%, transparent)"
                         : "transparent"
                       : isActive(item.url)
                       ? `${colors.primary.light}1A`
@@ -159,7 +159,7 @@ export function Menu({
                     style={{
                       backgroundColor: isDark
                         ? isActive(item.url)
-                          ? `${colors.sidebar.itemBorderLeft}33`
+                          ? "color-mix(in srgb, var(--color-brand-primary) 20%, transparent)"
                           : "transparent"
                         : isActive(item.url)
                         ? `${colors.primary.light}60`
@@ -176,7 +176,7 @@ export function Menu({
                       style={{
                         color: isDark
                           ? isActive(item.url)
-                            ? colors.sidebar.itemBorderLeft
+                            ? "var(--color-brand-primary-light)"
                             : "rgba(255,255,255,0.6)"
                           : colorPalette &&
                             colorPalette.primary &&
@@ -259,9 +259,11 @@ export function Menu({
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-bold shadow-md"
                   style={{
-                    background: `linear-gradient(to bottom right, ${colors.primary.main}, ${
-                      "dark" in colors.primary ? colors.primary.dark : colors.primary.main
-                    })`,
+                    background: isDark
+                      ? "linear-gradient(to bottom right, var(--color-brand-primary), var(--color-brand-primary-dark))"
+                      : `linear-gradient(to bottom right, ${colors.primary.main}, ${
+                          "dark" in colors.primary ? colors.primary.dark : colors.primary.main
+                        })`,
                     borderColor: isDark ? "rgba(255,255,255,0.15)" : colors.border.light,
                     color: "#fff",
                   }}
@@ -287,7 +289,7 @@ export function Menu({
               <span
                 className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2"
                 style={{
-                  backgroundColor: colors.status?.success ?? "#10b981",
+                  backgroundColor: isDark ? "var(--color-success)" : colors.status?.success ?? "#10b981",
                   borderColor: isDark ? "#0A0F16" : "#fff",
                 }}
               />

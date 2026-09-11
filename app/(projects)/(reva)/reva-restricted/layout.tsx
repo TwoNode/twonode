@@ -6,5 +6,9 @@ export default function RevaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ToastProvider>{children}</ToastProvider>;
+  return (
+    <ToastProvider>
+      <div data-product="reva">{children}</div>
+    </ToastProvider>
+  );
 }

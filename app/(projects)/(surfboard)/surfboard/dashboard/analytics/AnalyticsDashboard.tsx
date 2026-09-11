@@ -6,7 +6,6 @@ import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { surfboardApi } from '@/surfboard/apiClient';
-import { SURFBOARD_COLORS } from '@/surfboard/colors';
 import type { DateRangeValue } from '@/components/dashboard/DateRangeFilter';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
 import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
@@ -159,7 +158,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
           breakdown={`${analytics.provisionalPlansCount} provisional (${provisionalShare}% of all records)`}
           icon={Layers}
           tone="brand"
-          accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
         />
 
         <StatCard

@@ -1,7 +1,6 @@
 import { DashboardShell } from "@/components/admin-panel/DashboardShell";
 import { getEffectiveUserData } from "@/lib/auth/session";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { Platform } from "@/utils/platform";
 
 export const maxDuration = 60;
@@ -42,7 +41,6 @@ export default async function RestrictedDashboardLayout({
     <DashboardShell
       title="Surfboard Admin"
       logoSrc="/surfboard/surf_logo.svg"
-      colorPalette={SURFBOARD_COLORS}
       role={userData?.role}
       group="admin"
       user={user?.name || userData?.name ? { picture: user?.picture, name: user?.name || userData?.name } : undefined}

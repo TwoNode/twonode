@@ -181,7 +181,6 @@ export default function DashboardHome() {
             breakdown={`Pending ${stats.pending} · Lodged ${stats.lodged} · Queried ${stats.queried}`}
             icon={FileText}
             tone="brand"
-            accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
           />
         </Link>
 

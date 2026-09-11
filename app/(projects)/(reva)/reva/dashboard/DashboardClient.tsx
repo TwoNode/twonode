@@ -5,7 +5,7 @@ import { useKindeAuth } from "@kinde-oss/kinde-auth-nextjs";
 import { FileText, Clock3, CheckCircle2, FileCheck2, Plus } from "lucide-react";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { REVA_GRADIENTS } from "@/reva/colors";
 import Link from "next/link";
 import UserPropertyRequests from "./components/UserPropertyRequests";
 import UserSearchFilters, {
@@ -176,7 +176,6 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
           value={totalCount}
           icon={FileText}
           tone="brand"
-          accent={{ main: REVA_COLORS.primary.main, light: REVA_COLORS.primary.light }}
         />
         <StatCard
           label="Processing"

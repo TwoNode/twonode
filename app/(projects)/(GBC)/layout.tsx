@@ -45,7 +45,9 @@ export default function GBCLayout({
 }>) {
   return (
     <ToastProvider>
-      <div className="relative">{children}</div>
+      <div className="relative" data-product="gbc">
+        {children}
+      </div>
     </ToastProvider>
   );
 }

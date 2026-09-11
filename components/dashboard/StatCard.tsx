@@ -29,7 +29,12 @@ export interface StatCardProps {
   breakdown?: string;
   icon: LucideIcon;
   tone?: "brand" | Exclude<BadgeTone, "danger">;
-  /** Required when tone="brand" — the platform's own primary color. */
+  /**
+   * Only needed to override the platform's own brand color (rare) — by
+   * default tone="brand" reads the --color-brand-primary token, which
+   * already resolves to the right product via the DOM's [data-product]
+   * scope with no prop-drilling required.
+   */
   accent?: StatCardAccent;
   /** Optional up/down change indicator, e.g. { value: "+12%", direction: "up" }. */
   trend?: { value: string; direction: "up" | "down" };
@@ -54,7 +59,9 @@ export function StatCard({
   const { theme } = useTheme();
   const isBrand = tone === "brand";
   const brandColor = isBrand
-    ? (theme === "dark" && accent?.light) || accent?.main || "#0077B6"
+    ? (theme === "dark" && accent?.light) ||
+      accent?.main ||
+      "var(--color-brand-primary)"
     : undefined;
 
   return (
@@ -101,7 +108,9 @@ export function StatCard({
         style={
           isBrand
             ? {
-                background: `${brandColor}${theme === "dark" ? "26" : "1A"}`,
+                background: brandColor?.startsWith("var(")
+                  ? `color-mix(in srgb, ${brandColor} ${theme === "dark" ? 15 : 10}%, transparent)`
+                  : `${brandColor}${theme === "dark" ? "26" : "1A"}`,
                 color: brandColor,
               }
             : undefined
