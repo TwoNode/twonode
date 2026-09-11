@@ -29,13 +29,13 @@ export default function HomeSponsors() {
   }, []);
 
   return (
-    <section className="py-16 sm:py-20 md:py-24 bg-white">
+    <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">
             Our Sponsors & Partners
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 px-2">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 px-2">
             Thank you to our amazing sponsors who make GBC possible
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function HomeSponsors() {
           {sponsors.map((sponsor: any) => (
             <div
               key={sponsor.id}
-              className="flex items-center justify-center p-6 bg-gray-50 rounded-lg hover:shadow-lg transition-shadow"
+              className="flex items-center justify-center p-6 bg-gray-50 dark:bg-surface rounded-lg hover:shadow-lg transition-shadow"
             >
               <img
                 src={sponsor.logo}

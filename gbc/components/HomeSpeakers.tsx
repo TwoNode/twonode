@@ -29,13 +29,13 @@ export default function HomeSpeakers() {
   }, []);
 
   return (
-    <section className="py-16 sm:py-20 md:py-24 bg-white">
+    <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">
             Our Speakers
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 px-2">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 px-2">
             Meet the industry leaders sharing their insights at GBC 2.0
           </p>
         </div>
@@ -45,7 +45,7 @@ export default function HomeSpeakers() {
               key={speaker.id}
               className="overflow-hidden group hover:shadow-2xl transition-all duration-300"
             >
-              <div className="relative overflow-hidden bg-linear-to-br from-gray-100 to-gray-200">
+              <div className="relative overflow-hidden bg-linear-to-br from-gray-100 to-gray-200 dark:from-surface dark:to-surface-muted">
                 <img
                   src={speaker.photo}
                   alt={speaker.name}
@@ -58,21 +58,21 @@ export default function HomeSpeakers() {
                 )}
               </div>
               <div className="p-6">
-                <h3 className="font-bold text-gray-900 mb-2 text-xl">
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-xl">
                   {speaker.name}
                 </h3>
-                <p className="text-purple-600 font-semibold mb-2">
+                <p className="text-purple-600 dark:text-purple-400 font-semibold mb-2">
                   {speaker.title}
                 </p>
                 {speaker.company && (
-                  <div className="flex items-center gap-2 text-gray-600 mb-4">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-4">
                     <Building2 className="h-4 w-4" />
                     <span className="text-sm">{speaker.company}</span>
                   </div>
                 )}
-                <p className="text-gray-600 mb-4 line-clamp-3">{speaker.bio}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">{speaker.bio}</p>
                 {(speaker.linkedin || speaker.twitter) && (
-                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                  <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-white/10">
                     {speaker.linkedin && (
                       <a
                         href={speaker.linkedin}
