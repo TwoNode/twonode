@@ -40,6 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useConfirm } from "@/hooks/useConfirm";
+import { PageLoader } from "@/components/ui/spinner";
 
 interface SurveyPlan {
   id: string;
@@ -352,14 +353,7 @@ export default function SurfPlansPage() {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading survey plans...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader label="Loading survey plans…" />;
   }
 
   return (
