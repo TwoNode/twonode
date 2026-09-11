@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, MapPinOff, AlertCircle } from "lucide-react";
+import { MapPinOff, AlertCircle } from "lucide-react";
 import PlansMapClient from "@/app/(projects)/(surfboard)/components/PlansMapClient";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { PageLoader } from "@/components/ui/spinner";
 
 const ErrorState = ({ message }: { message: string }) => (
   <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4 text-center p-6">
@@ -22,15 +23,7 @@ const ErrorState = ({ message }: { message: string }) => (
 );
 
 const LoadingState = () => (
-  <div className="flex h-[calc(100vh-200px)] flex-col items-center justify-center space-y-4">
-    <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-    <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">
-      Loading All Surf Plans
-    </h2>
-    <p className="text-gray-500 dark:text-gray-400">
-      Fetching spatial data across the platform...
-    </p>
-  </div>
+  <PageLoader className="h-[calc(100vh-200px)] min-h-0" label="Fetching spatial data across the platform…" />
 );
 
 export default function AdminMapViewerPage() {

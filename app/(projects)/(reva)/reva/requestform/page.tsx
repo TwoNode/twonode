@@ -67,11 +67,6 @@ export const metadata: Metadata = {
     site: "@TwoNodeTechnologies",
     creator: "@TwoNodeTechnologies",
   },
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
-  },
   referrer: "origin-when-cross-origin",
   formatDetection: {
     email: false,
