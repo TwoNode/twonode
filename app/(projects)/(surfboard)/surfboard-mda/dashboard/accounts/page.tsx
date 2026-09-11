@@ -320,7 +320,7 @@ export default function AccountsAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
         </div>
       </div>
     );
@@ -337,21 +337,21 @@ export default function AccountsAdminPage() {
       <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Accounts Admin</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts Admin</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review and approve LASG payment receipts for Certificate of Deposit
             batches
           </p>
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold text-blue-600">{pendingCount}</p>
-          <p className="text-sm text-gray-500">Pending Batches</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Pending Batches</p>
         </div>
       </div>
 
       {/* Search Input */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
         <Input
           type="text"
           placeholder="Search by batch code, plan number, submitter..."
@@ -378,12 +378,12 @@ export default function AccountsAdminPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
                   {searchQuery
                     ? "No matching batches found"
                     : "No batches awaiting approval"}
                 </p>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   {searchQuery
                     ? "Try adjusting your search"
                     : "Batches with LASG receipts will appear here"}
@@ -396,7 +396,7 @@ export default function AccountsAdminPage() {
                 const isBatchMine = isBatchLockedByMe(batch.id);
                 const isDisabled = !isBatchMine;
                 return (
-                  <Card key={batch.id} className={isBatchMine ? "border-2 border-blue-200 ring-2 ring-blue-100" : "border-2 border-gray-200"}>
+                  <Card key={batch.id} className={isBatchMine ? "border-2 border-blue-200 ring-2 ring-blue-100" : "border-2 border-gray-200 dark:border-white/10"}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -410,7 +410,7 @@ export default function AccountsAdminPage() {
                                 Locked by you
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-gray-500">
+                              <Badge variant="outline" className="text-gray-500 dark:text-gray-400">
                                 View Only
                               </Badge>
                             )}
@@ -429,7 +429,7 @@ export default function AccountsAdminPage() {
                         <p className="text-2xl font-bold text-blue-600">
                           ₦{batch.totalAmount.toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {batch.plans.length} plan
                           {batch.plans.length !== 1 ? "s" : ""}
                         </p>
@@ -440,8 +440,8 @@ export default function AccountsAdminPage() {
                     {/* Payment Receipts */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* LASG Receipt */}
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           LASG Payment Receipt
                         </p>
                         {batch.lasgReceiptUrl ? (
@@ -456,13 +456,13 @@ export default function AccountsAdminPage() {
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         ) : (
-                          <span className="text-sm text-gray-400 italic">No LASG receipt</span>
+                          <span className="text-sm text-gray-400 dark:text-gray-500 italic">No LASG receipt</span>
                         )}
                       </div>
 
                       {/* Remita Receipt */}
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
+                      <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Remita Payment Receipt
                         </p>
                         {batch.remitaReceiptUrl ? (
@@ -477,14 +477,14 @@ export default function AccountsAdminPage() {
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         ) : (
-                          <span className="text-sm text-gray-400 italic">No Remita receipt</span>
+                          <span className="text-sm text-gray-400 dark:text-gray-500 italic">No Remita receipt</span>
                         )}
                       </div>
                     </div>
 
                     {/* Plans Table */}
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Plans in Batch
                       </p>
                       <Table>
@@ -503,7 +503,7 @@ export default function AccountsAdminPage() {
                               <TableCell className="font-medium">
                                 <span className="block">{plan.planNumber}</span>
                                 {plan.referencePlanNumber && (
-                                  <span className="text-xs text-gray-500 block">Ref: {plan.referencePlanNumber}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 block">Ref: {plan.referencePlanNumber}</span>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -538,7 +538,7 @@ export default function AccountsAdminPage() {
                                     </a>
                                   ))}
                                   {!plan.queryLasgReceiptUrls?.length && !plan.queryRemitaReceiptUrls?.length && (
-                                    <span className="text-xs text-gray-400">No Query Fees</span>
+                                    <span className="text-xs text-gray-400 dark:text-gray-500">No Query Fees</span>
                                   )}
                                 </div>
                               </TableCell>
@@ -583,10 +583,10 @@ export default function AccountsAdminPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <History className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
                   {searchQuery ? "No matching batches found" : "No history yet"}
                 </p>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   {searchQuery
                     ? "Try adjusting your search"
                     : "Approved and disapproved batches will appear here"}
@@ -622,10 +622,10 @@ export default function AccountsAdminPage() {
                         </CardDescription>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-bold text-gray-600">
+                        <p className="text-xl font-bold text-gray-600 dark:text-gray-400">
                           ₦{batch.totalAmount.toLocaleString()}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {batch.plans.length} plan
                           {batch.plans.length !== 1 ? "s" : ""}
                         </p>
@@ -634,19 +634,19 @@ export default function AccountsAdminPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {/* Review Info */}
-                    <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                      <p className="text-gray-600">
+                    <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-lg text-sm">
+                      <p className="text-gray-600 dark:text-gray-400">
                         <span className="font-medium">Reviewed by:</span>{" "}
                         {batch.accountsApprovedByUser
                           ? `${batch.accountsApprovedByUser.firstName} ${batch.accountsApprovedByUser.lastName}`
                           : "Unknown"}
                       </p>
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 dark:text-gray-400">
                         <span className="font-medium">Date:</span>{" "}
                         {formatDate(batch.accountsApprovedAt)}
                       </p>
                       {batch.accountsComment && (
-                        <p className="text-gray-600 mt-2">
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">
                           <span className="font-medium">Comment:</span>{" "}
                           {batch.accountsComment}
                         </p>
@@ -680,7 +680,7 @@ export default function AccountsAdminPage() {
                     </div>
 
                     {/* Plans Summary */}
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       <span className="font-medium">Plans:</span>{" "}
                       {batch.plans.map((p) => p.planNumber).join(", ")}
                     </div>
@@ -688,7 +688,7 @@ export default function AccountsAdminPage() {
                     {/* Query Receipts for History */}
                     {batch.plans.some(p => p.queryLasgReceiptUrls?.length || p.queryRemitaReceiptUrls?.length) && (
                       <div className="mt-2 space-y-1">
-                        <p className="text-xs font-medium text-gray-500">Query Fee Receipts:</p>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Query Fee Receipts:</p>
                         <div className="flex flex-wrap gap-2">
                           {batch.plans.flatMap(p => [
                             ...(p.queryLasgReceiptUrls?.map((url, i) => ({ url, label: `${p.planNumber} LASG ${i + 1}` })) || []),
@@ -732,11 +732,11 @@ export default function AccountsAdminPage() {
 
           <div className="space-y-4">
             {selectedBatch && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-gray-700">
+              <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Batch: {selectedBatch.batchCode}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Amount: ₦{selectedBatch.totalAmount.toLocaleString()}
                 </p>
               </div>
@@ -744,7 +744,7 @@ export default function AccountsAdminPage() {
 
             {approvalAction === "disapprove" && (
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Reason for Disapproval *
                 </label>
                 <div className="mb-2 mt-2">

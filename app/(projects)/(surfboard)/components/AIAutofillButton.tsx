@@ -268,13 +268,13 @@ export default function AIAutofillButton({
 
       {/* Hint text */}
       {status === "idle" && hasNoPdf && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Upload a PDF file to enable AI autofill
         </p>
       )}
 
       {status === "idle" && !pdfJsLoaded && (
-        <p className="text-xs text-gray-500">Loading PDF library...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Loading PDF library...</p>
       )}
 
       {/* Error details */}
@@ -587,7 +587,7 @@ export type { AIExtractedData };
 
 //       {/* Hint text */}
 //       {status === "idle" && hasNoPdf && (
-//         <p className="text-xs text-gray-500">
+//         <p className="text-xs text-gray-500 dark:text-gray-400">
 //           Upload a PDF file to enable AI autofill
 //         </p>
 //       )}

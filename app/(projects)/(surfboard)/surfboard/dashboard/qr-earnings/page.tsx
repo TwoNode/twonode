@@ -111,7 +111,7 @@ export default function QREarningsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-3" />
-        <p className="text-gray-600 font-medium text-sm">
+        <p className="text-gray-600 dark:text-gray-400 font-medium text-sm">
           Loading your QR Earnings dashboard...
         </p>
       </div>
@@ -205,7 +205,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Total Earned */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -225,7 +225,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Pending Withdrawal */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -245,7 +245,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Total Withdrawn */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -268,7 +268,7 @@ export default function QREarningsPage() {
       {/* Transaction History & Withdrawals Tabs */}
       <div className="space-y-6">
         {/* Recent Transactions Table */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardHeader className="border-b border-slate-100 p-6">
             <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -342,7 +342,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Withdrawal History Table */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardHeader className="border-b border-slate-100 p-6">
             <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-indigo-600" />

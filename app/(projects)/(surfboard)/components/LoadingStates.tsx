@@ -29,7 +29,7 @@ export function PlanDetailsLoadingState() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="animate-pulse bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            className="animate-pulse bg-white dark:bg-surface rounded-xl p-6 border border-gray-200 dark:border-white/10 shadow-sm"
           >
             <div className="h-4 bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/2 mb-4 animate-shimmer"></div>
             <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export function PlanDetailsLoadingState() {
         {[1, 2].map((i) => (
           <div
             key={i}
-            className="animate-pulse bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+            className="animate-pulse bg-white dark:bg-surface rounded-xl p-6 border border-gray-200 dark:border-white/10 shadow-sm"
           >
             <div className="h-6 bg-linear-to-r from-blue-200 via-blue-100 to-blue-200 rounded w-1/4 mb-4 animate-shimmer"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -70,10 +70,10 @@ export function PlanDetailsLoadingState() {
           </div>
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-700 animate-pulse">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse">
             Loading plan details...
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Please wait while we fetch the data
           </p>
         </div>
@@ -109,7 +109,7 @@ export function PlanFormLoadingState() {
       {/* Form Sections Skeleton */}
       <div className="space-y-6">
         {/* Basic Information Card */}
-        <div className="animate-pulse bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <div className="animate-pulse bg-white dark:bg-surface rounded-xl p-6 border border-gray-200 dark:border-white/10 shadow-sm">
           <div className="h-6 bg-linear-to-r from-blue-200 via-blue-100 to-blue-200 rounded w-1/4 mb-6 animate-shimmer"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -122,7 +122,7 @@ export function PlanFormLoadingState() {
         </div>
 
         {/* File Upload Card */}
-        <div className="animate-pulse bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <div className="animate-pulse bg-white dark:bg-surface rounded-xl p-6 border border-gray-200 dark:border-white/10 shadow-sm">
           <div className="h-6 bg-linear-to-r from-blue-200 via-blue-100 to-blue-200 rounded w-1/4 mb-6 animate-shimmer"></div>
           <div className="space-y-6">
             {[1, 2, 3].map((i) => (
@@ -135,7 +135,7 @@ export function PlanFormLoadingState() {
         </div>
 
         {/* Map Card */}
-        <div className="animate-pulse bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+        <div className="animate-pulse bg-white dark:bg-surface rounded-xl p-6 border border-gray-200 dark:border-white/10 shadow-sm">
           <div className="h-6 bg-linear-to-r from-emerald-200 via-emerald-100 to-emerald-200 rounded w-1/4 mb-4 animate-shimmer"></div>
           <div className="h-96 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 rounded-lg relative overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer-slow"></div>
@@ -153,10 +153,10 @@ export function PlanFormLoadingState() {
           </div>
         </div>
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-700 animate-pulse">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse">
             Loading form data...
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Please wait while we prepare the form
           </p>
         </div>
@@ -202,7 +202,7 @@ export function GenericLoadingSpinner({
         <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
         <div className="w-16 h-16 border-4 border-blue-600 rounded-full border-t-transparent animate-spin absolute top-0 left-0"></div>
       </div>
-      <p className="text-sm font-medium text-gray-700">{message}</p>
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{message}</p>
     </div>
   );
 }

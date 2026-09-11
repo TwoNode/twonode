@@ -89,7 +89,7 @@ function StatusBadge({ status }: { status?: string | null }) {
     status.toLowerCase() as keyof typeof statusConfig
   ] || {
     label: status,
-    class: "bg-gray-100 text-gray-800 border-gray-200",
+    class: "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-200 dark:border-white/10",
   };
 
   return (
@@ -405,7 +405,7 @@ function PlanDetails({ planId }: { planId: string }) {
                     setIsPaywallOpen(true);
                   }}
                   size="sm"
-                  className="bg-white text-emerald-800 hover:bg-emerald-50 font-bold gap-1.5"
+                  className="bg-white dark:bg-surface text-emerald-800 hover:bg-emerald-50 font-bold gap-1.5"
                 >
                   <Award className="h-4 w-4" />
                   Unlock Certificate of Deposit
@@ -434,7 +434,7 @@ function PlanDetails({ planId }: { planId: string }) {
                 setIsPaywallOpen(true);
               }}
               size="sm"
-              className="bg-white text-amber-900 hover:bg-amber-100 font-bold"
+              className="bg-white dark:bg-surface text-amber-900 hover:bg-amber-100 font-bold"
             >
               Re-Purchase Access
             </Button>
@@ -461,7 +461,7 @@ function PlanDetails({ planId }: { planId: string }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 bg-white hover:bg-cyan-50 border-cyan-200 text-cyan-700 hover:text-cyan-800 font-medium shadow-sm"
+                  className="gap-1.5 bg-white dark:bg-surface hover:bg-cyan-50 border-cyan-200 text-cyan-700 hover:text-cyan-800 font-medium shadow-sm"
                   onClick={() => setShowMap(!showMap)}
                 >
                   <MapPin className="h-3.5 w-3.5" />
@@ -562,7 +562,7 @@ function PlanDetails({ planId }: { planId: string }) {
                   <CardContent className="flex-1 p-0 relative h-200 overflow-auto scroll-m-0 webkit-scrollbar scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-100">
                     {/* Map Section */}
 
-                    <div className="bg-white rounded-2xl shadow p-6">
+                    <div className="bg-white dark:bg-surface rounded-2xl shadow p-6">
                       <h2 className="text-lg font-semibold mb-4 text-gray-800">
                         Map Preview
                       </h2>
@@ -799,7 +799,7 @@ function PlanDetails({ planId }: { planId: string }) {
                         Plan Summary
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-4 bg-white">
+                    <CardContent className="p-6 space-y-4 bg-white dark:bg-surface">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-500">
                           Status
@@ -834,7 +834,7 @@ function PlanDetails({ planId }: { planId: string }) {
                         Quick Actions
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 space-y-2 bg-white">
+                    <CardContent className="p-4 space-y-2 bg-white dark:bg-surface">
                       <Button
                         variant="outline"
                         className="w-full justify-start gap-2 text-slate-700 hover:text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50"

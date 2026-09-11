@@ -54,7 +54,17 @@ doc lives in that same folder.
   classifier declined) — flagged to close out before/during Phase 8–9.
   Full writeup in `docs/development-history/phases/phase-6-design-tokens.md`.
   Shipped on `design-system/phase-6-tokens` ([PR #66](https://github.com/roji-tech/twonodes/pull/66)).
-- **Phase 7 — Surfboard theming**: Ready to start — Phase 6 unblocked it.
+- **Phase 7 — Surfboard theming**: In progress. Batch 1 shipped
+  ([PR #67](https://github.com/roji-tech/twonodes/pull/67)): mechanical
+  dark-mode sweep across all 70 files with zero `dark:` coverage across
+  the surveyor site/dashboard, MDA shell, admin panel, and the shared
+  plan-related components directory (a gap the per-shell scoping missed
+  initially). Hand-fixed native `<select>` elements and JS-driven
+  stat-card colors the sweep can't reach. Responsiveness spot-checked at
+  375/768/1024px on the three dashboard homes — no issues found. Live-
+  verified against a real authenticated account in both themes.
+  Still open: individual verification of ~45 remaining pages. Full
+  writeup in `docs/development-history/phases/phase-7-surfboard-theming.md`.
 - **Phase 8 — REVA theming**: Planned, blocked on Phase 6 (and ideally 7).
 - **Phase 9 — GBC theming**: Planned, blocked on Phase 6 (and ideally 7–8).
 - **Phase 10 — Public/marketing sites theming**: Planned, blocked on

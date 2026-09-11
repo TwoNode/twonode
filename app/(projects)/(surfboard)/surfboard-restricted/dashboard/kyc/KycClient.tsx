@@ -97,19 +97,19 @@ export default function KycClient({
   };
 
   return (
-    <Card className="bg-white border-gray-200 shadow-xl">
+    <Card className="bg-white dark:bg-surface border-gray-200 dark:border-white/10 shadow-xl">
       <CardContent className="p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
             <Input
               placeholder="Search by name, email, or SURCON..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white border-gray-300 text-gray-900 w-full h-11"
+              className="pl-10 bg-white dark:bg-surface border-gray-300 dark:border-white/15 text-gray-900 dark:text-white w-full h-11"
             />
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <CheckCircle
                 className="h-4 w-4"
@@ -127,10 +127,10 @@ export default function KycClient({
           </div>
         </div>
 
-        <div className="rounded-md border border-gray-200 overflow-x-auto">
+        <div className="rounded-md border border-gray-200 dark:border-white/10 overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead
-              className="text-gray-700"
+              className="text-gray-700 dark:text-gray-300"
               style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
             >
               <tr>
@@ -148,7 +148,7 @@ export default function KycClient({
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-8 text-center text-gray-500"
+                    className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                   >
                     No surveyors found.
                   </td>
@@ -158,37 +158,37 @@ export default function KycClient({
                   <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
-                        <span className="text-gray-900 font-medium">
+                        <span className="text-gray-900 dark:text-white font-medium">
                           {s.firstName} {s.lastName}
                         </span>
-                        <span className="text-gray-500 text-xs">{s.email}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">{s.email}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.surconRegNumber || (
-                        <span className="text-gray-400 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.payerID ? (
                         <div className="flex flex-col gap-1">
                           <span>{s.payerID}</span>
-                          <Badge variant="outline" className="w-fit text-xs border-gray-300 text-gray-600">
+                          <Badge variant="outline" className="w-fit text-xs border-gray-300 dark:border-white/15 text-gray-600 dark:text-gray-400">
                             {s.payerIDType || "Unknown Type"}
                           </Badge>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.bankDetails ? (
                         <div className="flex items-center gap-2">
                           <div className="flex flex-col">
-                            <span className="text-gray-900">
+                            <span className="text-gray-900 dark:text-white">
                               {s.bankDetails.accountName}
                             </span>
-                            <span className="text-gray-500 text-xs">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">
                               {s.bankDetails.bankName} •{" "}
                               {s.bankDetails.accountNumber}
                             </span>
@@ -206,10 +206,10 @@ export default function KycClient({
                           />
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">Not set</span>
+                        <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {format(new Date(s.createdAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -225,7 +225,7 @@ export default function KycClient({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {s.isKycValidated ? "Revoke" : "Approve"}
                         </span>
                         <Switch

@@ -102,14 +102,14 @@ export default function AuditLogsPage() {
         <div className="flex items-center gap-3">
           <FileText className="w-8 h-8 text-blue-600 shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="text-sm text-gray-600">{total} total entries</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{total} total entries</p>
           </div>
         </div>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Filter className="w-4 h-4" />
           {showFilters ? "Hide Filters" : "Show Filters"}
@@ -118,10 +118,10 @@ export default function AuditLogsPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6">
+        <div className="bg-white dark:bg-surface p-4 rounded-lg border border-gray-200 dark:border-white/10 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Action
               </label>
               <select
@@ -130,7 +130,7 @@ export default function AuditLogsPage() {
                   setActionFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Actions</option>
                 {actions.map((action) => (
@@ -142,7 +142,7 @@ export default function AuditLogsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Entity
               </label>
               <select
@@ -151,7 +151,7 @@ export default function AuditLogsPage() {
                   setEntityFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Entities</option>
                 {entities.map((entity) => (
@@ -166,37 +166,37 @@ export default function AuditLogsPage() {
       )}
 
       {/* Logs Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading audit logs...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading audit logs...</p>
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-12 text-center text-gray-500 dark:text-gray-400">
             No audit logs found
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Timestamp
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Action
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Entity
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Changes
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     IP Address
                   </th>
                 </tr>
@@ -207,21 +207,21 @@ export default function AuditLogsPage() {
                     key={log.id}
                     className="hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                       {formatDate(log.createdAt)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       {log.user ? (
                         <div className="flex flex-col">
                           <span className="font-medium">
                             {log.user.firstName} {log.user.lastName}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {log.user.email}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Unknown</span>
+                        <span className="text-gray-400 dark:text-gray-500">Unknown</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -229,10 +229,10 @@ export default function AuditLogsPage() {
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       {log.entity}
                       {log.entityId && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           ID: {log.entityId.substring(0, 8)}...
                         </div>
                       )}
@@ -244,15 +244,15 @@ export default function AuditLogsPage() {
                             {" "}
                             View changes
                           </summary>
-                          <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-x-auto max-w-md">
+                          <pre className="mt-2 p-2 bg-gray-50 dark:bg-white/5 rounded text-xs overflow-x-auto max-w-md">
                             {formatChanges(log.changes)}
                           </pre>
                         </details>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-400 dark:text-gray-500">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {log.ipAddress || "-"}
                     </td>
                   </tr>
@@ -266,14 +266,14 @@ export default function AuditLogsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             Page {page} of {totalPages}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -281,7 +281,7 @@ export default function AuditLogsPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               Next
               <ChevronRight className="w-4 h-4" />

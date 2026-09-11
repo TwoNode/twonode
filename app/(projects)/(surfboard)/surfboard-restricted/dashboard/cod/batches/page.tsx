@@ -96,7 +96,7 @@ export default function BatchManagementPage() {
     switch (status) {
       case "PENDING_PAYMENT":
         return (
-          <Badge className="bg-gray-100 text-gray-700">
+          <Badge className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300">
             <Clock className="w-3 h-3 mr-1" />
             Awaiting Payment
           </Badge>
@@ -139,7 +139,7 @@ export default function BatchManagementPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
         </div>
       </div>
     );
@@ -162,7 +162,7 @@ export default function BatchManagementPage() {
             <p className="text-2xl font-bold text-green-600">
               {formatCurrency(batch.totalAmount)}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Total (inc. {formatCurrency(batch.systemCharges)} system charges)
             </p>
           </div>
@@ -170,25 +170,25 @@ export default function BatchManagementPage() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Batch Info */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
           <div>
-            <p className="text-xs text-gray-500">Plans in Batch</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Plans in Batch</p>
             <p className="text-lg font-semibold">{batch.planCount}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Base Fees</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Base Fees</p>
             <p className="text-sm font-medium">
               {formatCurrency(batch.totalFees)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">System Charges</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">System Charges</p>
             <p className="text-sm font-medium">
               {formatCurrency(batch.systemCharges)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Remita RRR</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Remita RRR</p>
             <p className="text-sm font-mono">
               {batch.userPaymentRef || "N/A"}
             </p>
@@ -203,7 +203,7 @@ export default function BatchManagementPage() {
               <p className="text-sm font-medium">
                 {batch.submitter.firstName} {batch.submitter.lastName}
               </p>
-              <p className="text-xs text-gray-500">{batch.submitter.email}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{batch.submitter.email}</p>
             </div>
           </div>
         )}
@@ -230,8 +230,8 @@ export default function BatchManagementPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Batch Management</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Batch Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             View Certificate of Deposit batches with verified Remita payments
           </p>
         </div>
@@ -269,7 +269,7 @@ export default function BatchManagementPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{paidBatches.length}</p>
-                  <p className="text-sm text-gray-500">Ready for MDA Review</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Ready for MDA Review</p>
                 </div>
               </CardContent>
             </Card>
@@ -282,7 +282,7 @@ export default function BatchManagementPage() {
                   <p className="text-2xl font-bold">
                     {paidBatches.reduce((sum, b) => sum + b.planCount, 0)}
                   </p>
-                  <p className="text-sm text-gray-500">Total Plans</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Plans</p>
                 </div>
               </CardContent>
             </Card>
@@ -297,7 +297,7 @@ export default function BatchManagementPage() {
                       paidBatches.reduce((sum, b) => sum + b.totalAmount, 0)
                     )}
                   </p>
-                  <p className="text-sm text-gray-500">Total Amount</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Amount</p>
                 </div>
               </CardContent>
             </Card>
@@ -307,10 +307,10 @@ export default function BatchManagementPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Receipt className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
                   No batches pending MDA review
                 </p>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   Batches with verified Remita payments will appear here
                 </p>
               </CardContent>
@@ -335,7 +335,7 @@ export default function BatchManagementPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{approvedBatches.length}</p>
-                  <p className="text-sm text-gray-500">Approved Batches</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Approved Batches</p>
                 </div>
               </CardContent>
             </Card>
@@ -348,7 +348,7 @@ export default function BatchManagementPage() {
                   <p className="text-2xl font-bold">
                     {approvedBatches.reduce((sum, b) => sum + b.planCount, 0)}
                   </p>
-                  <p className="text-sm text-gray-500">Total Plans</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Plans</p>
                 </div>
               </CardContent>
             </Card>
@@ -363,7 +363,7 @@ export default function BatchManagementPage() {
                       approvedBatches.reduce((sum, b) => sum + b.totalAmount, 0)
                     )}
                   </p>
-                  <p className="text-sm text-gray-500">Total Amount</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Amount</p>
                 </div>
               </CardContent>
             </Card>
@@ -373,10 +373,10 @@ export default function BatchManagementPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <CheckCircle className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
                   No approved batches yet
                 </p>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   Batches approved by MDA Accounts will appear here
                 </p>
               </CardContent>

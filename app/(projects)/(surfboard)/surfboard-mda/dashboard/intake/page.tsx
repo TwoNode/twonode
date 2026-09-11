@@ -370,7 +370,7 @@ export default function IntakeAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading intake batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading intake batches...</p>
         </div>
       </div>
     );
@@ -391,14 +391,14 @@ export default function IntakeAdminPage() {
             ? isQueried ? "border-l-4 border-l-red-400" : isApproved ? "border-l-4 border-l-green-400" : ""
             : isBatchMine
               ? "border-2 border-blue-200 ring-2 ring-blue-100"
-              : "border-2 border-gray-200"
+              : "border-2 border-gray-200 dark:border-white/10"
         }`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Package className={`w-5 h-5 ${isBatchMine ? "text-blue-600" : "text-gray-500"}`} />
+                <Package className={`w-5 h-5 ${isBatchMine ? "text-blue-600" : "text-gray-500 dark:text-gray-400"}`} />
                 <CardTitle className="text-xl">Batch {batch.batchCode}</CardTitle>
                 {isHistory && (
                   <Badge className={isQueried ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}>
@@ -412,7 +412,7 @@ export default function IntakeAdminPage() {
                       Locked by you
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-gray-500">
+                    <Badge variant="outline" className="text-gray-500 dark:text-gray-400">
                       View Only
                     </Badge>
                   )
@@ -427,16 +427,16 @@ export default function IntakeAdminPage() {
                     value={(batch.plans.length / batch._count.plans) * 100}
                     className="w-32 h-2"
                   />
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
                     {batch.plans.length}/{batch._count.plans} ready for intake
                   </span>
                 </div>
               )}
             </div>
             {isHistory && intakeTime && (
-               <div className="text-right text-xs text-gray-500">
+               <div className="text-right text-xs text-gray-500 dark:text-gray-400">
                   <p>Processed on:</p>
-                  <p className="font-medium text-gray-700">{formatDate(intakeTime)}</p>
+                  <p className="font-medium text-gray-700 dark:text-gray-300">{formatDate(intakeTime)}</p>
                </div>
             )}
             {!isHistory && isBatchMine && (
@@ -460,7 +460,7 @@ export default function IntakeAdminPage() {
                   <User className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
                     <p className="text-xs text-emerald-600">Submitted By</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {batch.submitter.firstName} {batch.submitter.lastName}
                     </p>
                   </div>
@@ -470,7 +470,7 @@ export default function IntakeAdminPage() {
                     <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">SURCON Number</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {batch.submitter.surconRegNumber}
                       </p>
                     </div>
@@ -481,7 +481,7 @@ export default function IntakeAdminPage() {
                     <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">Company</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {batch.submitter.companyName}
                       </p>
                     </div>
@@ -491,19 +491,19 @@ export default function IntakeAdminPage() {
             </div>
           )}
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
+          <div className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 dark:bg-white/5 px-4 py-2 border-b border-gray-200 dark:border-white/10 font-medium text-sm text-gray-700 dark:text-gray-300">
               Plans in this Batch
             </div>
             <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                {batch.plans.map(p => {
                  const isPlanProcessing = processingPlanId === p.id;
                  return (
-                  <div key={p.id} className="p-4 bg-white hover:bg-gray-50 transition-colors">
+                  <div key={p.id} className="p-4 bg-white dark:bg-surface hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <span className="font-medium text-gray-900">{p.planNumber}</span>
-                        <span className="text-gray-500 ml-2">{p.surveyTitle}</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{p.planNumber}</span>
+                        <span className="text-gray-500 dark:text-gray-400 ml-2">{p.surveyTitle}</span>
                       </div>
                       {isHistory && p.intakeStatus && (
                          <Badge variant={p.intakeStatus === "APPROVED" ? "outline" : "destructive"} className="text-[10px] h-5">
@@ -530,7 +530,7 @@ export default function IntakeAdminPage() {
                                 alt={`Record Copy - ${p.planNumber}`}
                                 className="max-h-32 rounded border shadow-sm hover:shadow-md transition-shadow"
                               />
-                              <p className="text-[10px] text-gray-500 mt-0.5">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                                 Click to view full size
                               </p>
                             </div>
@@ -539,7 +539,7 @@ export default function IntakeAdminPage() {
                             href={p.redCopyFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (
                               <ImageIcon className="w-3.5 h-3.5" />
@@ -554,7 +554,7 @@ export default function IntakeAdminPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="inline-flex items-center gap-1.5 ml-2 bg-white text-xs h-8"
+                              className="inline-flex items-center gap-1.5 ml-2 bg-white dark:bg-surface text-xs h-8"
                               onClick={() =>
                                 setActiveVerificationModal({
                                   isOpen: true,
@@ -609,7 +609,7 @@ export default function IntakeAdminPage() {
           </div>
 
           {!isHistory && batch.plans.length > 1 && (
-            <div className="flex gap-3 pt-2 border-t border-gray-200">
+            <div className="flex gap-3 pt-2 border-t border-gray-200 dark:border-white/10">
               <Button
                 onClick={() => handleBatchActionClick(batch, "approve")}
                 className="flex-1 bg-green-600 hover:bg-green-700"
@@ -648,14 +648,14 @@ export default function IntakeAdminPage() {
       />
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Intake Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Intake Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review and approve physical documents sequentially — approve or query each plan individually
           </p>
         </div>
 
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <Input
             type="text"
             placeholder="Search by batch code, surveyor name, or SURCON #..."
@@ -682,12 +682,12 @@ export default function IntakeAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Package className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery
                       ? "No matching batches found"
                       : "No batches awaiting Intake review"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Batches passing parallel review will appear here"}
@@ -710,10 +710,10 @@ export default function IntakeAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <History className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery ? "No matching batches found" : "No history yet"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Processed batches will appear here"}
@@ -768,7 +768,7 @@ export default function IntakeAdminPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Query Reason *
                   </label>
                   <div className="mb-2 mt-2">
@@ -790,7 +790,7 @@ export default function IntakeAdminPage() {
                     className="mt-1"
                     rows={4}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     The surveyor will be notified of this query.
                   </p>
                 </div>

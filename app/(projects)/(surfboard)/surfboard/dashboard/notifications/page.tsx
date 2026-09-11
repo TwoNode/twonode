@@ -128,7 +128,7 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Bell className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
             {unreadCount > 0 && (
               <Badge variant="destructive" className="text-sm">
                 {unreadCount} unread
@@ -136,19 +136,19 @@ export default function NotificationsPage() {
             )}
           </div>
         </div>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Stay updated with your survey plans and system notifications
         </p>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-white/10">
         <button
           onClick={() => setFilter("all")}
           className={`px-4 py-2 font-medium transition-colors ${
             filter === "all"
               ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
           }`}
         >
           All Notifications
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
           className={`px-4 py-2 font-medium transition-colors ${
             filter === "unread"
               ? "text-blue-600 border-b-2 border-blue-600"
-              : "text-gray-600 hover:text-gray-900"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
           }`}
         >
           Unread
@@ -181,12 +181,12 @@ export default function NotificationsPage() {
       {!loading && (
         <div className="space-y-3">
           {notifications.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg font-medium">
+            <div className="text-center py-12 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+              <Bell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
                 No notifications
               </p>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 {filter === "unread"
                   ? "You're all caught up!"
                   : "You don't have any notifications yet"}
@@ -209,10 +209,10 @@ export default function NotificationsPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
                         {notification.title}
                       </h3>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {format(
                           new Date(notification.createdAt),
                           "MMM d, h:mm a"
@@ -220,7 +220,7 @@ export default function NotificationsPage() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-700 mb-3">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                       {notification.message}
                     </p>
 
@@ -258,7 +258,7 @@ export default function NotificationsPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-xs text-gray-500 hover:text-red-600"
+                        className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600"
                         onClick={() => handleDismiss(notification.id)}
                       >
                         <X className="h-3 w-3 mr-1" />

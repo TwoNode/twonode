@@ -113,8 +113,8 @@ export function SurveyorBankSettings({
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader className="border-b border-gray-100 pb-4">
+    <Card className="bg-white/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+      <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -152,7 +152,7 @@ export function SurveyorBankSettings({
                 value={bankCode}
                 onChange={(e) => setBankCode(e.target.value)}
                 disabled={loading}
-                className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                className="w-full p-2.5 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
               >
                 {NIGERIAN_BANKS.map((b) => (
                   <option key={b.code} value={b.code}>
@@ -177,7 +177,7 @@ export function SurveyorBankSettings({
                   setAccountNumber(e.target.value.replace(/\D/g, ""))
                 }
                 disabled={loading}
-                className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tracking-wider font-mono text-base"
+                className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tracking-wider font-mono text-base"
               />
             </div>
           </div>
@@ -189,7 +189,7 @@ export function SurveyorBankSettings({
                 <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
                   Verified Account Name
                 </span>
-                <h4 className="text-lg font-bold text-gray-900 mt-0.5">
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
                   {bankDetails.accountName}
                 </h4>
               </div>

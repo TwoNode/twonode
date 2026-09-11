@@ -287,7 +287,7 @@ export default function SurfPlansPage() {
       case "QUERIED": // Added QUERIED status color
         return "bg-red-100 text-red-700 border-red-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -346,7 +346,7 @@ export default function SurfPlansPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading survey plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading survey plans...</p>
         </div>
       </div>
     );
@@ -365,7 +365,7 @@ export default function SurfPlansPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-gray-500 mb-1 block">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">
                 Survey Title
               </label>
               <Textarea
@@ -374,7 +374,7 @@ export default function SurfPlansPage() {
                 rows={5}
                 className="resize-y font-mono text-sm"
               />
-              <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span>Separate multiple owners with new lines.</span>
                 <span
                   className={
@@ -408,8 +408,8 @@ export default function SurfPlansPage() {
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Survey Plans</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Survey Plans</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage and review all survey plan submissions
             </p>
           </div>
@@ -417,7 +417,7 @@ export default function SurfPlansPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -443,19 +443,19 @@ export default function SurfPlansPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100`}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 dark:border-white/10`}
             >
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-white/10 mb-6">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("all")}
@@ -463,7 +463,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "all"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -476,7 +476,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "person-count"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -489,7 +489,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "queries"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -500,16 +500,16 @@ export default function SurfPlansPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by plan number, title, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -518,7 +518,7 @@ export default function SurfPlansPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className="appearance-none px-4 py-2 pr-10 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-surface"
               >
                 <option value="ALL">All Status</option>
                 <option value="PENDING">Pending</option>
@@ -529,18 +529,18 @@ export default function SurfPlansPage() {
                 <option value="QUERIED">Queried</option>{" "}
                 {/* Added Queried option */}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filters
             </button>
 
-            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors">
               <Download className="w-4 h-4" />
               Export
             </button>
@@ -549,45 +549,45 @@ export default function SurfPlansPage() {
       </div>
 
       {/* Plans Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Plan Details
                 </th>
                 {activeTab === "person-count" ? (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Survey Title Analysis
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Count
                     </th>
                   </>
                 ) : (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Location
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Owner
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Updated
                     </th>
                   </>
                 )}
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
               {filteredPlans.length === 0 ? (
                 <tr>
                   <td
@@ -595,8 +595,8 @@ export default function SurfPlansPage() {
                     className="px-6 py-12 text-center"
                   >
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No plans found</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       Try adjusting your search or filters
                     </p>
                   </td>
@@ -616,15 +616,15 @@ export default function SurfPlansPage() {
                           <FileText className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">
+                          <div className="font-semibold text-gray-900 dark:text-white">
                             {plan.planNumber}
                           </div>
                           {activeTab !== "person-count" && (
-                            <div className="text-sm text-gray-600 truncate max-w-xs">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
                               {plan.surveyTitle}
                             </div>
                           )}
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-3">
                             <span>{plan.status}</span>
                             <span>•</span>
                             <span>
@@ -638,7 +638,7 @@ export default function SurfPlansPage() {
                     {activeTab === "person-count" ? (
                       <>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-800 font-mono bg-gray-50 p-2 rounded border border-gray-100 whitespace-pre-wrap max-w-md">
+                          <div className="text-sm text-gray-800 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
                             {plan.surveyTitle}
                           </div>
                           {hasPotentialMismatch(plan.surveyTitle) && (
@@ -668,13 +668,13 @@ export default function SurfPlansPage() {
                       <>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
                             <div>
-                              <div className="text-sm text-gray-900">
+                              <div className="text-sm text-gray-900 dark:text-white">
                                 {plan.location}
                               </div>
                               {plan.facility && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {plan.facility}
                                 </div>
                               )}
@@ -683,12 +683,12 @@ export default function SurfPlansPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
                             <div>
-                              <div className="text-sm text-gray-900">
+                              <div className="text-sm text-gray-900 dark:text-white">
                                 {plan.owner.name}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {plan.owner.email}
                               </div>
                             </div>
@@ -706,8 +706,8 @@ export default function SurfPlansPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
-                            <div className="text-sm text-gray-900">
+                            <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                            <div className="text-sm text-gray-900 dark:text-white">
                               {new Date(plan.updatedAt).toLocaleDateString()}
                             </div>
                           </div>
@@ -748,13 +748,13 @@ export default function SurfPlansPage() {
                         )}
                         <Link
                           href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
                           title="More actions"
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -770,23 +770,23 @@ export default function SurfPlansPage() {
 
         {/* Pagination */}
         {filteredPlans.length > 0 && (
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
-            <div className="text-sm text-gray-600">
+          <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 flex items-center justify-between border-t border-gray-200 dark:border-white/10">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Showing{" "}
               <span className="font-medium">{filteredPlans.length}</span> of{" "}
               <span className="font-medium">{plans.length}</span> plans
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
                 Previous
               </button>
               <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm">
                 1
               </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
                 2
               </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
                 Next
               </button>
             </div>

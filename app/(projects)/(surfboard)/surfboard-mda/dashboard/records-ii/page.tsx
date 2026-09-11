@@ -431,7 +431,7 @@ export default function RecordsIIAdminPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading batches...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
         </div>
       </div>
     );
@@ -465,7 +465,7 @@ export default function RecordsIIAdminPage() {
                 : ""
             : isBatchMine
               ? "border-2 border-blue-200 ring-2 ring-blue-100"
-              : "border-2 border-gray-200 opacity-60 grayscale-30"
+              : "border-2 border-gray-200 dark:border-white/10 opacity-60 grayscale-30"
         }`}
       >
         <CardHeader className="pb-3">
@@ -494,7 +494,7 @@ export default function RecordsIIAdminPage() {
                       Locked by you
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-gray-500">
+                    <Badge variant="outline" className="text-gray-500 dark:text-gray-400">
                       View Only
                     </Badge>
                   ))}
@@ -514,7 +514,7 @@ export default function RecordsIIAdminPage() {
                       }
                       className="w-32 h-2"
                     />
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       {batch.plans.length}/{batch._count.plans} ready for
                       Records II
                     </span>
@@ -538,7 +538,7 @@ export default function RecordsIIAdminPage() {
                   <User className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
                     <p className="text-xs text-emerald-600">Submitted By</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {batch.submitter.firstName} {batch.submitter.lastName}
                     </p>
                   </div>
@@ -548,7 +548,7 @@ export default function RecordsIIAdminPage() {
                     <Hash className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">SURCON Number</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {batch.submitter.surconRegNumber}
                       </p>
                     </div>
@@ -559,7 +559,7 @@ export default function RecordsIIAdminPage() {
                     <Briefcase className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">Company</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {batch.submitter.companyName}
                       </p>
                     </div>
@@ -569,7 +569,7 @@ export default function RecordsIIAdminPage() {
                   <Mail className="w-4 h-4 text-emerald-500 mt-0.5" />
                   <div>
                     <p className="text-xs text-emerald-600">Email</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {batch.submitter.email}
                     </p>
                   </div>
@@ -579,7 +579,7 @@ export default function RecordsIIAdminPage() {
                     <Phone className="w-4 h-4 text-emerald-500 mt-0.5" />
                     <div>
                       <p className="text-xs text-emerald-600">Phone</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {batch.submitter.phoneNumber}
                       </p>
                     </div>
@@ -590,8 +590,8 @@ export default function RecordsIIAdminPage() {
           )}
 
           {/* Plans in this Batch */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
+          <div className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 dark:bg-white/5 px-4 py-2 border-b border-gray-200 dark:border-white/10 font-medium text-sm text-gray-700 dark:text-gray-300">
               Plans in this Batch
             </div>
             <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
@@ -600,22 +600,22 @@ export default function RecordsIIAdminPage() {
                 return (
                   <div
                     key={p.id}
-                    className="p-4 bg-white hover:bg-gray-50 transition-colors"
+                    className="p-4 bg-white dark:bg-surface hover:bg-gray-50 transition-colors"
                   >
                     {/* Plan header */}
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-gray-900 dark:text-white">
                           {p.planNumber}
                         </span>
-                        <span className="text-gray-500">{p.surveyTitle}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{p.surveyTitle}</span>
                         {p.planType && (
                           <Badge variant="secondary" className="text-xs">
                             {p.planType}
                           </Badge>
                         )}
                         {p.referencePlanNumber && (
-                          <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
+                          <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md border border-gray-200 dark:border-white/10">
                             Ref: {p.referencePlanNumber}
                           </span>
                         )}
@@ -628,21 +628,21 @@ export default function RecordsIIAdminPage() {
                     </div>
 
                     {/* Location info */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded-lg mb-3 text-xs">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 dark:bg-white/5 p-3 rounded-lg mb-3 text-xs">
                       <div>
-                        <p className="text-gray-500">LGA</p>
+                        <p className="text-gray-500 dark:text-gray-400">LGA</p>
                         <p className="font-medium">{p.lga || "N/A"}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Ward</p>
+                        <p className="text-gray-500 dark:text-gray-400">Ward</p>
                         <p className="font-medium">{p.ward || "N/A"}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">LCDA</p>
+                        <p className="text-gray-500 dark:text-gray-400">LCDA</p>
                         <p className="font-medium">{p.lcda || "N/A"}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Deeded Area</p>
+                        <p className="text-gray-500 dark:text-gray-400">Deeded Area</p>
                         <p className="font-medium">{p.deededArea}</p>
                       </div>
                     </div>
@@ -686,7 +686,7 @@ export default function RecordsIIAdminPage() {
                                 alt={`Record Copy - ${p.planNumber}`}
                                 className="max-h-32 rounded border shadow-sm hover:shadow-md transition-shadow"
                               />
-                              <p className="text-[10px] text-gray-500 mt-0.5">
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                                 Click to view full size
                               </p>
                             </div>
@@ -695,7 +695,7 @@ export default function RecordsIIAdminPage() {
                             href={p.redCopyFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (
                               <ImageIcon className="w-3.5 h-3.5" />
@@ -710,7 +710,7 @@ export default function RecordsIIAdminPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="inline-flex items-center gap-1.5 ml-2 bg-white text-xs h-8"
+                              className="inline-flex items-center gap-1.5 ml-2 bg-white dark:bg-surface text-xs h-8"
                               onClick={() =>
                                 setActiveVerificationModal({
                                   isOpen: true,
@@ -733,14 +733,14 @@ export default function RecordsIIAdminPage() {
 
                     {/* History info */}
                     {isHistory && p.recordsIIApprovedAt && (
-                      <div className="bg-gray-50 p-3 rounded-lg text-sm mb-3">
-                        <p className="text-gray-600">
+                      <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-lg text-sm mb-3">
+                        <p className="text-gray-600 dark:text-gray-400">
                           <span className="font-medium">Reviewed by:</span>{" "}
                           {p.recordsIIApprovedByUser
                             ? `${p.recordsIIApprovedByUser.firstName} ${p.recordsIIApprovedByUser.lastName}`
                             : "Unknown"}
                         </p>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 dark:text-gray-400">
                           <span className="font-medium">Date:</span>{" "}
                           {formatDate(p.recordsIIApprovedAt)}
                         </p>
@@ -798,7 +798,7 @@ export default function RecordsIIAdminPage() {
 
           {/* Batch-Level Action Buttons (only if > 1 plan) */}
           {!isHistory && batch.plans.length > 1 && (
-            <div className="flex gap-3 pt-2 border-t border-gray-200">
+            <div className="flex gap-3 pt-2 border-t border-gray-200 dark:border-white/10">
               <Button
                 onClick={() => handleBatchActionClick(batch, "approve")}
                 className="flex-1 bg-green-600 hover:bg-green-700"
@@ -850,10 +850,10 @@ export default function RecordsIIAdminPage() {
 
       <div className="container mx-auto p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Records II Admin
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Final approval before submission to OSSG — verify physical copies
             match uploaded copies
           </p>
@@ -889,9 +889,9 @@ export default function RecordsIIAdminPage() {
         )}
 
         {isLocking && (
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
             <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring batch lock...
             </span>
           </div>
@@ -915,7 +915,7 @@ export default function RecordsIIAdminPage() {
 
         {/* Search Input */}
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
           <Input
             type="text"
             placeholder="Search by batch code, plan number, surveyor, SURCON #..."
@@ -950,12 +950,12 @@ export default function RecordsIIAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Package className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery
                       ? "No matching batches found"
                       : "No batches awaiting Records II review"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Batches with all 5 approvals complete will appear here"}
@@ -980,12 +980,12 @@ export default function RecordsIIAdminPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <History className="w-16 h-16 text-gray-300 mb-4" />
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
                     {searchQuery
                       ? "No matching batches found"
                       : "No history yet"}
                   </p>
-                  <p className="text-gray-400 text-sm mt-2">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                     {searchQuery
                       ? "Try adjusting your search"
                       : "Lodged and queried batches will appear here"}
@@ -1066,7 +1066,7 @@ export default function RecordsIIAdminPage() {
                 </div>
               ) : (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Query Reason *
                   </label>
                   <div className="mb-2 mt-2">
@@ -1088,7 +1088,7 @@ export default function RecordsIIAdminPage() {
                     className="mt-1"
                     rows={4}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     The surveyor will be notified and can make corrections
                   </p>
                 </div>

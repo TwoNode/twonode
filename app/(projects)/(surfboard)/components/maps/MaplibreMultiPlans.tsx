@@ -439,7 +439,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         if (properties.easting) {
           popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base text-gray-800">Pillar: ${
             properties.pillarNumber
-          }</h3><ul class="text-xs text-gray-600 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
+          }</h3><ul class="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
             properties.pointIndex ?? "N/A"
           }</li><li><strong>Easting:</strong> ${
             properties.rawEasting !== undefined
@@ -455,7 +455,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 : "N/A"
           }</li></ul></div>`;
         } else {
-          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600">${properties.surveyTitle}</p><p class="text-xs text-gray-500 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">${properties.status}</span></div>`;
+          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span></div>`;
         }
         popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
       };
@@ -705,7 +705,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 rounded-xl shadow-lg p-3 space-y-2">
         <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
           <div className="relative">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Location
             </label>
             <div className="relative">
@@ -723,7 +723,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               )}
             </div>
             {locResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {locResults.map((r, i) => (
                   <button
                     key={`${r.lon}-${i}`}
@@ -741,7 +741,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Search Plans
             </label>
             <input
@@ -771,7 +771,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </button>
             <button
               onClick={clearAll}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 text-gray-700 border border-red-400 hover:bg-red-200 transition-colors"
+              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 hover:bg-red-200 transition-colors"
             >
               Clear Filters
             </button>
@@ -779,7 +779,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         </div>
         <div className="flex flex-wrap gap-4">
           <div className="shadow-md p-2 rounded-md">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Status
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -794,7 +794,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     statusFilter.includes(s)
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50"
                   }`}
                 >
                   {s}
@@ -803,7 +803,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </div>
           </div>
           <div className="shadow-md p-2 rounded-md">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Plan Type
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -818,7 +818,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     typeFilter.includes(t)
                       ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50"
                   }`}
                 >
                   {t}
@@ -971,7 +971,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   />
                   <span className="font-medium text-sm">{p.planNumber}</span>
                 </div>
-                <div className="text-xs text-gray-600 truncate">
+                <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                   {p.planType as string} · {p.status}
                 </div>
               </button>

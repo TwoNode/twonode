@@ -95,7 +95,7 @@ export function CertificateOfDepositStatus({
       case "PENDING":
         return <Clock className="w-5 h-5 text-amber-600" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
+        return <Clock className="w-5 h-5 text-gray-400 dark:text-gray-500" />;
     }
   };
 
@@ -108,7 +108,7 @@ export function CertificateOfDepositStatus({
       case "PENDING":
         return "bg-amber-100 text-amber-700 border-amber-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -124,7 +124,7 @@ export function CertificateOfDepositStatus({
       case "PENDING_USER_PAYMENT":
         return "bg-amber-100 text-amber-700 border-amber-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -155,10 +155,10 @@ export function CertificateOfDepositStatus({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Batch Info */}
-        <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-surface rounded-lg border border-blue-200">
           <div>
-            <p className="text-sm text-gray-600">Batch Code</p>
-            <p className="text-lg font-semibold text-gray-900">{batchCode}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Batch Code</p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{batchCode}</p>
           </div>
           {batchPaymentStatus && (
             <Badge
@@ -174,8 +174,8 @@ export function CertificateOfDepositStatus({
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-700">Approval Progress</span>
-            <span className="text-gray-600">
+            <span className="font-medium text-gray-700 dark:text-gray-300">Approval Progress</span>
+            <span className="text-gray-600 dark:text-gray-400">
               {approvedCount} of {totalStages} stages completed
             </span>
           </div>
@@ -184,14 +184,14 @@ export function CertificateOfDepositStatus({
 
         {/* Approval Stages */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-900">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
             Approval Stages
           </h4>
           <div className="space-y-2">
             {approvalStages.map((stage, index) => (
               <div
                 key={stage.name}
-                className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
+                className="flex items-start gap-3 p-3 bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 hover:border-blue-300 transition-colors"
               >
                 <div className="shrink-0 mt-0.5">
                   {getStatusIcon(stage.status)}
@@ -199,10 +199,10 @@ export function CertificateOfDepositStatus({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {stage.name}
                       </p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {stage.description}
                       </p>
                     </div>

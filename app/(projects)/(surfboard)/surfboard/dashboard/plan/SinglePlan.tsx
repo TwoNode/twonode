@@ -114,7 +114,7 @@ const FileCard = ({
       case "cert":
         return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
       default:
-        return <File className="h-5 w-5 text-gray-500 mr-2" />;
+        return <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />;
     }
   };
 
@@ -135,7 +135,7 @@ const FileCard = ({
               e.stopPropagation();
               setShowConfirm(true);
             }}
-            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity ml-2"
+            className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-gray-500 hover:text-red-500 transition-opacity ml-2"
             title="Delete file"
             disabled={isDeleting}
           >
@@ -187,17 +187,17 @@ const FileCard = ({
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-surface rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-start">
               <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Delete File
                 </h3>
                 <div className="mt-2">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Are you sure you want to delete this file? This action
                     cannot be undone.
                   </p>
@@ -217,7 +217,7 @@ const FileCard = ({
               </button>
               <button
                 type="button"
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-white/15 shadow-sm px-4 py-2 bg-white dark:bg-surface text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -450,7 +450,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </DialogHeader>
 
         <div className="flex flex-col items-center space-y-4">
-          <div className="p-4 bg-white rounded-lg border">
+          <div className="p-4 bg-white dark:bg-surface rounded-lg border">
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
@@ -729,7 +729,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <h1 className="text-2xl font-bold text-gray-800 mb-4">
             Plan Not Found
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             The requested plan could not be found.
           </p>
           <button
@@ -748,7 +748,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       <div className="mb-8">
         <div className="mb-8">
           {/* Header Card with Gradient Background */}
-          <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100 dark:border-white/10">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 {/* Plan Info */}
@@ -761,7 +761,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     {plan.planNumber}
                   </h1>
-                  <p className="text-lg text-gray-600 max-w-2xl">
+                  <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
                     {plan.surveyTitle}
                   </p>
 
@@ -787,7 +787,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   <button
                     onClick={handleRefresh}
                     disabled={isRefreshing}
-                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                   >
                     {isRefreshing ? (
                       <>
@@ -804,7 +804,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   <button
                     onClick={toggleMap}
-                    className="px-4 py-2 bg-white border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-white dark:bg-surface border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     <span>{showMap ? "Hide Map" : "View Map"}</span>
@@ -824,7 +824,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         onClick={handleEdit}
                         className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
                           isPlanLocked(plan)
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            ? "bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                             : "bg-amber-500 text-white hover:bg-amber-600"
                         }`}
                         disabled={isDeleting || isPlanLocked(plan)}
@@ -846,7 +846,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         onClick={handleDelete}
                         className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
                           isPlanLocked(plan)
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            ? "bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                             : "bg-red-500 text-white hover:bg-red-600"
                         }`}
                         disabled={isDeleting || isPlanLocked(plan)}
@@ -871,7 +871,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     size="sm"
                     onClick={handleGenerateQrCode}
                     disabled={isGeneratingQr}
-                    className="h-10 px-4 border-gray-200 hover:bg-gray-50 flex items-center justify-center"
+                    className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
                   >
                     {isGeneratingQr ? (
                       <>
@@ -901,7 +901,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
         {/* Map Section */}
         {!showMap && plan && (
-          <div className="bg-white rounded-2xl shadow p-6">
+          <div className="bg-white dark:bg-surface rounded-2xl shadow p-6">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
               Map Preview
             </h2>
@@ -922,9 +922,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         <div className="space-y-6 mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Plan Information Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-blue-500 mr-2"
                     fill="none"
@@ -944,25 +944,25 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div className="p-6 space-y-4">
                 <div className="flex items-start">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan Number
                     </p>
-                    <p className="mt-1 text-gray-900 font-medium">
+                    <p className="mt-1 text-gray-900 dark:text-white font-medium">
                       {plan.planNumber}
                     </p>
                     {plan.referencePlanNumber && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Reference Number
                         </p>
-                        <p className="mt-1 text-gray-700">
+                        <p className="mt-1 text-gray-700 dark:text-gray-300">
                           {plan.referencePlanNumber}
                         </p>
                       </div>
                     )}
                     {plan.withdrawalAndResubmissionStatus && plan.withdrawalAndResubmissionStatus !== "No_Action" && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Withdrawal Status
                         </p>
                         <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -975,10 +975,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     {/* @ts-ignore - reasonForWithdrawalAndResubmission may not be in PlanWithPillars type yet */}
                     {plan.reasonForWithdrawalAndResubmission && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Reason for Withdrawal
                         </p>
-                        <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
                           {/* @ts-ignore */}
                           {plan.reasonForWithdrawalAndResubmission}
                         </p>
@@ -990,9 +990,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Survey Title
                     </p>
                     {/* @ts-ignore */}
@@ -1000,57 +1000,57 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       <div className="mt-2 space-y-2">
                         {/* @ts-ignore */}
                         {plan.parcels.map((parcel: any, idx: number) => (
-                          <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
-                            <span className="text-gray-700">{parcel.surveyTitle || plan.surveyTitle}</span>
+                          <div key={idx} className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
+                            <span className="font-medium text-gray-600 dark:text-gray-400">Polygon {idx + 1}: </span>
+                            <span className="text-gray-700 dark:text-gray-300">{parcel.surveyTitle || plan.surveyTitle}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.surveyTitle}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Plan Type
                       </p>
-                      <p className="mt-1 text-gray-700">{plan.planType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.planType}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Pillar Type
                       </p>
-                      <p className="mt-1 text-gray-700">{plan.pillarType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.pillarType}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Facilitator
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {plan.facilitator || "N/A"}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Date on Plan
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.dateOnSurveyPlan
                           ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
                           : "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Date Lodged
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.dateLodged
                           ? new Date(plan.dateLodged).toLocaleDateString()
                           : "Not lodged"}
@@ -1062,9 +1062,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </div>
 
             {/* Location Details Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-green-500 mr-2"
                     fill="none"
@@ -1091,26 +1091,26 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <div className="space-y-4">
                   {plan.ward && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Ward</p>
-                      <p className="mt-1 text-gray-700">{plan.ward}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ward</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.ward}</p>
                     </div>
                   )}
                   {plan.lcda && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">LCDA</p>
-                      <p className="mt-1 text-gray-700">{plan.lcda}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LCDA</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lcda}</p>
                     </div>
                   )}
                   {plan.lga && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">LGA</p>
-                      <p className="mt-1 text-gray-700">{plan.lga}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LGA</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lga}</p>
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Area</p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Area</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.areaSqM
                           ? plan.areaSqM < 10000
                             ? `${plan.areaSqM.toLocaleString(undefined, {
@@ -1124,10 +1124,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Deeded Area
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.deededArea || "N/A"}
                       </p>
                     </div>
@@ -1135,11 +1135,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   {plan.centroid &&
                     Array.isArray(plan.centroid) &&
                     plan.centroid.length >= 2 && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Centroid Coordinates
                         </p>
-                        <p className="mt-1 text-gray-700 font-mono text-sm">
+                        <p className="mt-1 text-gray-700 dark:text-gray-300 font-mono text-sm">
                           {`${typeof plan.centroid[1] === "number" ? plan.centroid[1].toFixed(6) : plan.centroid[1]}°N, ${typeof plan.centroid[0] === "number" ? plan.centroid[0].toFixed(6) : plan.centroid[0]}°E`}
                         </p>
                         <button
@@ -1175,9 +1175,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </div>
 
             {/* Timestamps Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-purple-500 mr-2"
                     fill="none"
@@ -1213,10 +1213,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Created
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {new Date(plan.createdAt).toLocaleString(undefined, {
                           year: "numeric",
                           month: "short",
@@ -1244,10 +1244,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Last Updated
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {new Date(plan.updatedAt).toLocaleString(undefined, {
                           year: "numeric",
                           month: "short",
@@ -1256,7 +1256,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                           minute: "2-digit",
                         })}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {plan.updatedAt !== plan.createdAt
                           ? "Updated"
                           : "Created"}{" "}
@@ -1272,8 +1272,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </div>
 
         {/* Documents Section */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Documents</h3>
+        <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Documents</h3>
           <div className="space-y-4">
             {/* PDF Files */}
             {plan.pdfFilePaths?.length > 0 && (
@@ -1338,20 +1338,20 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </div>
 
         {/* Geometry Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+        <div className="bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center">
             <MapPinIcon className="h-5 w-5 text-blue-500 mr-2" />
             Geometry Coordinates
           </h3>
 
-          <div className="bg-gray-50 rounded-md p-3 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-white/5 rounded-md p-3 border border-gray-100 dark:border-white/10">
             {plan.geometry ? (
               <div className="space-y-4">
                 {(() => {
                   const geometry = handleGeometryDisplay();
                   if (!geometry || !geometry.coordinates?.length) {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         No geometry data available
                       </div>
                     );
@@ -1398,7 +1398,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     );
                   } else {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         Unsupported geometry type: {geometry.type}
                       </div>
                     );
@@ -1406,7 +1406,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   if (boundaries.length === 0) {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         No valid coordinates found
                       </div>
                     );
@@ -1414,17 +1414,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   return boundaries.map((boundary, i) => (
                     <div key={i} className="space-y-2">
-                      <div className="flex items-center text-sm font-medium text-gray-700">
+                      <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-mono mr-2">
                           {i + 1}
                         </span>
                         {boundary.label}
-                        <span className="ml-2 text-xs text-gray-500 font-normal">
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal">
                           ({boundary.points.length} points)
                         </span>
                       </div>
 
-                      <div className="ml-7 bg-white border border-gray-200 rounded-md p-2 max-h-40 overflow-y-auto">
+                      <div className="ml-7 bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-md p-2 max-h-40 overflow-y-auto">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
                           {boundary.points.map((coord, j) => {
                             if (!Array.isArray(coord) || coord.length < 2)
@@ -1436,10 +1436,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                                 key={j}
                                 className="flex items-center py-1 px-2 hover:bg-gray-50 rounded"
                               >
-                                <span className="text-gray-500 w-5">
+                                <span className="text-gray-500 dark:text-gray-400 w-5">
                                   {j + 1}.
                                 </span>
-                                <span className="text-gray-700">
+                                <span className="text-gray-700 dark:text-gray-300">
                                   {typeof x === "number"
                                     ? x.toFixed(6)
                                     : String(x)}
@@ -1458,7 +1458,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 })()}
               </div>
             ) : (
-              <div className="text-center py-4 text-gray-500">
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                 No boundary coordinates available
               </div>
             )}
@@ -1466,43 +1466,43 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </div>
 
         {/* Pillars Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
+        <div className="bg-white dark:bg-surface rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Pillars ({plan.pillars?.length || 0})
             </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-white/5">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Pillar #
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Easting
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Northing
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Point Index
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                 {plan.pillars?.map((pillar, index) => (
                   <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {pillar.pillarNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.easting?.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.northing?.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.pointIndex}
                     </td>
                   </tr>

@@ -241,10 +241,10 @@ export default function SharedPlans() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           {activeTab === "myShared" ? "My Shared Plans" : "Shared with Me"}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           {activeTab === "myShared"
             ? "View and manage plans you've shared with others"
             : "View plans that have been shared with you"}
@@ -385,11 +385,11 @@ export default function SharedPlans() {
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+            <div className="mb-6 p-4 border rounded-lg bg-gray-50 dark:bg-white/5">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Status
                   </label>
                   <div className="space-y-2">
@@ -400,11 +400,11 @@ export default function SharedPlans() {
                           id={`status-${status}`}
                           checked={filters.status.includes(status)}
                           onChange={() => handleStatusChange(status)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
                         />
                         <label
                           htmlFor={`status-${status}`}
-                          className="ml-2 text-sm text-gray-700"
+                          className="ml-2 text-sm text-gray-700 dark:text-gray-300"
                         >
                           {status}
                         </label>
@@ -415,7 +415,7 @@ export default function SharedPlans() {
 
                 {/* Plan Type Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Plan Type
                   </label>
                   <div className="space-y-2">
@@ -426,11 +426,11 @@ export default function SharedPlans() {
                           id={`type-${type}`}
                           checked={filters.planType.includes(type)}
                           onChange={() => handlePlanTypeChange(type)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
                         />
                         <label
                           htmlFor={`type-${type}`}
-                          className="ml-2 text-sm text-gray-700"
+                          className="ml-2 text-sm text-gray-700 dark:text-gray-300"
                         >
                           {type}
                         </label>
@@ -441,12 +441,12 @@ export default function SharedPlans() {
 
                 {/* Date Range Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Date Range
                   </label>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                         From
                       </label>
                       <Popover>
@@ -479,7 +479,7 @@ export default function SharedPlans() {
                       </Popover>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                         To
                       </label>
                       <Popover>
@@ -520,12 +520,12 @@ export default function SharedPlans() {
           {/* Sort Controls */}
           <div className="mb-4 flex justify-between items-center">
             <div>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 Showing {currentPlans.length} of {pagination.total} plans
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
               <Select
                 value={sort.field}
                 onValueChange={handleSortChange}
