@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "../globals.css";
 import Link from "next/link";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const bricolage = localFont({
   src: [
@@ -131,6 +132,7 @@ export default function RootLayout({
           {/* <MyPopup /> */}
           {children}
         </main>
+        <WhatsAppButton />
       </body>
     </html>
   );
