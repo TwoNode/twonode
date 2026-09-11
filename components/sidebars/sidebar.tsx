@@ -73,10 +73,10 @@ export function Sidebar({
                 <img
                   src={logoSrc}
                   alt={`${title} logo`}
-                  className="w-9 h-9 rounded-full shadow border border-white/15 bg-white object-contain shrink-0"
+                  className="w-11 h-11 rounded-full shadow border border-white/15 bg-white object-contain shrink-0"
                 />
               )}
-              <span className="text-base font-bold text-white tracking-wide truncate">
+              <span className="text-lg font-bold text-white tracking-wide truncate">
                 {title}
               </span>
             </div>
