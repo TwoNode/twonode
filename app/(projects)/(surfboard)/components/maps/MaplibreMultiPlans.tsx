@@ -102,6 +102,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
+  const [displayMode, setDisplayMode] = useState<"shape" | "dots">("shape");
 
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
@@ -632,6 +633,16 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     });
   }, [activeBasemap, isReady]);
 
+  // Toggle between the filled plan polygons and the raw pillar dots — the
+  // two layers already render from separate sources, so this is just a
+  // visibility swap rather than a re-render of the underlying data.
+  useEffect(() => {
+    if (!map.current || !isReady) return;
+    if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol")) return;
+    map.current.setLayoutProperty("plans-fill", "visibility", displayMode === "shape" ? "visible" : "none");
+    map.current.setLayoutProperty("pillars-symbol", "visibility", displayMode === "dots" ? "visible" : "none");
+  }, [displayMode, isReady]);
+
   useEffect(() => {
     if (!locQuery.trim()) {
       setLocResults([]);
@@ -831,6 +842,32 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
       {/* Basemap and Plan Visibility */}
       <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Plan Display</div>
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
+          <button
+            type="button"
+            onClick={() => setDisplayMode("shape")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "shape"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Shape
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode("dots")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "dots"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Dots
+          </button>
+        </div>
+        <hr className="my-2 border-gray-200 dark:border-white/10" />
         <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
         {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
           (k) => (
