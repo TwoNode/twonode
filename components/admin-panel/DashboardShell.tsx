@@ -140,7 +140,7 @@ export function DashboardShell({
         </header>
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
-          {children}
+          <div className="max-w-400 mx-auto">{children}</div>
         </div>
       </div>
     </div>

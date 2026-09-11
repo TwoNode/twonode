@@ -12,7 +12,7 @@ import RevaLoading from "@/reva/components/RevaLoading";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
 
-export const sideBarWidthClass = " lg:w-[248px] ";
+export const sideBarWidthClass = " lg:w-[284px] ";
 
 export default function RevaAdminPanelLayout({
   children,

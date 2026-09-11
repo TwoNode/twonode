@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface SurveyPlan {
   id: string;
@@ -60,6 +61,7 @@ interface SurveyPlan {
 }
 
 export default function SurfPlansPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [plans, setPlans] = useState<SurveyPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -206,7 +208,8 @@ export default function SurfPlansPage() {
   // Actions using real server actions imported above
 
   const handleVerify = async (plan: SurveyPlan) => {
-    if (!confirm("Verify this count?")) return;
+    if (!(await confirm({ title: "Verify count?", description: "Verify this count?", confirmLabel: "Verify" })))
+      return;
     setProcessingId(plan.id);
     const count = getPersonCount(plan.surveyTitle);
 
@@ -232,7 +235,14 @@ export default function SurfPlansPage() {
   };
 
   const handleQuery = async (plan: SurveyPlan) => {
-    if (!confirm("Are you sure you want to query this plan?")) return;
+    if (
+      !(await confirm({
+        title: "Query this plan?",
+        description: "Are you sure you want to query this plan?",
+        confirmLabel: "Query plan",
+      }))
+    )
+      return;
     setProcessingId(plan.id);
 
     try {
@@ -354,6 +364,7 @@ export default function SurfPlansPage() {
 
   return (
     <div className="min-h-full space-y-6">
+      {ConfirmDialog}
       {/* Edit Modal (Dialog) */}
       <Dialog
         open={!!editingPlan}

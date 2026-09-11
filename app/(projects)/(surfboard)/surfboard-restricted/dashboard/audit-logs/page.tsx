@@ -109,7 +109,7 @@ export default function AuditLogsPage() {
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors"
+          className="shrink-0 flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           <Filter className="w-4 h-4" />
           {showFilters ? "Hide Filters" : "Show Filters"}
@@ -201,11 +201,11 @@ export default function AuditLogsPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-white/10">
                 {logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                       {formatDate(log.createdAt)}
@@ -225,7 +225,7 @@ export default function AuditLogsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 rounded-md text-xs font-medium">
                         {log.action}
                       </span>
                     </td>
@@ -273,7 +273,7 @@ export default function AuditLogsPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <ChevronLeft className="w-4 h-4" />
               Previous
@@ -281,7 +281,7 @@ export default function AuditLogsPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-white dark:bg-surface border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               Next
               <ChevronRight className="w-4 h-4" />

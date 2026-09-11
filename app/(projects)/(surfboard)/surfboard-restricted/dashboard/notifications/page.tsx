@@ -36,6 +36,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type NotificationType =
   | "INFO"
@@ -78,6 +79,7 @@ const audienceLabels: Record<NotificationAudience, string> = {
 };
 
 export default function AdminNotificationsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -160,7 +162,14 @@ export default function AdminNotificationsPage() {
   };
 
   const handleDelete = async (notificationId: string) => {
-    if (!confirm("Are you sure you want to delete this notification?")) {
+    if (
+      !(await confirm({
+        title: "Delete notification?",
+        description: "Are you sure you want to delete this notification?",
+        confirmLabel: "Delete",
+        variant: "destructive",
+      }))
+    ) {
       return;
     }
 
@@ -175,6 +184,7 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
+      {ConfirmDialog}
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">

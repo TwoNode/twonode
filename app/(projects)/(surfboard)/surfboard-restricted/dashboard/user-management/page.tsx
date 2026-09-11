@@ -6,6 +6,14 @@ import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { SurfboardRole } from "@/prisma/generated";
 import { Eye, ArrowUpCircle, CreditCard } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Subscription {
   id?: string;
@@ -47,6 +55,7 @@ interface UserStats {
 }
 
 export default function UserManagementPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -187,7 +196,14 @@ export default function UserManagementPage() {
   };
 
   const handlePromoteToAdmin = async (userId: string) => {
-    if (!confirm("Are you sure you want to promote this user to Admin?"))
+    if (
+      !(await confirm({
+        title: "Promote to Admin?",
+        description:
+          "Are you sure you want to promote this user to Admin? They will gain access to the admin dashboard.",
+        confirmLabel: "Promote",
+      }))
+    )
       return;
 
     const result = await surfboardApi.admin.users.promote(userId);
@@ -239,7 +255,16 @@ export default function UserManagementPage() {
   };
 
   const handleCancelSubscription = async (userId: string) => {
-    if (!confirm("Are you sure you want to cancel this subscription?")) return;
+    if (
+      !(await confirm({
+        title: "Cancel subscription?",
+        description:
+          "Are you sure you want to cancel this subscription? This action cannot be undone.",
+        confirmLabel: "Cancel subscription",
+        variant: "destructive",
+      }))
+    )
+      return;
 
     const result = await surfboardApi.admin.users.cancelSubscription(userId);
     if (result.success) {
@@ -325,6 +350,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
+      {ConfirmDialog}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -627,48 +653,70 @@ export default function UserManagementPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <select
+                        <Select
                           value={user.role}
-                          onChange={(e) =>
-                            handleRoleChange(
-                              user.id,
-                              e.target.value as SurfboardRole
-                            )
+                          onValueChange={(value) =>
+                            handleRoleChange(user.id, value as SurfboardRole)
                           }
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                            user.role
-                          )} border-0 cursor-pointer`}
                         >
-                          {activeTab === "admins" ? (
-                            <>
-                              <option value="USER">USER</option>
-                              <option value="ADMIN">ADMIN</option>
-                              <option value="SUPERADMIN">SUPERADMIN</option>
-
-                              <option value="RECORDS_I">Records I</option>
-                              <option value="RECORDS_II">Records II</option>
-                              <option value="ACCOUNTS">Accounts</option>
-                              <option value="CHARTING">Charting</option>
-                              <option value="SURCON">SURCON</option>
-                              <option value="MDA_SUPERADMIN">
-                                MDA Super Admin
-                              </option>
-                            </>
-                          ) : (
-                            <>
-                              <option value="RECORDS_I">RECORDS_I</option>
-                              <option value="INTAKE">INTAKE</option>
-                              <option value="RECORDS_II">RECORDS_II</option>
-                              <option value="ACCOUNTS">ACCOUNTS</option>
-                              <option value="CHARTING">CHARTING</option>
-                              <option value="SURCON">SURCON</option>
-                              <option value="ARCHIVE">ARCHIVE</option>
-                              <option value="MDA_SUPERADMIN">
-                                MDA_SUPERADMIN
-                              </option>
-                            </>
-                          )}
-                        </select>
+                          <SelectTrigger
+                            className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+                              user.role
+                            )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeTab === "admins" ? (
+                              <>
+                                <SelectItem value="USER">USER</SelectItem>
+                                <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                <SelectItem value="SUPERADMIN">
+                                  SUPERADMIN
+                                </SelectItem>
+                                <SelectItem value="RECORDS_I">
+                                  Records I
+                                </SelectItem>
+                                <SelectItem value="RECORDS_II">
+                                  Records II
+                                </SelectItem>
+                                <SelectItem value="ACCOUNTS">
+                                  Accounts
+                                </SelectItem>
+                                <SelectItem value="CHARTING">
+                                  Charting
+                                </SelectItem>
+                                <SelectItem value="SURCON">SURCON</SelectItem>
+                                <SelectItem value="MDA_SUPERADMIN">
+                                  MDA Super Admin
+                                </SelectItem>
+                              </>
+                            ) : (
+                              <>
+                                <SelectItem value="RECORDS_I">
+                                  RECORDS_I
+                                </SelectItem>
+                                <SelectItem value="INTAKE">INTAKE</SelectItem>
+                                <SelectItem value="RECORDS_II">
+                                  RECORDS_II
+                                </SelectItem>
+                                <SelectItem value="ACCOUNTS">
+                                  ACCOUNTS
+                                </SelectItem>
+                                <SelectItem value="CHARTING">
+                                  CHARTING
+                                </SelectItem>
+                                <SelectItem value="SURCON">SURCON</SelectItem>
+                                <SelectItem value="ARCHIVE">
+                                  ARCHIVE
+                                </SelectItem>
+                                <SelectItem value="MDA_SUPERADMIN">
+                                  MDA_SUPERADMIN
+                                </SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-6 py-4">
                         <button

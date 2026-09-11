@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/hooks/useConfirm";
 import {
   Card,
   CardContent,
@@ -45,6 +46,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function AdminQREarningsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -77,9 +79,12 @@ export default function AdminQREarningsPage() {
 
   const handleApprovePayout = async (requestId: string) => {
     if (
-      !confirm(
-        "Are you sure you want to approve and execute this payout via Paystack?",
-      )
+      !(await confirm({
+        title: "Approve payout?",
+        description:
+          "Are you sure you want to approve and execute this payout via Paystack?",
+        confirmLabel: "Approve & pay",
+      }))
     )
       return;
 
@@ -153,6 +158,7 @@ export default function AdminQREarningsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/60 dark:bg-background p-4 sm:p-6 lg:p-8 space-y-8">
+      {ConfirmDialog}
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
