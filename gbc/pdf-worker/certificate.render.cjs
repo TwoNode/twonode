@@ -14,6 +14,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs");
 const React = require("react");
 const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View, Image, Svg, Line } = require("@react-pdf/renderer");
 const { format } = require("date-fns");
@@ -21,6 +22,8 @@ const { format } = require("date-fns");
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
 const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
 const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
+// Falls back to a blank line (no image) if this file is ever removed.
+const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "signatures", "olamide_signature_white.png");
 
 Font.register({
   family: "Bricolage",
@@ -53,9 +56,7 @@ const styles = StyleSheet.create({
   content: { position: "absolute", top: 48, left: 64, right: 64, bottom: 40, display: "flex", flexDirection: "column" },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   brandRow: { flexDirection: "row", alignItems: "center" },
-  logo: { width: 62, height: 15.2, marginRight: 12, objectFit: "contain" },
-  wordmark: { fontSize: 13, fontWeight: 800, color: INK, letterSpacing: 1 },
-  wordmarkSub: { fontSize: 8, fontWeight: 500, color: MUTED, marginTop: 2, letterSpacing: 0.5 },
+  logo: { width: 90, height: 22.1, objectFit: "contain" },
   ticketNo: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 1, textAlign: "right" },
   center: { flexGrow: 1, alignItems: "center", justifyContent: "center", textAlign: "center" },
   eyebrow: { fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 3, marginBottom: 18 },
@@ -71,14 +72,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   body: { fontSize: 11, fontWeight: 500, color: INK, lineHeight: 1.6, maxWidth: 420 },
-  bodyEm: { fontWeight: 700, color: PURPLE },
+  bodyEm: { fontWeight: 700, color: GOLD },
   bottomRow: { flexDirection: "row", alignItems: "flex-end" },
   verifyBlock: { flexDirection: "row", alignItems: "center", width: 260 },
   qr: { width: 46, height: 46, marginRight: 10, flexShrink: 0 },
   verifyText: { width: 204 },
   verifyLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5, marginBottom: 2 },
   verifyUrl: { fontSize: 8, fontWeight: 500, color: PURPLE },
-  signatureBlock: { flexGrow: 1, alignItems: "center" },
+  signatureBlock: { flexGrow: 1, flexBasis: 0, alignItems: "center" },
+  signatureImage: { width: 100, height: 32, marginBottom: -6, objectFit: "contain" },
   signatureLine: { width: 140, borderBottomWidth: 0.75, borderBottomColor: MUTED, marginBottom: 5 },
   signatureLabel: { fontSize: 8, fontWeight: 600, color: MUTED, letterSpacing: 0.5 },
   issuerBlock: { width: 230, textAlign: "right" },
@@ -136,13 +138,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       React.createElement(
         View,
         { style: styles.brandRow },
-        React.createElement(Image, { style: styles.logo, src: LOGO_PATH }),
-        React.createElement(
-          View,
-          null,
-          React.createElement(Text, { style: styles.wordmark }, edition.name.toUpperCase()),
-          React.createElement(Text, { style: styles.wordmarkSub }, "GEOSPATIAL BUILDERS CONFERENCE · TWONODE TECHNOLOGIES")
-        )
+        React.createElement(Image, { style: styles.logo, src: LOGO_PATH })
       ),
       React.createElement(Text, { style: styles.ticketNo }, `CERTIFICATE ${ticket.ticketNumber}`)
     ),
@@ -157,7 +153,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         { style: styles.body },
         "participated in ",
         React.createElement(Text, { style: styles.bodyEm }, edition.name),
-        `, held ${dateRange} at ${edition.venue}, under the theme "${edition.theme}" — ${edition.subTheme}.`
+        `, held ${dateRange} at ${edition.venue}, under the theme "${edition.theme}: ${edition.subTheme}."`
       )
     ),
     React.createElement(
@@ -177,6 +173,9 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       React.createElement(
         View,
         { style: styles.signatureBlock },
+        fs.existsSync(SIGNATURE_PATH)
+          ? React.createElement(Image, { style: styles.signatureImage, src: SIGNATURE_PATH })
+          : null,
         React.createElement(View, { style: styles.signatureLine }),
         React.createElement(Text, { style: styles.signatureLabel }, "AUTHORIZED SIGNATURE")
       ),

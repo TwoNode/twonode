@@ -85,14 +85,14 @@ export default function AdminMapViewerPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] w-full">
-      <div className="mb-4">
+    <div className="flex h-[calc(100vh-96px)] w-full flex-col">
+      <div className="mb-4 shrink-0">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Map Viewer</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           View all survey plans across the platform with spatial visualization
         </p>
       </div>
-      <div className="h-[calc(100%-80px)] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 shadow-lg">
+      <div className="min-h-0 flex-1 w-full rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
         <PlansMapClient plansRaw={allPlans} />
       </div>
     </div>
