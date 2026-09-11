@@ -176,6 +176,16 @@ export default function UserManagementPage() {
   });
 
   const handleRoleChange = async (userId: string, newRole: SurfboardRole) => {
+    if (
+      !(await confirm({
+        title: `Change role to ${newRole}?`,
+        description:
+          "This immediately changes what this user can access — including admin or superadmin privileges if you're granting them.",
+        confirmLabel: "Change role",
+      }))
+    )
+      return;
+
     const result = await surfboardApi.admin.users.updateRole(userId, newRole);
     if (result.success) {
       toast.success(`User role updated to ${newRole}`);
@@ -186,6 +196,18 @@ export default function UserManagementPage() {
   };
 
   const handleStatusToggle = async (userId: string, currentStatus: boolean) => {
+    if (
+      !(await confirm({
+        title: currentStatus ? "Deactivate this user?" : "Activate this user?",
+        description: currentStatus
+          ? "They'll immediately lose access to their account until reactivated."
+          : "They'll immediately regain access to their account.",
+        confirmLabel: currentStatus ? "Deactivate" : "Activate",
+        variant: currentStatus ? "destructive" : "default",
+      }))
+    )
+      return;
+
     const result = await surfboardApi.admin.users.setStatus(userId, !currentStatus);
     if (result.success) {
       toast.success(`User ${!currentStatus ? "activated" : "deactivated"} successfully`);
@@ -241,6 +263,15 @@ export default function UserManagementPage() {
 
   const handleUpdateSubscription = async () => {
     if (!editingSubscription) return;
+
+    if (
+      !(await confirm({
+        title: "Save subscription changes?",
+        description: `This immediately changes ${editingSubscription.firstName || editingSubscription.email}'s plan, billing amount, and access — they'll see the new terms right away.`,
+        confirmLabel: "Save changes",
+      }))
+    )
+      return;
 
     const result = await surfboardApi.admin.users.updateSubscription(editingSubscription.id, subscriptionForm);
 
