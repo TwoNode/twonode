@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { playNotificationSound } from "@/lib/notificationSound";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { revaApi } from "@/reva/apiClient";
@@ -90,6 +91,7 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
       }
 
       const fresh = sorted.filter((n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current);
+      if (fresh.length) playNotificationSound();
       fresh
         .slice()
         .reverse()
