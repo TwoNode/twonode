@@ -76,9 +76,13 @@ pass, since both were real bugs rather than styling work:
   entirely: `getTimeTrend` now uses a type-safe `findMany` (same
   `planType`/`createdAt`/`userId` filters) and buckets by month in JS. Same
   output shape, no raw SQL left in the concurrent batch, so the collision
-  surface is gone. `tsc --noEmit` clean; not able to re-trigger the original
-  concurrency scenario for a before/after comparison since this dev
-  database currently has zero seeded `SurfboardPlan` rows.
+  surface is gone. `tsc --noEmit` clean. Verified under real load: seeded
+  120 dummy `SurfboardPlan` rows spread across 12 months for the test
+  account, fired 30 concurrent `getUserDashboardAnalytics()` calls via
+  `Promise.allSettled` (the same shape of load — 8 parallel queries per
+  call — that used to intermittently break under `$queryRaw`), got 30/30
+  successes with identical `timeTrends` output across every call, then
+  deleted the seeded rows. No recurrence of the original error.
 
 ## Verification plan
 
