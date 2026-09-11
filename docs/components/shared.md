@@ -1,0 +1,174 @@
+# Shared — Components
+
+Components used across two or more platforms (or by the TwoNode corporate
+site), living under the top-level `components/` and `providers/` folders,
+plus the marketing-site sections colocated under `app/(main)/`.
+
+## `components/ui/` — shadcn/ui primitives
+
+Standard [shadcn/ui](https://ui.shadcn.com/) primitives, one file per
+component. Not product-specific.
+
+| File | Description |
+|---|---|
+| `accordion.tsx` | Accordion / collapsible sections |
+| `alert-dialog.tsx` | Confirmation dialog (used for deletes, logout, etc.) |
+| `alert.tsx` | Inline alert banner |
+| `avatar.tsx` | Avatar image/fallback |
+| `badge.tsx` | Small status/label badge |
+| `button.tsx` | Button primitive |
+| `calendar.tsx` | Date-picker calendar |
+| `card.tsx` | Card container |
+| `carousel.tsx` | Carousel/slider |
+| `checkbox.tsx` | Checkbox input |
+| `collapsible.tsx` | Collapsible content region |
+| `command.tsx` | Command palette / searchable list |
+| `dialog.tsx` | Modal dialog |
+| `drawer.tsx` | Slide-out drawer |
+| `dropdown-menu.tsx` | Dropdown menu |
+| `file-upload.tsx` | File upload control |
+| `form.tsx` | Form field wrappers (react-hook-form integration) |
+| `input.tsx` | Text input |
+| `label.tsx` | Form label |
+| `loading-examples.tsx` | Reference/demo of loading-state patterns |
+| `loading-spinner.tsx` | Loading spinner |
+| `password-input.tsx` | Password input with show/hide toggle |
+| `phone-input.tsx` | Phone number input |
+| `popover.tsx` | Popover (used by the notification bell dropdown) |
+| `progress.tsx` | Progress bar |
+| `scroll-area.tsx` | Custom scrollbar container |
+| `select.tsx` | Select/dropdown input |
+| `separator.tsx` | Visual divider |
+| `sheet.tsx` | Slide-in panel |
+| `skeleton.tsx` | Loading skeleton placeholder |
+| `switch.tsx` | Toggle switch |
+| `table.tsx` | Table primitives |
+| `tabs.tsx` | Tabs |
+| `textarea.tsx` | Multi-line text input |
+| `toaster.tsx` | Toast notification container |
+| `toast.tsx` | Toast notification primitive |
+| `tooltip.tsx` | Tooltip |
+| `visually-hidden.tsx` | Visually-hidden (screen-reader-only) wrapper |
+
+## `components/dashboard/` — shared dashboard system
+
+Used by every product's dashboard shell (GBC/REVA/Surfboard).
+
+| File | Description |
+|---|---|
+| `DashboardBadge.tsx` | Shared status-badge look (tone system) |
+| `DashboardHero.tsx` | Gradient greeting banner at the top of a dashboard page |
+| `DashboardSearch.tsx` | Debounced topbar search with live results dropdown |
+| `DateRangeFilter.tsx` | Two-input date-range filter (used by Surfboard's dashboard analytics) |
+| `StatCard.tsx` | Tone-tinted stat tile with icon and optional breakdown line |
+| `ThemeToggle.tsx` | Light/dark theme toggle button |
+
+## `components/sidebars/` — shared sidebar system
+
+| File | Description |
+|---|---|
+| `menu.tsx` | Renders the nav item list + pinned footer (avatar, logout) |
+| `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button) |
+
+## `components/admin-panel/` — shared admin shell chrome
+
+| File | Description |
+|---|---|
+| `collapse-menu-button.tsx` | Collapsible submenu button |
+| `content-layout.tsx` | Page content wrapper for admin shells |
+| `DashboardShell.tsx` | Top-level admin dashboard shell (navbar + sidebar composition) |
+| `navbar.tsx` | Admin panel top navbar |
+| `sheet-menu.tsx` | Mobile slide-in menu |
+| `sidebar-toggle.tsx` | Sidebar collapse/expand toggle |
+| `user-nav.tsx` | User account menu in the navbar |
+
+## `components/auth/` — shared auth UI
+
+| File | Description |
+|---|---|
+| `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right) |
+| `GoogleIcon.tsx` | Google "G" logo icon |
+| `NativeAuthCard.tsx` | Email/password login+register card |
+| `ResetPasswordCard.tsx` | Password reset form card |
+| `VerifyEmailCard.tsx` | Email verification status card |
+
+## `components/Navbar/` — corporate site navbar
+
+| File | Description |
+|---|---|
+| `index.tsx` | Corporate site navbar |
+| `navbarItems.tsx` | Navbar link/item definitions |
+| `navbar-mobile.tsx` | Mobile navbar/menu |
+| `sidebar-button.tsx` | Hamburger/sidebar toggle button |
+
+## `components/headers/`, `components/pageNotFound/`, `components/svgs/`, `components/middlewares/`
+
+| File | Description |
+|---|---|
+| `headers/HomeHeader.tsx` | Corporate homepage header |
+| `pageNotFound/GBCPageNotFound.tsx` | GBC-branded 404 page |
+| `pageNotFound/SurfPageNotFound.tsx` | Surfboard-branded 404 page |
+| `svgs/index.tsx` | Shared inline SVG icon set |
+| `middlewares/ServerProtectedAdminRoute.tsx` | Server-side admin route guard wrapper |
+
+## Cross-platform utility components (`components/`)
+
+| File | Description |
+|---|---|
+| `ConfirmedLogoutLink.tsx` | Logout link/button wrapped in a confirmation dialog |
+| `NotificationBell.tsx` | Dropdown notification bell (generic over platform) |
+| `UserAvatar.tsx` | Session-fetching avatar with initials fallback (generic over platform) |
+| `CountdownComponent.tsx` | Countdown timer |
+| `GoogleAnalytics.tsx` | GA tracking script loader |
+| `InvalidReferencePage.tsx` | "Invalid reference" error page |
+| `MyPopup.tsx` | Generic popup/modal wrapper |
+| `SetCookieFromClient.tsx` | Client-side cookie setter |
+| `ToasterComponent.tsx` | Toast provider mount point |
+| `YouTubeEmbed.tsx` | YouTube video embed |
+
+## Corporate/marketing site sections (`components/` root)
+
+| File | Description |
+|---|---|
+| `Banner.jsx` | Marketing banner |
+| `CarouselImageSlider.jsx` | Image carousel |
+| `certificate21.html` | Static certificate HTML template/reference |
+| `DemystifyingGIS.tsx` | "Demystifying GIS" marketing section |
+| `EffortlessTracking.tsx` | Marketing section |
+| `Footer.tsx` | Corporate site footer |
+| `FrequentlyAskedQuestions.tsx` | FAQ section |
+| `HomeComponents.tsx` | Homepage section composition |
+| `OurGallery.tsx` | Gallery preview section |
+| `ProductShowcase.tsx` | Product (GBC/REVA/Surfboard) showcase section |
+| `ReachOutToUs.tsx` | Contact CTA section |
+| `Revolutionizing.jsx` | Marketing section |
+| `SurfboardCSVHeaderHelp.tsx` | Help panel explaining Surfboard's CSV import headers |
+| `SurfBoardSubscriptionPlans.tsx` | Surfboard subscription plans marketing section |
+| `SurfBoard.tsx` | Surfboard marketing section |
+| `SurveyTrustFirms.jsx` | "Trusted by" firms section |
+| `TakeAViewofOurGallery.tsx` | Gallery CTA section |
+
+## Marketing-site sections colocated with pages (`app/(main)/`)
+
+| File | Description |
+|---|---|
+| `about-us/Aboutbanner.tsx` | About-us page banner |
+| `contact/ContactUs.tsx` | Contact page content |
+| `contact/OurMap.jsx` | Embedded map on the contact page |
+| `events/GbcBanner.tsx` | GBC promo banner on the events page |
+| `events/Gbc.tsx` | GBC section on the events page |
+| `events/svgs/index.jsx` | Icon set for the events page |
+| `featurednews/FeaturedNews.tsx` | Featured news section |
+| `featurednews/svgs.tsx` | Icon set for the featured news page |
+| `gbc-frame/GbcFrame.tsx` | Embeddable GBC frame content |
+| `present/GbcFrame.tsx` | GBC frame content (presentation variant) |
+| `services/Revol.tsx` | Services page section |
+| `signup/EffortlessTracking.tsx` | Signup page marketing section |
+| `signup/SurfBoardSubscriptionPlans.tsx` | Signup page subscription plans section |
+
+## `providers/`
+
+| File | Description |
+|---|---|
+| `KindeAuthProvider.tsx` | Wraps the app with Kinde auth context |
+| `ToastProvider.tsx` | Wraps the app with the toast notification context |

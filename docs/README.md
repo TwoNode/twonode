@@ -13,6 +13,9 @@
 | [`surfboard/`](./surfboard/) | Survey plan lodging + the MDA government approval workflow: user flow, technical flow, QR Earnings. |
 | [`reva/`](./reva/) | Property due-diligence requests: user flow, user stories, notifications. |
 | [`gbc/`](./gbc/) | Event ticketing — auth notes; see `development-history/phases/phase-4-gbc.md` for the fuller picture. |
+| [`pages/`](./pages/) | Every page route, one file per platform (`gbc.md`/`reva.md`/`surfboard.md`) plus `main-site.md` for the shared corporate site. |
+| [`components/`](./components/) | Every component, one file per platform plus `shared.md`. |
+| [`functions/`](./functions/) | Every service/util/hook/lib file, one file per platform plus `shared.md`. |
 
 ## Reading a document that predates the rebuild
 

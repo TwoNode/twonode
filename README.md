@@ -24,6 +24,7 @@ Everything about how the app is built and why lives in [`docs/`](docs/README.md)
 - [`docs/auth/`](docs/auth/) — how login, sessions, and roles work across all three products (native email+password auth and the still-live Kinde OAuth path).
 - [`docs/payment/`](docs/payment/) — Paystack subscriptions, Certificate of Deposit payments, and the Remita two-link verification flow.
 - [`docs/surfboard/`](docs/surfboard/), [`docs/reva/`](docs/reva/), [`docs/gbc/`](docs/gbc/) — per-product user flows, user stories, and feature notes.
+- [`docs/pages/`](docs/pages/), [`docs/components/`](docs/components/), [`docs/functions/`](docs/functions/) — full inventories of every page route, component, and service/util/hook file, one file per platform (`gbc`/`reva`/`surfboard`) plus a shared file.
 
 ## Learn More (Next.js)
 
