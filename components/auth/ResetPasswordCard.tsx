@@ -80,7 +80,7 @@ export function ResetPasswordCard({
   }
 
   return (
-    <div className="bg-white dark:bg-[#101F2C] dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full flex flex-col items-center">
+    <div className="bg-white dark:bg-surface dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full flex flex-col items-center">
       <div className="flex justify-center mb-6">
         <img
           src={logoSrc}

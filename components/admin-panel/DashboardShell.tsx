@@ -6,7 +6,6 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
-import { useTheme } from "@/hooks/useTheme";
 import { Platform } from "@/utils/platform";
 import { Menu, LogOut } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
@@ -34,17 +33,10 @@ import {
  * Client Components" (confirmed live while building this).
  */
 
-export interface DashboardShellColorPalette {
-  primary: { main: string; dark: string; light: string; contrastText?: string };
-  secondary?: { main: string; light: string };
-  background: { paper: string; default: string };
-}
-
 export interface DashboardShellProps {
   children: React.ReactNode;
   title: string;
   logoSrc: string;
-  colorPalette: DashboardShellColorPalette;
   role: string | null | undefined;
   group: SurfboardRouteGroup;
   user?: { picture?: string; name?: string };
@@ -55,14 +47,12 @@ export function DashboardShell({
   children,
   title,
   logoSrc,
-  colorPalette,
   role,
   group,
   user,
   logoutRedirectUrl = "/api/auth/logout_redirect",
 }: DashboardShellProps) {
   const sidebar = useStore(useSidebar, (x) => x);
-  const { theme } = useTheme();
   // DashboardShell is Surfboard-only today (pilot scope, see doc-comment
   // above) — hardcoded rather than a prop until a second product adopts it.
   useNativeAuthRefresh(Platform.SURFBOARD);
@@ -121,12 +111,11 @@ export function DashboardShell({
       </div>
 
       <div
-        className="flex-1 min-w-0 flex flex-col overflow-hidden"
-        style={{ background: theme === "dark" ? "#0B1A26" : colorPalette.background.paper }}
+        className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background"
       >
         <header
-          className="w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow bg-white border-b border-blue-100"
-          style={{ background: colorPalette.primary.dark }}
+          className="w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow border-b border-blue-100"
+          style={{ background: "var(--color-brand-primary-dark)" }}
         >
           <button
             onClick={() => sidebar?.toggleOpen()}
