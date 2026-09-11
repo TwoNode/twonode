@@ -285,17 +285,17 @@ export default function SurfPlansPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        return "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30";
       case "PENDING":
-        return "bg-amber-100 text-amber-700 border-amber-200";
+        return "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
       case "REJECTED":
-        return "bg-rose-100 text-rose-700 border-rose-200";
+        return "bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30";
       case "UNDER_REVIEW":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30";
       case "LODGED":
-        return "bg-violet-100 text-violet-700 border-violet-200";
+        return "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-500/30";
       case "QUERIED": // Added QUERIED status color
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30";
       default:
         return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
@@ -322,32 +322,32 @@ export default function SurfPlansPage() {
     {
       label: "Total Plans",
       value: plans.length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Pending Review",
       value: plans.filter((p) => p.status === "PENDING").length,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Approved",
       value: plans.filter((p) => p.status === "APPROVED").length,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
     },
     {
       label: "Under Review",
       value: plans.filter((p) => p.status === "UNDER_REVIEW").length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Queried Plans", // Added Queried Plans stat
       value: plans.filter((p) => p.status === "QUERIED").length,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-500/10",
     },
   ];
 
@@ -428,7 +428,7 @@ export default function SurfPlansPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -545,13 +545,13 @@ export default function SurfPlansPage() {
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filters
             </button>
 
-            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <Download className="w-4 h-4" />
               Export
             </button>
@@ -562,7 +562,7 @@ export default function SurfPlansPage() {
       {/* Plans Table */}
       <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
             <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -598,7 +598,7 @@ export default function SurfPlansPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
               {filteredPlans.length === 0 ? (
                 <tr>
                   <td
@@ -619,11 +619,11 @@ export default function SurfPlansPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-blue-50 rounded-lg">
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg">
                           <FileText className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
@@ -667,8 +667,8 @@ export default function SurfPlansPage() {
                         <td className="px-6 py-4 text-center">
                           <div
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${plan.personCountVerified
-                              ? "bg-green-100 text-green-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300"
+                              : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300"
                               }`}
                           >
                             {getPersonCount(plan.surveyTitle)}
@@ -734,7 +734,7 @@ export default function SurfPlansPage() {
                               <button
                                 onClick={() => handleVerify(plan)}
                                 disabled={!!processingId}
-                                className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition-colors"
+                                className="px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-500/15 hover:bg-green-100 dark:hover:bg-green-500/25 border border-green-200 dark:border-green-500/30 rounded transition-colors"
                               >
                                 Verify
                               </button>
@@ -744,13 +744,13 @@ export default function SurfPlansPage() {
                               disabled={
                                 !!processingId || plan.status === "QUERIED"
                               }
-                              className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors"
+                              className="px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 border border-red-200 dark:border-red-500/30 rounded transition-colors"
                             >
                               Query
                             </button>
                             <button
                               onClick={() => handleEditClick(plan)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/30"
                               title="Edit Title"
                             >
                               <Pencil className="w-4 h-4" />
@@ -759,13 +759,13 @@ export default function SurfPlansPage() {
                         )}
                         <Link
                           href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="More actions"
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -788,16 +788,16 @@ export default function SurfPlansPage() {
               <span className="font-medium">{plans.length}</span> plans
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm">
                 Previous
               </button>
               <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm">
                 1
               </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm">
                 2
               </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-white transition-colors text-sm">
+              <button className="px-3 py-1 border border-gray-300 dark:border-white/15 rounded hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-sm">
                 Next
               </button>
             </div>

@@ -228,14 +228,14 @@ export default function SurfboardUserPanelLayout({
       label: "Notifications",
       url: "/surfboard/dashboard/notifications",
       section: "Account",
-      requiresSubscription: false,
+      requiresSubscription: true,
     },
     {
       icon: QrCode,
       label: "QR Earnings",
       url: `${dashboardUrl}/qr-earnings`,
       section: "Account",
-      requiresSubscription: false,
+      requiresSubscription: true,
     },
     {
       icon: Settings,
