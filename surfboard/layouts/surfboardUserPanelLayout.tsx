@@ -27,7 +27,6 @@ import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
-import { useTheme } from "@/hooks/useTheme";
 import {
   DashboardSearch,
   type DashboardSearchResult,
@@ -155,7 +154,6 @@ export default function SurfboardUserPanelLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const sidebar = useStore(useSidebar, (x) => x);
-  const { theme } = useTheme();
   useNativeAuthRefresh(Platform.SURFBOARD);
   const dashboardUrl = "/surfboard/dashboard";
 
@@ -298,9 +296,8 @@ export default function SurfboardUserPanelLayout({
       <div
         className={cn(
           "relative min-h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] transition-[margin-left] ease-in-out duration-300",
-          "flex overflow-hidden"
+          "flex overflow-hidden bg-background"
         )}
-        style={{ background: theme === "dark" ? "#0B1A26" : SURFBOARD_COLORS.background.default }}
       >
         {/* Mobile Overlay - appears when sidebar is open */}
         {sidebar.isOpen && (

@@ -699,9 +699,9 @@ export function AmendPlanModal({
 
             {/* Right Column - Map View */}
             <div className="hidden lg:block sticky top-0">
-              <div className="h-[calc(90vh-140px)] min-h-[500px] rounded-xl overflow-hidden border-2 border-slate-200 shadow-inner bg-slate-50 relative group">
-                <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                  <p className="text-xs font-semibold text-slate-700 flex items-center gap-2">
+              <div className="h-[calc(90vh-140px)] min-h-[500px] rounded-xl overflow-hidden border-2 border-slate-200 dark:border-white/10 shadow-inner bg-slate-50 dark:bg-surface relative group">
+                <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                     Pillar Preview
                   </p>
@@ -731,8 +731,8 @@ export function AmendPlanModal({
               </div>
 
               {/* Payer Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <User className="w-4 h-4" /> Payer Details
                 </h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -781,8 +781,8 @@ export function AmendPlanModal({
               </div>
 
               {/* Payment Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3 shadow-xs">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3 shadow-xs">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <Building className="w-4 h-4 text-blue-500" /> Payment Details
                 </h3>
                 <div className="space-y-2 text-xs">
@@ -824,7 +824,7 @@ export function AmendPlanModal({
 
               {/* Receipt Links Form */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-sm text-slate-700">Verify Payment Links</h3>
+                <h3 className="font-semibold text-sm text-slate-700 dark:text-gray-300">Verify Payment Links</h3>
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-sm flex justify-between">

@@ -152,16 +152,16 @@ export default function AdminQREarningsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-background p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
           <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-md">
             <DollarSign className="w-6 h-6" />
           </div>
           QR Code Revenue & Payout Queue
         </h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
           Platform-wide revenue stats, top surveyor leaderboard, and Paystack
           automated payout management.
         </p>
@@ -183,35 +183,35 @@ export default function AdminQREarningsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 dark:border-white/10 shadow-md">
           <CardContent className="p-6">
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+            <span className="text-slate-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
               Surveyor Verification Fees
             </span>
             <div className="text-3xl font-black text-emerald-600 mt-2">
               ₦{(stats?.totalVerificationFees || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-slate-500 mt-2">Credited to surveyors</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-2">Credited to surveyors</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 dark:border-white/10 shadow-md">
           <CardContent className="p-6">
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+            <span className="text-slate-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
               Platform Service Fees
             </span>
             <div className="text-3xl font-black text-blue-600 mt-2">
               ₦{(stats?.totalServiceFees || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-2">
               Platform retained income
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 dark:border-white/10 shadow-md">
           <CardContent className="p-6">
-            <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+            <span className="text-slate-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">
               Pending Payout Queue
             </span>
             <div className="text-3xl font-black text-amber-600 mt-2">
@@ -225,10 +225,10 @@ export default function AdminQREarningsPage() {
       </div>
 
       {/* Pending Payout Queue Section */}
-      <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
+      <Card className="bg-white dark:bg-surface border-slate-200 dark:border-white/10 shadow-md">
         <CardHeader className="border-b border-slate-100 p-6 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-600" />
               Pending Payout Requests Queue
             </CardTitle>
@@ -243,7 +243,7 @@ export default function AdminQREarningsPage() {
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50">
+            <TableHeader className="bg-slate-50 dark:bg-surface">
               <TableRow>
                 <TableHead className="font-bold">Ref</TableHead>
                 <TableHead className="font-bold">Surveyor</TableHead>
@@ -258,7 +258,7 @@ export default function AdminQREarningsPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="text-center py-10 text-slate-500"
+                    className="text-center py-10 text-slate-500 dark:text-gray-400"
                   >
                     No pending withdrawal requests in the queue.
                   </TableCell>
@@ -266,29 +266,29 @@ export default function AdminQREarningsPage() {
               ) : (
                 pendingRequests.map((req: any) => (
                   <TableRow key={req.id}>
-                    <TableCell className="font-mono text-xs font-bold text-slate-900">
+                    <TableCell className="font-mono text-xs font-bold text-slate-900 dark:text-white">
                       {req.requestRef}
                     </TableCell>
                     <TableCell>
-                      <div className="font-bold text-slate-900 text-sm">
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">
                         {req.user?.firstName} {req.user?.lastName}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-500 dark:text-gray-400">
                         {req.user?.companyName || req.user?.email}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-semibold text-slate-900 text-sm">
+                      <div className="font-semibold text-slate-900 dark:text-white text-sm">
                         {req.bankName}
                       </div>
-                      <div className="text-xs text-slate-500 font-mono">
+                      <div className="text-xs text-slate-500 dark:text-gray-400 font-mono">
                         {req.accountNumber} • {req.accountName}
                       </div>
                     </TableCell>
-                    <TableCell className="font-black text-slate-900 text-base">
+                    <TableCell className="font-black text-slate-900 dark:text-white text-base">
                       ₦{req.amount.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-xs text-slate-500">
+                    <TableCell className="text-xs text-slate-500 dark:text-gray-400">
                       {format(new Date(req.createdAt), "MMM d, yyyy • h:mm a")}
                     </TableCell>
                     <TableCell className="text-right">
@@ -332,9 +332,9 @@ export default function AdminQREarningsPage() {
       </Card>
 
       {/* Leaderboard Section */}
-      <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
+      <Card className="bg-white dark:bg-surface border-slate-200 dark:border-white/10 shadow-md">
         <CardHeader className="border-b border-slate-100 p-6">
-          <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <CardTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-500" />
             Top Earning Surveyors Leaderboard
           </CardTitle>
@@ -344,7 +344,7 @@ export default function AdminQREarningsPage() {
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader className="bg-slate-50">
+            <TableHeader className="bg-slate-50 dark:bg-surface">
               <TableRow>
                 <TableHead className="font-bold">Rank</TableHead>
                 <TableHead className="font-bold">Surveyor Name</TableHead>
@@ -358,7 +358,7 @@ export default function AdminQREarningsPage() {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="text-center py-10 text-slate-500"
+                    className="text-center py-10 text-slate-500 dark:text-gray-400"
                   >
                     No earnings activity recorded yet.
                   </TableCell>
@@ -366,16 +366,16 @@ export default function AdminQREarningsPage() {
               ) : (
                 stats.leaderboard.map((item: any, idx: number) => (
                   <TableRow key={item.surveyorId}>
-                    <TableCell className="font-black text-slate-700 text-sm">
+                    <TableCell className="font-black text-slate-700 dark:text-gray-300 text-sm">
                       #{idx + 1}
                     </TableCell>
-                    <TableCell className="font-bold text-slate-900">
+                    <TableCell className="font-bold text-slate-900 dark:text-white">
                       {item.name}
                     </TableCell>
-                    <TableCell className="text-slate-600 text-sm">
+                    <TableCell className="text-slate-600 dark:text-gray-300 text-sm">
                       {item.company}
                     </TableCell>
-                    <TableCell className="font-semibold text-slate-800">
+                    <TableCell className="font-semibold text-slate-800 dark:text-gray-200">
                       {item.transactionsCount} scans
                     </TableCell>
                     <TableCell className="font-black text-emerald-600 text-base">
@@ -396,7 +396,7 @@ export default function AdminQREarningsPage() {
             <DialogTitle className="text-lg font-bold">
               Reject Withdrawal Request
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
+            <DialogDescription className="text-xs text-slate-500 dark:text-gray-400">
               Provide a reason. The requested funds will be refunded back to the
               surveyor's available balance.
             </DialogDescription>

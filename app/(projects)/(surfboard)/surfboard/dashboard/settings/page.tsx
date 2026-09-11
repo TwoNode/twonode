@@ -141,7 +141,7 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+      <div className="flex items-center justify-center min-h-[60vh] bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-background dark:via-background dark:to-background">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
             <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-background dark:via-background dark:to-background">
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         {/* Header Section */}
         <motion.div
@@ -179,7 +179,7 @@ export default function SettingsPage() {
               <div className="p-2 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
                 <Settings className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
                 Account Settings
               </h1>
             </div>
@@ -194,7 +194,7 @@ export default function SettingsPage() {
             transition={{ delay: 0.1 }}
             className="w-full lg:w-auto"
           >
-            <Card className="p-4 sm:p-5 bg-white/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="p-4 sm:p-5 bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function SettingsPage() {
             className="space-y-6"
             onValueChange={setActiveTab}
           >
-            <TabsList className="grid w-full grid-cols-3 max-w-lg h-12 bg-white/80 backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg h-12 bg-white/80 dark:bg-surface/80 backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm">
               <TabsTrigger
                 value="personal"
                 className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all"
@@ -266,7 +266,7 @@ export default function SettingsPage() {
 
             <form onSubmit={handleSubmit}>
               <TabsContent value="personal" className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+                <Card className="bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
                   <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
                     <CardTitle className="text-xl sm:text-2xl">
                       Personal Information
@@ -517,7 +517,7 @@ export default function SettingsPage() {
               </TabsContent>
 
               <TabsContent value="professional" className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+                <Card className="bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
                   <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
                     <CardTitle className="text-xl sm:text-2xl">
                       Professional Information

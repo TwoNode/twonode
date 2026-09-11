@@ -706,11 +706,11 @@ export default function ArchiveDashboard() {
         <>
             <div className="container mx-auto p-6 space-y-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Archive className="w-8 h-8 text-amber-600" />
                         Archive Dashboard
                     </h1>
-                    <p className="mt-2 text-slate-600">
+                    <p className="mt-2 text-slate-600 dark:text-gray-300">
                         Log the physical handover of plans from Records II to
                         the official archive. This is for internal tracking.
                     </p>
@@ -831,7 +831,7 @@ export default function ArchiveDashboard() {
                         <DialogDescription>
                             Confirm that you have securely received and archived
                             the physical copies for{" "}
-                            <strong className="text-slate-900">
+                            <strong className="text-slate-900 dark:text-white">
                                 {dialogTarget}
                             </strong>
                             .
@@ -864,7 +864,7 @@ export default function ArchiveDashboard() {
                         <div className="space-y-2">
                             <label
                                 htmlFor="archive-notes"
-                                className="text-sm font-medium text-slate-700"
+                                className="text-sm font-medium text-slate-700 dark:text-gray-300"
                             >
                                 Archive Notes / Location (Optional)
                             </label>

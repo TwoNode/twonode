@@ -251,8 +251,8 @@ export function RemitaPaymentModal({
               </div>
 
               {/* Payer Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <User className="w-4 h-4" /> Payer Information
                 </h3>
                 <div className="grid grid-cols-1 gap-2 text-sm">
@@ -312,8 +312,8 @@ export function RemitaPaymentModal({
               </div>
 
               {/* Payment Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <Building className="w-4 h-4" /> Payment Details
                 </h3>
                 <div className="space-y-2 text-sm">

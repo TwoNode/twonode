@@ -52,13 +52,13 @@ const typeIcons: Record<NotificationType, React.ReactNode> = {
 };
 
 const typeColors: Record<NotificationType, string> = {
-  INFO: "bg-blue-50 border-blue-200",
-  SUCCESS: "bg-green-50 border-green-200",
-  WARNING: "bg-yellow-50 border-yellow-200",
-  ERROR: "bg-red-50 border-red-200",
-  SYSTEM: "bg-purple-50 border-purple-200",
-  PLAN: "bg-indigo-50 border-indigo-200",
-  SHARING: "bg-pink-50 border-pink-200",
+  INFO: "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20",
+  SUCCESS: "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20",
+  WARNING: "bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/20",
+  ERROR: "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20",
+  SYSTEM: "bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20",
+  PLAN: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20",
+  SHARING: "bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-500/20",
 };
 
 export default function NotificationsPage() {

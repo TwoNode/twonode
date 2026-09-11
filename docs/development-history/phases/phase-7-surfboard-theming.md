@@ -76,9 +76,13 @@ pass, since both were real bugs rather than styling work:
   entirely: `getTimeTrend` now uses a type-safe `findMany` (same
   `planType`/`createdAt`/`userId` filters) and buckets by month in JS. Same
   output shape, no raw SQL left in the concurrent batch, so the collision
-  surface is gone. `tsc --noEmit` clean; not able to re-trigger the original
-  concurrency scenario for a before/after comparison since this dev
-  database currently has zero seeded `SurfboardPlan` rows.
+  surface is gone. `tsc --noEmit` clean. Verified under real load: seeded
+  120 dummy `SurfboardPlan` rows spread across 12 months for the test
+  account, fired 30 concurrent `getUserDashboardAnalytics()` calls via
+  `Promise.allSettled` (the same shape of load — 8 parallel queries per
+  call — that used to intermittently break under `$queryRaw`), got 30/30
+  successes with identical `timeTrends` output across every call, then
+  deleted the seeded rows. No recurrence of the original error.
 
 ## Verification plan
 
@@ -97,10 +101,62 @@ clean throughout; live-verified against a real authenticated test account
 (temporarily elevated to SUPERADMIN, restored to USER after each session)
 in both themes.
 
-**Still open:** individual light+dark verification of the ~45 remaining
-pages beyond the ones spot-checked here (each shell's list/table pages,
-form pages, and settings pages) — the sweep should have gotten most of
-them right mechanically (same patterns, same fix), but per the plan's own
-verification bar, "should have" isn't "verified." Next session should
-either continue spot-checking a wider sample or do a full page-by-page
-pass before marking this phase complete.
+**Batch 2 (this session, follow-up): 31 of the ~45 remaining pages spot-checked
+live**, light+dark, at 1440px, via a scripted authenticated Playwright pass
+(screenshot every page, flag any with >15% near-white pixels as a heuristic
+for un-migrated backgrounds, then eyeball the flagged ones). Found and fixed
+four real bugs the batch-1 sweep missed, all now confirmed live in both
+themes:
+
+- **`surfboardUserPanelLayout.tsx`'s content pane** set its background via
+  `style={{ background: theme === "dark" ? "#0B1A26" : ... }}` — React-state
+  driven, not the CSS-token cascade the rest of Phase 6/7 uses. Under a
+  desync between the `theme` context and the DOM's `.dark` class (the
+  surveyor shell is the only layout still wired this way), the whole content
+  pane rendered light with barely-visible text while the sidebar/header
+  (already token-based) rendered dark. Replaced with `bg-background`;
+  removed the now-fully-dead `theme`/`useTheme` usage from the file.
+- **`slate-*` color family never covered by batch 1's sweep.** The original
+  regex only targeted `gray-*`/`white`; 12 files across the codebase use
+  `slate-*` instead, none of it dark-aware. Surveyor Settings and both
+  shells' QR-Earnings pages had page-level hero gradients/banners
+  (`bg-linear-to-br from-slate-50 ...`, `text-slate-900`) with zero `dark:`
+  variants — legible-breaking in dark mode (dark-on-dark or light-panel-on
+  dark-page). Hand-fixed Settings' hero gradient + cards; wrote a scoped
+  Python sweep (same "pair bare utility with its dark: equivalent, skip if
+  a dark: already exists for that property family" approach as batch 1, but
+  for `slate-*`) for the other 11 files with `slate-*` usage.
+  - The sweep script produced two real regressions, both caught by
+    re-screenshotting rather than trusting the mechanical pass: (1) it
+    matched `QRPaywallModal.tsx`, a modal that's intentionally
+    always-dark-styled (`bg-slate-900`, hardcoded regardless of site theme)
+    — reverted that file entirely, it needed no `dark:` variants. (2) on
+    `bg-slate-50/60` (an opacity-suffixed class), the regex inserted the
+    `dark:` class *before* the `/60` suffix instead of after it, silently
+    stripping the intended translucency from the light-mode class in two
+    files (`qr-earnings/page.tsx` in both the surveyor and admin shells) —
+    hand-fixed both.
+- **Notification-card unread background** (`typeColors` map in
+  `surfboard/dashboard/notifications/page.tsx`): `bg-blue-50`/`bg-green-50`/
+  etc. per notification type, no `dark:` variants — unread cards rendered as
+  a near-white panel with white-on-near-white title text. Added a
+  `dark:bg-{color}-500/10` + `dark:border-{color}-500/20` tint per type
+  (the existing text colors already had correct `dark:` variants, so only
+  the backgrounds needed it).
+
+**Also fixed this session (unrelated to dark mode, found while verifying
+against a real login):** the dev environment itself had `KINDE_SITE_URL`
+pinned to `http://localhost:3000` in `.env`, and an unrelated project's dev
+server (ApproveHR, a different repo entirely) was squatting on port 3000 —
+Kinde's own `withAuth` middleware builds its unauthenticated-redirect URL
+from that env var, so any logged-out request landed on a stranger's app
+instead of this one's login page. Stopped that process and moved this
+project's dev server onto port 3000 to match `KINDE_SITE_URL`; confirmed
+the redirect now resolves to a same-origin relative path.
+
+**Still open:** ~14 of the ~45 remaining pages not yet individually
+verified (this batch covered the highest-risk list/table/form/settings
+pages; the rest are lower-traffic pages — map viewers, callback pages,
+profile pages — expected to be fine given the sweep now also covers
+`slate-*`, but not screenshotted). Next session should finish that sample
+or do a full pass before marking this phase complete.
