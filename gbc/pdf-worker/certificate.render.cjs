@@ -23,7 +23,7 @@ const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", f
 const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
 const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
 // Falls back to a blank line (no image) if this file is ever removed.
-const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "olamide_Signature.png");
+const SIGNATURE_PATH = path.join(__dirname, "..", "..", "public", "signatures", "olamide_signature_white.png");
 
 Font.register({
   family: "Bricolage",
