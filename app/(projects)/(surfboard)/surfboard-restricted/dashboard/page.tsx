@@ -196,7 +196,6 @@ export default function RestrictedDashboardHome() {
               value={stat.value.toLocaleString()}
               icon={stat.icon}
               tone={STAT_TONES[index % STAT_TONES.length]}
-              accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
               trend={{ value: stat.change, direction: stat.trend as "up" | "down" }}
             />
           </motion.div>
