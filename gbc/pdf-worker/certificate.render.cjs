@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   body: { fontSize: 11, fontWeight: 500, color: INK, lineHeight: 1.6, maxWidth: 420 },
-  bodyEm: { fontWeight: 700, color: PURPLE },
+  bodyEm: { fontWeight: 700, color: GOLD },
   bottomRow: { flexDirection: "row", alignItems: "flex-end" },
   verifyBlock: { flexDirection: "row", alignItems: "center", width: 260 },
   qr: { width: 46, height: 46, marginRight: 10, flexShrink: 0 },
@@ -153,7 +153,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         { style: styles.body },
         "participated in ",
         React.createElement(Text, { style: styles.bodyEm }, edition.name),
-        `, held ${dateRange} at ${edition.venue}, under the theme "${edition.theme}" — ${edition.subTheme}.`
+        `, held ${dateRange} at ${edition.venue}, under the theme "${edition.theme}: ${edition.subTheme}."`
       )
     ),
     React.createElement(
