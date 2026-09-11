@@ -34,12 +34,27 @@ after the original rebuild's Phases 0–5. Full context and design principles
 in `docs/development-history/phases/phase-6-design-tokens.md`; every phase
 doc lives in that same folder.
 
-- **Phase 6 — Design Token Foundation**: Planned, not started. Builds the
-  shared semantic + per-product brand CSS tokens and migrates the shared
-  component library (`components/sidebars/*`, `components/dashboard/*`,
-  `components/admin-panel/*`, `components/auth/*`) off inline hex onto
-  them. Blocks every phase below.
-- **Phase 7 — Surfboard theming**: Planned, blocked on Phase 6.
+- **Phase 6 — Design Token Foundation**: Complete. Shared semantic +
+  per-product brand CSS tokens shipped in `app/globals.css` via Tailwind
+  v4's `@theme` directive (not `tailwind.config.ts` — confirmed dead,
+  unloaded by the v4 build since there's no `@config` directive anywhere).
+  `[data-product="surfboard|reva|gbc"]` added to each product's
+  route-group root layout. Shared component library migrated off inline
+  `colorPalette` hex: `components/sidebars/{sidebar,menu}.tsx`,
+  `components/dashboard/StatCard.tsx`, `components/admin-panel/DashboardShell.tsx`,
+  `components/admin-panel/sheet-menu.tsx`, all four `components/auth/*`
+  cards. Found and fixed 3 real bugs along the way — shared components
+  that silently defaulted to REVA's brand color (one via
+  `window.location.pathname` sniffing) regardless of which product
+  rendered them. Verified live: reset a Surfboard test account's password
+  directly in the dev DB, logged in for real, screenshotted the surveyor/
+  admin/MDA dashboards in both themes — all correct. REVA/GBC's
+  *authenticated* views weren't live-tested this pass (no test account
+  available without a bulk user lookup, which the environment's safety
+  classifier declined) — flagged to close out before/during Phase 8–9.
+  Full writeup in `docs/development-history/phases/phase-6-design-tokens.md`.
+  Shipped on `design-system/phase-6-tokens` ([PR #66](https://github.com/roji-tech/twonodes/pull/66)).
+- **Phase 7 — Surfboard theming**: Ready to start — Phase 6 unblocked it.
 - **Phase 8 — REVA theming**: Planned, blocked on Phase 6 (and ideally 7).
 - **Phase 9 — GBC theming**: Planned, blocked on Phase 6 (and ideally 7–8).
 - **Phase 10 — Public/marketing sites theming**: Planned, blocked on
