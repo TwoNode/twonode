@@ -38,6 +38,7 @@ interface AdminProfile {
 
 import { COD_FEES, type ZoneFeeRow } from "../../../utils/CoDFees";
 import { nigerianStates, DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface SettingsData {
   zoneFees: ZoneFeeRow[];
@@ -52,6 +53,7 @@ interface SettingsData {
 }
 
 export default function SettingsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -493,9 +495,13 @@ export default function SettingsPage() {
 
   const handleResetToDefaults = async () => {
     if (
-      !window.confirm(
-        "Are you sure you want to reset all settings to their defaults? This action will create a backup, but it replaces all current configurations immediately.",
-      )
+      !(await confirm({
+        title: "Reset all settings?",
+        description:
+          "Are you sure you want to reset all settings to their defaults? This action will create a backup, but it replaces all current configurations immediately.",
+        confirmLabel: "Reset to defaults",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
@@ -613,6 +619,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
+      {ConfirmDialog}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
