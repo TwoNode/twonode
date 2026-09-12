@@ -249,8 +249,16 @@ export const surfboardApi = {
     qr: {
       stats: () => jsonFetch<any>(`${BASE}/admin/qr/stats`),
 
-      pendingWithdrawals: () =>
-        jsonFetch<any[]>(`${BASE}/admin/qr/withdrawals`),
+      pendingWithdrawals: (params: { page?: number; pageSize?: number; search?: string } = {}) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/admin/qr/withdrawals?${qs.toString()}`);
+      },
 
       processWithdrawal: (
         id: string,
