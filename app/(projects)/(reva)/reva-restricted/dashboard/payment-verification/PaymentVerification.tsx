@@ -40,6 +40,7 @@ import {
   notifyWarning,
 } from "@/utils/notify";
 import { REVA_COLORS, REVA_GRADIENTS, revaStatusBadgeStyle } from "@/reva/colors";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Request {
   id: string;
@@ -83,6 +84,8 @@ export function PaymentVerification() {
     VerificationResult[]
   >([]);
   const [showResults, setShowResults] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchRequests();
@@ -91,6 +94,11 @@ export function PaymentVerification() {
   useEffect(() => {
     filterRequests();
   }, [requests, searchTerm, statusFilter]);
+
+  // A search/filter/bulk-verify change invalidates whatever page was showing.
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, pageSize]);
 
   const fetchRequests = async () => {
     try {
@@ -295,6 +303,12 @@ export function PaymentVerification() {
     );
   };
 
+  // Bulk "Verify All Unpaid" needs the full unpaginated set to be correct —
+  // only the rendered table itself is paginated (client-side slice), the
+  // underlying fetch/filter stays whole.
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
+  const pagedRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
+
   const getEnvironmentBadge = (isLive: boolean) => {
     return (
       <Badge style={revaStatusBadgeStyle(isLive ? "error" : "info")}>
@@ -471,7 +485,7 @@ export function PaymentVerification() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.map((request) => (
+                {pagedRequests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-mono text-sm">
                       {request.reference}
@@ -554,6 +568,15 @@ export function PaymentVerification() {
           {filteredRequests.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>No requests found matching the current filters.</p>
+            </div>
+          )}
+
+          {filteredRequests.length > 0 && (
+            <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-gray-500">
+                Page {page} of {totalPages} • {filteredRequests.length} requests
+              </p>
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
             </div>
           )}
         </CardContent>
