@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Subscription {
   id?: string;
@@ -54,15 +56,16 @@ interface UserStats {
   usersWithActiveSubscriptions: number;
 }
 
+interface UserFilters {
+  roleGroup: "admins" | "mda";
+  status: string;
+  role: string;
+}
+
 export default function UserManagementPage() {
   const { confirm, ConfirmDialog } = useConfirm();
-  const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterRole, setFilterRole] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<User | null>(
     null
@@ -70,8 +73,49 @@ export default function UserManagementPage() {
   const [currentUserRole, setCurrentUserRole] = useState<SurfboardRole | null>(
     null
   );
-  const [activeTab, setActiveTab] = useState<"admins" | "mda">("admins");
   const router = useRouter();
+
+  const {
+    items: users,
+    total,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<User, UserFilters>(
+    async ({ page, pageSize, search, filters }) =>
+      surfboardApi.admin.users.list({
+        page,
+        pageSize,
+        search: search || undefined,
+        roleGroup: filters.roleGroup,
+        role: filters.role !== "all" ? filters.role : undefined,
+        status:
+          filters.status === "active" || filters.status === "inactive"
+            ? filters.status
+            : undefined,
+      }),
+    { initialFilters: { roleGroup: "admins", status: "all", role: "all" }, pageSize: 20 }
+  );
+
+  const activeTab = filters.roleGroup;
+  const filterStatus = filters.status;
+  const filterRole = filters.role;
+  const setActiveTab = (tab: "admins" | "mda") =>
+    setFilters({ roleGroup: tab, status: "all", role: "all" });
+  const setFilterStatus = (status: string) =>
+    setFilters((f) => ({ ...f, status }));
+  const setFilterRole = (role: string) => setFilters((f) => ({ ...f, role }));
+
+  const loadStats = async () => {
+    const statsResult = await surfboardApi.admin.users.stats();
+    if (statsResult.success) setStats(statsResult.data);
+  };
 
   // Subscription form state
   const [subscriptionForm, setSubscriptionForm] = useState<Subscription>({
@@ -94,7 +138,7 @@ export default function UserManagementPage() {
   });
 
   useEffect(() => {
-    fetchData();
+    loadStats();
     // Fetch current user role from session/context
     // For now, we'll check from the users list after fetching
     const checkCurrentUserRole = async () => {
@@ -110,70 +154,8 @@ export default function UserManagementPage() {
       }
     };
     checkCurrentUserRole();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [usersResult, statsResult] = await Promise.all([
-        surfboardApi.admin.users.list(),
-        surfboardApi.admin.users.stats(),
-      ]);
-
-      if (usersResult.success) {
-        setUsers(usersResult.data);
-      } else {
-        toast.error(usersResult.error || "Failed to fetch users");
-      }
-
-      if (statsResult.success) {
-        setStats(statsResult.data);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load user data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Define admin and MDA roles
-  const adminRoles: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
-  const mdaRoles: SurfboardRole[] = [
-    "RECORDS_I",
-    "INTAKE",
-    "RECORDS_II",
-    "ACCOUNTS",
-    "CHARTING",
-    "SURCON",
-    "ARCHIVE",
-    "MDA_SUPERADMIN",
-  ];
-
-  // Filter users based on active tab
-  const tabFilteredUsers = users.filter((user) => {
-    if (activeTab === "admins") {
-      return adminRoles.includes(user.role);
-    } else {
-      return mdaRoles.includes(user.role);
-    }
-  });
-
-  const filteredUsers = tabFilteredUsers.filter((user) => {
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && user.isActive) ||
-      (filterStatus === "inactive" && !user.isActive);
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-    const matchesSearch =
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ??
-        false);
-
-    return matchesStatus && matchesRole && matchesSearch;
-  });
 
   const handleRoleChange = async (userId: string, newRole: SurfboardRole) => {
     if (
@@ -189,7 +171,8 @@ export default function UserManagementPage() {
     const result = await surfboardApi.admin.users.updateRole(userId, newRole);
     if (result.success) {
       toast.success(`User role updated to ${newRole}`);
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -211,7 +194,8 @@ export default function UserManagementPage() {
     const result = await surfboardApi.admin.users.setStatus(userId, !currentStatus);
     if (result.success) {
       toast.success(`User ${!currentStatus ? "activated" : "deactivated"} successfully`);
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -231,7 +215,8 @@ export default function UserManagementPage() {
     const result = await surfboardApi.admin.users.promote(userId);
     if (result.success) {
       toast.success("User promoted to Admin successfully");
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -279,7 +264,8 @@ export default function UserManagementPage() {
       toast.success("Subscription updated successfully");
       setShowSubscriptionModal(false);
       setEditingSubscription(null);
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -302,7 +288,8 @@ export default function UserManagementPage() {
       toast.success("Subscription canceled successfully");
       setShowSubscriptionModal(false);
       setEditingSubscription(null);
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -320,7 +307,8 @@ export default function UserManagementPage() {
         email: "",
         role: "ADMIN",
       });
-      fetchData();
+      reload();
+      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -627,7 +615,7 @@ export default function UserManagementPage() {
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Users ({filteredUsers.length})
+                Users ({total})
               </h2>
             </div>
 
@@ -656,7 +644,7 @@ export default function UserManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
-                  {filteredUsers.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
@@ -822,6 +810,15 @@ export default function UserManagementPage() {
                 </tbody>
               </table>
             </div>
+
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Page {page} of {totalPages} • {total} users
+                </p>
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              </div>
+            )}
           </div>
 
           {/* User Details Modal */}

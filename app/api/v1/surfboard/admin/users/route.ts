@@ -4,11 +4,20 @@ import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { getAllUsers, createAdmin } from "@/surfboard/services/adminUserService";
+import { parsePagination } from "@/lib/api/pagination";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(
-  async (_req, ctx) => {
-    const data = await getAllUsers(ctx.session.role);
+  async (req, ctx) => {
+    const params = req.nextUrl.searchParams;
+    const pagination = parsePagination(params);
+    const data = await getAllUsers(ctx.session.role, {
+      ...pagination,
+      search: params.get("search") || undefined,
+      roleGroup: params.get("roleGroup") === "mda" ? "mda" : "admins",
+      role: params.get("role") || undefined,
+      status: params.get("status") === "active" || params.get("status") === "inactive" ? params.get("status") as "active" | "inactive" : undefined,
+    });
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }

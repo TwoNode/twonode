@@ -309,7 +309,26 @@ export const surfboardApi = {
     },
 
     users: {
-      list: () => jsonFetch<any[]>(`${BASE}/admin/users`),
+      list: (
+        params: {
+          page?: number;
+          pageSize?: number;
+          search?: string;
+          roleGroup?: "admins" | "mda";
+          role?: string;
+          status?: "active" | "inactive";
+        } = {},
+      ) => {
+        const qs = new URLSearchParams();
+        if (params.page) qs.set("page", String(params.page));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        if (params.roleGroup) qs.set("roleGroup", params.roleGroup);
+        if (params.role) qs.set("role", params.role);
+        if (params.status) qs.set("status", params.status);
+        const query = qs.toString();
+        return jsonFetch<any>(`${BASE}/admin/users${query ? `?${query}` : ""}`);
+      },
 
       stats: () => jsonFetch<any>(`${BASE}/admin/users/stats`),
 
@@ -369,6 +388,34 @@ export const surfboardApi = {
     },
 
     plansMap: () => jsonFetch<{ plans: any[] }>(`${BASE}/admin/plans/map`),
+
+    plans: {
+      list: (
+        params: {
+          page?: number;
+          pageSize?: number;
+          search?: string;
+          status?: string;
+          tab?: "all" | "person-count" | "queries";
+        } = {},
+      ) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        if (params.status) qs.set("status", params.status);
+        if (params.tab) qs.set("tab", params.tab);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/admin/plans?${qs.toString()}`);
+      },
+
+      stats: () =>
+        jsonFetch<{ total: number; pending: number; underReview: number; lodged: number; queried: number }>(
+          `${BASE}/admin/plans/stats`,
+        ),
+    },
   },
 
   plans: {
@@ -518,6 +565,13 @@ export const surfboardApi = {
           body: JSON.stringify({ count }),
         },
       ),
+
+    /** Admin-only correction of a survey title. */
+    updateTitle: (planId: string, surveyTitle: string) =>
+      jsonFetch<any>(`${BASE}/plans/${encodeURIComponent(planId)}/title`, {
+        method: "PATCH",
+        body: JSON.stringify({ surveyTitle }),
+      }),
 
     /** Public, QR-gated: redacts geometry/pillars/centroid/user unless the caller has a PAID_ACTIVE or FREE QR-earnings session. */
     getPublic: (planId: string, token?: string) =>
@@ -1050,6 +1104,29 @@ export const surfboardApi = {
         `${BASE}/notifications${query ? `?${query}` : ""}`,
       );
     },
+
+    /** Paginated variant for the admin Notification Management page — passing `page` switches the route to the paginated envelope shape. */
+    listPaginated: (params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      includeRead?: boolean;
+      includeDismissed?: boolean;
+      type?: string;
+      audience?: string;
+    } = {}) => {
+      const qs = new URLSearchParams();
+      qs.set("page", String(params.page ?? 1));
+      if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+      if (params.search) qs.set("search", params.search);
+      if (params.includeRead === false) qs.set("includeRead", "false");
+      if (params.includeDismissed) qs.set("includeDismissed", "true");
+      if (params.type) qs.set("type", params.type);
+      if (params.audience) qs.set("audience", params.audience);
+      return jsonFetch<any>(`${BASE}/notifications?${qs.toString()}`);
+    },
+
+    stats: () => jsonFetch<any>(`${BASE}/notifications/stats`),
 
     create: (input: {
       type:
