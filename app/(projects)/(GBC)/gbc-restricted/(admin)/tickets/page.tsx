@@ -1,4 +1,4 @@
-import { getTickets } from "@/gbc/services/ticketService";
+import { getTicketsPaginated } from "@/gbc/services/ticketService";
 import {
   AdminTicketsTable,
   type Ticket,
@@ -6,6 +6,7 @@ import {
 import { ExportButton } from "@/gbc/components/admin/ExportButton";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { TicketsPaginationControl } from "./TicketsPaginationControl";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -13,10 +14,18 @@ export const dynamic = "force-dynamic";
 export default async function AdminTicketsPage({
   searchParams,
 }: {
-  searchParams: { search?: string; status?: string };
+  searchParams: { search?: string; status?: string; page?: string; pageSize?: string };
 }) {
-  const { search, status } = await searchParams;
-  const tickets: Ticket[] = await getTickets({ search, status });
+  const { search, status, page: pageParam, pageSize: pageSizeParam } = await searchParams;
+  const page = pageParam ? Math.max(1, Number(pageParam)) : 1;
+  const pageSize = pageSizeParam ? Number(pageSizeParam) : 10;
+  const result = await getTicketsPaginated({
+    page,
+    pageSize,
+    search,
+    status: status && status !== "all" ? status : undefined,
+  });
+  const tickets: Ticket[] = result.data;
 
   return (
     <div>
@@ -32,6 +41,7 @@ export default async function AdminTicketsPage({
 
       <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
         <form className="flex flex-col md:flex-row gap-3 sm:gap-4">
+          <input type="hidden" name="page" value="1" />
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5" />
@@ -66,6 +76,19 @@ export default async function AdminTicketsPage({
       </div>
 
       <AdminTicketsTable tickets={tickets} />
+
+      {result.pagination.totalPages > 1 && (
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-gray-600">
+            Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} tickets
+          </p>
+          <TicketsPaginationControl
+            page={result.pagination.page}
+            totalPages={result.pagination.totalPages}
+            pageSize={result.pagination.pageSize}
+          />
+        </div>
+      )}
     </div>
   );
 }
