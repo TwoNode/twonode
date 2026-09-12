@@ -82,6 +82,8 @@ export default function UserManagementPage() {
     loading,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     search: searchTerm,
     setSearch: setSearchTerm,
     filters,
@@ -816,7 +818,7 @@ export default function UserManagementPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Page {page} of {totalPages} • {total} users
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
               </div>
             )}
           </div>
