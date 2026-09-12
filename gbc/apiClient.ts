@@ -225,6 +225,27 @@ export const gbcApi = {
   users: {
     list: () => jsonFetch<AdminSummary[]>(`${BASE}/admin/users`),
 
+    stats: () => jsonFetch<{ total: number; superAdmins: number; admins: number }>(`${BASE}/admin/users/stats`),
+
+    listPaginated: (params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      roles?: ("ADMIN" | "SUPERADMIN")[];
+      statuses?: boolean[];
+    } = {}) => {
+      const qs = new URLSearchParams();
+      qs.set("page", String(params.page ?? 1));
+      if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+      if (params.search) qs.set("search", params.search);
+      if (params.roles) qs.set("roles", params.roles.join(","));
+      if (params.statuses) qs.set("statuses", params.statuses.map(String).join(","));
+      return jsonFetch<{
+        data: AdminSummary[];
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${BASE}/admin/users?${qs.toString()}`);
+    },
+
     add: (input: AddAdminInput) =>
       jsonFetch<AdminSummary>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),
 
