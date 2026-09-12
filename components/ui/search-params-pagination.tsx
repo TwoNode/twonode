@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Pagination } from "@/components/ui/pagination";
 
-/** Server-searchParams-driven pages can't hold client state for the page — this pushes a new URL instead, which re-runs the server component with fresh data. */
-export function TicketsPaginationControl({
+/** For server-searchParams-driven pages (no client list state) — pushes a new URL instead of calling setState, which re-runs the server component with fresh data. */
+export function SearchParamsPagination({
   page,
   totalPages,
   pageSize,

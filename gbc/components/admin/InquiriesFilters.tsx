@@ -1,18 +1,26 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 
 interface InquiriesFiltersProps {
   currentType?: string;
   currentStatus?: string;
+  currentSearch?: string;
 }
 
 export function InquiriesFilters({
   currentType,
   currentStatus,
+  currentSearch,
 }: InquiriesFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+  }, []);
 
   const handleTypeChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -21,6 +29,7 @@ export function InquiriesFilters({
     } else {
       params.set("type", value);
     }
+    params.set("page", "1");
     router.push(`?${params.toString()}`);
   };
 
@@ -31,11 +40,40 @@ export function InquiriesFilters({
     } else {
       params.set("status", value);
     }
+    params.set("page", "1");
     router.push(`?${params.toString()}`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value.trim()) {
+        params.set("search", value);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`?${params.toString()}`);
+    }, 350);
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex-1">
+        <label className="block text-sm font-medium mb-2">Search</label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="search"
+            defaultValue={currentSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search by name, email, or subject…"
+            className="w-full pl-9 pr-4 py-2 border rounded-lg"
+          />
+        </div>
+      </div>
+
       <div className="flex-1">
         <label className="block text-sm font-medium mb-2">Filter by Type</label>
         <select

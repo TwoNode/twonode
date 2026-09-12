@@ -6,7 +6,7 @@ import {
 import { ExportButton } from "@/gbc/components/admin/ExportButton";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { TicketsPaginationControl } from "./TicketsPaginationControl";
+import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -82,7 +82,7 @@ export default async function AdminTicketsPage({
           <p className="text-sm text-gray-600">
             Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} tickets
           </p>
-          <TicketsPaginationControl
+          <SearchParamsPagination
             page={result.pagination.page}
             totalPages={result.pagination.totalPages}
             pageSize={result.pagination.pageSize}
