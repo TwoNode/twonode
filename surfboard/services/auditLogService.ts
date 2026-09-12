@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/auditLogActions.ts — role
@@ -29,12 +30,13 @@ export interface GetAuditLogsParams {
   action?: string;
   entity?: string;
   userId?: string;
+  search?: string;
   startDate?: Date;
   endDate?: Date;
 }
 
 export async function getAuditLogs(params: GetAuditLogsParams = {}) {
-  const { page = 1, pageSize = 50, action, entity, userId, startDate, endDate } = params;
+  const { page = 1, pageSize = 10, action, entity, userId, search, startDate, endDate } = params;
 
   const where: any = {};
   if (action) where.action = action;
@@ -44,6 +46,24 @@ export async function getAuditLogs(params: GetAuditLogsParams = {}) {
     where.createdAt = {};
     if (startDate) where.createdAt.gte = startDate;
     if (endDate) where.createdAt.lte = endDate;
+  }
+  if (search) {
+    const matchingUsers = await prisma.surfboardUser.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: search, mode: "insensitive" } },
+          { lastName: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+    });
+    const matchingUserIds = matchingUsers.map((u) => u.id);
+    where.OR = [
+      { entityId: { contains: search, mode: "insensitive" } },
+      { ipAddress: { contains: search, mode: "insensitive" } },
+      ...(matchingUserIds.length ? [{ userId: { in: matchingUserIds } }] : []),
+    ];
   }
 
   const total = await prisma.surfboardAuditLog.count({ where });
@@ -66,13 +86,7 @@ export async function getAuditLogs(params: GetAuditLogsParams = {}) {
     user: log.userId ? userMap.get(log.userId) || null : null,
   }));
 
-  return {
-    logs: logsWithUsers,
-    total,
-    page,
-    pageSize,
-    totalPages: Math.ceil(total / pageSize),
-  };
+  return paginatedResult(logsWithUsers, total, page, pageSize);
 }
 
 export async function getAuditLogActions() {

@@ -280,6 +280,7 @@ export const surfboardApi = {
           action?: string;
           entity?: string;
           userId?: string;
+          search?: string;
           startDate?: Date;
           endDate?: Date;
         } = {},
@@ -290,15 +291,13 @@ export const surfboardApi = {
         if (params.action) qs.set("action", params.action);
         if (params.entity) qs.set("entity", params.entity);
         if (params.userId) qs.set("userId", params.userId);
+        if (params.search) qs.set("search", params.search);
         if (params.startDate)
           qs.set("startDate", params.startDate.toISOString());
         if (params.endDate) qs.set("endDate", params.endDate.toISOString());
         return jsonFetch<{
-          logs: any[];
-          total: number;
-          page: number;
-          pageSize: number;
-          totalPages: number;
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
         }>(`${BASE}/admin/audit-logs?${qs.toString()}`);
       },
 
