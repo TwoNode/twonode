@@ -694,6 +694,16 @@ export const surfboardApi = {
           `${BASE}/cod/batches/stats?status=${encodeURIComponent(status)}`,
         ),
 
+      allStats: () =>
+        jsonFetch<{
+          total: number;
+          pendingUserPayment: number;
+          lasgPaid: number;
+          accountsApproved: number;
+          accountsDisapproved: number;
+          completed: number;
+        }>(`${BASE}/cod/batches/stats`),
+
       submit: (planIds: string[], acceptanceAcknowledged: true) =>
         jsonFetch<any>(`${BASE}/cod/batches`, {
           method: "POST",

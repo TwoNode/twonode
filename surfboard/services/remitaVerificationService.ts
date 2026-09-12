@@ -120,6 +120,31 @@ export async function getBatchStatusStats(userRole: SurfboardRole, status: strin
   };
 }
 
+/** Breakdown across every payment status at once — the Certificates page's overview cards, which (unlike Batch Management's two-tab view) span the whole bucket regardless of the active status filter. */
+export async function getAllBatchStats(userRole: SurfboardRole) {
+  if (userRole !== SurfboardRole.ADMIN && userRole !== SurfboardRole.SUPERADMIN) {
+    throw new ForbiddenError();
+  }
+  const grouped = await prisma.certificateOfDepositBatch.groupBy({
+    by: ["paymentStatus"],
+    _count: true,
+  });
+  const byStatus: Record<string, number> = {};
+  let total = 0;
+  for (const row of grouped) {
+    byStatus[row.paymentStatus] = row._count;
+    total += row._count;
+  }
+  return {
+    total,
+    pendingUserPayment: byStatus.PENDING_USER_PAYMENT ?? 0,
+    lasgPaid: byStatus.LASG_PAID ?? 0,
+    accountsApproved: byStatus.ACCOUNTS_APPROVED ?? 0,
+    accountsDisapproved: byStatus.ACCOUNTS_DISAPPROVED ?? 0,
+    completed: byStatus.COMPLETED ?? 0,
+  };
+}
+
 export async function submitRedCopyBatch(userId: string, planIds: string[], acceptanceAcknowledged: boolean) {
   if (!acceptanceAcknowledged) throw new ValidationError({ acceptanceAcknowledged: "Submission policy must be acknowledged" });
 
