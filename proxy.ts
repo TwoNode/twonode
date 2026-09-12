@@ -108,6 +108,23 @@ function resolveLoginRedirect(pathname: string): string {
   return "/reva/login"; // Default fallback
 }
 
+// Where an *authenticated* request lands when the role check for a specific
+// page fails (e.g. a non-superadmin hitting a superadmin-only route). Unlike
+// resolveLoginRedirect, this only ever runs once a valid session is already
+// confirmed, so sending the user back to a login page would be wrong — they
+// land on their own dashboard home instead.
+function resolveDashboardRedirect(pathname: string): string {
+  if (pathname.startsWith("/reva-restricted")) return "/reva-restricted/dashboard";
+  if (pathname.startsWith("/reva")) return "/reva/dashboard";
+  if (pathname.startsWith("/surfboard-mda")) return "/surfboard-mda/dashboard";
+  if (pathname.startsWith("/surfboard-restricted"))
+    return "/surfboard-restricted/dashboard";
+  if (pathname.startsWith("/surfboard")) return "/surfboard/dashboard";
+  if (pathname.startsWith("/gbc-restricted")) return "/gbc-restricted";
+  if (pathname.startsWith("/gbc")) return "/gbc";
+  return "/reva/dashboard"; // Default fallback
+}
+
 // Given a role already resolved for the active platform (regardless of
 // whether it came from a native JWT session or the legacy Kinde-derived
 // encrypted cookie), decides whether this specific route is reachable.
@@ -225,7 +242,7 @@ async function tryNativeSession(
   );
 
   if (redirectPath) return createRedirectResponse(req, redirectPath);
-  if (!hasAccess) return createRedirectResponse(req, resolveLoginRedirect(pathname));
+  if (!hasAccess) return createRedirectResponse(req, resolveDashboardRedirect(pathname));
   return NextResponse.next();
 }
 
@@ -317,7 +334,7 @@ const proxyWithLogic = withDynamicAuth(
       console.log("🛡️ Proxy - Access granted:", hasAccess, "--", role, "in platform:", activePlatform);
 
       if (!hasAccess) {
-        const redirectPath = resolveLoginRedirect(pathname);
+        const redirectPath = resolveDashboardRedirect(pathname);
         console.log("🛡️ Proxy - User does not have required role, redirecting to:", redirectPath);
         return createRedirectResponse(req, redirectPath);
       }
