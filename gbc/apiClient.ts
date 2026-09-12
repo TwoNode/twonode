@@ -280,6 +280,27 @@ export const gbcApi = {
       return jsonFetch<GBCNotificationItem[]>(`${BASE}/notifications${query ? `?${query}` : ""}`);
     },
 
+    listPaginated: (params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      type?: GBCUserNotificationType;
+      includeRead?: boolean;
+      includeDismissed?: boolean;
+    } = {}) => {
+      const qs = new URLSearchParams();
+      qs.set("page", String(params.page ?? 1));
+      if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+      if (params.search) qs.set("search", params.search);
+      if (params.type) qs.set("type", params.type);
+      if (params.includeRead === false) qs.set("includeRead", "false");
+      if (params.includeDismissed) qs.set("includeDismissed", "true");
+      return jsonFetch<{
+        data: GBCNotificationItem[];
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${BASE}/notifications?${qs.toString()}`);
+    },
+
     create: (input: {
       type: GBCUserNotificationType;
       title: string;

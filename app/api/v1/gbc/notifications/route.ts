@@ -3,16 +3,31 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { getAdminNotifications, createGBCNotification } from "@/gbc/services/notificationService";
+import { parsePagination } from "@/lib/api/pagination";
+import { getAdminNotifications, getAdminNotificationsPaginated, createGBCNotification } from "@/gbc/services/notificationService";
 import { Platform, GBCRole } from "@/utils/platform";
+import type { GBCUserNotificationType } from "@/prisma/generated";
 
+/** Opt-in: `?page=` switches to the paginated/searchable variant (the admin Notifications page) — omitting it keeps the original plain-array shape. */
 export const GET = withAuth<GBCRole>(
   async (req, ctx) => {
     const { searchParams } = new URL(req.url);
     const includeRead = searchParams.get("includeRead") !== "false";
     const includeDismissed = searchParams.get("includeDismissed") === "true";
-    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
 
+    if (searchParams.has("page")) {
+      const pagination = parsePagination(searchParams);
+      const data = await getAdminNotificationsPaginated(ctx.session.sub, ctx.session.role as "ADMIN" | "SUPERADMIN", {
+        ...pagination,
+        search: searchParams.get("search") || undefined,
+        type: (searchParams.get("type") as GBCUserNotificationType) || undefined,
+        includeRead,
+        includeDismissed,
+      });
+      return NextResponse.json({ success: true, data });
+    }
+
+    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
     const data = await getAdminNotifications(ctx.session.sub, ctx.session.role as "ADMIN" | "SUPERADMIN", {
       includeRead,
       includeDismissed,
