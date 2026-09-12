@@ -45,9 +45,11 @@ import {
   Share2,
   X,
 } from "lucide-react";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
 import { useConfirm } from "@/hooks/useConfirm";
 import { PageLoader } from "@/components/ui/spinner";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 type NotificationType =
   | "INFO"
@@ -109,15 +111,56 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   SHARING: <Share2 className="h-3.5 w-3.5" />,
 };
 
+interface NotificationStats {
+  total: number;
+  unread: number;
+  sentToday: number;
+  broadcastToAllUsers: number;
+}
+
+interface NotificationFilters {
+  type: NotificationType | "ALL";
+  audience: NotificationAudience | "ALL";
+}
+
 export default function AdminNotificationsPage() {
   const { confirm, ConfirmDialog } = useConfirm();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<NotificationStats | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
-  const [audienceFilter, setAudienceFilter] = useState<NotificationAudience | "ALL">("ALL");
+
+  const {
+    items: notifications,
+    total,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    search,
+    setSearch,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<Notification, NotificationFilters>(
+    async ({ page, pageSize, search, filters }) =>
+      surfboardApi.notifications.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        includeRead: true,
+        includeDismissed: true,
+        type: filters.type !== "ALL" ? filters.type : undefined,
+        audience: filters.audience !== "ALL" ? filters.audience : undefined,
+      }),
+    { initialFilters: { type: "ALL", audience: "ALL" }, pageSize: 20 }
+  );
+
+  const typeFilter = filters.type;
+  const audienceFilter = filters.audience;
+  const setTypeFilter = (type: NotificationType | "ALL") =>
+    setFilters((f) => ({ ...f, type }));
+  const setAudienceFilter = (audience: NotificationAudience | "ALL") =>
+    setFilters((f) => ({ ...f, audience }));
 
   // Form state
   const [formData, setFormData] = useState({
@@ -129,30 +172,13 @@ export default function AdminNotificationsPage() {
     sendEmail: false,
   });
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      const result = await surfboardApi.notifications.list({
-        includeRead: true,
-        includeDismissed: true,
-        limit: 100,
-      });
-
-      if (result.success) {
-        setNotifications(result.data);
-      } else {
-        toast.error("Failed to load notifications");
-      }
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-      toast.error("Error loading notifications");
-    } finally {
-      setLoading(false);
-    }
+  const loadStats = async () => {
+    const result = await surfboardApi.notifications.stats();
+    if (result.success) setStats(result.data);
   };
 
   useEffect(() => {
-    loadNotifications();
+    loadStats();
   }, []);
 
   const handleCreate = async () => {
@@ -183,7 +209,8 @@ export default function AdminNotificationsPage() {
           link: "",
           sendEmail: false,
         });
-        loadNotifications();
+        reload();
+        loadStats();
       } else {
         toast.error(result.error || "Failed to create notification");
       }
@@ -210,55 +237,45 @@ export default function AdminNotificationsPage() {
     const result = await surfboardApi.notifications.remove(notificationId);
     if (result.success) {
       toast.success("Notification deleted");
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      reload();
+      loadStats();
     } else {
       toast.error("Failed to delete notification");
     }
   };
 
-  const stats = [
+  const statCards = [
     {
       label: "Total Notifications",
-      value: notifications.length,
+      value: stats?.total ?? 0,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Unread",
-      value: notifications.filter((n) => !n.isRead).length,
+      value: stats?.unread ?? 0,
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Sent Today",
-      value: notifications.filter((n) => isToday(new Date(n.createdAt))).length,
+      value: stats?.sentToday ?? 0,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
     },
     {
       label: "Broadcast to All Users",
-      value: notifications.filter((n) => n.audience === "ALL_USERS").length,
+      value: stats?.broadcastToAllUsers ?? 0,
       color: "text-violet-600 dark:text-violet-400",
       bgColor: "bg-violet-50 dark:bg-violet-500/10",
     },
   ];
 
-  const filteredNotifications = notifications.filter((n) => {
-    const matchesSearch =
-      !search.trim() ||
-      n.title.toLowerCase().includes(search.trim().toLowerCase()) ||
-      n.message.toLowerCase().includes(search.trim().toLowerCase());
-    const matchesType = typeFilter === "ALL" || n.type === typeFilter;
-    const matchesAudience = audienceFilter === "ALL" || n.audience === audienceFilter;
-    return matchesSearch && matchesType && matchesAudience;
-  });
-
   const hasActiveFilters = !!search.trim() || typeFilter !== "ALL" || audienceFilter !== "ALL";
 
   const clearFilters = () => {
     setSearch("");
-    setTypeFilter("ALL");
-    setAudienceFilter("ALL");
+    setFilters({ type: "ALL", audience: "ALL" });
   };
 
   return (
@@ -426,7 +443,7 @@ export default function AdminNotificationsPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
+          {statCards.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
@@ -522,16 +539,16 @@ export default function AdminNotificationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
-              {filteredNotifications.length === 0 ? (
+              {notifications.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <Bell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">
-                      {notifications.length === 0
+                      {!hasActiveFilters && (stats?.total ?? 0) === 0
                         ? "No notifications yet"
                         : "No notifications match your filters"}
                     </p>
-                    {hasActiveFilters && notifications.length > 0 && (
+                    {hasActiveFilters && (
                       <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
                         Clear filters
                       </Button>
@@ -539,7 +556,7 @@ export default function AdminNotificationsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredNotifications.map((notification) => (
+                notifications.map((notification) => (
                   <tr
                     key={notification.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
@@ -594,6 +611,15 @@ export default function AdminNotificationsPage() {
               )}
             </tbody>
           </table>
+
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page} of {totalPages} • {total} notifications
+              </p>
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          )}
         </div>
       )}
     </div>

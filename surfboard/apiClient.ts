@@ -1070,6 +1070,29 @@ export const surfboardApi = {
       );
     },
 
+    /** Paginated variant for the admin Notification Management page — passing `page` switches the route to the paginated envelope shape. */
+    listPaginated: (params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      includeRead?: boolean;
+      includeDismissed?: boolean;
+      type?: string;
+      audience?: string;
+    } = {}) => {
+      const qs = new URLSearchParams();
+      qs.set("page", String(params.page ?? 1));
+      if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+      if (params.search) qs.set("search", params.search);
+      if (params.includeRead === false) qs.set("includeRead", "false");
+      if (params.includeDismissed) qs.set("includeDismissed", "true");
+      if (params.type) qs.set("type", params.type);
+      if (params.audience) qs.set("audience", params.audience);
+      return jsonFetch<any>(`${BASE}/notifications?${qs.toString()}`);
+    },
+
+    stats: () => jsonFetch<any>(`${BASE}/notifications/stats`),
+
     create: (input: {
       type:
         | "INFO"

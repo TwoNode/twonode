@@ -3,7 +3,8 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { getUserNotifications, createNotification } from "@/surfboard/services/notificationService";
+import { getUserNotifications, getUserNotificationsPaginated, createNotification } from "@/surfboard/services/notificationService";
+import { parsePagination } from "@/lib/api/pagination";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 export const GET = withAuth<SurfboardRole>(
@@ -11,8 +12,24 @@ export const GET = withAuth<SurfboardRole>(
     const params = req.nextUrl.searchParams;
     const includeRead = params.get("includeRead") !== "false";
     const includeDismissed = params.get("includeDismissed") === "true";
-    const limit = params.get("limit") ? Number(params.get("limit")) : undefined;
 
+    // Opt-in: only the admin Notification Management page passes `page` —
+    // NotificationBell.tsx never does, and expects a plain array back, so
+    // its request shape and response shape are both left untouched.
+    if (params.has("page")) {
+      const pagination = parsePagination(params);
+      const data = await getUserNotificationsPaginated(ctx.session.sub, ctx.session.role, {
+        ...pagination,
+        includeRead,
+        includeDismissed,
+        type: (params.get("type") as any) || undefined,
+        audience: (params.get("audience") as any) || undefined,
+        search: params.get("search") || undefined,
+      });
+      return NextResponse.json({ success: true, data });
+    }
+
+    const limit = params.get("limit") ? Number(params.get("limit")) : undefined;
     const data = await getUserNotifications(ctx.session.sub, ctx.session.role, { includeRead, includeDismissed, limit });
     return NextResponse.json({ success: true, data });
   },
