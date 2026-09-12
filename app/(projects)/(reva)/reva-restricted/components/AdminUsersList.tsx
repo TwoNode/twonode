@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,13 +25,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon, ClockIcon, Search } from "lucide-react";
 import { revaApi } from "@/reva/apiClient";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 interface AdminUser {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: "ADMIN" | "SUPERADMIN";
+  // Server-side scope:"admins" filtering guarantees only ADMIN/SUPERADMIN rows come back — widened to match the API's full Role union.
+  role: "USER" | "ADMIN" | "SUPERADMIN";
   emailVerified: boolean;
   is_active: boolean;
   createdAt: Date | string;
@@ -41,40 +44,26 @@ interface AdminUser {
   };
 }
 
-interface AdminUsersListProps {
-  users: AdminUser[];
-  // isLoading: boolean;
-}
-
-export default function AdminUsersList({
-  users,
-}: // isLoading,
-AdminUsersListProps) {
-  const [filteredUsers, setFilteredUsers] = useState<AdminUser[]>(users);
+export default function AdminUsersList() {
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Update filtered users when users prop changes
-  useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
-
-  // Filter users based on search term
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter(
-        (user) =>
-          user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.role.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [searchTerm, users]);
+  const {
+    items: filteredUsers,
+    total,
+    totalPages,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    reload,
+  } = useServerList<AdminUser, Record<string, never>>(
+    async ({ page, pageSize, search }) =>
+      revaApi.admin.users.listPaginated({ page, pageSize, search: search || undefined, scope: "admins" }),
+    { initialFilters: {} }
+  );
 
   const handleDeactivateUser = async (userId: string) => {
     setActionUserId(userId);
@@ -83,6 +72,7 @@ AdminUsersListProps) {
       const result = await revaApi.admin.users.setActive(userId, false);
       if (result.success) {
         toast.success("User deactivated successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to deactivate user");
       }
@@ -102,6 +92,7 @@ AdminUsersListProps) {
       const result = await revaApi.admin.users.setActive(userId, true);
       if (result.success) {
         toast.success("User reactivated successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to reactivate user");
       }
@@ -121,6 +112,7 @@ AdminUsersListProps) {
       const result = await revaApi.admin.users.demote(userId);
       if (result.success) {
         toast.success("Admin privileges removed successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to remove admin privileges");
       }
@@ -160,7 +152,7 @@ AdminUsersListProps) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold text-gray-900">
-              Admin Users ({filteredUsers.length})
+              Admin Users ({total})
             </CardTitle>
             <CardDescription>
               Manage admin and superadmin user accounts
@@ -346,6 +338,14 @@ AdminUsersListProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages} • {total} admin users
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
           </div>
         )}
       </CardContent>

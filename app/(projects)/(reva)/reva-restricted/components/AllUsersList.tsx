@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { revaApi } from "@/reva/apiClient";
 import { CalendarIcon, ClockIcon, Search } from "lucide-react";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 interface User {
   id: string;
@@ -48,50 +50,39 @@ interface User {
   };
 }
 
-interface AllUsersListProps {
-  users: User[];
+interface UserListFilters {
+  role: string;
 }
 
-export default function AllUsersList({ users }: AllUsersListProps) {
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+export default function AllUsersList() {
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Update filtered users when users prop changes
-  useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
-
-  // Filter users based on search term and role selection
-  useEffect(() => {
-    let filtered = users;
-
-    // Filter by role first
-    if (selectedRole !== "all") {
-      if (selectedRole === "admins") {
-        filtered = filtered.filter(
-          (user) => user.role === "ADMIN" || user.role === "SUPERADMIN"
-        );
-      } else if (selectedRole === "users") {
-        filtered = filtered.filter((user) => user.role === "USER");
-      }
-    }
-
-    // Then filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(
-        (user) =>
-          user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.role.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredUsers(filtered);
-  }, [searchTerm, selectedRole, users]);
+  const {
+    items: filteredUsers,
+    total,
+    totalPages,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<User, UserListFilters>(
+    async ({ page, pageSize, search, filters }) =>
+      revaApi.admin.users.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        scope: filters.role === "admins" || filters.role === "users" ? filters.role : "all",
+      }),
+    { initialFilters: { role: "all" } }
+  );
+  const selectedRole = filters.role;
+  const setSelectedRole = (role: string) => setFilters({ role });
 
   const handleMakeUserAdmin = async (
     userId: string,
@@ -103,6 +94,7 @@ export default function AllUsersList({ users }: AllUsersListProps) {
       const result = await revaApi.admin.users.promote(userId, role);
       if (result.success) {
         toast.success("User upgraded to admin successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to make user admin");
       }
@@ -122,6 +114,7 @@ export default function AllUsersList({ users }: AllUsersListProps) {
       const result = await revaApi.admin.users.setActive(userId, false);
       if (result.success) {
         toast.success("User deactivated successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to deactivate user");
       }
@@ -141,6 +134,7 @@ export default function AllUsersList({ users }: AllUsersListProps) {
       const result = await revaApi.admin.users.setActive(userId, true);
       if (result.success) {
         toast.success("User reactivated successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to reactivate user");
       }
@@ -160,6 +154,7 @@ export default function AllUsersList({ users }: AllUsersListProps) {
       const result = await revaApi.admin.users.remove(userId);
       if (result.success) {
         toast.success("User deleted successfully");
+        reload();
       } else {
         toast.error(result.error || "Failed to delete user");
       }
@@ -199,7 +194,7 @@ export default function AllUsersList({ users }: AllUsersListProps) {
         <div className="flex flex-col xl:flex-row max-xl:xl:items-start sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle className="text-nowrap text-xl font-bold text-gray-900">
-              All Users ({filteredUsers.length})
+              All Users ({total})
             </CardTitle>
             <CardDescription>
               Manage all user accounts and their roles
@@ -438,6 +433,14 @@ export default function AllUsersList({ users }: AllUsersListProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages} • {total} users
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
           </div>
         )}
       </CardContent>
