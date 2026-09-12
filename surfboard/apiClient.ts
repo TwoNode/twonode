@@ -309,7 +309,26 @@ export const surfboardApi = {
     },
 
     users: {
-      list: () => jsonFetch<any[]>(`${BASE}/admin/users`),
+      list: (
+        params: {
+          page?: number;
+          pageSize?: number;
+          search?: string;
+          roleGroup?: "admins" | "mda";
+          role?: string;
+          status?: "active" | "inactive";
+        } = {},
+      ) => {
+        const qs = new URLSearchParams();
+        if (params.page) qs.set("page", String(params.page));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        if (params.roleGroup) qs.set("roleGroup", params.roleGroup);
+        if (params.role) qs.set("role", params.role);
+        if (params.status) qs.set("status", params.status);
+        const query = qs.toString();
+        return jsonFetch<any>(`${BASE}/admin/users${query ? `?${query}` : ""}`);
+      },
 
       stats: () => jsonFetch<any>(`${BASE}/admin/users/stats`),
 

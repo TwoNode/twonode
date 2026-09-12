@@ -2,6 +2,31 @@ import prisma from "@/lib/prisma";
 import { SurfboardRole } from "@/prisma/generated";
 import { ForbiddenError, NotFoundError, ConflictError } from "@/lib/api/errors";
 import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)/(surfboard)/utils/auditLogger";
+import { paginatedResult } from "@/lib/api/pagination";
+
+/** Matches user-management/page.tsx's admin-vs-MDA tab split. */
+const ADMIN_TAB_ROLES: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
+const MDA_TAB_ROLES: SurfboardRole[] = [
+  "RECORDS_I",
+  "INTAKE",
+  "RECORDS_II",
+  "ACCOUNTS",
+  "CHARTING",
+  "SURCON",
+  "ARCHIVE",
+  "MDA_SUPERADMIN",
+];
+
+export interface GetAllUsersParams {
+  page: number;
+  pageSize: number;
+  skip: number;
+  take: number;
+  search?: string;
+  roleGroup?: "admins" | "mda";
+  role?: string;
+  status?: "active" | "inactive";
+}
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/adminActions.ts. Broad
@@ -13,16 +38,39 @@ import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)
  * confirmed dead (zero real callers) and not migrated.
  */
 
-export async function getAllUsers(callerRole: SurfboardRole) {
-  const users = await prisma.surfboardUser.findMany({
-    include: {
-      subscription: { take: 1, orderBy: { createdAt: "desc" } },
-      _count: { select: { plans: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsersParams) {
+  const where: NonNullable<Parameters<typeof prisma.surfboardUser.findMany>[0]>["where"] = {
+    role: { in: params.roleGroup === "mda" ? MDA_TAB_ROLES : ADMIN_TAB_ROLES },
+  };
+  if (params.role && params.role !== "all") {
+    where.role = params.role as SurfboardRole;
+  }
+  if (params.status === "active") where.isActive = true;
+  if (params.status === "inactive") where.isActive = false;
+  if (params.search) {
+    where.OR = [
+      { firstName: { contains: params.search, mode: "insensitive" } },
+      { lastName: { contains: params.search, mode: "insensitive" } },
+      { email: { contains: params.search, mode: "insensitive" } },
+      { companyName: { contains: params.search, mode: "insensitive" } },
+    ];
+  }
 
-  return users.map((user) => ({
+  const [total, users] = await Promise.all([
+    prisma.surfboardUser.count({ where }),
+    prisma.surfboardUser.findMany({
+      where,
+      include: {
+        subscription: { take: 1, orderBy: { createdAt: "desc" } },
+        _count: { select: { plans: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: params.skip,
+      take: params.take,
+    }),
+  ]);
+
+  const data = users.map((user) => ({
     id: user.id,
     kindeId: user.kindeId,
     email: user.email,
@@ -39,6 +87,8 @@ export async function getAllUsers(callerRole: SurfboardRole) {
     // ADMINs can only see subscriptions for USER role accounts
     subscription: callerRole === "ADMIN" && user.role !== "USER" ? null : user.subscription[0] || null,
   }));
+
+  return paginatedResult(data, total, params.page, params.pageSize);
 }
 
 export async function getUserStats() {

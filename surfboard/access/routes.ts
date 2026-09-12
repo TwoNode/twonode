@@ -83,7 +83,17 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: ADMIN_BASE, label: "Home", icon: Home, roles: ADMIN_ROLES, group: "admin", section: "Overview" },
   { path: `${ADMIN_BASE}/surf-plans`, label: "Surf Plans", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
   { path: `${ADMIN_BASE}/map`, label: "Map Viewer", icon: Map, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
-  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
+  // Secure Plans is hidden: its status maps to the real SurfboardPlanStatus
+  // enum, but priority/confidentiality/tags/estimatedValue have no backing
+  // field anywhere in the schema — it's mock-only UI with no real concept
+  // behind it yet. `roles: []` (rather than deleting the entry outright)
+  // is deliberate: canAccessRoute's prefix match falls back to the bare
+  // ADMIN_BASE "Home" entry for any sub-path with no entry of its own, which
+  // would silently grant every ADMIN/SUPERADMIN access anyway — confirmed
+  // live (proxy.ts still returned 200 after just deleting the entry). An
+  // empty roles array both drops it from getNavItemsForRole's nav list and
+  // makes canAccessRoute's `.includes(role)` check false for everyone.
+  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: [], group: "admin", section: "Plans" },
   { path: `${ADMIN_BASE}/user-management`, label: "User Management", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/kyc`, label: "Surveyor's KYC", icon: Shield, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },

@@ -41,6 +41,8 @@ import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useConfirm } from "@/hooks/useConfirm";
 import { PageLoader } from "@/components/ui/spinner";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { useViewMode } from "@/hooks/useViewMode";
 
 interface SurveyPlan {
   id: string;
@@ -72,6 +74,7 @@ export default function SurfPlansPage() {
   const [activeTab, setActiveTab] = useState<
     "all" | "person-count" | "queries"
   >("all");
+  const [viewMode, setViewMode] = useViewMode("surf-plans", "list");
 
   // Edit Modal State
   const [editingPlan, setEditingPlan] = useState<SurveyPlan | null>(null);
@@ -460,7 +463,7 @@ export default function SurfPlansPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-white/10 mb-6">
+      <div className="border-b border-gray-200 dark:border-white/10 mb-6 overflow-x-auto">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("all")}
@@ -518,7 +521,7 @@ export default function SurfPlansPage() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <div className="relative">
               <select
                 value={statusFilter}
@@ -549,11 +552,95 @@ export default function SurfPlansPage() {
               <Download className="w-4 h-4" />
               Export
             </button>
+
+            {activeTab !== "person-count" && (
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Plans Table */}
+      {/* Plans Grid */}
+      {viewMode === "grid" && activeTab !== "person-count" ? (
+        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4">
+          {filteredPlans.length === 0 ? (
+            <div className="py-12 text-center">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPlans.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg shrink-0">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate">
+                          {plan.planNumber}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {plan.surveyTitle}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                        plan.status
+                      )}`}
+                    >
+                      {getStatusIcon(plan.status)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <span className="truncate">{plan.location}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <span className="truncate">{plan.owner.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Updated {new Date(plan.updatedAt).toLocaleDateString()}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
+                    <Link
+                      href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Link>
+                    <button
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      title="More actions"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      /* Plans Table */
       <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
@@ -798,6 +885,7 @@ export default function SurfPlansPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
