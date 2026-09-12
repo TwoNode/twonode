@@ -102,7 +102,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
-  const [displayMode, setDisplayMode] = useState<"shape" | "dots">("shape");
+  const [displayMode, setDisplayMode] = useState<"shape" | "dots" | "dots-lines">("shape");
 
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
@@ -400,6 +400,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         },
       });
       map.current.addLayer({
+        id: "plans-outline",
+        type: "line",
+        source: "plansLayer",
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 2,
+        },
+      });
+      map.current.addLayer({
         id: "plans-labels",
         type: "symbol",
         source: "plansLayer",
@@ -595,6 +604,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       ) as FilterSpecification;
 
       map.current?.setFilter("plans-fill", filter);
+      map.current?.setFilter("plans-outline", filter);
       map.current?.setFilter("plans-labels", filter);
       map.current?.setFilter("pillars-symbol", pillarFilter);
 
@@ -638,9 +648,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   // visibility swap rather than a re-render of the underlying data.
   useEffect(() => {
     if (!map.current || !isReady) return;
-    if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol")) return;
+    if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol") || !map.current.getLayer("plans-outline")) return;
     map.current.setLayoutProperty("plans-fill", "visibility", displayMode === "shape" ? "visible" : "none");
-    map.current.setLayoutProperty("pillars-symbol", "visibility", displayMode === "dots" ? "visible" : "none");
+    map.current.setLayoutProperty("plans-outline", "visibility", displayMode === "dots-lines" ? "visible" : "none");
+    map.current.setLayoutProperty("pillars-symbol", "visibility", displayMode === "dots" || displayMode === "dots-lines" ? "visible" : "none");
   }, [displayMode, isReady]);
 
   useEffect(() => {
@@ -865,6 +876,17 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             }`}
           >
             Dots
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode("dots-lines")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "dots-lines"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Dots + Lines
           </button>
         </div>
         <hr className="my-2 border-gray-200 dark:border-white/10" />
