@@ -676,6 +676,24 @@ export const surfboardApi = {
           `${BASE}/cod/batches${status ? `?status=${encodeURIComponent(status)}` : ""}`,
         ),
 
+      /** Admin-only, paginated/searchable variant of list() — the admin Batch Management page. */
+      listPaginated: (params: { page?: number; pageSize?: number; status?: string; search?: string } = {}) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.status) qs.set("status", params.status);
+        if (params.search) qs.set("search", params.search);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/cod/batches?${qs.toString()}`);
+      },
+
+      statsByStatus: (status: string) =>
+        jsonFetch<{ count: number; totalPlans: number; totalAmount: number }>(
+          `${BASE}/cod/batches/stats?status=${encodeURIComponent(status)}`,
+        ),
+
       submit: (planIds: string[], acceptanceAcknowledged: true) =>
         jsonFetch<any>(`${BASE}/cod/batches`, {
           method: "POST",
