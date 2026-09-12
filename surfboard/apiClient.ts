@@ -388,6 +388,34 @@ export const surfboardApi = {
     },
 
     plansMap: () => jsonFetch<{ plans: any[] }>(`${BASE}/admin/plans/map`),
+
+    plans: {
+      list: (
+        params: {
+          page?: number;
+          pageSize?: number;
+          search?: string;
+          status?: string;
+          tab?: "all" | "person-count" | "queries";
+        } = {},
+      ) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        if (params.status) qs.set("status", params.status);
+        if (params.tab) qs.set("tab", params.tab);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/admin/plans?${qs.toString()}`);
+      },
+
+      stats: () =>
+        jsonFetch<{ total: number; pending: number; underReview: number; lodged: number; queried: number }>(
+          `${BASE}/admin/plans/stats`,
+        ),
+    },
   },
 
   plans: {
@@ -537,6 +565,13 @@ export const surfboardApi = {
           body: JSON.stringify({ count }),
         },
       ),
+
+    /** Admin-only correction of a survey title. */
+    updateTitle: (planId: string, surveyTitle: string) =>
+      jsonFetch<any>(`${BASE}/plans/${encodeURIComponent(planId)}/title`, {
+        method: "PATCH",
+        body: JSON.stringify({ surveyTitle }),
+      }),
 
     /** Public, QR-gated: redacts geometry/pillars/centroid/user unless the caller has a PAID_ACTIVE or FREE QR-earnings session. */
     getPublic: (planId: string, token?: string) =>
