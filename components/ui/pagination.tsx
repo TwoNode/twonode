@@ -30,7 +30,7 @@ function getPageWindow(page: number, totalPages: number): (number | "…")[] {
   return result;
 }
 
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const DEFAULT_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100];
 
 /** Shared Prev/Next + page-number + page-size control for every paginated admin list — pairs with useServerList. */
 export function Pagination({

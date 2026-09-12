@@ -32,7 +32,7 @@ export function useServerList<T, F extends object>(
   opts: { initialFilters: F; pageSize?: number; searchDebounceMs?: number }
 ) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(opts.pageSize ?? 20);
+  const [pageSize, setPageSize] = useState(opts.pageSize ?? 10);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<F>(opts.initialFilters);

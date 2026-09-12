@@ -24,7 +24,7 @@ export interface Paginated<T> {
   };
 }
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
 /** Parses `?page=` and `?pageSize=` off a request's search params, clamped to sane bounds. */
