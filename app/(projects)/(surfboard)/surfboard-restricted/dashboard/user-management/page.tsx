@@ -16,6 +16,8 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { useViewMode } from "@/hooks/useViewMode";
 
 interface Subscription {
   id?: string;
@@ -73,6 +75,7 @@ export default function UserManagementPage() {
   const [currentUserRole, setCurrentUserRole] = useState<SurfboardRole | null>(
     null
   );
+  const [viewMode, setViewMode] = useViewMode("user-management", "list");
   const router = useRouter();
 
   const {
@@ -102,7 +105,7 @@ export default function UserManagementPage() {
             ? filters.status
             : undefined,
       }),
-    { initialFilters: { roleGroup: "admins", status: "all", role: "all" }, pageSize: 20 }
+    { initialFilters: { roleGroup: "admins", status: "all", role: "all" } }
   );
 
   const activeTab = filters.roleGroup;
@@ -615,12 +618,150 @@ export default function UserManagementPage() {
 
           {/* Users Table */}
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Users ({total})
               </h2>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
+            {viewMode === "grid" ? (
+              <div className="p-4">
+                {users.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-gray-500 dark:text-gray-400">No users found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="shrink-0 h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">
+                              {user.firstName[0]}
+                              {user.lastName[0]}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) => handleRoleChange(user.id, value as SurfboardRole)}
+                          >
+                            <SelectTrigger
+                              className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+                                user.role
+                              )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeTab === "admins" ? (
+                                <>
+                                  <SelectItem value="USER">USER</SelectItem>
+                                  <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                  <SelectItem value="SUPERADMIN">SUPERADMIN</SelectItem>
+                                  <SelectItem value="RECORDS_I">Records I</SelectItem>
+                                  <SelectItem value="RECORDS_II">Records II</SelectItem>
+                                  <SelectItem value="ACCOUNTS">Accounts</SelectItem>
+                                  <SelectItem value="CHARTING">Charting</SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">MDA Super Admin</SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="RECORDS_I">RECORDS_I</SelectItem>
+                                  <SelectItem value="INTAKE">INTAKE</SelectItem>
+                                  <SelectItem value="RECORDS_II">RECORDS_II</SelectItem>
+                                  <SelectItem value="ACCOUNTS">ACCOUNTS</SelectItem>
+                                  <SelectItem value="CHARTING">CHARTING</SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="ARCHIVE">ARCHIVE</SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">MDA_SUPERADMIN</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+
+                          <button
+                            onClick={() => handleStatusToggle(user.id, user.isActive)}
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.isActive
+                                ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                                : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
+                            }`}
+                          >
+                            {user.isActive ? "Active" : "Inactive"}
+                          </button>
+                        </div>
+
+                        {user.subscription ? (
+                          <div>
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSubscriptionStatusColor(
+                                user.subscription.status
+                              )}`}
+                            >
+                              {user.subscription.planName}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              ₦{(user.subscription.amount / 100).toLocaleString()}/{user.subscription.interval}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex w-fit px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
+                            No Subscription
+                          </span>
+                        )}
+
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {user.plansCount} plan{user.plansCount === 1 ? "" : "s"}
+                          {user.companyName ? ` • ${user.companyName}` : ""}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            title="View details"
+                            className="p-1.5 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          {user.role === "USER" && (
+                            <button
+                              onClick={() => handlePromoteToAdmin(user.id)}
+                              title="Promote to admin"
+                              className="p-1.5 rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors"
+                            >
+                              <ArrowUpCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => openSubscriptionModal(user)}
+                            title="Manage subscription"
+                            className="p-1.5 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
                 <thead className="bg-gray-50 dark:bg-white/5">
@@ -812,6 +953,7 @@ export default function UserManagementPage() {
                 </tbody>
               </table>
             </div>
+            )}
 
             {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
