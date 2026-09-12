@@ -90,6 +90,8 @@ export default function SurfPlansPage() {
     loading,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     search: searchTerm,
     setSearch: setSearchTerm,
     filters,
@@ -796,7 +798,7 @@ export default function SurfPlansPage() {
               Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
               <span className="font-medium">{total}</span> plans
             </div>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>
@@ -809,7 +811,7 @@ export default function SurfPlansPage() {
             Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
             <span className="font-medium">{total}</span> plans
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
         </div>
       )}
     </div>

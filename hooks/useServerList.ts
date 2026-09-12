@@ -31,8 +31,8 @@ export function useServerList<T, F extends object>(
   fetcher: ServerListFetcher<T, F>,
   opts: { initialFilters: F; pageSize?: number; searchDebounceMs?: number }
 ) {
-  const pageSize = opts.pageSize ?? 20;
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(opts.pageSize ?? 20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<F>(opts.initialFilters);
@@ -49,12 +49,13 @@ export function useServerList<T, F extends object>(
 
   const filtersKey = JSON.stringify(filters);
 
-  // Any change to search or filters invalidates the current page — page 2
-  // of a stale query is meaningless once the query itself changed.
+  // Any change to search, filters, or page size invalidates the current page
+  // — page 2 of a stale query (or a stale row count) is meaningless once the
+  // query itself changed.
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, filtersKey]);
+  }, [debouncedSearch, filtersKey, pageSize]);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -86,6 +87,8 @@ export function useServerList<T, F extends object>(
     loading,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     search,
     setSearch,
     filters,

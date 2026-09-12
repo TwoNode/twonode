@@ -136,6 +136,8 @@ export default function AdminNotificationsPage() {
     loading,
     page,
     setPage,
+    pageSize,
+    setPageSize,
     search,
     setSearch,
     filters,
@@ -617,7 +619,7 @@ export default function AdminNotificationsPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Page {page} of {totalPages} • {total} notifications
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
             </div>
           )}
         </div>
