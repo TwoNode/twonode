@@ -36,6 +36,8 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { revaApi } from "@/reva/apiClient";
 import { REVA_COLORS, REVA_GRADIENTS } from "@/reva/colors";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 type NotificationType =
   | "INFO"
@@ -84,111 +86,93 @@ const typeColorMap: Record<NotificationType, string> = {
     "bg-purple-50 border-purple-200 dark:bg-purple-950/20 dark:border-purple-800",
 };
 
+interface NotificationFilters {
+  type: NotificationType | "ALL";
+  status: "ALL" | "UNREAD" | "READ";
+  showDismissed: boolean;
+}
+
 export default function AdminNotificationsList() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<
-    Notification[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<NotificationType | "ALL">("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "UNREAD" | "READ">(
-    "ALL"
-  );
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
     []
   );
-  const [showDismissed, setShowDismissed] = useState(false);
   const [adminUserId, setAdminUserId] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const {
+    items: filteredNotifications,
+    total,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<Notification, NotificationFilters>(
+    async ({ page, pageSize, search, filters }) => {
+      const res = await revaApi.notifications.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        type: filters.type !== "ALL" ? filters.type : undefined,
+        status: filters.status,
+        includeDismissed: filters.showDismissed,
+      });
+      if (!res.success || !res.data) return res as any;
+      return {
+        ...res,
+        data: {
+          ...res.data,
+          data: res.data.data.map((n) => ({
+            ...n,
+            createdAt: n.createdAt.toString(),
+            updatedAt: n.updatedAt.toString(),
+          })),
+        },
+      };
+    },
+    { initialFilters: { type: "ALL", status: "ALL", showDismissed: false } }
+  );
+
+  const typeFilter = filters.type;
+  const statusFilter = filters.status;
+  const showDismissed = filters.showDismissed;
+  const setTypeFilter = (type: NotificationType | "ALL") => setFilters((f) => ({ ...f, type }));
+  const setStatusFilter = (status: "ALL" | "UNREAD" | "READ") => setFilters((f) => ({ ...f, status }));
+  const setShowDismissed = (showDismissed: boolean) => setFilters((f) => ({ ...f, showDismissed }));
+
+  const loadUnreadCount = async () => {
+    const result = await revaApi.notifications.unreadCount();
+    if (result.success) setUnreadCount(result.data.count);
+  };
 
   useEffect(() => {
-    fetchAdminAndNotifications();
-  }, []);
-
-  useEffect(() => {
-    filterNotifications();
-  }, [notifications, searchTerm, typeFilter, statusFilter, showDismissed]);
-
-  const fetchAdminAndNotifications = async () => {
-    try {
-      setLoading(true);
+    (async () => {
       const admin = await revaApi.auth.me();
       if (admin.success) {
         setAdminUserId(admin.data.id);
         // /api/v1/auth/me lowercases role; this component's comparisons expect the Prisma enum casing
         setUserRole(admin.data.role.toUpperCase());
-
-        // The route itself picks getAdminNotifications/getSuperAdminNotifications by session role
-        const result = await revaApi.notifications.list();
-
-        if (result.success) {
-          setNotifications(
-            (result.data || []).map((notification) => ({
-              ...notification,
-              createdAt: notification.createdAt.toString(),
-              updatedAt: notification.updatedAt.toString(),
-            }))
-          );
-        }
       }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+    loadUnreadCount();
+  }, []);
 
-  const filterNotifications = () => {
-    let filtered = notifications;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (notif) =>
-          notif.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          notif.message.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by type
-    if (typeFilter !== "ALL") {
-      filtered = filtered.filter((notif) => notif.type === typeFilter);
-    }
-
-    // Filter by status
-    if (statusFilter === "UNREAD") {
-      filtered = filtered.filter(
-        (notif) => !notif.readBy.includes(adminUserId)
-      );
-    } else if (statusFilter === "READ") {
-      filtered = filtered.filter((notif) => notif.readBy.includes(adminUserId));
-    }
-
-    // Filter dismissed notifications
-    if (!showDismissed) {
-      filtered = filtered.filter(
-        (notif) => !notif.dismissedBy.includes(adminUserId)
-      );
-    }
-
-    setFilteredNotifications(filtered);
+  const refresh = async () => {
+    await Promise.all([reload(), loadUnreadCount()]);
   };
 
   const handleMarkAsRead = async (notificationId: string) => {
     if (!adminUserId) return;
-
     try {
       const result = await revaApi.notifications.markRead(notificationId);
-      if (result.success) {
-        setNotifications((prev) =>
-          prev.map((notif) =>
-            notif.id === notificationId
-              ? { ...notif, readBy: [...notif.readBy, adminUserId] }
-              : notif
-          )
-        );
-      }
+      if (result.success) await refresh();
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -196,18 +180,9 @@ export default function AdminNotificationsList() {
 
   const handleDismiss = async (notificationId: string) => {
     if (!adminUserId) return;
-
     try {
       const result = await revaApi.notifications.dismiss(notificationId);
-      if (result.success) {
-        setNotifications((prev) =>
-          prev.map((notif) =>
-            notif.id === notificationId
-              ? { ...notif, dismissedBy: [...notif.dismissedBy, adminUserId] }
-              : notif
-          )
-        );
-      }
+      if (result.success) await refresh();
     } catch (error) {
       console.error("Error dismissing notification:", error);
     }
@@ -224,9 +199,10 @@ export default function AdminNotificationsList() {
   const handleBulkMarkAsRead = async () => {
     try {
       for (const notificationId of selectedNotifications) {
-        await handleMarkAsRead(notificationId);
+        await revaApi.notifications.markRead(notificationId);
       }
       setSelectedNotifications([]);
+      await refresh();
     } catch (error) {
       console.error("Error bulk marking notifications as read:", error);
     }
@@ -235,19 +211,13 @@ export default function AdminNotificationsList() {
   const handleBulkDismiss = async () => {
     try {
       for (const notificationId of selectedNotifications) {
-        await handleDismiss(notificationId);
+        await revaApi.notifications.dismiss(notificationId);
       }
       setSelectedNotifications([]);
+      await refresh();
     } catch (error) {
       console.error("Error bulk dismissing notifications:", error);
     }
-  };
-
-  const getUnreadCount = () => {
-    return notifications.filter(
-      (n) =>
-        !n.readBy.includes(adminUserId) && !n.dismissedBy.includes(adminUserId)
-    ).length;
   };
 
   if (loading) {
@@ -281,7 +251,7 @@ export default function AdminNotificationsList() {
               Notifications
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {getUnreadCount()} unread notifications
+              {unreadCount} unread notifications
             </p>
           </div>
         </div>
@@ -303,7 +273,7 @@ export default function AdminNotificationsList() {
             </Link>
           )}
           <Button
-            onClick={fetchAdminAndNotifications}
+            onClick={refresh}
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
@@ -576,6 +546,14 @@ export default function AdminNotificationsList() {
               ))
             )}
           </ScrollArea>
+          {totalPages > 1 && (
+            <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Page {page} of {totalPages} • {total} notifications
+              </p>
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

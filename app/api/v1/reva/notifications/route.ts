@@ -3,7 +3,14 @@ import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
-import { getUserNotifications, getAdminNotifications, getSuperAdminNotifications, createNotification } from "@/reva/services/notificationService";
+import { parsePagination } from "@/lib/api/pagination";
+import {
+  getUserNotifications,
+  getAdminNotifications,
+  getSuperAdminNotifications,
+  getAdminNotificationsPaginated,
+  createNotification,
+} from "@/reva/services/notificationService";
 import { Platform, RevaRole } from "@/utils/platform";
 import type { Role, NotificationAudience, NotificationType } from "@/prisma/generated";
 
@@ -11,9 +18,28 @@ import type { Role, NotificationAudience, NotificationType } from "@/prisma/gene
  * One route, role from the session picks which query runs — not a
  * caller-supplied `role` argument like the source's getUserNotifications
  * (which trusted whatever role the client passed).
+ *
+ * Opt-in: `?page=` switches ADMIN/SUPERADMIN to the paginated/searchable
+ * variant (the reva-restricted admin notifications list) — the regular
+ * /reva/dashboard bell-equivalent list never passes it, and expects the
+ * original plain-array shape, so it's left untouched.
  */
 export const GET = withAuth<RevaRole>(
-  async (_req, ctx) => {
+  async (req, ctx) => {
+    const params = req.nextUrl.searchParams;
+
+    if (params.has("page") && (ctx.session.role === RevaRole.ADMIN || ctx.session.role === RevaRole.SUPERADMIN)) {
+      const pagination = parsePagination(params);
+      const data = await getAdminNotificationsPaginated(ctx.session.role as unknown as "ADMIN" | "SUPERADMIN", ctx.session.sub, {
+        ...pagination,
+        search: params.get("search") || undefined,
+        type: (params.get("type") as NotificationType) || undefined,
+        status: (params.get("status") as "UNREAD" | "READ" | "ALL") || undefined,
+        includeDismissed: params.get("includeDismissed") === "true",
+      });
+      return NextResponse.json({ success: true, data });
+    }
+
     const notifications =
       ctx.session.role === RevaRole.SUPERADMIN
         ? await getSuperAdminNotifications()
