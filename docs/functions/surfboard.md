@@ -27,6 +27,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `remitaVerificationService.ts` | Remita payment verification |
 | `settingsService.ts` | Platform settings CRUD |
 | `subscriptionAnalyticsService.ts` | Subscription-related analytics |
+| `subscriptionReminderService.ts` | Daily cron job: emails + WhatsApp-nudges users whose subscription expires within 3 days (dedup'd per expiry date via `expiryReminderSentAt`) |
 | `subscriptionService.ts` | Subscription plan CRUD/lifecycle |
 | `verificationService.ts` | SPCode / record-copy verification logic |
 

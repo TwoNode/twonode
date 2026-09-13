@@ -19,7 +19,10 @@ This document describes the end-to-end journey of a survey plan, from the survey
 *   **Plan Types**: `PLAN_TYPES` (e.g., "APPROVED LAYOUT", "DEED").
 *   **Fee Rates**: `SURB_LGA_RATES` (Stored in `SurfboardSettings`).
 *   **System Charge**: `SYSTEM_CHARGE_PERCENT` (Default: 10%).
-*   **Lock Duration**: `LOCK_DURATION_MINUTES = 6` (per-plan locks — Accounts, Charting, SURCON, Records I). Intake and Records II use per-plan-in-batch locks instead, `3` minutes × the number of plans in the batch (`surfboard/services/planLockService.ts` — confirmed current values; both durations were previously misdocumented, as 3 and 30 minutes respectively, in different copies of this doc).
+*   **Lock Duration** (`surfboard/services/planLockService.ts` — confirmed against current code, three distinct schemes):
+    *   **Charting, SURCON, Records I**: single-plan lock, `LOCK_DURATION_MINUTES = 6` flat, oldest-unlocked-plan-first (FIFO).
+    *   **Accounts**: a *batch-level* lock (locks every plan in the batch at once, not one plan) — flat `3` minutes regardless of batch size.
+    *   **Intake, Records II**: batch-level lock, `3` minutes × the number of plans in the batch (`RECORDS_II_LOCK_MINUTES_PER_PLAN = 3`).
 
 ### B. Database Schema (Prisma)
 *   **`SurfboardPlan`**: Tracks approval status for all 6 roles (`accountsStatus`, `chartingStatus`, `surconStatus`, `recordsIStatus`, `intakeStatus`, `recordsIIStatus`) and lock metadata (`{role}LockedBy`, `{role}LockExpiresAt`).
@@ -111,9 +114,9 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 6 minutes w
     *   **Function**: `canWorkOnPlan(planId, role, userId)`
     *   **Logic**: Checks if there are older pending submissions for the same role. If an older plan is locked by someone else, the next available can be accessed.
 *   **Concurrency Lock Management**
-    *   **Function**: `acquirePlanLock(planId, role, userId)`
-    *   **Logic**: Sets `{role}LockedBy = userId` and `{role}LockExpiresAt = now + 30 mins`.
-    *   **Hook**: `usePlanLock.ts` manages periodic heartbeats and release upon window navigation.
+    *   **Function**: `acquirePlanLock(planId, role, userId)` (explicit lock-a-specific-plan route) / `getAndLockOldestAvailablePlan(role, userId)` (the "claim next in queue" flow the MDA review UI actually drives).
+    *   **Logic**: Sets `{role}LockedBy = userId` and `{role}LockExpiresAt = now + 6 mins` for Charting/SURCON/Records I. See §1's Lock Duration breakdown for Accounts/Intake/Records II, which use a different (batch-level) scheme.
+    *   **Hook**: `usePlanLock.ts` (single-plan roles) / `useBatchLock.ts` (Accounts, Intake, Records II) auto-acquire on mount and release on navigation. Both hooks guard against overlapping/racing `acquireLock()` calls (an in-flight-promise ref) — a real bug found and fixed 2026-09-13 where React Strict Mode's double-invoked mount effect could leave the "Acquiring lock..." spinner stuck until a manual page refresh.
 *   **Role-Specific Processing**
     *   **Accounts**: `updateAccountsApproval(batchId, approved, comment)` — verifies CoD and any subsequent query fee receipts.
     *   **Charting**: `updateChartingStatus(planId, mode: "APPROVE" | "QUERY", comment)`
@@ -157,10 +160,11 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 6 minutes w
 *   **Display**: The uploaded Record Copy (PDF/Image).
 *   **Action**: Collects the envelope (physical plan) and verifies that the physical plan submitted to the office matches the online digital copy.
 *   **Decision**: **Approve** or **Query** (requires a comment).
-*   **Locking**: No Locking feature. Records are sorted sequentially (oldest to newest) to prevent a surveyor's delay in physical submission from stalling the workflow for others.
+*   **Locking**: Batch-level lock (locks every eligible plan in the batch at once, sorted oldest-`physicalCopySubmittedAt`-first) — this prevents a surveyor's delay in physical submission from stalling the workflow for others, since only their own batch locks, not the whole queue.
 
 ### Technical Flow
 *   **Function**: `updateIntakeStatus(planId, approved, comment)`
+*   **Locking Function**: `getAndLockBatchForIntake(userId)` — duration is `3` minutes × the number of plans in the locked batch.
 *   **Pre-check**: Validates that `accountsStatus`, `chartingStatus`, `surconStatus`, and `recordsIStatus` are all `"APPROVED"`.
 *   **Status Update**: Sets `intakeStatus`. If Queried, it immediately updates `redCopyStatus` to `"QUERIED"` and fires `notifyConsolidatedQueries`.
 
@@ -174,7 +178,7 @@ MDA admins process plans simultaneously. Each plan is **Locked** for 6 minutes w
 *   **Action**: Final Verification that the physical plan submitted to the office matches the online digital copy.
 *   **Decision**: Final **Approve** or **Query**.
     *   *Note on Queries*: If Records II issues a query at this final stage, it effectively resets the plan, requiring re-review by all MDA roles.
-*   **Locking**: Locking feature is applied here based on batches.
+*   **Locking**: Batch-level lock (`getAndLockBatchForRecordsII`) — `3` minutes × the number of plans in the batch, same formula as Intake.
 
 #### Automated Lodging (OSSG)
 *   Upon Records II approval, the system automatically:
