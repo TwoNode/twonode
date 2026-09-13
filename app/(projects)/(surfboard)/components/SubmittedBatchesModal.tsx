@@ -47,6 +47,7 @@ import type {
   RedCopyBatchPDFData,
 } from "./RedCopySubmissionPDF";
 import { PhysicalSubmissionModal } from "./PhysicalSubmissionModal";
+import { useConfirm } from "@/hooks/useConfirm";
 
 // Dynamically import DownloadSubmissionLetterBtn to avoid SSR issues
 const DownloadSubmissionLetterBtn = dynamic(
@@ -100,6 +101,7 @@ export function SubmittedBatchesModal({
   onClose,
   onSuccess,
 }: SubmittedBatchesModalProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,9 +274,13 @@ export function SubmittedBatchesModal({
 
   const handleDeleteAll = async () => {
     if (
-      !confirm(
-        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!",
-      )
+      !(await confirm({
+        title: "Delete ALL batches?",
+        description:
+          "DEVELOPMENT ONLY: this will reset all related plans and cannot be undone.",
+        confirmLabel: "Delete all",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
@@ -300,7 +306,9 @@ export function SubmittedBatchesModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      {ConfirmDialog}
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="space-y-3 pb-4 border-b">
           <div className="flex items-center justify-between">
@@ -608,6 +616,7 @@ export function SubmittedBatchesModal({
           }}
         />
       )}
-    </Dialog>
+      </Dialog>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export interface ServerListPage<T> {
@@ -40,6 +40,12 @@ export function useServerList<T, F extends object>(
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  // Guards against out-of-order responses: two reload()s can overlap
+  // (e.g. an unfiltered mount fetch racing a filter set immediately after,
+  // such as syncing a `?role=` query param) and nothing otherwise stops an
+  // older request's response from landing after a newer one's and
+  // clobbering it with stale data.
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), opts.searchDebounceMs ?? 350);
@@ -58,9 +64,11 @@ export function useServerList<T, F extends object>(
   }, [debouncedSearch, filtersKey, pageSize]);
 
   const reload = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const res = await fetcher({ page, pageSize, search: debouncedSearch, filters });
+      if (requestId !== requestIdRef.current) return; // superseded by a newer request
       if (res.success && res.data) {
         setItems(res.data.data);
         setTotal(res.data.pagination.total);
@@ -69,9 +77,10 @@ export function useServerList<T, F extends object>(
         toast.error(res.error || "Failed to load data");
       }
     } catch {
+      if (requestId !== requestIdRef.current) return;
       toast.error("Error loading data");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, debouncedSearch, filtersKey]);
