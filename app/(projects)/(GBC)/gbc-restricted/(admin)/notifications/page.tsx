@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import type { GBCNotificationItem } from "@/gbc/apiClient";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
+import { useConfirm } from "@/hooks/useConfirm";
 
 type NotificationType = "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM";
 type NotificationAudience = "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
@@ -51,6 +52,7 @@ interface NotificationFilters {
 }
 
 export default function GBCAdminNotificationsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -128,7 +130,15 @@ export default function GBCAdminNotificationsPage() {
   };
 
   const handleDelete = async (notificationId: string) => {
-    if (!confirm("Are you sure you want to delete this notification?")) return;
+    if (
+      !(await confirm({
+        title: "Delete this notification?",
+        description: "This action cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "destructive",
+      }))
+    )
+      return;
 
     const result = await gbcApi.notifications.remove(notificationId);
     if (result.success) {
@@ -141,6 +151,7 @@ export default function GBCAdminNotificationsPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
+      {ConfirmDialog}
       <div className="mb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
