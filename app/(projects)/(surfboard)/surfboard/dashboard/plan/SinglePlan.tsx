@@ -40,6 +40,7 @@ import { Loader2 } from "lucide-react";
 import MaplibreMap from "../../../components/maps/MaplibreMap";
 import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -240,6 +241,7 @@ interface SinglePlanDetailsProps {
 }
 
 export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [plan, setPlan] = useState<PlanWithPillars | null>(null);
   const [loading, setLoading] = useState(true);
@@ -343,9 +345,12 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     if (!plan) return;
 
     if (
-      !confirm(
-        "Are you sure you want to delete this plan? This action cannot be undone.",
-      )
+      !(await confirm({
+        title: "Delete this plan?",
+        description: "This action cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
@@ -745,6 +750,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {ConfirmDialog}
       <div className="mb-8">
         <div className="mb-8">
           {/* Header Card with Gradient Background */}

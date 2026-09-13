@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { SurfboardRole } from "@/prisma/generated";
@@ -67,6 +67,19 @@ interface UserFilters {
   subscriptionStatus: string;
 }
 
+// Mirrors adminUserService.ts's MDA_TAB_ROLES — used to route a `?role=`
+// query param (e.g. from Admin Tools' "View Users" links) to the correct tab.
+const MDA_ROLES = [
+  "RECORDS_I",
+  "INTAKE",
+  "RECORDS_II",
+  "ACCOUNTS",
+  "CHARTING",
+  "SURCON",
+  "ARCHIVE",
+  "MDA_SUPERADMIN",
+];
+
 export default function UserManagementPage() {
   const { confirm, ConfirmDialog } = useConfirm();
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -80,6 +93,7 @@ export default function UserManagementPage() {
   );
   const [viewMode, setViewMode] = useViewMode("user-management", "list");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const {
     items: users,
@@ -139,6 +153,21 @@ export default function UserManagementPage() {
   const setFilterRole = (role: string) => setFilters((f) => ({ ...f, role }));
   const setFilterSubscriptionStatus = (subscriptionStatus: string) =>
     setFilters((f) => ({ ...f, subscriptionStatus }));
+
+  // Sync the role filter with a `?role=` query param (e.g. Admin Tools'
+  // "View Users" links) — runs once on mount so it doesn't fight the user's
+  // own subsequent filter changes.
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (!roleParam) return;
+    setFilters({
+      roleGroup: MDA_ROLES.includes(roleParam) ? "mda" : "admins",
+      status: "all",
+      role: roleParam,
+      subscriptionStatus: "all",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadStats = async () => {
     const statsResult = await surfboardApi.admin.users.stats();

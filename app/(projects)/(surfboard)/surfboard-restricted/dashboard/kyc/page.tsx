@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { getSurveyorsForKyc } from "@/surfboard/services/qrEarningsService";
-import { getAuthenticatedSurfUserFromCookie } from "@/surfboard/utils/surfAuth";
+import { getEffectiveUserData } from "@/lib/auth/session";
+import { canAccessSurfAdminPanel } from "@/permissions";
+import { Platform } from "@/utils/platform";
 import { redirect } from "next/navigation";
 import KycClient from "./KycClient";
 
@@ -9,14 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default async function KycPage() {
-  let user = null;
-  try {
-    user = await getAuthenticatedSurfUserFromCookie();
-  } catch (e) {
-    // Expected during prerendering when no cookies are available
-  }
-  
-  if (!user || user.role !== "SUPERADMIN") {
+  const userData = await getEffectiveUserData(Platform.SURFBOARD);
+
+  if (!userData || !canAccessSurfAdminPanel(userData.role)) {
     redirect("/surfboard-restricted/dashboard");
   }
 

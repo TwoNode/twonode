@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export interface SubmitterInfo {
   id: string;
@@ -66,6 +67,7 @@ export function RemitaPaymentModal({
   batchData,
   onSuccess,
 }: RemitaPaymentModalProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [lasgReceiptUrl, setLasgReceiptUrl] = useState("");
   const [remitaReceiptUrl, setRemitaReceiptUrl] = useState("");
@@ -191,11 +193,15 @@ export function RemitaPaymentModal({
     }
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
     if (
-      !confirm(
-        "You have an active batch submission. Are you sure you want to close? You will need to provide the receipt links later to verify payment.",
-      )
+      !(await confirm({
+        title: "Close this batch submission?",
+        description:
+          "You have an active batch submission. You will need to provide the receipt links later to verify payment.",
+        confirmLabel: "Close",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
@@ -204,6 +210,7 @@ export function RemitaPaymentModal({
 
   return (
     <>
+      {ConfirmDialog}
       <Dialog open={isOpen} onOpenChange={handleModalClose}>
         <DialogContent className="max-w-350 h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50 dark:bg-white/5">
           <DialogHeader className="p-6 pb-2 border-b bg-white dark:bg-surface">
