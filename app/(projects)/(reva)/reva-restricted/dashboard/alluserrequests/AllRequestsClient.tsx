@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import RequestList from "../../components/RequestsList";
 import { AdminMiniHeader } from "../../components/AdminMiniHeader";
 import SearchFilters, {
   SearchFilters as SearchFiltersType,
 } from "../../components/SearchFilters";
+import { Pagination } from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 interface Request {
   id: string;
@@ -63,6 +66,14 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
     hasReport: null,
     isApproved: null,
   });
+  const [oneTimePage, setOneTimePage] = useState(1);
+  const [requestsPage, setRequestsPage] = useState(1);
+
+  // A filter change invalidates whatever page either section was showing.
+  useEffect(() => {
+    setOneTimePage(1);
+    setRequestsPage(1);
+  }, [filters]);
 
   const filteredData = useMemo(() => {
     let filtered = [...initialData];
@@ -236,6 +247,12 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
   const filteredCount =
     filteredData.filtered.length + filteredData.filteredOneTime.length;
 
+  const oneTimeTotalPages = Math.max(1, Math.ceil(filteredData.filteredOneTime.length / PAGE_SIZE));
+  const pagedOneTime = filteredData.filteredOneTime.slice((oneTimePage - 1) * PAGE_SIZE, oneTimePage * PAGE_SIZE);
+
+  const requestsTotalPages = Math.max(1, Math.ceil(filteredData.filtered.length / PAGE_SIZE));
+  const pagedRequests = filteredData.filtered.slice((requestsPage - 1) * PAGE_SIZE, requestsPage * PAGE_SIZE);
+
   return (
     <div className="mx-auto flex flex-col p-6 max-xl:p-[30px_40px] max-lg:p-[15px_30px] max-sm:p-[10px_15px] max-md:p-[10px_20px] max-w-5xl">
       <SearchFilters
@@ -255,7 +272,12 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
               </>
             }
           />
-          <RequestList requests={filteredData.filteredOneTime} />
+          <RequestList requests={pagedOneTime} />
+          {oneTimeTotalPages > 1 && (
+            <div className="mt-3 flex justify-end">
+              <Pagination page={oneTimePage} totalPages={oneTimeTotalPages} onPageChange={setOneTimePage} />
+            </div>
+          )}
         </section>
       )}
 
@@ -270,7 +292,14 @@ const AllRequestsClient: React.FC<AllRequestsClientProps> = ({
         />
 
         {filteredData.filtered.length > 0 ? (
-          <RequestList requests={filteredData.filtered} />
+          <>
+            <RequestList requests={pagedRequests} />
+            {requestsTotalPages > 1 && (
+              <div className="flex justify-end">
+                <Pagination page={requestsPage} totalPages={requestsTotalPages} onPageChange={setRequestsPage} />
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-8 text-gray-500">
             <p>No requests found matching your criteria.</p>

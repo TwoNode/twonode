@@ -7,8 +7,6 @@ import { Menu, MenuProps } from "@/components/sidebars/menu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
-import { REVA_COLORS } from "@/reva/colors";
-import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 export interface SidebarProps extends MenuProps {
   sideBarWidthClass: string;
@@ -51,14 +49,6 @@ export function Sidebar({
 
   if (!sidebar) return null;
 
-  // Detect if this is a Surfboard layout by checking for a surfboard dashboard path
-  const isSurfboard =
-    typeof window !== "undefined" &&
-    (window.location.pathname.includes("/surfboard") ||
-      window.location.pathname.includes("/surfboard-restricted"));
-
-  const colorPalette = isSurfboard ? SURFBOARD_COLORS : REVA_COLORS;
-
   return (
     <aside
       className={cn(
@@ -83,10 +73,10 @@ export function Sidebar({
                 <img
                   src={logoSrc}
                   alt={`${title} logo`}
-                  className="w-9 h-9 rounded-full shadow border border-white/15 bg-white object-contain shrink-0"
+                  className="w-11 h-11 rounded-full shadow border border-white/15 bg-white object-contain shrink-0"
                 />
               )}
-              <span className="text-base font-bold text-white tracking-wide truncate">
+              <span className="text-lg font-bold text-white tracking-wide truncate">
                 {title}
               </span>
             </div>
@@ -108,11 +98,8 @@ export function Sidebar({
                 onClick={() => sidebar?.toggleOpen()}
                 className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg shadow-black/30 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
-                  background: `linear-gradient(120deg, ${
-                    "dark" in colorPalette.primary
-                      ? colorPalette.primary.dark
-                      : colorPalette.primary.main
-                  }, ${colorPalette.primary.main})`,
+                  background:
+                    "linear-gradient(120deg, var(--color-brand-primary-dark), var(--color-brand-primary))",
                 }}
               >
                 {primaryAction.icon && (
@@ -129,7 +116,6 @@ export function Sidebar({
               userImageUrl={userImageUrl}
               userName={userName}
               userRole={userRole}
-              colorPalette={colorPalette}
               variant="dark"
             />
           </div>

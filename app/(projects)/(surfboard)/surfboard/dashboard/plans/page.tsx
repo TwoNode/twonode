@@ -53,27 +53,18 @@ export default function PlansPage() {
         className="w-full"
       >
         <div className="mb-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3 bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger
-              value="all"
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="all" className="flex items-center gap-2">
               <ListChecks className="w-4 h-4" />
               <span className="hidden sm:inline">All Plans</span>
               <span className="sm:hidden">All</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="shared"
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
+            <TabsTrigger value="shared" className="flex items-center gap-2">
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">Shared Plans</span>
               <span className="sm:hidden">Shared</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="queried"
-              className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
+            <TabsTrigger value="queried" className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               <span className="hidden sm:inline">Queried Plans</span>
               <span className="sm:hidden">Queried</span>

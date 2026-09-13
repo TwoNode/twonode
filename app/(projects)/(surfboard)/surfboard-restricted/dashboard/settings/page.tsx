@@ -38,6 +38,7 @@ interface AdminProfile {
 
 import { COD_FEES, type ZoneFeeRow } from "../../../utils/CoDFees";
 import { nigerianStates, DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface SettingsData {
   zoneFees: ZoneFeeRow[];
@@ -52,6 +53,7 @@ interface SettingsData {
 }
 
 export default function SettingsPage() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -493,9 +495,13 @@ export default function SettingsPage() {
 
   const handleResetToDefaults = async () => {
     if (
-      !window.confirm(
-        "Are you sure you want to reset all settings to their defaults? This action will create a backup, but it replaces all current configurations immediately.",
-      )
+      !(await confirm({
+        title: "Reset all settings?",
+        description:
+          "Are you sure you want to reset all settings to their defaults? This action will create a backup, but it replaces all current configurations immediately.",
+        confirmLabel: "Reset to defaults",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
@@ -592,10 +598,10 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
         </div>
       </div>
     );
@@ -603,24 +609,25 @@ export default function SettingsPage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Failed to load profile data</p>
+          <p className="text-gray-600 dark:text-gray-400">Failed to load profile data</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
+      {ConfirmDialog}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-                <p className="text-gray-600 mt-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
                   Manage your profile, preferences, and security settings
                 </p>
               </div>
@@ -634,15 +641,15 @@ export default function SettingsPage() {
           </div>
 
           {/* Settings Navigation */}
-          <div className="bg-white rounded-lg shadow-lg mb-8">
-            <div className="border-b border-gray-200 overflow-x-auto">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-lg mb-8">
+            <div className="border-b border-gray-200 dark:border-white/10 overflow-x-auto">
               <nav className="flex space-x-8 px-6 w-max min-w-full">
                 <button
                   onClick={() => setActiveTab("profile")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "profile"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Profile
@@ -652,7 +659,7 @@ export default function SettingsPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "preferences"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Preferences
@@ -662,7 +669,7 @@ export default function SettingsPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "security"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Security
@@ -672,7 +679,7 @@ export default function SettingsPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "notifications"
                       ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Notifications
@@ -683,7 +690,7 @@ export default function SettingsPage() {
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "lga"
                         ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     MDA Settings
@@ -696,13 +703,13 @@ export default function SettingsPage() {
               {/* Profile Tab */}
               {activeTab === "profile" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Profile Information
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         First Name
                       </label>
                       <input
@@ -715,12 +722,12 @@ export default function SettingsPage() {
                               : null,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Last Name
                       </label>
                       <input
@@ -731,12 +738,12 @@ export default function SettingsPage() {
                             prev ? { ...prev, lastName: e.target.value } : null,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Email
                       </label>
                       <input
@@ -747,12 +754,12 @@ export default function SettingsPage() {
                             prev ? { ...prev, email: e.target.value } : null,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Phone Number
                       </label>
                       <input
@@ -763,12 +770,12 @@ export default function SettingsPage() {
                             prev ? { ...prev, phone: e.target.value } : null,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Department
                       </label>
                       <input
@@ -781,24 +788,24 @@ export default function SettingsPage() {
                               : null,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Role
                       </label>
                       <input
                         type="text"
                         value={profile.role}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400"
                       />
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
                     <button
                       onClick={() =>
                         setProfile({
@@ -827,7 +834,7 @@ export default function SettingsPage() {
                           },
                         })
                       }
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Reset
                     </button>
@@ -845,13 +852,13 @@ export default function SettingsPage() {
               {/* Preferences Tab */}
               {activeTab === "preferences" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Application Preferences
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Theme
                       </label>
                       <select
@@ -863,7 +870,7 @@ export default function SettingsPage() {
                             e.target.value,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
@@ -872,7 +879,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Language
                       </label>
                       <select
@@ -884,7 +891,7 @@ export default function SettingsPage() {
                             e.target.value,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="en">English</option>
                         <option value="af">Afrikaans</option>
@@ -894,7 +901,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Timezone
                       </label>
                       <select
@@ -906,7 +913,7 @@ export default function SettingsPage() {
                             e.target.value,
                           )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="Africa/Johannesburg">
                           Africa/Johannesburg
@@ -920,7 +927,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
                     <button
                       onClick={handleProfileUpdate}
                       disabled={saving}
@@ -935,18 +942,18 @@ export default function SettingsPage() {
               {/* Security Tab */}
               {activeTab === "security" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Security Settings
                   </h2>
 
                   <div className="space-y-6">
-                    <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-medium text-gray-900">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             Password
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Last changed:{" "}
                             {new Date(
                               profile.security.lastPasswordChange,
@@ -962,13 +969,13 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-medium text-gray-900">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                             Two-Factor Authentication
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Add an extra layer of security to your account
                           </p>
                         </div>
@@ -996,8 +1003,8 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                         Recent Login Activity
                       </h3>
                       <div className="space-y-3">
@@ -1007,14 +1014,14 @@ export default function SettingsPage() {
                             className="flex items-center justify-between text-sm"
                           >
                             <div>
-                              <span className="text-gray-900">
+                              <span className="text-gray-900 dark:text-white">
                                 {new Date(login.date).toLocaleString()}
                               </span>
-                              <span className="text-gray-500 ml-2">
+                              <span className="text-gray-500 dark:text-gray-400 ml-2">
                                 • {login.device}
                               </span>
                             </div>
-                            <div className="text-gray-500">
+                            <div className="text-gray-500 dark:text-gray-400">
                               {login.ip} • {login.location}
                             </div>
                           </div>
@@ -1028,17 +1035,17 @@ export default function SettingsPage() {
               {/* Notifications Tab */}
               {activeTab === "notifications" && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Notification Preferences
                   </h2>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                           Email Notifications
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Receive notifications via email
                         </p>
                       </div>
@@ -1057,7 +1064,7 @@ export default function SettingsPage() {
                         }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                             profile.preferences.notifications.email
                               ? "translate-x-6"
                               : "translate-x-1"
@@ -1066,12 +1073,12 @@ export default function SettingsPage() {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                           Push Notifications
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Receive push notifications in browser
                         </p>
                       </div>
@@ -1090,7 +1097,7 @@ export default function SettingsPage() {
                         }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                             profile.preferences.notifications.push
                               ? "translate-x-6"
                               : "translate-x-1"
@@ -1099,12 +1106,12 @@ export default function SettingsPage() {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                           SMS Notifications
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Receive notifications via SMS
                         </p>
                       </div>
@@ -1123,7 +1130,7 @@ export default function SettingsPage() {
                         }`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                             profile.preferences.notifications.sms
                               ? "translate-x-6"
                               : "translate-x-1"
@@ -1133,7 +1140,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
                     <button
                       onClick={handleProfileUpdate}
                       disabled={saving}
@@ -1149,7 +1156,7 @@ export default function SettingsPage() {
               {activeTab === "lga" && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                       Lagos Zone Fee Settings
                     </h2>
                     <div className="flex flex-wrap gap-3">
@@ -1267,15 +1274,15 @@ export default function SettingsPage() {
                   </div>
 
                   {/* System Charge */}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                       System Charge Percentage
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Percentage added to the base fee for system charges
                     </p>
                     <div className="flex items-center gap-4">
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Percentage:
                       </label>
                       <input
@@ -1291,10 +1298,10 @@ export default function SettingsPage() {
                               parseFloat(e.target.value) || 0,
                           })
                         }
-                        className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-32 px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={settingsLoading}
                       />
-                      <span className="text-gray-600">%</span>
+                      <span className="text-gray-600 dark:text-gray-400">%</span>
                     </div>
                     <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-900">
@@ -1312,11 +1319,11 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   {/* Coordinate Shifts */}
-                  <div className="bg-gray-50 rounded-lg p-6 mt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6 mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                       Coordinate Visualization Shifts
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Set Easting and Northing adjustments for map visualization
                       per state.
                     </p>
@@ -1334,14 +1341,14 @@ export default function SettingsPage() {
                         return (
                           <div
                             key={state}
-                            className="p-4 border border-gray-200 rounded-lg bg-white"
+                            className="p-4 border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-surface"
                           >
                             <h4 className="font-semibold text-gray-800 mb-3">
                               {state}
                             </h4>
                             <div className="space-y-3">
                               <div>
-                                <label className="block text-xs text-gray-500 mb-1">
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                                   Easting Shift
                                 </label>
                                 <input
@@ -1360,11 +1367,11 @@ export default function SettingsPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded focus:ring-blue-500 focus:border-blue-500"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-500 mb-1">
+                                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                                   Northing Shift
                                 </label>
                                 <input
@@ -1383,7 +1390,7 @@ export default function SettingsPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded focus:ring-blue-500 focus:border-blue-500"
                                 />
                               </div>
                             </div>
@@ -1394,13 +1401,13 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Zone Fees Table */}
-                  <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           Zone Fee Rates by Area
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           Fixed fees based on area range and Lagos zone
                         </p>
                       </div>
@@ -1429,35 +1436,35 @@ export default function SettingsPage() {
 
                     <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-100 sticky top-0">
+                        <thead className="bg-gray-100 dark:bg-white/10 sticky top-0">
                           <tr>
-                            <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               S/N
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Area Range
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Zone A (₦)
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Zone B (₦)
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Zone C (₦)
                             </th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                               Zone D (₦)
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                           {settings.zoneFees.map((fee, index) => (
                             <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-2 py-3 text-center whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-2 py-3 text-center whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 {index + 1}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                 {fee.range}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
@@ -1473,7 +1480,7 @@ export default function SettingsPage() {
                                       parseFloat(e.target.value) || 0,
                                     )
                                   }
-                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                   disabled={settingsLoading}
                                 />
                               </td>
@@ -1490,7 +1497,7 @@ export default function SettingsPage() {
                                       parseFloat(e.target.value) || 0,
                                     )
                                   }
-                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                   disabled={settingsLoading}
                                 />
                               </td>
@@ -1507,7 +1514,7 @@ export default function SettingsPage() {
                                       parseFloat(e.target.value) || 0,
                                     )
                                   }
-                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                   disabled={settingsLoading}
                                 />
                               </td>
@@ -1524,7 +1531,7 @@ export default function SettingsPage() {
                                       parseFloat(e.target.value) || 0,
                                     )
                                   }
-                                  className="w-28 px-2 py-1 text-right border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  className="w-28 px-2 py-1 text-right border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                   disabled={settingsLoading}
                                 />
                               </td>
@@ -1554,20 +1561,20 @@ export default function SettingsPage() {
       {/* Settings History Modal */}
       {showSettingsHistory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Settings History
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     View and revert to previous settings configurations
                   </p>
                 </div>
                 <button
                   onClick={() => setShowSettingsHistory(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600"
                 >
                   <svg
                     className="w-6 h-6"
@@ -1602,20 +1609,20 @@ export default function SettingsPage() {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-gray-500">No settings history available</p>
+                  <p className="text-gray-500 dark:text-gray-400">No settings history available</p>
                 </div>
               ) : (
                 settingsHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                    className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           {new Date(item.updatedAt).toLocaleString()}
                         </p>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {item.updatedBy
                             ? `Updated by ${item.updatedBy.firstName} ${item.updatedBy.lastName}`
                             : "System update"}
@@ -1643,10 +1650,10 @@ export default function SettingsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="font-medium text-gray-700">
+                        <p className="font-medium text-gray-700 dark:text-gray-300">
                           System Charge: {item.settings.systemChargePercent}%
                         </p>
-                        <p className="font-medium text-gray-700 mt-2">
+                        <p className="font-medium text-gray-700 dark:text-gray-300 mt-2">
                           Zone Fees: {item.settings.zoneFees?.length || 0}{" "}
                           ranges
                         </p>
@@ -1657,10 +1664,10 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-6 border-t border-gray-200 dark:border-white/10 flex justify-end">
               <button
                 onClick={() => setShowSettingsHistory(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Close
               </button>
@@ -1672,46 +1679,46 @@ export default function SettingsPage() {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Change Password
               </h2>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Current Password
                   </label>
                   <input
                     type="password"
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     New Password
                   </label>
                   <input
                     type="password"
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Confirm New Password
                   </label>
                   <input
                     type="password"
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
               <div className="mt-6 flex justify-end space-x-4">
                 <button
                   onClick={() => setShowPasswordModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1731,18 +1738,18 @@ export default function SettingsPage() {
       {/* CSV Format Help Modal */}
       {showCSVFormatHelp && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-lg w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg max-w-lg w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 CSV Format Guide
               </h2>
             </div>
             <div className="p-6">
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Your CSV file must include the following headers
                 (case-insensitive):
               </p>
-              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700 mb-4">
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
                 <li>
                   <strong>Range</strong> (e.g., "0 - 1000")
                 </li>
@@ -1765,7 +1772,7 @@ export default function SettingsPage() {
                   <strong>Zone D</strong> (Fee for Zone D)
                 </li>
               </ul>
-              <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-4 overflow-x-auto">
+              <div className="bg-gray-50 dark:bg-white/5 p-3 rounded text-xs font-mono mb-4 overflow-x-auto">
                 Range,Start,End,Zone A,Zone B,Zone C,Zone D<br />
                 "0 - 1000",0,1000,5000,4000,3000,2000
               </div>
@@ -1785,12 +1792,12 @@ export default function SettingsPage() {
       {/* CSV Preview Modal */}
       {showCSVPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Preview CSV Data
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Review the data before applying. This will replace all current
                 zone fees.
               </p>
@@ -1813,53 +1820,53 @@ export default function SettingsPage() {
               {csvPreviewData.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-white/5">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Range
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Start
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           End
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Zone A
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Zone B
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Zone C
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Zone D
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                       {csvPreviewData.slice(0, 10).map((row, i) => (
                         <tr key={i}>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                             {row.range}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                             {row.start}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                             {row.end}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right">
                             ₦{row.lagosZoneA.toLocaleString()}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                             ₦{row.lagosZoneB.toLocaleString()}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                             ₦{row.lagosZoneC.toLocaleString()}
                           </td>
-                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-right">
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                             ₦{row.lagosZoneD.toLocaleString()}
                           </td>
                         </tr>
@@ -1867,7 +1874,7 @@ export default function SettingsPage() {
                     </tbody>
                   </table>
                   {csvPreviewData.length > 10 && (
-                    <p className="text-center text-sm text-gray-500 mt-2">
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
                       ...and {csvPreviewData.length - 10} more rows
                     </p>
                   )}
@@ -1877,7 +1884,7 @@ export default function SettingsPage() {
               <div className="flex justify-end space-x-4 mt-6">
                 <button
                   onClick={() => setShowCSVPreview(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1897,15 +1904,15 @@ export default function SettingsPage() {
       {/* Two-Factor Modal */}
       {showTwoFactorModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white dark:bg-surface rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-white/10">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {profile.security.twoFactorEnabled ? "Disable" : "Enable"}{" "}
                 Two-Factor Authentication
               </h2>
             </div>
             <div className="p-6">
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {profile.security.twoFactorEnabled
                   ? "Are you sure you want to disable two-factor authentication? This will make your account less secure."
                   : "Two-factor authentication adds an extra layer of security to your account by requiring a second form of verification."}
@@ -1913,7 +1920,7 @@ export default function SettingsPage() {
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={() => setShowTwoFactorModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>

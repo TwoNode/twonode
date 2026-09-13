@@ -11,81 +11,90 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
   ArrowUpRight,
   Layers,
-  Database,
-  Eye,
 } from "lucide-react";
-import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
+import { formatDistanceToNow } from "date-fns";
+import {
+  SURFBOARD_COLORS,
+  surfboardStatusBadgeStyle,
+} from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { surfboardApi } from "@/surfboard/apiClient";
+import type { StatCards } from "@/surfboard/services/analyticsService";
 
-const HERO_GRADIENT = `linear-gradient(135deg, ${SURFBOARD_COLORS.primary.dark} 0%, ${SURFBOARD_COLORS.primary.main} 55%, ${SURFBOARD_COLORS.secondary.dark} 130%)`;
+const HERO_GRADIENT = `linear-gradient(135deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 35%, ${SURFBOARD_COLORS.primary.main} 70%, ${SURFBOARD_COLORS.secondary.dark} 130%)`;
 const ACCENT_GRADIENT = `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 0%, ${SURFBOARD_COLORS.secondary.main} 100%)`;
 
 const STAT_TONES = ["brand", "info", "warning", "success"] as const;
 
-// Simple counter animation hook
-function useCountUp(end: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
+interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+}
 
-  useEffect(() => {
-    let startTime: number;
-    let animationFrame: number;
+interface ActivityItem {
+  id: string;
+  action: string;
+  entity: string;
+  createdAt: string | Date;
+  user?: { firstName: string; lastName: string } | null;
+}
 
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
+/** Buckets an audit-log action string into the same success/warning/error/info palette the old mock feed used. */
+function activityTone(
+  action: string,
+): "success" | "warning" | "error" | "info" {
+  if (/APPROVE|COMPLETE|VERIFY/i.test(action)) return "success";
+  if (/QUERY|DISAPPROVE|REVOKE|DEACTIVATE/i.test(action)) return "warning";
+  if (/DELETE|REJECT|FAIL/i.test(action)) return "error";
+  return "info";
+}
 
-      setCount(Math.floor(progress * end));
-
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [end, duration]);
-
-  return count;
+function activityIcon(tone: "success" | "warning" | "error" | "info") {
+  if (tone === "success") return CheckCircle2;
+  if (tone === "warning") return AlertTriangle;
+  if (tone === "error") return AlertTriangle;
+  return Activity;
 }
 
 export default function RestrictedDashboardHome() {
-  // Mock statistics - replace with real data from your API
-  const totalPlans = useCountUp(1247);
-  const totalUsers = useCountUp(342);
-  const pendingReviews = useCountUp(28);
-  const activePlans = useCountUp(892);
+  const [statCards, setStatCards] = useState<StatCards | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const [statsRes, usersRes, activityRes] = await Promise.all([
+        surfboardApi.analytics.stats(),
+        surfboardApi.admin.users.stats(),
+        surfboardApi.admin.auditLogs.list({ page: 1, pageSize: 5 }),
+      ]);
+      if (statsRes.success) setStatCards(statsRes.data);
+      if (usersRes.success) setUserStats(usersRes.data);
+      if (activityRes.success) setRecentActivity(activityRes.data?.data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const stats = [
     {
       title: "Total Plans",
-      value: totalPlans,
-      change: "+12.3%",
-      trend: "up",
-      icon: Database,
+      value: statCards?.totalPlansCount ?? 0,
+      icon: FileCheck,
     },
+    { title: "Active Users", value: userStats?.activeUsers ?? 0, icon: Users },
     {
-      title: "Active Users",
-      value: totalUsers,
-      change: "+8.1%",
-      trend: "up",
-      icon: Users,
-    },
-    {
-      title: "Pending Reviews",
-      value: pendingReviews,
-      change: "-3.2%",
-      trend: "down",
+      title: "Pending Batches",
+      value: statCards?.pendingBatchesCount ?? 0,
       icon: Clock,
     },
     {
-      title: "Active Plans",
-      value: activePlans,
-      change: "+15.7%",
-      trend: "up",
+      title: "Pending Certificates",
+      value: statCards?.pendingCertificatePlansCount ?? 0,
       icon: Activity,
     },
   ];
@@ -109,66 +118,6 @@ export default function RestrictedDashboardHome() {
       icon: FileCheck,
       href: "/surfboard-restricted/dashboard/surf-plans",
     },
-    // {
-    //   title: "Security & Permissions",
-    //   description: "Configure security settings and access policies",
-    //   icon: Shield,
-    //   href: "/surfboard-restricted/dashboard/secure-plans",
-    //   color: "from-rose-500 to-pink-500",
-    //   iconBg: "bg-rose-100",
-    //   iconColor: "text-rose-600",
-    // },
-    // {
-    //   title: "System Settings",
-    //   description: "Manage platform configuration and preferences",
-    //   icon: Settings,
-    //   href: "/surfboard-restricted/dashboard/settings",
-    //   color: "from-slate-500 to-gray-600",
-    //   iconBg: "bg-slate-100",
-    //   iconColor: "text-slate-600",
-    // },
-    // {
-    //   title: "SuperAdmin Panel",
-    //   description: "Access advanced system-wide controls",
-    //   icon: Zap,
-    //   href: "/surfboard-restricted/dashboard/superadmin",
-    //   color: "from-amber-500 to-orange-500",
-    //   iconBg: "bg-amber-100",
-    //   iconColor: "text-amber-600",
-    // },
-  ];
-
-  const recentActivity = [
-    {
-      type: "success" as const,
-      icon: CheckCircle2,
-      message: "Survey plan SP-2024-1243 approved by John Doe",
-      time: "2 minutes ago",
-    },
-    {
-      type: "warning" as const,
-      icon: AlertTriangle,
-      message: "Pending review: 5 new survey submissions",
-      time: "15 minutes ago",
-    },
-    {
-      type: "info" as const,
-      icon: Eye,
-      message: "New user registration: jane.smith@example.com",
-      time: "1 hour ago",
-    },
-    {
-      type: "error" as const,
-      icon: XCircle,
-      message: "Survey plan SP-2024-1189 flagged for review",
-      time: "2 hours ago",
-    },
-    {
-      type: "success" as const,
-      icon: CheckCircle2,
-      message: "System backup completed successfully",
-      time: "3 hours ago",
-    },
   ];
 
   return (
@@ -177,7 +126,11 @@ export default function RestrictedDashboardHome() {
         greeting="Admin control center"
         title="Admin Dashboard"
         description="Manage survey plans, users, and system settings with comprehensive oversight and analytics."
-        pills={[`${totalPlans.toLocaleString()} Plans`, `${totalUsers} Users`, `${pendingReviews} Pending`]}
+        pills={[
+          `${(statCards?.totalPlansCount ?? 0).toLocaleString()} Plans`,
+          `${userStats?.totalUsers ?? 0} Users`,
+          `${statCards?.pendingBatchesCount ?? 0} Pending`,
+        ]}
         gradient={HERO_GRADIENT}
         className="mb-8"
       />
@@ -193,11 +146,9 @@ export default function RestrictedDashboardHome() {
           >
             <StatCard
               label={stat.title}
-              value={stat.value.toLocaleString()}
+              value={loading ? "…" : stat.value.toLocaleString()}
               icon={stat.icon}
               tone={STAT_TONES[index % STAT_TONES.length]}
-              accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
-              trend={{ value: stat.change, direction: stat.trend as "up" | "down" }}
             />
           </motion.div>
         ))}
@@ -207,7 +158,9 @@ export default function RestrictedDashboardHome() {
         {/* Quick Actions */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Quick Actions
+            </h2>
             <Layers className="w-6 h-6 text-gray-400" />
           </div>
 
@@ -226,7 +179,9 @@ export default function RestrictedDashboardHome() {
                       <div className="flex items-start gap-4">
                         <div
                           className="p-3 rounded-xl group-hover:scale-110 transition-transform duration-300"
-                          style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
+                          style={{
+                            backgroundColor: SURFBOARD_COLORS.surface.main,
+                          }}
                         >
                           <Icon
                             className="w-6 h-6"
@@ -268,12 +223,18 @@ export default function RestrictedDashboardHome() {
 
           <div className="bg-white dark:bg-white/3 rounded-xl shadow-md dark:shadow-none border border-gray-100 dark:border-white/10 overflow-hidden">
             <div className="divide-y divide-gray-100 dark:divide-white/10">
+              {!loading && recentActivity.length === 0 && (
+                <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No recent activity.
+                </div>
+              )}
               <AnimatePresence>
                 {recentActivity.map((activity, index) => {
-                  const Icon = activity.icon;
+                  const tone = activityTone(activity.action);
+                  const Icon = activityIcon(tone);
                   return (
                     <motion.div
-                      key={index}
+                      key={activity.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -282,17 +243,22 @@ export default function RestrictedDashboardHome() {
                       <div className="flex gap-3">
                         <div
                           className="p-2 rounded-lg shrink-0"
-                          style={surfboardStatusBadgeStyle(activity.type)}
+                          style={surfboardStatusBadgeStyle(tone)}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 dark:text-gray-100 mb-1 leading-relaxed">
-                            {activity.message}
+                            {activity.action.replace(/_/g, " ")}
+                            {activity.user
+                              ? ` · ${activity.user.firstName} ${activity.user.lastName}`
+                              : ""}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {activity.time}
+                            {formatDistanceToNow(new Date(activity.createdAt), {
+                              addSuffix: true,
+                            })}
                           </p>
                         </div>
                       </div>
@@ -303,7 +269,7 @@ export default function RestrictedDashboardHome() {
             </div>
             <div className="p-4 bg-gray-50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10">
               <Link
-                href="/surfboard-restricted/dashboard/analytics"
+                href="/surfboard-restricted/dashboard/audit-logs"
                 className="text-sm font-medium text-[#0077B6] hover:text-[#023E8A] flex items-center gap-1 group"
               >
                 View all activity

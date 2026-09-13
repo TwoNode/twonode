@@ -2,6 +2,34 @@ import prisma from "@/lib/prisma";
 import { SurfboardRole } from "@/prisma/generated";
 import { ForbiddenError, NotFoundError, ConflictError } from "@/lib/api/errors";
 import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)/(surfboard)/utils/auditLogger";
+import { paginatedResult } from "@/lib/api/pagination";
+
+/** Matches user-management/page.tsx's admin-vs-MDA tab split. */
+const ADMIN_TAB_ROLES: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
+const MDA_TAB_ROLES: SurfboardRole[] = [
+  "RECORDS_I",
+  "INTAKE",
+  "RECORDS_II",
+  "ACCOUNTS",
+  "CHARTING",
+  "SURCON",
+  "ARCHIVE",
+  "MDA_SUPERADMIN",
+];
+
+export interface GetAllUsersParams {
+  page: number;
+  pageSize: number;
+  skip: number;
+  take: number;
+  search?: string;
+  roleGroup?: "admins" | "mda";
+  role?: string;
+  status?: "active" | "inactive";
+  subscriptionStatus?: "expired" | "expiring_soon";
+}
+
+const EXPIRING_SOON_WINDOW_DAYS = 7;
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/adminActions.ts. Broad
@@ -13,16 +41,47 @@ import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)
  * confirmed dead (zero real callers) and not migrated.
  */
 
-export async function getAllUsers(callerRole: SurfboardRole) {
-  const users = await prisma.surfboardUser.findMany({
-    include: {
-      subscription: { take: 1, orderBy: { createdAt: "desc" } },
-      _count: { select: { plans: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsersParams) {
+  const where: NonNullable<Parameters<typeof prisma.surfboardUser.findMany>[0]>["where"] = {
+    role: { in: params.roleGroup === "mda" ? MDA_TAB_ROLES : ADMIN_TAB_ROLES },
+  };
+  if (params.role && params.role !== "all") {
+    where.role = params.role as SurfboardRole;
+  }
+  if (params.status === "active") where.isActive = true;
+  if (params.status === "inactive") where.isActive = false;
+  if (params.subscriptionStatus === "expired") {
+    where.subscription = { some: { currentEnd: { lt: new Date() } } };
+  }
+  if (params.subscriptionStatus === "expiring_soon") {
+    const now = new Date();
+    const soon = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    where.subscription = { some: { currentEnd: { gte: now, lte: soon } } };
+  }
+  if (params.search) {
+    where.OR = [
+      { firstName: { contains: params.search, mode: "insensitive" } },
+      { lastName: { contains: params.search, mode: "insensitive" } },
+      { email: { contains: params.search, mode: "insensitive" } },
+      { companyName: { contains: params.search, mode: "insensitive" } },
+    ];
+  }
 
-  return users.map((user) => ({
+  const [total, users] = await Promise.all([
+    prisma.surfboardUser.count({ where }),
+    prisma.surfboardUser.findMany({
+      where,
+      include: {
+        subscription: { take: 1, orderBy: { createdAt: "desc" } },
+        _count: { select: { plans: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: params.skip,
+      take: params.take,
+    }),
+  ]);
+
+  const data = users.map((user) => ({
     id: user.id,
     kindeId: user.kindeId,
     email: user.email,
@@ -39,15 +98,30 @@ export async function getAllUsers(callerRole: SurfboardRole) {
     // ADMINs can only see subscriptions for USER role accounts
     subscription: callerRole === "ADMIN" && user.role !== "USER" ? null : user.subscription[0] || null,
   }));
+
+  return paginatedResult(data, total, params.page, params.pageSize);
 }
 
 export async function getUserStats() {
-  const [totalUsers, activeUsers, admins, superAdmins, usersWithSubscriptions] = await Promise.all([
+  const now = new Date();
+  const expiringSoonCutoff = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers,
+    activeUsers,
+    admins,
+    superAdmins,
+    usersWithSubscriptions,
+    expiredSubscriptions,
+    expiringSoonSubscriptions,
+  ] = await Promise.all([
     prisma.surfboardUser.count(),
     prisma.surfboardUser.count({ where: { isActive: true } }),
     prisma.surfboardUser.count({ where: { role: "ADMIN" } }),
     prisma.surfboardUser.count({ where: { role: "SUPERADMIN" } }),
     prisma.subscription.count({ where: { status: "active" } }),
+    prisma.subscription.count({ where: { currentEnd: { lt: now } } }),
+    prisma.subscription.count({ where: { currentEnd: { gte: now, lte: expiringSoonCutoff } } }),
   ]);
 
   return {
@@ -58,6 +132,8 @@ export async function getUserStats() {
     superAdmins,
     regularUsers: totalUsers - admins - superAdmins,
     usersWithActiveSubscriptions: usersWithSubscriptions,
+    expiredSubscriptions,
+    expiringSoonSubscriptions,
   };
 }
 

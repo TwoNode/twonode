@@ -349,8 +349,8 @@ export function AmendPlanModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={showPayment ? "w-[95vw] lg:max-w-[1400px] h-[95vh] lg:h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50" : "w-[95vw] lg:max-w-7xl max-h-[95vh] lg:max-h-[90vh] overflow-y-auto"}>
-        <DialogHeader className={showPayment ? "p-4 lg:p-6 pb-2 border-b bg-white" : ""}>
+      <DialogContent className={showPayment ? "w-[95vw] lg:max-w-[1400px] h-[95vh] lg:h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50 dark:bg-white/5" : "w-[95vw] lg:max-w-7xl max-h-[95vh] lg:max-h-[90vh] overflow-y-auto"}>
+        <DialogHeader className={showPayment ? "p-4 lg:p-6 pb-2 border-b bg-white dark:bg-surface" : ""}>
           {!showPayment ? (
             <>
               <DialogTitle className="flex items-center gap-2">
@@ -378,10 +378,10 @@ export function AmendPlanModal({
                 </DialogDescription>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">Total Amount</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">Total Amount</p>
                 <div className="flex items-center gap-2 justify-end">
                   <p className="text-2xl font-bold text-green-700">₦{feeAmount.toLocaleString()}</p>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -429,7 +429,7 @@ export function AmendPlanModal({
                       <Plus className="w-4 h-4 mr-1" />
                       Add Row
                     </Button>
-                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded">
                       {pillars.length} pillars
                     </span>
                   </div>
@@ -465,13 +465,13 @@ export function AmendPlanModal({
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-blue-50">
+                      <tbody className="bg-white dark:bg-surface divide-y divide-blue-50">
                         {pillars.map((pillar, index) => (
                           <tr
                             key={index}
                             className="hover:bg-blue-50/50 transition-colors group"
                           >
-                            <td className="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-500">
+                            <td className="px-3 py-1.5 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400">
                               {index + 1}
                             </td>
                             <td className="px-3 py-1.5 whitespace-nowrap">
@@ -484,7 +484,7 @@ export function AmendPlanModal({
                                     e.target.value
                                   )
                                 }
-                                className="h-7 w-auto min-w-[60px] text-sm font-medium border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                                className="h-7 w-auto min-w-[60px] text-sm font-medium border-gray-200 dark:border-white/10 focus:border-blue-400 focus:ring-blue-400"
                                 placeholder="P1"
                               />
                             </td>
@@ -500,7 +500,7 @@ export function AmendPlanModal({
                                     e.target.value
                                   )
                                 }
-                                className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                                className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 dark:border-white/10 focus:border-blue-400 focus:ring-blue-400"
                                 placeholder="0.000"
                               />
                             </td>
@@ -516,7 +516,7 @@ export function AmendPlanModal({
                                     e.target.value
                                   )
                                 }
-                                className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                                className="h-7 w-auto min-w-[70px] text-sm font-mono border-gray-200 dark:border-white/10 focus:border-blue-400 focus:ring-blue-400"
                                 placeholder="0.000"
                               />
                             </td>
@@ -562,7 +562,7 @@ export function AmendPlanModal({
                           <tr>
                             <td
                               colSpan={5}
-                              className="px-4 py-6 text-center text-gray-500"
+                              className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
                             >
                               <div className="flex flex-col items-center gap-2">
                                 <FileSpreadsheet className="w-6 h-6 text-gray-300" />
@@ -596,7 +596,7 @@ export function AmendPlanModal({
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       LGA
                     </label>
                     <Input
@@ -607,7 +607,7 @@ export function AmendPlanModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       LCDA
                     </label>
                     <Input
@@ -618,7 +618,7 @@ export function AmendPlanModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Ward
                     </label>
                     <Input
@@ -629,7 +629,7 @@ export function AmendPlanModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       State
                     </label>
                     <Input
@@ -662,7 +662,7 @@ export function AmendPlanModal({
                   </div>
                 )}
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Upload a new record copy (PDF or image)
                   </p>
                   <div className="flex items-center gap-3">
@@ -672,7 +672,7 @@ export function AmendPlanModal({
                       accept=".pdf,image/*"
                       onChange={handleFileSelect}
                       disabled={uploading}
-                      className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                      className="flex-1 text-sm text-gray-600 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
                     />
                     {selectedFile && (
                       <span className="text-sm text-green-600 flex items-center gap-1">
@@ -699,9 +699,9 @@ export function AmendPlanModal({
 
             {/* Right Column - Map View */}
             <div className="hidden lg:block sticky top-0">
-              <div className="h-[calc(90vh-140px)] min-h-[500px] rounded-xl overflow-hidden border-2 border-slate-200 shadow-inner bg-slate-50 relative group">
-                <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                  <p className="text-xs font-semibold text-slate-700 flex items-center gap-2">
+              <div className="h-[calc(90vh-140px)] min-h-[500px] rounded-xl overflow-hidden border-2 border-slate-200 dark:border-white/10 shadow-inner bg-slate-50 dark:bg-surface relative group">
+                <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                     Pillar Preview
                   </p>
@@ -721,7 +721,7 @@ export function AmendPlanModal({
         ) : (
           <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden border-y lg:border rounded-none lg:rounded-lg mx-0 lg:-mx-4 lg:my-2">
             {/* Left Panel: Payer Info & Receipt Links */}
-            <div className="w-full lg:w-1/3 p-4 lg:p-6 lg:overflow-y-auto lg:border-r bg-white space-y-6">
+            <div className="w-full lg:w-1/3 p-4 lg:p-6 lg:overflow-y-auto lg:border-r bg-white dark:bg-surface space-y-6">
               {/* Payer ID Match Warning */}
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -731,47 +731,47 @@ export function AmendPlanModal({
               </div>
 
               {/* Payer Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <User className="w-4 h-4" /> Payer Details
                 </h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <label className="text-xs text-gray-500">Payer ID</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Payer ID</label>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{payer?.payerID || "Not Set"}</p>
                       {payer?.payerID && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.payerID.toString(), "Payer ID")} title="Copy Payer ID">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(payer.payerID.toString(), "Payer ID")} title="Copy Payer ID">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500">Payer Type</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Payer Type</label>
                     <p className="font-medium">{payer?.payerIDType || "Not Set"}</p>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-gray-500">Name</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Name</label>
                     <p className="font-medium">{payer ? `${payer.firstName} ${payer.lastName}` : "Loading..."}</p>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-gray-500">Email</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Email</label>
                     <div className="flex items-center gap-2">
                       <p className="font-medium truncate">{payer?.email || "N/A"}</p>
                       {payer?.email && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.email, "Email")} title="Copy Email">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(payer.email, "Email")} title="Copy Email">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs text-gray-500">Phone</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400">Phone</label>
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{payer?.phoneNumber || "N/A"}</p>
                       {payer?.phoneNumber && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(payer.phoneNumber, "Phone")} title="Copy Phone">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(payer.phoneNumber, "Phone")} title="Copy Phone">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
@@ -781,40 +781,40 @@ export function AmendPlanModal({
               </div>
 
               {/* Payment Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3 shadow-xs">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3 shadow-xs">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <Building className="w-4 h-4 text-blue-500" /> Payment Details
                 </h3>
                 <div className="space-y-2 text-xs">
                   <div>
-                    <span className="text-gray-500 block">Agency Name</span>
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                      <span className="font-medium text-gray-900">
+                    <span className="text-gray-500 dark:text-gray-400 block">Agency Name</span>
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
+                      <span className="font-medium text-gray-900 dark:text-white">
                         4830000 -- 61004 -- Office of Surveyor General
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Revenue Name</span>
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                      <span className="font-medium text-gray-900">
+                    <span className="text-gray-500 dark:text-gray-400 block">Revenue Name</span>
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
+                      <span className="font-medium text-gray-900 dark:text-white">
                         4020002 -- 32202 -- Lands Registry Transactions
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Period</span>
+                    <span className="text-gray-500 dark:text-gray-400 block">Period</span>
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-900 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" /> {today}
+                      <span className="font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" /> {today}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
@@ -824,7 +824,7 @@ export function AmendPlanModal({
 
               {/* Receipt Links Form */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-sm text-slate-700">Verify Payment Links</h3>
+                <h3 className="font-semibold text-sm text-slate-700 dark:text-gray-300">Verify Payment Links</h3>
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-sm flex justify-between">
@@ -834,7 +834,7 @@ export function AmendPlanModal({
                       placeholder="https://printreceipt.ebs-rcm.com/..."
                       value={lasgReceiptUrl}
                       onChange={(e) => setLasgReceiptUrl(e.target.value)}
-                      className="bg-gray-50 border-gray-200 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
+                      className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
                     />
                   </div>
 
@@ -846,7 +846,7 @@ export function AmendPlanModal({
                       placeholder="https://login.remita.net/remita/rrr/..."
                       value={remitaReceiptUrl}
                       onChange={(e) => setRemitaReceiptUrl(e.target.value)}
-                      className="bg-gray-50 border-gray-200 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
+                      className="bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 focus:bg-white text-sm focus:border-blue-400 focus:ring-blue-400 transition-colors"
                     />
                   </div>
                 </div>
@@ -854,7 +854,7 @@ export function AmendPlanModal({
             </div>
 
             {/* Right Panel: Embedded Remita Portal */}
-            <div className="w-full lg:w-2/3 bg-gray-100 flex flex-col relative min-h-[400px] lg:min-h-0 border-t lg:border-t-0">
+            <div className="w-full lg:w-2/3 bg-gray-100 dark:bg-white/10 flex flex-col relative min-h-[400px] lg:min-h-0 border-t lg:border-t-0">
               <div className="bg-yellow-50 text-yellow-800 text-xs px-4 py-2 border-b flex items-center justify-between shadow-sm z-10">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5" />
@@ -865,18 +865,18 @@ export function AmendPlanModal({
                     </Button>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setIframeKey((k) => k + 1)} className="h-7 text-xs bg-white">
+                <Button variant="outline" size="sm" onClick={() => setIframeKey((k) => k + 1)} className="h-7 text-xs bg-white dark:bg-surface">
                   Refresh Portal
                 </Button>
               </div>
-              <div className="flex-1 relative overflow-hidden bg-white shadow-inner">
+              <div className="flex-1 relative overflow-hidden bg-white dark:bg-surface shadow-inner">
                 <div className="absolute inset-0 flex items-center justify-center -z-10">
                   <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
                 </div>
                 <iframe
                   key={iframeKey}
                   src="https://login.remita.net/remita/lirs/internal/pay.reg"
-                  className="w-full h-full border-0 absolute inset-0 z-0 bg-white"
+                  className="w-full h-full border-0 absolute inset-0 z-0 bg-white dark:bg-surface"
                   title="Remita Payment Portal"
                 />
               </div>

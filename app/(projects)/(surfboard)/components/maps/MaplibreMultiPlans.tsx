@@ -15,7 +15,8 @@ import maplibregl, {
 } from "maplibre-gl";
 import type { Feature, FeatureCollection, Polygon, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Plan, PillarData } from "../../types/surfboardTypes";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
 import proj4 from "proj4";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { applyVisualizationShift } from "../../utils/surfboardUtils";
@@ -48,22 +49,36 @@ const generatePlanSignature = (pillars: PillarData[]): string => {
   );
 };
 
-// Helper to generate consistent colors for plans
-const colorCache = new Map<string, string>();
-const generateColor = (id: string): string => {
-  if (colorCache.has(id)) {
-    return colorCache.get(id)!;
-  }
+// Symbology is by plan type, not by individual plan — every plan of the
+// same type reads as the same color on the map, so the palette below is a
+// fixed legend rather than a per-id hash. "CSV" covers locally-uploaded
+// plans (see TempPlan below); an unrecognized type falls back to a
+// deterministic hash so it's still stable across renders instead of random.
+const PLAN_TYPE_COLORS: Record<string, string> = {
+  [PLAN_TYPES.APPROVED_LAYOUT]: "#2563eb",
+  [PLAN_TYPES.DEED]: "#16a34a",
+  [PLAN_TYPES.DEED_CHANGE_OF_TITLE]: "#d97706",
+  [PLAN_TYPES.DEED_CHANGE_OF_TITLE_LAYOUT]: "#ca8a04",
+  [PLAN_TYPES.PROVISIONAL]: "#7c3aed",
+  [PLAN_TYPES.PROVISIONAL_LAYOUT]: "#9333ea",
+  [PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION]: "#dc2626",
+  CSV: "#0891b2",
+};
+const fallbackColorCache = new Map<string, string>();
+const getColorForPlanType = (planType: string | undefined | null): string => {
+  if (!planType) return "#6b7280";
+  if (PLAN_TYPE_COLORS[planType]) return PLAN_TYPE_COLORS[planType];
+  if (fallbackColorCache.has(planType)) return fallbackColorCache.get(planType)!;
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < planType.length; i++) {
+    hash = planType.charCodeAt(i) + ((hash << 5) - hash);
   }
   let color = "#";
   for (let i = 0; i < 3; i++) {
     const value = (hash >> (i * 8)) & 0xff;
     color += ("00" + value.toString(16)).substr(-2);
   }
-  colorCache.set(id, color);
+  fallbackColorCache.set(planType, color);
   return color;
 };
 
@@ -102,6 +117,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
+  const [displayMode, setDisplayMode] = useState<"shape" | "dots" | "dots-lines">("shape");
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  const [displayPanelCollapsed, setDisplayPanelCollapsed] = useState(false);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
@@ -399,6 +418,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         },
       });
       map.current.addLayer({
+        id: "plans-outline",
+        type: "line",
+        source: "plansLayer",
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 2,
+        },
+      });
+      map.current.addLayer({
         id: "plans-labels",
         type: "symbol",
         source: "plansLayer",
@@ -439,7 +467,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         if (properties.easting) {
           popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base text-gray-800">Pillar: ${
             properties.pillarNumber
-          }</h3><ul class="text-xs text-gray-600 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
+          }</h3><ul class="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
             properties.pointIndex ?? "N/A"
           }</li><li><strong>Easting:</strong> ${
             properties.rawEasting !== undefined
@@ -455,7 +483,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 : "N/A"
           }</li></ul></div>`;
         } else {
-          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600">${properties.surveyTitle}</p><p class="text-xs text-gray-500 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">${properties.status}</span></div>`;
+          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span></div>`;
         }
         popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
       };
@@ -495,7 +523,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       const shifts = shiftsResult.success ? shiftsResult.data : {};
 
       filteredPlans.forEach((plan) => {
-        const color = generateColor(plan.id);
+        const color = getColorForPlanType(plan.planType as string);
         const stateName = plan.state;
 
         let hasPillars = false;
@@ -594,6 +622,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       ) as FilterSpecification;
 
       map.current?.setFilter("plans-fill", filter);
+      map.current?.setFilter("plans-outline", filter);
       map.current?.setFilter("plans-labels", filter);
       map.current?.setFilter("pillars-symbol", pillarFilter);
 
@@ -631,6 +660,17 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       }
     });
   }, [activeBasemap, isReady]);
+
+  // Toggle between the filled plan polygons and the raw pillar dots — the
+  // two layers already render from separate sources, so this is just a
+  // visibility swap rather than a re-render of the underlying data.
+  useEffect(() => {
+    if (!map.current || !isReady) return;
+    if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol") || !map.current.getLayer("plans-outline")) return;
+    map.current.setLayoutProperty("plans-fill", "visibility", displayMode === "shape" ? "visible" : "none");
+    map.current.setLayoutProperty("plans-outline", "visibility", displayMode === "dots-lines" ? "visible" : "none");
+    map.current.setLayoutProperty("pillars-symbol", "visibility", displayMode === "dots" || displayMode === "dots-lines" ? "visible" : "none");
+  }, [displayMode, isReady]);
 
   useEffect(() => {
     if (!locQuery.trim()) {
@@ -685,15 +725,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
       {notification && (
         <div
-          className={`absolute z-60 top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-xl text-sm font-semibold
+          className={`absolute z-60 top-24 left-1/2 -translate-x-1/2 p-3 rounded-lg shadow-md text-sm font-semibold
             ${
               notification.type === "info"
-                ? "bg-blue-100 border border-blue-400 text-blue-800"
+                ? "bg-blue-100 dark:bg-blue-500/15 border border-blue-400 dark:border-blue-500/30 text-blue-800 dark:text-blue-300"
                 : ""
             }
             ${
               notification.type === "error"
-                ? "bg-red-100 border border-red-400 text-red-800"
+                ? "bg-red-100 dark:bg-red-500/15 border border-red-400 dark:border-red-500/30 text-red-800 dark:text-red-300"
                 : ""
             }`}
         >
@@ -702,10 +742,26 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       )}
 
       {/* Controls Panel */}
-      <div className="absolute z-50 top-2 left-2 max-w-4xl mx-auto bg-white/95 rounded-xl shadow-lg p-3 space-y-2">
+      <div className="absolute z-50 top-2 left-2 max-w-[calc(100vw-1rem)] bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 space-y-2">
+        <button
+          type="button"
+          onClick={() => setControlsCollapsed((c) => !c)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            Search &amp; Filters
+          </span>
+          {controlsCollapsed ? (
+            <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          ) : (
+            <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          )}
+        </button>
+        {!controlsCollapsed && (
+        <>
         <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
           <div className="relative">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Location
             </label>
             <div className="relative">
@@ -714,7 +770,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 value={locQuery}
                 onChange={(e) => setLocQuery(e.target.value)}
                 placeholder="Search location..."
-                className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
               />
               {locLoading && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -723,11 +779,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               )}
             </div>
             {locResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
                 {locResults.map((r, i) => (
                   <button
                     key={`${r.lon}-${i}`}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                    className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
                     onClick={() => {
                       flyToLoc(r.lat, r.lon);
                       setLocResults([]);
@@ -741,7 +797,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Search Plans
             </label>
             <input
@@ -749,7 +805,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Plan number, title, facilitator..."
-              className="w-full px-3 py-1.5 text-sm border rounded-lg focus:ring-1 focus:ring-blue-400"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
             />
           </div>
 
@@ -765,21 +821,21 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             />{" "}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 text-green-700 border border-green-500 hover:bg-green-100 transition-colors whitespace-nowrap"
+              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
             >
               Upload CSV
             </button>
             <button
               onClick={clearAll}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 text-gray-700 border border-red-400 hover:bg-red-200 transition-colors"
+              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
             >
               Clear Filters
             </button>
           </div>
         </div>
         <div className="flex flex-wrap gap-4">
-          <div className="shadow-md p-2 rounded-md">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Status
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -794,7 +850,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     statusFilter.includes(s)
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
                 >
                   {s}
@@ -802,8 +858,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
               ))}
             </div>
           </div>
-          <div className="shadow-md p-2 rounded-md">
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Plan Type
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -818,7 +874,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                   className={`px-2 py-0.5 rounded-full text-xs border ${
                     typeFilter.includes(t)
                       ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
                   }`}
                 >
                   {t}
@@ -827,16 +883,70 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Basemap and Plan Visibility */}
-      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 rounded-xl shadow-lg p-3">
-        <div className="text-sm font-semibold mb-1">Basemap</div>
+      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 max-h-[70vh] overflow-y-auto">
+        <button
+          type="button"
+          onClick={() => setDisplayPanelCollapsed((c) => !c)}
+          className="flex items-center justify-between w-full text-left mb-1"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            Plan Display
+          </span>
+          {displayPanelCollapsed ? (
+            <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          ) : (
+            <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          )}
+        </button>
+        {!displayPanelCollapsed && (
+        <>
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
+          <button
+            type="button"
+            onClick={() => setDisplayMode("shape")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "shape"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Shape
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode("dots")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "dots"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Dots
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode("dots-lines")}
+            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              displayMode === "dots-lines"
+                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            Dots + Lines
+          </button>
+        </div>
+        <hr className="my-2 border-gray-200 dark:border-white/10" />
+        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
         {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
           (k) => (
             <label
               key={k}
-              className="flex items-center gap-2 cursor-pointer text-sm"
+              className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
             >
               <input
                 type="radio"
@@ -849,8 +959,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </label>
           ),
         )}
-        <hr className="my-2" />
-        <div className="text-sm font-semibold mb-1">
+        <hr className="my-2 border-gray-200 dark:border-white/10" />
+        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
           Database Plans ({visiblePlanIds.length})
         </div>
         <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
@@ -859,7 +969,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             .map((p) => (
               <label
                 key={p.id}
-                className="flex items-center gap-2 cursor-pointer text-sm"
+                className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
               >
                 <input
                   type="checkbox"
@@ -874,7 +984,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 />{" "}
                 <span
                   className="inline-block w-3 h-3 rounded-sm"
-                  style={{ background: generateColor(p.id) }}
+                  style={{ background: getColorForPlanType(p.planType as string) }}
                 />
                 <button
                   className="hover:underline truncate"
@@ -888,21 +998,21 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         </div>
         {tempPlans.length > 0 && (
           <>
-            <hr className="my-2" />
+            <hr className="my-2 border-gray-200 dark:border-white/10" />
             <div className="flex justify-between items-center">
-              <div className="text-sm font-semibold">
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
                 Uploaded Layers ({visibleTempPlanIds.length})
               </div>
               <button
                 onClick={clearTempPlans}
-                className="text-xs text-red-500 hover:underline"
+                className="text-xs text-red-500 dark:text-red-400 hover:underline"
               >
                 Clear All
               </button>
             </div>
             <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
               {tempPlans.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 text-sm">
+                <div key={p.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <label className="flex items-center gap-2 cursor-pointer grow truncate">
                     <input
                       type="checkbox"
@@ -917,7 +1027,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                     />{" "}
                     <span
                       className="inline-block w-3 h-3 rounded-sm shrink-0"
-                      style={{ background: generateColor(p.id) }}
+                      style={{ background: getColorForPlanType(p.planType as string) }}
                     />
                     <button
                       className="hover:underline truncate text-left"
@@ -939,19 +1049,49 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             </div>
           </>
         )}
+        </>
+        )}
       </div>
 
       {/* Summary Strip */}
       {filteredPlans.length > 0 && (
-        <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 rounded-xl shadow-lg p-3">
-          <div className="text-sm font-semibold mb-2">
-            Filtered Plans ({filteredPlans.length})
+        <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+          <button
+            type="button"
+            onClick={() => setSummaryCollapsed((c) => !c)}
+            className="flex items-center justify-between w-full text-left mb-2"
+          >
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              Filtered Plans ({filteredPlans.length})
+            </span>
+            {summaryCollapsed ? (
+              <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+          {!summaryCollapsed && (
+          <>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-gray-200 dark:border-white/10">
+            {Object.entries(PLAN_TYPE_COLORS)
+              .filter(([type]) => type !== "CSV")
+              .map(([type, color]) => (
+                <div key={type} className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                    style={{ background: color }}
+                  />
+                  <span className="text-[11px] text-gray-600 dark:text-gray-400">
+                    {type}
+                  </span>
+                </div>
+              ))}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
             {filteredPlans.map((p) => (
               <button
                 key={p.id}
-                className="p-2 border rounded-lg text-left hover:bg-gray-50 overflow-hidden"
+                className="p-2 border border-gray-200 dark:border-white/10 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-white/5 overflow-hidden"
                 onClick={() => {
                   const allVisible = [...visiblePlanIds, ...visibleTempPlanIds];
                   if (!allVisible.includes(p.id)) {
@@ -967,16 +1107,18 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 <div className="flex items-center gap-2">
                   <span
                     className="inline-block w-3 h-3 rounded-sm"
-                    style={{ background: generateColor(p.id) }}
+                    style={{ background: getColorForPlanType(p.planType as string) }}
                   />
-                  <span className="font-medium text-sm">{p.planNumber}</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{p.planNumber}</span>
                 </div>
-                <div className="text-xs text-gray-600 truncate">
+                <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                   {p.planType as string} · {p.status}
                 </div>
               </button>
             ))}
           </div>
+          </>
+          )}
         </div>
       )}
     </div>

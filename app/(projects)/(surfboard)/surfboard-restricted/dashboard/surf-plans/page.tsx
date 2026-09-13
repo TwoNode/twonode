@@ -11,7 +11,6 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  XCircle,
   Clock,
   MapPin,
   FileText,
@@ -39,6 +38,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { useConfirm } from "@/hooks/useConfirm";
+import { PageLoader } from "@/components/ui/spinner";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { useViewMode } from "@/hooks/useViewMode";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 interface SurveyPlan {
   id: string;
@@ -46,7 +51,7 @@ interface SurveyPlan {
   surveyTitle: string;
   facility: string | null;
   location: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW" | "LODGED" | "QUERIED";
+  status: "PENDING" | "UNDER_REVIEW" | "LODGED" | "QUERIED";
   createdAt: string;
   updatedAt: string;
   owner: {
@@ -59,16 +64,64 @@ interface SurveyPlan {
   personCountVerified?: boolean;
 }
 
+interface PlanStats {
+  total: number;
+  pending: number;
+  underReview: number;
+  lodged: number;
+  queried: number;
+}
+
+interface PlanFilters {
+  status: string;
+  tab: "all" | "person-count" | "queries";
+}
+
 export default function SurfPlansPage() {
-  const [plans, setPlans] = useState<SurveyPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const { confirm, ConfirmDialog } = useConfirm();
   const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "all" | "person-count" | "queries"
-  >("all");
+  const [viewMode, setViewMode] = useViewMode("surf-plans", "list");
+  const [stats, setStats] = useState<PlanStats | null>(null);
+
+  const {
+    items: plans,
+    total,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<SurveyPlan, PlanFilters>(
+    async ({ page, pageSize, search, filters }) =>
+      surfboardApi.admin.plans.list({
+        page,
+        pageSize,
+        search: search || undefined,
+        status: filters.status,
+        tab: filters.tab,
+      }),
+    { initialFilters: { status: "ALL", tab: "all" } }
+  );
+
+  const activeTab = filters.tab;
+  const statusFilter = filters.status;
+  const setActiveTab = (tab: PlanFilters["tab"]) => setFilters((f) => ({ ...f, tab }));
+  const setStatusFilter = (status: string) => setFilters((f) => ({ ...f, status }));
+
+  const loadStats = async () => {
+    const res = await surfboardApi.admin.plans.stats();
+    if (res.success && res.data) setStats(res.data);
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   // Edit Modal State
   const [editingPlan, setEditingPlan] = useState<SurveyPlan | null>(null);
@@ -78,92 +131,9 @@ export default function SurfPlansPage() {
   // Action State
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
-  useEffect(() => {
-    const fetchPlans = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockPlans: SurveyPlan[] = [
-        {
-          id: "1",
-          planNumber: "SP-2024-001",
-          surveyTitle: "Commercial Development Site A",
-          facility: "Cape Town CBD",
-          location: "Cape Town, Western Cape",
-          status: "APPROVED",
-          createdAt: "2024-01-15T10:00:00Z",
-          updatedAt: "2024-01-16T14:30:00Z",
-          owner: { name: "John Doe", email: "john@example.com" },
-          pillarsCount: 24,
-          area: 5420,
-        },
-        {
-          id: "2",
-          planNumber: "SP-2024-002",
-          surveyTitle: "Residential Plot Survey",
-          facility: null,
-          location: "Durban, KwaZulu-Natal",
-          status: "PENDING",
-          createdAt: "2024-01-14T09:00:00Z",
-          updatedAt: "2024-01-14T09:00:00Z",
-          owner: { name: "Jane Smith", email: "jane@example.com" },
-          pillarsCount: 18,
-          area: 3200,
-        },
-        {
-          id: "3",
-          planNumber: "SP-2024-003",
-          surveyTitle: "Industrial Park Boundary",
-          facility: "Rosslyn Industrial",
-          location: "Pretoria, Gauteng",
-          status: "UNDER_REVIEW",
-          createdAt: "2024-01-13T11:00:00Z",
-          updatedAt: "2024-01-15T16:00:00Z",
-          owner: { name: "Mike Wilson", email: "mike@example.com" },
-          pillarsCount: 32,
-          area: 12800,
-        },
-        {
-          id: "4",
-          planNumber: "SP-2024-004",
-          surveyTitle: "Agricultural Land Division",
-          facility: null,
-          location: "Stellenbosch, Western Cape",
-          status: "REJECTED",
-          createdAt: "2024-01-12T08:00:00Z",
-          updatedAt: "2024-01-13T10:00:00Z",
-          owner: { name: "Sarah Johnson", email: "sarah@example.com" },
-          pillarsCount: 12,
-          area: 8500,
-        },
-        {
-          id: "5",
-          planNumber: "SP-2024-005",
-          surveyTitle: "Coastal Property Survey",
-          facility: "Camps Bay",
-          location: "Cape Town, Western Cape",
-          status: "LODGED",
-          createdAt: "2024-01-11T13:00:00Z",
-          updatedAt: "2024-01-17T09:00:00Z",
-          owner: { name: "David Brown", email: "david@example.com" },
-          pillarsCount: 28,
-          area: 6300,
-        },
-      ];
-
-      setPlans(mockPlans);
-      setLoading(false);
-    };
-
-    fetchPlans();
-  }, []);
-
   const handleRefresh = async () => {
-    setRefreshing(true);
-    // In real app: re-fetch data
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
+    await reload();
+    await loadStats();
   };
 
   const handleEditClick = (plan: SurveyPlan) => {
@@ -175,18 +145,20 @@ export default function SurfPlansPage() {
     if (!editingPlan) return;
     setIsSaving(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Update local state
-    setPlans((prev) =>
-      prev.map((p) =>
-        p.id === editingPlan.id ? { ...p, surveyTitle: editTitle } : p
-      )
-    );
-
-    setEditingPlan(null);
-    setIsSaving(false);
+    try {
+      const res = await surfboardApi.plans.updateTitle(editingPlan.id, editTitle);
+      if (res.success) {
+        toast.success("Survey title updated");
+        setEditingPlan(null);
+        await reload();
+      } else {
+        toast.error(res.error || "Failed to update title");
+      }
+    } catch {
+      toast.error("Error updating title");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getPersonCount = (title: string) => {
@@ -206,7 +178,8 @@ export default function SurfPlansPage() {
   // Actions using real server actions imported above
 
   const handleVerify = async (plan: SurveyPlan) => {
-    if (!confirm("Verify this count?")) return;
+    if (!(await confirm({ title: "Verify count?", description: "Verify this count?", confirmLabel: "Verify" })))
+      return;
     setProcessingId(plan.id);
     const count = getPersonCount(plan.surveyTitle);
 
@@ -214,13 +187,7 @@ export default function SurfPlansPage() {
       const res = await surfboardApi.plans.verifyPersonCount(plan.id, count);
       if (res.success) {
         toast.success("Person count verified");
-        setPlans((prev) =>
-          prev.map((p) =>
-            p.id === plan.id
-              ? { ...p, personCount: count, personCountVerified: true }
-              : p
-          )
-        );
+        await reload();
       } else {
         toast.error(res.error || "Failed to verify");
       }
@@ -232,16 +199,22 @@ export default function SurfPlansPage() {
   };
 
   const handleQuery = async (plan: SurveyPlan) => {
-    if (!confirm("Are you sure you want to query this plan?")) return;
+    if (
+      !(await confirm({
+        title: "Query this plan?",
+        description: "Are you sure you want to query this plan?",
+        confirmLabel: "Query plan",
+      }))
+    )
+      return;
     setProcessingId(plan.id);
 
     try {
       const res = await surfboardApi.plans.query(plan.id);
       if (res.success) {
         toast.success("Plan queried");
-        setPlans((prev) =>
-          prev.map((p) => (p.id === plan.id ? { ...p, status: "QUERIED" } : p))
-        );
+        await reload();
+        await loadStats();
       } else {
         toast.error(res.error || "Failed to query");
       }
@@ -252,56 +225,32 @@ export default function SurfPlansPage() {
     }
   };
 
-  const filteredPlans = plans.filter((plan) => {
-    // Tab filtering
-    if (activeTab === "queries") {
-      if (plan.status !== "QUERIED") return false;
-    }
-
-    const matchesSearch =
-      plan.planNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.surveyTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      plan.location.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "ALL" || plan.status === statusFilter;
-
-    // For person-count tab, maybe only show non-verified ones? Or all?
-    // Let's show all for now, but sort verified to bottom maybe?
-
-    return matchesSearch && matchesStatus;
-  });
+  // Filtering/pagination happens server-side (search, status, tab all sent as query params).
+  const filteredPlans = plans;
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "APPROVED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
       case "PENDING":
-        return "bg-amber-100 text-amber-700 border-amber-200";
-      case "REJECTED":
-        return "bg-rose-100 text-rose-700 border-rose-200";
+        return "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
       case "UNDER_REVIEW":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30";
       case "LODGED":
-        return "bg-violet-100 text-violet-700 border-violet-200";
-      case "QUERIED": // Added QUERIED status color
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30";
+      case "QUERIED":
+        return "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "APPROVED":
+      case "LODGED":
         return <CheckCircle className="w-4 h-4" />;
-      case "REJECTED":
-        return <XCircle className="w-4 h-4" />;
       case "PENDING":
       case "UNDER_REVIEW":
-      case "LODGED":
         return <Clock className="w-4 h-4" />;
-      case "QUERIED": // Added QUERIED status icon
+      case "QUERIED":
         return <AlertTriangle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
@@ -311,49 +260,39 @@ export default function SurfPlansPage() {
   const statsData = [
     {
       label: "Total Plans",
-      value: plans.length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      value: stats?.total ?? 0,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
       label: "Pending Review",
-      value: plans.filter((p) => p.status === "PENDING").length,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-    },
-    {
-      label: "Approved",
-      value: plans.filter((p) => p.status === "APPROVED").length,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      value: stats?.pending ?? 0,
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
     },
     {
       label: "Under Review",
-      value: plans.filter((p) => p.status === "UNDER_REVIEW").length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      value: stats?.underReview ?? 0,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
     },
     {
-      label: "Queried Plans", // Added Queried Plans stat
-      value: plans.filter((p) => p.status === "QUERIED").length,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
+      label: "Lodged (Approved)",
+      value: stats?.lodged ?? 0,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
+    },
+    {
+      label: "Queried Plans",
+      value: stats?.queried ?? 0,
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-500/10",
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading survey plans...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-full space-y-6">
+      {ConfirmDialog}
       {/* Edit Modal (Dialog) */}
       <Dialog
         open={!!editingPlan}
@@ -365,7 +304,7 @@ export default function SurfPlansPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-gray-500 mb-1 block">
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 block">
                 Survey Title
               </label>
               <Textarea
@@ -374,7 +313,7 @@ export default function SurfPlansPage() {
                 rows={5}
                 className="resize-y font-mono text-sm"
               />
-              <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span>Separate multiple owners with new lines.</span>
                 <span
                   className={
@@ -408,19 +347,19 @@ export default function SurfPlansPage() {
       <div className="mb-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Survey Plans</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Survey Plans</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Manage and review all survey plan submissions
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleRefresh}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
             >
               <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
               />
               Refresh
             </button>
@@ -443,19 +382,19 @@ export default function SurfPlansPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100`}
+              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 dark:border-white/10`}
             >
               <div className={`text-2xl font-bold ${stat.color} mb-1`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-white/10 mb-6 overflow-x-auto">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab("all")}
@@ -463,7 +402,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "all"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -476,7 +415,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "person-count"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -489,7 +428,7 @@ export default function SurfPlansPage() {
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
               ${activeTab === "queries"
                 ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
               }
             `}
           >
@@ -500,94 +439,178 @@ export default function SurfPlansPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by plan number, title, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <div className="relative">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className="appearance-none px-4 py-2 pr-10 border border-gray-300 dark:border-white/15 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-surface"
               >
                 <option value="ALL">All Status</option>
                 <option value="PENDING">Pending</option>
                 <option value="UNDER_REVIEW">Under Review</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="LODGED">Lodged</option>
-                <option value="QUERIED">Queried</option>{" "}
-                {/* Added Queried option */}
+                <option value="LODGED">Lodged (Approved)</option>
+                <option value="QUERIED">Queried</option>
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 pointer-events-none" />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
               <Filter className="w-4 h-4" />
               Filters
             </button>
 
-            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-white/15 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <Download className="w-4 h-4" />
               Export
             </button>
+
+            {activeTab !== "person-count" && (
+              <ViewToggle value={viewMode} onChange={setViewMode} />
+            )}
           </div>
         </div>
       </div>
 
-      {/* Plans Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Loading State */}
+      {loading && <PageLoader label="Loading survey plans…" />}
+
+      {/* Plans Grid */}
+      {!loading && (viewMode === "grid" && activeTab !== "person-count" ? (
+        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4">
+          {filteredPlans.length === 0 ? (
+            <div className="py-12 text-center">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPlans.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg shrink-0">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate">
+                          {plan.planNumber}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {plan.surveyTitle}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                        plan.status
+                      )}`}
+                    >
+                      {getStatusIcon(plan.status)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <span className="truncate">{plan.location}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                    <span className="truncate">{plan.owner.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Updated {new Date(plan.updatedAt).toLocaleDateString()}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
+                    <Link
+                      href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Link>
+                    <button
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+                      title="More actions"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      /* Plans Table */
+      <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+            <thead className="bg-gray-50 dark:bg-white/5">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Plan Details
                 </th>
                 {activeTab === "person-count" ? (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Survey Title Analysis
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Count
                     </th>
                   </>
                 ) : (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Location
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Owner
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Updated
                     </th>
                   </>
                 )}
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
               {filteredPlans.length === 0 ? (
                 <tr>
                   <td
@@ -595,8 +618,8 @@ export default function SurfPlansPage() {
                     className="px-6 py-12 text-center"
                   >
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No plans found</p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-gray-500 dark:text-gray-400">No plans found</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                       Try adjusting your search or filters
                     </p>
                   </td>
@@ -608,23 +631,23 @@ export default function SurfPlansPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-blue-50 rounded-lg">
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/15 rounded-lg">
                           <FileText className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">
+                          <div className="font-semibold text-gray-900 dark:text-white">
                             {plan.planNumber}
                           </div>
                           {activeTab !== "person-count" && (
-                            <div className="text-sm text-gray-600 truncate max-w-xs">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
                               {plan.surveyTitle}
                             </div>
                           )}
-                          <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-3">
                             <span>{plan.status}</span>
                             <span>•</span>
                             <span>
@@ -638,7 +661,7 @@ export default function SurfPlansPage() {
                     {activeTab === "person-count" ? (
                       <>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-800 font-mono bg-gray-50 p-2 rounded border border-gray-100 whitespace-pre-wrap max-w-md">
+                          <div className="text-sm text-gray-800 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
                             {plan.surveyTitle}
                           </div>
                           {hasPotentialMismatch(plan.surveyTitle) && (
@@ -656,8 +679,8 @@ export default function SurfPlansPage() {
                         <td className="px-6 py-4 text-center">
                           <div
                             className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${plan.personCountVerified
-                              ? "bg-green-100 text-green-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300"
+                              : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300"
                               }`}
                           >
                             {getPersonCount(plan.surveyTitle)}
@@ -668,13 +691,13 @@ export default function SurfPlansPage() {
                       <>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
                             <div>
-                              <div className="text-sm text-gray-900">
+                              <div className="text-sm text-gray-900 dark:text-white">
                                 {plan.location}
                               </div>
                               {plan.facility && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {plan.facility}
                                 </div>
                               )}
@@ -683,12 +706,12 @@ export default function SurfPlansPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
                             <div>
-                              <div className="text-sm text-gray-900">
+                              <div className="text-sm text-gray-900 dark:text-white">
                                 {plan.owner.name}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {plan.owner.email}
                               </div>
                             </div>
@@ -706,8 +729,8 @@ export default function SurfPlansPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
-                            <div className="text-sm text-gray-900">
+                            <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                            <div className="text-sm text-gray-900 dark:text-white">
                               {new Date(plan.updatedAt).toLocaleDateString()}
                             </div>
                           </div>
@@ -723,7 +746,7 @@ export default function SurfPlansPage() {
                               <button
                                 onClick={() => handleVerify(plan)}
                                 disabled={!!processingId}
-                                className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded transition-colors"
+                                className="px-2 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-500/15 hover:bg-green-100 dark:hover:bg-green-500/25 border border-green-200 dark:border-green-500/30 rounded transition-colors"
                               >
                                 Verify
                               </button>
@@ -733,13 +756,13 @@ export default function SurfPlansPage() {
                               disabled={
                                 !!processingId || plan.status === "QUERIED"
                               }
-                              className="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition-colors"
+                              className="px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 border border-red-200 dark:border-red-500/30 rounded transition-colors"
                             >
                               Query
                             </button>
                             <button
                               onClick={() => handleEditClick(plan)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/15 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/30"
                               title="Edit Title"
                             >
                               <Pencil className="w-4 h-4" />
@@ -748,13 +771,13 @@ export default function SurfPlansPage() {
                         )}
                         <Link
                           href={`/surfboard-restricted/dashboard/surf-plans/update/${plan.id}`}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                           title="More actions"
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -770,29 +793,27 @@ export default function SurfPlansPage() {
 
         {/* Pagination */}
         {filteredPlans.length > 0 && (
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
-            <div className="text-sm text-gray-600">
-              Showing{" "}
-              <span className="font-medium">{filteredPlans.length}</span> of{" "}
-              <span className="font-medium">{plans.length}</span> plans
+          <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 dark:border-white/10">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
+              <span className="font-medium">{total}</span> plans
             </div>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
-                Previous
-              </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm">
-                1
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-white transition-colors text-sm">
-                Next
-              </button>
-            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>
+      ))}
+
+      {/* Grid-view pagination (table view carries its own footer above) */}
+      {!loading && viewMode === "grid" && activeTab !== "person-count" && filteredPlans.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Showing <span className="font-medium">{filteredPlans.length}</span> of{" "}
+            <span className="font-medium">{total}</span> plans
+          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+        </div>
+      )}
     </div>
   );
 }

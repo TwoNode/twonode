@@ -7,6 +7,8 @@ import { AddAdminModal } from "@/gbc/components/admin/AddAdminModal";
 import { AdminFilter } from "@/gbc/components/admin/AdminFilter";
 import { useEffect, useState } from "react";
 import { gbcApi } from "@/gbc/apiClient";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Admin {
   id: string;
@@ -21,71 +23,50 @@ interface Admin {
   updatedAt: string;
 }
 
+interface AdminFilters {
+  roles: string[];
+  statuses: boolean[];
+}
+
 export default function AdminUsersPage() {
-  const [allAdmins, setAllAdmins] = useState<Admin[]>([]);
-  const [filteredAdmins, setFilteredAdmins] = useState<Admin[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilters, setRoleFilters] = useState<string[]>([
-    "ADMIN",
-    "SUPERADMIN",
-  ]);
-  const [statusFilters, setStatusFilters] = useState<boolean[]>([true, false]); // Both active and inactive
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch admins on mount
-  useEffect(() => {
-    const fetchAdmins = async () => {
-      const result = await gbcApi.users.list();
-      if (result.success && result.data) {
-        setAllAdmins(result.data as Admin[]);
-        setFilteredAdmins(result.data as Admin[]);
-      }
-      setIsLoading(false);
-    };
-
-    fetchAdmins();
-  }, []);
-
-  // Apply filters and search
-  useEffect(() => {
-    let filtered = allAdmins;
-
-    // Filter by role
-    if (roleFilters && roleFilters.length > 0) {
-      filtered = filtered.filter((admin) => roleFilters.includes(admin.role));
-    }
-
-    // Filter by status
-    if (statusFilters && statusFilters.length > 0) {
-      console.log("statusFilters", statusFilters);
-      console.log("allAdmins", filtered);
-      // filtered = filtered.filter((admin) =>
-      //   statusFilters.includes(admin.isActive)
-      // );
-    }
-
-    // Filter by search query
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((admin) => {
-        const name = `${admin.firstName || ""} ${
-          admin.lastName || ""
-        }`.toLowerCase();
-        const email = admin.email.toLowerCase();
-        return name.includes(query) || email.includes(query);
-      });
-    }
-
-    setFilteredAdmins(filtered);
-  }, [allAdmins, roleFilters, statusFilters, searchQuery]);
+  const {
+    items: filteredAdmins,
+    total,
+    totalPages,
+    loading: isLoading,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    filters,
+    setFilters,
+  } = useServerList<Admin, AdminFilters>(
+    async ({ page, pageSize, search, filters }) =>
+      gbcApi.users.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        roles: filters.roles as ("ADMIN" | "SUPERADMIN")[],
+        statuses: filters.statuses,
+      }),
+    { initialFilters: { roles: ["ADMIN", "SUPERADMIN"], statuses: [true, false] } }
+  );
 
   const handleFilterChange = (filters: {
     roles: string[];
     statuses: boolean[];
   }) => {
-    setRoleFilters(filters.roles);
-    setStatusFilters(filters.statuses);
+    setFilters(filters);
   };
+
+  const [stats, setStats] = useState<{ total: number; superAdmins: number; admins: number } | null>(null);
+  useEffect(() => {
+    gbcApi.users.stats().then((res) => {
+      if (res.success && res.data) setStats(res.data);
+    });
+  }, []);
 
   return (
     <div>
@@ -112,7 +93,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="text-xs sm:text-sm text-gray-600">Total Admins</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1">
-                {allAdmins?.length || 0}
+                {stats?.total ?? 0}
               </p>
             </div>
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600 opacity-20" />
@@ -124,8 +105,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="text-xs sm:text-sm text-gray-600">Super Admins</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1">
-                {allAdmins?.filter((a: any) => a.role === "SUPERADMIN")
-                  .length || 0}
+                {stats?.superAdmins ?? 0}
               </p>
             </div>
             <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-amber-600 opacity-20" />
@@ -137,7 +117,7 @@ export default function AdminUsersPage() {
             <div>
               <p className="text-xs sm:text-sm text-gray-600">Regular Admins</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1">
-                {allAdmins?.filter((a: any) => a.role === "ADMIN").length || 0}
+                {stats?.admins ?? 0}
               </p>
             </div>
             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 opacity-20" />
@@ -150,11 +130,9 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
           <h2 className="text-lg sm:text-xl font-bold">
             All Admins
-            {filteredAdmins.length !== allAdmins.length && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                ({filteredAdmins.length} of {allAdmins.length})
-              </span>
-            )}
+            <span className="text-sm font-normal text-gray-500 ml-2">
+              ({total})
+            </span>
           </h2>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
@@ -178,7 +156,17 @@ export default function AdminUsersPage() {
             <p className="text-gray-500">Loading admins...</p>
           </div>
         ) : (
-          <AdminUsersList admins={filteredAdmins} />
+          <>
+            <AdminUsersList admins={filteredAdmins} />
+            {totalPages > 1 && (
+              <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-sm text-gray-500">
+                  Page {page} of {totalPages} • {total} admins
+                </p>
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              </div>
+            )}
+          </>
         )}
       </Card>
     </div>

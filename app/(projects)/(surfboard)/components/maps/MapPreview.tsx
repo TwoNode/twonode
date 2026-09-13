@@ -156,9 +156,9 @@ export default function MapPreview({
   if (pillars.length === 0) {
     return (
       <div
-        className={`bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center ${className}`}
+        className={`bg-gray-50 dark:bg-white/5 border-2 border-dashed border-gray-300 dark:border-white/15 rounded-lg p-8 text-center ${className}`}
       >
-        <div className="text-gray-400 mb-4">
+        <div className="text-gray-400 dark:text-gray-500 mb-4">
           <svg
             className="mx-auto h-12 w-12"
             fill="none"
@@ -173,8 +173,8 @@ export default function MapPreview({
             />
           </svg>
         </div>
-        <p className="text-gray-600">No survey data to display</p>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-gray-600 dark:text-gray-400">No survey data to display</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Upload a CSV file to see the map preview
         </p>
       </div>

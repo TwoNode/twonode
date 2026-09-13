@@ -23,7 +23,7 @@ export function InquiryModal({ open, onOpenChange, onSend, isSending }: any) {
       <DialogContent className="sm:max-w-md bg-[#1A1A1A] border-[#333] text-white">
         <DialogHeader>
           <DialogTitle>Account Update Inquiry</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-gray-400 dark:text-gray-500">
             Send an email to the admin team detailing what you want to change in your profile.
           </DialogDescription>
         </DialogHeader>

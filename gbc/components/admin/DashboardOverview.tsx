@@ -3,7 +3,7 @@
 import { Ticket, DollarSign, CheckCircle, Clock } from "lucide-react";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+import { GBC_GRADIENTS } from "@/gbc/colors";
 
 export interface DashboardOverviewStats {
   completedTickets: number;
@@ -53,7 +53,6 @@ export function DashboardOverview({
           breakdown={`${stats.availableTickets} remaining`}
           icon={Ticket}
           tone="brand"
-          accent={{ main: GBC_COLORS.primary.main, light: GBC_COLORS.primary.light }}
         />
         <StatCard
           label="Total Revenue"

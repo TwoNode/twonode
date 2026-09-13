@@ -313,7 +313,7 @@ export default function ArchiveDashboard() {
             <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 animate-spin text-amber-600 mx-auto" />
-                    <p className="mt-4 text-gray-600">
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">
                         Loading archive batches...
                     </p>
                 </div>
@@ -379,7 +379,7 @@ export default function ArchiveDashboard() {
                                             }
                                             className="w-32 h-2"
                                         />
-                                        <span className="text-xs text-gray-600">
+                                        <span className="text-xs text-gray-600 dark:text-gray-400">
                                             {batch.plans.length}/
                                             {batch._count.plans} ready for
                                             archive
@@ -406,7 +406,7 @@ export default function ArchiveDashboard() {
                                         <p className="text-xs text-emerald-600">
                                             Submitted By
                                         </p>
-                                        <p className="text-sm font-medium text-gray-900">
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
                                             {batch.submitter.firstName}{" "}
                                             {batch.submitter.lastName}
                                         </p>
@@ -419,7 +419,7 @@ export default function ArchiveDashboard() {
                                             <p className="text-xs text-emerald-600">
                                                 SURCON Number
                                             </p>
-                                            <p className="text-sm font-medium text-gray-900">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
                                                 {
                                                     batch.submitter
                                                         .surconRegNumber
@@ -435,7 +435,7 @@ export default function ArchiveDashboard() {
                                             <p className="text-xs text-emerald-600">
                                                 Company
                                             </p>
-                                            <p className="text-sm font-medium text-gray-900">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
                                                 {batch.submitter.companyName}
                                             </p>
                                         </div>
@@ -447,7 +447,7 @@ export default function ArchiveDashboard() {
                                         <p className="text-xs text-emerald-600">
                                             Email
                                         </p>
-                                        <p className="text-sm font-medium text-gray-900">
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
                                             {batch.submitter.email}
                                         </p>
                                     </div>
@@ -459,7 +459,7 @@ export default function ArchiveDashboard() {
                                             <p className="text-xs text-emerald-600">
                                                 Phone
                                             </p>
-                                            <p className="text-sm font-medium text-gray-900">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
                                                 {batch.submitter.phoneNumber}
                                             </p>
                                         </div>
@@ -470,8 +470,8 @@ export default function ArchiveDashboard() {
                     )}
 
                     {/* Plans in this Batch */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 font-medium text-sm text-gray-700">
+                    <div className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+                        <div className="bg-gray-50 dark:bg-white/5 px-4 py-2 border-b border-gray-200 dark:border-white/10 font-medium text-sm text-gray-700 dark:text-gray-300">
                             Plans in this Batch
                         </div>
                         <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
@@ -481,15 +481,15 @@ export default function ArchiveDashboard() {
                                 return (
                                     <div
                                         key={p.id}
-                                        className="p-4 bg-white hover:bg-gray-50 transition-colors"
+                                        className="p-4 bg-white dark:bg-surface hover:bg-gray-50 transition-colors"
                                     >
                                         {/* Plan header */}
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="font-medium text-gray-900">
+                                                <span className="font-medium text-gray-900 dark:text-white">
                                                     {p.planNumber}
                                                 </span>
-                                                <span className="text-gray-500">
+                                                <span className="text-gray-500 dark:text-gray-400">
                                                     {p.surveyTitle}
                                                 </span>
                                                 {p.planType && (
@@ -501,7 +501,7 @@ export default function ArchiveDashboard() {
                                                     </Badge>
                                                 )}
                                                 {p.referencePlanNumber && (
-                                                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
+                                                    <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md border border-gray-200 dark:border-white/10">
                                                         Ref:{" "}
                                                         {p.referencePlanNumber}
                                                     </span>
@@ -517,9 +517,9 @@ export default function ArchiveDashboard() {
                                         </div>
 
                                         {/* Location info */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-3 rounded-lg mb-3 text-xs">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 dark:bg-white/5 p-3 rounded-lg mb-3 text-xs">
                                             <div>
-                                                <p className="text-gray-500">
+                                                <p className="text-gray-500 dark:text-gray-400">
                                                     LGA
                                                 </p>
                                                 <p className="font-medium">
@@ -527,7 +527,7 @@ export default function ArchiveDashboard() {
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-gray-500">
+                                                <p className="text-gray-500 dark:text-gray-400">
                                                     Ward
                                                 </p>
                                                 <p className="font-medium">
@@ -535,7 +535,7 @@ export default function ArchiveDashboard() {
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-gray-500">
+                                                <p className="text-gray-500 dark:text-gray-400">
                                                     LCDA
                                                 </p>
                                                 <p className="font-medium">
@@ -543,7 +543,7 @@ export default function ArchiveDashboard() {
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-gray-500">
+                                                <p className="text-gray-500 dark:text-gray-400">
                                                     Deeded Area
                                                 </p>
                                                 <p className="font-medium">
@@ -592,7 +592,7 @@ export default function ArchiveDashboard() {
                                                                 alt={`Record Copy - ${p.planNumber}`}
                                                                 className="max-h-32 rounded border shadow-sm hover:shadow-md transition-shadow"
                                                             />
-                                                            <p className="text-[10px] text-gray-500 mt-0.5">
+                                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                                                                 Click to view
                                                                 full size
                                                             </p>
@@ -602,7 +602,7 @@ export default function ArchiveDashboard() {
                                                         href={p.redCopyFileUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
                                                     >
                                                         {isImageUrl(
                                                             p.redCopyFileUrl
@@ -681,7 +681,7 @@ export default function ArchiveDashboard() {
 
                     {/* Batch-Level Archive Button (only if > 1 plan) */}
                     {!isHistory && batch.plans.length > 1 && (
-                        <div className="flex gap-3 pt-2 border-t border-gray-200">
+                        <div className="flex gap-3 pt-2 border-t border-gray-200 dark:border-white/10">
                             <Button
                                 onClick={() => handleBatchArchiveClick(batch)}
                                 className="flex-1 bg-amber-600 hover:bg-amber-700"
@@ -706,11 +706,11 @@ export default function ArchiveDashboard() {
         <>
             <div className="container mx-auto p-6 space-y-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Archive className="w-8 h-8 text-amber-600" />
                         Archive Dashboard
                     </h1>
-                    <p className="mt-2 text-slate-600">
+                    <p className="mt-2 text-slate-600 dark:text-gray-300">
                         Log the physical handover of plans from Records II to
                         the official archive. This is for internal tracking.
                     </p>
@@ -718,7 +718,7 @@ export default function ArchiveDashboard() {
 
                 {/* Search Input */}
                 <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                     <Input
                         type="text"
                         placeholder="Search by plan number, batch code, surveyor..."
@@ -767,12 +767,12 @@ export default function ArchiveDashboard() {
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <Archive className="w-16 h-16 text-gray-300 mb-4" />
-                                    <p className="text-gray-500 text-lg">
+                                    <p className="text-gray-500 dark:text-gray-400 text-lg">
                                         {searchQuery
                                             ? "No matching batches found"
                                             : "No Batches Pending"}
                                     </p>
-                                    <p className="text-gray-400 text-sm mt-2">
+                                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                                         {searchQuery
                                             ? "Try adjusting your search"
                                             : "Batches fully approved by Records II will appear here for physical archiving."}
@@ -797,12 +797,12 @@ export default function ArchiveDashboard() {
                             <Card>
                                 <CardContent className="flex flex-col items-center justify-center py-12">
                                     <History className="w-16 h-16 text-gray-300 mb-4" />
-                                    <p className="text-gray-500 text-lg">
+                                    <p className="text-gray-500 dark:text-gray-400 text-lg">
                                         {searchQuery
                                             ? "No matching batches found"
                                             : "No History Found"}
                                     </p>
-                                    <p className="text-gray-400 text-sm mt-2">
+                                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                                         {searchQuery
                                             ? "Try adjusting your search"
                                             : "Archived batches will appear here."}
@@ -831,7 +831,7 @@ export default function ArchiveDashboard() {
                         <DialogDescription>
                             Confirm that you have securely received and archived
                             the physical copies for{" "}
-                            <strong className="text-slate-900">
+                            <strong className="text-slate-900 dark:text-white">
                                 {dialogTarget}
                             </strong>
                             .
@@ -864,7 +864,7 @@ export default function ArchiveDashboard() {
                         <div className="space-y-2">
                             <label
                                 htmlFor="archive-notes"
-                                className="text-sm font-medium text-slate-700"
+                                className="text-sm font-medium text-slate-700 dark:text-gray-300"
                             >
                                 Archive Notes / Location (Optional)
                             </label>
@@ -878,7 +878,7 @@ export default function ArchiveDashboard() {
                                 rows={3}
                                 className="resize-none"
                             />
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                                 Record the physical storage location for future
                                 reference.
                                 {dialogMode === "batch" &&

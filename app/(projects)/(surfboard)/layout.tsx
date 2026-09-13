@@ -32,9 +32,13 @@ export const metadata: Metadata = {
     images: ["/favicon.jpg"],
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/surfboard/favicon/favicon.ico", sizes: "any" },
+      { url: "/surfboard/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/surfboard/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/surfboard/favicon/favicon.ico",
+    apple: "/surfboard/favicon/apple-touch-icon.png",
   },
 };
 export default function RootLayout({
@@ -42,5 +46,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className="relative">{children}</div>;
+  return (
+    <div className="relative" data-product="surfboard">
+      {children}
+    </div>
+  );
 }

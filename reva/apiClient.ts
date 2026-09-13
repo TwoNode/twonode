@@ -131,6 +131,28 @@ export const revaApi = {
   notifications: {
     list: () => jsonFetch<Array<Notification & { isRead: boolean; isDismissed: boolean }>>(`${BASE}/notifications`),
 
+    /** Admin-only paginated/searchable variant — the reva-restricted admin notifications list. */
+    listPaginated: (params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      type?: NotificationType;
+      status?: "UNREAD" | "READ" | "ALL";
+      includeDismissed?: boolean;
+    } = {}) => {
+      const qs = new URLSearchParams();
+      qs.set("page", String(params.page ?? 1));
+      if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+      if (params.search) qs.set("search", params.search);
+      if (params.type) qs.set("type", params.type);
+      if (params.status) qs.set("status", params.status);
+      if (params.includeDismissed) qs.set("includeDismissed", "true");
+      return jsonFetch<{
+        data: Array<Notification & { isRead: boolean; isDismissed: boolean }>;
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${BASE}/notifications?${qs.toString()}`);
+    },
+
     create: (input: CreateNotificationInput) =>
       jsonFetch<Notification>(`${BASE}/notifications`, { method: "POST", body: JSON.stringify(input) }),
 
@@ -147,6 +169,19 @@ export const revaApi = {
       list: () => jsonFetch<RevaUser[]>(`${BASE}/admin/users`),
 
       listAdmins: () => jsonFetch<RevaUser[]>(`${BASE}/admin/users?scope=admins`),
+
+      /** Paginated/searchable variant — used by the Super Admin page's two browsable list cards. */
+      listPaginated: (params: { page?: number; pageSize?: number; scope?: "all" | "admins" | "users"; search?: string } = {}) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.scope) qs.set("scope", params.scope);
+        if (params.search) qs.set("search", params.search);
+        return jsonFetch<{
+          data: (RevaUser & { _count: { properties: number } })[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/admin/users?${qs.toString()}`);
+      },
 
       create: (input: CreateAdminUserInput) =>
         jsonFetch<RevaUser>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),

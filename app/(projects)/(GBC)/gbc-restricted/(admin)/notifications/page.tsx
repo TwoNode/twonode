@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Plus, Trash2, Send, Users, Shield, Globe, Loader2 } from "lucide-react";
+import { Bell, Plus, Trash2, Send, Users, Shield, Globe, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import type { GBCNotificationItem } from "@/gbc/apiClient";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 type NotificationType = "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM";
 type NotificationAudience = "GENERAL_ADMINS" | "SUPERADMIN" | "ALL_USERS";
@@ -44,9 +46,11 @@ const audienceLabels: Record<NotificationAudience, string> = {
  * specific user" UI yet, same as Surfboard's own create dialog never
  * exposed SPECIFIC_USERS either — it's create-only from userIds server-side).
  */
+interface NotificationFilters {
+  type: NotificationType | "ALL";
+}
+
 export default function GBCAdminNotificationsPage() {
-  const [notifications, setNotifications] = useState<GBCNotificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -58,26 +62,38 @@ export default function GBCAdminNotificationsPage() {
     link: "",
   });
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      const result = await gbcApi.notifications.list({ includeRead: true, includeDismissed: true, limit: 100 });
-      if (result.success && result.data) {
-        setNotifications(result.data);
-      } else {
-        toast.error("Failed to load notifications");
-      }
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-      toast.error("Error loading notifications");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    items: notifications,
+    total,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search,
+    setSearch,
+    filters,
+    setFilters,
+    reload,
+  } = useServerList<GBCNotificationItem, NotificationFilters>(
+    async ({ page, pageSize, search, filters }) => {
+      const res = await gbcApi.notifications.listPaginated({
+        page,
+        pageSize,
+        search: search || undefined,
+        type: filters.type !== "ALL" ? filters.type : undefined,
+        includeRead: true,
+        includeDismissed: true,
+      });
+      if (!res.success) toast.error("Failed to load notifications");
+      return res;
+    },
+    { initialFilters: { type: "ALL" } }
+  );
 
-  useEffect(() => {
-    loadNotifications();
-  }, []);
+  const typeFilter = filters.type;
+  const setTypeFilter = (type: NotificationType | "ALL") => setFilters({ type });
 
   const handleCreate = async () => {
     if (!formData.title.trim() || !formData.message.trim()) {
@@ -99,7 +115,7 @@ export default function GBCAdminNotificationsPage() {
         toast.success("Notification created successfully");
         setShowCreateDialog(false);
         setFormData({ type: "INFO", title: "", message: "", audience: "ALL_USERS", link: "" });
-        loadNotifications();
+        reload();
       } else {
         toast.error(result.error || "Failed to create notification");
       }
@@ -117,7 +133,7 @@ export default function GBCAdminNotificationsPage() {
     const result = await gbcApi.notifications.remove(notificationId);
     if (result.success) {
       toast.success("Notification deleted");
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      reload();
     } else {
       toast.error("Failed to delete notification");
     }
@@ -235,6 +251,31 @@ export default function GBCAdminNotificationsPage() {
         <p className="text-gray-600">Create and manage admin notifications</p>
       </div>
 
+      <div className="bg-white rounded-lg shadow p-4 mb-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by title or message…"
+            className="pl-9"
+          />
+        </div>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as NotificationType | "ALL")}>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Types</SelectItem>
+            <SelectItem value="INFO">Info</SelectItem>
+            <SelectItem value="SUCCESS">Success</SelectItem>
+            <SelectItem value="WARNING">Warning</SelectItem>
+            <SelectItem value="ERROR">Error</SelectItem>
+            <SelectItem value="SYSTEM">System</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -290,6 +331,14 @@ export default function GBCAdminNotificationsPage() {
               )}
             </tbody>
           </table>
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-gray-600">
+                Page {page} of {totalPages} • {total} notifications
+              </p>
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            </div>
+          )}
         </div>
       )}
     </div>

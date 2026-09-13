@@ -297,7 +297,7 @@ const MaplibreMap: React.FC<MaplibreMapProps> = ({ processedPillars, state }) =>
         className="absolute top-0 bottom-0 w-full h-full"
       />
 
-      <div className="absolute bottom-5 left-5 w-44 bg-white p-3 z-50 shadow-lg rounded-xl font-sans text-sm">
+      <div className="absolute bottom-5 left-5 w-44 bg-white dark:bg-surface p-3 z-50 shadow-lg rounded-xl font-sans text-sm">
         <strong className="block text-base font-bold mb-1.5 text-gray-800">
           Basemaps
         </strong>

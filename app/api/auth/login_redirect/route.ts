@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { addBaseUrl } from "@/utils/addBaseUrl";
+import { NextRequest, NextResponse } from "next/server";
 import { Platform } from "@/utils/platform";
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import {
@@ -13,14 +12,14 @@ import {
   isMDARole,
 } from "@/permissions";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   console.log("login_redirect PAGE");
   const userData = await getEncryptedUserData();
 
   let redirectUrl = "/";
 
   if (!userData) {
-    return NextResponse.redirect(addBaseUrl("/"));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   if (userData.platform === Platform.REVA) {
@@ -53,7 +52,7 @@ export async function GET() {
     }
   }
 
-  return NextResponse.redirect(addBaseUrl(redirectUrl));
+  return NextResponse.redirect(new URL(redirectUrl, request.url));
 }
 
 // import { NextResponse } from "next/server";

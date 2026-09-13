@@ -205,8 +205,8 @@ export function RemitaPaymentModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleModalClose}>
-        <DialogContent className="max-w-350 h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50">
-          <DialogHeader className="p-6 pb-2 border-b bg-white">
+        <DialogContent className="max-w-350 h-[90vh] flex flex-col p-0 overflow-hidden bg-gray-50 dark:bg-white/5">
+          <DialogHeader className="p-6 pb-2 border-b bg-white dark:bg-surface">
             <div className="flex justify-between items-start">
               <div>
                 <DialogTitle className="flex items-center gap-2 text-xl">
@@ -218,7 +218,7 @@ export function RemitaPaymentModal({
                 </DialogDescription>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase font-semibold">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">
                   Total Amount
                 </p>
                 <div className="flex items-center gap-2 justify-end">
@@ -228,7 +228,7 @@ export function RemitaPaymentModal({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    className="h-8 w-8 text-gray-400 dark:text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                     onClick={handleCopyAmount}
                     title="Copy Amount"
                   >
@@ -241,7 +241,7 @@ export function RemitaPaymentModal({
 
           <div className="flex flex-1 overflow-hidden">
             {/* Left Panel: Payer Info & Receipt Links */}
-            <div className="w-1/3 p-6 overflow-y-auto border-r bg-white space-y-6">
+            <div className="w-1/3 p-6 overflow-y-auto border-r bg-white dark:bg-surface space-y-6">
               {/* Payer ID Match Warning */}
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -251,58 +251,58 @@ export function RemitaPaymentModal({
               </div>
 
               {/* Payer Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <User className="w-4 h-4" /> Payer Information
                 </h3>
                 <div className="grid grid-cols-1 gap-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-500 block">Payer ID</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Payer ID</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-medium">
                         {batchData.submitter?.payerID || "N/A"}
                       </span>
                       {batchData.submitter?.payerID && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.payerID?.toString() || "", "Payer ID")} title="Copy Payer ID">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.payerID?.toString() || "", "Payer ID")} title="Copy Payer ID">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Payer ID Type</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Payer ID Type</span>
                     <span className="font-medium">
                       {batchData.submitter?.payerIDType || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Name</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Name</span>
                     <span className="font-medium">
                       {batchData.submitter?.firstName}{" "}
                       {batchData.submitter?.lastName}
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Email</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Email</span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
                         {batchData.submitter?.email || "N/A"}
                       </span>
                       {batchData.submitter?.email && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.email?.toString() || "", "Email")} title="Copy Email">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.email?.toString() || "", "Email")} title="Copy Email">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Phone</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Phone</span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">
                         {batchData.submitter?.phoneNumber || "N/A"}
                       </span>
                       {batchData.submitter?.phoneNumber && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.phoneNumber?.toString() || "", "Phone")} title="Copy Phone">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(batchData.submitter?.phoneNumber?.toString() || "", "Phone")} title="Copy Phone">
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}
@@ -312,40 +312,40 @@ export function RemitaPaymentModal({
               </div>
 
               {/* Payment Info Card */}
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+              <div className="border rounded-lg p-4 bg-slate-50 dark:bg-surface space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-slate-700 dark:text-gray-300">
                   <Building className="w-4 h-4" /> Payment Details
                 </h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-500 block">Agency Name</span>
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Agency Name</span>
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
                       <span className="font-medium">
                         4830000 -- 61004 -- Office of Surveyor General
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4830000 -- 61004 -- Office of Surveyor General", "Agency Name")} title="Copy Agency Name">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Revenue Name</span>
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Revenue Name</span>
+                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 pb-1">
                       <span className="font-medium">
                         4020002 -- 32202 -- Lands Registry Transactions
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText("4020002 -- 32202 -- Lands Registry Transactions", "Revenue Name")} title="Copy Revenue Name">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 block">Period</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Period</span>
                     <div className="flex items-center justify-between">
                       <span className="font-medium flex items-center gap-1">
                         <Calendar className="w-3 h-3" /> {today}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
+                      <Button variant="ghost" size="icon" className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-blue-600" onClick={() => handleCopyText(today, "Period")} title="Copy Period">
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
@@ -360,7 +360,7 @@ export function RemitaPaymentModal({
                     <LinkIcon className="w-4 h-4 text-green-600" />
                     Verify Payment with Receipt Links
                   </label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     After payment, Remita sends two receipt links to your email.
                     Paste both links below to verify.
                   </p>
@@ -368,7 +368,7 @@ export function RemitaPaymentModal({
 
                 {/* LASG Receipt URL */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                     Link 1 — LASG Receipt
                   </label>
                   <input
@@ -376,7 +376,7 @@ export function RemitaPaymentModal({
                     placeholder="https://printreceipt.ebs-rcm.com/..."
                     className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${lasgReceiptUrl && !isValidLasgUrl(lasgReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
-                        : "border-gray-300 focus:border-blue-500"
+                        : "border-gray-300 dark:border-white/15 focus:border-blue-500"
                       }`}
                     value={lasgReceiptUrl}
                     onChange={(e) => setLasgReceiptUrl(e.target.value)}
@@ -390,7 +390,7 @@ export function RemitaPaymentModal({
 
                 {/* Remita Receipt URL */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                     Link 2 — Remita Receipt
                   </label>
                   <input
@@ -398,7 +398,7 @@ export function RemitaPaymentModal({
                     placeholder="https://login.remita.net/remita/rrr/..."
                     className={`w-full h-10 px-3 rounded-md border text-xs focus:outline-none transition-colors ${remitaReceiptUrl && !isValidRemitaUrl(remitaReceiptUrl)
                         ? "border-red-300 focus:border-red-500 bg-red-50"
-                        : "border-gray-300 focus:border-blue-500"
+                        : "border-gray-300 dark:border-white/15 focus:border-blue-500"
                       }`}
                     value={remitaReceiptUrl}
                     onChange={(e) => setRemitaReceiptUrl(e.target.value)}
@@ -431,15 +431,15 @@ export function RemitaPaymentModal({
             </div>
 
             {/* Right Panel: Remita Iframe */}
-            <div className="w-2/3 bg-gray-100 relative border-l">
-              <div className="absolute top-0 left-0 right-0 bg-white border-b px-4 py-2 flex items-center justify-between z-10">
-                <span className="text-xs font-semibold text-gray-500">
+            <div className="w-2/3 bg-gray-100 dark:bg-white/10 relative border-l">
+              <div className="absolute top-0 left-0 right-0 bg-white dark:bg-surface border-b px-4 py-2 flex items-center justify-between z-10">
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                   REMITA PAYMENT PORTAL
                 </span>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIframeKey((k) => k + 1)}
-                    className="text-xs text-gray-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 flex items-center gap-1 transition-colors"
                     title="Reload Remita Portal"
                   >
                     <RefreshCw className="w-3 h-3" /> Reload
@@ -484,7 +484,7 @@ export function RemitaPaymentModal({
                 )}
               </div>
             </div>
-            <AlertDialogDescription className="text-sm text-gray-700 mt-2 leading-relaxed">
+            <AlertDialogDescription className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
               {errorPopup?.message}
             </AlertDialogDescription>
           </AlertDialogHeader>

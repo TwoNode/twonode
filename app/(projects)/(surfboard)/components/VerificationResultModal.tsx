@@ -215,7 +215,7 @@ export function VerificationResultModal({
       case "ERROR":
         return "bg-red-100 text-red-800 border-red-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-800 border-gray-200 dark:border-white/10";
     }
   };
 
@@ -235,7 +235,7 @@ export function VerificationResultModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-gray-50">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-gray-50 dark:bg-white/5">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Record Copy Verification: {planNumber}</span>
@@ -302,8 +302,8 @@ export function VerificationResultModal({
             }
 
             return (
-              <div key={idx} className="bg-white rounded-xl shadow-sm border p-6 space-y-6">
-                <h4 className="font-bold text-gray-900 border-b pb-2">
+              <div key={idx} className="bg-white dark:bg-surface rounded-xl shadow-sm border p-6 space-y-6">
+                <h4 className="font-bold text-gray-900 dark:text-white border-b pb-2">
                   Parcel {parcel.parcelIndex}
                 </h4>
 
@@ -317,7 +317,7 @@ export function VerificationResultModal({
                 {/* Traverse Map Plotting */}
                 {csvVertices.length > 0 && (
                   <div>
-                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                       Traverse Map
                     </h5>
                     <div className="mb-4">
@@ -333,17 +333,17 @@ export function VerificationResultModal({
                 {/* Identified Anchor */}
                 {parcel.anchor && (
                   <div>
-                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                       Identified Anchor
                     </h5>
-                    <div className="bg-gray-50 border rounded-lg p-3 text-sm font-mono flex flex-wrap gap-4">
+                    <div className="bg-gray-50 dark:bg-white/5 border rounded-lg p-3 text-sm font-mono flex flex-wrap gap-4">
                       <div>
-                        <span className="text-gray-500">Ref:</span> E{" "}
+                        <span className="text-gray-500 dark:text-gray-400">Ref:</span> E{" "}
                         {parcel.anchor.ref.easting} · N{" "}
                         {parcel.anchor.ref.northing}
                       </div>
                       <div>
-                        <span className="text-gray-500">Vertex:</span>{" "}
+                        <span className="text-gray-500 dark:text-gray-400">Vertex:</span>{" "}
                         <span className="text-blue-600 font-bold">
                           {parcel.anchor.vertex.id || parcel.anchor.vertex.pillarNumber || parcel.anchor.vertex.pillar || parcel.anchor.vertex.point || parcel.anchor.vertex.no || "Anchor"}
                         </span>{" "}
@@ -351,7 +351,7 @@ export function VerificationResultModal({
                         {parcel.anchor.vertex.northing})
                       </div>
                       <div>
-                        <span className="text-gray-500">Residual:</span>{" "}
+                        <span className="text-gray-500 dark:text-gray-400">Residual:</span>{" "}
                         {parcel.anchor.residual.toFixed(3)}m
                       </div>
                     </div>
@@ -361,12 +361,12 @@ export function VerificationResultModal({
                 {/* Traverse Legs Table */}
                 {parcel.traverse?.legResults && (
                   <div>
-                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                       Traverse Legs
                     </h5>
                     <div className="overflow-x-auto border rounded-lg">
                       <table className="w-full text-sm text-left font-mono">
-                        <thead className="bg-gray-100 text-gray-700 text-xs uppercase">
+                        <thead className="bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 text-xs uppercase">
                           <tr>
                             <th className="px-4 py-2 border-b">Leg</th>
                             <th className="px-4 py-2 border-b text-center" colSpan={2}>
@@ -377,19 +377,19 @@ export function VerificationResultModal({
                             </th>
                             <th className="px-4 py-2 border-b text-center">Status</th>
                           </tr>
-                          <tr className="bg-gray-50">
-                            <th className="px-4 py-1 border-b text-gray-400"></th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 font-normal">WCB</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 font-normal">Dist</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 font-normal">WCB</th>
-                            <th className="px-4 py-1 border-b text-center text-gray-500 font-normal">Dist</th>
+                          <tr className="bg-gray-50 dark:bg-white/5">
+                            <th className="px-4 py-1 border-b text-gray-400 dark:text-gray-500"></th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">WCB</th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">Dist</th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">WCB</th>
+                            <th className="px-4 py-1 border-b text-center text-gray-500 dark:text-gray-400 font-normal">Dist</th>
                             <th className="px-4 py-1 border-b"></th>
                           </tr>
                         </thead>
                         <tbody>
                           {parcel.traverse.legResults.map((lr: any, i: number) => (
                             <tr key={i} className="border-b last:border-b-0 hover:bg-gray-50">
-                              <td className="px-4 py-2 font-bold text-gray-700">
+                              <td className="px-4 py-2 font-bold text-gray-700 dark:text-gray-300">
                                 {(lr.fromVertex?.id || lr.fromVertex?.pillarNumber || lr.fromVertex?.pillar || lr.fromVertex?.point || lr.fromVertex?.no || "?")} → {(lr.toVertex?.id || lr.toVertex?.pillarNumber || lr.toVertex?.pillar || lr.toVertex?.point || lr.toVertex?.no || "?")}
                               </td>
                               <td className="px-4 py-2 text-center text-blue-600">
@@ -404,7 +404,7 @@ export function VerificationResultModal({
                                     {lr.extractedWCB.toFixed(4)}°
                                   </span>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-gray-400 dark:text-gray-500">-</span>
                                 )}
                               </td>
                               <td className="px-4 py-2 text-center">
@@ -413,7 +413,7 @@ export function VerificationResultModal({
                                     {lr.extractedDist.toFixed(2)}m
                                   </span>
                                 ) : (
-                                  <span className="text-gray-400">-</span>
+                                  <span className="text-gray-400 dark:text-gray-500">-</span>
                                 )}
                               </td>
                               <td className="px-4 py-2 text-center flex justify-center">
@@ -434,7 +434,7 @@ export function VerificationResultModal({
                 {/* Confidence Bars */}
                 {parcel.score?.scores && (
                   <div>
-                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                       Vertex Confidence
                     </h5>
                     <div className="flex flex-wrap gap-2">
@@ -448,7 +448,7 @@ export function VerificationResultModal({
                         return (
                           <div
                             key={i}
-                            className="w-8 h-12 bg-gray-100 rounded-md relative overflow-hidden flex items-end group cursor-default"
+                            className="w-8 h-12 bg-gray-100 dark:bg-white/10 rounded-md relative overflow-hidden flex items-end group cursor-default"
                             title={`${s.fromId}→${s.toId}: ${s.legPct.toFixed(0)}%`}
                           >
                             <div
@@ -480,7 +480,7 @@ export function VerificationResultModal({
                 {/* Issues section */}
                 {issues.length > 0 && (
                   <div>
-                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
+                    <h5 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                       Issues / Warnings
                     </h5>
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">

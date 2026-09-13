@@ -1,8 +1,10 @@
 import { addBaseUrl } from "@/utils/addBaseUrl";
 import prisma from "@/lib/prisma";
 import { sendNotificationMail } from "@/utils/email";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { SurfboardNotificationType, SurfboardNotificationAudience, SurfboardRole } from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/notificationActions.ts —
@@ -29,6 +31,9 @@ export type CreateNotificationInput = {
   link?: string;
   metadata?: any;
   sendEmail?: boolean;
+  /** Best-effort WhatsApp copy of the notification — silently a no-op for
+   * recipients with no phone on file, or when no provider is configured. */
+  sendWhatsApp?: boolean;
 };
 
 export type NotificationWithUser = {
@@ -58,6 +63,11 @@ export async function createNotification(input: CreateNotificationInput) {
 
   if (input.sendEmail) {
     await sendNotificationEmails(notification.id);
+  }
+  if (input.sendWhatsApp) {
+    sendNotificationWhatsApp(notification.id).catch((error) =>
+      console.error("Error sending notification WhatsApp messages:", error)
+    );
   }
 
   return { id: notification.id };
@@ -90,7 +100,7 @@ async function sendNotificationEmails(notificationId: string): Promise<void> {
 async function getNotificationRecipients(notification: {
   audience: SurfboardNotificationAudience;
   userIds: string[];
-}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string }>> {
+}): Promise<Array<{ id: string; email: string; firstName: string; lastName: string; phoneNumber: string | null }>> {
   const where: any = { isActive: true };
 
   switch (notification.audience) {
@@ -107,7 +117,22 @@ async function getNotificationRecipients(notification: {
       break;
   }
 
-  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true } });
+  return prisma.surfboardUser.findMany({ where, select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true } });
+}
+
+async function sendNotificationWhatsApp(notificationId: string): Promise<void> {
+  const notification = await prisma.surfboardNotification.findUnique({ where: { id: notificationId } });
+  if (!notification) {
+    console.error("Notification not found:", notificationId);
+    return;
+  }
+
+  const recipients = await getNotificationRecipients(notification);
+  const sends = recipients
+    .filter((r) => r.phoneNumber)
+    .map((r) => sendWhatsAppMessage(r.phoneNumber!, `${notification.title}\n\n${notification.message}`));
+
+  await Promise.allSettled(sends);
 }
 
 function generateNotificationEmailHtml(
@@ -223,6 +248,96 @@ export async function getUserNotifications(
       if (!includeDismissed && n.isDismissed) return false;
       return true;
     });
+}
+
+/**
+ * Server-paginated sibling of getUserNotifications, for the admin
+ * Notification Management page — kept separate from getUserNotifications
+ * (used by NotificationBell.tsx, which expects a plain array and never
+ * passes page/pageSize) rather than changing that function's return shape,
+ * to avoid breaking the bell's existing consumption. Unlike
+ * getUserNotifications, isRead/isDismissed filtering happens IN the Prisma
+ * where clause instead of after a fixed-size fetch — filtering post-fetch
+ * would make skip/take paginate over the wrong (pre-filter) row count.
+ */
+export async function getUserNotificationsPaginated(
+  userId: string,
+  role: SurfboardRole,
+  options: {
+    page: number;
+    pageSize: number;
+    skip: number;
+    take: number;
+    includeRead?: boolean;
+    includeDismissed?: boolean;
+    type?: SurfboardNotificationType;
+    audience?: SurfboardNotificationAudience;
+    search?: string;
+  }
+) {
+  const { includeRead = true, includeDismissed = false } = options;
+
+  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
+  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
+
+  const where: any = { AND: [{ OR: audienceOr }] };
+  if (!includeRead) where.AND.push({ NOT: { readBy: { has: userId } } });
+  if (!includeDismissed) where.AND.push({ NOT: { dismissedBy: { has: userId } } });
+  if (options.type) where.AND.push({ type: options.type });
+  if (options.audience) where.AND.push({ audience: options.audience });
+  if (options.search) {
+    where.AND.push({
+      OR: [
+        { title: { contains: options.search, mode: "insensitive" } },
+        { message: { contains: options.search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  const [total, notifications] = await Promise.all([
+    prisma.surfboardNotification.count({ where }),
+    prisma.surfboardNotification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+  ]);
+
+  const data: NotificationWithUser[] = notifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    audience: notification.audience,
+    link: notification.link,
+    createdAt: notification.createdAt,
+    isRead: notification.readBy.includes(userId),
+    isDismissed: notification.dismissedBy.includes(userId),
+  }));
+
+  return paginatedResult(data, total, options.page, options.pageSize);
+}
+
+/** Same audience-visibility scoping as getUserNotificationsPaginated, so the admin page's stat cards always agree with what the table can actually show. */
+export async function getNotificationStats(userId: string, role: SurfboardRole) {
+  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
+  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
+  const baseWhere = { OR: audienceOr };
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const [total, unread, sentToday, broadcastToAllUsers] = await Promise.all([
+    prisma.surfboardNotification.count({ where: baseWhere }),
+    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { NOT: { readBy: { has: userId } } }] } }),
+    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { createdAt: { gte: startOfToday } }] } }),
+    prisma.surfboardNotification.count({ where: { AND: [baseWhere, { audience: "ALL_USERS" }] } }),
+  ]);
+
+  return { total, unread, sentToday, broadcastToAllUsers };
 }
 
 export async function markNotificationAsRead(userId: string, notificationId: string) {
@@ -449,6 +564,7 @@ export async function notifyPlanApproved(params: {
       link: `/surfboard/dashboard/plans`,
       metadata: { planId: params.planId, planNumber: params.planNumber, batchCode: params.batchCode },
       sendEmail: params.sendEmail ?? true,
+      sendWhatsApp: true,
     });
   } catch (error) {
     console.error("Error sending plan approval notification:", error);
@@ -472,6 +588,7 @@ export async function notifyPlanCreated(params: {
       link: `/surfboard/dashboard/plan?planId=${params.planId}`,
       metadata: { planId: params.planId, planNumber: params.planNumber, surveyTitle: params.surveyTitle },
       sendEmail: params.sendEmail ?? true,
+      sendWhatsApp: true,
     });
   } catch (error) {
     console.error("Error sending plan created notification:", error);

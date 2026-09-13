@@ -198,7 +198,7 @@ export default function SettingsPage() {
       <div className="min-h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
         </div>
       </div>
     );
@@ -210,14 +210,14 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Manage your profile and preferences
             </p>
           </div>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -225,16 +225,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Settings Card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white dark:bg-surface rounded-2xl shadow-lg overflow-hidden">
           {/* Tabs */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 dark:border-white/10">
             <nav className="flex px-6 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("profile")}
                 className={`py-4 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "profile"
                     ? "border-purple-500 text-purple-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <User className="w-4 h-4" />
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                 className={`py-4 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                   activeTab === "preferences"
                     ? "border-purple-500 text-purple-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <SettingsIcon className="w-4 h-4" />
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                   className={`py-4 px-4 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                     activeTab === "mda-settings"
                       ? "border-purple-500 text-purple-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   <Shield className="w-4 h-4" />
@@ -271,54 +271,54 @@ export default function SettingsPage() {
             {/* Profile Tab */}
             {activeTab === "profile" && profile && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Profile Information
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       First Name
                     </label>
                     <input
                       type="text"
                       value={profile.firstName}
                       disabled
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
                       value={profile.lastName}
                       disabled
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
                       value={profile.email}
                       disabled
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Role
                     </label>
-                    <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 flex items-center gap-2">
+                    <div className="w-full px-4 py-3 border border-gray-200 dark:border-white/10 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center gap-2">
                       <Shield className="w-5 h-5 text-purple-600" />
-                      <span className="text-gray-700 font-medium">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">
                         {roleNames[profile.role] || profile.role}
                       </span>
                     </div>
@@ -338,13 +338,13 @@ export default function SettingsPage() {
             {/* Preferences Tab */}
             {activeTab === "preferences" && (
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Application Preferences
                 </h2>
 
                 {/* Theme Selection */}
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Theme
                   </label>
                   <div className="grid grid-cols-3 gap-4">
@@ -355,21 +355,21 @@ export default function SettingsPage() {
                       className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
                         preferences.theme === "light"
                           ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-gray-200 dark:border-white/10 hover:border-gray-300"
                       }`}
                     >
                       <Sun
                         className={`w-6 h-6 ${
                           preferences.theme === "light"
                             ? "text-purple-600"
-                            : "text-gray-500"
+                            : "text-gray-500 dark:text-gray-400"
                         }`}
                       />
                       <span
                         className={`text-sm font-medium ${
                           preferences.theme === "light"
                             ? "text-purple-600"
-                            : "text-gray-600"
+                            : "text-gray-600 dark:text-gray-400"
                         }`}
                       >
                         Light
@@ -383,21 +383,21 @@ export default function SettingsPage() {
                       className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
                         preferences.theme === "dark"
                           ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-gray-200 dark:border-white/10 hover:border-gray-300"
                       }`}
                     >
                       <Moon
                         className={`w-6 h-6 ${
                           preferences.theme === "dark"
                             ? "text-purple-600"
-                            : "text-gray-500"
+                            : "text-gray-500 dark:text-gray-400"
                         }`}
                       />
                       <span
                         className={`text-sm font-medium ${
                           preferences.theme === "dark"
                             ? "text-purple-600"
-                            : "text-gray-600"
+                            : "text-gray-600 dark:text-gray-400"
                         }`}
                       >
                         Dark
@@ -411,21 +411,21 @@ export default function SettingsPage() {
                       className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
                         preferences.theme === "auto"
                           ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-gray-200 dark:border-white/10 hover:border-gray-300"
                       }`}
                     >
                       <Monitor
                         className={`w-6 h-6 ${
                           preferences.theme === "auto"
                             ? "text-purple-600"
-                            : "text-gray-500"
+                            : "text-gray-500 dark:text-gray-400"
                         }`}
                       />
                       <span
                         className={`text-sm font-medium ${
                           preferences.theme === "auto"
                             ? "text-purple-600"
-                            : "text-gray-600"
+                            : "text-gray-600 dark:text-gray-400"
                         }`}
                       >
                         Auto
@@ -435,16 +435,16 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Email Notifications */}
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-white/10 rounded-xl">
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-purple-100 rounded-lg">
                       <Mail className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Email Notifications
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         Receive email updates about plan approvals and queries
                       </p>
                     </div>
@@ -463,7 +463,7 @@ export default function SettingsPage() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-surface transition-transform ${
                         preferences.emailNotifications
                           ? "translate-x-6"
                           : "translate-x-1"
@@ -473,7 +473,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Save Button */}
-                <div className="flex justify-end pt-6 border-t border-gray-200">
+                <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-white/10">
                   <button
                     onClick={handleSavePreferences}
                     disabled={saving}
@@ -496,10 +496,10 @@ export default function SettingsPage() {
             {activeTab === "mda-settings" && isSuperAdmin && (
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     MDA Administration Settings
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Configure CoD submission policy, acceptance text, and query
                     response fees
                   </p>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-center py-16">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
-                      <p className="mt-3 text-sm text-gray-500">
+                      <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
                         Loading MDA settings...
                       </p>
                     </div>
@@ -520,11 +520,11 @@ export default function SettingsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <FileText className="w-5 h-5 text-purple-600" />
-                        <label className="text-sm font-semibold text-gray-900">
+                        <label className="text-sm font-semibold text-gray-900 dark:text-white">
                           CoD Acceptance Affirmation Text
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         This is the text surveyors must accept when submitting a
                         CoD batch. It appears as a checkbox label in the
                         submission modal.
@@ -538,14 +538,14 @@ export default function SettingsPage() {
                           })
                         }
                         rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
                         placeholder="I hereby affirm that the information provided..."
                       />
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 mb-1 font-medium">
+                      <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">
                           Preview:
                         </p>
-                        <label className="flex items-start gap-2 text-sm text-gray-700">
+                        <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                           <input
                             type="checkbox"
                             checked
@@ -560,14 +560,14 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Divider */}
-                    <hr className="border-gray-200" />
+                    <hr className="border-gray-200 dark:border-white/10" />
 
                     {/* CoD Policy Content */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Shield className="w-5 h-5 text-purple-600" />
-                          <label className="text-sm font-semibold text-gray-900">
+                          <label className="text-sm font-semibold text-gray-900 dark:text-white">
                             CoD Submission Policy Content
                           </label>
                         </div>
@@ -581,7 +581,7 @@ export default function SettingsPage() {
                           {showPolicyPreview ? "Hide Preview" : "Show Preview"}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Full policy text shown to surveyors before submission.
                         Supports line breaks for formatting.
                       </p>
@@ -594,15 +594,15 @@ export default function SettingsPage() {
                           })
                         }
                         rows={8}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-mono resize-y"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-mono resize-y"
                         placeholder="Official CoD Submission Policy..."
                       />
                       {showPolicyPreview && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">
+                        <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
                             Policy Preview (as seen by surveyors):
                           </p>
-                          <div className="bg-white rounded-lg p-4 border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                          <div className="bg-white dark:bg-surface rounded-lg p-4 border border-gray-100 dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
                             {mdaSettings.codPolicyContent ||
                               "No policy content set"}
                           </div>
@@ -611,17 +611,17 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Divider */}
-                    <hr className="border-gray-200" />
+                    <hr className="border-gray-200 dark:border-white/10" />
 
                     {/* Query Response Fee Percentage */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Percent className="w-5 h-5 text-purple-600" />
-                        <label className="text-sm font-semibold text-gray-900">
+                        <label className="text-sm font-semibold text-gray-900 dark:text-white">
                           Query Response Fee Percentage
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Additional percentage charged when a surveyor responds
                         to a query and resubmits.
                       </p>
@@ -639,9 +639,9 @@ export default function SettingsPage() {
                                 parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-32 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                          className="w-32 px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                         />
-                        <span className="text-sm text-gray-600 font-medium">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                           %
                         </span>
                       </div>
@@ -669,25 +669,25 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Divider */}
-                    <hr className="border-gray-200" />
+                    <hr className="border-gray-200 dark:border-white/10" />
 
                     {/* Record Copy Verification Tolerances */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Shield className="w-5 h-5 text-purple-600" />
-                        <label className="text-sm font-semibold text-gray-900">
+                        <label className="text-sm font-semibold text-gray-900 dark:text-white">
                           Record Copy Verification Tolerances
                         </label>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         These tolerances dictate how strict the automated Record
                         Copy validation is when comparing the PDF with the
                         entered survey coordinates.
                       </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/10">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Anchor Coord (m)
                           </label>
                           <input
@@ -703,11 +703,11 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Bearing WCB (°)
                           </label>
                           <input
@@ -723,11 +723,11 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Distance (m)
                           </label>
                           <input
@@ -743,11 +743,11 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Area (sq m)
                           </label>
                           <input
@@ -763,11 +763,11 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Pass Threshold (%)
                           </label>
                           <input
@@ -783,11 +783,11 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Warn Threshold (%)
                           </label>
                           <input
@@ -803,18 +803,18 @@ export default function SettingsPage() {
                                 },
                               })
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-lg text-sm"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-white/10">
                       <button
                         onClick={handleResetMdaSettings}
                         disabled={!hasMdaSettingsChanged() || mdaSettingsSaving}
-                        className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                        className="px-4 py-2.5 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                       >
                         <RotateCcw className="w-4 h-4" />
                         Discard Changes
@@ -843,7 +843,7 @@ export default function SettingsPage() {
                 ) : (
                   <div className="text-center py-12">
                     <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">Failed to load MDA settings</p>
+                    <p className="text-gray-500 dark:text-gray-400">Failed to load MDA settings</p>
                     <button
                       onClick={fetchMdaSettings}
                       className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"

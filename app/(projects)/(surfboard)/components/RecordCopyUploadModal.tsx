@@ -203,7 +203,7 @@ export function RecordCopyUploadModal({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Upload Progress
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
@@ -233,15 +233,15 @@ export function RecordCopyUploadModal({
               return (
                 <div
                   key={plan.id}
-                  className="border border-gray-200 rounded-lg p-4 space-y-3"
+                  className="border border-gray-200 dark:border-white/10 rounded-lg p-4 space-y-3"
                 >
                   {/* Plan Info */}
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {plan.planNumber}
                       </p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {plan.surveyTitle}
                       </p>
                     </div>
@@ -255,7 +255,7 @@ export function RecordCopyUploadModal({
                           className="p-1 hover:bg-red-50 rounded-full transition-colors group"
                           title="Remove from selection"
                         >
-                          <X className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                          <X className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-red-600" />
                         </button>
                       )}
                     </div>
@@ -279,7 +279,7 @@ export function RecordCopyUploadModal({
                               e.target.files?.[0] || null,
                             )
                           }
-                          className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          className="flex-1 text-sm text-gray-600 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                           disabled={status?.uploading}
                         />
                         {file && !status?.uploading && (

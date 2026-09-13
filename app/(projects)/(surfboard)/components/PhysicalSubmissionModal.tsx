@@ -106,7 +106,7 @@ export function PhysicalSubmissionModal({
 
         <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           {plans.length === 0 ? (
-            <p className="text-gray-500 text-center">No records found in this batch.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center">No records found in this batch.</p>
           ) : (
             <div className="space-y-3">
               {plans.map((plan) => {
@@ -121,14 +121,14 @@ export function PhysicalSubmissionModal({
                     key={plan.id}
                     className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-colors ${
                       isAlreadySubmitted
-                        ? "bg-gray-50 border-gray-200 opacity-70"
+                        ? "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-70"
                         : isQueried
                         ? "bg-red-50/50 border-red-100 opacity-60"
                         : !eligible
-                        ? "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
+                        ? "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 opacity-60 cursor-not-allowed"
                         : isSelected
                         ? "border-blue-500 bg-blue-50 cursor-pointer"
-                        : "border-gray-200 hover:border-blue-300 cursor-pointer"
+                        : "border-gray-200 dark:border-white/10 hover:border-blue-300 cursor-pointer"
                     }`}
                     onClick={() => {
                       if (isAvailable) {
@@ -138,7 +138,7 @@ export function PhysicalSubmissionModal({
                   >
                     <div className="shrink-0 mt-0.5">
                       {isAlreadySubmitted ? (
-                        <CheckCircle2 className="w-5 h-5 text-gray-400" />
+                        <CheckCircle2 className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                       ) : isQueried || !eligible ? (
                         <Circle className="w-5 h-5 text-gray-300" />
                       ) : isSelected ? (
@@ -149,9 +149,9 @@ export function PhysicalSubmissionModal({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">{plan.planNumber}</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">{plan.planNumber}</span>
                         {isAlreadySubmitted && (
-                          <Badge variant="outline" className="text-xs bg-gray-100">
+                          <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-white/10">
                             Already Submitted
                           </Badge>
                         )}
@@ -166,7 +166,7 @@ export function PhysicalSubmissionModal({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{plan.surveyTitle}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{plan.surveyTitle}</p>
                     </div>
                   </div>
                 );
@@ -176,7 +176,7 @@ export function PhysicalSubmissionModal({
         </div>
 
         <DialogFooter className="flex items-center justify-between mt-4">
-          <div className="text-sm text-gray-600 font-medium">
+          <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             {selectedPlanIds.size} out of {plans.length} records selected to be submitted
           </div>
           <div className="flex gap-2">

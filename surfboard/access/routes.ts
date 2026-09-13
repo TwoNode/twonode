@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Wrench,
   ShieldAlert,
+  SlidersHorizontal,
 } from "lucide-react";
 import { SurfboardRole } from "@/utils/platform";
 
@@ -51,6 +52,8 @@ export interface SurfboardRouteEntry {
   group: SurfboardRouteGroup;
   /** Visual sidebar section heading — display-only, no bearing on access control. */
   section?: string;
+  /** Section starts collapsed on first visit (still one click away) — for less-frequently-used groups, so the sidebar's default view is shorter. */
+  sectionCollapsedByDefault?: boolean;
 }
 
 const ADMIN_ROLES = [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN];
@@ -81,18 +84,29 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: ADMIN_BASE, label: "Home", icon: Home, roles: ADMIN_ROLES, group: "admin", section: "Overview" },
   { path: `${ADMIN_BASE}/surf-plans`, label: "Surf Plans", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
   { path: `${ADMIN_BASE}/map`, label: "Map Viewer", icon: Map, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
-  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: ADMIN_ROLES, group: "admin", section: "Plans" },
+  // Secure Plans is hidden: its status maps to the real SurfboardPlanStatus
+  // enum, but priority/confidentiality/tags/estimatedValue have no backing
+  // field anywhere in the schema — it's mock-only UI with no real concept
+  // behind it yet. `roles: []` (rather than deleting the entry outright)
+  // is deliberate: canAccessRoute's prefix match falls back to the bare
+  // ADMIN_BASE "Home" entry for any sub-path with no entry of its own, which
+  // would silently grant every ADMIN/SUPERADMIN access anyway — confirmed
+  // live (proxy.ts still returned 200 after just deleting the entry). An
+  // empty roles array both drops it from getNavItemsForRole's nav list and
+  // makes canAccessRoute's `.includes(role)` check false for everyone.
+  { path: `${ADMIN_BASE}/secure-plans`, label: "Secure Plans", icon: ShieldAlert, roles: [], group: "admin", section: "Plans" },
   { path: `${ADMIN_BASE}/user-management`, label: "User Management", icon: ListChecks, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/kyc`, label: "Surveyor's KYC", icon: Shield, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/cod/batches`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
-  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights" },
-  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights" },
-  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin", section: "System" },
-  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin", section: "System" },
+  { path: `${ADMIN_BASE}/qr-earnings/settings`, label: "QR Earnings Settings", icon: SlidersHorizontal, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/admin-tools`, label: "Admin Tools", icon: Wrench, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },
+  { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: ShieldAlert, roles: SUPERADMIN_ONLY, group: "admin", section: "System", sectionCollapsedByDefault: true },
 
   // --- User (surveyor) panel ---
   { path: USER_BASE, label: "Home", icon: Home, roles: USER_PANEL_ROLES, group: "user", section: "Overview" },

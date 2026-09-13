@@ -65,7 +65,7 @@ export default function MapViewerPage() {
       {/* Popup for plan details */}
       {selectedPlan && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+          <div className="bg-white dark:bg-surface rounded-xl shadow-lg p-8 max-w-md w-full">
             <h2
               className="text-xl font-bold mb-2"
               style={{ color: SURFBOARD_COLORS.primary.dark }}

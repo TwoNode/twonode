@@ -1,5 +1,6 @@
 "use client"
 import type { ReactNode } from "react";
+import { PlatformNetworkGraphic } from "./PlatformNetworkGraphic";
 
 export type AuthSplitLayoutProps = {
   accent: string;
@@ -26,7 +27,7 @@ export function AuthSplitLayout({
 }: AuthSplitLayoutProps) {
   return (
     <div className="min-h-screen flex">
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white dark:bg-[#0B1A26]">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white dark:bg-background">
         {notice && <div className="w-full max-w-md mb-4">{notice}</div>}
         {children}
         {footerNote && (
@@ -60,17 +61,10 @@ export function AuthSplitLayout({
           style={{ background: "white", opacity: 0.12 }}
         />
 
-        {/* Network/Node Logo Background Image */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-          <img
-            src="/twonode-network.svg"
-            alt="Twonode Network"
-            className="w-3/4 h-3/4 object-contain"
-            onError={(e) => {
-              // Fallback if image doesn't exist
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+        {/* Network graphic — TwoNode hub with each live product's real logo
+            at its node, plus one open slot to signal we're still expanding. */}
+        <div className="absolute inset-0 flex items-center justify-center p-12">
+          <PlatformNetworkGraphic className="max-w-md" />
         </div>
 
         <div className="relative z-10 flex flex-col justify-end w-full p-12 xl:p-16">

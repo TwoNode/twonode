@@ -14,6 +14,7 @@ import { calculatePlanFeeByZone, getChartingInterpretation, getZoneFromGeometry 
 import { getZoneFees, getSystemChargePercent } from "@/surfboard/services/settingsService";
 import { ApiError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/codActions.ts — batch
@@ -53,6 +54,95 @@ export async function getBatchesByStatus(status: string | undefined, userRole: S
   });
 
   return batches.map((batch) => ({ ...batch, planCount: batch._count.plans, _count: undefined }));
+}
+
+export interface GetAdminBatchesParams {
+  page: number;
+  pageSize: number;
+  status?: string;
+  search?: string;
+}
+
+/** Admin-only, paginated/searchable sibling of getBatchesByStatus — kept separate since that function is also used unpaginated by the surveyor-facing submitted-batches modal. */
+export async function getBatchesByStatusPaginated(userRole: SurfboardRole, params: GetAdminBatchesParams) {
+  if (userRole !== SurfboardRole.ADMIN && userRole !== SurfboardRole.SUPERADMIN) {
+    throw new ForbiddenError();
+  }
+  const { page, pageSize, status, search } = params;
+
+  const where: any = {};
+  if (status) where.paymentStatus = status;
+  if (search) {
+    where.OR = [
+      { batchCode: { contains: search, mode: "insensitive" } },
+      { submitter: { firstName: { contains: search, mode: "insensitive" } } },
+      { submitter: { lastName: { contains: search, mode: "insensitive" } } },
+      { submitter: { email: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.certificateOfDepositBatch.findMany({
+      where,
+      include: {
+        submitter: { select: { firstName: true, lastName: true, email: true } },
+        _count: { select: { plans: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.certificateOfDepositBatch.count({ where }),
+  ]);
+
+  const data = rows.map((batch) => ({ ...batch, planCount: batch._count.plans, _count: undefined }));
+  return paginatedResult(data, total, page, pageSize);
+}
+
+/** Aggregate counts/totals for a given payment status — kept independent of the paginated list so stat cards reflect the whole status bucket, not just the current page. */
+export async function getBatchStatusStats(userRole: SurfboardRole, status: string) {
+  if (userRole !== SurfboardRole.ADMIN && userRole !== SurfboardRole.SUPERADMIN) {
+    throw new ForbiddenError();
+  }
+  const [count, aggregates] = await Promise.all([
+    prisma.certificateOfDepositBatch.count({ where: { paymentStatus: status as any } }),
+    prisma.certificateOfDepositBatch.aggregate({
+      where: { paymentStatus: status as any },
+      _sum: { totalAmount: true },
+    }),
+  ]);
+  const planCountAgg = await prisma.surfboardPlan.count({ where: { batch: { paymentStatus: status as any } } });
+
+  return {
+    count,
+    totalPlans: planCountAgg,
+    totalAmount: aggregates._sum?.totalAmount ?? 0,
+  };
+}
+
+/** Breakdown across every payment status at once — the Certificates page's overview cards, which (unlike Batch Management's two-tab view) span the whole bucket regardless of the active status filter. */
+export async function getAllBatchStats(userRole: SurfboardRole) {
+  if (userRole !== SurfboardRole.ADMIN && userRole !== SurfboardRole.SUPERADMIN) {
+    throw new ForbiddenError();
+  }
+  const grouped = await prisma.certificateOfDepositBatch.groupBy({
+    by: ["paymentStatus"],
+    _count: true,
+  });
+  const byStatus: Record<string, number> = {};
+  let total = 0;
+  for (const row of grouped) {
+    byStatus[row.paymentStatus] = row._count;
+    total += row._count;
+  }
+  return {
+    total,
+    pendingUserPayment: byStatus.PENDING_USER_PAYMENT ?? 0,
+    lasgPaid: byStatus.LASG_PAID ?? 0,
+    accountsApproved: byStatus.ACCOUNTS_APPROVED ?? 0,
+    accountsDisapproved: byStatus.ACCOUNTS_DISAPPROVED ?? 0,
+    completed: byStatus.COMPLETED ?? 0,
+  };
 }
 
 export async function submitRedCopyBatch(userId: string, planIds: string[], acceptanceAcknowledged: boolean) {

@@ -17,7 +17,7 @@ export default function SurfRestrictedLandingPage() {
           Go to Restricted Dashboard
         </Link>
       </section>
-      <section className="bg-white rounded-xl shadow-md p-6 max-w-xl w-full border border-blue-100">
+      <section className="bg-white dark:bg-surface rounded-xl shadow-md p-6 max-w-xl w-full border border-blue-100">
         <h2 className="text-2xl font-bold text-blue-800 mb-2">
           Restricted Features
         </h2>

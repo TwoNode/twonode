@@ -15,6 +15,7 @@ import { PLAN_TYPES } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -788,6 +789,14 @@ export async function queryPlan(userRole: SurfboardRole, planId: string) {
   return { success: true };
 }
 
+/** Admin correction of a survey title (e.g. fixing a person-count mismatch) — separate from the surveyor's own updateSurfPlan, which requires the full plan DTO. */
+export async function updatePlanSurveyTitle(userRole: SurfboardRole, planId: string, surveyTitle: string) {
+  if (userRole === SurfboardRole.USER) throw new ForbiddenError();
+  if (!surveyTitle?.trim()) throw new ValidationError({ surveyTitle: "Survey title is required" });
+  await prisma.surfboardPlan.update({ where: { id: planId }, data: { surveyTitle: surveyTitle.trim() } });
+  return { success: true };
+}
+
 // ---------------------------------------------------------------------------
 // Sharing / users
 // ---------------------------------------------------------------------------
@@ -895,10 +904,13 @@ export async function getAllSurfPlansForAdmin() {
       id: true,
       planNumber: true,
       surveyTitle: true,
+      planType: true,
       ward: true,
       lga: true,
       status: true,
       geometry: true,
+      pillars: true,
+      state: true,
       user: { select: { firstName: true, lastName: true, email: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -908,11 +920,106 @@ export async function getAllSurfPlansForAdmin() {
     id: plan.id,
     planNumber: plan.planNumber,
     surveyTitle: plan.surveyTitle,
+    planType: plan.planType,
     location: plan.ward && plan.lga ? `${plan.ward}, ${plan.lga}` : plan.ward || plan.lga,
     status: plan.status,
     geometry: plan.geometry,
+    pillars: plan.pillars,
+    state: plan.state,
     ward: plan.ward,
     lga: plan.lga,
     owner: plan.user ?? null,
   }));
+}
+
+export interface AdminPlanListParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  /** A single SurfboardPlanStatus value, or "ALL"/undefined for no filter. */
+  status?: string;
+  /** "queries" narrows to QUERIED regardless of `status`; "person-count" is a display-only tab, no extra filtering. */
+  tab?: "all" | "person-count" | "queries";
+}
+
+/** Admin/superadmin-facing Survey Plans table — paginated, searchable, ADMIN/SUPERADMIN only, enforced at the route layer. */
+export async function getAdminSurfPlansPaginated(params: AdminPlanListParams) {
+  const { page, pageSize, search, status, tab } = params;
+  const where: Prisma.SurfboardPlanWhereInput = { deleted: false };
+
+  if (tab === "queries") {
+    where.status = "QUERIED";
+  } else if (status && status !== "ALL") {
+    where.status = status as any;
+  }
+
+  if (search) {
+    where.OR = [
+      { planNumber: { contains: search, mode: "insensitive" } },
+      { surveyTitle: { contains: search, mode: "insensitive" } },
+      { ward: { contains: search, mode: "insensitive" } },
+      { lga: { contains: search, mode: "insensitive" } },
+      { state: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({
+      where,
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        ward: true,
+        lga: true,
+        state: true,
+        locality: true,
+        pillars: true,
+        geometry: true,
+        personCount: true,
+        personCountVerified: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  const data = rows.map(withGeometry).map((plan) => ({
+    id: plan.id,
+    planNumber: plan.planNumber,
+    surveyTitle: plan.surveyTitle,
+    facility: plan.locality,
+    location: [plan.ward, plan.lga, plan.state].filter(Boolean).join(", ") || "—",
+    status: plan.status,
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt,
+    owner: {
+      name: plan.user ? `${plan.user.firstName} ${plan.user.lastName}`.trim() : "Unknown",
+      email: plan.user?.email ?? "",
+    },
+    pillarsCount: Array.isArray(plan.pillars) ? (plan.pillars as unknown[]).length : 0,
+    area: plan.areaSqM,
+    personCount: plan.personCount,
+    personCountVerified: plan.personCountVerified,
+  }));
+
+  return paginatedResult(data, total, page, pageSize);
+}
+
+/** Status-breakdown counts for the admin Survey Plans stat cards — kept separate from the paginated list so the cards reflect the whole table, not just the current page. */
+export async function getAdminSurfPlansStats() {
+  const [total, pending, underReview, lodged, queried] = await Promise.all([
+    prisma.surfboardPlan.count({ where: { deleted: false } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, status: "PENDING" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, status: "UNDER_REVIEW" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, status: "LODGED" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, status: "QUERIED" } }),
+  ]);
+  return { total, pending, underReview, lodged, queried };
 }

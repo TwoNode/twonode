@@ -52,23 +52,13 @@ export const metadata: Metadata = {
     images: ["/reva/favicon.jpg"],
   },
   icons: {
-    icon: "/reva/favicon.ico",
-    shortcut: "/reva/favicon.ico",
-    apple: "/reva/apple-touch-icon.png",
-    other: [
-      {
-        rel: "icon",
-        type: "image/png",
-        sizes: "32x32",
-        url: "/reva/favicon-32x32.png",
-      },
-      {
-        rel: "icon",
-        type: "image/png",
-        sizes: "16x16",
-        url: "/reva/favicon-16x16.png",
-      },
+    icon: [
+      { url: "/reva/favicon/favicon.ico", sizes: "any" },
+      { url: "/reva/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/reva/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
+    shortcut: "/reva/favicon/favicon.ico",
+    apple: "/reva/favicon/apple-touch-icon.png",
   },
   robots: {
     index: true,
@@ -91,5 +81,9 @@ export default function RevaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ToastProvider>{children}</ToastProvider>;
+  return (
+    <ToastProvider>
+      <div data-product="reva">{children}</div>
+    </ToastProvider>
+  );
 }

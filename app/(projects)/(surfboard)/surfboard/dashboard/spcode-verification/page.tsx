@@ -43,7 +43,7 @@ export default function SPCodeVerificationPage() {
         {filteredPlans.map((plan) => (
           <div
             key={plan.id}
-            className="bg-white rounded-xl shadow p-6 flex flex-col md:flex-row items-center gap-6"
+            className="bg-white dark:bg-surface rounded-xl shadow p-6 flex flex-col md:flex-row items-center gap-6"
           >
             {/* TODO: Replace with real QR code */}
             <div className="w-32 h-32 bg-blue-100 flex items-center justify-center rounded-lg text-blue-700 font-bold text-lg">

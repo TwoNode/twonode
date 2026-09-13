@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NotificationAudience, NotificationType, Role } from "@/prisma/generated";
 import { sendEmailToAdmin, sendEmailToAllAdmins } from "@/utils/email";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from revaActions.ts's notification CRUD + trigger functions.
@@ -85,6 +86,68 @@ export async function getSuperAdminNotifications() {
   });
 }
 
+export interface GetAdminNotificationsPaginatedParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  type?: NotificationType;
+  status?: "UNREAD" | "READ" | "ALL";
+  includeDismissed?: boolean;
+}
+
+/**
+ * Paginated/searchable sibling of getAdminNotifications()/
+ * getSuperAdminNotifications() — those two stay as-is (still used
+ * unpaginated by the /reva/dashboard bell-equivalent list). Same audience
+ * scoping per role, but with search/status pushed into the Prisma `where`
+ * instead of filtered client-side after the fact, and read/dismissed state
+ * computed per row against the viewing admin's own userId.
+ */
+export async function getAdminNotificationsPaginated(
+  role: "ADMIN" | "SUPERADMIN",
+  userId: string,
+  params: GetAdminNotificationsPaginatedParams
+) {
+  const { page, pageSize, search, type, status, includeDismissed } = params;
+
+  const audiences =
+    role === Role.SUPERADMIN
+      ? [NotificationAudience.SUPERADMIN, NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS]
+      : [NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS];
+
+  const where: any = { audience: { in: audiences } };
+  const and: any[] = [];
+  if (type) where.type = type;
+  if (status === "UNREAD") and.push({ NOT: { readBy: { has: userId } } });
+  else if (status === "READ") where.readBy = { has: userId };
+  if (!includeDismissed) and.push({ NOT: { dismissedBy: { has: userId } } });
+  if (and.length) where.AND = and;
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: "insensitive" } },
+      { message: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.notification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.notification.count({ where }),
+  ]);
+
+  const data = rows.map((n) => ({
+    ...n,
+    isRead: n.readBy.includes(userId),
+    isDismissed: n.dismissedBy.includes(userId),
+  }));
+
+  return paginatedResult(data, total, page, pageSize);
+}
+
 export async function markNotificationAsRead(notificationId: string, userId: string) {
   const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
   if (!notification) return null;
@@ -106,6 +169,21 @@ export async function dismissNotification(notificationId: string, userId: string
 export async function getUnreadNotificationCount(userId: string, role: Role) {
   const notifications = await getUserNotifications(userId, role);
   return notifications.filter((n) => !n.readBy.includes(userId) && !n.dismissedBy.includes(userId)).length;
+}
+
+/** Same audience scoping as getAdminNotificationsPaginated — getUnreadNotificationCount() uses getUserNotifications()'s condition set instead, which doesn't match what the admin list actually displays. */
+export async function getAdminNotificationUnreadCount(role: "ADMIN" | "SUPERADMIN", userId: string) {
+  const audiences =
+    role === Role.SUPERADMIN
+      ? [NotificationAudience.SUPERADMIN, NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS]
+      : [NotificationAudience.GENERAL_ADMINS, NotificationAudience.ALL_USERS];
+
+  return prisma.notification.count({
+    where: {
+      audience: { in: audiences },
+      AND: [{ NOT: { readBy: { has: userId } } }, { NOT: { dismissedBy: { has: userId } } }],
+    },
+  });
 }
 
 // ===== Notification triggers =====

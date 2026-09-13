@@ -22,7 +22,7 @@ export default function PlansMapClient({ plansRaw }: { plansRaw: Plan[] }) {
   // }, [plansRaw]);
 
   return (
-    <div className="h-[85vh] w-full border-8 border-dotted border-red-600">
+    <div className="h-full w-full">
       <MaplibreMultiPlansWithSearch
         plans={plansRaw}
         // basemap="roadmap"

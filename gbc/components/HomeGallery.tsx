@@ -28,29 +28,29 @@ export default function HomeGallery() {
   }, []);
 
   return (
-    <section className="py-12 sm:py-16 bg-gray-50">
+    <section className="py-12 sm:py-16 bg-gray-50 dark:bg-surface">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
             Gallery Highlights
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400">
             Snapshots from past GBC events
           </p>
         </div>
         {items.length === 0 ? (
           <div className="text-center py-12">
-            <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No gallery items yet.</p>
+            <ImageIcon className="h-24 w-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">No gallery items yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((item: any) => (
               <div
                 key={item.id}
-                className="group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
+                className="group relative bg-white dark:bg-surface-muted rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
               >
-                <div className="relative aspect-video bg-gray-100">
+                <div className="relative aspect-video bg-gray-100 dark:bg-surface">
                   {item.mediaType === "VIDEO" ? (
                     <>
                       {item.thumbnailUrl ? (
@@ -60,8 +60,8 @@ export default function HomeGallery() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <Play className="h-16 w-16 text-gray-400" />
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-surface-muted">
+                          <Play className="h-16 w-16 text-gray-400 dark:text-gray-500" />
                         </div>
                       )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
@@ -79,9 +79,9 @@ export default function HomeGallery() {
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+                  <h3 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">{item.title}</h3>
                   {item.description && (
-                    <p className="text-gray-600 text-sm line-clamp-2">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
                       {item.description}
                     </p>
                   )}

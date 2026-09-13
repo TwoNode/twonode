@@ -52,7 +52,7 @@ export default function UpdateSurfPlanPage({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-lg text-gray-600">Loading plan details...</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">Loading plan details...</div>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function UpdateSurfPlanPage({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-white dark:bg-surface rounded-xl shadow-md p-6">
         <h1 className="text-2xl font-bold text-blue-900 mb-6">
           Update Surf Plan
         </h1>

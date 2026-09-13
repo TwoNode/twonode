@@ -603,7 +603,7 @@ export function BatchSubmissionModal({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Total Plans Selected
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
@@ -616,18 +616,18 @@ export function BatchSubmissionModal({
 
           {/* Plans List */}
           <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-gray-900">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
               Selected Plans:
             </h4>
             <div className="max-h-60 overflow-y-auto space-y-2">
               {selectedPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 gap-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10 gap-3"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900 font-mono">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">
                         {plan.planNumber}
                       </p>
                       {plan.redCopyFileUrl && (
@@ -676,11 +676,11 @@ export function BatchSubmissionModal({
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                       {plan.surveyTitle}
                     </p>
                     {plan.lga && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         LGA: {plan.lga}
                       </p>
                     )}
@@ -690,8 +690,8 @@ export function BatchSubmissionModal({
                   <div className="flex items-center gap-2 shrink-0">
                     {verificationData[plan.id] ? (
                       verificationData[plan.id].isLoading ? (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border">
-                          <Loader2 className="w-3 h-3 animate-spin text-gray-500" />{" "}
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2.5 py-1 rounded-full border">
+                          <Loader2 className="w-3 h-3 animate-spin text-gray-500 dark:text-gray-400" />{" "}
                           Verifying
                         </div>
                       ) : (
@@ -742,7 +742,7 @@ export function BatchSubmissionModal({
                         className="p-1 hover:bg-red-50 rounded-full transition-colors group"
                         title="Remove from selection"
                       >
-                        <X className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                        <X className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-red-600" />
                       </button>
                     )}
                   </div>
@@ -789,7 +789,7 @@ export function BatchSubmissionModal({
           )}
 
           {allVerifiedOrReviewed ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+            <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4 mt-4">
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="policy-acceptance"
@@ -871,7 +871,7 @@ export function BatchSubmissionModal({
           <DialogHeader>
             <DialogTitle>Submission Policy</DialogTitle>
           </DialogHeader>
-          <div className="prose max-w-none text-sm text-gray-700 whitespace-pre-wrap">
+          <div className="prose max-w-none text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
             {policyContent}
           </div>
           <DialogFooter>
@@ -901,7 +901,7 @@ export function BatchSubmissionModal({
           <DialogHeader className="pb-2">
             <DialogTitle>View Record Copy - {viewingPdfPlanNumber}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full h-full border rounded overflow-hidden bg-gray-100">
+          <div className="flex-1 w-full h-full border rounded overflow-hidden bg-gray-100 dark:bg-white/10">
             {viewingPdfUrl && (
               <iframe
                 src={viewingPdfUrl}
@@ -940,7 +940,7 @@ export function BatchSelectionBar({
         exit={{ opacity: 0, y: 50 }}
         className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[95%] sm:w-auto max-w-lg sm:max-w-none"
       >
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-500 p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-surface rounded-xl shadow-2xl border-2 border-blue-500 p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="flex items-center justify-between sm:justify-start gap-2">
             <Badge className="bg-blue-600 text-nowrap text-white px-3 py-1 text-sm w-full sm:w-auto flex justify-center">
               {selectedCount} selected
@@ -952,7 +952,7 @@ export function BatchSelectionBar({
               variant="outline"
               size="sm"
               onClick={onClear}
-              className="border-gray-300 flex-1 sm:flex-none"
+              className="border-gray-300 dark:border-white/15 flex-1 sm:flex-none"
             >
               Clear
             </Button>

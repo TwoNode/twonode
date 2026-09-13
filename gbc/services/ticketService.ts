@@ -15,6 +15,7 @@ import { calculateTicketPrice, isTicketTypeAvailable } from "@/gbc/utils";
 import type { TicketPurchaseInput } from "@/gbc/utils/validations";
 import { generateTicketReceiptPdfBuffer } from "@/gbc/services/receiptPdfService";
 import type { GBCEdition, GBCTicket } from "@/prisma/generated";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(GBC)/actions/ticket-actions.ts. Pure Prisma,
@@ -428,7 +429,7 @@ export async function getTicketStats() {
   };
 }
 
-export async function getTickets(filters?: { status?: string; search?: string; limit?: number }) {
+function buildTicketWhere(filters?: { status?: string; search?: string }) {
   const where: any = {};
   if (filters?.status) where.paymentStatus = filters.status;
   if (filters?.search) {
@@ -439,7 +440,45 @@ export async function getTickets(filters?: { status?: string; search?: string; l
       { ticketNumber: { contains: filters.search, mode: "insensitive" } },
     ];
   }
-  return prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, take: filters?.limit || 100 });
+  return where;
+}
+
+/**
+ * `limit` used to silently default to 100 when omitted — real data loss for
+ * the two callers (attendees/certificates pages) that fetch "every COMPLETED
+ * ticket" for a real business action and can easily exceed that. Omitting
+ * `limit` now means unbounded, matching what those callers actually expect;
+ * RecentTickets' explicit `limit: 5` and the (uncalled) admin API route's
+ * optional limit are both unaffected.
+ */
+export async function getTickets(filters?: { status?: string; search?: string; limit?: number }) {
+  const where = buildTicketWhere(filters);
+  return prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, take: filters?.limit });
+}
+
+export interface GetTicketsPaginatedParams {
+  page: number;
+  pageSize: number;
+  status?: string;
+  search?: string;
+}
+
+/** Paginated/searchable sibling of getTickets() — the admin Tickets Management page. */
+export async function getTicketsPaginated(params: GetTicketsPaginatedParams) {
+  const { page, pageSize, status, search } = params;
+  const where = buildTicketWhere({ status, search });
+
+  const [rows, total] = await Promise.all([
+    prisma.gBCTicket.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.gBCTicket.count({ where }),
+  ]);
+
+  return paginatedResult(rows, total, page, pageSize);
 }
 
 export async function getTicketById(id: string) {

@@ -22,11 +22,11 @@ export function StatsCard({ title, value, change, icon, color = 'blue' }: StatsC
   const colorClasses = colorMap[color];
   
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-surface rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+          <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {change !== undefined && (

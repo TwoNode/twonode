@@ -37,8 +37,8 @@ export function PlanDetailsErrorState({
 
             {/* Error Message */}
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-              <p className="text-sm text-gray-600">{message}</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
             </div>
 
             {/* Action Buttons */}
@@ -72,7 +72,7 @@ export function PlanDetailsErrorState({
             </div>
 
             {/* Help Text */}
-            <p className="text-xs text-gray-500 pt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 pt-2">
               If this problem persists, please contact support.
             </p>
           </div>
@@ -102,8 +102,8 @@ export function PlanFormErrorState({
 
             {/* Error Message */}
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-              <p className="text-sm text-gray-600">{message}</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
             </div>
 
             {/* Action Buttons */}
@@ -125,7 +125,7 @@ export function PlanFormErrorState({
             </div>
 
             {/* Help Text */}
-            <p className="text-xs text-gray-500 pt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 pt-2">
               If this problem persists, please contact support.
             </p>
           </div>
@@ -145,13 +145,13 @@ export function GenericErrorState({
     <div className="flex items-center justify-center min-h-[300px] p-6">
       <div className="text-center space-y-4 max-w-md">
         <div className="flex justify-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-            <Icon className="w-8 h-8 text-gray-600" />
+          <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center">
+            <Icon className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
         </div>
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600">{message}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
         </div>
         {onRetry && (
           <Button onClick={onRetry} variant="outline">
@@ -173,13 +173,13 @@ export function NotFoundState({
     <div className="flex items-center justify-center min-h-[400px] p-6">
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-            <span className="text-5xl font-bold text-gray-400">404</span>
+          <div className="w-24 h-24 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center">
+            <span className="text-5xl font-bold text-gray-400 dark:text-gray-500">404</span>
           </div>
         </div>
         <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600">{message}</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {onGoBack && (

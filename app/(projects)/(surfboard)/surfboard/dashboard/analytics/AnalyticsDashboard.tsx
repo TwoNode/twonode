@@ -6,7 +6,6 @@ import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { surfboardApi } from '@/surfboard/apiClient';
-import { SURFBOARD_COLORS } from '@/surfboard/colors';
 import type { DateRangeValue } from '@/components/dashboard/DateRangeFilter';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
 import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
@@ -159,7 +158,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
           breakdown={`${analytics.provisionalPlansCount} provisional (${provisionalShare}% of all records)`}
           icon={Layers}
           tone="brand"
-          accent={{ main: SURFBOARD_COLORS.primary.main, light: SURFBOARD_COLORS.primary.light }}
         />
 
         <StatCard
@@ -233,7 +231,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
           data={areaDataByDimension[areaDimension]}
           height={400}
           maxItems={8}
-          showMultiVariable={areaDimension !== 'lga'} // Show multi-variable for LCDA and Ward
           actions={
             <div className="inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/10 dark:bg-white/5">
               {AREA_DIMENSIONS.map((dim) => (
