@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { sendMail, sendEmailToAllSuperAdmins } from "@/utils/email";
 import { notifySystemAlert } from "@/reva/services/notificationService";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from reva-restricted/actions/adminDbActions.ts's
@@ -92,6 +93,46 @@ export async function getAllUsers() {
   const regularUsers = allUsers.filter((user) => user.role === "USER");
 
   return { allUsers, admins, regularUsers };
+}
+
+export interface GetAllUsersPaginatedParams {
+  page: number;
+  pageSize: number;
+  scope?: "all" | "admins" | "users";
+  search?: string;
+}
+
+/**
+ * Paginated/searchable sibling of getAllUsers()/getAllAdminUsers() — those
+ * two stay as-is (getAllUsers() also feeds UserRoleManagementForm's
+ * full-roster dropdown, which needs every user, not one page of them).
+ */
+export async function getAllUsersPaginated(params: GetAllUsersPaginatedParams) {
+  const { page, pageSize, scope, search } = params;
+
+  const where: any = { email: { not: process.env.DEV_EMAIL } };
+  if (scope === "admins") where.role = { in: ["ADMIN", "SUPERADMIN"] };
+  if (scope === "users") where.role = "USER";
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.revaUser.findMany({
+      where,
+      include: { _count: { select: { properties: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.revaUser.count({ where }),
+  ]);
+
+  return paginatedResult(rows, total, page, pageSize);
 }
 
 export async function makeUserAdmin(userId: string, role: "ADMIN" | "SUPERADMIN") {

@@ -249,8 +249,16 @@ export const surfboardApi = {
     qr: {
       stats: () => jsonFetch<any>(`${BASE}/admin/qr/stats`),
 
-      pendingWithdrawals: () =>
-        jsonFetch<any[]>(`${BASE}/admin/qr/withdrawals`),
+      pendingWithdrawals: (params: { page?: number; pageSize?: number; search?: string } = {}) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.search) qs.set("search", params.search);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/admin/qr/withdrawals?${qs.toString()}`);
+      },
 
       processWithdrawal: (
         id: string,
@@ -280,6 +288,7 @@ export const surfboardApi = {
           action?: string;
           entity?: string;
           userId?: string;
+          search?: string;
           startDate?: Date;
           endDate?: Date;
         } = {},
@@ -290,15 +299,13 @@ export const surfboardApi = {
         if (params.action) qs.set("action", params.action);
         if (params.entity) qs.set("entity", params.entity);
         if (params.userId) qs.set("userId", params.userId);
+        if (params.search) qs.set("search", params.search);
         if (params.startDate)
           qs.set("startDate", params.startDate.toISOString());
         if (params.endDate) qs.set("endDate", params.endDate.toISOString());
         return jsonFetch<{
-          logs: any[];
-          total: number;
-          page: number;
-          pageSize: number;
-          totalPages: number;
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
         }>(`${BASE}/admin/audit-logs?${qs.toString()}`);
       },
 
@@ -317,6 +324,7 @@ export const surfboardApi = {
           roleGroup?: "admins" | "mda";
           role?: string;
           status?: "active" | "inactive";
+          subscriptionStatus?: "expired" | "expiring_soon";
         } = {},
       ) => {
         const qs = new URLSearchParams();
@@ -326,6 +334,7 @@ export const surfboardApi = {
         if (params.roleGroup) qs.set("roleGroup", params.roleGroup);
         if (params.role) qs.set("role", params.role);
         if (params.status) qs.set("status", params.status);
+        if (params.subscriptionStatus) qs.set("subscriptionStatus", params.subscriptionStatus);
         const query = qs.toString();
         return jsonFetch<any>(`${BASE}/admin/users${query ? `?${query}` : ""}`);
       },
@@ -676,6 +685,34 @@ export const surfboardApi = {
         jsonFetch<any[]>(
           `${BASE}/cod/batches${status ? `?status=${encodeURIComponent(status)}` : ""}`,
         ),
+
+      /** Admin-only, paginated/searchable variant of list() — the admin Batch Management page. */
+      listPaginated: (params: { page?: number; pageSize?: number; status?: string; search?: string } = {}) => {
+        const qs = new URLSearchParams();
+        qs.set("page", String(params.page ?? 1));
+        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+        if (params.status) qs.set("status", params.status);
+        if (params.search) qs.set("search", params.search);
+        return jsonFetch<{
+          data: any[];
+          pagination: { page: number; pageSize: number; total: number; totalPages: number };
+        }>(`${BASE}/cod/batches?${qs.toString()}`);
+      },
+
+      statsByStatus: (status: string) =>
+        jsonFetch<{ count: number; totalPlans: number; totalAmount: number }>(
+          `${BASE}/cod/batches/stats?status=${encodeURIComponent(status)}`,
+        ),
+
+      allStats: () =>
+        jsonFetch<{
+          total: number;
+          pendingUserPayment: number;
+          lasgPaid: number;
+          accountsApproved: number;
+          accountsDisapproved: number;
+          completed: number;
+        }>(`${BASE}/cod/batches/stats`),
 
       submit: (planIds: string[], acceptanceAcknowledged: true) =>
         jsonFetch<any>(`${BASE}/cod/batches`, {

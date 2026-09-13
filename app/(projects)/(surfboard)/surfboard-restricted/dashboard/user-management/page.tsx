@@ -16,6 +16,8 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { useViewMode } from "@/hooks/useViewMode";
 
 interface Subscription {
   id?: string;
@@ -54,12 +56,15 @@ interface UserStats {
   superAdmins: number;
   regularUsers: number;
   usersWithActiveSubscriptions: number;
+  expiredSubscriptions: number;
+  expiringSoonSubscriptions: number;
 }
 
 interface UserFilters {
   roleGroup: "admins" | "mda";
   status: string;
   role: string;
+  subscriptionStatus: string;
 }
 
 export default function UserManagementPage() {
@@ -68,11 +73,12 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<User | null>(
-    null
+    null,
   );
   const [currentUserRole, setCurrentUserRole] = useState<SurfboardRole | null>(
-    null
+    null,
   );
+  const [viewMode, setViewMode] = useViewMode("user-management", "list");
   const router = useRouter();
 
   const {
@@ -101,18 +107,38 @@ export default function UserManagementPage() {
           filters.status === "active" || filters.status === "inactive"
             ? filters.status
             : undefined,
+        subscriptionStatus:
+          filters.subscriptionStatus === "expired" ||
+          filters.subscriptionStatus === "expiring_soon"
+            ? filters.subscriptionStatus
+            : undefined,
       }),
-    { initialFilters: { roleGroup: "admins", status: "all", role: "all" }, pageSize: 20 }
+    {
+      initialFilters: {
+        roleGroup: "admins",
+        status: "all",
+        role: "all",
+        subscriptionStatus: "all",
+      },
+    },
   );
 
   const activeTab = filters.roleGroup;
   const filterStatus = filters.status;
   const filterRole = filters.role;
+  const filterSubscriptionStatus = filters.subscriptionStatus;
   const setActiveTab = (tab: "admins" | "mda") =>
-    setFilters({ roleGroup: tab, status: "all", role: "all" });
+    setFilters({
+      roleGroup: tab,
+      status: "all",
+      role: "all",
+      subscriptionStatus: "all",
+    });
   const setFilterStatus = (status: string) =>
     setFilters((f) => ({ ...f, status }));
   const setFilterRole = (role: string) => setFilters((f) => ({ ...f, role }));
+  const setFilterSubscriptionStatus = (subscriptionStatus: string) =>
+    setFilters((f) => ({ ...f, subscriptionStatus }));
 
   const loadStats = async () => {
     const statsResult = await surfboardApi.admin.users.stats();
@@ -193,9 +219,14 @@ export default function UserManagementPage() {
     )
       return;
 
-    const result = await surfboardApi.admin.users.setStatus(userId, !currentStatus);
+    const result = await surfboardApi.admin.users.setStatus(
+      userId,
+      !currentStatus,
+    );
     if (result.success) {
-      toast.success(`User ${!currentStatus ? "activated" : "deactivated"} successfully`);
+      toast.success(
+        `User ${!currentStatus ? "activated" : "deactivated"} successfully`,
+      );
       reload();
       loadStats();
     } else {
@@ -260,7 +291,10 @@ export default function UserManagementPage() {
     )
       return;
 
-    const result = await surfboardApi.admin.users.updateSubscription(editingSubscription.id, subscriptionForm);
+    const result = await surfboardApi.admin.users.updateSubscription(
+      editingSubscription.id,
+      subscriptionForm,
+    );
 
     if (result.success) {
       toast.success("Subscription updated successfully");
@@ -363,7 +397,9 @@ export default function UserManagementPage() {
       <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading user management...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Loading user management...
+          </p>
         </div>
       </div>
     );
@@ -435,7 +471,7 @@ export default function UserManagementPage() {
 
           {/* Stats Overview */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
               <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
@@ -510,7 +546,9 @@ export default function UserManagementPage() {
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Admins
+                    </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                       {stats.admins + stats.superAdmins}
                     </p>
@@ -546,12 +584,76 @@ export default function UserManagementPage() {
                   </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setFilterSubscriptionStatus("expired")}
+                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6"
+              >
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Expired Subscriptions
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                      {stats.expiredSubscriptions}
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFilterSubscriptionStatus("expiring_soon")}
+                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6"
+              >
+                <div className="flex items-center">
+                  <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Expiring in 7 Days
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                      {stats.expiringSoonSubscriptions}
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
           )}
 
           {/* Filters and Search */}
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Users
@@ -610,178 +712,175 @@ export default function UserManagementPage() {
                   )}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Subscription
+                </label>
+                <select
+                  value={filterSubscriptionStatus}
+                  onChange={(e) => setFilterSubscriptionStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Subscriptions</option>
+                  <option value="expired">Expired</option>
+                  <option value="expiring_soon">Expiring in 7 Days</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Users Table */}
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Users ({total})
               </h2>
+              <ViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
-                <thead className="bg-gray-50 dark:bg-white/5">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Subscription
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Plans
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
-                              <span className="text-sm font-medium text-white">
-                                {user.firstName[0]}
-                                {user.lastName[0]}
-                              </span>
-                            </div>
+            {viewMode === "grid" ? (
+              <div className="p-4">
+                {users.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No users found
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="shrink-0 h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">
+                              {user.firstName[0]}
+                              {user.lastName[0]}
+                            </span>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {user.email}
                             </div>
-                            {user.companyName && (
-                              <div className="text-xs text-gray-400 dark:text-gray-500">
-                                {user.companyName}
-                              </div>
-                            )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) =>
-                            handleRoleChange(user.id, value as SurfboardRole)
-                          }
-                        >
-                          <SelectTrigger
-                            className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                              user.role
-                            )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) =>
+                              handleRoleChange(user.id, value as SurfboardRole)
+                            }
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {activeTab === "admins" ? (
-                              <>
-                                <SelectItem value="USER">USER</SelectItem>
-                                <SelectItem value="ADMIN">ADMIN</SelectItem>
-                                <SelectItem value="SUPERADMIN">
-                                  SUPERADMIN
-                                </SelectItem>
-                                <SelectItem value="RECORDS_I">
-                                  Records I
-                                </SelectItem>
-                                <SelectItem value="RECORDS_II">
-                                  Records II
-                                </SelectItem>
-                                <SelectItem value="ACCOUNTS">
-                                  Accounts
-                                </SelectItem>
-                                <SelectItem value="CHARTING">
-                                  Charting
-                                </SelectItem>
-                                <SelectItem value="SURCON">SURCON</SelectItem>
-                                <SelectItem value="MDA_SUPERADMIN">
-                                  MDA Super Admin
-                                </SelectItem>
-                              </>
-                            ) : (
-                              <>
-                                <SelectItem value="RECORDS_I">
-                                  RECORDS_I
-                                </SelectItem>
-                                <SelectItem value="INTAKE">INTAKE</SelectItem>
-                                <SelectItem value="RECORDS_II">
-                                  RECORDS_II
-                                </SelectItem>
-                                <SelectItem value="ACCOUNTS">
-                                  ACCOUNTS
-                                </SelectItem>
-                                <SelectItem value="CHARTING">
-                                  CHARTING
-                                </SelectItem>
-                                <SelectItem value="SURCON">SURCON</SelectItem>
-                                <SelectItem value="ARCHIVE">
-                                  ARCHIVE
-                                </SelectItem>
-                                <SelectItem value="MDA_SUPERADMIN">
-                                  MDA_SUPERADMIN
-                                </SelectItem>
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() =>
-                            handleStatusToggle(user.id, user.isActive)
-                          }
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            user.isActive
-                              ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
-                              : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
-                          }`}
-                        >
-                          {user.isActive ? "Active" : "Inactive"}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                            <SelectTrigger
+                              className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+                                user.role,
+                              )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeTab === "admins" ? (
+                                <>
+                                  <SelectItem value="USER">USER</SelectItem>
+                                  <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                  <SelectItem value="SUPERADMIN">
+                                    SUPERADMIN
+                                  </SelectItem>
+                                  <SelectItem value="RECORDS_I">
+                                    Records I
+                                  </SelectItem>
+                                  <SelectItem value="RECORDS_II">
+                                    Records II
+                                  </SelectItem>
+                                  <SelectItem value="ACCOUNTS">
+                                    Accounts
+                                  </SelectItem>
+                                  <SelectItem value="CHARTING">
+                                    Charting
+                                  </SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">
+                                    MDA Super Admin
+                                  </SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="RECORDS_I">
+                                    RECORDS_I
+                                  </SelectItem>
+                                  <SelectItem value="INTAKE">INTAKE</SelectItem>
+                                  <SelectItem value="RECORDS_II">
+                                    RECORDS_II
+                                  </SelectItem>
+                                  <SelectItem value="ACCOUNTS">
+                                    ACCOUNTS
+                                  </SelectItem>
+                                  <SelectItem value="CHARTING">
+                                    CHARTING
+                                  </SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="ARCHIVE">
+                                    ARCHIVE
+                                  </SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">
+                                    MDA_SUPERADMIN
+                                  </SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+
+                          <button
+                            onClick={() =>
+                              handleStatusToggle(user.id, user.isActive)
+                            }
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.isActive
+                                ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                                : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
+                            }`}
+                          >
+                            {user.isActive ? "Active" : "Inactive"}
+                          </button>
+                        </div>
+
                         {user.subscription ? (
                           <div>
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSubscriptionStatusColor(
-                                user.subscription.status
+                                user.subscription.status,
                               )}`}
                             >
                               {user.subscription.planName}
                             </span>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                               ₦
                               {(
                                 user.subscription.amount / 100
                               ).toLocaleString()}
                               /{user.subscription.interval}
-                            </div>
+                            </span>
                           </div>
                         ) : (
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
+                          <span className="inline-flex w-fit px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
                             No Subscription
                           </span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                        {user.plansCount}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1">
+
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {user.plansCount} plan
+                          {user.plansCount === 1 ? "" : "s"}
+                          {user.companyName ? ` • ${user.companyName}` : ""}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-1 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
                           <button
                             onClick={() => setSelectedUser(user)}
                             title="View details"
@@ -806,19 +905,220 @@ export default function UserManagementPage() {
                             <CreditCard className="h-4 w-4" />
                           </button>
                         </div>
-                      </td>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+                  <thead className="bg-gray-50 dark:bg-white/5">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Subscription
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Plans
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white dark:bg-surface divide-y divide-gray-200 dark:divide-white/10">
+                    {users.map((user) => (
+                      <tr
+                        key={user.id}
+                        className="hover:bg-gray-50 dark:hover:bg-white/5"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                                <span className="text-sm font-medium text-white">
+                                  {user.firstName[0]}
+                                  {user.lastName[0]}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {user.firstName} {user.lastName}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {user.email}
+                              </div>
+                              {user.companyName && (
+                                <div className="text-xs text-gray-400 dark:text-gray-500">
+                                  {user.companyName}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) =>
+                              handleRoleChange(user.id, value as SurfboardRole)
+                            }
+                          >
+                            <SelectTrigger
+                              className={`h-auto w-auto min-w-0 gap-1.5 px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+                                user.role,
+                              )} border-0 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:opacity-60`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeTab === "admins" ? (
+                                <>
+                                  <SelectItem value="USER">USER</SelectItem>
+                                  <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                  <SelectItem value="SUPERADMIN">
+                                    SUPERADMIN
+                                  </SelectItem>
+                                  <SelectItem value="RECORDS_I">
+                                    Records I
+                                  </SelectItem>
+                                  <SelectItem value="RECORDS_II">
+                                    Records II
+                                  </SelectItem>
+                                  <SelectItem value="ACCOUNTS">
+                                    Accounts
+                                  </SelectItem>
+                                  <SelectItem value="CHARTING">
+                                    Charting
+                                  </SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">
+                                    MDA Super Admin
+                                  </SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="RECORDS_I">
+                                    RECORDS_I
+                                  </SelectItem>
+                                  <SelectItem value="INTAKE">INTAKE</SelectItem>
+                                  <SelectItem value="RECORDS_II">
+                                    RECORDS_II
+                                  </SelectItem>
+                                  <SelectItem value="ACCOUNTS">
+                                    ACCOUNTS
+                                  </SelectItem>
+                                  <SelectItem value="CHARTING">
+                                    CHARTING
+                                  </SelectItem>
+                                  <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="ARCHIVE">
+                                    ARCHIVE
+                                  </SelectItem>
+                                  <SelectItem value="MDA_SUPERADMIN">
+                                    MDA_SUPERADMIN
+                                  </SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() =>
+                              handleStatusToggle(user.id, user.isActive)
+                            }
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.isActive
+                                ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                                : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
+                            }`}
+                          >
+                            {user.isActive ? "Active" : "Inactive"}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.subscription ? (
+                            <div>
+                              <span
+                                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getSubscriptionStatusColor(
+                                  user.subscription.status,
+                                )}`}
+                              >
+                                {user.subscription.planName}
+                              </span>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                ₦
+                                {(
+                                  user.subscription.amount / 100
+                                ).toLocaleString()}
+                                /{user.subscription.interval}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
+                              No Subscription
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                          {user.plansCount}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setSelectedUser(user)}
+                              title="View details"
+                              className="p-1.5 rounded-md text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            {user.role === "USER" && (
+                              <button
+                                onClick={() => handlePromoteToAdmin(user.id)}
+                                title="Promote to admin"
+                                className="p-1.5 rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors"
+                              >
+                                <ArrowUpCircle className="h-4 w-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openSubscriptionModal(user)}
+                              title="Manage subscription"
+                              className="p-1.5 rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {totalPages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Page {page} of {totalPages} • {total} users
                 </p>
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                />
               </div>
             )}
           </div>
@@ -873,7 +1173,9 @@ export default function UserManagementPage() {
                           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Email
                           </label>
-                          <p className="text-gray-900 dark:text-white">{selectedUser.email}</p>
+                          <p className="text-gray-900 dark:text-white">
+                            {selectedUser.email}
+                          </p>
                         </div>
                         <div>
                           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -905,7 +1207,7 @@ export default function UserManagementPage() {
                           </label>
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-                              selectedUser.role
+                              selectedUser.role,
                             )}`}
                           >
                             {selectedUser.role}
@@ -947,7 +1249,7 @@ export default function UserManagementPage() {
                           </label>
                           <p className="text-gray-900 dark:text-white">
                             {new Date(
-                              selectedUser.createdAt
+                              selectedUser.createdAt,
                             ).toLocaleDateString()}
                           </p>
                         </div>
@@ -1084,11 +1386,11 @@ export default function UserManagementPage() {
                       <input
                         type="date"
                         value={
-                          subscriptionForm?.currentEnd instanceof Date
-                            ? subscriptionForm.currentEnd
+                          subscriptionForm?.currentEnd
+                            ? new Date(subscriptionForm.currentEnd)
                                 .toISOString()
                                 .split("T")[0]
-                            : (subscriptionForm?.currentEnd as string) || ""
+                            : ""
                         }
                         onChange={(e) =>
                           setSubscriptionForm({

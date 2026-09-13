@@ -114,7 +114,7 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
     const interval = setInterval(() => {
       refreshUnreadCount();
       pollForNewNotifications();
-    }, 60000);
+    }, 45000);
     return () => clearInterval(interval);
   }, [refreshUnreadCount, pollForNewNotifications]);
 

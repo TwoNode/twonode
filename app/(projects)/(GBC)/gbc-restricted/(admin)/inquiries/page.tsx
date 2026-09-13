@@ -1,9 +1,10 @@
 // src/app/admin/inquiries/page.tsx
-import { getInquiries } from "@/gbc/services/contactService";
+import { getInquiriesPaginated, getInquiryStats } from "@/gbc/services/contactService";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
 import { InquiriesTable } from "@/gbc/components/admin/InquiriesTable";
 import { InquiriesFilters } from "@/gbc/components/admin/InquiriesFilters";
+import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -11,20 +12,17 @@ export const dynamic = "force-dynamic";
 export default async function AdminInquiriesPage({
   searchParams,
 }: {
-  searchParams: { status?: string; type?: string };
+  searchParams: { status?: string; type?: string; search?: string; page?: string; pageSize?: string };
 }) {
-  const { status, type } = await searchParams;
-  const inquiries = await getInquiries({ status, type });
+  const { status, type, search, page: pageParam, pageSize: pageSizeParam } = await searchParams;
+  const page = pageParam ? Math.max(1, Number(pageParam)) : 1;
+  const pageSize = pageSizeParam ? Number(pageSizeParam) : 10;
 
-  // Calculate stats
-  const stats = {
-    total: inquiries?.length || 0,
-    pending: inquiries?.filter((i: any) => i.status === "PENDING").length || 0,
-    inProgress:
-      inquiries?.filter((i: any) => i.status === "IN_PROGRESS").length || 0,
-    resolved:
-      inquiries?.filter((i: any) => i.status === "RESOLVED").length || 0,
-  };
+  const [result, stats] = await Promise.all([
+    getInquiriesPaginated({ page, pageSize, status, type, search }),
+    getInquiryStats(),
+  ]);
+  const inquiries = result.data;
 
   return (
     <div>
@@ -86,11 +84,24 @@ export default async function AdminInquiriesPage({
 
       {/* Filters */}
       <Card className="p-6 mb-6">
-        <InquiriesFilters currentType={type} currentStatus={status} />
+        <InquiriesFilters currentType={type} currentStatus={status} currentSearch={search} />
       </Card>
 
       {/* Inquiries Table */}
       <InquiriesTable inquiries={inquiries || []} />
+
+      {result.pagination.totalPages > 1 && (
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-gray-600">
+            Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} inquiries
+          </p>
+          <SearchParamsPagination
+            page={result.pagination.page}
+            totalPages={result.pagination.totalPages}
+            pageSize={result.pagination.pageSize}
+          />
+        </div>
+      )}
     </div>
   );
 }

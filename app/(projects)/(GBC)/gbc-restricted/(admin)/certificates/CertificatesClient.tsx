@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Clock, Mail, CheckSquare, Square, Loader2 } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
+import { Pagination } from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 export default function CertificatesClient({ initialTickets }: { initialTickets: any[] }) {
   const [tickets, setTickets] = useState(initialTickets || []);
@@ -15,20 +18,31 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
     "Thank you for attending Geospatial Builders Conference (GBC) 2.0!\n\nWe appreciate your active participation and are thrilled to have you as part of our geospatial community."
   );
   const [isSending, setIsSending] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // A filter/search change invalidates whatever page was showing.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search]);
 
   const filteredTickets = tickets.filter((t: any) => {
-    const matchesFilter = 
+    const matchesFilter =
       filter === "ALL" ? true :
       filter === "CHECKED_IN" ? t.checkedIn === true :
       t.checkedIn === false;
-      
-    const matchesSearch = 
-      t.name.toLowerCase().includes(search.toLowerCase()) || 
+
+    const matchesSearch =
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.email.toLowerCase().includes(search.toLowerCase()) ||
       t.ticketNumber.toLowerCase().includes(search.toLowerCase());
-      
+
     return matchesFilter && matchesSearch;
   });
+
+  // "Select All" operates on every filtered ticket, not just the rendered
+  // page — only the rendered list below is windowed.
+  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / PAGE_SIZE));
+  const pagedTickets = filteredTickets.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const toggleSelection = (ticketNumber: string) => {
     const newSelection = new Set(selectedTickets);
@@ -176,7 +190,7 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
 
         <div className="space-y-2 max-h-150 overflow-y-auto pr-2">
           {filteredTickets.length > 0 ? (
-            filteredTickets.map((ticket: any) => (
+            pagedTickets.map((ticket: any) => (
               <div
                 key={ticket.id}
                 onClick={() => toggleSelection(ticket.ticketNumber)}
@@ -224,6 +238,15 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
             </div>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages} • {filteredTickets.length} attendees
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </Card>
     </div>
   );

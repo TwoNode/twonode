@@ -7,6 +7,7 @@ import {
   sendGBCInquiryReply,
 } from "@/gbc/utils/email";
 import type { ContactFormInput } from "@/gbc/utils/validations";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from contact-actions.ts — inquiry functions only. Its "USER
@@ -29,6 +30,52 @@ export async function getInquiries(filters?: { status?: string; type?: string })
   if (filters?.status) where.status = filters.status as any;
   if (filters?.type) where.type = filters.type;
   return prisma.gBCContactInquiry.findMany({ where, orderBy: { createdAt: "desc" } });
+}
+
+export interface GetInquiriesPaginatedParams {
+  page: number;
+  pageSize: number;
+  status?: string;
+  type?: string;
+  search?: string;
+}
+
+/** Paginated/searchable sibling of getInquiries() — the admin Inquiries page. */
+export async function getInquiriesPaginated(params: GetInquiriesPaginatedParams) {
+  const { page, pageSize, status, type, search } = params;
+  const where: Prisma.GBCContactInquiryWhereInput = {};
+  if (status) where.status = status as any;
+  if (type) where.type = type;
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { subject: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.gBCContactInquiry.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.gBCContactInquiry.count({ where }),
+  ]);
+
+  return paginatedResult(rows, total, page, pageSize);
+}
+
+/** Overview counts for the Inquiries page's stat cards — independent of whatever filters/page the browsable list currently has applied. */
+export async function getInquiryStats() {
+  const [total, pending, inProgress, resolved] = await Promise.all([
+    prisma.gBCContactInquiry.count(),
+    prisma.gBCContactInquiry.count({ where: { status: "PENDING" as any } }),
+    prisma.gBCContactInquiry.count({ where: { status: "IN_PROGRESS" as any } }),
+    prisma.gBCContactInquiry.count({ where: { status: "RESOLVED" as any } }),
+  ]);
+  return { total, pending, inProgress, resolved };
 }
 
 export async function updateInquiryStatus(id: string, status: string) {

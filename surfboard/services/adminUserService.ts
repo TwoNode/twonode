@@ -26,7 +26,10 @@ export interface GetAllUsersParams {
   roleGroup?: "admins" | "mda";
   role?: string;
   status?: "active" | "inactive";
+  subscriptionStatus?: "expired" | "expiring_soon";
 }
+
+const EXPIRING_SOON_WINDOW_DAYS = 7;
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/adminActions.ts. Broad
@@ -47,6 +50,14 @@ export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsers
   }
   if (params.status === "active") where.isActive = true;
   if (params.status === "inactive") where.isActive = false;
+  if (params.subscriptionStatus === "expired") {
+    where.subscription = { some: { currentEnd: { lt: new Date() } } };
+  }
+  if (params.subscriptionStatus === "expiring_soon") {
+    const now = new Date();
+    const soon = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    where.subscription = { some: { currentEnd: { gte: now, lte: soon } } };
+  }
   if (params.search) {
     where.OR = [
       { firstName: { contains: params.search, mode: "insensitive" } },
@@ -92,12 +103,25 @@ export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsers
 }
 
 export async function getUserStats() {
-  const [totalUsers, activeUsers, admins, superAdmins, usersWithSubscriptions] = await Promise.all([
+  const now = new Date();
+  const expiringSoonCutoff = new Date(now.getTime() + EXPIRING_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers,
+    activeUsers,
+    admins,
+    superAdmins,
+    usersWithSubscriptions,
+    expiredSubscriptions,
+    expiringSoonSubscriptions,
+  ] = await Promise.all([
     prisma.surfboardUser.count(),
     prisma.surfboardUser.count({ where: { isActive: true } }),
     prisma.surfboardUser.count({ where: { role: "ADMIN" } }),
     prisma.surfboardUser.count({ where: { role: "SUPERADMIN" } }),
     prisma.subscription.count({ where: { status: "active" } }),
+    prisma.subscription.count({ where: { currentEnd: { lt: now } } }),
+    prisma.subscription.count({ where: { currentEnd: { gte: now, lte: expiringSoonCutoff } } }),
   ]);
 
   return {
@@ -108,6 +132,8 @@ export async function getUserStats() {
     superAdmins,
     regularUsers: totalUsers - admins - superAdmins,
     usersWithActiveSubscriptions: usersWithSubscriptions,
+    expiredSubscriptions,
+    expiringSoonSubscriptions,
   };
 }
 

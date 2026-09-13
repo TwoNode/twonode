@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { createNotification } from "@/surfboard/services/notificationService";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /** Migrated from app/(projects)/(surfboard)/actions/qrAdminActions.ts. */
 
@@ -83,24 +84,51 @@ export async function getAdminQREarningsStats() {
   };
 }
 
-export async function getAdminPendingWithdrawals() {
-  return prisma.withdrawalRequest.findMany({
-    where: { status: "PENDING" },
-    include: {
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phoneNumber: true,
-          companyName: true,
-          isKycValidated: true,
+export interface GetAdminPendingWithdrawalsParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+}
+
+export async function getAdminPendingWithdrawals(params: GetAdminPendingWithdrawalsParams) {
+  const { page, pageSize, search } = params;
+  const where: any = { status: "PENDING" };
+  if (search) {
+    where.OR = [
+      { requestRef: { contains: search, mode: "insensitive" } },
+      { accountName: { contains: search, mode: "insensitive" } },
+      { accountNumber: { contains: search, mode: "insensitive" } },
+      { user: { firstName: { contains: search, mode: "insensitive" } } },
+      { user: { lastName: { contains: search, mode: "insensitive" } } },
+      { user: { email: { contains: search, mode: "insensitive" } } },
+      { user: { companyName: { contains: search, mode: "insensitive" } } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.withdrawalRequest.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            companyName: true,
+            isKycValidated: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+      orderBy: { createdAt: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.withdrawalRequest.count({ where }),
+  ]);
+
+  return paginatedResult(rows, total, page, pageSize);
 }
 
 export async function processAdminWithdrawalRequest(

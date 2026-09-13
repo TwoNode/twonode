@@ -14,6 +14,7 @@ import {
   MapPin,
   FileCheck,
   UserCheck,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,37 +45,56 @@ import {
 import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useServerList } from "@/hooks/useServerList";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function AdminQREarningsPage() {
   const { confirm, ConfirmDialog } = useConfirm();
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
 
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRejectId, setSelectedRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [statsRes, queueRes] = await Promise.all([
-        surfboardApi.admin.qr.stats(),
-        surfboardApi.admin.qr.pendingWithdrawals(),
-      ]);
+  const {
+    items: pendingRequests,
+    total: totalPending,
+    totalPages,
+    loading,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    search,
+    setSearch,
+    reload,
+  } = useServerList<any, Record<string, never>>(
+    async ({ page, pageSize, search }) =>
+      surfboardApi.admin.qr.pendingWithdrawals({ page, pageSize, search: search || undefined }),
+    { initialFilters: {} }
+  );
 
+  const loadStats = async () => {
+    setStatsLoading(true);
+    try {
+      const statsRes = await surfboardApi.admin.qr.stats();
       if (statsRes.success) setStats(statsRes.data);
-      if (queueRes.success) setPendingRequests(queueRes.data || []);
     } catch (err: any) {
       toast.error(err.message || "Failed to load admin QR earnings data");
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   };
 
+  const fetchData = async () => {
+    await Promise.all([reload(), loadStats()]);
+  };
+
   useEffect(() => {
-    fetchData();
+    loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleApprovePayout = async (requestId: string) => {
@@ -145,7 +165,7 @@ export default function AdminQREarningsPage() {
     }
   };
 
-  if (loading) {
+  if (statsLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-3" />
@@ -244,9 +264,20 @@ export default function AdminQREarningsPage() {
             </CardDescription>
           </div>
           <Badge className="bg-amber-500/15 text-amber-800 border-amber-300 font-bold px-3 py-1">
-            {pendingRequests.length} Pending
+            {totalPending} Pending
           </Badge>
         </CardHeader>
+        <CardContent className="p-6 pb-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-gray-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by ref, surveyor, or bank account…"
+              className="pl-9"
+            />
+          </div>
+        </CardContent>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50 dark:bg-surface">
@@ -260,13 +291,19 @@ export default function AdminQREarningsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pendingRequests.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 mx-auto" />
+                  </TableCell>
+                </TableRow>
+              ) : pendingRequests.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={6}
                     className="text-center py-10 text-slate-500 dark:text-gray-400"
                   >
-                    No pending withdrawal requests in the queue.
+                    {search ? "No requests match your search." : "No pending withdrawal requests in the queue."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -335,6 +372,14 @@ export default function AdminQREarningsPage() {
             </TableBody>
           </Table>
         </CardContent>
+        {totalPages > 1 && (
+          <CardContent className="px-6 py-4 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-slate-600 dark:text-gray-400">
+              Page {page} of {totalPages} • {totalPending} requests
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+          </CardContent>
+        )}
       </Card>
 
       {/* Leaderboard Section */}

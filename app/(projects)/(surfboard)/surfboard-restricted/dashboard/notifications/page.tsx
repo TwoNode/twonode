@@ -50,6 +50,8 @@ import { useConfirm } from "@/hooks/useConfirm";
 import { PageLoader } from "@/components/ui/spinner";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { useViewMode } from "@/hooks/useViewMode";
 
 type NotificationType =
   | "INFO"
@@ -128,6 +130,7 @@ export default function AdminNotificationsPage() {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [viewMode, setViewMode] = useViewMode("notifications", "list");
 
   const {
     items: notifications,
@@ -154,7 +157,7 @@ export default function AdminNotificationsPage() {
         type: filters.type !== "ALL" ? filters.type : undefined,
         audience: filters.audience !== "ALL" ? filters.audience : undefined,
       }),
-    { initialFilters: { type: "ALL", audience: "ALL" }, pageSize: 20 }
+    { initialFilters: { type: "ALL", audience: "ALL" } }
   );
 
   const typeFilter = filters.type;
@@ -511,14 +514,97 @@ export default function AdminNotificationsPage() {
               Clear
             </Button>
           )}
+          <ViewToggle value={viewMode} onChange={setViewMode} className="shrink-0" />
         </div>
       </div>
 
       {/* Loading State */}
       {loading && <PageLoader label="Loading notifications…" />}
 
+      {/* Notifications Grid */}
+      {!loading && viewMode === "grid" && (
+        <div className="space-y-4">
+          {notifications.length === 0 ? (
+            <div className="bg-white dark:bg-surface rounded-lg border border-gray-100 dark:border-white/10 px-6 py-12 text-center">
+              <Bell className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">
+                {!hasActiveFilters && (stats?.total ?? 0) === 0
+                  ? "No notifications yet"
+                  : "No notifications match your filters"}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {notifications.map((notification, index) => (
+                <motion.div
+                  key={notification.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  className="flex flex-col gap-3 bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold rounded-full border ${TYPE_TONE[notification.type]}`}
+                    >
+                      {TYPE_ICONS[notification.type]}
+                      {notification.type}
+                    </span>
+                    {!notification.isRead && (
+                      <BellRing className="h-3.5 w-3.5 text-blue-500 shrink-0" aria-label="Unread" />
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {notification.title}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
+                      {notification.message}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    {audienceIcons[notification.audience]}
+                    {audienceLabels[notification.audience]}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-white/10">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {format(new Date(notification.createdAt), "MMM d, yyyy")}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(notification.id)}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && notifications.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Page {page} of {totalPages} • {total} notifications
+              </p>
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Notifications Table */}
-      {!loading && (
+      {!loading && viewMode === "list" && (
         <div className="bg-white dark:bg-surface rounded-lg border border-gray-100 dark:border-white/10 overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
             <thead className="bg-gray-50 dark:bg-white/5">

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { GBCUserNotificationType, GBCUserNotificationAudience } from "@/prisma/generated";
 import { NotFoundError } from "@/lib/api/errors";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * GBC's in-app admin notification inbox — mirrors Surfboard's
@@ -79,6 +80,67 @@ export async function getAdminNotifications(
       if (!includeDismissed && n.isDismissed) return false;
       return true;
     });
+}
+
+export interface GetAdminNotificationsPaginatedParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  type?: GBCUserNotificationType;
+  includeRead?: boolean;
+  includeDismissed?: boolean;
+}
+
+/**
+ * Paginated/searchable sibling of getAdminNotifications() — that one stays
+ * as-is (has its own unit test). Also fixes a real bug found while wiring
+ * this up: getAdminNotifications() filters includeRead/includeDismissed
+ * client-side in JS *after* `take: limit`, so `take` could cap the
+ * pre-filter set and silently under-return matches. Filtering now happens
+ * in the Prisma `where` clause, so skip/take operate on the true count.
+ */
+export async function getAdminNotificationsPaginated(
+  userId: string,
+  role: "ADMIN" | "SUPERADMIN",
+  params: GetAdminNotificationsPaginatedParams
+) {
+  const { page, pageSize, search, type, includeRead = true, includeDismissed = false } = params;
+
+  const where: any = { OR: [{ audience: "ALL_USERS" }, { audience: "GENERAL_ADMINS" }, { userIds: { has: userId } }] };
+  if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
+
+  const and: any[] = [];
+  if (type) where.type = type;
+  if (!includeRead) and.push({ NOT: { readBy: { has: userId } } });
+  if (!includeDismissed) and.push({ NOT: { dismissedBy: { has: userId } } });
+  if (and.length) where.AND = and;
+  if (search) {
+    where.AND = [...(where.AND || []), { OR: [{ title: { contains: search, mode: "insensitive" } }, { message: { contains: search, mode: "insensitive" } }] }];
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.gBCUserNotification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.gBCUserNotification.count({ where }),
+  ]);
+
+  const data = rows.map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    message: n.message,
+    audience: n.audience,
+    link: n.link,
+    createdAt: n.createdAt,
+    isRead: n.readBy.includes(userId),
+    isDismissed: n.dismissedBy.includes(userId),
+  }));
+
+  return paginatedResult(data, total, page, pageSize);
 }
 
 export async function markGBCNotificationAsRead(userId: string, notificationId: string) {

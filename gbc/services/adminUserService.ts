@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { ConflictError, ForbiddenError } from "@/lib/api/errors";
 import type { GBCRole } from "@/prisma/generated";
+import { paginatedResult } from "@/lib/api/pagination";
 
 /**
  * Migrated from admin-actions.ts — the live, better-designed admin-user
@@ -37,6 +38,66 @@ export async function getAllAdmins() {
       updatedAt: true,
     },
   });
+}
+
+export interface GetAllAdminsPaginatedParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  roles?: ("ADMIN" | "SUPERADMIN")[];
+  statuses?: boolean[];
+}
+
+/** Paginated/searchable sibling of getAllAdmins() — that one stays as-is (has its own unit test). */
+export async function getAllAdminsPaginated(params: GetAllAdminsPaginatedParams) {
+  const { page, pageSize, search, roles, statuses } = params;
+
+  const where: any = { email: { not: process.env.DEV_EMAIL } };
+  if (roles) where.role = { in: roles };
+  if (statuses) where.isActive = { in: statuses };
+  if (search) {
+    where.OR = [
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const select = {
+    id: true,
+    kindeId: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    phone: true,
+    role: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const;
+
+  const [rows, total] = await Promise.all([
+    prisma.gBCUser.findMany({
+      where,
+      select,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.gBCUser.count({ where }),
+  ]);
+
+  return paginatedResult(rows, total, page, pageSize);
+}
+
+/** Overview counts for the admin Users page's stat cards — independent of whatever filters/page the browsable list currently has applied. */
+export async function getAdminStats() {
+  const where = { email: { not: process.env.DEV_EMAIL } };
+  const [total, superAdmins] = await Promise.all([
+    prisma.gBCUser.count({ where }),
+    prisma.gBCUser.count({ where: { ...where, role: "SUPERADMIN" } }),
+  ]);
+  return { total, superAdmins, admins: total - superAdmins };
 }
 
 export async function addAdmin(

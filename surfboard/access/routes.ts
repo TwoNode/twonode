@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Wrench,
   ShieldAlert,
+  SlidersHorizontal,
 } from "lucide-react";
 import { SurfboardRole } from "@/utils/platform";
 
@@ -99,6 +100,7 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: Award, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/cod/batches`, label: "Certificate of Deposit", icon: Receipt, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/qr-earnings`, label: "QR Earnings", icon: QrCode, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
+  { path: `${ADMIN_BASE}/qr-earnings/settings`, label: "QR Earnings Settings", icon: SlidersHorizontal, roles: ADMIN_ROLES, group: "admin", section: "Operations" },
   { path: `${ADMIN_BASE}/analytics`, label: "Analytics", icon: Cog, roles: ADMIN_ROLES, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
   { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: FileText, roles: SUPERADMIN_ONLY, group: "admin", section: "Insights", sectionCollapsedByDefault: true },
   { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin", section: "System", sectionCollapsedByDefault: true },

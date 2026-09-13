@@ -5,7 +5,6 @@ import UserRoleManagementForm from "../../components/UserRoleManagementForm";
 import AllUsersList from "../../components/AllUsersList";
 import CreateNotificationForm from "../../components/CreateNotificationForm";
 import { getAllUsers } from "@/reva/services/adminUserService";
-import { canAccessRevaAdminPanel } from "@/permissions";
 
 interface User {
   id: string;
@@ -22,32 +21,15 @@ interface User {
   };
 }
 
-interface AdminUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: "ADMIN" | "SUPERADMIN";
-  emailVerified: boolean;
-  is_active: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  _count: {
-    properties: number;
-  };
-}
-
 const RevaPage: FC = async () => {
+  // Only UserRoleManagementForm's dropdown needs the full unpaginated roster —
+  // AdminUsersList/AllUsersList below now fetch their own paginated data.
   let allUsers: User[] = [];
-  let adminUsers: AdminUser[] = [];
   try {
     const result = await getAllUsers();
     allUsers = result.allUsers as User[];
-    adminUsers = result.allUsers.filter((user) =>
-      canAccessRevaAdminPanel(user.role)
-    ) as AdminUser[];
   } catch {
-    // fall through with empty lists
+    // fall through with empty list
   }
 
   return (
@@ -81,12 +63,12 @@ const RevaPage: FC = async () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Admin Users List */}
         <div className="w-full">
-          <AdminUsersList users={adminUsers} />
+          <AdminUsersList />
         </div>
 
         {/* All Users List */}
         <div className="w-full">
-          <AllUsersList users={allUsers} />
+          <AllUsersList />
         </div>
       </div>
     </div>
