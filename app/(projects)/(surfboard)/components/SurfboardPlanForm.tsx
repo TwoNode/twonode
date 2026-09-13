@@ -228,7 +228,8 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
 const cn = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");
 
-const labelCls = "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
+const labelCls =
+  "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
 const reqBadge = (
   <span className="text-red-500" aria-hidden="true">
     *
@@ -645,7 +646,9 @@ export default function SurfboardPlanForm({
 
         // Get admin boundaries for this polygon
         const tempPoly = await generatePolygonFromPillars(pillarsWithIndex);
-        const adminData = await surfboardApi.plans.adminBoundaries(tempPoly as any);
+        const adminData = await surfboardApi.plans.adminBoundaries(
+          tempPoly as any,
+        );
 
         newParcels.push({
           polygonIndex: parcelIdx,
@@ -1425,7 +1428,7 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.surveyTitle ? inputError : inputBorder,
-                      "min-h-[60px] resize-y",
+                      "min-h-15 resize-y",
                     )}
                     disabled={
                       (lockNonCert && mode === "edit") ||
@@ -1992,7 +1995,7 @@ export default function SurfboardPlanForm({
               </div>
 
               <div className="flex flex-wrap justify-between gap-4">
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.ward && "text-gray-400")}
                   >
@@ -2006,7 +2009,7 @@ export default function SurfboardPlanForm({
                     className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.lcda && "text-gray-400")}
                   >
@@ -2020,7 +2023,7 @@ export default function SurfboardPlanForm({
                     className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label className={cn(labelCls, !form.lga && "text-gray-400")}>
                     Primary LGA
                   </label>
@@ -2032,7 +2035,7 @@ export default function SurfboardPlanForm({
                     placeholder="Auto-populated"
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.state && "text-gray-400")}
                   >

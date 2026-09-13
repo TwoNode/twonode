@@ -324,6 +324,7 @@ export const surfboardApi = {
           roleGroup?: "admins" | "mda";
           role?: string;
           status?: "active" | "inactive";
+          subscriptionStatus?: "expired" | "expiring_soon";
         } = {},
       ) => {
         const qs = new URLSearchParams();
@@ -333,6 +334,7 @@ export const surfboardApi = {
         if (params.roleGroup) qs.set("roleGroup", params.roleGroup);
         if (params.role) qs.set("role", params.role);
         if (params.status) qs.set("status", params.status);
+        if (params.subscriptionStatus) qs.set("subscriptionStatus", params.subscriptionStatus);
         const query = qs.toString();
         return jsonFetch<any>(`${BASE}/admin/users${query ? `?${query}` : ""}`);
       },

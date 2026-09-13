@@ -39,7 +39,11 @@ import {
   notifyInfo,
   notifyWarning,
 } from "@/utils/notify";
-import { REVA_COLORS, REVA_GRADIENTS, revaStatusBadgeStyle } from "@/reva/colors";
+import {
+  REVA_COLORS,
+  REVA_GRADIENTS,
+  revaStatusBadgeStyle,
+} from "@/reva/colors";
 import { Pagination } from "@/components/ui/pagination";
 
 interface Request {
@@ -144,7 +148,7 @@ export function PaymentVerification() {
           (req.user?.email &&
             req.user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (req.email &&
-            req.email.toLowerCase().includes(searchTerm.toLowerCase()))
+            req.email.toLowerCase().includes(searchTerm.toLowerCase())),
       );
     }
 
@@ -157,13 +161,13 @@ export function PaymentVerification() {
   };
 
   const verifyPayment = async (
-    request: Request
+    request: Request,
   ): Promise<VerificationResult> => {
     try {
       const result = await revaApi.admin.requests.verifyPayment(
         request.reference,
         request.isLive,
-        request.type === "authenticated" ? "authenticated" : "oneTime"
+        request.type === "authenticated" ? "authenticated" : "oneTime",
       );
 
       if (!result.success) {
@@ -207,11 +211,11 @@ export function PaymentVerification() {
 
       const results: VerificationResult[] = [];
       const unpaidRequests = filteredRequests.filter(
-        (req) => req.paymentStatus !== "Paid"
+        (req) => req.paymentStatus !== "Paid",
       );
 
       notifyInfo(
-        `Starting verification of ${unpaidRequests.length} unpaid requests...`
+        `Starting verification of ${unpaidRequests.length} unpaid requests...`,
       );
 
       for (const request of unpaidRequests) {
@@ -223,8 +227,8 @@ export function PaymentVerification() {
           prev.map((req) =>
             req.reference === request.reference
               ? { ...req, paymentStatus: result.newStatus }
-              : req
-          )
+              : req,
+          ),
         );
       }
 
@@ -233,11 +237,11 @@ export function PaymentVerification() {
 
       const successfulVerifications = results.filter((r) => r.success).length;
       const statusChanges = results.filter(
-        (r) => r.originalStatus !== r.newStatus
+        (r) => r.originalStatus !== r.newStatus,
       ).length;
 
       notifySuccess(
-        `Verification completed! ${successfulVerifications} successful, ${statusChanges} status changes.`
+        `Verification completed! ${successfulVerifications} successful, ${statusChanges} status changes.`,
       );
 
       // Refresh the requests list
@@ -261,17 +265,17 @@ export function PaymentVerification() {
         prev.map((req) =>
           req.reference === request.reference
             ? { ...req, paymentStatus: result.newStatus }
-            : req
-        )
+            : req,
+        ),
       );
 
       if (result.success) {
         notifySuccess(
-          `Payment verified for ${request.reference}: ${result.message}`
+          `Payment verified for ${request.reference}: ${result.message}`,
         );
       } else {
         notifyError(
-          `Verification failed for ${request.reference}: ${result.message}`
+          `Verification failed for ${request.reference}: ${result.message}`,
         );
       }
 
@@ -295,7 +299,7 @@ export function PaymentVerification() {
     return (
       <Badge
         style={revaStatusBadgeStyle(
-          tones[status as keyof typeof tones] || "info"
+          tones[status as keyof typeof tones] || "info",
         )}
       >
         {status}
@@ -307,7 +311,10 @@ export function PaymentVerification() {
   // only the rendered table itself is paginated (client-side slice), the
   // underlying fetch/filter stays whole.
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
-  const pagedRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
+  const pagedRequests = filteredRequests.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   const getEnvironmentBadge = (isLive: boolean) => {
     return (
@@ -319,7 +326,7 @@ export function PaymentVerification() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <div
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
@@ -449,7 +456,7 @@ export function PaymentVerification() {
                           ? result.originalStatus !== result.newStatus
                             ? "success"
                             : "info"
-                          : "error"
+                          : "error",
                       )}
                     >
                       {result.success ? "Success" : "Failed"}
@@ -576,7 +583,13 @@ export function PaymentVerification() {
               <p className="text-sm text-gray-500">
                 Page {page} of {totalPages} • {filteredRequests.length} requests
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </CardContent>

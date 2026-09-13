@@ -17,6 +17,10 @@ export const GET = withAuth<SurfboardRole>(
       roleGroup: params.get("roleGroup") === "mda" ? "mda" : "admins",
       role: params.get("role") || undefined,
       status: params.get("status") === "active" || params.get("status") === "inactive" ? params.get("status") as "active" | "inactive" : undefined,
+      subscriptionStatus:
+        params.get("subscriptionStatus") === "expired" || params.get("subscriptionStatus") === "expiring_soon"
+          ? (params.get("subscriptionStatus") as "expired" | "expiring_soon")
+          : undefined,
     });
     return NextResponse.json({ success: true, data });
   },

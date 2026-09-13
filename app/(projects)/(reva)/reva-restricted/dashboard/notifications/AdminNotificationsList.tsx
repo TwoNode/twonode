@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Bell,
   CheckCircle2,
@@ -94,7 +94,7 @@ interface NotificationFilters {
 
 export default function AdminNotificationsList() {
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>(
-    []
+    [],
   );
   const [adminUserId, setAdminUserId] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
@@ -137,15 +137,18 @@ export default function AdminNotificationsList() {
         },
       };
     },
-    { initialFilters: { type: "ALL", status: "ALL", showDismissed: false } }
+    { initialFilters: { type: "ALL", status: "ALL", showDismissed: false } },
   );
 
   const typeFilter = filters.type;
   const statusFilter = filters.status;
   const showDismissed = filters.showDismissed;
-  const setTypeFilter = (type: NotificationType | "ALL") => setFilters((f) => ({ ...f, type }));
-  const setStatusFilter = (status: "ALL" | "UNREAD" | "READ") => setFilters((f) => ({ ...f, status }));
-  const setShowDismissed = (showDismissed: boolean) => setFilters((f) => ({ ...f, showDismissed }));
+  const setTypeFilter = (type: NotificationType | "ALL") =>
+    setFilters((f) => ({ ...f, type }));
+  const setStatusFilter = (status: "ALL" | "UNREAD" | "READ") =>
+    setFilters((f) => ({ ...f, status }));
+  const setShowDismissed = (showDismissed: boolean) =>
+    setFilters((f) => ({ ...f, showDismissed }));
 
   const loadUnreadCount = async () => {
     const result = await revaApi.notifications.unreadCount();
@@ -222,7 +225,7 @@ export default function AdminNotificationsList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="flex items-center gap-2">
           <RefreshCw className="w-5 h-5 animate-spin" />
           <span>Loading notifications...</span>
@@ -414,7 +417,7 @@ export default function AdminNotificationsList() {
           </div>
         </CardHeader>
         <CardContent className="p-2 sm:p-6">
-          <ScrollArea className="max-h-[600px] space-y-3 sm:space-y-4 pr-2">
+          <ScrollArea className="max-h-150 space-y-3 sm:space-y-4 pr-2">
             {filteredNotifications.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
                 <Bell className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
@@ -443,7 +446,7 @@ export default function AdminNotificationsList() {
                           ]);
                         } else {
                           setSelectedNotifications((prev) =>
-                            prev.filter((id) => id !== notif.id)
+                            prev.filter((id) => id !== notif.id),
                           );
                         }
                       }}
@@ -467,7 +470,7 @@ export default function AdminNotificationsList() {
                                 </span>
                               )}
                               {notif.metadata.address && (
-                                <span className="truncate max-w-[200px]">
+                                <span className="truncate max-w-50">
                                   Address: {notif.metadata.address}
                                 </span>
                               )}
@@ -487,7 +490,7 @@ export default function AdminNotificationsList() {
                           >
                             {format(
                               new Date(notif.createdAt),
-                              "dd MMM, hh:mm a"
+                              "dd MMM, hh:mm a",
                             )}
                           </Badge>
                           <Badge
@@ -551,7 +554,13 @@ export default function AdminNotificationsList() {
               <p className="text-xs sm:text-sm text-muted-foreground">
                 Page {page} of {totalPages} • {total} notifications
               </p>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} pageSize={pageSize} onPageSizeChange={setPageSize} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+              />
             </div>
           )}
         </CardContent>
