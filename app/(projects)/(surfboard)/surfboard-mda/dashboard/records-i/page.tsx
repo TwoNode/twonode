@@ -115,6 +115,7 @@ export default function RecordsIAdminPage() {
     showLeaveWarning,
     confirmLeave,
     cancelLeave,
+    lockError,
   } = usePlanLock({
     role: "RECORDS_I",
     onLockAcquired: (planId, planNumber) => {
@@ -124,6 +125,10 @@ export default function RecordsIAdminPage() {
       toast.info("Plan lock released");
     },
   });
+
+  useEffect(() => {
+    if (lockError) toast.error(lockError);
+  }, [lockError]);
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {

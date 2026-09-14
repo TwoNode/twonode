@@ -107,6 +107,7 @@ export default function ChartingAdminPage() {
     showLeaveWarning,
     confirmLeave,
     cancelLeave,
+    lockError,
   } = usePlanLock({
     role: "CHARTING",
     onLockAcquired: (planId, planNumber) => {
@@ -116,6 +117,13 @@ export default function ChartingAdminPage() {
       toast.info("Plan lock released");
     },
   });
+
+  // Without this, a failed lock-acquire (e.g. a 403 from the lock route)
+  // left every pending plan silently stuck in the disabled "View Only"
+  // state with no indication anything had gone wrong.
+  useEffect(() => {
+    if (lockError) toast.error(lockError);
+  }, [lockError]);
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {
