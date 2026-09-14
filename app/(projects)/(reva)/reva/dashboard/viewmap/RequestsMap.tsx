@@ -84,7 +84,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading map...</p>
         </div>
       </div>
     );
@@ -96,10 +96,10 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Map Loading Error
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Unable to load Google Maps. Please check your internet connection.
           </p>
         </div>
@@ -110,13 +110,13 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
   return (
     <div className="space-y-4">
       {/* Search Section */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-surface rounded-xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Property Search */}
           <div className="flex-1">
             <label
               htmlFor="property-search"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
               Search Properties
             </label>
@@ -127,11 +127,11 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                 placeholder="Search by title, address, status..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                 <svg
-                  className="w-5 h-5 text-gray-400"
+                  className="w-5 h-5 text-gray-400 dark:text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -146,7 +146,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
               </div>
             </div>
             {searchQuery && (
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
                 Showing {filteredProperties.length} of {properties.length}{" "}
                 properties
               </p>
@@ -155,7 +155,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
 
           {/* Location Search */}
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Search Location
             </label>
             <StandaloneSearchBox
@@ -165,7 +165,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
               <input
                 type="text"
                 placeholder="Search for a location..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </StandaloneSearchBox>
           </div>
@@ -179,7 +179,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                   setMapCenter({ lat: 6.5244, lng: 3.3792 });
                   setMapZoom(12);
                 }}
-                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-3 bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-surface-muted transition-colors"
               >
                 Clear
               </button>
@@ -235,23 +235,23 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                 <h3 className="font-semibold text-lg mb-2">
                   {selectedProperty?.title || "Property"}
                 </h3>
-                <p className="text-gray-600 mb-2">
+                <p className="text-gray-600 dark:text-gray-300 mb-2">
                   {selectedProperty?.address}
                 </p>
                 <div className="flex items-center gap-2 mb-2">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       selectedProperty.status === "Available"
-                        ? "bg-green-100 text-green-800"
+                        ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                         : selectedProperty.status === "Processing"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                        : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                     }`}
                   >
                     {selectedProperty?.status}
                   </span>
                 </div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-gray-900 dark:text-white">
                   Cost: ₦
                   {selectedProperty?.totalCost
                     ? selectedProperty.totalCost.toLocaleString()
@@ -265,15 +265,15 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
 
       {/* Property List Summary */}
       {filteredProperties.length > 0 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-3">
+        <div className="bg-white dark:bg-surface rounded-xl p-4 shadow-sm border border-gray-100 dark:border-white/10">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
             Properties on Map
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredProperties.slice(0, 6).map((property) => (
               <div
                 key={property.id}
-                className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-3 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors"
                 onClick={() => {
                   if (property.lat && property.lng) {
                     setMapCenter({ lat: property.lat, lng: property.lng });
@@ -282,19 +282,19 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                   }
                 }}
               >
-                <h4 className="font-medium text-sm text-gray-900 truncate">
+                <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">
                   {property.title || "Untitled Property"}
                 </h4>
-                <p className="text-xs text-gray-600 truncate">
+                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
                   {property.address}
                 </p>
                 <span
                   className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
                     property.status === "Available"
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                       : property.status === "Processing"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                      : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                   }`}
                 >
                   {property.status}
@@ -303,7 +303,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
             ))}
           </div>
           {filteredProperties.length > 6 && (
-            <p className="text-sm text-gray-600 mt-3 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-3 text-center">
               +{filteredProperties.length - 6} more properties
             </p>
           )}

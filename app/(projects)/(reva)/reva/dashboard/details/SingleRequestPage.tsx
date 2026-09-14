@@ -156,14 +156,14 @@ const SingleRequestPage = ({
   };
   return (
     <>
-      <div className="space-y-8 p-8 max-w-7xl mx-auto bg-gray-50">
+      <div className="space-y-8 p-8 max-w-7xl mx-auto bg-gray-50 dark:bg-surface">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-white p-6 rounded-xl shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-white dark:bg-surface p-6 rounded-xl shadow-sm">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
               {property?.title || "Untitled Request"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Reference ID:{" "}
               <span className="font-medium">{property?.reference}</span>
             </p>
@@ -193,8 +193,8 @@ const SingleRequestPage = ({
 
         {/* Property Information */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
-            <CardTitle className="text-xl text-gray-800">
+          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b dark:from-background dark:to-background">
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">
               Property Information
             </CardTitle>
           </CardHeader>
@@ -231,8 +231,8 @@ const SingleRequestPage = ({
 
         {/* Site Images */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-linear-to-r from-yellow-50 to-orange-50 border-b">
-            <CardTitle className="text-xl text-gray-800">Site Images</CardTitle>
+          <CardHeader className="bg-linear-to-r from-yellow-50 to-orange-50 border-b dark:from-background dark:to-background">
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">Site Images</CardTitle>
           </CardHeader>
           <CardContent>
             {Array.isArray(property?.site_images) &&
@@ -241,7 +241,7 @@ const SingleRequestPage = ({
                 {property.site_images.map((url: string, idx: number) => (
                   <div
                     key={idx}
-                    className="rounded-lg overflow-hidden border bg-white shadow hover:shadow-lg transition-shadow"
+                    className="rounded-lg overflow-hidden border bg-white dark:bg-surface shadow hover:shadow-lg transition-shadow"
                   >
                     <img
                       src={url}
@@ -253,7 +253,7 @@ const SingleRequestPage = ({
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-8 text-gray-400">
+              <div className="flex flex-col items-center justify-center p-8 text-gray-400 dark:text-gray-400">
                 <svg
                   className="w-12 h-12 mb-2"
                   fill="none"
@@ -275,8 +275,8 @@ const SingleRequestPage = ({
 
         {/* Financial */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b">
-            <CardTitle className="text-xl text-gray-800">
+          <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b dark:from-background dark:to-background">
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">
               Financial Details
             </CardTitle>
           </CardHeader>
@@ -318,8 +318,8 @@ const SingleRequestPage = ({
 
         {/* Comments */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-linear-to-r from-purple-50 to-pink-50 border-b">
-            <CardTitle className="text-xl text-gray-800">
+          <CardHeader className="bg-linear-to-r from-purple-50 to-pink-50 border-b dark:from-background dark:to-background">
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">
               Comments & Notes
             </CardTitle>
           </CardHeader>
@@ -328,15 +328,15 @@ const SingleRequestPage = ({
               value={property?.comments || "No remarks"}
               readOnly
               rows={4}
-              className="resize-none bg-gray-50 border-gray-200"
+              className="resize-none bg-gray-50 dark:bg-surface border-gray-200 dark:border-white/10"
             />
           </CardContent>
         </Card>
 
         {/* Report Status */}
         <Card className="overflow-hidden border-none shadow-md">
-          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
-            <CardTitle className="text-xl text-gray-800">
+          <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b dark:from-background dark:to-background">
+            <CardTitle className="text-xl text-gray-800 dark:text-gray-200">
               Due Diligence Report
             </CardTitle>
           </CardHeader>
@@ -360,13 +360,13 @@ const SingleRequestPage = ({
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   {isReportReady()
                     ? "Your due diligence report is ready for download. The report contains comprehensive property analysis including title search, survey records, charting information, and land use details."
                     : "Your report is being processed. This may take 24-48 hours. You'll be notified when it's ready."}
                 </p>
                 {property?.report?.updatedAt && (
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Last updated:{" "}
                     {new Date(property.report.updatedAt).toLocaleDateString(
                       "en-US",
@@ -433,11 +433,11 @@ const SingleRequestPage = ({
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center border-t border-gray-200 pt-8 flex-wrap max-sm:justify-center gap-4">
+        <div className="flex justify-between items-center border-t border-gray-200 dark:border-white/10 pt-8 flex-wrap max-sm:justify-center gap-4">
           <Link href="/reva/dashboard">
             <Button
               variant="outline"
-              className="max-sm:w-full rounded-lg hover:bg-gray-100 transition-colors"
+              className="max-sm:w-full rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors"
             >
               ← Back to All Requests
             </Button>
@@ -469,7 +469,7 @@ const SingleRequestPage = ({
             <AlertDialogTitle className="text-xl text-red-600">
               Deleting this Request
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-600">
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
               Are you sure you want to delete this due diligence request? This
               action cannot be undone.
             </AlertDialogDescription>
@@ -477,7 +477,7 @@ const SingleRequestPage = ({
           <AlertDialogFooter className="gap-3">
             <AlertDialogCancel
               onClick={toggleDeleteModal}
-              className="rounded-lg hover:bg-gray-100"
+              className="rounded-lg hover:bg-gray-100 dark:hover:bg-surface"
             >
               Cancel
             </AlertDialogCancel>
@@ -505,8 +505,8 @@ const Info = ({
   bold?: boolean;
   color?: string;
 }) => (
-  <div className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-    <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
+  <div className="bg-white dark:bg-surface p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</p>
     <p
       className={`text-base ${bold ? "font-semibold" : ""} ${
         color || "text-gray-900"

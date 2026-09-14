@@ -332,7 +332,7 @@ export function PaymentVerification() {
             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
             style={{ borderColor: REVA_COLORS.primary.light }}
           ></div>
-          <p className="text-gray-600">Loading requests...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading requests...</p>
         </div>
       </div>
     );
@@ -343,10 +343,10 @@ export function PaymentVerification() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Payment Verification
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             Verify payment status with Paystack for all requests
           </p>
         </div>
@@ -444,8 +444,8 @@ export function PaymentVerification() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">{result.reference}</p>
-                      <p className="text-sm text-gray-600">{result.message}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{result.message}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {result.originalStatus} → {result.newStatus}
                         {result.isLive && " (Live)"}
                       </p>
@@ -503,14 +503,14 @@ export function PaymentVerification() {
                           <p className="font-medium">
                             {request.user.firstName} {request.user.lastName}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {request.user.email}
                           </p>
                         </div>
                       ) : (
                         <div>
                           <p className="font-medium">{request.requester}</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {request.email}
                           </p>
                         </div>
@@ -573,7 +573,7 @@ export function PaymentVerification() {
           </div>
 
           {filteredRequests.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <p>No requests found matching the current filters.</p>
             </div>
           )}

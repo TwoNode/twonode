@@ -25,7 +25,7 @@ const ManageNotificationsPage = () => {
             >
               Notifications Management
             </h1>
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
               Create, view, and manage system notifications
             </p>
           </div>
@@ -51,7 +51,7 @@ const ManageNotificationsPage = () => {
                 <Bell className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Total Notifications
                 </p>
                 <p className="text-lg sm:text-xl font-bold">All Types</p>
@@ -67,7 +67,7 @@ const ManageNotificationsPage = () => {
                 <Users className="w-4 h-4 text-green-600" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   User Notifications
                 </p>
                 <p className="text-lg sm:text-xl font-bold">General Users</p>
@@ -83,7 +83,7 @@ const ManageNotificationsPage = () => {
                 <Settings className="w-4 h-4 text-purple-600" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Admin Notifications
                 </p>
                 <p className="text-lg sm:text-xl font-bold">General Admins</p>
@@ -99,7 +99,7 @@ const ManageNotificationsPage = () => {
                 <Shield className="w-4 h-4 text-red-600" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Superadmin Notifications
                 </p>
                 <p className="text-lg sm:text-xl font-bold">Superadmin Only</p>

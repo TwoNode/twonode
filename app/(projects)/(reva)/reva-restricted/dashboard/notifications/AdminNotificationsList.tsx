@@ -527,7 +527,7 @@ export default function AdminNotificationsList() {
                           </Button>
                         )}
                         {notif.dismissedBy.includes(adminUserId) ? (
-                          <span className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                          <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                             <X className="w-3 h-3" />
                             Dismissed
                           </span>

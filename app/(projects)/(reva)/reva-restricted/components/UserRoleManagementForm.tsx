@@ -126,7 +126,7 @@ export default function UserRoleManagementForm({
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-900">
+        <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
           User Role Management
         </CardTitle>
         <CardDescription>
@@ -224,15 +224,15 @@ export default function UserRoleManagementForm({
             )}
 
             {selectedUser && (
-              <div className="p-3 bg-gray-50 rounded-md">
-                <p className="text-sm text-gray-600">
+              <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-md">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   <strong>Selected User:</strong> {selectedUser.firstName}{" "}
                   {selectedUser.lastName}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   <strong>Email:</strong> {selectedUser.email}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   <strong>Current Role:</strong> {selectedUser.role}
                 </p>
               </div>

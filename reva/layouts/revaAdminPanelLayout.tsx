@@ -92,7 +92,7 @@ export default function RevaAdminPanelLayout({
         />
       </div>
 
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background">
         <RevaAdminDashboardNavbar
           userImageUrl={user?.picture!}
           userData={userData}

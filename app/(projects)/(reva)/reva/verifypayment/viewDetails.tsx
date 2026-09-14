@@ -76,9 +76,9 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-background dark:to-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white dark:bg-surface shadow-sm border-b border-gray-200 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -94,17 +94,17 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               </div>
               <div className="hidden md:block h-8 w-px bg-gray-200" />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Property Verification
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Secure and reliable property verification services
                 </p>
               </div>
             </div>
             <Link
               href="/"
-              className="hidden md:flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              className="hidden md:flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors"
             >
               <Home className="h-4 w-4 mr-1" />
               Back to Home
@@ -130,7 +130,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                       : "We are processing your payment."}
                   </p>
                   {formData.statusMessage && (
-                    <div className="text-sm bg-white/50 p-2 rounded-md">
+                    <div className="text-sm bg-white/50 dark:bg-surface p-2 rounded-md">
                       {formData.statusMessage}
                     </div>
                   )}
@@ -141,27 +141,27 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
 
           {/* Status Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white p-4 rounded-lg border">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
+            <div className="bg-white dark:bg-surface p-4 rounded-lg border">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Request Status
               </h3>
               <div className="flex items-center justify-between">
                 <Badge variant={getStatusVariant()} className="text-sm">
                   {formData.status}
                 </Badge>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   Last updated: {updatedAt}
                 </span>
               </div>
               {isProcessing && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Your request is being processed. You'll be notified when it's
                   complete.
                 </p>
               )}
             </div>
-            <div className="bg-white p-4 rounded-lg border">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
+            <div className="bg-white dark:bg-surface p-4 rounded-lg border">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Payment
               </h3>
               <div className="flex items-center justify-between">
@@ -170,19 +170,19 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                 </Badge>
                 <span className="text-sm font-medium">{totalCost}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Paid on: {createdAt}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Paid on: {createdAt}</p>
             </div>
           </div>
         </div>
 
         <Card className="overflow-hidden">
-          <CardHeader className="bg-gray-50 border-b">
+          <CardHeader className="bg-gray-50 dark:bg-white/5 border-b">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Verification Request #{formData.reference}
                 </CardTitle>
-                <CardDescription className="mt-1 text-sm text-gray-500">
+                <CardDescription className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Submitted on {formatDate(formData.createdAt)}
                 </CardDescription>
               </div>
@@ -203,17 +203,17 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               {/* Left Column */}
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
                     Property Information
                   </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                     <div className="flex items-start">
                       <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-2 shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
                           {formData.address || "No address provided"}
                         </p>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           {formData.lga || "N/A"}
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
@@ -225,34 +225,34 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
                     Request Details
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">Reference</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Reference</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {formData.reference}
                       </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         Submitted On
                       </span>
-                      <span className="text-sm text-gray-900">{createdAt}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{createdAt}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         Last Updated
                       </span>
-                      <span className="text-sm text-gray-900">{updatedAt}</span>
+                      <span className="text-sm text-gray-900 dark:text-white">{updatedAt}</span>
                     </div>
                     {formData.description && (
                       <div className="pt-2">
-                        <p className="text-sm text-gray-500 mb-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                           Description
                         </p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
                           {formData.description}
                         </p>
                       </div>
@@ -269,26 +269,26 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               {/* Right Column */}
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
                     Contact Information
                   </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg space-y-3">
                     <div className="flex items-center">
                       <User className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-gray-900 dark:text-white">
                         {formData.requester || "No name provided"}
                       </span>
                     </div>
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-gray-900 dark:text-white">
                         {formData.email}
                       </span>
                     </div>
                     {formData.userPhoneNumber && (
                       <div className="flex items-center">
                         <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-900">
+                        <span className="text-sm text-gray-900 dark:text-white">
                           {formData.userPhoneNumber}
                         </span>
                       </div>
@@ -298,29 +298,29 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
 
                 {/* Payment Information */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
                     Payment Information
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Amount Paid</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Amount Paid</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {formatCurrency(formData.totalCost)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         Payment Date
                       </span>
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-gray-900 dark:text-white">
                         {formatDate(formData.paymentDate || formData.updatedAt)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         Payment Method
                       </span>
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-gray-900 dark:text-white">
                         {formData.paymentMethod || "Online Payment"}
                       </span>
                     </div>
@@ -343,7 +343,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="h-64 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
                 <a
                   href={`https://www.google.com/maps?q=${formData.lat},${formData.lng}`}
                   target="_blank"
@@ -354,7 +354,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   View on Google Maps
                 </a>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 Coordinates: {formData.lat.toFixed(6)},{" "}
                 {formData.lng.toFixed(6)}
               </p>
@@ -394,7 +394,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                     </a>
                   ))}
                 {formData.documentsUrls.length > 4 && (
-                  <div className="text-xs text-gray-500 col-span-full">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 col-span-full">
                     +{formData.documentsUrls.length - 4} more documents
                   </div>
                 )}
@@ -445,7 +445,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                     </p>
                   </div>
                 </div>
-                <div className="text-sm text-gray-600 space-y-2">
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <p>
                     You'll receive an email notification when your report is
                     ready.
@@ -466,7 +466,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Your due diligence report has been approved and is ready for
                 download.
               </p>
@@ -504,7 +504,7 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
 
         {/* Support Information */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Need help? Contact our support team at{" "}
             <a
               href="mailto:support@reva.ng"

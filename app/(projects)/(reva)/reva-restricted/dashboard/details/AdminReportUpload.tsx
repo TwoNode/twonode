@@ -302,7 +302,7 @@ export function AdminReportUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed z-999 inset-0 flex justify-center items-center bg-white bg-opacity-75">
+        <div className="fixed z-999 inset-0 flex justify-center items-center bg-white dark:bg-surface bg-opacity-75">
           <svg
             className="animate-spin h-8 w-8"
             style={{ color: REVA_COLORS.primary.light }}

@@ -34,7 +34,7 @@ export const RevaFooterSection = ({
                 alt="REVA Logo"
                 width={50}
                 height={50}
-                className="bg-white/90 rounded-full"
+                className="bg-white/90 dark:bg-surface rounded-full"
               />
             </Link>
           </div>

@@ -263,7 +263,7 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* Pricing */}
-      {/* <section className="py-20 bg-white text-gray-900 text-center">
+      {/* <section className="py-20 bg-white dark:bg-surface text-gray-900 dark:text-white text-center">
         <h2 className="text-4xl font-semibold">Pricing Plans</h2>
         <p className="mt-6 text-xl">
           Due diligence reports start from{" "}

@@ -184,7 +184,7 @@ export function AdminDirectLinkUpload({
   return (
     <div>
       {isLoading && (
-        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-999">
+        <div className="fixed inset-0 flex justify-center items-center bg-white dark:bg-surface bg-opacity-75 z-999">
           <svg
             className="animate-spin h-8 w-8"
             style={{ color: REVA_COLORS.primary.light }}
@@ -271,9 +271,9 @@ export function AdminDirectLinkUpload({
                     </div>
                   </>
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-white/10 rounded-lg p-6 text-center">
                     <svg
-                      className="mx-auto h-8 w-8 text-gray-400"
+                      className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"

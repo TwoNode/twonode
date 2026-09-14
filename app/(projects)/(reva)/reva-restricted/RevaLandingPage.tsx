@@ -81,14 +81,14 @@ const RevaLandingPage: FC = () => {
       <RevaHeroSection />
 
       {/* About Section */}
-      <section className="py-20 px-5 bg-linear-to-r from-gray-100 to-gray-200 text-gray-900 text-center">
-        <h2 className="text-4xl font-extrabold text-gray-800 mb-10">
+      <section className="py-20 px-5 bg-linear-to-r from-gray-100 to-gray-200 text-gray-900 dark:text-white text-center dark:from-background dark:to-background">
+        <h2 className="text-4xl font-extrabold text-gray-800 dark:text-gray-200 mb-10">
           About REVA
         </h2>
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-start">
           <div className="md:w-1/2 px-6 md:px-12">
-            <p className="text-lg p-5 leading-relaxed text-justify text-gray-700">
+            <p className="text-lg p-5 leading-relaxed text-justify text-gray-700 dark:text-gray-300">
               REVA is a cutting-edge digital platform designed to simplify real
               estate due diligence. By providing structured and detailed reports
               on land parcels, REVA empowers users to make informed decisions
@@ -111,7 +111,7 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* Why Us Section */}
-      <section className="py-20 bg-gray-100 text-gray-900 text-center">
+      <section className="py-20 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white text-center">
         <h2 className="text-4xl font-semibold">Why Choose REVA?</h2>
         <div className="flex flex-wrap justify-center gap-6 mt-10 px-10">
           {[
@@ -123,7 +123,7 @@ const RevaLandingPage: FC = () => {
           ].map((reason, index) => (
             <motion.div
               key={index}
-              className="p-6 bg-white rounded-xl shadow-md w-64 text-center"
+              className="p-6 bg-white dark:bg-surface rounded-xl shadow-md w-64 text-center"
               animate={{ opacity: 1, y: 0 }}
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: index * 0.2 }}
@@ -135,13 +135,13 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* Core Features */}
-      <section className="py-20 bg-gray-100 text-gray-900">
+      <section className="py-20 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white">
         <h2 className="text-4xl font-semibold text-center">Core Features</h2>
         <div className="flex flex-wrap justify-center gap-6 mt-10 px-10">
           {coreFeatures.map((feature, index) => (
             <motion.div
               key={index}
-              className="p-6 bg-white rounded-xl shadow-md w-64 text-center hover:shadow-lg hover:scale-105 transition-transform duration-300"
+              className="p-6 bg-white dark:bg-surface rounded-xl shadow-md w-64 text-center hover:shadow-lg hover:scale-105 transition-transform duration-300"
               animate={{ opacity: 1, y: 0 }}
               initial={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: index * 0.2 }}
@@ -153,20 +153,20 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-white text-gray-900">
+      <section className="py-20 bg-white dark:bg-surface text-gray-900 dark:text-white">
         <h2 className="text-4xl font-semibold text-center">How It Works</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-12 px-12">
           {howItWorks.map((step, index) => (
             <motion.div
               key={index}
-              className="p-8 border rounded-xl text-center shadow-lg bg-gray-50 hover:shadow-2xl transition-all"
+              className="p-8 border rounded-xl text-center shadow-lg bg-gray-50 dark:bg-white/5 hover:shadow-2xl transition-all"
               animate={{ opacity: 1, scale: 1 }}
               initial={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5, delay: index * 0.2 }}
             >
               <h3 className="text-2xl font-semibold">Step {index + 1}</h3>
               <p className="mt-2 text-lg">{step.title}</p>
-              <p className="text-gray-500 mt-2">{step.desc}</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -207,7 +207,7 @@ const RevaLandingPage: FC = () => {
       </div>
 
       {/* Informed Decision */}
-      <section className="py-20 bg-white text-gray-900 text-center">
+      <section className="py-20 bg-white dark:bg-surface text-gray-900 dark:text-white text-center">
         <h2 className="text-4xl font-semibold">Informed Decision</h2>
         <p className="mt-6 text-xl">
           With REVA make quick and informed land investment decisions.
@@ -215,7 +215,7 @@ const RevaLandingPage: FC = () => {
       </section>
 
       {/* Pricing */}
-      {/* <section className="py-20 bg-white text-gray-900 text-center">
+      {/* <section className="py-20 bg-white dark:bg-surface text-gray-900 dark:text-white text-center">
         <h2 className="text-4xl font-semibold">Pricing Plans</h2>
         <p className="mt-6 text-xl">
           Due diligence reports start from{" "}

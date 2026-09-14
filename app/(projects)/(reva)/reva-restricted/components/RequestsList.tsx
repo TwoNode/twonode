@@ -219,15 +219,15 @@ const RequestList = ({
 
   if (requests.length === 0) {
     return (
-      <div className="min-h-[400px] bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center rounded-lg">
+      <div className="min-h-[400px] bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center rounded-lg dark:from-background dark:to-background">
         <div className="text-center">
           <div className="mx-auto h-24 w-24 text-gray-300 mb-4">
             <DocumentTextIcon className="h-full w-full" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No requests found
           </h3>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             No property requests match your criteria.
           </p>
         </div>
@@ -239,13 +239,13 @@ const RequestList = ({
     <div className="space-y-6">
       {/* Header with Stats */}
       {showStats && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {title || "Property Requests"}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Showing {requests.length}{" "}
                 {requests.length === 1 ? "request" : "requests"}
               </p>
@@ -307,7 +307,7 @@ const RequestList = ({
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
                       {getPropertyIcon(propertyType)}
                     </div>
                     <div>
@@ -335,12 +335,12 @@ const RequestList = ({
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#008cff] transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-[#008cff] transition-colors">
                         {request.title ||
                           request.description ||
                           "Untitled Request"}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         REF: {request.reference}
                       </p>
                     </div>
@@ -364,10 +364,10 @@ const RequestList = ({
                 </div>
 
                 {/* Requester Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <UserIcon className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
+                    <UserIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Requester
                     </span>
                   </div>
@@ -376,13 +376,13 @@ const RequestList = ({
                       <span className="font-medium">{requesterInfo.name}</span>
                     </div>
                     {requesterInfo.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <EnvelopeIcon className="h-4 w-4" />
                         <span>{requesterInfo.email}</span>
                       </div>
                     )}
                     {requesterInfo.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <PhoneIcon className="h-4 w-4" />
                         <span>{requesterInfo.phone}</span>
                       </div>
@@ -396,14 +396,14 @@ const RequestList = ({
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-gray-400" />
                       <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Address
                         </p>
-                        <p className="text-sm text-gray-900">
+                        <p className="text-sm text-gray-900 dark:text-white">
                           {request.address}
                         </p>
                         {request.lga && (
-                          <p className="text-xs text-gray-500">{request.lga}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{request.lga}</p>
                         )}
                       </div>
                     </div>
@@ -413,10 +413,10 @@ const RequestList = ({
                       <div className="flex items-center gap-2">
                         <GlobeAltIcon className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Coordinates
                           </p>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm text-gray-900 dark:text-white">
                             {request.lat && request.lng
                               ? `${request.lat.toFixed(
                                   6
@@ -433,10 +433,10 @@ const RequestList = ({
                       <div className="flex items-center gap-2">
                         <DocumentTextIcon className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Parcel ID
                           </p>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm text-gray-900 dark:text-white">
                             {request.parcelId}
                           </p>
                         </div>
@@ -448,7 +448,7 @@ const RequestList = ({
                     <div className="flex items-center gap-2">
                       <NairaIcon className="h-4 w-4 text-gray-400" />
                       <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Total Cost
                         </p>
                         <p
@@ -463,10 +463,10 @@ const RequestList = ({
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4 text-gray-400" />
                       <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           {request.updatedAt ? "Last Updated" : "Created"}
                         </p>
-                        <p className="text-sm text-gray-900">
+                        <p className="text-sm text-gray-900 dark:text-white">
                           {format(
                             getDateForFormatting(request),
                             "dd MMM yyyy, hh:mm a"
@@ -478,7 +478,7 @@ const RequestList = ({
                     <div className="flex items-center gap-2">
                       <ClockIcon className="h-4 w-4 text-gray-400" />
                       <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Due Date
                         </p>
                         <p
@@ -505,8 +505,8 @@ const RequestList = ({
                 {request.documentsUrls.length > 0 && (
                   <div className="border-t pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <DocumentTextIcon className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <DocumentTextIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Supporting Documents
                       </span>
                       <Badge variant="outline" className="text-xs">
@@ -535,7 +535,7 @@ const RequestList = ({
                           </a>
                         ))}
                       {request.documentsUrls.length > 4 && (
-                        <div className="text-xs text-gray-500 col-span-full">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 col-span-full">
                           +{request.documentsUrls.length - 4} more documents
                         </div>
                       )}

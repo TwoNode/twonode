@@ -98,9 +98,9 @@ export async function OneTimeRequest({ data }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-background dark:to-background">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white dark:bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
@@ -112,19 +112,19 @@ export async function OneTimeRequest({ data }: PageProps) {
                   height={40}
                   className="h-10 w-auto"
                 />
-                <span className="ml-2 text-2xl font-bold text-gray-900">
+                <span className="ml-2 text-2xl font-bold text-gray-900 dark:text-white">
                   REVA
                 </span>
               </div>
               <span className="text-gray-400">|</span>
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Property Verification
               </span>
             </div>
             <div className="hidden md:block">
               <Button
                 variant="ghost"
-                className="text-gray-700 hover:bg-gray-100"
+                className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
               >
                 <Home className="h-4 w-4 mr-2" />
                 Back to Home
@@ -138,10 +138,10 @@ export async function OneTimeRequest({ data }: PageProps) {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Property Verification Request
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 <span className="font-medium">Reference ID:</span>{" "}
                 {request.reference}
               </p>
@@ -151,8 +151,8 @@ export async function OneTimeRequest({ data }: PageProps) {
               <Badge
                 className={`px-3 py-1.5 text-sm font-medium ${
                   request.status === "Completed"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-blue-100 text-blue-800"
+                    ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                    : "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300"
                 }`}
               >
                 {request.status === "Completed" ? (
@@ -165,20 +165,20 @@ export async function OneTimeRequest({ data }: PageProps) {
               <Badge
                 className={`px-3 py-1.5 text-sm font-medium ${
                   request.paymentStatus === "Paid"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                    : "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300"
                 }`}
               >
                 <DollarSign className="h-4 w-4 mr-1.5" />
                 {request.paymentStatus}
               </Badge>
               {isReportReady ? (
-                <Badge className="bg-green-100 text-green-800 px-3 py-1.5 text-sm font-medium">
+                <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300 px-3 py-1.5 text-sm font-medium">
                   <FileCheck className="h-4 w-4 mr-1.5" />
                   Report Approved
                 </Badge>
               ) : (
-                <Badge className="bg-yellow-100 text-yellow-800 px-3 py-1.5 text-sm font-medium">
+                <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 px-3 py-1.5 text-sm font-medium">
                   <AlertCircle className="h-4 w-4 mr-1.5" />
                   Pending Approval
                 </Badge>
@@ -187,12 +187,12 @@ export async function OneTimeRequest({ data }: PageProps) {
           </div>
 
           {/* Progress Tracker */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-sm p-6 mb-8 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Request Progress
               </h2>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 Created on {formatDate(request.createdAt)}
               </span>
             </div>
@@ -285,52 +285,52 @@ export async function OneTimeRequest({ data }: PageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Request Information */}
             <div className="lg:col-span-2 space-y-6">
-              <Card className="border border-gray-200 rounded-lg overflow-hidden">
-                <CardHeader className="bg-gray-50 border-b">
+              <Card className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+                <CardHeader className="bg-gray-50 dark:bg-white/5 border-b">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <FileText className="h-5 w-5 text-blue-600" />
                       Request Information
                     </CardTitle>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300">
                       {request.reference}
                     </span>
                   </div>
-                  <CardDescription className="mt-1 text-sm text-gray-500">
+                  <CardDescription className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Submitted on {formatDate(request.createdAt)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-500">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Description
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {request.description || "No description provided"}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Total Cost
                       </label>
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {formatCurrency(request.totalCost)}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Created
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {formatDate(request.createdAt)}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500">
+                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Last Updated
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {formatDate(request.updatedAt)}
                       </p>
                     </div>
@@ -348,46 +348,46 @@ export async function OneTimeRequest({ data }: PageProps) {
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                       <div className="flex items-center mb-2">
                         <User className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-sm font-medium text-gray-700">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Requester
                         </h3>
                       </div>
-                      <p className="ml-7 text-base font-medium text-gray-900">
+                      <p className="ml-7 text-base font-medium text-gray-900 dark:text-white">
                         {request.requester || "N/A"}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Mail className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-sm font-medium text-gray-700">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Email
                         </h3>
                       </div>
-                      <p className="ml-7 text-base font-medium text-gray-900">
+                      <p className="ml-7 text-base font-medium text-gray-900 dark:text-white">
                         {request.email}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Phone className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-sm font-medium text-gray-700">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Phone
                         </h3>
                       </div>
-                      <p className="ml-7 text-base font-medium text-gray-900">
+                      <p className="ml-7 text-base font-medium text-gray-900 dark:text-white">
                         {request.userPhoneNumber || "N/A"}
                       </p>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                       <div className="flex items-center mb-2">
                         <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-sm font-medium text-gray-700">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Status
                         </h3>
                       </div>
@@ -395,8 +395,8 @@ export async function OneTimeRequest({ data }: PageProps) {
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             request.status === "Completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
+                              ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
+                              : "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300"
                           }`}
                         >
                           {request.status}
@@ -405,14 +405,14 @@ export async function OneTimeRequest({ data }: PageProps) {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                     <div className="flex items-center mb-2">
                       <MessageSquare className="h-5 w-5 text-blue-600 mr-2" />
-                      <h3 className="text-sm font-medium text-gray-700">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Description
                       </h3>
                     </div>
-                    <p className="ml-7 text-sm text-gray-700">
+                    <p className="ml-7 text-sm text-gray-700 dark:text-gray-300">
                       {request.description || "No description provided."}
                     </p>
                   </div>
@@ -430,22 +430,22 @@ export async function OneTimeRequest({ data }: PageProps) {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
+                      <Mail className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                       <div>
-                        <label className="text-sm font-medium text-gray-500">
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Email
                         </label>
-                        <p className="text-gray-900">{request.email}</p>
+                        <p className="text-gray-900 dark:text-white">{request.email}</p>
                       </div>
                     </div>
                     {request.userPhoneNumber && (
                       <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-gray-500" />
+                        <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         <div>
-                          <label className="text-sm font-medium text-gray-500">
+                          <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                             Phone
                           </label>
-                          <p className="text-gray-900">
+                          <p className="text-gray-900 dark:text-white">
                             {request.userPhoneNumber}
                           </p>
                         </div>
@@ -453,10 +453,10 @@ export async function OneTimeRequest({ data }: PageProps) {
                     )}
                     {request.requester && (
                       <div>
-                        <label className="text-sm font-medium text-gray-500">
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Requester Name
                         </label>
-                        <p className="text-gray-900">{request.requester}</p>
+                        <p className="text-gray-900 dark:text-white">{request.requester}</p>
                       </div>
                     )}
                   </div>
@@ -475,7 +475,7 @@ export async function OneTimeRequest({ data }: PageProps) {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="h-64 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
                       <a
                         href={`https://www.google.com/maps?q=${request.lat},${request.lng}`}
                         target="_blank"
@@ -486,7 +486,7 @@ export async function OneTimeRequest({ data }: PageProps) {
                         View on Google Maps
                       </a>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       Coordinates: {request.lat.toFixed(6)},{" "}
                       {request.lng.toFixed(6)}
                     </p>
@@ -496,13 +496,13 @@ export async function OneTimeRequest({ data }: PageProps) {
 
               {/* Documents */}
               {request.documentsUrls && request.documentsUrls.length > 0 && (
-                <Card className="border border-gray-200 rounded-lg overflow-hidden">
-                  <CardHeader className="bg-gray-50 border-b">
-                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Card className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+                  <CardHeader className="bg-gray-50 dark:bg-white/5 border-b">
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <FileText className="h-5 w-5 text-blue-600" />
                       Documents
                     </CardTitle>
-                    <CardDescription className="text-sm text-gray-500">
+                    <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
                       {request.documentsUrls.length} document(s) attached
                     </CardDescription>
                   </CardHeader>
@@ -565,7 +565,7 @@ export async function OneTimeRequest({ data }: PageProps) {
                     <CardTitle>Status Information</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-900">{request.statusMessage}</p>
+                    <p className="text-gray-900 dark:text-white">{request.statusMessage}</p>
                   </CardContent>
                 </Card>
               )}

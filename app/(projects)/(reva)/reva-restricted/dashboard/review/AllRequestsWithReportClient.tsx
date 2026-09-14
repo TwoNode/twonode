@@ -308,7 +308,7 @@ const AllRequestsWithReportClient: React.FC<
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <p>No requests with reports found matching your criteria.</p>
           </div>
         )}

@@ -228,7 +228,7 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
         ) : (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
-              <div className="text-gray-400 mb-4">
+              <div className="text-gray-400 dark:text-gray-400 mb-4">
                 <svg
                   className="mx-auto h-12 w-12"
                   fill="none"
@@ -243,10 +243,10 @@ const DashboardClient: React.FC<DashboardClientProps> = ({ initialData }) => {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No requests found
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 {filters.searchTerm ||
                 filters.status.length > 0 ||
                 filters.paymentStatus.length > 0 ||

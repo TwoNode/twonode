@@ -239,7 +239,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
           <span>
             Showing {filteredCount} of {totalCount} requests
             {hasActiveFilters && (
@@ -267,7 +267,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         {isExpanded && (
           <div className="border-t pt-4 space-y-4">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <AdjustmentsHorizontalIcon className="h-4 w-4" />
                 Status
               </h4>
@@ -278,7 +278,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     variant={
                       filters.status.includes(status) ? "default" : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     onClick={() => handleStatusToggle(status)}
                   >
                     {status}
@@ -288,7 +288,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Payment Status
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -300,7 +300,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                         ? "default"
                         : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     onClick={() => handlePaymentStatusToggle(status)}
                   >
                     {status}
@@ -310,7 +310,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Request Type
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -320,7 +320,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                     variant={
                       filters.requestType.includes(type) ? "default" : "outline"
                     }
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     onClick={() => handleRequestTypeToggle(type)}
                   >
                     {type}
@@ -330,7 +330,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Local Government Area
               </h4>
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -338,7 +338,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   <Badge
                     key={lga}
                     variant={filters.lga.includes(lga) ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     onClick={() => handleLGAToggle(lga)}
                   >
                     {lga}
@@ -348,13 +348,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Report Status
               </h4>
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant={filters.hasReport === true ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",
@@ -366,7 +366,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 </Badge>
                 <Badge
                   variant={filters.hasReport === false ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "hasReport",
@@ -378,7 +378,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 </Badge>
                 <Badge
                   variant={filters.isApproved === true ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "isApproved",
@@ -390,7 +390,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 </Badge>
                 <Badge
                   variant={filters.isApproved === false ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   onClick={() =>
                     handleFilterChange(
                       "isApproved",

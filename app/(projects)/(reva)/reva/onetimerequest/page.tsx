@@ -31,7 +31,7 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
 
   if (!reference || !email) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-white/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center text-red-600">
@@ -56,7 +56,7 @@ export default async function OneTimeRequestPage({ searchParams }: PageProps) {
     request = await getOneTimeRequestByReference(reference, email);
   } catch {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-white/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center text-red-600">
