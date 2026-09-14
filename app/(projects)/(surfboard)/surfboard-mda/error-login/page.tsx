@@ -10,6 +10,7 @@ export default function SurfMDAErrorLoginPage() {
       eyebrow="MDA Portal"
       headline="Ministries, Departments & Agencies."
       description="Sign in to your MDA workspace to manage submissions, approvals, and inter-agency records."
+      networkVariant="mda"
     >
       <div className="bg-white dark:bg-[#101F2C] dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full text-center flex flex-col items-center">
         <div className="flex justify-center mb-6">

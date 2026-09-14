@@ -12,6 +12,8 @@ export type AuthSplitLayoutProps = {
   notice?: ReactNode;
   /** Rendered below the form card on the left panel. */
   footerNote?: string;
+  /** "mda" swaps the network graphic to a single TwoNode↔MDA node, hiding the other products. */
+  networkVariant?: "default" | "mda";
   children: ReactNode;
 };
 
@@ -23,6 +25,7 @@ export function AuthSplitLayout({
   description,
   notice,
   footerNote,
+  networkVariant = "default",
   children,
 }: AuthSplitLayoutProps) {
   return (
@@ -64,7 +67,7 @@ export function AuthSplitLayout({
         {/* Network graphic — TwoNode hub with each live product's real logo
             at its node, plus one open slot to signal we're still expanding. */}
         <div className="absolute inset-0 flex items-center justify-center p-12">
-          <PlatformNetworkGraphic className="max-w-md" />
+          <PlatformNetworkGraphic className="max-w-md" variant={networkVariant} />
         </div>
 
         <div className="relative z-10 flex flex-col justify-end w-full p-12 xl:p-16">

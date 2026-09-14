@@ -897,39 +897,49 @@ export async function getAdminBoundaries(geometry: object): Promise<AdminBoundar
 }
 
 /** Minimal plan data with geometry for the admin map view — ADMIN/SUPERADMIN only, enforced at the route layer. */
-export async function getAllSurfPlansForAdmin() {
-  const plans = await prisma.surfboardPlan.findMany({
-    where: { deleted: false, geometry: { not: Prisma.DbNull as any } },
-    select: {
-      id: true,
-      planNumber: true,
-      surveyTitle: true,
-      planType: true,
-      ward: true,
-      lga: true,
-      status: true,
-      geometry: true,
-      pillars: true,
-      state: true,
-      user: { select: { firstName: true, lastName: true, email: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: number } = {}) {
+  const where = { deleted: false, geometry: { not: Prisma.DbNull as any } };
 
-  return plans.map((plan) => ({
-    id: plan.id,
-    planNumber: plan.planNumber,
-    surveyTitle: plan.surveyTitle,
-    planType: plan.planType,
-    location: plan.ward && plan.lga ? `${plan.ward}, ${plan.lga}` : plan.ward || plan.lga,
-    status: plan.status,
-    geometry: plan.geometry,
-    pillars: plan.pillars,
-    state: plan.state,
-    ward: plan.ward,
-    lga: plan.lga,
-    owner: plan.user ?? null,
-  }));
+  const [plans, total] = await Promise.all([
+    prisma.surfboardPlan.findMany({
+      where,
+      select: {
+        id: true,
+        planNumber: true,
+        surveyTitle: true,
+        planType: true,
+        ward: true,
+        lga: true,
+        status: true,
+        geometry: true,
+        pillars: true,
+        state: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: params.skip,
+      take: params.take,
+    }),
+    prisma.surfboardPlan.count({ where }),
+  ]);
+
+  return {
+    total,
+    plans: plans.map((plan) => ({
+      id: plan.id,
+      planNumber: plan.planNumber,
+      surveyTitle: plan.surveyTitle,
+      planType: plan.planType,
+      location: plan.ward && plan.lga ? `${plan.ward}, ${plan.lga}` : plan.ward || plan.lga,
+      status: plan.status,
+      geometry: plan.geometry,
+      pillars: plan.pillars,
+      state: plan.state,
+      ward: plan.ward,
+      lga: plan.lga,
+      owner: plan.user ?? null,
+    })),
+  };
 }
 
 export interface AdminPlanListParams {

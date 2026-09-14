@@ -46,9 +46,10 @@ export interface StatCards {
 /**
  * Two separate pending-certificate stat cards (resolved 2026-08-26, per the
  * spec's open question) — batch-level (CertificateOfDepositBatch not yet
- * COMPLETED) and plan-level (SurfboardPlan.redCopyStatus not yet a terminal
- * state) measure different things for different audiences, so both ship
- * rather than picking one.
+ * COMPLETED) and plan-level (SurfboardPlan.redCopyStatus actively SUBMITTED
+ * or QUERIED — excludes NOT_SUBMITTED, which hasn't entered the certificate
+ * pipeline at all) measure different things for different audiences, so
+ * both ship rather than picking one.
  */
 export async function getStatCards(scope: AnalyticsScope): Promise<StatCards> {
   const where = scopeWhere(scope);
@@ -68,7 +69,12 @@ export async function getStatCards(scope: AnalyticsScope): Promise<StatCards> {
         },
       }),
       prisma.surfboardPlan.count({
-        where: { ...where, deleted: false, redCopyStatus: { notIn: ["APPROVED", "FAILED"] } },
+        where: {
+          ...where,
+          deleted: false,
+          planType: { notIn: PROVISIONAL_TYPES },
+          redCopyStatus: { in: ["SUBMITTED", "QUERIED"] },
+        },
       }),
     ]);
 

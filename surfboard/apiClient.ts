@@ -396,7 +396,15 @@ export const surfboardApi = {
         ),
     },
 
-    plansMap: () => jsonFetch<{ plans: any[] }>(`${BASE}/admin/plans/map`),
+    plansMap: (params: { skip?: number; take?: number } = {}) => {
+      const qs = new URLSearchParams();
+      if (params.skip) qs.set("skip", String(params.skip));
+      if (params.take) qs.set("take", String(params.take));
+      const query = qs.toString();
+      return jsonFetch<{ plans: any[]; total: number; skip: number; take: number }>(
+        `${BASE}/admin/plans/map${query ? `?${query}` : ""}`,
+      );
+    },
 
     plans: {
       list: (

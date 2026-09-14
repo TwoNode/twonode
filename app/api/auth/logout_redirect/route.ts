@@ -4,6 +4,8 @@ import {
   clearEncryptedUserCookie,
   getEncryptedUserData,
 } from "@/utils/encryptedCookies";
+import { getEffectiveUserData } from "@/lib/auth/session";
+import { clearAuthCookies } from "@/lib/auth/cookies";
 import {
   canAccessRevaAdminPanel,
   canAccessSurfAdminPanel,
@@ -14,11 +16,21 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const userData = await getEncryptedUserData(request);
     const { searchParams } = new URL(request.url);
-    
+
     // Check if we have an explicit platform we're logging out from
     const fromPlatform = searchParams.get("from") as Platform | null;
+
+    // getEncryptedUserData only reads the legacy Kinde-derived cookie, which
+    // a natively-authenticated session (JWT cookie, e.g. Surfboard's
+    // access_token_surfboard) never has — that left native users with
+    // userData === null here, falling through to the "/" default below
+    // instead of their platform's login page. getEffectiveUserData checks
+    // the native session first (given an explicit platform to check it
+    // against), falling back to the legacy cookie either way.
+    const userData = fromPlatform
+      ? await getEffectiveUserData(fromPlatform)
+      : await getEncryptedUserData(request);
 
     let redirectUrl = "/";
 
@@ -59,6 +71,13 @@ export async function GET(request: NextRequest) {
           redirectUrl = "/gbc/login";
         }
       }
+    }
+
+    // Also clear the native JWT session cookies for this platform — the
+    // legacy USER_SESSION cookie clear below never touched these, so a
+    // natively-authenticated user stayed silently logged in after "logout".
+    if (fromPlatform) {
+      await clearAuthCookies(fromPlatform);
     }
 
     // Clear the cookie and redirect
