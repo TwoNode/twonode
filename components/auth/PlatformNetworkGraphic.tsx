@@ -14,10 +14,13 @@ const NODES = [
   { x: 16, y: 39, kind: "open" as const }, // deliberately empty — room for what's next
 ];
 
-// MDA-facing pages only surface the TwoNode hub connected to the MDA/OSSG
-// node — the other consumer-facing product logos (Surfboard, REVA, GBC)
-// aren't relevant to an internal government-agency audience.
-const MDA_NODE = { x: 16, y: 39, kind: "mda" as const };
+// MDA-facing pages only surface a single TwoNode↔MDA connection, centered
+// and larger than the default graphic's hub — the other consumer-facing
+// product logos (Surfboard, REVA, GBC) aren't relevant to an internal
+// government-agency audience.
+const MDA_TWONODE = { x: 38, y: 50 };
+const MDA_MDA = { x: 62, y: 50 };
+const MDA_PAIR_SIZE = "28%"; // bigger than the default graphic's 20% hub
 
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
@@ -35,19 +38,43 @@ export function PlatformNetworkGraphic({
   className?: string;
   variant?: "default" | "mda";
 }) {
-  const nodes = variant === "mda" ? [MDA_NODE] : NODES;
+  if (variant === "mda") {
+    return (
+      <div className={`relative aspect-square w-full ${className}`}>
+        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
+            <line x1={MDA_TWONODE.x} y1={MDA_TWONODE.y} x2={MDA_MDA.x} y2={MDA_MDA.y} />
+          </g>
+        </svg>
+
+        <div
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg"
+          style={{ left: `${MDA_TWONODE.x}%`, top: `${MDA_TWONODE.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
+        >
+          <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
+        </div>
+
+        <div
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
+          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
+        >
+          <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
+        </div>
+      </div>
+    );
+  }
+
+  const nodes = NODES;
 
   return (
     <div className={`relative aspect-square w-full ${className}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        {variant === "default" && (
-          <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
-            <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
-            <line x1={NODES[1].x} y1={NODES[1].y} x2={NODES[2].x} y2={NODES[2].y} />
-            <line x1={NODES[2].x} y1={NODES[2].y} x2={NODES[3].x} y2={NODES[3].y} />
-            <line x1={NODES[3].x} y1={NODES[3].y} x2={NODES[0].x} y2={NODES[0].y} />
-          </g>
-        )}
+        <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
+          <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
+          <line x1={NODES[1].x} y1={NODES[1].y} x2={NODES[2].x} y2={NODES[2].y} />
+          <line x1={NODES[2].x} y1={NODES[2].y} x2={NODES[3].x} y2={NODES[3].y} />
+          <line x1={NODES[3].x} y1={NODES[3].y} x2={NODES[0].x} y2={NODES[0].y} />
+        </g>
         {/* Primary hub connections */}
         <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
           {nodes.map((n) => (
@@ -65,15 +92,7 @@ export function PlatformNetworkGraphic({
       </div>
 
       {nodes.map((n) =>
-        n.kind === "mda" ? (
-          <div
-            key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "15%", aspectRatio: "1" }}
-          >
-            <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
-          </div>
-        ) : n.kind === "open" ? (
+        n.kind === "open" ? (
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40"
