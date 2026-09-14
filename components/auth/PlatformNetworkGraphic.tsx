@@ -19,9 +19,10 @@ const NODES = [
 // than the default graphic's hub — the other consumer-facing product logos
 // (TwoNode, REVA, GBC) aren't relevant to an internal government-agency
 // audience using the Surfboard MDA workspace specifically.
-const MDA_MDA = { x: 50, y: 22 };
-const MDA_SURFBOARD = { x: 50, y: 44 };
-const MDA_PAIR_SIZE = "22%"; // 1.1x the default graphic's 20% hub
+const MDA_MDA = { x: 50, y: 18 };
+const MDA_SURFBOARD = { x: 50, y: 52 };
+const MDA_MDA_SIZE = "22%"; // 1.1x the default graphic's 20% hub
+const MDA_SURFBOARD_SIZE = "16%"; // smaller than MDA — MDA is the primary mark here
 
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
@@ -50,14 +51,14 @@ export function PlatformNetworkGraphic({
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
+          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: MDA_MDA_SIZE, aspectRatio: "1" }}
         >
           <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
         </div>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
+          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: MDA_SURFBOARD_SIZE, aspectRatio: "1" }}
         >
           <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
         </div>
