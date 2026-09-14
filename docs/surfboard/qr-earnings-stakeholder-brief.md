@@ -1,7 +1,7 @@
 # Surfboard QR Code Earnings & Certificate of Deposit (CoD)
 ## Executive Product Brief & Implementation Plan (Non-Technical Stakeholders)
 
-> **Status**: QR Code Earnings shipped — Phase 1 of the 2026-08 architecture rebuild migrated it to `surfboard/services/qrEarningsService.ts` behind `/api/v1/surfboard/{qr,admin}/*` (8 routes: 3 public paywall/payment routes, 5 authenticated earnings/withdrawal/KYC routes). All 5 roadmap phases below describe what was originally planned; the feature is live, not a future plan. See `docs/development-history/phases/phase-1-foundations.md` (Step 9) for what actually shipped, including a real payment-bypass vulnerability that was found and fixed during the migration.
+> **Status**: QR Code Earnings shipped — Phase 1 of the 2026-08 architecture rebuild migrated it to `surfboard/services/qrEarningsService.ts` behind `/api/v1/surfboard/{qr,admin}/*` (11 routes, confirmed 2026-09-14: 3 public paywall/payment routes — `qr/access-state`, `qr/payments`, `qr/payments/verify` — and 8 authenticated earnings/withdrawal/KYC/admin routes — `qr/bank-details`, `qr/earnings-overview`, `qr/settings`, `qr/withdrawals`, `admin/qr/settings`, `admin/qr/stats`, `admin/qr/withdrawals`, `admin/qr/withdrawals/[id]`). All 5 roadmap phases below describe what was originally planned; the feature is live, not a future plan. See `docs/development-history/phases/phase-1-foundations.md` (Step 9) for what actually shipped, including a real payment-bypass vulnerability that was found and fixed during the migration.
 
 ---
 
