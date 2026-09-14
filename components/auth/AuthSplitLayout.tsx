@@ -76,23 +76,30 @@ export function AuthSplitLayout({
           style={{ background: "white", opacity: 0.12 }}
         />
 
-        {/* Network graphic — TwoNode hub with each live product's real logo
-            at its node, plus one open slot to signal we're still expanding. */}
-        <div className="absolute inset-0 flex items-center justify-center p-12">
-          <PlatformNetworkGraphic className="max-w-md" variant={networkVariant} />
-        </div>
+        {/* Network graphic and headline text used to be two independently
+            positioned full-height overlays (graphic centered, text
+            bottom-anchored) — on any viewport short enough (laptop screens,
+            or a user zoomed to 125%+), the centered graphic's lower nodes
+            collided with the text card. Stacking them in one flex column
+            instead gives each its own region, so they can't overlap
+            regardless of panel height. */}
+        <div className="relative z-10 flex h-full flex-col">
+          <div className="flex-1 min-h-0 flex items-center justify-center p-12 pb-4 xl:p-16 xl:pb-4">
+            <PlatformNetworkGraphic className="max-w-md" variant={networkVariant} />
+          </div>
 
-        <div className="relative z-10 flex flex-col justify-end w-full p-12 xl:p-16">
-          <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-8 max-w-md">
-            <p className="text-xs font-semibold tracking-widest uppercase text-white/70 mb-3">
-              {eyebrow}
-            </p>
-            <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-4 text-balance">
-              {headline}
-            </h2>
-            <p className="text-white/80 text-base leading-relaxed">
-              {description}
-            </p>
+          <div className="w-full p-12 pt-0 xl:p-16 xl:pt-0">
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-8 max-w-md">
+              <p className="text-xs font-semibold tracking-widest uppercase text-white/70 mb-3">
+                {eyebrow}
+              </p>
+              <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-4 text-balance">
+                {headline}
+              </h2>
+              <p className="text-white/80 text-base leading-relaxed">
+                {description}
+              </p>
+            </div>
           </div>
         </div>
       </div>
