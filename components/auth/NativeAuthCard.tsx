@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { Suspense, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,20 @@ export type NativeAuthCardProps = {
   registerNotice?: string;
 };
 
-export function NativeAuthCard({
+// useSearchParams() requires a Suspense boundary above it or Next.js bails
+// the whole page out of static prerendering at build time (confirmed live:
+// broke the Vercel build with "useSearchParams() should be wrapped in a
+// suspense boundary" on every page using this card). The public export stays
+// a drop-in NativeAuthCard; the actual implementation moves one level down.
+export function NativeAuthCard(props: NativeAuthCardProps) {
+  return (
+    <Suspense fallback={<div className="w-full max-w-md" />}>
+      <NativeAuthCardInner {...props} />
+    </Suspense>
+  );
+}
+
+function NativeAuthCardInner({
   platform,
   logoSrc,
   logoAlt,

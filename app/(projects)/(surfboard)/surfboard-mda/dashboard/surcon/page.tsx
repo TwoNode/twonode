@@ -112,6 +112,7 @@ export default function SurconAdminPage() {
     showLeaveWarning,
     confirmLeave,
     cancelLeave,
+    lockError,
   } = usePlanLock({
     role: "SURCON",
     onLockAcquired: (planId, planNumber) => {
@@ -121,6 +122,10 @@ export default function SurconAdminPage() {
       toast.info("Plan lock released");
     },
   });
+
+  useEffect(() => {
+    if (lockError) toast.error(lockError);
+  }, [lockError]);
 
   // Filter plans based on search query
   const filteredPlans = useMemo(() => {

@@ -23,5 +23,8 @@ export const POST = withAuth<SurfboardRole>(
     const data = await releaseAllLocksForUser(role, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: MDA_ROLES as SurfboardRole[] }
+  // See the matching comment in locks/next/route.ts — this array only gates
+  // who may call the route; SUPERADMIN callers were previously 403'd here
+  // before ever reaching the handler's own SUPERADMIN allowance below.
+  { platform: Platform.SURFBOARD, roles: [...MDA_ROLES, SurfboardRole.SUPERADMIN] as SurfboardRole[] }
 );

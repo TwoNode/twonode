@@ -31,6 +31,15 @@ function assertRoleMatchesSession(requestedRole: MDARole, sessionRole: Surfboard
 
 const roleQuerySchema = z.enum(MDA_ROLES as [MDARole, ...MDARole[]]);
 
+// This array only gates who's ALLOWED to call these routes, not which
+// queue/stage they're acting for (that's the `role` body/query param,
+// checked separately via assertRoleMatchesSession above) — so it's safe
+// to include SUPERADMIN here without adding it to MDA_ROLES itself, which
+// would incorrectly also make "SUPERADMIN" a valid stage-role value.
+// Without this, SUPERADMIN callers were 403'd by withAuth before ever
+// reaching assertRoleMatchesSession's own SUPERADMIN allowance.
+const LOCK_ROUTE_ROLES = [...MDA_ROLES, SurfboardRole.SUPERADMIN] as SurfboardRole[];
+
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx, routeCtx: RouteCtx) => {
     const { planId } = await routeCtx.params;
@@ -41,7 +50,7 @@ export const GET = withAuth<SurfboardRole>(
     const data = await getPlanLockStatus(planId, parsedRole.data, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: MDA_ROLES as SurfboardRole[] }
+  { platform: Platform.SURFBOARD, roles: LOCK_ROUTE_ROLES }
 );
 
 const lockBodySchema = z.object({ role: roleQuerySchema });
@@ -58,7 +67,7 @@ export const POST = withAuth<SurfboardRole>(
     const data = await acquirePlanLock(planId, role, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: MDA_ROLES as SurfboardRole[] }
+  { platform: Platform.SURFBOARD, roles: LOCK_ROUTE_ROLES }
 );
 
 export const DELETE = withAuth<SurfboardRole>(
@@ -73,5 +82,5 @@ export const DELETE = withAuth<SurfboardRole>(
     const data = await releasePlanLock(planId, role, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
-  { platform: Platform.SURFBOARD, roles: MDA_ROLES as SurfboardRole[] }
+  { platform: Platform.SURFBOARD, roles: LOCK_ROUTE_ROLES }
 );
