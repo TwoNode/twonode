@@ -21,7 +21,7 @@ const NODES = [
 // audience using the Surfboard MDA workspace specifically.
 const MDA_MDA = { x: 50, y: 22 };
 const MDA_SURFBOARD = { x: 50, y: 44 };
-const MDA_PAIR_SIZE = "24%"; // bigger than the default graphic's 20% hub, shifted up to clear the info card below
+const MDA_PAIR_SIZE = "22%"; // 1.1x the default graphic's 20% hub
 
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
