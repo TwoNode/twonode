@@ -97,6 +97,8 @@ export async function updateProfile(userId: string, formData: FormData) {
       } catch (error) {
         console.error(`Error uploading ${field}:`, error);
       }
+    } else if (formData.get(`remove-${field}`) === "true") {
+      updates[field] = null;
     }
   }
 
