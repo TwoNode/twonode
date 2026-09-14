@@ -1,488 +1,544 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import {
-  Waves,
-  Map,
-  FileSpreadsheet,
-  ShieldCheck,
-  Upload,
-  Landmark,
-  Database,
-  ZoomIn,
-  CheckCircle2,
-  ArrowRight,
-  Sparkles,
-  Search,
-  Boxes,
-  Layers,
-  Ruler,
-  Compass,
-  FileDown,
-  Menu,
-} from "lucide-react";
-import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import { Sora, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import styles from "./surfboard-landing.module.css";
 
-// Bold gradients built from the real brand tokens (navy -> deep blue -> teal),
-// mirroring the pattern used for GBC's hero/CTA gradients.
-const SURFBOARD_GRADIENTS = {
-  hero: `linear-gradient(155deg, ${SURFBOARD_COLORS.primary.dark} 0%, ${SURFBOARD_COLORS.primary.main} 55%, ${SURFBOARD_COLORS.secondary.main} 130%)`,
-  primary: `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 60%, ${SURFBOARD_COLORS.secondary.main} 100%)`,
-};
+const sora = Sora({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-sora" });
+const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-sans" });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500"], variable: "--font-plex-mono" });
+
+/** Deterministic seeded pattern (visual only, not a scannable code) — stable across renders rather than re-randomizing. */
+function useQrPattern(size = 11) {
+  return useMemo(() => {
+    let seed = 42;
+    const rand = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+    const cells: boolean[] = [];
+    for (let i = 0; i < size * size; i++) {
+      const r = Math.floor(i / size);
+      const c = i % size;
+      const isFinder = (r < 3 && c < 3) || (r < 3 && c > size - 4) || (r > size - 4 && c < 3);
+      cells.push(isFinder ? r === 0 || r === 2 || c === 0 || c === 2 || (r === 1 && c === 1) : rand() > 0.5);
+    }
+    return cells;
+  }, [size]);
+}
+
+const PLAN_ICON = (
+  <>
+    <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+    <path d="M14 2v6h6" />
+  </>
+);
 
 export default function SurfboardLandingPage() {
-  const features = useMemo(
-    () => [
-      {
-        title: "CSV Upload & Validation",
-        desc: "Import pillars/plans, auto-validate fields, and catch errors before they ship.",
-        icon: FileSpreadsheet,
-      },
-      {
-        title: "Polygon Generation",
-        desc: "Turn ordered pillars into clean polygons; snap, close, and simplify geometry.",
-        icon: Ruler,
-      },
-      {
-        title: "Nigeria Boundary Lookup",
-        desc: "Instant ward/LCDA/LGA/state detection using spatial intersects.",
-        icon: Landmark,
-      },
-      {
-        title: "Interactive Map Analysis",
-        desc: "Pan, zoom, toggle layers, measure, and overlay pillars/polygons with boundary metadata.",
-        icon: Layers,
-      },
-      {
-        title: "Facilitator Console",
-        desc: "Track certificates, statuses, and pending actions in one place.",
-        icon: Boxes,
-      },
-    ],
-    []
-  );
-
-  const steps = [
-    {
-      title: "Smart Form",
-      desc: "Guided form for survey plan uploads, CSV import, map preview, and attribute entry.",
-      icon: FileSpreadsheet,
-    },
-    {
-      title: "Survey Plan Viewer",
-      desc: "Interactive map viewer for visualizing, searching, and querying survey plans and parcel boundaries.",
-      icon: Map,
-    },
-    {
-      title: "Dashboard",
-      desc: "Central hub for managing plans, viewing recent activity, and accessing analytics.",
-      icon: Database,
-    },
-    {
-      title: "SP-Code Verification",
-      desc: "Protects survey plans with unique QR codes for public verification, ensuring authenticity.",
-      icon: CheckCircle2,
-    },
-  ];
+  const qrCells = useQrPattern(11);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: SURFBOARD_COLORS.background.default }}
-    >
+    <div className={`${styles.landing} ${sora.variable} ${plexSans.variable} ${plexMono.variable}`}>
       {/* NAV */}
-      <header
-        className="sticky top-0 z-40 border-b border-white/10 backdrop-blur"
-        style={{ background: SURFBOARD_GRADIENTS.hero }}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="#" className="group inline-flex items-center gap-2">
-              <Image
-                src="/surfboard/surf_logo.svg"
-                alt="Surfboard"
-                width={64}
-                height={64}
-              />
-              <span className="font-semibold tracking-tight text-white">
-                Surfboard
-              </span>
-              <span className="ml-2 rounded-full bg-white/15 px-2.5 py-0.5 text-xs text-white ring-1 ring-white/25">
-                beta
-              </span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
-              <Link
-                href="#features"
-                className="hover:text-white transition-colors"
-              >
-                Features
-              </Link>
-              <Link href="#how" className="hover:text-white transition-colors">
-                How it works
-              </Link>
-              <Link href="#faq" className="hover:text-white transition-colors">
-                FAQ
-              </Link>
-              <Link href="/surfboard/badge" className="hover:text-white transition-colors">
-                Badge Video
-              </Link>
-            </nav>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/surfboard/login"
-                className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-white dark:bg-surface px-4 py-2 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:opacity-90"
-                style={{ color: SURFBOARD_COLORS.primary.dark }}
-              >
-                Get Started <ArrowRight className="h-4 w-4" />
-              </Link>
-              <details className="relative md:hidden group">
-                <summary
-                  className="list-none flex items-center justify-center h-10 w-10 rounded-lg bg-white/10 border border-white/20 cursor-pointer"
-                  aria-label="Open menu"
-                >
-                  <Menu className="h-5 w-5 text-white" />
-                </summary>
-                <div
-                  className="absolute right-0 top-12 w-56 rounded-xl border border-white/10 bg-white dark:bg-surface p-2 shadow-2xl z-50"
-                  style={{ color: SURFBOARD_COLORS.primary.dark }}
-                >
-                  <Link
-                    href="#features"
-                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
-                  >
-                    Features
-                  </Link>
-                  <Link
-                    href="#how"
-                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
-                  >
-                    How it works
-                  </Link>
-                  <Link
-                    href="#faq"
-                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
-                  >
-                    FAQ
-                  </Link>
-                  <Link
-                    href="/surfboard/badge"
-                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100"
-                  >
-                    Badge Video
-                  </Link>
-                  <div className="my-1 border-t border-gray-100 dark:border-white/10 sm:hidden" />
-                  <Link
-                    href="/surfboard/login"
-                    className="sm:hidden block rounded-lg px-3 py-2 text-sm font-semibold hover:bg-gray-100"
-                  >
-                    Get Started
-                  </Link>
-                </div>
-              </details>
-            </div>
+      <nav className={styles.topbar}>
+        <div className={`${styles.wrap} ${styles.navRow}`}>
+          <div className={styles.brand}>
+            <span className={styles.mark}>S</span> Surfboard <span className={styles.beta}>beta</span>
           </div>
+          <div className={styles.navLinks}>
+            <a href="#how">How it works</a>
+            <a href="#verify">Verification</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <Link href="/surfboard/login" className={`${styles.btn} ${styles.btnWhite}`}>
+            Get Started <ArrowRightIcon />
+          </Link>
         </div>
-      </header>
+      </nav>
 
       {/* HERO */}
-      <section
-        className="relative overflow-hidden"
-        style={{ background: SURFBOARD_GRADIENTS.hero }}
-      >
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs text-white">
-              <Sparkles className="h-3.5 w-3.5" /> New: Interactive map analysis
-              & ward/LGA auto-detection
-            </div>
-            <h1 className="mt-5 text-balance text-4xl font-semibold leading-tight text-white sm:text-5xl">
-              Surfboard: Geospatial Intelligence for Survey Plans
-            </h1>
-            <p className="mt-4 max-w-xl text-pretty text-white/80">
-              Unlock the value of cadastral and geospatial data. Surfboard
-              empowers surveyors, planners, and land administrators with
-              actionable insights and structured land intelligence.
+      <section className={styles.hero}>
+        <div className={styles.heroBg} />
+        <div className={styles.heroDots} />
+        <div className={`${styles.wrap} ${styles.heroGrid}`}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>
+              <SparkleIcon /> Your survey plan. Secure it, and add more value to it.
+            </span>
+            <h1 className={styles.headline}>The digital infrastructure for securing your survey plans</h1>
+            <p className={styles.sub}>
+              Surfboard gives surveyors a trusted digital infrastructure for storing, securing, lodging, and
+              verifying survey plans.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/surfboard/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-surface px-4 py-2 text-sm font-semibold hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                style={{ color: SURFBOARD_COLORS.primary.dark }}
-              >
-                Get Started Now <ArrowRight className="h-4 w-4" />
+            <div className={styles.ctaRow}>
+              <Link href="/surfboard/login" className={`${styles.btn} ${styles.btnWhite}`}>
+                Get Started Now <ArrowRightIcon />
               </Link>
-              <Link
-                href="/surfboard/badge"
-                className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/25 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-              >
+              <Link href="/surfboard/badge" className={`${styles.btn} ${styles.btnGhost}`}>
                 View Badge Video
               </Link>
             </div>
-            <div className="mt-6 flex items-center gap-5 text-xs text-white/75">
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4" /> Validation checks
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Layers className="h-4 w-4" /> GIS-ready
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Map className="h-4 w-4" /> Interactive map
-              </span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            {/* Replace with a product screenshot */}
-            <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-2xl">
-              <div className="absolute inset-0 grid place-items-center">
-                <Image
-                  src="/surfboard/map_screenshot.png"
-                  alt="Map Preview"
-                  className="h-[65%] w-[85%] opacity-95"
-                  width={100}
-                  height={100}
-                />
-              </div>
-              <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 text-xs text-white/90 ring-1 ring-white/20">
-                <ZoomIn className="h-3.5 w-3.5" /> Map preview
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section
-        id="features"
-        className="relative py-20"
-        style={{ backgroundColor: SURFBOARD_COLORS.background.default }}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">
-              Built for surveyors and land admins
-            </h2>
-            <p className="mt-3 text-gray-600 dark:text-gray-400">
-              Everything you need from CSV to certificate in one flow.
-            </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f, index) => {
-              const isAlt = index % 2 === 1;
-              return (
-                <motion.div
-                  key={f.title}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.35 }}
-                  className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-surface p-6 shadow-sm ring-1 ring-black/2 transition-shadow hover:shadow-lg"
-                >
-                  <div
-                    className="mb-3 inline-flex rounded-lg p-2"
-                    style={{
-                      backgroundColor: isAlt
-                        ? SURFBOARD_COLORS.secondary.light
-                        : SURFBOARD_COLORS.surface.main,
-                    }}
-                  >
-                    <f.icon
-                      className="h-5 w-5"
-                      style={{
-                        color: isAlt
-                          ? SURFBOARD_COLORS.secondary.dark
-                          : SURFBOARD_COLORS.primary.main,
-                      }}
-                    />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {f.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{f.desc}</p>
-                </motion.div>
-              );
-            })}
+          <div className={styles.heroVisual} aria-hidden="true">
+            <div className={styles.orbitGlow} />
+            <svg className={styles.orbitSvg} viewBox="0 0 240 240">
+              <circle className={styles.orbitRing} cx="120" cy="120" r="100" />
+              <circle className={styles.orbitRing} cx="120" cy="120" r="64" />
+
+              {/* outer ring: surveyor / property owner / financial institutions */}
+              <g className={styles.orbitSpinA}>
+                <line className={styles.orbitLine} x1="120" y1="120" x2="220" y2="120" />
+                <line className={styles.orbitLine} x1="120" y1="120" x2="70" y2="206.6" />
+                <line className={styles.orbitLine} x1="120" y1="120" x2="70" y2="33.4" />
+
+                <g className={styles.iconCounter} style={{ transformOrigin: "220px 120px" }}>
+                  <circle className={styles.orbitBubble} cx="220" cy="120" r="17" />
+                  <g className={styles.orbitIcon} transform="translate(211,111) scale(0.75)">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+                  </g>
+                </g>
+                <g className={styles.iconCounter} style={{ transformOrigin: "70px 206.6px" }}>
+                  <circle className={styles.orbitBubble} cx="70" cy="206.6" r="17" />
+                  <g className={styles.orbitIcon} transform="translate(61,198) scale(0.75)">
+                    <path d="m3 11 9-8 9 8" />
+                    <path d="M5 10v10h14V10" />
+                    <path d="M9 20v-6h6v6" />
+                  </g>
+                </g>
+                <g className={styles.iconCounter} style={{ transformOrigin: "70px 33.4px" }}>
+                  <circle className={styles.orbitBubble} cx="70" cy="33.4" r="17" />
+                  <g className={styles.orbitIcon} transform="translate(61,24.4) scale(0.75)">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M6 10v.01M18 14v.01" />
+                  </g>
+                </g>
+              </g>
+
+              {/* inner ring: verify / lodge / secure */}
+              <g className={styles.orbitSpinB}>
+                <line className={styles.orbitLine} x1="120" y1="120" x2="152" y2="175.4" />
+                <line className={styles.orbitLine} x1="120" y1="120" x2="56" y2="120" />
+                <line className={styles.orbitLine} x1="120" y1="120" x2="152" y2="64.6" />
+
+                <g className={styles.iconCounter} style={{ transformOrigin: "152px 175.4px" }}>
+                  <circle className={styles.orbitBubble} cx="152" cy="175.4" r="13" />
+                  <g className={styles.orbitIcon} transform="translate(145.4,169.1) scale(0.55)">
+                    <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z" />
+                    <path d="m9 12 2 2 4-4" />
+                  </g>
+                </g>
+                <g className={styles.iconCounter} style={{ transformOrigin: "56px 120px" }}>
+                  <circle className={styles.orbitBubble} cx="56" cy="120" r="13" />
+                  <g className={styles.orbitIcon} transform="translate(49.4,113.4) scale(0.55)">
+                    <path d="M22 2 11 13" />
+                    <path d="M22 2 15 22l-4-9-9-4 20-7Z" />
+                  </g>
+                </g>
+                <g className={styles.iconCounter} style={{ transformOrigin: "152px 64.6px" }}>
+                  <circle className={styles.orbitBubble} cx="152" cy="64.6" r="13" />
+                  <g className={styles.orbitIcon} transform="translate(145.4,58.3) scale(0.55)">
+                    <rect x="4" y="11" width="16" height="9" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </g>
+                </g>
+              </g>
+
+              {/* core: MDA (institution mark) + Surfboard (S mark) */}
+              <g transform="translate(76,100)">
+                <rect className={styles.orbitCoreBadge} x="0" y="0" width="40" height="40" rx="12" />
+                <g className={styles.orbitCoreIcon} transform="translate(9,10) scale(0.86)">
+                  <path d="M3 21h18" />
+                  <path d="M5 21V9M9 21V9M15 21V9M19 21V9" />
+                  <path d="m3 9 9-6 9 6" />
+                </g>
+              </g>
+              <g transform="translate(124,100)">
+                <rect className={styles.orbitCoreBadge} x="0" y="0" width="40" height="40" rx="12" />
+                <text x="20" y="28" textAnchor="middle" fontFamily="var(--font-sora), sans-serif" fontWeight="800" fontSize="20" className={styles.orbitCoreS}>
+                  S
+                </text>
+              </g>
+            </svg>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how" className="py-20" style={{ backgroundColor: "#FFFFFF" }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold text-gray-900 dark:text-white sm:text-4xl">
-              From CSV to certificate
-            </h2>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              A minimal, auditable pipeline that just works.
+      {/* VALUE BAND */}
+      <section className={styles.valueBand}>
+        <div className={`${styles.wrap} ${styles.valueGrid}`}>
+          <div className={styles.vProp}>
+            <span className={styles.vNum}>01</span>
+            <h3>Stand out</h3>
+          </div>
+          <div className={styles.vProp}>
+            <span className={styles.vNum}>02</span>
+            <h3>Build trust</h3>
+          </div>
+          <div className={styles.vProp}>
+            <span className={styles.vNum}>03</span>
+            <h3>Leave a lasting impression on your clients</h3>
+          </div>
+        </div>
+      </section>
+
+      {/* PILLARS */}
+      <section className={styles.section}>
+        <div className={styles.wrap}>
+          <span className={styles.kicker}>The foundation</span>
+          <h2 className={styles.h2} style={{ marginBottom: 8 }}>
+            Four things every plan gets
+          </h2>
+        </div>
+        <div className={styles.wrap} style={{ marginTop: 36 }}>
+          <div className={styles.pillarList}>
+            <div className={styles.pillarItem}>
+              <span className={styles.pillarNum}>01</span>
+              <h3>Store</h3>
+              <p>Every survey plan lives in one durable, searchable record.</p>
+            </div>
+            <div className={styles.pillarItem}>
+              <span className={styles.pillarNum}>02</span>
+              <h3>Secure</h3>
+              <p>Tamper-evident records with a full audit trail from upload to lodgement.</p>
+            </div>
+            <div className={styles.pillarItem}>
+              <span className={styles.pillarNum}>03</span>
+              <h3>Lodge</h3>
+              <p>Submit straight into the government&apos;s charting and certification pipeline.</p>
+            </div>
+            <div className={styles.pillarItem}>
+              <span className={styles.pillarNum}>04</span>
+              <h3>Verify</h3>
+              <p>Anyone can confirm authenticity in seconds with a single scan.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT IS A SURVEY PLAN */}
+      <section className={styles.section} style={{ background: "var(--sfl-card)" }}>
+        <div className={`${styles.wrap} ${styles.center}`}>
+          <span className={styles.kicker}>The basics</span>
+          <h2 className={styles.h2}>What is a Survey Plan really?</h2>
+        </div>
+        <div className={`${styles.wrap} ${styles.defList}`}>
+          <div>
+            <div className={styles.defNum}>1</div>
+            <p>It defines boundaries</p>
+          </div>
+          <div>
+            <div className={styles.defNum}>2</div>
+            <p>Supports ownership claims</p>
+          </div>
+          <div>
+            <div className={styles.defNum}>3</div>
+            <p>And lays the foundation for everything that follows</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CONNECTED TO GOVERNMENT */}
+      <section className={styles.section}>
+        <div className={styles.wrap}>
+          <div className={styles.connectCard}>
+            <div>
+              <span className={styles.kicker}>Government integration</span>
+              <h2>Connected directly to the Office of the State Surveyor-General</h2>
+              <p>
+                Every submission moves straight into the real Charting, SURCON, Records, and Accounts pipeline, with
+                no separate portal, no re-keying data, and no lost paperwork between systems.
+              </p>
+            </div>
+            <div className={styles.nodePair}>
+              <div className={styles.node}>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12h16M4 12l4-4M4 12l4 4" stroke="#233dff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className={styles.dash} />
+              <div className={`${styles.node} ${styles.nodeRound}`}>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z" stroke="#000b3d" strokeWidth="1.6" fill="#000b3d10" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PROCESS */}
+      <section id="how" className={styles.section} style={{ background: "var(--sfl-card)" }}>
+        <div className={`${styles.wrap} ${styles.center}`}>
+          <span className={styles.kicker}>The process</span>
+          <h2 className={styles.h2}>From upload to lodgement</h2>
+          <p className={styles.lead}>One clear path, five checkpoints, full visibility throughout.</p>
+        </div>
+        <div className={styles.wrap} style={{ position: "relative" }}>
+          <div className={styles.stepRail} />
+          <div className={styles.steps}>
+            {PROCESS_STEPS.map((s) => (
+              <div className={styles.step} key={s.label}>
+                <div className={styles.stepIcon}>{s.icon}</div>
+                <div className={styles.stepLabel}>{s.label}</div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ECOSYSTEM (sticky) */}
+      <div className={styles.cycleStickyWrap}>
+        <section className={styles.cycleSection}>
+          <div className={styles.cycleContent}>
+            <div className={`${styles.wrap} ${styles.center}`}>
+              <span className={styles.kicker}>The ecosystem</span>
+              <h2 className={styles.h2}>The survey plan is the core of the ecosystem</h2>
+              <p className={styles.lead}>Everyone who touches a property transaction relies on the same secured record.</p>
+            </div>
+            <div className={styles.cycleWrap}>
+              <div className={styles.ring} />
+              <div className={styles.cycleCenter}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  {PLAN_ICON}
+                  <path d="M9 13h6M9 17h6" />
+                </svg>
+                <span>Survey Plan</span>
+              </div>
+              <div className={styles.cycleNode} style={{ left: "50%", top: "4%" }}>
+                <div className={styles.bubble}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+                  </svg>
+                </div>
+                <span>Surveyor</span>
+              </div>
+              <div className={styles.cycleNode} style={{ left: "96%", top: "50%" }}>
+                <div className={styles.bubble}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V9M9 21V9M15 21V9M19 21V9" />
+                    <path d="m3 9 9-6 9 6" />
+                  </svg>
+                </div>
+                <span>Government</span>
+              </div>
+              <div className={styles.cycleNode} style={{ left: "50%", top: "96%" }}>
+                <div className={styles.bubble}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3 11 9-8 9 8" />
+                    <path d="M5 10v10h14V10" />
+                    <path d="M9 20v-6h6v6" />
+                  </svg>
+                </div>
+                <span>Property Owner</span>
+              </div>
+              <div className={styles.cycleNode} style={{ left: "4%", top: "50%" }}>
+                <div className={styles.bubble}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M6 10v.01M18 14v.01" />
+                  </svg>
+                </div>
+                <span>Financial Institutions</span>
+              </div>
+            </div>
+            <p className={`${styles.wrap} ${styles.center} ${styles.lead}`} style={{ marginTop: 52 }}>
+              Now it&apos;s secured, verifiable, and more connected, enabling fast property transactions.
             </p>
           </div>
+        </section>
+      </div>
 
-          <ol className="mx-auto mt-12 center justify-center flex max-w-5xl flex-wrap gap-6">
-            {steps.map((s, index) => {
-              const isAlt = index % 2 === 1;
-              return (
-                <li
-                  key={s.title}
-                  className="group basis-1/4 min-w-50 relative overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-surface p-5 text-center shadow-sm transition-all duration-300 hover:border-gray-200 hover:shadow-lg"
-                >
-                  <div className="absolute -right-6 -top-6 text-7xl font-bold text-gray-100 transition-all duration-300 group-hover:text-gray-200">
-                    {index + 1}
-                  </div>
-                  <div
-                    className="relative z-10 mx-auto mb-4 inline-flex rounded-xl p-3"
-                    style={{
-                      backgroundColor: isAlt
-                        ? SURFBOARD_COLORS.secondary.light
-                        : SURFBOARD_COLORS.surface.main,
-                    }}
-                  >
-                    <s.icon
-                      className="h-6 w-6"
-                      style={{
-                        color: isAlt
-                          ? SURFBOARD_COLORS.secondary.dark
-                          : SURFBOARD_COLORS.primary.main,
-                      }}
-                    />
-                  </div>
-                  <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-white">
-                    {s.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                    {s.desc}
-                  </p>
-                </li>
-              );
-            })}
-          </ol>
-
-          <div
-            className="mx-auto mt-16 max-w-4xl rounded-2xl border p-6"
-            style={{
-              borderColor: SURFBOARD_COLORS.accent.light,
-              background: `linear-gradient(to right, ${SURFBOARD_COLORS.accent.light}22, ${SURFBOARD_COLORS.accent.main}11)`,
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div
-                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: `${SURFBOARD_COLORS.accent.main}22`,
-                  color: SURFBOARD_COLORS.accent.dark,
-                }}
-              >
-                <CheckCircle2 className="h-5 w-5" />
+      {/* VERIFICATION */}
+      <section id="verify" className={styles.section} style={{ background: "var(--sfl-card)" }}>
+        <div className={`${styles.wrap} ${styles.center}`}>
+          <span className={styles.kicker}>Verification</span>
+          <h2 className={styles.h2}>One scan secures your client&apos;s trust in your work</h2>
+          <p className={styles.lead}>
+            Secure, verify, access the certificate of deposit, and navigate to the plan, all from a single QR code.
+          </p>
+        </div>
+        <div className={`${styles.wrap} ${styles.twoCol}`}>
+          <div className={styles.qrCard}>
+            <div className={styles.qrBox}>
+              <div className={styles.qrGrid}>
+                {qrCells.map((on, i) => (
+                  <i key={i} className={on ? "" : styles.off} />
+                ))}
+              </div>
+            </div>
+            <div className={styles.planNum}>PLAN NO. SP/2024/0113</div>
+            <div className={styles.scanHint}>Scan to verify authenticity</div>
+          </div>
+          <div className={styles.verifyCard}>
+            <div className={styles.vHead}>
+              <div className={styles.vBadge}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3Z" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-                  Empowering Land Professionals
-                </h3>
-                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                  As land data becomes increasingly central to modern
-                  administration and planning, Surfboard provides the essential
-                  tools you need to stay ahead. Our comprehensive platform
-                  streamlines survey submission management, offers powerful plan
-                  visualization, and delivers strategic insights from spatial
-                  datasets—all in one intuitive interface.
-                </p>
-                <p
-                  className="mt-3 text-sm font-medium italic"
-                  style={{ color: SURFBOARD_COLORS.accent.dark }}
-                >
-                  "Transforming raw survey data into actionable intelligence."
-                </p>
+                <b>Verified authentic</b>
+                <small>Checked against the Surfboard registry</small>
               </div>
+            </div>
+            <div className={styles.vRows}>
+              <div className={styles.vRow}>
+                <span>Plan Number</span>
+                <span>SP/2024/0113</span>
+              </div>
+              <div className={styles.vRow}>
+                <span>LGA</span>
+                <span>Ikeja</span>
+              </div>
+              <div className={styles.vRow}>
+                <span>Status</span>
+                <span style={{ color: "var(--sfl-success)" }}>Certificate of Deposit issued</span>
+              </div>
+            </div>
+            <button className={styles.mapBtn} type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>{" "}
+              View on Google Maps
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* QR EARNINGS */}
+      <section id="qr-earnings" className={styles.section}>
+        <div className={`${styles.wrap} ${styles.center}`}>
+          <span className={styles.kicker}>QR earnings</span>
+          <h2 className={styles.h2}>Every scan pays you back</h2>
+          <p className={styles.lead}>Verification isn&apos;t just trust: it&apos;s a passive earnings stream for every surveyor on Surfboard.</p>
+        </div>
+        <div className={styles.financeCard}>
+          <div className={styles.frowTop}>
+            <span className={styles.fLabel}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3" />
+                <path d="M3 7v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2Z" />
+                <circle cx="17" cy="14" r="1.4" />
+              </svg>{" "}
+              QR Earnings
+            </span>
+            <span className={styles.fPill}>Live balance</span>
+          </div>
+          <div className={`${styles.fBalance} ${styles.mono}`}>₦42,500</div>
+          <p className={styles.fSub}>Available for payout</p>
+          <div className={styles.fList}>
+            <div className={styles.fItem}>
+              <div className={styles.fItemLeft}>
+                <div className={`${styles.fIcon} ${styles.fIconUp}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 17 17 7" />
+                    <path d="M7 7h10v10" />
+                  </svg>
+                </div>
+                QR scan: SP/2024/0113
+              </div>
+              <div className={`${styles.fAmount} ${styles.fAmountPos} ${styles.mono}`}>+₦500</div>
+            </div>
+            <div className={styles.fItem}>
+              <div className={styles.fItemLeft}>
+                <div className={`${styles.fIcon} ${styles.fIconUp}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 17 17 7" />
+                    <path d="M7 7h10v10" />
+                  </svg>
+                </div>
+                QR scan: SP/2024/0098
+              </div>
+              <div className={`${styles.fAmount} ${styles.fAmountPos} ${styles.mono}`}>+₦500</div>
+            </div>
+            <div className={styles.fItem}>
+              <div className={styles.fItemLeft}>
+                <div className={`${styles.fIcon} ${styles.fIconDown}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m7 7 10 10" />
+                    <path d="M17 7v10H7" />
+                  </svg>
+                </div>
+                Payout to bank account
+              </div>
+              <div className={`${styles.fAmount} ${styles.mono}`} style={{ color: "#ffffffcc" }}>
+                -₦4,000
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DASHBOARD PREVIEW */}
+      <section className={styles.section} style={{ background: "var(--sfl-card)" }}>
+        <div className={`${styles.wrap} ${styles.center}`}>
+          <span className={styles.kicker}>Your dashboard</span>
+          <h2 className={styles.h2}>Everything in one dashboard</h2>
+        </div>
+        <div className={`${styles.wrap} ${styles.dashGrid}`}>
+          <div className={styles.statCard}>
+            <div className={styles.statIcn}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                {PLAN_ICON}
+                <path d="m9 15 2 2 4-4" />
+              </svg>
+            </div>
+            <div>
+              <div className={styles.statLbl}>Your Certificate of Deposits</div>
+              <div className={styles.statNum}>128</div>
+            </div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statIcn}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z" />
+              </svg>
+            </div>
+            <div>
+              <div className={styles.statLbl}>Your QR Code Activities</div>
+              <div className={styles.statNum}>312</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section
-        id="faq"
-        className="py-20"
-        style={{ backgroundColor: SURFBOARD_COLORS.background.default }}
-      >
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+      <section id="faq" className={styles.section}>
+        <div className={styles.wrap}>
+          <span className={styles.kicker}>FAQ</span>
+          <h2 className={styles.h2} style={{ marginBottom: 32 }}>
             Frequently asked
           </h2>
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-            <FAQ
-              q="Can I upload survey plans outside Lagos?"
-              a="Yes, you can upload survey plans for anywhere in the world."
-            />
-            <FAQ
-              q="Is every QR Code unique to a survey plan?"
-              a="Yes, each survey record automatically generates a unique QR Code for secure identification."
-            />
-            <FAQ
-              q="When I scan the QR Code, will it show the location of the survey plan?"
-              a="Yes, scanning the QR Code displays the location of the survey plan on an interactive map, along with additional details about the record."
-            />
-            <FAQ
-              q="Can I navigate to the location of the survey plan?"
-              a="Yes, simply click 'View on Google Maps' to get directions to the exact location."
-            />
-            <FAQ
-              q="What is the required CSV file format?"
-              a="Your file should have the following columns: Column 1: Pillar No, Column 2: X coordinate, Column 3: Y coordinate"
-            />
-            <FAQ
-              q="Can I edit a record after upload?"
-              a="Absolutely! You can click 'Edit' to make and save any necessary changes."
-            />
-            <FAQ
-              q="Can Surfboard auto-detect wards and LGAs?"
-              a="Yes. Given polygon geometry, Surfboard intersects against a Nigeria wards dataset to return ward, LCDA/LGA, and state metadata."
-            />
-            <FAQ
-              q="Do you support big CSV files?"
-              a="Yes. Large files are handled with streaming parsers and server-side validation; you'll see progress and row-level errors."
-            />
-            <FAQ
-              q="Is geometry required?"
-              a="No. You can upload pillars only — Surfboard generates and validates polygons for you."
-            />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+            {FAQS.map((item, i) => (
+              <FaqItem key={item.q} q={item.q} a={item.a} open={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section
-        className="py-16 text-white"
-        style={{ background: SURFBOARD_GRADIENTS.hero }}
-      >
-        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-          <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
-            Ready to ship accurate survey plans?
-          </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-white/80">
-            Start with a CSV, end with clean geometry, boundary metadata, and
-            audit-ready records.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/surfboard/login"
-              className="rounded-xl bg-white dark:bg-surface px-5 py-2.5 text-sm font-semibold hover:opacity-90"
-              style={{ color: SURFBOARD_COLORS.primary.dark }}
-            >
+      {/* CLOSING */}
+      <section className={`${styles.section} ${styles.closing}`}>
+        <div className={styles.wrap}>
+          <h2>Surfboard: The digital infrastructure for secured survey plans</h2>
+          <p>Now it&apos;s secured, verifiable, and more connected, enabling fast property transactions.</p>
+          <div style={{ marginTop: 22 }}>
+            <Link href="/surfboard/login" className={`${styles.btn} ${styles.btnWhite}`}>
               Get Started Now
             </Link>
           </div>
@@ -490,65 +546,235 @@ export default function SurfboardLandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer
-        className="border-t py-10"
-        style={{
-          backgroundColor: SURFBOARD_COLORS.background.paper,
-          borderColor: "#E5E7EB",
-        }}
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <Image
-                src="/surfboard/surf_light_logo.svg"
-                alt="Surfboard"
-                width={64}
-                height={64}
-              />{" "}
-              Surfboard by
-              <Link
-                href="https://www.twonodetechnologies.com/surfboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-900 dark:text-white hover:opacity-80"
-              >
-                TwoNode Technologies
-              </Link>
+      <footer className={styles.footer}>
+        <div className={styles.footerDots} />
+        <div className={`${styles.wrap} ${styles.footTop}`}>
+          <div className={styles.footBrand}>
+            <div className={styles.brand}>
+              <span className={styles.mark}>S</span> Surfboard
             </div>
-            <nav className="flex flex-wrap items-center justify-center gap-5 text-xs text-gray-700 dark:text-gray-300">
-              <Link href="#features" className="hover:text-gray-900">
-                Features
-              </Link>
-              <Link href="#how" className="hover:text-gray-900">
-                How it works
-              </Link>
-              <Link href="#faq" className="hover:text-gray-900">
-                FAQ
-              </Link>
-              <Link href="/surfboard/badge" className="hover:text-gray-900">
-                Badge Video
-              </Link>
-            </nav>
+            <p>
+              The digital infrastructure for securing your survey plans, built for surveyors, trusted by government,
+              and verifiable by anyone.
+            </p>
+            <Link href="/surfboard/login" className={styles.footCta}>
+              Get started free →
+            </Link>
           </div>
-          <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-            {new Date().getFullYear()} TwoNode Technologies. All rights
-            reserved.
-          </p>
+          <div className={styles.footCol}>
+            <h4>Product</h4>
+            <ul>
+              <li>
+                <a href="#how">How it works</a>
+              </li>
+              <li>
+                <a href="#verify">Verification</a>
+              </li>
+              <li>
+                <a href="#qr-earnings">QR Earnings</a>
+              </li>
+              <li>
+                <a href="#faq">FAQ</a>
+              </li>
+            </ul>
+          </div>
+          <div className={styles.footCol}>
+            <h4>Company</h4>
+            <ul>
+              <li>
+                <a href="https://www.twonodetechnologies.com" target="_blank" rel="noopener noreferrer">
+                  TwoNode Technologies
+                </a>
+              </li>
+              <li>
+                <Link href="/surfboard/badge">Badge Video</Link>
+              </li>
+              <li>
+                <a href="mailto:info@twonodetechnologies.com">Contact</a>
+              </li>
+            </ul>
+          </div>
+          <div className={styles.footCol}>
+            <h4>Legal</h4>
+            <ul>
+              <li>
+                <a href="#">Privacy Policy</a>
+              </li>
+              <li>
+                <a href="#">Terms of Service</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className={`${styles.wrap} ${styles.footBottom}`}>
+          <span>© {new Date().getFullYear()} Surfboard, a TwoNode Product. All rights reserved.</span>
+          <div className={styles.footSocial}>
+            <a href="#" aria-label="X / Twitter">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.9 2h3.3l-7.2 8.2L23.5 22h-6.6l-5.2-6.8L5.7 22H2.4l7.7-8.8L1.5 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.8L7.4 4h-2l12.3 16Z" />
+              </svg>
+            </a>
+            <a href="#" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2 3.77-2 4.03 0 4.78 2.5 4.78 5.8V21h-4v-5.7c0-1.36-.03-3.1-1.9-3.1-1.9 0-2.2 1.48-2.2 3v5.8h-4z" />
+              </svg>
+            </a>
+            <a href="#" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.2" cy="6.8" r="1" />
+              </svg>
+            </a>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-function FAQ({ q, a }: { q: string; a: string }) {
+function ArrowRightIcon() {
   return (
-    <details className="group rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-surface p-4 shadow-sm open:shadow-md">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
-        <span className="text-sm font-medium text-gray-900 dark:text-white">{q}</span>
-        <ArrowRight className="h-4 w-4 text-gray-500 dark:text-gray-400 transition group-open:rotate-90" />
-      </summary>
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{a}</p>
-    </details>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+function SparkleIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    </svg>
+  );
+}
+
+const PROCESS_STEPS = [
+  {
+    label: "STEP 1",
+    title: "Upload",
+    desc: "CSV or manual pillar entry, validated on the way in.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v12" />
+        <path d="m7 8 5-5 5 5" />
+        <path d="M5 21h14" />
+      </svg>
+    ),
+  },
+  {
+    label: "STEP 2",
+    title: "Review",
+    desc: "Geometry, boundaries, and attributes checked before it moves on.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="6" y="4" width="12" height="17" rx="2" />
+        <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+        <path d="m9 13 2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    label: "STEP 3",
+    title: "Submit",
+    desc: "Sent into the Certificate of Deposit queue for processing.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 2 11 13" />
+        <path d="M22 2 15 22l-4-9-9-4 20-7Z" />
+      </svg>
+    ),
+  },
+  {
+    label: "STEP 4",
+    title: "Track",
+    desc: "Live status across Charting, SURCON, Records, and Accounts.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="5" cy="18" r="2.5" />
+        <circle cx="19" cy="6" r="2.5" />
+        <path d="M7.5 18H15a4 4 0 0 0 4-4a4 4 0 0 0-4-4H9a4 4 0 0 1-4-4" />
+      </svg>
+    ),
+  },
+  {
+    label: "STEP 5",
+    title: "Lodge",
+    desc: "Certified, QR-secured, and ready to stand up anywhere.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8.5 12.5 2.3 2.3 4.7-5" />
+      </svg>
+    ),
+  },
+];
+
+const FAQS = [
+  { q: "Can I upload survey plans outside Lagos?", a: "Yes, you can upload survey plans for anywhere in the world." },
+  {
+    q: "Is every QR Code unique to a survey plan?",
+    a: "Yes, each survey record automatically generates a unique QR Code for secure identification.",
+  },
+  {
+    q: "When I scan the QR Code, will it show the location of the survey plan?",
+    a: "Yes, scanning the QR Code displays the location of the survey plan on an interactive map, along with additional details about the record.",
+  },
+  {
+    q: "Can I navigate to the location of the survey plan?",
+    a: "Yes, simply click 'View on Google Maps' to get directions to the exact location.",
+  },
+  {
+    q: "What is the required CSV file format?",
+    a: "Your file should have the following columns: Column 1: Pillar No, Column 2: X coordinate, Column 3: Y coordinate.",
+  },
+  { q: "Can I edit a record after upload?", a: "Absolutely! You can click 'Edit' to make and save any necessary changes." },
+  {
+    q: "Can Surfboard auto-detect wards and LGAs?",
+    a: "Yes. Given polygon geometry, Surfboard intersects against a Nigeria wards dataset to return ward, LCDA/LGA, and state metadata.",
+  },
+  {
+    q: "Do you support big CSV files?",
+    a: "Yes. Large files are handled with streaming parsers and server-side validation; you'll see progress and row-level errors.",
+  },
+  { q: "Is geometry required?", a: "No. You can upload pillars only, Surfboard generates and validates polygons for you." },
+];
+
+function FaqItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
+  return (
+    <div
+      style={{
+        borderRadius: "var(--sfl-radius-md)",
+        border: "1px solid var(--sfl-border)",
+        background: "var(--sfl-card)",
+        padding: "16px 18px",
+      }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          display: "flex",
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+          padding: 0,
+          font: "inherit",
+          color: "var(--sfl-ink)",
+        }}
+      >
+        <span style={{ fontSize: 14.5, fontWeight: 600 }}>{q}</span>
+        <ArrowRightIcon />
+      </button>
+      {open && (
+        <p style={{ marginTop: 10, marginBottom: 0, fontSize: 14, color: "var(--sfl-muted)", lineHeight: 1.55 }}>{a}</p>
+      )}
+    </div>
   );
 }
