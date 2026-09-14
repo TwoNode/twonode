@@ -30,17 +30,6 @@ export function AuthSplitLayout({
 }: AuthSplitLayoutProps) {
   return (
     <div className="min-h-screen flex">
-      {/* LASG tricolor accent — MDA is a Lagos State government portal, so
-          this reads top-to-bottom as red/gold/green rather than a generic
-          brand stripe. Full height, left edge, MDA pages only. */}
-      {networkVariant === "mda" && (
-        <div className="hidden sm:flex w-2 shrink-0 flex-col">
-          <div className="flex-1" style={{ background: "#CE1126" }} />
-          <div className="flex-1" style={{ background: "#FCD116" }} />
-          <div className="flex-1" style={{ background: "#007A33" }} />
-        </div>
-      )}
-
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white dark:bg-background">
         {notice && <div className="w-full max-w-md mb-4">{notice}</div>}
         {children}
@@ -48,6 +37,18 @@ export function AuthSplitLayout({
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{footerNote}</p>
         )}
       </div>
+
+      {/* LASG tricolor accent — MDA is a Lagos State government portal, so
+          this reads top-to-bottom as red/gold/green rather than a generic
+          brand stripe. Sits on the seam between the two panels, MDA pages
+          only, at the same breakpoint the right panel itself appears. */}
+      {networkVariant === "mda" && (
+        <div className="hidden lg:flex w-2 shrink-0 flex-col">
+          <div className="flex-1" style={{ background: "#CE1126" }} />
+          <div className="flex-1" style={{ background: "#FCD116" }} />
+          <div className="flex-1" style={{ background: "#007A33" }} />
+        </div>
+      )}
 
       <div
         className="relative hidden lg:flex flex-1 overflow-hidden"
