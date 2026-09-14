@@ -118,7 +118,7 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
             </div>
 
             {/* Support Info */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/10">
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                   Need help? Contact our support team

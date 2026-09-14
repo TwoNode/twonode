@@ -28,12 +28,12 @@ const ViewDetailsContent = ({ formData }: { formData: any }) => {
   console.log("Reference:", reference);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-2xl">
+    <div className="min-h-screen bg-gray-50 dark:bg-white/5 flex items-center justify-center px-4 py-12">
+      <div className="bg-white dark:bg-surface shadow-2xl rounded-2xl p-10 w-full max-w-2xl">
         <h1 className="text-3xl font-bold text-green-700 text-center mb-6">
           Due Diligence Request Successful
         </h1>
-        <p className="text-center text-gray-600 mb-6">
+        <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
           Thank you for your due diligence request.
           <br />
           Your REVA transaction reference is:
@@ -113,8 +113,8 @@ export default ViewDetails;
 
 const Detail = ({ label = "", value = "" }) => (
   <div className="flex justify-between items-center border-b pb-2">
-    <span className="text-gray-600 font-medium">{label}:</span>
-    <span className="text-gray-800 font-semibold text-right ml-4 max-w-[60%] truncate">
+    <span className="text-gray-600 dark:text-gray-400 font-medium">{label}:</span>
+    <span className="text-gray-800 dark:text-gray-200 font-semibold text-right ml-4 max-w-[60%] truncate">
       {value}
     </span>
   </div>

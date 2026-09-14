@@ -151,7 +151,7 @@ export default function AdminUsersList() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold text-gray-900">
+            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
               Admin Users ({total})
             </CardTitle>
             <CardDescription>
@@ -175,19 +175,19 @@ export default function AdminUsersList() {
       <CardContent>
         {filteredUsers.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">No admin users found</p>
+            <p className="text-gray-500 dark:text-gray-400">No admin users found</p>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex flex-col gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
                         {user.firstName} {user.lastName}
                       </h3>
 
@@ -212,9 +212,9 @@ export default function AdminUsersList() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-2">{user.email}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{user.email}</p>
 
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="h-3 w-3" />
                         <span>

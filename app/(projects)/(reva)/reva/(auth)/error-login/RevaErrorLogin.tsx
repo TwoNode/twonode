@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 
 export default function RevaErrorLogin() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 to-blue-100 px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 to-blue-100 px-4 py-12 dark:from-background dark:to-background">
+      <div className="bg-white dark:bg-surface rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
         <div className="flex justify-center mb-6">
           <img
             src="/reva/revaLogo.png"
             alt="REVA Logo"
-            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white"
+            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white dark:bg-surface"
             style={{ background: "white" }}
           />
         </div>

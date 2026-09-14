@@ -63,7 +63,7 @@ export const RevaHeroSection = ({
                   alt="REVA Logo"
                   width={50}
                   height={50}
-                  className="bg-white/70 rounded-full"
+                  className="bg-white/70 dark:bg-surface rounded-full"
                 />
               ) : (
                 <Image
@@ -71,7 +71,7 @@ export const RevaHeroSection = ({
                   alt="REVA Logo"
                   width={100}
                   height={100}
-                  className="bg-white/70 rounded-full"
+                  className="bg-white/70 dark:bg-surface rounded-full"
                 />
               )
             }

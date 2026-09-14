@@ -201,7 +201,7 @@ export default function UserPropertyRequests({
 
   if (properties.length === 0) {
     return (
-      <div className="min-h-[400px] bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-[400px] bg-linear-to-b from-gray-50 to-gray-100 flex items-center justify-center dark:from-background dark:to-background">
         <div className="text-center">
           <div className="mx-auto h-24 w-24 text-gray-300 mb-4">
             <DocumentTextIcon className="h-full w-full" />

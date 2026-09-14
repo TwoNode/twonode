@@ -110,7 +110,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
   return (
     <div className="space-y-4">
       {/* Search Section */}
-      <div className="bg-white dark:bg-surface rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-surface rounded-xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Property Search */}
           <div className="flex-1">
@@ -242,10 +242,10 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                       selectedProperty.status === "Available"
-                        ? "bg-green-100 text-green-800"
+                        ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                         : selectedProperty.status === "Processing"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                        : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                     }`}
                   >
                     {selectedProperty?.status}
@@ -265,7 +265,7 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
 
       {/* Property List Summary */}
       {filteredProperties.length > 0 && (
-        <div className="bg-white dark:bg-surface rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-surface rounded-xl p-4 shadow-sm border border-gray-100 dark:border-white/10">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
             Properties on Map
           </h3>
@@ -291,10 +291,10 @@ const MapContainer = ({ properties = [] }: { properties: Array<any> }) => {
                 <span
                   className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
                     property.status === "Available"
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300"
                       : property.status === "Processing"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300"
+                      : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                   }`}
                 >
                   {property.status}

@@ -12,13 +12,13 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
   reference,
 }) => {
   return (
-    <div className="min-h-screen bg-linear-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4 dark:from-background dark:to-background">
       <div className="max-w-md w-full">
         {/* Error Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden">
+        <div className="bg-white dark:bg-surface rounded-2xl shadow-xl border border-red-100 overflow-hidden">
           {/* Header with Icon */}
           <div className="bg-linear-to-r from-red-500 to-red-600 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 dark:bg-surface rounded-full mb-4">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
@@ -42,7 +42,7 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
           {/* Content */}
           <div className="p-6">
             <div className="text-center mb-6">
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 {message ||
                   "Something went wrong during payment verification. Please try again or contact support if the issue persists."}
               </p>
@@ -74,7 +74,7 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
 
               <button
                 onClick={() => window.history.back()}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="w-full bg-gray-100 dark:bg-white/10 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 <div className="flex items-center justify-center space-x-2">
                   <svg
@@ -96,9 +96,9 @@ const PaymentErrorPage: FC<PaymentErrorPageProps> = ({
             </div>
 
             {/* Support Info */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-white/10">
               <div className="text-center">
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                   Need help? Contact our support team
                 </p>
                 <a

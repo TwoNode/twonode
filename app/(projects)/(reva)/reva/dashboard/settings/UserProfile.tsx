@@ -160,18 +160,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "SUPERADMIN":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300";
       case "ADMIN":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300";
       case "USER":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-500/15 text-gray-800 dark:text-gray-300";
     }
   };
 
   const getStatusBadgeColor = (isActive: boolean) => {
-    return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+    return isActive ? "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300" : "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300";
   };
 
   return (

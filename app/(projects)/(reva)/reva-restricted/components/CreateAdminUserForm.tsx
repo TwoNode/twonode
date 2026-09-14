@@ -81,7 +81,7 @@ export default function CreateAdminUserForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-gray-900">
+        <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
           Create Admin User
         </CardTitle>
         <CardDescription>

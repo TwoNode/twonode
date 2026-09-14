@@ -816,7 +816,7 @@ const RevaDueDiligenceForm: React.FC = () => {
       </AlertDialog>
 
       {!showReview ? (
-        <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="mx-auto bg-white dark:bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-lg">
           <h2 className="text-3xl font-extrabold text-blue-700 mb-4 text-center">
             REVA Due Diligence Request
           </h2>
@@ -827,7 +827,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             onSubmit={handleSubmit}
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Requester Name
               </label>
 
@@ -841,7 +841,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
 
@@ -863,7 +863,7 @@ const RevaDueDiligenceForm: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Property Address
               </label>
               <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
@@ -883,7 +883,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 style={{ lineHeight: "12px" }}
               >
                 if address isn't available and you're at the property, tap{" "}
-                <span className="inline-block py-1 px-1 mx-0.5 text-xs whitespace-nowrap bg-slate-100 rounded-sm">
+                <span className="inline-block py-1 px-1 mx-0.5 text-xs whitespace-nowrap bg-slate-100 dark:bg-white/10 rounded-sm">
                   Use My Location.
                 </span>{" "}
                 We'll use your accurate location.
@@ -933,16 +933,16 @@ const RevaDueDiligenceForm: React.FC = () => {
               <h3 className="mb-2 text-lg font-semibold text-green-700">
                 Parcel Information
               </h3>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 <strong>Parcel ID:</strong>{" "}
-                <span id="parcelId" className="text-gray-900">
+                <span id="parcelId" className="text-gray-900 dark:text-white">
                   {location ? parcelId : "-"}
                 </span>
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Location (Lat, Lng)
               </label>
               <Input
@@ -956,7 +956,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Local Government Area (LGA)
               </label>
               <Input
@@ -970,7 +970,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Supporting Documents
               </label>
               <Input
@@ -998,7 +998,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Site Images <span className="text-red-500">*</span>
               </label>
               <Input
@@ -1040,7 +1040,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Additional Comments
               </label>
               <Textarea
@@ -1051,7 +1051,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Total Cost (NGN)
               </label>
               <Input
@@ -1077,54 +1077,54 @@ const RevaDueDiligenceForm: React.FC = () => {
           </form>
         </div>
       ) : (
-        <div className="mx-auto bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+        <div className="mx-auto bg-white dark:bg-surface p-8 rounded-2xl shadow-2xl w-full max-w-lg">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-6 text-center">
             Review Your Details
           </h2>
 
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">Email:</span>
-              <span className="text-gray-800 font-semibold">{email}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Email:</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">{email}</span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">Requester Name:</span>
-              <span className="text-gray-800 font-semibold">{requester}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Requester Name:</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">{requester}</span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
                 Property Address:
               </span>
-              <span className="text-gray-800 font-semibold">{address}</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">{address}</span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">Location:</span>
-              <span className="text-gray-800 font-semibold">
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Location:</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">
                 {location ? `${location.lat}, ${location.lng}` : "Not set"}
               </span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">Parcel ID:</span>
-              <span className="text-gray-800 font-semibold">{parcelId}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Parcel ID:</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">{parcelId}</span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">LGA:</span>
-              <span className="text-gray-800 font-semibold">{lga}</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">LGA:</span>
+              <span className="text-gray-800 dark:text-gray-200 font-semibold">{lga}</span>
             </div>
 
             <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 font-medium">Files:</span>
-              <div className="text-gray-800 font-semibold overflow-hidden">
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Files:</span>
+              <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
                 <div className="flex flex-col">
                   {fileNames.map((name, index) => (
                     <span
                       key={index}
-                      className="text-gray-800 font-semibold text-ellipsis border-b-2 border-gray-200"
+                      className="text-gray-800 dark:text-gray-200 font-semibold text-ellipsis border-b-2 border-gray-200 dark:border-white/10"
                     >
                       {name}
                     </span>
@@ -1134,13 +1134,13 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center border-b pb-2 gap-2">
-              <span className="text-gray-600 font-medium">Site Images:</span>
-              <div className="text-gray-800 font-semibold overflow-hidden">
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Site Images:</span>
+              <div className="text-gray-800 dark:text-gray-200 font-semibold overflow-hidden">
                 <div className="flex flex-col">
                   {siteImageNames.map((name, index) => (
                     <span
                       key={index}
-                      className="text-gray-800 font-semibold text-ellipsis border-b-2 border-gray-200"
+                      className="text-gray-800 dark:text-gray-200 font-semibold text-ellipsis border-b-2 border-gray-200 dark:border-white/10"
                     >
                       {name}
                     </span>
@@ -1150,7 +1150,7 @@ const RevaDueDiligenceForm: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="text-gray-600 font-medium">Total Cost:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Total Cost:</span>
               <span className="font-semibold text-xl text-blue-600">
                 {totalCost.toLocaleString("en-NG", {
                   style: "currency",
@@ -1172,7 +1172,7 @@ const RevaDueDiligenceForm: React.FC = () => {
                 className="form-checkbox h-5 w-5 text-blue-600"
               />
 
-              <span className="text-sm text-gray-700 justify-normal">
+              <span className="text-sm text-gray-700 dark:text-gray-300 justify-normal">
                 I have read and agreed to the{" "}
                 <Link
                   href="#"
@@ -1247,7 +1247,7 @@ const PrivacyPolicyModal = ({
               Privacy Policy & Terms and Conditions
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 text-gray-700 overflow-y-auto max-h-[70vh]">
+          <div className="space-y-6 text-gray-700 dark:text-gray-300 overflow-y-auto max-h-[70vh]">
             {/* --- Privacy Policy --- */}
             <section>
               <h2 className="text-2xl font-bold mb-2">Privacy Policy</h2>

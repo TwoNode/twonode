@@ -21,7 +21,7 @@ export const RevaUserDashboardNavbar = ({
           alt="REVA Logo"
           width={50}
           height={50}
-          className="bg-white/70 rounded-full w-12 max-md:w-11"
+          className="bg-white/70 dark:bg-surface rounded-full w-12 max-md:w-11"
         />
       </Link>
 
