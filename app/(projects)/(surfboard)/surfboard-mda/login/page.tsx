@@ -17,11 +17,12 @@ export default function SurfMDALoginPage() {
       eyebrow="MDA Portal"
       headline="Ministries, Departments & Agencies."
       description="Sign in to your MDA workspace to manage submissions, approvals, and inter-agency records."
+      networkVariant="mda"
     >
       <NativeAuthCard
         platform={Platform.SURFBOARD}
-        logoSrc="/surfboard/surf_logo.svg"
-        logoAlt="Surfboard Logo"
+        logoSrc="/OSSG_Logo.png"
+        logoAlt="MDA Logo"
         title="MDA Portal"
         subtitle="Ministry, Department & Agency access."
         accent="#6D28D9"

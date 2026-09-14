@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -16,6 +17,11 @@ import {
   getNavItemsForRole,
   type SurfboardRouteGroup,
 } from "@/surfboard/access/routes";
+import {
+  canAccessSurfSuperAdminPanel,
+  canAccessSurfAdminPanel,
+  isMDARole,
+} from "@/permissions";
 
 /**
  * Data-driven replacement for the per-product, per-role layout components
@@ -50,12 +56,27 @@ export function DashboardShell({
   role,
   group,
   user,
-  logoutRedirectUrl = "/api/auth/logout_redirect",
+  logoutRedirectUrl,
 }: DashboardShellProps) {
   const sidebar = useStore(useSidebar, (x) => x);
+  const router = useRouter();
   // DashboardShell is Surfboard-only today (pilot scope, see doc-comment
   // above) — hardcoded rather than a prop until a second product adopts it.
   useNativeAuthRefresh(Platform.SURFBOARD);
+
+  // Surfboard admin/MDA sessions are native-JWT-only — they never have a
+  // Kinde session to end, so routing logout through Kinde's LogoutLink (as
+  // ConfirmedLogoutLink's postLogoutRedirectURL path does) sends the browser
+  // to Kinde's own hosted "Signed out" page instead of back to this app, and
+  // never clears the native access/refresh cookies at all (confirmed live:
+  // refresh_token_surfboard survived a full click-through logout). Calling
+  // our own /api/auth/logout_redirect directly — same fix already used by
+  // the superadmin page's logout button — bypasses Kinde entirely.
+  const postLogoutPath = canAccessSurfSuperAdminPanel(role) || canAccessSurfAdminPanel(role)
+    ? "/surfboard-restricted/login"
+    : isMDARole(role)
+      ? "/surfboard-mda/login"
+      : "/surfboard/login";
 
   const navItems = getNavItemsForRole(role, group).map((r) => ({
     icon: r.icon,
@@ -71,7 +92,10 @@ export function DashboardShell({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          postLogoutRedirectURL={logoutRedirectUrl}
+          onConfirm={() => {
+            fetch(logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard");
+            router.push(postLogoutPath);
+          }}
           trigger={
             <button
               type="button"

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -154,6 +155,7 @@ export default function SurfboardUserPanelLayout({
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const sidebar = useStore(useSidebar, (x) => x);
+  const router = useRouter();
   useNativeAuthRefresh(Platform.SURFBOARD);
   const dashboardUrl = "/surfboard/dashboard";
 
@@ -248,7 +250,10 @@ export default function SurfboardUserPanelLayout({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          postLogoutRedirectURL="/api/auth/logout_redirect"
+          onConfirm={() => {
+            fetch("/api/auth/logout_redirect?from=surfboard");
+            router.push("/surfboard/login");
+          }}
           trigger={
             <button
               type="button"

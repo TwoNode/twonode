@@ -134,7 +134,7 @@ export default function SurfboardSuperAdminPage() {
                 </button>
                 <ConfirmedLogoutLink
                   onConfirm={() => {
-                    fetch("/api/auth/logout_redirect");
+                    fetch("/api/auth/logout_redirect?from=surfboard");
                     router.push("/surfboard-restricted/login");
                   }}
                   trigger={

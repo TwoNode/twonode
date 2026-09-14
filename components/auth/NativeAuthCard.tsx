@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ export function NativeAuthCard({
   registerNotice,
 }: NativeAuthCardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme } = useTheme();
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
@@ -55,6 +56,14 @@ export function NativeAuthCard({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
+
+  // Middleware (proxy.ts) attaches this when it bounces an unauthenticated
+  // visit to login, so a session expiring (or a stale link) mid-task can
+  // return the user to where they actually were instead of always to the
+  // role's default dashboard. Restricted to a same-origin relative path —
+  // never follow an absolute/protocol-relative URL from a query param.
+  const returnTo = searchParams.get("post_login_redirect_url");
+  const safeReturnTo = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
 
   const dark = accentDark ?? accent;
   // accentDark is a near-black navy for every product — fine on the light
@@ -100,7 +109,10 @@ export function NativeAuthCard({
         return;
       }
 
-      router.push(resolveRedirect(result.data.role));
+      // Only honor the return-to path on a login, not a fresh registration —
+      // a brand-new account has no reason to land back on whatever gated
+      // page bounced the visitor to login in the first place.
+      router.push(mode === "login" && safeReturnTo ? safeReturnTo : resolveRedirect(result.data.role));
       router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");

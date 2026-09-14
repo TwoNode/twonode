@@ -14,26 +14,43 @@ const NODES = [
   { x: 16, y: 39, kind: "open" as const }, // deliberately empty — room for what's next
 ];
 
+// MDA-facing pages only surface the TwoNode hub connected to the MDA/OSSG
+// node — the other consumer-facing product logos (Surfboard, REVA, GBC)
+// aren't relevant to an internal government-agency audience.
+const MDA_NODE = { x: 16, y: 39, kind: "mda" as const };
+
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
  * actual branding) with TwoNode's logo at the hub and each live product's
  * logo at its node, plus one open slot left unfilled to signal the network
  * is still growing.
+ *
+ * `variant="mda"` swaps that node set for a single TwoNode↔MDA connection,
+ * used on the MDA portal's auth pages.
  */
-export function PlatformNetworkGraphic({ className = "" }: { className?: string }) {
+export function PlatformNetworkGraphic({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: "default" | "mda";
+}) {
+  const nodes = variant === "mda" ? [MDA_NODE] : NODES;
+
   return (
     <div className={`relative aspect-square w-full ${className}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        {/* Secondary mesh between satellites — faint, just for texture */}
-        <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
-          <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
-          <line x1={NODES[1].x} y1={NODES[1].y} x2={NODES[2].x} y2={NODES[2].y} />
-          <line x1={NODES[2].x} y1={NODES[2].y} x2={NODES[3].x} y2={NODES[3].y} />
-          <line x1={NODES[3].x} y1={NODES[3].y} x2={NODES[0].x} y2={NODES[0].y} />
-        </g>
+        {variant === "default" && (
+          <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
+            <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
+            <line x1={NODES[1].x} y1={NODES[1].y} x2={NODES[2].x} y2={NODES[2].y} />
+            <line x1={NODES[2].x} y1={NODES[2].y} x2={NODES[3].x} y2={NODES[3].y} />
+            <line x1={NODES[3].x} y1={NODES[3].y} x2={NODES[0].x} y2={NODES[0].y} />
+          </g>
+        )}
         {/* Primary hub connections */}
         <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
-          {NODES.map((n) => (
+          {nodes.map((n) => (
             <line key={n.kind} x1={HUB.x} y1={HUB.y} x2={n.x} y2={n.y} />
           ))}
         </g>
@@ -47,8 +64,16 @@ export function PlatformNetworkGraphic({ className = "" }: { className?: string 
         <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
       </div>
 
-      {NODES.map((n) =>
-        n.kind === "open" ? (
+      {nodes.map((n) =>
+        n.kind === "mda" ? (
+          <div
+            key={n.kind}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "15%", aspectRatio: "1" }}
+          >
+            <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
+          </div>
+        ) : n.kind === "open" ? (
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40"

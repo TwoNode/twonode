@@ -35,13 +35,25 @@ export default function AdminMapViewerPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await surfboardApi.admin.plansMap();
+      const PAGE_SIZE = 500;
+      let skip = 0;
+      let combined: any[] = [];
 
-      if (result.success) {
-        setAllPlans(result.data.plans || []);
-      } else {
-        setError(result.error || "Failed to fetch plans");
+      while (true) {
+        const result = await surfboardApi.admin.plansMap({ skip, take: PAGE_SIZE });
+
+        if (!result.success) {
+          setError(result.error || "Failed to fetch plans");
+          return;
+        }
+
+        combined = combined.concat(result.data.plans || []);
+        skip += PAGE_SIZE;
+
+        if (skip >= result.data.total || !result.data.plans?.length) break;
       }
+
+      setAllPlans(combined);
     } catch (err) {
       console.error("Error fetching admin plans:", err);
       setError("An error occurred while fetching plans");
