@@ -267,7 +267,10 @@ export const sendVerificationEmail = async ({
 };
 
 /**
- * Send email using Surfboard notification credentials (NOTIF_EMAIL)
+ * Send a Surfboard notification email. Shares the same account as every
+ * other sender in this file (EMAIL_USER/EMAIL_PASS) — previously ran on a
+ * separate NOTIF_EMAIL credential pair, consolidated once all outbound mail
+ * moved onto one notifications@ mailbox.
  */
 export const sendNotificationMail = async ({
   to,
@@ -279,13 +282,13 @@ export const sendNotificationMail = async ({
     const transporter = createTransport({
       service: "Zoho",
       auth: {
-        user: process.env.NOTIF_EMAIL,
-        pass: process.env.NOTIF_EMAIL_PASS,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
     const mailOptions = {
-      from: process.env.NOTIF_EMAIL,
+      from: process.env.EMAIL_USER,
       to,
       subject,
       text,
