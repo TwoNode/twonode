@@ -14,13 +14,14 @@ const NODES = [
   { x: 16, y: 39, kind: "open" as const }, // deliberately empty — room for what's next
 ];
 
-// MDA-facing pages only surface a single TwoNode↔MDA connection, centered
-// and larger than the default graphic's hub — the other consumer-facing
-// product logos (Surfboard, REVA, GBC) aren't relevant to an internal
-// government-agency audience.
-const MDA_TWONODE = { x: 38, y: 50 };
-const MDA_MDA = { x: 62, y: 50 };
-const MDA_PAIR_SIZE = "28%"; // bigger than the default graphic's 20% hub
+// MDA-facing pages only surface a single MDA↔Surfboard connection, stacked
+// vertically (MDA on top, since that's the audience signing in) and larger
+// than the default graphic's hub — the other consumer-facing product logos
+// (TwoNode, REVA, GBC) aren't relevant to an internal government-agency
+// audience using the Surfboard MDA workspace specifically.
+const MDA_MDA = { x: 50, y: 22 };
+const MDA_SURFBOARD = { x: 50, y: 44 };
+const MDA_PAIR_SIZE = "24%"; // bigger than the default graphic's 20% hub, shifted up to clear the info card below
 
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
@@ -43,22 +44,22 @@ export function PlatformNetworkGraphic({
       <div className={`relative aspect-square w-full ${className}`}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
-            <line x1={MDA_TWONODE.x} y1={MDA_TWONODE.y} x2={MDA_MDA.x} y2={MDA_MDA.y} />
+            <line x1={MDA_MDA.x} y1={MDA_MDA.y} x2={MDA_SURFBOARD.x} y2={MDA_SURFBOARD.y} />
           </g>
         </svg>
-
-        <div
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg"
-          style={{ left: `${MDA_TWONODE.x}%`, top: `${MDA_TWONODE.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
-        >
-          <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
-        </div>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
           style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
         >
           <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
+        </div>
+
+        <div
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
+          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: MDA_PAIR_SIZE, aspectRatio: "1" }}
+        >
+          <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
         </div>
       </div>
     );
