@@ -189,13 +189,21 @@ badge page, both subscription-related pages (the subscription/callback
 page in particular already fully dark-themed with no gaps).
 
 **Out of scope, noted for later phases (not fixed here):**
-- The public marketing homepage (`/surfboard`) has an un-migrated light
+- ~~The public marketing homepage (`/surfboard`) has an un-migrated light
   section below its hero (`bg-white`-ish, `text-white` heading rendering
   invisible-on-light) — belongs to Phase 10 (public/marketing sites), not
-  this dashboard-focused phase.
+  this dashboard-focused phase.~~ **Resolved outside phase tracking
+  (2026-09-15):** the homepage was fully redesigned and rebuilt on real
+  design tokens (`surfboard-landing.module.css`, scoped `--sfl-*`
+  variables with `:global(.dark)` overrides) as a separate user-driven
+  redesign project, not part of this phase's batches — [PR #99](https://github.com/roji-tech/twonodes/pull/99).
+  A follow-up ([PR #100](https://github.com/roji-tech/twonodes/pull/100))
+  also made the page default to light regardless of OS preference and
+  added its own nav theme toggle. Phase 10 no longer needs to theme this
+  page — see the note in `phase-10-public-sites-theming.md`.
 - The public plan-verification page (`/surfboardplan/[id]`) has no dark
   mode treatment either — same reasoning, it's a public page outside
-  Phase 7's three authenticated shells.
+  Phase 7's three authenticated shells. Still open for Phase 10.
 
 **Phase 7 status:** every page in `docs/pages/surfboard.md` across all
 three shells has now been individually verified at least once (the ~45

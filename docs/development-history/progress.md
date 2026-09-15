@@ -1,6 +1,6 @@
 # Twonodes Architecture Rebuild — Progress Tracker
 
-Last Updated: 2026-09-11
+Last Updated: 2026-09-15
 
 See also: `docs/development-history/route-inventory.md` — the full list of every route (pages + API) across all three products, kept current as each phase renames/adds/retires routes.
 
@@ -54,7 +54,7 @@ doc lives in that same folder.
   classifier declined) — flagged to close out before/during Phase 8–9.
   Full writeup in `docs/development-history/phases/phase-6-design-tokens.md`.
   Shipped on `design-system/phase-6-tokens` ([PR #66](https://github.com/roji-tech/twonodes/pull/66)).
-- **Phase 7 — Surfboard theming**: In progress. Batch 1 shipped
+- **Phase 7 — Surfboard theming**: Complete. Batch 1 shipped
   ([PR #67](https://github.com/roji-tech/twonodes/pull/67)): mechanical
   dark-mode sweep across all 70 files with zero `dark:` coverage across
   the surveyor site/dashboard, MDA shell, admin panel, and the shared
@@ -62,9 +62,17 @@ doc lives in that same folder.
   initially). Hand-fixed native `<select>` elements and JS-driven
   stat-card colors the sweep can't reach. Responsiveness spot-checked at
   375/768/1024px on the three dashboard homes — no issues found. Live-
-  verified against a real authenticated account in both themes.
-  Still open: individual verification of ~45 remaining pages. Full
-  writeup in `docs/development-history/phases/phase-7-surfboard-theming.md`.
+  verified against a real authenticated account in both themes. Batches
+  2–3 (follow-up sessions) worked through the rest of the ~45-page
+  checklist plus an admin-panel visual-polish pass (bespoke stat-card/
+  status-badge colors, a table-row hover bug, 8 pages' un-dark'd gradient
+  wrappers) — every page in `docs/pages/surfboard.md` across all three
+  shells has now been individually verified at least once. Two items
+  explicitly deferred to Phase 10 (public pages, out of this phase's
+  authenticated-shell scope): the public plan-verification page
+  (`/surfboardplan/[id]`, still open), and the public homepage — since
+  resolved outside phase tracking, see below. Full writeup in
+  `docs/development-history/phases/phase-7-surfboard-theming.md`.
 - **Phase 8 — REVA theming**: Planned, blocked on Phase 6 (and ideally 7).
 - **Phase 9 — GBC theming**: Planned, blocked on Phase 6 (and ideally 7–8).
 - **Phase 10 — Public/marketing sites theming**: Planned, blocked on
@@ -75,6 +83,39 @@ doc lives in that same folder.
 Each phase verified with `tsc --noEmit` plus light+dark screenshots at
 mobile/tablet/desktop widths before moving to the next, and ships as its
 own branch + PR off `main`.
+
+---
+
+## Ad-hoc UI work (outside phase tracking, 2026-09-14/15)
+
+User-driven redesign work on the Surfboard product, not scoped to either
+initiative above but overlapping Phase 7/10's theming concerns:
+
+- **MDA login zoom-overlap fix** ([PR #98](https://github.com/roji-tech/twonodes/pull/98)):
+  `AuthSplitLayout`'s network graphic and headline card were two
+  independently-positioned overlays that collided at short viewports/125%
+  zoom. Restructured into a single flex column (graphic region, text region
+  below) so they can't overlap regardless of panel height — fixes every
+  `AuthSplitLayout` consumer, not just MDA.
+- **Surfboard homepage redesign** ([PR #99](https://github.com/roji-tech/twonodes/pull/99)):
+  the public `/surfboard` landing page was fully rebuilt from an iterated
+  Artifact proposal into real code — new `surfboard-landing.module.css`
+  with its own scoped `--sfl-*` design tokens (light + `:global(.dark)`
+  overrides), animated hero orbit graphic, editorial section treatments.
+  This is the fix for the light-section/invisible-heading gap Phase 7 had
+  flagged and deferred to Phase 10 — see the resolved note in
+  `phase-7-surfboard-theming.md` and the updated checklist in
+  `phase-10-public-sites-theming.md`.
+- **Homepage light-mode default + toggle** ([PR #100](https://github.com/roji-tech/twonodes/pull/100)):
+  the homepage now defaults to light regardless of OS `prefers-color-scheme`
+  (only an explicit prior choice is respected) and has its own nav toggle,
+  wired into the site's real `.dark`-class theme rather than a standalone
+  preview toggle.
+
+Not yet done: the rest of Phase 10's public-site scope (main corporate
+site, GBC/REVA public sites, the remaining Surfboard public pages
+including `/surfboardplan/[id]`) is still fully open — only the Surfboard
+homepage itself is resolved.
 
 ---
 
