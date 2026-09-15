@@ -34,6 +34,7 @@ describe("canAccessRoute — admin panel", () => {
       "/gbc-restricted/attendees",
       "/gbc-restricted/check-in",
       "/gbc-restricted/editions",
+      "/gbc-restricted/profile",
     ]) {
       expect(canAccessRoute(path, GBCRole.ADMIN)).toBe(true);
     }

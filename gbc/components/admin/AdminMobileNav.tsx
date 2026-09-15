@@ -1,21 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
+import { useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
-import UserAvatar from "@/components/UserAvatar";
-import { Menu } from "lucide-react";
+import { GBCUserMenu } from "@/gbc/components/admin/GBCUserMenu";
+import { GBCAdminSearch } from "@/gbc/components/admin/GBCAdminSearch";
+import { Menu, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { GBC_ROUTES } from "@/gbc/access/routes";
 
 /**
  * Sourced from the same registry as AdminSidebar.tsx instead of a second,
- * separately hand-maintained title map — the old one had already drifted
- * (missing Certificates, Speakers, and Editions, so those pages' mobile
- * header silently fell back to the generic "Admin" title). Tickets'
- * title changes from "Tickets Management" to "Tickets" to match the
- * sidebar label exactly, rather than keeping two different names for
- * the same page.
+ * separately hand-maintained title map.
  */
 const routeTitles: Record<string, string> = Object.fromEntries(
   GBC_ROUTES.filter((r) => r.group === "admin").map((r) => [r.path, r.label])
@@ -24,30 +19,50 @@ const routeTitles: Record<string, string> = Object.fromEntries(
 export function AdminMobileNav({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname();
   const title = routeTitles[pathname] || "Admin";
+  const [showSearch, setShowSearch] = useState(false);
 
   return (
-    <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-      <button
-        onClick={onMenuClick}
-        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        aria-label="Open menu"
-      >
-        <Menu className="h-5 w-5 text-gray-600" />
-      </button>
-      <h1 className="text-lg font-bold text-gray-900">{title}</h1>
+    <div className="md:hidden sticky top-0 z-30 bg-white border-b border-gray-200">
+      <div className="px-4 py-2.5 flex items-center gap-2.5">
+        <button
+          onClick={onMenuClick}
+          className="p-1.5 -ml-1 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5 text-gray-600" />
+        </button>
+        <h1 className="text-base font-bold text-gray-900 truncate">{title}</h1>
 
-      <div className="ml-auto flex items-center gap-2">
-        <NotificationBell platform="gbc" viewAllHref="/gbc-restricted/notifications" iconClassName="h-5 w-5 text-gray-600" />
-        <UserAvatar platform="gbc" size={28} />
-        <ConfirmedLogoutLink
-          postLogoutRedirectURL="/api/auth/logout_redirect"
-          trigger={
-            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-              Sign Out
-            </Button>
-          }
-        />
+        <div className="ml-auto flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowSearch((prev) => !prev)}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            aria-label={showSearch ? "Close search" : "Open search"}
+          >
+            {showSearch ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
+          </button>
+          <NotificationBell
+            platform="gbc"
+            viewAllHref="/gbc-restricted/notifications"
+            iconClassName="h-5 w-5 text-gray-600"
+          />
+          <GBCUserMenu size={30} />
+        </div>
       </div>
+
+      {showSearch && (
+        <div className="px-4 pb-3 pt-1 border-t border-gray-100 bg-gray-50/80">
+          <GBCAdminSearch
+            placeholder="Search tickets, attendees, sections…"
+            className="w-full max-w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }
