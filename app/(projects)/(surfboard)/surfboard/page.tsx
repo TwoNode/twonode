@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Sora, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { useTheme } from "@/hooks/useTheme";
 import styles from "./surfboard-landing.module.css";
+
+/** This landing page defaults to light regardless of OS preference — only
+ * an explicit prior choice (from this page's toggle, or elsewhere in the
+ * site) is respected. */
+const THEME_STORAGE_KEY = "twonodes-theme";
 
 const sora = Sora({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-sora" });
 const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-sans" });
@@ -38,6 +44,26 @@ const PLAN_ICON = (
 export default function SurfboardLandingPage() {
   const qrCells = useQrPattern(11);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { theme, setTheme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    // Deferred a tick: ThemeProvider's own mount effect re-derives theme from
+    // the class the blocking init script already painted (system preference,
+    // for a first-time visitor) and briefly re-asserts it after this runs —
+    // waiting until that settles lets this be the final word instead of
+    // getting immediately overwritten back to dark.
+    const id = setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored !== "light" && stored !== "dark") {
+          setTheme("light");
+        }
+      } catch {
+        // localStorage unavailable — leave whatever theme resolved.
+      }
+    }, 0);
+    return () => clearTimeout(id);
+  }, [setTheme]);
 
   return (
     <div className={`${styles.landing} ${sora.variable} ${plexSans.variable} ${plexMono.variable}`}>
@@ -52,9 +78,19 @@ export default function SurfboardLandingPage() {
             <a href="#verify">Verification</a>
             <a href="#faq">FAQ</a>
           </div>
-          <Link href="/surfboard/login" className={`${styles.btn} ${styles.btnWhite}`}>
-            Get Started <ArrowRightIcon />
-          </Link>
+          <div className={styles.navActions}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={styles.themeToggle}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            </button>
+            <Link href="/surfboard/login" className={`${styles.btn} ${styles.btnWhite}`}>
+              Get Started <ArrowRightIcon />
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -646,6 +682,23 @@ function SparkleIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
     </svg>
   );
 }
