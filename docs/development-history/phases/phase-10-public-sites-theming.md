@@ -21,9 +21,15 @@ public pages.
       tickets, certificate view, login).
 - [ ] REVA public site — the `/reva/*` (non-dashboard) section of
       `docs/pages/reva.md`.
-- [ ] Surfboard public site — the `/surfboard/*` (non-dashboard) section of
-      `docs/pages/surfboard.md`, plus the public plan viewer
-      (`/surfboardplan/[id]`).
+- [x] Surfboard homepage (`/surfboard`) — done ahead of this phase, outside
+      phase tracking: fully redesigned on real design tokens with `.dark`
+      overrides, plus a page-level light-default + nav toggle
+      ([PR #99](https://github.com/roji-tech/twonodes/pull/99),
+      [PR #100](https://github.com/roji-tech/twonodes/pull/100), 2026-09-15).
+      See the resolved note in `phase-7-surfboard-theming.md`.
+- [ ] Surfboard public site — the rest of the `/surfboard/*` (non-dashboard)
+      section of `docs/pages/surfboard.md`, plus the public plan viewer
+      (`/surfboardplan/[id]`) — still open.
 - [ ] Responsiveness pass at 375px / 768px / 1024px+ on every page above,
       fixed as each page is touched for theming.
 - [ ] Decide per-page whether dark mode is actually wanted on purely
