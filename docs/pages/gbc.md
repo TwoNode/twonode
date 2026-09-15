@@ -34,6 +34,7 @@ public marketing/ticketing site (`/gbc/*`) and a separate admin panel
 | `/gbc-restricted/gallery` | `gbc-restricted/(admin)/gallery/page.tsx` | Manage gallery photos |
 | `/gbc-restricted/inquiries` | `gbc-restricted/(admin)/inquiries/page.tsx` | Contact-form inquiries inbox |
 | `/gbc-restricted/notifications` | `gbc-restricted/(admin)/notifications/page.tsx` | Admin notifications list |
+| `/gbc-restricted/profile` | `gbc-restricted/(admin)/profile/page.tsx` | Admin user profile view |
 | `/gbc-restricted/settings` | `gbc-restricted/(admin)/settings/page.tsx` | Admin account/platform settings |
 | `/gbc-restricted/speakers` | `gbc-restricted/(admin)/speakers/page.tsx` | Manage speakers |
 | `/gbc-restricted/sponsors` | `gbc-restricted/(admin)/sponsors/page.tsx` | Manage sponsors |
