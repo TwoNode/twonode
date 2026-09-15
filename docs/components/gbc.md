@@ -28,6 +28,8 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 | `GalleryFilters.tsx` | Filter bar for the gallery management page |
 | `GalleryGrid.tsx` | Grid layout for gallery photo management |
 | `GallerySettings.tsx` | Gallery-wide settings panel |
+| `GBCAdminSearch.tsx` | Global search bar for the admin dashboard (pages + tickets) |
+| `GBCUserMenu.tsx` | Avatar trigger with dropdown for settings, profile, and sign out |
 | `InquiriesFilters.tsx` | Filter bar for the inquiries inbox |
 | `InquiriesTable.tsx` | Table of contact-form inquiries |
 | `ManualCheckIn.tsx` | Manual (non-QR) attendee check-in form |
