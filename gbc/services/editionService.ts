@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import type { GBCEditionStatus } from "@/prisma/generated";
 
 /**
  * Editions live in their own gbc_editions table (see the GBCEdition model's
@@ -18,6 +19,32 @@ import type { GBCEdition } from "@/gbc/utils/settings";
  * level too (added via raw SQL, see prisma/migrations/manual_gbc_editions.sql,
  * since Prisma's schema DSL can't express a partial index).
  */
+
+/**
+ * Editions used to just sit at whatever status they were created with
+ * (default "UPCOMING") until an admin remembered to archive them — nothing
+ * ever flipped a past event to "PAST" on its own, so e.g. GBC 1.0 (Nov
+ * 2024) could still read "Upcoming" in September 2026. Self-heals on every
+ * read instead: the one status an admin action actually controls is
+ * ACTIVE (the exactly-one-ACTIVE invariant above is a deliberate business
+ * decision, not a calendar fact, so it's never auto-touched even once its
+ * dates have passed — an edition can stay "active" for post-event
+ * certificate/receipt access); every other edition's status is derived
+ * purely from whether its endDate has passed.
+ */
+function deriveStatus(row: { status: string; endDate: Date }): GBCEditionStatus {
+  if (row.status === "ACTIVE") return "ACTIVE";
+  return row.endDate < new Date() ? "PAST" : "UPCOMING";
+}
+
+async function withSyncedStatus<T extends { key: string; status: string; endDate: Date }>(
+  row: T
+): Promise<T> {
+  const correctStatus = deriveStatus(row);
+  if (correctStatus === row.status) return row;
+  await prisma.gBCEdition.update({ where: { key: row.key }, data: { status: correctStatus } });
+  return { ...row, status: correctStatus };
+}
 
 function toGBCEdition(row: {
   key: string;
@@ -45,7 +72,8 @@ function toGBCEdition(row: {
 
 export async function getEditions(): Promise<GBCEdition[]> {
   const rows = await prisma.gBCEdition.findMany({ orderBy: [{ startDate: "desc" }] });
-  return rows.map(toGBCEdition);
+  const synced = await Promise.all(rows.map(withSyncedStatus));
+  return synced.map(toGBCEdition);
 }
 
 export async function getActiveEdition(): Promise<GBCEdition | null> {
@@ -56,7 +84,7 @@ export async function getActiveEdition(): Promise<GBCEdition | null> {
 async function getEditionOrThrow(key: string) {
   const edition = await prisma.gBCEdition.findUnique({ where: { key } });
   if (!edition) throw new NotFoundError("Edition");
-  return edition;
+  return withSyncedStatus(edition);
 }
 
 async function editionStats(key: string) {
