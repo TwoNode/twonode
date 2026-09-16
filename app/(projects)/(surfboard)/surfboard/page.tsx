@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Sora, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import { useTheme } from "@/hooks/useTheme";
 import styles from "./surfboard-landing.module.css";
 
@@ -11,8 +11,9 @@ import styles from "./surfboard-landing.module.css";
  * site) is respected. */
 const THEME_STORAGE_KEY = "twonodes-theme";
 
-const sora = Sora({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-sora" });
-const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-sans" });
+/** Headings/body reuse the site-wide Bricolage Grotesque (already loaded by
+ * the root layout via --font-bricolage) — only the mono/label accents (QR
+ * grid, verification codes) get their own typeface. */
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500"], variable: "--font-plex-mono" });
 
 /** Deterministic seeded pattern (visual only, not a scannable code) — stable across renders rather than re-randomizing. */
@@ -66,7 +67,7 @@ export default function SurfboardLandingPage() {
   }, [setTheme]);
 
   return (
-    <div className={`${styles.landing} ${sora.variable} ${plexSans.variable} ${plexMono.variable}`}>
+    <div className={`${styles.landing} ${plexMono.variable}`}>
       {/* NAV */}
       <nav className={styles.topbar}>
         <div className={`${styles.wrap} ${styles.navRow}`}>
@@ -195,7 +196,7 @@ export default function SurfboardLandingPage() {
               </g>
               <g transform="translate(124,100)">
                 <rect className={styles.orbitCoreBadge} x="0" y="0" width="40" height="40" rx="12" />
-                <text x="20" y="28" textAnchor="middle" fontFamily="var(--font-sora), sans-serif" fontWeight="800" fontSize="20" className={styles.orbitCoreS}>
+                <text x="20" y="28" textAnchor="middle" fontFamily="var(--font-bricolage), sans-serif" fontWeight="800" fontSize="20" className={styles.orbitCoreS}>
                   S
                 </text>
               </g>
