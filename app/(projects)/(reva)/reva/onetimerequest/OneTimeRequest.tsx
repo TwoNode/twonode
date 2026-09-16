@@ -554,6 +554,12 @@ export async function OneTimeRequest({ data }: PageProps) {
                         Your report has been approved and is ready for download.
                       </AlertDescription>
                     </Alert>
+                    <div className="mt-4">
+                      <DownloadReportButton
+                        reference={request.reference}
+                        email={request.email}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               )}
