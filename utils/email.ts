@@ -267,6 +267,59 @@ export const sendVerificationEmail = async ({
 };
 
 /**
+ * A download-gate code, requested fresh every time someone tries to
+ * download a report or document — not a login/verification token, so it's
+ * a short human-typed code rather than a link.
+ */
+export const sendDownloadOtpEmail = async ({
+  to,
+  firstName,
+  code,
+  target,
+  platform,
+}: {
+  to: string;
+  firstName: string;
+  code: string;
+  target: string;
+  platform: Platform;
+}) => {
+  const brand = PLATFORM_BRAND[platform];
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const targetLabel = target === "report" ? "report" : "document";
+  const text = `${greeting}\n\nYour ${brand.name} download code is: ${code}\n\nEnter this code to download your ${targetLabel}. This code expires in 10 minutes and can only be used once. If you didn't request this, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${greeting}</p>
+        <p>Use this code to download your ${targetLabel}:</p>
+        <p style="margin: 24px 0; text-align: center;">
+          <span style="background:#f4f4f5;color:${brand.accentDark};padding:14px 28px;border-radius:8px;font-weight:700;font-size:28px;letter-spacing:.15em;display:inline-block;">${code}</span>
+        </p>
+        <p style="color:#666;font-size:13px;">This code expires in 10 minutes and can only be used once. If you didn't request this, you can safely ignore this email.</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
+    </div>
+  `;
+
+  return sendMail({
+    to,
+    subject: `Your ${brand.name} download code`,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
+};
+
+/**
  * Send a Surfboard notification email. Shares the same account as every
  * other sender in this file (EMAIL_USER/EMAIL_PASS) — previously ran on a
  * separate NOTIF_EMAIL credential pair, consolidated once all outbound mail

@@ -27,9 +27,11 @@ export type FormState = {
 export function AdminDirectLinkUpload({
   property,
   user = {},
+  viewerRole = null,
 }: {
   property: any;
   user: any;
+  viewerRole?: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -313,7 +315,7 @@ export function AdminDirectLinkUpload({
         <Card>
           <CardContent className="p-6 space-y-6">
             <div className="flex justify-end gap-6 pt-6">
-              {user?.role! === "SUPERADMIN" && (
+              {viewerRole === "SUPERADMIN" && (
                 <>
                   {property?.report?.isApproved ? (
                     <Button

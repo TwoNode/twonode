@@ -66,9 +66,11 @@ export type ReportType = {
 export function AdminReportUpload({
   property,
   user = {},
+  viewerRole = null,
 }: {
   property: any;
   user: any;
+  viewerRole?: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -786,7 +788,7 @@ export function AdminReportUpload({
             </div>
 
             <div className="flex justify-end gap-6 pt-6">
-              {user?.role === "SUPERADMIN" && (
+              {viewerRole === "SUPERADMIN" && (
                 <>
                   {property?.report?.isApproved ? (
                     <Button

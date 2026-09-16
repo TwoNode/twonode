@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { NotFoundError } from "@/lib/api/errors";
 import { notifyNewPropertyRequest } from "@/reva/services/notificationService";
 
 /**
@@ -109,6 +109,36 @@ export async function updatePropertyTransactionStatus(
 }
 
 /**
+ * documentsUrls and report.directFileLink are raw, permanent, unsigned S3
+ * URLs — never return them from a general fetch response. A real
+ * (short-lived, presigned) URL only ever comes from the OTP-verified
+ * download endpoints (see downloadOtpService.ts). Everything else on
+ * `report` (isApproved, approvedAt, and — for a Detailed Form report — the
+ * structured due-diligence fields RevaReportPDF renders) stays as-is: none
+ * of that is a URL, so none of it is the thing this redaction closes.
+ * `directFileLink`'s presence becomes a `downloadAvailable` boolean so a
+ * "Download Report" button can still render correctly.
+ */
+function redactDownloadableFields<T extends { documentsUrls: string[]; report: unknown }>(
+  row: T
+): Omit<T, "documentsUrls" | "report"> & {
+  documentsCount: number;
+  report: (Record<string, unknown> & { downloadAvailable: boolean }) | null;
+} {
+  const { documentsUrls, report, ...safe } = row;
+  let safeReport: (Record<string, unknown> & { downloadAvailable: boolean }) | null = null;
+  if (report && typeof report === "object") {
+    const { directFileLink, ...restOfReport } = report as Record<string, unknown>;
+    safeReport = { ...restOfReport, downloadAvailable: "directFileLink" in (report as object) };
+  }
+  return {
+    ...safe,
+    documentsCount: documentsUrls.length,
+    report: safeReport,
+  };
+}
+
+/**
  * userId here is RevaUser.id (the native session's `sub`), so this queries
  * Property.userId directly — the source instead matched via
  * `property.user.kindeId === kindeId` (a relation filter keyed on Kinde's
@@ -120,11 +150,13 @@ export async function getUserProperties(userId: string) {
     where: { userId, deleted: false },
   });
 
-  return [...properties].sort((a, b) => {
-    const dateA = new Date(a.updatedAt || a.createdAt).getTime();
-    const dateB = new Date(b.updatedAt || b.createdAt).getTime();
-    return dateB - dateA;
-  });
+  return [...properties]
+    .sort((a, b) => {
+      const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+      const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+      return dateB - dateA;
+    })
+    .map(redactDownloadableFields);
 }
 
 /**
@@ -155,43 +187,11 @@ export async function getTransactionData(reference: string) {
 export async function authGetTransactionData(reference: string) {
   const transaction = await prisma.property.findUnique({ where: { reference } });
   if (!transaction) throw new NotFoundError("Transaction");
-  return transaction;
+  return redactDownloadableFields(transaction);
 }
 
 export async function getOneTimeRequestByReference(reference: string, email: string) {
   const request = await prisma.oneTimeUserProperty.findFirst({ where: { reference, email } });
   if (!request) throw new NotFoundError("Request");
-  return request;
-}
-
-export type ReportDownload =
-  | { type: "redirect"; redirectUrl: string }
-  | { type: "data"; reference: string; address: string; report: unknown; approvedAt: unknown; approvedBy: unknown };
-
-export async function downloadOneTimeRequestReport(reference: string, email: string): Promise<ReportDownload> {
-  if (!reference || !email) throw new ValidationError({ reference: "reference and email are required" });
-
-  const request = await getOneTimeRequestByReference(reference, email);
-
-  if (!request.report || typeof request.report !== "object") {
-    throw new NotFoundError("Report");
-  }
-
-  const report = request.report as Record<string, unknown>;
-  if (!("isApproved" in report) || !report.isApproved) {
-    throw new ValidationError({ report: "Report is not yet approved" });
-  }
-
-  if ("directFileLink" in report) {
-    return { type: "redirect", redirectUrl: report.directFileLink as string };
-  }
-
-  return {
-    type: "data",
-    reference: request.reference,
-    address: request.address,
-    report: request.report,
-    approvedAt: report.approvedAt ?? null,
-    approvedBy: report.approvedBy ?? null,
-  };
+  return redactDownloadableFields(request);
 }

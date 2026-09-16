@@ -13,13 +13,13 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   EyeIcon,
-  ArrowDownTrayIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Link from "next/link";
+import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
 // Custom Naira icon component
 const NairaIcon = ({ className }: { className?: string }) => (
@@ -63,7 +63,7 @@ interface Property {
   lga: string;
   parcelId?: string | null;
   totalCost: number;
-  documentsUrls: string[];
+  documentsCount: number;
   comments?: string | null;
   createdAt?: Date | string | null;
   updatedAt?: Date | string | null;
@@ -433,7 +433,7 @@ export default function UserPropertyRequests({
                   </div>
 
                   {/* Documents Section */}
-                  {property.documentsUrls.length > 0 && (
+                  {property.documentsCount > 0 && (
                     <div className="border-t pt-4">
                       <div className="flex items-center gap-2 mb-3">
                         <DocumentTextIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -441,34 +441,23 @@ export default function UserPropertyRequests({
                           Supporting Documents
                         </span>
                         <Badge variant="outline" className="text-xs">
-                          {property.documentsUrls.length}
+                          {property.documentsCount}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {property.documentsUrls
-                          .slice(0, 4)
-                          .map((doc: string, index: number) => (
-                            <a
-                              key={index}
-                              href={doc}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
-                            >
-                              <ArrowDownTrayIcon className="h-3 w-3" />
-                              <span className="truncate">
-                                {doc
-                                  .split("/")
-                                  .pop()
-                                  ?.replace(/_/g, " ")
-                                  .replace(".pdf", "") ||
-                                  `Document ${index + 1}`}
-                              </span>
-                            </a>
-                          ))}
-                        {property.documentsUrls.length > 4 && (
+                        {Array.from({ length: Math.min(property.documentsCount, 4) }).map((_, index) => (
+                          <SecureDownloadDialog
+                            key={index}
+                            label={`Document ${index + 1}`}
+                            reference={property.reference}
+                            target={`document:${index}`}
+                            authenticated
+                            className="justify-start text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                          />
+                        ))}
+                        {property.documentsCount > 4 && (
                           <div className="text-xs text-gray-500 dark:text-gray-400 col-span-full">
-                            +{property.documentsUrls.length - 4} more documents
+                            +{property.documentsCount - 4} more documents
                           </div>
                         )}
                       </div>
@@ -485,16 +474,12 @@ export default function UserPropertyRequests({
                     </Button>
 
                     {reportReady && (
-                      <Button variant="outline" asChild>
-                        <Link
-                          href={`/api/reva/onetimerequest/download?reference=${
-                            property.reference
-                          }&email=${encodeURIComponent(property.email || "")}`}
-                        >
-                          <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-                          Download Report
-                        </Link>
-                      </Button>
+                      <SecureDownloadDialog
+                        label="Download Report"
+                        reference={property.reference}
+                        target="report"
+                        authenticated
+                      />
                     )}
                   </div>
 
