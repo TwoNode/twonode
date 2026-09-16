@@ -29,7 +29,7 @@
 
   background: var(--sfl-bg);
   color: var(--sfl-ink);
-  font-family: var(--font-bricolage), system-ui, sans-serif;
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
   font-size: 15px;
 }
 
@@ -46,7 +46,7 @@
 .landing :global(h1),
 .landing :global(h2),
 .landing :global(h3) {
-  font-family: var(--font-bricolage), system-ui, sans-serif;
+  font-family: var(--font-sora), system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -99,7 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-bricolage), sans-serif;
+  font-family: var(--font-sora), sans-serif;
   font-weight: 800;
 }
 .beta {
@@ -1126,7 +1126,7 @@
   color: #ffffff60;
   margin: 0 0 16px;
   font-weight: 600;
-  font-family: var(--font-bricolage), sans-serif;
+  font-family: var(--font-sora), sans-serif;
 }
 .footCol ul {
   list-style: none;
