@@ -16,10 +16,16 @@ const requestSchema = z.object({
   email: z.string().email(),
 });
 
-const GENERIC_RESPONSE = NextResponse.json({
-  success: true,
-  data: { message: "If that email is registered, we've sent a link to it." },
-});
+// A function, not a module-level NextResponse singleton — a NextResponse's
+// body stream is consumed once it's actually sent, so a shared object
+// reused across requests serves an empty body (and an "Unexpected end of
+// JSON input" client-side parse error) on every request after the first.
+function genericResponse() {
+  return NextResponse.json({
+    success: true,
+    data: { message: "If that email is registered, we've sent a link to it." },
+  });
+}
 
 /**
  * Always returns the same generic response whether or not the email is
@@ -43,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!(await checkRateLimit(identifier))) {
       // Same generic response even when rate-limited — a distinct message
       // here would itself be a timing/enumeration signal.
-      return GENERIC_RESPONSE;
+      return genericResponse();
     }
     await recordAttempt(identifier);
 
@@ -96,7 +102,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return GENERIC_RESPONSE;
+    return genericResponse();
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }

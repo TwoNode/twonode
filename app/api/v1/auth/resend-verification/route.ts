@@ -13,10 +13,16 @@ const resendSchema = z.object({
   email: z.string().email(),
 });
 
-const GENERIC_RESPONSE = NextResponse.json({
-  success: true,
-  data: { message: "If that email is registered and unverified, we've sent a new link to it." },
-});
+// A function, not a module-level NextResponse singleton — a NextResponse's
+// body stream is consumed once it's actually sent, so a shared object
+// reused across requests serves an empty body (and an "Unexpected end of
+// JSON input" client-side parse error) on every request after the first.
+function genericResponse() {
+  return NextResponse.json({
+    success: true,
+    data: { message: "If that email is registered and unverified, we've sent a new link to it." },
+  });
+}
 
 /**
  * Same generic-response, non-enumerating shape as request-password-reset —
@@ -36,7 +42,7 @@ export async function POST(req: NextRequest) {
     const identifier = `resend-verification:${clientIp}:${email}`;
 
     if (!(await checkRateLimit(identifier))) {
-      return GENERIC_RESPONSE;
+      return genericResponse();
     }
     await recordAttempt(identifier);
 
@@ -45,7 +51,7 @@ export async function POST(req: NextRequest) {
       await issueAndSendVerificationEmail(platform, user);
     }
 
-    return GENERIC_RESPONSE;
+    return genericResponse();
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
   }
