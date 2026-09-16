@@ -32,7 +32,7 @@ interface Property {
   lga: string;
   parcelId?: string | null;
   totalCost: number;
-  documentsUrls: string[];
+  documentsCount: number;
   comments?: string | null;
   createdAt?: Date | string | null;
   updatedAt?: Date | string | null;

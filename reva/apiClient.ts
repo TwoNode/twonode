@@ -1,8 +1,10 @@
 import type { ApiResult } from "@/lib/api/types";
 import type { Property, OneTimeUserProperty, RevaUser, Notification, Role, NotificationAudience, NotificationType } from "@/prisma/generated";
 import type { RevaProfile, ProfileUpdateInput } from "@/reva/services/profileService";
-import type { ReportDownload } from "@/reva/services/propertyRequestService";
 import type { EncryptedUserData } from "@/utils/encryptedCookies";
+
+/** "report" or "document:N" (N = index into documentsCount) — which S3-backed field a download-OTP authorizes. */
+export type DownloadTarget = "report" | `document:${number}`;
 
 /**
  * Thin typed wrapper around /api/v1/reva/* — mirrors gbc/apiClient.ts and
@@ -88,6 +90,18 @@ export const revaApi = {
         method: "PATCH",
         body: JSON.stringify(input),
       }),
+
+    requestDownloadOtp: (reference: string, target: DownloadTarget) =>
+      jsonFetch<{ message: string }>(`${BASE}/properties/${encodeURIComponent(reference)}/download-otp/request`, {
+        method: "POST",
+        body: JSON.stringify({ target }),
+      }),
+
+    verifyDownloadOtp: (reference: string, target: DownloadTarget, code: string) =>
+      jsonFetch<{ url: string }>(`${BASE}/properties/${encodeURIComponent(reference)}/download-otp/verify`, {
+        method: "POST",
+        body: JSON.stringify({ target, code }),
+      }),
   },
 
   oneTimeProperties: {
@@ -102,10 +116,17 @@ export const revaApi = {
         `${BASE}/one-time-properties/lookup?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
       ),
 
-    lookupReport: (reference: string, email: string) =>
-      jsonFetch<ReportDownload>(
-        `${BASE}/one-time-properties/lookup/report?reference=${encodeURIComponent(reference)}&email=${encodeURIComponent(email)}`
-      ),
+    requestDownloadOtp: (reference: string, email: string, target: DownloadTarget) =>
+      jsonFetch<{ message: string }>(`${BASE}/one-time-properties/download-otp/request`, {
+        method: "POST",
+        body: JSON.stringify({ reference, email, target }),
+      }),
+
+    verifyDownloadOtp: (reference: string, email: string, target: DownloadTarget, code: string) =>
+      jsonFetch<{ url: string }>(`${BASE}/one-time-properties/download-otp/verify`, {
+        method: "POST",
+        body: JSON.stringify({ reference, email, target, code }),
+      }),
 
     updateStatus: (reference: string, input: PropertyStatusUpdate) =>
       jsonFetch<OneTimeUserProperty>(`${BASE}/one-time-properties/status`, {

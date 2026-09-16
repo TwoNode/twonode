@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { NotFoundError } from "@/lib/api/errors";
 
 /**
  * Prisma mocked, no real database. Weighted toward getUserPropertyById's
  * email-match check (a resolved open question from the Phase 3 spec — the
  * source had no such check, unlike every other guest-data route in REVA)
- * and downloadOneTimeRequestReport's approval-gating logic, since both are
- * real access-control surfaces for guest (unauthenticated) data.
+ * and the documentsUrls/report redaction every general fetch applies now
+ * (raw S3 URLs only ever come from the OTP-verified download endpoints —
+ * see downloadOtpService.test.ts), since both are real access-control
+ * surfaces for guest (unauthenticated) data.
  */
 
 const mockPrisma = vi.hoisted(() => ({
@@ -25,7 +27,6 @@ vi.mock("@/reva/services/notificationService", () => ({
 const {
   getUserPropertyById,
   getOneTimeRequestByReference,
-  downloadOneTimeRequestReport,
   getUserProperties,
   getUserContact,
 } = await import("@/reva/services/propertyRequestService");
@@ -59,56 +60,55 @@ describe("getOneTimeRequestByReference", () => {
   });
 });
 
-describe("downloadOneTimeRequestReport", () => {
-  it("throws ValidationError when reference or email is missing", async () => {
-    await expect(downloadOneTimeRequestReport("", "e@test.com")).rejects.toThrow(ValidationError);
-  });
-
-  it("throws NotFoundError when no report exists yet", async () => {
-    mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue({ reference: "R1", email: "e@test.com", report: null });
-    await expect(downloadOneTimeRequestReport("R1", "e@test.com")).rejects.toThrow(NotFoundError);
-  });
-
-  it("throws ValidationError when the report exists but isn't approved yet", async () => {
+describe("getOneTimeRequestByReference redaction", () => {
+  it("strips documentsUrls/report.directFileLink but keeps everything else on report", async () => {
     mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue({
       reference: "R1",
       email: "e@test.com",
-      report: { isApproved: false },
+      documentsUrls: ["https://bucket.s3.region.amazonaws.com/a.pdf", "https://bucket.s3.region.amazonaws.com/b.pdf"],
+      report: { isApproved: true, directFileLink: ["https://bucket.s3.region.amazonaws.com/report.pdf"] },
     });
-    await expect(downloadOneTimeRequestReport("R1", "e@test.com")).rejects.toThrow(ValidationError);
+    const result = await getOneTimeRequestByReference("R1", "e@test.com");
+    expect(result).not.toHaveProperty("documentsUrls");
+    expect(result.documentsCount).toBe(2);
+    expect(result.report).toEqual({ isApproved: true, downloadAvailable: true });
+    expect(JSON.stringify(result)).not.toContain("s3.region.amazonaws.com");
   });
 
-  it("returns a redirect when the approved report has a directFileLink", async () => {
+  it("keeps structured Detailed-Form report fields intact — those aren't URLs, so redaction shouldn't touch them", async () => {
     mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue({
       reference: "R1",
       email: "e@test.com",
-      report: { isApproved: true, directFileLink: "https://example.com/report.pdf" },
+      documentsUrls: [],
+      report: { isApproved: true, titleName: "Jane Doe", zoning: "Residential" },
     });
-    const result = await downloadOneTimeRequestReport("R1", "e@test.com");
-    expect(result).toEqual({ type: "redirect", redirectUrl: "https://example.com/report.pdf" });
-  });
-
-  it("returns report data when approved with no direct link", async () => {
-    mockPrisma.oneTimeUserProperty.findFirst.mockResolvedValue({
-      reference: "R1",
-      address: "1 Test St",
-      email: "e@test.com",
-      report: { isApproved: true, approvedAt: "2026-01-01", approvedBy: "admin1" },
+    const result = await getOneTimeRequestByReference("R1", "e@test.com");
+    expect(result.report).toEqual({
+      isApproved: true,
+      titleName: "Jane Doe",
+      zoning: "Residential",
+      downloadAvailable: false,
     });
-    const result = await downloadOneTimeRequestReport("R1", "e@test.com");
-    expect(result).toMatchObject({ type: "data", reference: "R1", address: "1 Test St", approvedBy: "admin1" });
   });
 });
 
 describe("getUserProperties", () => {
-  it("queries directly by userId and sorts descending by updatedAt", async () => {
+  it("queries directly by userId, sorts descending by updatedAt, and redacts URLs", async () => {
     mockPrisma.property.findMany.mockResolvedValue([
-      { id: "a", updatedAt: new Date("2026-01-01"), createdAt: new Date("2026-01-01") },
-      { id: "b", updatedAt: new Date("2026-02-01"), createdAt: new Date("2026-01-01") },
+      { id: "a", updatedAt: new Date("2026-01-01"), createdAt: new Date("2026-01-01"), documentsUrls: [], report: null },
+      {
+        id: "b",
+        updatedAt: new Date("2026-02-01"),
+        createdAt: new Date("2026-01-01"),
+        documentsUrls: ["https://bucket.s3.region.amazonaws.com/a.pdf"],
+        report: { isApproved: false },
+      },
     ]);
     const result = await getUserProperties("user-1");
     expect(mockPrisma.property.findMany).toHaveBeenCalledWith({ where: { userId: "user-1", deleted: false } });
     expect(result.map((p: any) => p.id)).toEqual(["b", "a"]);
+    expect(result[0]).not.toHaveProperty("documentsUrls");
+    expect(result[0].documentsCount).toBe(1);
   });
 });
 

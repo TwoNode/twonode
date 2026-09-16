@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import DownloadReportButton from "../onetimerequest/components/DownloadReportButton";
+import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
 // Format currency helper
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -424,9 +424,11 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                   </div>
                 </div>
                 <div className="w-full sm:w-auto">
-                  <DownloadReportButton
+                  <SecureDownloadDialog
+                    label="Download Report"
                     reference={formData.reference}
                     email={formData.email}
+                    target="report"
                   />
                 </div>
               </div>
@@ -470,9 +472,11 @@ const VerifyPaymentContent = ({ formData }: { formData: any }) => {
                 Your due diligence report has been approved and is ready for
                 download.
               </p>
-              <DownloadReportButton
+              <SecureDownloadDialog
+                label="Download Report"
                 reference={formData.reference}
                 email={formData.email}
+                target="report"
               />
             </CardContent>
           </Card>

@@ -72,6 +72,27 @@ model OneTimeUserProperty {
   report Json? // report from reva
 }
 
+/// Short-lived download-gate code, requested fresh for every download
+/// attempt (report or an original document) on the guest one-time-request
+/// page and the authenticated user's own dashboard. Mirrors
+/// EmailVerificationToken/PasswordResetToken's hashed-code + expiry +
+/// single-use shape, but stores a short numeric code (a human types 6
+/// digits) instead of a link token.
+model DownloadOtp {
+  id        String    @id @default(uuid())
+  reference String // Property.reference or OneTimeUserProperty.reference, resolved server-side
+  email     String // guest email, or the authenticated user's account email — always the delivery address
+  userId    String? // set for the authenticated (Property) path; audit only, ownership is re-checked at verify time regardless
+  target    String // "report" | "document:0" | "document:1" | ... — which S3-backed field this code authorizes
+  codeHash  String // sha256(rawCode) — the raw code is never persisted
+  attempts  Int       @default(0) // wrong-guess counter against this specific row, capped independently of the IP-scoped rate limiter
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([reference, target, email, createdAt])
+}
+
 enum Role {
   USER
   ADMIN

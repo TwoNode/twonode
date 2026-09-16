@@ -30,9 +30,8 @@ import {
   FileSpreadsheet,
   MessageSquare,
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
-import DownloadReportButton from "./components/DownloadReportButton";
+import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
 // Reva colors
 const REVA_PRIMARY = "#0066CC";
@@ -56,7 +55,7 @@ interface PageProps {
         lga?: string;
         parcelId?: string;
         totalCost?: string;
-        documentsUrls?: string[];
+        documentsCount?: number;
         site_images?: string[];
         comments?: string;
         isLive?: boolean;
@@ -64,6 +63,7 @@ interface PageProps {
         updatedAt?: string;
         report?: {
           isApproved?: boolean;
+          downloadAvailable?: boolean;
           comments?: string;
         };
       }
@@ -495,7 +495,7 @@ export async function OneTimeRequest({ data }: PageProps) {
               )}
 
               {/* Documents */}
-              {request.documentsUrls && request.documentsUrls.length > 0 && (
+              {request.documentsCount > 0 && (
                 <Card className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
                   <CardHeader className="bg-gray-50 dark:bg-white/5 border-b">
                     <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -503,25 +503,20 @@ export async function OneTimeRequest({ data }: PageProps) {
                       Documents
                     </CardTitle>
                     <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
-                      {request.documentsUrls.length} document(s) attached
+                      {request.documentsCount} document(s) attached
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6">
-                    <div className="space-y-3">
-                      {request.documentsUrls.map(
-                        (doc: string, index: number) => (
-                          <Link
-                            key={index}
-                            href={doc}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Document {index + 1}
-                          </Link>
-                        )
-                      )}
+                    <div className="flex flex-wrap gap-3">
+                      {Array.from({ length: request.documentsCount }).map((_, index) => (
+                        <SecureDownloadDialog
+                          key={index}
+                          label={`Download Document ${index + 1}`}
+                          reference={request.reference}
+                          email={request.email}
+                          target={`document:${index}`}
+                        />
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -555,9 +550,11 @@ export async function OneTimeRequest({ data }: PageProps) {
                       </AlertDescription>
                     </Alert>
                     <div className="mt-4">
-                      <DownloadReportButton
+                      <SecureDownloadDialog
+                        label="Download Report"
                         reference={request.reference}
                         email={request.email}
+                        target="report"
                       />
                     </div>
                   </CardContent>
