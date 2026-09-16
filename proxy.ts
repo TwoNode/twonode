@@ -32,6 +32,15 @@ const protectedRoutes = [
 // Define public routes that bypass authentication
 const publicRoutes = [
   "/surfboardplan/", // This will match /surfboardplan/[id]
+  // GBC's matcher/protectedRoutes below cover the whole "/gbc-restricted"
+  // subtree (unlike REVA/Surfboard, which only gate their "/dashboard" and
+  // "/superadmin" segments, leaving "/login" etc. outside the matcher
+  // entirely). Without these, someone who isn't logged in — e.g. anyone
+  // opening a password-reset link, by definition — got redirected straight
+  // back to the login page instead of ever seeing these pages.
+  "/gbc-restricted/login",
+  "/gbc-restricted/reset-password",
+  "/gbc-restricted/verify-email",
 ];
 
 type DynamicAuthOptions = any & {
