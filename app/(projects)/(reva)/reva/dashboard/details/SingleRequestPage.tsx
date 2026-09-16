@@ -20,12 +20,11 @@ import {
 import { PropertyWithoutUser } from "@/reva/services/propertyRequestService";
 import Link from "next/link";
 import {
-  notifyError,
   notifyInfo,
-  notifySuccess,
   notifyWarning,
 } from "@/utils/notify";
 import { PDFDownloadButton } from "@/app/(projects)/(reva)/reva-restricted/dashboard/details/components/PDFDownloadButton";
+import { SecureDownloadDialog } from "@/reva/components/SecureDownloadDialog";
 
 export type ReportType = {
   centroid: string | null; // e.g. "6.5244, 3.3792"
@@ -90,7 +89,10 @@ const SingleRequestPage = ({
 
     if (!isApproved) return false;
 
-    if ("directFileLink" in (report || {})) {
+    // report.directFileLink is redacted out of the general fetch response
+    // (propertyRequestService.ts) — `downloadAvailable` is the signal that
+    // survives redaction for exactly this check.
+    if ((report as any)?.downloadAvailable) {
       return true;
     }
 
@@ -122,38 +124,6 @@ const SingleRequestPage = ({
     return hasAllFields;
   };
 
-  const handleDownloadReport = () => {
-    try {
-      if (
-        property?.report &&
-        typeof property.report === "object" &&
-        "directFileLink" in property.report
-      ) {
-        const link = document.createElement("a");
-        const directFileLink = (property.report as { directFileLink: string })
-          .directFileLink;
-
-        if (!directFileLink) {
-          notifyError("No valid file link available to download");
-          return;
-        }
-
-        link.href = directFileLink;
-        link.download = `${property?.title ?? "report"}.pdf`;
-        link.target = "_blank";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        notifySuccess("Report download started successfully!");
-      } else {
-        notifyError("Report is not ready for download yet");
-      }
-    } catch (error) {
-      console.error("Error downloading report:", error);
-      notifyError("Failed to download report. Please try again.");
-    }
-  };
   return (
     <>
       <div className="space-y-8 p-8 max-w-7xl mx-auto bg-gray-50 dark:bg-surface">
@@ -382,51 +352,14 @@ const SingleRequestPage = ({
                 )}
               </div>
               <div className="shrink-0">
-                <Button
-                  onClick={handleDownloadReport}
+                <SecureDownloadDialog
+                  label={isReportReady() ? "Download Report" : "Processing..."}
+                  reference={property?.reference}
+                  target="report"
+                  authenticated
                   disabled={!isReportReady()}
-                  className={`px-6 py-2 rounded-lg transition-colors ${
-                    isReportReady()
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  {isReportReady() ? (
-                    <>
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      Download Report
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-4 h-4 mr-2 animate-spin"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                      Processing...
-                    </>
-                  )}
-                </Button>
+                  className="px-6 py-2 rounded-lg transition-colors"
+                />
               </div>
             </div>
           </CardContent>

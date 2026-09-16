@@ -5,7 +5,9 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -37,6 +39,13 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
 const BUCKET_REGION = process.env.REVA_AWS_REGION!;
+const BUCKET_HOST = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
+
+function extractS3KeyFromUrl(url: string): string {
+  const idx = url.indexOf(BUCKET_HOST);
+  if (idx === -1) throw new Error(`Invalid S3 URL format. Expected host: ${BUCKET_HOST}`);
+  return url.substring(idx + BUCKET_HOST.length);
+}
 
 export async function uploadToS3(formData: FormData) {
   const files = formData.getAll("file") as File[];
@@ -115,15 +124,7 @@ export async function uploadToS3FromServer(
 export async function deleteFromS3(input: { key?: string; url?: string }) {
   const { key, url } = input;
 
-  let objectKey = key;
-  const bucketHost = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
-
-  if (!objectKey && url) {
-    const idx = url.indexOf(bucketHost);
-    if (idx === -1)
-      throw new Error(`Invalid S3 URL format. Expected host: ${bucketHost}`);
-    objectKey = url.substring(idx + bucketHost.length);
-  }
+  const objectKey = key ?? (url ? extractS3KeyFromUrl(url) : undefined);
 
   if (!objectKey) throw new Error("Missing key or valid url");
 
@@ -147,18 +148,16 @@ export async function deleteFromS3(input: { key?: string; url?: string }) {
 export async function deleteManyFromS3(
   items: { key?: string; url?: string }[]
 ) {
-  const bucketHost = `${BUCKET_NAME}.s3.${BUCKET_REGION}.amazonaws.com/`;
-
   const keys = items
     .map(({ key, url }) => {
       if (key) return key;
       if (url) {
-        const idx = url.indexOf(bucketHost);
-        if (idx === -1) {
+        try {
+          return extractS3KeyFromUrl(url);
+        } catch {
           console.warn(`Invalid S3 URL format: ${url}`);
           return null;
         }
-        return url.substring(idx + bucketHost.length);
       }
       return null;
     })
@@ -187,4 +186,18 @@ export async function deleteManyFromS3(
       }`
     );
   }
+}
+
+/**
+ * Turns a permanent public S3 URL into a short-lived signed one, so a
+ * verified download can be handed a real URL without that URL working
+ * forever for anyone who later obtains it (browser history, a forwarded
+ * email, a network-tab capture).
+ */
+export async function getPresignedDownloadUrl(
+  rawUrl: string,
+  expiresIn = 300
+): Promise<string> {
+  const key = extractS3KeyFromUrl(rawUrl);
+  return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }), { expiresIn });
 }
