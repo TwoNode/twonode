@@ -3,6 +3,7 @@ import { SurfboardRole } from "@/prisma/generated";
 import { ForbiddenError, NotFoundError, ConflictError } from "@/lib/api/errors";
 import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { paginatedResult } from "@/lib/api/pagination";
+import { activeSubscriptionWhereClause } from "@/surfboard/services/subscriptionService";
 
 /** Matches user-management/page.tsx's admin-vs-MDA tab split. */
 const ADMIN_TAB_ROLES: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
@@ -119,7 +120,7 @@ export async function getUserStats() {
     prisma.surfboardUser.count({ where: { isActive: true } }),
     prisma.surfboardUser.count({ where: { role: "ADMIN" } }),
     prisma.surfboardUser.count({ where: { role: "SUPERADMIN" } }),
-    prisma.subscription.count({ where: { status: "active" } }),
+    prisma.subscription.count({ where: activeSubscriptionWhereClause(now) }),
     prisma.subscription.count({ where: { currentEnd: { lt: now } } }),
     prisma.subscription.count({ where: { currentEnd: { gte: now, lte: expiringSoonCutoff } } }),
   ]);
