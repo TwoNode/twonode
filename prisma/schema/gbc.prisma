@@ -78,6 +78,13 @@ model GBCEdition {
   ticketPrefix String
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  /// Soft-delete marker — a "deleted" edition just drops off the main
+  /// Editions list (recycle bin) rather than being removed outright, since
+  /// tickets/sponsors/speakers/partners hold a hard FK to it and losing
+  /// that history by accident would be far worse than an extra list filter.
+  /// Only permanentlyDeleteEdition() (editionService.ts) does a real
+  /// prisma.gBCEdition.delete(), and only once nothing still references it.
+  deletedAt    DateTime?
 
   tickets    GBCTicket[]
   sponsors   GBCSponsor[]
@@ -86,6 +93,7 @@ model GBCEdition {
   eventStats GBCEventStats[]
 
   @@index([status])
+  @@index([deletedAt])
   @@map("gbc_editions")
 }
 

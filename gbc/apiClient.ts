@@ -212,6 +212,20 @@ export const gbcApi = {
 
     archive: (key: string) =>
       jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/archive`, { method: "PATCH" }),
+
+    delete: (key: string) =>
+      jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/delete`, { method: "DELETE" }),
+
+    restore: (key: string) =>
+      jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/restore`, { method: "PATCH" }),
+
+    permanentDelete: (key: string) =>
+      jsonFetch<(GBCEdition & { deletedAt: string })[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/permanent`, {
+        method: "DELETE",
+      }),
+
+    recycleBin: () =>
+      jsonFetch<(GBCEdition & { deletedAt: string })[]>(`${BASE}/admin/editions/recycle-bin`),
   },
 
   certificates: {

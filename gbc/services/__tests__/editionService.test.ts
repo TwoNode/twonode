@@ -9,17 +9,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  gBCEdition: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+  gBCEdition: { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   gBCTicket: { count: vi.fn(), aggregate: vi.fn() },
-  gBCSponsor: { findMany: vi.fn() },
-  gBCSpeaker: { findMany: vi.fn() },
+  gBCSponsor: { findMany: vi.fn(), count: vi.fn() },
+  gBCSpeaker: { findMany: vi.fn(), count: vi.fn() },
+  gBCPartner: { count: vi.fn() },
+  gBCEventStats: { count: vi.fn() },
   gBCAuditLog: { create: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-const { getActiveEdition, getEditionPublicRecap, getEditionAdminStats, createEdition, activateEdition, archiveEdition } =
-  await import("@/gbc/services/editionService");
+const {
+  getActiveEdition,
+  getEditionPublicRecap,
+  getEditionAdminStats,
+  createEdition,
+  activateEdition,
+  archiveEdition,
+  getDeletedEditions,
+  softDeleteEdition,
+  restoreEdition,
+  permanentlyDeleteEdition,
+} = await import("@/gbc/services/editionService");
 
 const row = (overrides: Partial<Record<string, unknown>> = {}) => ({
   key: "2.0",
@@ -52,6 +64,10 @@ beforeEach(() => {
   mockPrisma.gBCTicket.aggregate.mockResolvedValue({ _sum: { price: 0 } });
   mockPrisma.gBCSponsor.findMany.mockResolvedValue([]);
   mockPrisma.gBCSpeaker.findMany.mockResolvedValue([]);
+  mockPrisma.gBCSponsor.count.mockResolvedValue(0);
+  mockPrisma.gBCSpeaker.count.mockResolvedValue(0);
+  mockPrisma.gBCPartner.count.mockResolvedValue(0);
+  mockPrisma.gBCEventStats.count.mockResolvedValue(0);
 });
 
 describe("getActiveEdition", () => {
@@ -147,5 +163,88 @@ describe("archiveEdition", () => {
       where: { key: "2.0" },
       data: { status: "PAST" },
     });
+  });
+});
+
+describe("softDeleteEdition", () => {
+  it("throws NotFoundError for an unknown key", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValueOnce(null);
+    await expect(softDeleteEdition("9.0", "u1")).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("refuses to delete the currently ACTIVE edition", async () => {
+    await expect(softDeleteEdition("2.0", "u1")).rejects.toMatchObject({ status: 409 });
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
+  });
+
+  it("sets deletedAt on a non-active edition", async () => {
+    await softDeleteEdition("1.0", "u1");
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "1.0" },
+      data: { deletedAt: expect.any(Date) },
+    });
+  });
+});
+
+describe("restoreEdition", () => {
+  it("throws NotFoundError for an unknown key", async () => {
+    await expect(restoreEdition("9.0", "u1")).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("throws ValidationError when the edition isn't in the recycle bin", async () => {
+    await expect(restoreEdition("1.0", "u1")).rejects.toMatchObject({ status: 400 });
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
+  });
+
+  it("clears deletedAt on a soft-deleted edition", async () => {
+    mockPrisma.gBCEdition.findUnique.mockImplementation(async ({ where }: any) =>
+      where.key === "1.0" ? { ...rows1_0, deletedAt: new Date() } : null
+    );
+    await restoreEdition("1.0", "u1");
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "1.0" },
+      data: { deletedAt: null },
+    });
+  });
+});
+
+describe("permanentlyDeleteEdition (blocked while anything still references it)", () => {
+  it("throws NotFoundError for an unknown key", async () => {
+    await expect(permanentlyDeleteEdition("9.0", "u1")).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("throws ValidationError when the edition hasn't been soft-deleted first", async () => {
+    await expect(permanentlyDeleteEdition("1.0", "u1")).rejects.toMatchObject({ status: 400 });
+    expect(mockPrisma.gBCEdition.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuses to purge a soft-deleted edition that still has tickets attached", async () => {
+    mockPrisma.gBCEdition.findUnique.mockImplementation(async ({ where }: any) =>
+      where.key === "1.0" ? { ...rows1_0, deletedAt: new Date() } : null
+    );
+    mockPrisma.gBCTicket.count.mockResolvedValue(3);
+    await expect(permanentlyDeleteEdition("1.0", "u1")).rejects.toMatchObject({ status: 409 });
+    expect(mockPrisma.gBCEdition.delete).not.toHaveBeenCalled();
+  });
+
+  it("purges a soft-deleted edition once nothing references it", async () => {
+    mockPrisma.gBCEdition.findUnique.mockImplementation(async ({ where }: any) =>
+      where.key === "1.0" ? { ...rows1_0, deletedAt: new Date() } : null
+    );
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([]);
+    await permanentlyDeleteEdition("1.0", "u1");
+    expect(mockPrisma.gBCEdition.delete).toHaveBeenCalledWith({ where: { key: "1.0" } });
+  });
+});
+
+describe("getDeletedEditions", () => {
+  it("only returns rows with a deletedAt set", async () => {
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([{ ...rows1_0, deletedAt: new Date("2026-01-01") }]);
+    const result = await getDeletedEditions();
+    expect(result).toHaveLength(1);
+    expect(result[0].key).toBe("1.0");
+    expect(mockPrisma.gBCEdition.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { deletedAt: { not: null } } })
+    );
   });
 });

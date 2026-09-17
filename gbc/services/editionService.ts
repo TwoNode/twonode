@@ -44,8 +44,20 @@ function toGBCEdition(row: {
 }
 
 export async function getEditions(): Promise<GBCEdition[]> {
-  const rows = await prisma.gBCEdition.findMany({ orderBy: [{ startDate: "desc" }] });
+  const rows = await prisma.gBCEdition.findMany({
+    where: { deletedAt: null },
+    orderBy: [{ startDate: "desc" }],
+  });
   return rows.map(toGBCEdition);
+}
+
+/** Recycle bin — soft-deleted editions, most recently deleted first. */
+export async function getDeletedEditions(): Promise<(GBCEdition & { deletedAt: string })[]> {
+  const rows = await prisma.gBCEdition.findMany({
+    where: { deletedAt: { not: null } },
+    orderBy: [{ deletedAt: "desc" }],
+  });
+  return rows.map((row) => ({ ...toGBCEdition(row), deletedAt: row.deletedAt!.toISOString() }));
 }
 
 export async function getActiveEdition(): Promise<GBCEdition | null> {
@@ -138,4 +150,76 @@ export async function archiveEdition(key: string, userId: string): Promise<GBCEd
   });
 
   return getEditions();
+}
+
+/**
+ * Soft delete — drops the edition off the main list into the recycle bin.
+ * Fully reversible via restoreEdition(); nothing referencing this edition
+ * (tickets/sponsors/speakers/partners) is touched. Refuses to delete the
+ * currently ACTIVE edition — that's the one open for ticket sales, and
+ * "archive it first" makes the admin take that as its own deliberate step
+ * rather than have a delete silently double as an archive.
+ */
+export async function softDeleteEdition(key: string, userId: string): Promise<GBCEdition[]> {
+  const target = await getEditionOrThrow(key);
+  if (target.status === "ACTIVE") {
+    throw new ConflictError(`Edition "${key}" is currently active — archive it before deleting`);
+  }
+
+  await prisma.gBCEdition.update({ where: { key }, data: { deletedAt: new Date() } });
+  await prisma.gBCAuditLog.create({
+    data: { userId, action: "DELETE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+  });
+
+  return getEditions();
+}
+
+export async function restoreEdition(key: string, userId: string): Promise<GBCEdition[]> {
+  const edition = await prisma.gBCEdition.findUnique({ where: { key } });
+  if (!edition) throw new NotFoundError("Edition");
+  if (!edition.deletedAt) throw new ValidationError({ key: "Edition is not in the recycle bin" });
+
+  await prisma.gBCEdition.update({ where: { key }, data: { deletedAt: null } });
+  await prisma.gBCAuditLog.create({
+    data: { userId, action: "RESTORE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+  });
+
+  return getEditions();
+}
+
+/**
+ * Real, irreversible delete — only reachable from the recycle bin (must
+ * already be soft-deleted), and only when nothing still references it.
+ * Refusing outright rather than cascading is deliberate: an edition's
+ * tickets/sponsors/speakers/partners are real revenue and attendee
+ * history, and no admin click should be able to destroy that as a side
+ * effect of tidying up an old edition record.
+ */
+export async function permanentlyDeleteEdition(key: string, userId: string): Promise<(GBCEdition & { deletedAt: string })[]> {
+  const edition = await prisma.gBCEdition.findUnique({ where: { key } });
+  if (!edition) throw new NotFoundError("Edition");
+  if (!edition.deletedAt) {
+    throw new ValidationError({ key: "Edition must be deleted (in the recycle bin) before it can be purged" });
+  }
+
+  const [tickets, sponsors, partners, speakers, eventStats] = await Promise.all([
+    prisma.gBCTicket.count({ where: { edition: key } }),
+    prisma.gBCSponsor.count({ where: { edition: key } }),
+    prisma.gBCPartner.count({ where: { edition: key } }),
+    prisma.gBCSpeaker.count({ where: { edition: key } }),
+    prisma.gBCEventStats.count({ where: { edition: key } }),
+  ]);
+  const attached = tickets + sponsors + partners + speakers + eventStats;
+  if (attached > 0) {
+    throw new ConflictError(
+      `Edition "${key}" still has ${tickets} ticket(s), ${sponsors} sponsor(s), ${partners} partner(s), ${speakers} speaker(s), and ${eventStats} stats record(s) attached — it can't be permanently deleted while any of these exist`
+    );
+  }
+
+  await prisma.gBCEdition.delete({ where: { key } });
+  await prisma.gBCAuditLog.create({
+    data: { userId, action: "PERMANENTLY_DELETE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify({ key }) },
+  });
+
+  return getDeletedEditions();
 }
