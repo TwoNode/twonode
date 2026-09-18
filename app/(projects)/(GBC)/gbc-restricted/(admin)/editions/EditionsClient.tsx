@@ -14,13 +14,23 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Trash2, RotateCcw, X, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { gbcApi, type EditionAdminStats } from "@/gbc/apiClient";
 import { GBC_COLORS } from "@/gbc/colors";
@@ -82,6 +92,11 @@ export default function EditionsClient({
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [binOpen, setBinOpen] = useState(false);
+  const [deletedEditions, setDeletedEditions] = useState<(GBCEdition & { deletedAt: string })[]>([]);
+  const [loadingBin, setLoadingBin] = useState(false);
+  const [permanentTarget, setPermanentTarget] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,9 +155,69 @@ export default function EditionsClient({
     }
   }
 
+  async function handleDelete(key: string) {
+    setBusyKey(key);
+    const res = await gbcApi.editions.delete(key);
+    setBusyKey(null);
+    setDeleteTarget(null);
+    if (res.success) {
+      setEditions(res.data);
+      toast.success(`GBC ${key} moved to the recycle bin`);
+    } else {
+      toast.error(res.error);
+    }
+  }
+
+  async function loadRecycleBin() {
+    setLoadingBin(true);
+    const res = await gbcApi.editions.recycleBin();
+    setLoadingBin(false);
+    if (res.success) {
+      setDeletedEditions(res.data);
+    } else {
+      toast.error(res.error);
+    }
+  }
+
+  async function handleRestore(key: string) {
+    setBusyKey(key);
+    const res = await gbcApi.editions.restore(key);
+    setBusyKey(null);
+    if (res.success) {
+      setEditions(res.data);
+      toast.success(`GBC ${key} restored`);
+      loadRecycleBin();
+    } else {
+      toast.error(res.error);
+    }
+  }
+
+  async function handlePermanentDelete(key: string) {
+    setBusyKey(key);
+    const res = await gbcApi.editions.permanentDelete(key);
+    setBusyKey(null);
+    setPermanentTarget(null);
+    if (res.success) {
+      setDeletedEditions(res.data);
+      toast.success(`GBC ${key} permanently deleted`);
+    } else {
+      toast.error(res.error);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setBinOpen(true);
+            loadRecycleBin();
+          }}
+        >
+          Recycle bin
+        </Button>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button
@@ -339,16 +414,27 @@ export default function EditionsClient({
                           </Button>
                         </div>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[#A78BFA]"
-                          style={{ color: GBC_COLORS.primary.main }}
-                          onClick={() => handleActivate(edition.key)}
-                          disabled={busyKey === edition.key}
-                        >
-                          Set active
-                        </Button>
+                        <div className="inline-flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-[#A78BFA]"
+                            style={{ color: GBC_COLORS.primary.main }}
+                            onClick={() => handleActivate(edition.key)}
+                            disabled={busyKey === edition.key}
+                          >
+                            Set active
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => setDeleteTarget(edition.key)}
+                            disabled={busyKey === edition.key}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -358,6 +444,99 @@ export default function EditionsClient({
           </table>
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete GBC {deleteTarget}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This moves the edition to the recycle bin — it drops off this list, but nothing is
+              destroyed and it can be restored at any time. Its tickets, sponsors, speakers, and
+              partners are unaffected either way.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deleteTarget && handleDelete(deleteTarget)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={binOpen} onOpenChange={setBinOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Recycle bin</DialogTitle>
+          </DialogHeader>
+          {loadingBin ? (
+            <p className="text-sm text-gray-500 py-6 text-center">Loading…</p>
+          ) : deletedEditions.length === 0 ? (
+            <p className="text-sm text-gray-500 py-6 text-center">Nothing here.</p>
+          ) : (
+            <div className="space-y-2">
+              {deletedEditions.map((edition) => (
+                <div
+                  key={edition.key}
+                  className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3"
+                >
+                  <div>
+                    <div className="font-semibold">GBC {edition.key}</div>
+                    <div className="text-xs text-gray-500">
+                      Deleted {dateFormatter(edition.deletedAt)}
+                    </div>
+                  </div>
+                  <div className="inline-flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRestore(edition.key)}
+                      disabled={busyKey === edition.key}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Restore
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => setPermanentTarget(edition.key)}
+                      disabled={busyKey === edition.key}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Delete permanently
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!permanentTarget} onOpenChange={(open) => !open && setPermanentTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete GBC {permanentTarget}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cannot be undone. It will be refused if the edition still has any tickets,
+              sponsors, speakers, or partners attached to it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => permanentTarget && handlePermanentDelete(permanentTarget)}
+            >
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
