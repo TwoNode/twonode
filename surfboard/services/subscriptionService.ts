@@ -24,6 +24,22 @@ function isSubActiveOrGrace(status: string | null | undefined, expiresAt: Date |
   return isActive || isCancelledButValid;
 }
 
+/**
+ * Prisma `where` shape for the same "really active" rule as
+ * isSubActiveOrGrace above, for callers that need a COUNT rather than a
+ * single row (e.g. adminUserService.getUserStats' "Active Subscriptions"
+ * card) — a raw `status: "active"` filter would count rows whose
+ * `currentEnd` has already passed but were never flipped to "expired",
+ * silently drifting from what getUserActiveSubscription (and therefore
+ * proxy.ts's real subscription gate) considers active.
+ */
+export function activeSubscriptionWhereClause(now: Date = new Date()) {
+  return {
+    status: { in: ["active", "past_due", "canceled"] },
+    OR: [{ currentEnd: null }, { currentEnd: { gte: new Date(now.getTime() - GRACE_PERIOD_MS) } }],
+  };
+}
+
 export async function getUserActiveSubscription(userId: string) {
   const sub = await prisma.subscription.findUnique({ where: { userId } });
   if (!sub) return null;
