@@ -58,6 +58,79 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+
+  /**
+   * gbc/services/certificatePdfService.ts and receiptPdfService.ts render
+   * PDFs in a standalone `node` child process (execFile'd against
+   * gbc/pdf-worker/*.render.cjs) instead of in-process, to dodge a
+   * Turbopack/React-version conflict with @react-pdf/renderer — see that
+   * worker file's own comment. The tradeoff: those .cjs files are
+   * deliberately never statically imported by any app code, so Next's
+   * serverless file-tracing (which only follows import/require chains) has
+   * no way to know the routes below depend on them, their runtime-loaded
+   * assets (fonts, the certificate background/logo/signature images), or
+   * @react-pdf/renderer's own package tree. Left out, `execFile` fails on
+   * Vercel (works fine locally, where the whole repo is on disk) — this is
+   * the suspected cause of "certificate email not sending" in production;
+   * exact routes are named narrowly per Next's docs rather than a blanket
+   * '/*' to avoid bloating every function's bundle.
+   */
+  outputFileTracingIncludes: {
+    "/api/v1/gbc/admin/certificates/send": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+      "./public/gbc/gbcCertificateBg.jpeg",
+      "./public/gbc2/gbc2LightLogo.png",
+      "./public/signatures/**/*",
+    ],
+    "/api/v1/gbc/tickets/\\[ticketNumber\\]/certificate-pdf": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+      "./public/gbc/gbcCertificateBg.jpeg",
+      "./public/gbc2/gbc2LightLogo.png",
+      "./public/signatures/**/*",
+    ],
+    "/api/v1/gbc/tickets/\\[ticketNumber\\]/receipt-pdf": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+    "/api/v1/surfboard/cod/batches/\\[batchId\\]/receipt-pdf": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+    "/api/v1/gbc/tickets": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+    "/api/v1/gbc/tickets/pair": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+    "/api/v1/gbc/tickets/group": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+    "/api/v1/gbc/payments/verify": [
+      "./gbc/pdf-worker/**/*",
+      "./node_modules/@react-pdf/**/*",
+      "./node_modules/date-fns/**/*",
+      "./public/fonts/**/*",
+    ],
+  },
 };
 
 export default nextConfig;
