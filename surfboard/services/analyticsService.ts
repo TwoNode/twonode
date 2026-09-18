@@ -198,23 +198,40 @@ export interface TimeTrendPoint {
  * JS instead of via DATE_TRUNC/TO_CHAR removes the raw query — and that
  * collision surface — entirely.
  */
-export async function getTimeTrend(scope: AnalyticsScope): Promise<TimeTrendPoint[]> {
-  const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
+/**
+ * Buckets by `dateOnSurveyPlan` (matching the dashboard's own date-range
+ * filter, which is explicitly scoped to that field — see
+ * DateRangeFilter's "Survey plan date" label) whenever a range is given,
+ * so this chart's counts move in step with every other filtered stat
+ * instead of quietly staying on an all-time "last 12 months by createdAt"
+ * view while the rest of the dashboard reads zero. With no range (the
+ * unfiltered admin time-trend section), falls back to the original
+ * createdAt/12-months window.
+ */
+export async function getTimeTrend(scope: AnalyticsScope, range?: AnalyticsDateRange): Promise<TimeTrendPoint[]> {
   const where: Prisma.SurfboardPlanWhereInput = {
     planType: { notIn: PROVISIONAL_TYPES },
-    createdAt: { gte: twelveMonthsAgo },
   };
   if (scope.role === SurfboardRole.USER) {
     where.userId = scope.userId;
   }
 
-  const plans = await prisma.surfboardPlan.findMany({ where, select: { createdAt: true } });
+  const filteringByRange = !!(range?.from || range?.to);
+  if (filteringByRange) {
+    Object.assign(where, dateRangeWhere(range));
+  } else {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    where.createdAt = { gte: twelveMonthsAgo };
+  }
+
+  const plans = await prisma.surfboardPlan.findMany({ where, select: { createdAt: true, dateOnSurveyPlan: true } });
 
   const counts = new Map<string, number>();
-  for (const { createdAt } of plans) {
-    const month = `${createdAt.getUTCFullYear()}-${String(createdAt.getUTCMonth() + 1).padStart(2, "0")}`;
+  for (const plan of plans) {
+    const date = filteringByRange ? plan.dateOnSurveyPlan : plan.createdAt;
+    if (!date) continue;
+    const month = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
     counts.set(month, (counts.get(month) ?? 0) + 1);
   }
 
@@ -281,7 +298,7 @@ export async function getUserDashboardAnalytics(
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
       }),
-      getTimeTrend({ role: SurfboardRole.USER, userId }),
+      getTimeTrend({ role: SurfboardRole.USER, userId }, range),
     ]);
 
   const processedFacilitatorStats = facilitatorStats.map((stat) => {
