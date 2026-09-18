@@ -88,10 +88,462 @@ interface LocationResult {
   lon: number;
 }
 
+// --- Overlay panels ---------------------------------------------------
+// Each map overlay is its own memoized component so that a purely-local
+// interaction (e.g. collapsing/expanding one panel) never forces React to
+// re-render and reconcile the *other* two panels' JSX — this was showing up
+// as a ~166-240ms Interaction-to-Next-Paint cost on panel-toggle clicks,
+// even though the toggle only visually affects one small panel. Each
+// panel's own collapsed/expanded flag lives as local state here rather than
+// being lifted to the parent, since nothing outside the panel reads it —
+// that alone keeps a toggle click from re-rendering AllPlansMap at all.
+
+interface SearchFiltersPanelProps {
+  searchQuery: string;
+  onSearchQueryChange: (v: string) => void;
+  statusFilter: string[];
+  onToggleStatus: (s: string) => void;
+  typeFilter: string[];
+  onToggleType: (t: string) => void;
+  allStatuses: string[];
+  allTypes: string[];
+  locQuery: string;
+  onLocQueryChange: (v: string) => void;
+  locResults: LocationResult[];
+  onLocResultsChange: (r: LocationResult[]) => void;
+  locLoading: boolean;
+  onFlyTo: (lat: number, lon: number) => void;
+  onCsvUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onClearAll: () => void;
+}
+
+const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
+  searchQuery,
+  onSearchQueryChange,
+  statusFilter,
+  onToggleStatus,
+  typeFilter,
+  onToggleType,
+  allStatuses,
+  allTypes,
+  locQuery,
+  onLocQueryChange,
+  locResults,
+  onLocResultsChange,
+  locLoading,
+  onFlyTo,
+  onCsvUpload,
+  onClearAll,
+}: SearchFiltersPanelProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="absolute z-50 top-2 left-2 max-w-[calc(100vw-1rem)] bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 space-y-2">
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          Search &amp; Filters
+        </span>
+        {collapsed ? (
+          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        ) : (
+          <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        )}
+      </button>
+      {!collapsed && (
+      <>
+      <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
+        <div className="relative">
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Location
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={locQuery}
+              onChange={(e) => onLocQueryChange(e.target.value)}
+              placeholder="Search location..."
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
+            />
+            {locLoading && (
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
+              </div>
+            )}
+          </div>
+          {locResults.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
+              {locResults.map((r, i) => (
+                <button
+                  key={`${r.lon}-${i}`}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
+                  onClick={() => {
+                    onFlyTo(r.lat, r.lon);
+                    onLocResultsChange([]);
+                    onLocQueryChange(r.name);
+                  }}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Search Plans
+          </label>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            placeholder="Plan number, title, facilitator..."
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
+          />
+        </div>
+
+        <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
+          {" "}
+          <input
+            type="file"
+            ref={fileInputRef}
+            multiple
+            accept=".csv"
+            onChange={onCsvUpload}
+            className="hidden"
+          />{" "}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
+          >
+            Upload CSV
+          </button>
+          <button
+            onClick={onClearAll}
+            className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-4">
+        <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Status
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {allStatuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => onToggleStatus(s)}
+                className={`px-2 py-0.5 rounded-full text-xs border ${
+                  statusFilter.includes(s)
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Plan Type
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {allTypes.map((t) => (
+              <button
+                key={t}
+                onClick={() => onToggleType(t)}
+                className={`px-2 py-0.5 rounded-full text-xs border ${
+                  typeFilter.includes(t)
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      </>
+      )}
+    </div>
+  );
+});
+
+interface DisplayPanelProps {
+  displayMode: "shape" | "dots" | "dots-lines";
+  onDisplayModeChange: (m: "shape" | "dots" | "dots-lines") => void;
+  activeBasemap: string;
+  onBasemapChange: (b: string) => void;
+  filteredPlans: (Plan | TempPlan)[];
+  visiblePlanIds: string[];
+  onToggleVisiblePlan: (id: string, checked: boolean) => void;
+  zoomToPlan: (planId: string) => void;
+  tempPlans: TempPlan[];
+  visibleTempPlanIds: string[];
+  onToggleVisibleTempPlan: (id: string, checked: boolean) => void;
+  onClearTempPlans: () => void;
+  onRemoveTempPlan: (id: string) => void;
+}
+
+const DisplayPanel = React.memo(function DisplayPanel({
+  displayMode,
+  onDisplayModeChange,
+  activeBasemap,
+  onBasemapChange,
+  filteredPlans,
+  visiblePlanIds,
+  onToggleVisiblePlan,
+  zoomToPlan,
+  tempPlans,
+  visibleTempPlanIds,
+  onToggleVisibleTempPlan,
+  onClearTempPlans,
+  onRemoveTempPlan,
+}: DisplayPanelProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const dbPlans = useMemo(
+    () => filteredPlans.filter((p) => p.status !== "UPLOADED"),
+    [filteredPlans],
+  );
+
+  return (
+    <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 max-h-[70vh] overflow-y-auto">
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        className="flex items-center justify-between w-full text-left mb-1"
+      >
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          Plan Display
+        </span>
+        {collapsed ? (
+          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        ) : (
+          <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        )}
+      </button>
+      {!collapsed && (
+      <>
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
+        <button
+          type="button"
+          onClick={() => onDisplayModeChange("shape")}
+          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            displayMode === "shape"
+              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          }`}
+        >
+          Shape
+        </button>
+        <button
+          type="button"
+          onClick={() => onDisplayModeChange("dots")}
+          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            displayMode === "dots"
+              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          }`}
+        >
+          Dots
+        </button>
+        <button
+          type="button"
+          onClick={() => onDisplayModeChange("dots-lines")}
+          className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            displayMode === "dots-lines"
+              ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          }`}
+        >
+          Dots + Lines
+        </button>
+      </div>
+      <hr className="my-2 border-gray-200 dark:border-white/10" />
+      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
+      {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
+        (k) => (
+          <label
+            key={k}
+            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
+          >
+            <input
+              type="radio"
+              name="basemap"
+              value={k}
+              checked={activeBasemap === k}
+              onChange={() => onBasemapChange(k)}
+            />{" "}
+            <span className="capitalize">{k}</span>
+          </label>
+        ),
+      )}
+      <hr className="my-2 border-gray-200 dark:border-white/10" />
+      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+        Database Plans ({visiblePlanIds.length})
+      </div>
+      <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+        {dbPlans.map((p) => (
+          <label
+            key={p.id}
+            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
+          >
+            <input
+              type="checkbox"
+              checked={visiblePlanIds.includes(p.id)}
+              onChange={(e) => onToggleVisiblePlan(p.id, e.target.checked)}
+            />{" "}
+            <span
+              className="inline-block w-3 h-3 rounded-sm"
+              style={{ background: getColorForPlanType(p.planType as string) }}
+            />
+            <button
+              className="hover:underline truncate"
+              onClick={() => zoomToPlan(p.id)}
+              title="Zoom to plan"
+            >
+              {p.planNumber}
+            </button>
+          </label>
+        ))}
+      </div>
+      {tempPlans.length > 0 && (
+        <>
+          <hr className="my-2 border-gray-200 dark:border-white/10" />
+          <div className="flex justify-between items-center">
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              Uploaded Layers ({visibleTempPlanIds.length})
+            </div>
+            <button
+              onClick={onClearTempPlans}
+              className="text-xs text-red-500 dark:text-red-400 hover:underline"
+            >
+              Clear All
+            </button>
+          </div>
+          <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
+            {tempPlans.map((p) => (
+              <div key={p.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <label className="flex items-center gap-2 cursor-pointer grow truncate">
+                  <input
+                    type="checkbox"
+                    checked={visibleTempPlanIds.includes(p.id)}
+                    onChange={(e) => onToggleVisibleTempPlan(p.id, e.target.checked)}
+                  />{" "}
+                  <span
+                    className="inline-block w-3 h-3 rounded-sm shrink-0"
+                    style={{ background: getColorForPlanType(p.planType as string) }}
+                  />
+                  <button
+                    className="hover:underline truncate text-left"
+                    onClick={() => zoomToPlan(p.id)}
+                    title={p.planNumber}
+                  >
+                    {p.planNumber}
+                  </button>
+                </label>
+                <button
+                  onClick={() => onRemoveTempPlan(p.id)}
+                  className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none shrink-0"
+                  title="Remove Layer"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      </>
+      )}
+    </div>
+  );
+});
+
+interface SummaryPanelProps {
+  filteredPlans: (Plan | TempPlan)[];
+  onSelectPlan: (p: Plan | TempPlan) => void;
+}
+
+const SummaryPanel = React.memo(function SummaryPanel({
+  filteredPlans,
+  onSelectPlan,
+}: SummaryPanelProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (filteredPlans.length === 0) return null;
+
+  return (
+    <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        className="flex items-center justify-between w-full text-left mb-2"
+      >
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          Filtered Plans ({filteredPlans.length})
+        </span>
+        {collapsed ? (
+          <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        )}
+      </button>
+      {!collapsed && (
+      <>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-gray-200 dark:border-white/10">
+        {Object.entries(PLAN_TYPE_COLORS)
+          .filter(([type]) => type !== "CSV")
+          .map(([type, color]) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <span
+                className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                style={{ background: color }}
+              />
+              <span className="text-[11px] text-gray-600 dark:text-gray-400">
+                {type}
+              </span>
+            </div>
+          ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
+        {filteredPlans.map((p) => (
+          <button
+            key={p.id}
+            className="p-2 border border-gray-200 dark:border-white/10 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-white/5 overflow-hidden"
+            onClick={() => onSelectPlan(p)}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-block w-3 h-3 rounded-sm"
+                style={{ background: getColorForPlanType(p.planType as string) }}
+              />
+              <span className="font-medium text-sm text-gray-900 dark:text-white">{p.planNumber}</span>
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+              {p.planType as string} · {p.status}
+            </div>
+          </button>
+        ))}
+      </div>
+      </>
+      )}
+    </div>
+  );
+});
+
 const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MaplibreMap | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isReady, setIsReady] = useState(false);
 
   // --- Filter States ---
@@ -118,9 +570,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   // --- UI State ---
   const [activeBasemap, setActiveBasemap] = useState<string>("roadmap");
   const [displayMode, setDisplayMode] = useState<"shape" | "dots" | "dots-lines">("shape");
-  const [controlsCollapsed, setControlsCollapsed] = useState(false);
-  const [displayPanelCollapsed, setDisplayPanelCollapsed] = useState(false);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   // --- Memoized Derived Data ---
   const combinedPlans = useMemo(
@@ -168,9 +617,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return matchesStatus && matchesType;
       const matchesSearch =
-        plan.planNumber.toLowerCase().includes(query) ||
-        plan.surveyTitle.toLowerCase().includes(query) ||
-        plan.facilitator.toLowerCase().includes(query);
+        (plan.planNumber ?? "").toLowerCase().includes(query) ||
+        (plan.surveyTitle ?? "").toLowerCase().includes(query) ||
+        (plan.facilitator ?? "").toLowerCase().includes(query);
       return matchesStatus && matchesType && matchesSearch;
     });
   }, [combinedPlans, searchQuery, statusFilter, typeFilter]);
@@ -191,9 +640,9 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     }
   }, [notification]);
 
-  const flyToLoc = (lat: number, lon: number) => {
+  const flyToLoc = useCallback((lat: number, lon: number) => {
     map.current?.flyTo({ center: [lon, lat], zoom: 15 });
-  };
+  }, []);
   const zoomToPlan = useCallback(
     (planId: string) => {
       const plan = combinedPlans.find((p) => p.id === planId);
@@ -212,7 +661,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     [combinedPlans],
   );
 
-  const handleCsvUpload = async (
+  const handleCsvUpload = useCallback(async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
@@ -326,7 +775,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     }
     setTempPlans((prev) => [...prev, ...newTempPlans]);
     if (event.target) event.target.value = "";
-  };
+  }, [dbPlanSignatures, tempPlanSignatures, plans, tempPlans, zoomToPlan]);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -701,20 +1150,48 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     return () => clearTimeout(handler);
   }, [locQuery]);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setSearchQuery("");
     setStatusFilter([]);
     setTypeFilter([]);
     setLocQuery("");
     setLocResults([]);
     map.current?.flyTo({ center: [3.3792, 6.5244], zoom: 10 });
-  };
-  const clearTempPlans = () => {
+  }, []);
+  const clearTempPlans = useCallback(() => {
     setTempPlans([]);
-  };
-  const removeTempPlan = (idToRemove: string) => {
+  }, []);
+  const removeTempPlan = useCallback((idToRemove: string) => {
     setTempPlans((prev) => prev.filter((p) => p.id !== idToRemove));
-  };
+  }, []);
+
+  const toggleStatus = useCallback((s: string) => {
+    setStatusFilter((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
+  }, []);
+  const toggleType = useCallback((t: string) => {
+    setTypeFilter((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
+  }, []);
+  const toggleVisiblePlan = useCallback((id: string, checked: boolean) => {
+    setVisiblePlanIds((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+  }, []);
+  const toggleVisibleTempPlan = useCallback((id: string, checked: boolean) => {
+    setVisibleTempPlanIds((prev) =>
+      checked ? [...prev, id] : prev.filter((x) => x !== id),
+    );
+  }, []);
+  const selectSummaryPlan = useCallback(
+    (p: Plan | TempPlan) => {
+      if (p.status === "UPLOADED") {
+        setVisibleTempPlanIds((prev) => (prev.includes(p.id) ? prev : [...prev, p.id]));
+      } else {
+        setVisiblePlanIds((prev) => (prev.includes(p.id) ? prev : [...prev, p.id]));
+      }
+      zoomToPlan(p.id);
+    },
+    [zoomToPlan],
+  );
 
   return (
     <div className="relative w-full h-full font-sans">
@@ -741,386 +1218,42 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         </div>
       )}
 
-      {/* Controls Panel */}
-      <div className="absolute z-50 top-2 left-2 max-w-[calc(100vw-1rem)] bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 space-y-2">
-        <button
-          type="button"
-          onClick={() => setControlsCollapsed((c) => !c)}
-          className="flex items-center justify-between w-full text-left"
-        >
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-            Search &amp; Filters
-          </span>
-          {controlsCollapsed ? (
-            <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          ) : (
-            <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          )}
-        </button>
-        {!controlsCollapsed && (
-        <>
-        <div className="grid grid-cols-[1fr_1fr_auto] max-sm:grid-cols-[1fr] gap-3">
-          <div className="relative">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Location
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={locQuery}
-                onChange={(e) => setLocQuery(e.target.value)}
-                placeholder="Search location..."
-                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
-              />
-              {locLoading && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 rounded-full border-t-transparent" />
-                </div>
-              )}
-            </div>
-            {locResults.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
-                {locResults.map((r, i) => (
-                  <button
-                    key={`${r.lon}-${i}`}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
-                    onClick={() => {
-                      flyToLoc(r.lat, r.lon);
-                      setLocResults([]);
-                      setLocQuery(r.name);
-                    }}
-                  >
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Search Plans
-            </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Plan number, title, facilitator..."
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
-            />
-          </div>
+      <SearchFiltersPanel
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onToggleStatus={toggleStatus}
+        typeFilter={typeFilter}
+        onToggleType={toggleType}
+        allStatuses={allStatuses}
+        allTypes={allTypes}
+        locQuery={locQuery}
+        onLocQueryChange={setLocQuery}
+        locResults={locResults}
+        onLocResultsChange={setLocResults}
+        locLoading={locLoading}
+        onFlyTo={flyToLoc}
+        onCsvUpload={handleCsvUpload}
+        onClearAll={clearAll}
+      />
 
-          <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
-            {" "}
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              accept=".csv"
-              onChange={handleCsvUpload}
-              className="hidden"
-            />{" "}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-500 dark:border-green-500/40 hover:bg-green-100 dark:hover:bg-green-500/25 transition-colors whitespace-nowrap"
-            >
-              Upload CSV
-            </button>
-            <button
-              onClick={clearAll}
-              className="w-full py-1 px-3 text-xs rounded-lg bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-red-400 dark:border-red-500/40 hover:bg-red-200 dark:hover:bg-red-500/20 transition-colors"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-4">
-          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Status
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {allStatuses.map((s) => (
-                <button
-                  key={s}
-                  onClick={() =>
-                    setStatusFilter((p) =>
-                      p.includes(s) ? p.filter((x) => x !== s) : [...p, s],
-                    )
-                  }
-                  className={`px-2 py-0.5 rounded-full text-xs border ${
-                    statusFilter.includes(s)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="p-2 rounded-md border border-gray-100 dark:border-white/5">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Plan Type
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {allTypes.map((t) => (
-                <button
-                  key={t}
-                  onClick={() =>
-                    setTypeFilter((p) =>
-                      p.includes(t) ? p.filter((x) => x !== t) : [...p, t],
-                    )
-                  }
-                  className={`px-2 py-0.5 rounded-full text-xs border ${
-                    typeFilter.includes(t)
-                      ? "bg-emerald-600 text-white border-emerald-600"
-                      : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:hover:bg-white/5"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        </>
-        )}
-      </div>
+      <DisplayPanel
+        displayMode={displayMode}
+        onDisplayModeChange={setDisplayMode}
+        activeBasemap={activeBasemap}
+        onBasemapChange={setActiveBasemap}
+        filteredPlans={filteredPlans}
+        visiblePlanIds={visiblePlanIds}
+        onToggleVisiblePlan={toggleVisiblePlan}
+        zoomToPlan={zoomToPlan}
+        tempPlans={tempPlans}
+        visibleTempPlanIds={visibleTempPlanIds}
+        onToggleVisibleTempPlan={toggleVisibleTempPlan}
+        onClearTempPlans={clearTempPlans}
+        onRemoveTempPlan={removeTempPlan}
+      />
 
-      {/* Basemap and Plan Visibility */}
-      <div className="absolute z-40 bottom-2 left-2 w-56 bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 max-h-[70vh] overflow-y-auto">
-        <button
-          type="button"
-          onClick={() => setDisplayPanelCollapsed((c) => !c)}
-          className="flex items-center justify-between w-full text-left mb-1"
-        >
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-            Plan Display
-          </span>
-          {displayPanelCollapsed ? (
-            <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          ) : (
-            <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          )}
-        </button>
-        {!displayPanelCollapsed && (
-        <>
-        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 mb-2">
-          <button
-            type="button"
-            onClick={() => setDisplayMode("shape")}
-            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-              displayMode === "shape"
-                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-          >
-            Shape
-          </button>
-          <button
-            type="button"
-            onClick={() => setDisplayMode("dots")}
-            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-              displayMode === "dots"
-                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-          >
-            Dots
-          </button>
-          <button
-            type="button"
-            onClick={() => setDisplayMode("dots-lines")}
-            className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-              displayMode === "dots-lines"
-                ? "bg-white dark:bg-surface text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-          >
-            Dots + Lines
-          </button>
-        </div>
-        <hr className="my-2 border-gray-200 dark:border-white/10" />
-        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Basemap</div>
-        {(["roadmap", "satellite", "hybrid", "terrain", "osm"] as const).map(
-          (k) => (
-            <label
-              key={k}
-              className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-            >
-              <input
-                type="radio"
-                name="basemap"
-                value={k}
-                checked={activeBasemap === k}
-                onChange={() => setActiveBasemap(k)}
-              />{" "}
-              <span className="capitalize">{k}</span>
-            </label>
-          ),
-        )}
-        <hr className="my-2 border-gray-200 dark:border-white/10" />
-        <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-          Database Plans ({visiblePlanIds.length})
-        </div>
-        <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
-          {filteredPlans
-            .filter((p) => p.status !== "UPLOADED")
-            .map((p) => (
-              <label
-                key={p.id}
-                className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-              >
-                <input
-                  type="checkbox"
-                  checked={visiblePlanIds.includes(p.id)}
-                  onChange={(e) =>
-                    setVisiblePlanIds((prev) =>
-                      e.target.checked
-                        ? [...prev, p.id]
-                        : prev.filter((x) => x !== p.id),
-                    )
-                  }
-                />{" "}
-                <span
-                  className="inline-block w-3 h-3 rounded-sm"
-                  style={{ background: getColorForPlanType(p.planType as string) }}
-                />
-                <button
-                  className="hover:underline truncate"
-                  onClick={() => zoomToPlan(p.id)}
-                  title="Zoom to plan"
-                >
-                  {p.planNumber}
-                </button>
-              </label>
-            ))}
-        </div>
-        {tempPlans.length > 0 && (
-          <>
-            <hr className="my-2 border-gray-200 dark:border-white/10" />
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                Uploaded Layers ({visibleTempPlanIds.length})
-              </div>
-              <button
-                onClick={clearTempPlans}
-                className="text-xs text-red-500 dark:text-red-400 hover:underline"
-              >
-                Clear All
-              </button>
-            </div>
-            <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 mt-1">
-              {tempPlans.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <label className="flex items-center gap-2 cursor-pointer grow truncate">
-                    <input
-                      type="checkbox"
-                      checked={visibleTempPlanIds.includes(p.id)}
-                      onChange={(e) =>
-                        setVisibleTempPlanIds((prev) =>
-                          e.target.checked
-                            ? [...prev, p.id]
-                            : prev.filter((x) => x !== p.id),
-                        )
-                      }
-                    />{" "}
-                    <span
-                      className="inline-block w-3 h-3 rounded-sm shrink-0"
-                      style={{ background: getColorForPlanType(p.planType as string) }}
-                    />
-                    <button
-                      className="hover:underline truncate text-left"
-                      onClick={() => zoomToPlan(p.id)}
-                      title={p.planNumber}
-                    >
-                      {p.planNumber}
-                    </button>
-                  </label>
-                  <button
-                    onClick={() => removeTempPlan(p.id)}
-                    className="ml-auto text-red-400 hover:text-red-600 font-bold text-lg leading-none shrink-0"
-                    title="Remove Layer"
-                  >
-                    &times;
-                  </button>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-        </>
-        )}
-      </div>
-
-      {/* Summary Strip */}
-      {filteredPlans.length > 0 && (
-        <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
-          <button
-            type="button"
-            onClick={() => setSummaryCollapsed((c) => !c)}
-            className="flex items-center justify-between w-full text-left mb-2"
-          >
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-              Filtered Plans ({filteredPlans.length})
-            </span>
-            {summaryCollapsed ? (
-              <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            )}
-          </button>
-          {!summaryCollapsed && (
-          <>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-gray-200 dark:border-white/10">
-            {Object.entries(PLAN_TYPE_COLORS)
-              .filter(([type]) => type !== "CSV")
-              .map(([type, color]) => (
-                <div key={type} className="flex items-center gap-1.5">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                    style={{ background: color }}
-                  />
-                  <span className="text-[11px] text-gray-600 dark:text-gray-400">
-                    {type}
-                  </span>
-                </div>
-              ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
-            {filteredPlans.map((p) => (
-              <button
-                key={p.id}
-                className="p-2 border border-gray-200 dark:border-white/10 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-white/5 overflow-hidden"
-                onClick={() => {
-                  const allVisible = [...visiblePlanIds, ...visibleTempPlanIds];
-                  if (!allVisible.includes(p.id)) {
-                    if (p.status === "UPLOADED") {
-                      setVisibleTempPlanIds((prev) => [...prev, p.id]);
-                    } else {
-                      setVisiblePlanIds((prev) => [...prev, p.id]);
-                    }
-                  }
-                  zoomToPlan(p.id);
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block w-3 h-3 rounded-sm"
-                    style={{ background: getColorForPlanType(p.planType as string) }}
-                  />
-                  <span className="font-medium text-sm text-gray-900 dark:text-white">{p.planNumber}</span>
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                  {p.planType as string} · {p.status}
-                </div>
-              </button>
-            ))}
-          </div>
-          </>
-          )}
-        </div>
-      )}
+      <SummaryPanel filteredPlans={filteredPlans} onSelectPlan={selectSummaryPlan} />
     </div>
   );
 };
