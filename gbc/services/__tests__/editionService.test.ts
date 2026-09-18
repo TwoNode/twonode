@@ -18,7 +18,7 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-const { getActiveEdition, getEditionPublicRecap, getEditionAdminStats, createEdition, activateEdition, archiveEdition } =
+const { getEditions, getActiveEdition, getEditionPublicRecap, getEditionAdminStats, createEdition, activateEdition, archiveEdition } =
   await import("@/gbc/services/editionService");
 
 const row = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -52,6 +52,57 @@ beforeEach(() => {
   mockPrisma.gBCTicket.aggregate.mockResolvedValue({ _sum: { price: 0 } });
   mockPrisma.gBCSponsor.findMany.mockResolvedValue([]);
   mockPrisma.gBCSpeaker.findMany.mockResolvedValue([]);
+});
+
+describe("status self-heals from dates on every read (getEditions)", () => {
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const yesterday = new Date(Date.now() - ONE_DAY);
+  const tomorrow = new Date(Date.now() + ONE_DAY);
+
+  it("flips a non-active edition whose endDate has passed to PAST, and persists it", async () => {
+    const stale = row({ key: "1.0", status: "UPCOMING", startDate: yesterday, endDate: yesterday });
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([stale]);
+
+    const result = await getEditions();
+
+    expect(result[0].status).toBe("PAST");
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "1.0" },
+      data: { status: "PAST" },
+    });
+  });
+
+  it("flips a non-active edition whose dates are in the future to UPCOMING", async () => {
+    const stale = row({ key: "3.0", status: "PAST", startDate: tomorrow, endDate: tomorrow });
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([stale]);
+
+    const result = await getEditions();
+
+    expect(result[0].status).toBe("UPCOMING");
+    expect(mockPrisma.gBCEdition.update).toHaveBeenCalledWith({
+      where: { key: "3.0" },
+      data: { status: "UPCOMING" },
+    });
+  });
+
+  it("never auto-touches an ACTIVE edition, even once its dates have passed", async () => {
+    const activeButOver = row({ key: "2.0", status: "ACTIVE", startDate: yesterday, endDate: yesterday });
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([activeButOver]);
+
+    const result = await getEditions();
+
+    expect(result[0].status).toBe("ACTIVE");
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
+  });
+
+  it("does not write when the stored status already matches the derived one", async () => {
+    const alreadyCorrect = row({ key: "1.0", status: "PAST", startDate: yesterday, endDate: yesterday });
+    mockPrisma.gBCEdition.findMany.mockResolvedValue([alreadyCorrect]);
+
+    await getEditions();
+
+    expect(mockPrisma.gBCEdition.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("getActiveEdition", () => {
