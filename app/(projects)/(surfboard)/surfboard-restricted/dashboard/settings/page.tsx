@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { Platform } from "@/utils/platform";
 
 interface AdminProfile {
   id: string;
@@ -11,9 +12,15 @@ interface AdminProfile {
   lastName: string;
   email: string;
   role: string;
-  department: string;
   phone: string;
-  avatar: string;
+  /**
+   * Preferences/security below have no backing fields on SurfboardUser
+   * (no theme/language/timezone/2FA/login-history columns exist) — kept as
+   * fixed placeholders so the Preferences/Security/Notifications tabs still
+   * render, but they're display-only until that's designed as its own
+   * feature. Only firstName/lastName/phone (Profile tab) are real,
+   * fetched/saved via surfboardApi.profile — see fetchProfile below.
+   */
   preferences: {
     notifications: {
       email: boolean;
@@ -35,6 +42,19 @@ interface AdminProfile {
     }>;
   };
 }
+
+const PLACEHOLDER_PREFERENCES: AdminProfile["preferences"] = {
+  notifications: { email: true, push: true, sms: false },
+  theme: "light",
+  language: "en",
+  timezone: "Africa/Lagos",
+};
+
+const PLACEHOLDER_SECURITY: AdminProfile["security"] = {
+  twoFactorEnabled: false,
+  lastPasswordChange: new Date().toISOString(),
+  loginHistory: [],
+};
 
 import { COD_FEES, type ZoneFeeRow } from "../../../utils/CoDFees";
 import { nigerianStates, DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
@@ -95,62 +115,42 @@ export default function SettingsPage() {
   const [showSettingsHistory, setShowSettingsHistory] = useState(false);
   const [settingsHistory, setSettingsHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    // Simulate fetching admin profile data
-    const fetchProfile = async () => {
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const [profileRes, sessionRes] = await Promise.all([
+        surfboardApi.profile.get(),
+        surfboardApi.session.get(),
+      ]);
 
-      // Mock profile data
-      const mockProfile: AdminProfile = {
-        id: "1",
-        firstName: "John",
-        lastName: "Smith",
-        email: "john.smith@company.com",
-        role: "ADMIN",
-        department: "Survey Operations",
-        phone: "+27 82 123 4567",
-        avatar: "",
-        preferences: {
-          notifications: {
-            email: true,
-            push: true,
-            sms: false,
-          },
-          theme: "light",
-          language: "en",
-          timezone: "Africa/Johannesburg",
-        },
-        security: {
-          twoFactorEnabled: false,
-          lastPasswordChange: "2024-01-01T00:00:00Z",
-          loginHistory: [
-            {
-              date: "2024-01-15T10:30:00Z",
-              ip: "192.168.1.50",
-              device: "Chrome on Windows 10",
-              location: "Cape Town, South Africa",
-            },
-            {
-              date: "2024-01-14T16:45:00Z",
-              ip: "192.168.1.50",
-              device: "Chrome on Windows 10",
-              location: "Cape Town, South Africa",
-            },
-            {
-              date: "2024-01-13T09:15:00Z",
-              ip: "192.168.1.50",
-              device: "Chrome on Windows 10",
-              location: "Cape Town, South Africa",
-            },
-          ],
-        },
-      };
+      if (!profileRes.success) {
+        toast.error(profileRes.error || "Failed to load profile");
+        return;
+      }
 
-      setProfile(mockProfile);
+      const role =
+        sessionRes.success && sessionRes.data
+          ? sessionRes.data.platforms?.[Platform.SURFBOARD]?.role ??
+            (sessionRes.data.platform === Platform.SURFBOARD ? sessionRes.data.role : null)
+          : null;
+
+      setProfile({
+        id: profileRes.data.id,
+        firstName: profileRes.data.firstName || "",
+        lastName: profileRes.data.lastName || "",
+        email: profileRes.data.email,
+        role: role || "ADMIN",
+        phone: profileRes.data.phoneNumber || "",
+        preferences: PLACEHOLDER_PREFERENCES,
+        security: PLACEHOLDER_SECURITY,
+      });
+      setCurrentUserRole(role);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchProfile();
   }, []);
 
@@ -172,18 +172,30 @@ export default function SettingsPage() {
     };
 
     fetchSettings();
-
-    // Fetch current user role - in production this should come from auth context
-    // For now, assuming SUPERADMIN for testing
-    setCurrentUserRole("SUPERADMIN");
   }, []);
 
+  /**
+   * Only firstName/lastName/phone are real fields (see AdminProfile's doc
+   * comment) — shared by the Preferences/Notifications tabs' Save buttons
+   * too, since those tabs have nothing else to persist yet.
+   */
   const handleProfileUpdate = async () => {
+    if (!profile) return;
     setSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    alert("Profile updated successfully!");
+    try {
+      const formData = new FormData();
+      formData.set("firstName", profile.firstName);
+      formData.set("lastName", profile.lastName);
+      formData.set("phoneNumber", profile.phone);
+      const result = await surfboardApi.profile.update(formData);
+      if (result.success) {
+        toast.success("Profile updated successfully");
+      } else {
+        toast.error(result.error || "Failed to update profile");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Zone Fee Settings handlers
@@ -776,24 +788,6 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Department
-                      </label>
-                      <input
-                        type="text"
-                        value={profile.department}
-                        onChange={(e) =>
-                          setProfile((prev) =>
-                            prev
-                              ? { ...prev, department: e.target.value }
-                              : null,
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Role
                       </label>
                       <input
@@ -807,33 +801,7 @@ export default function SettingsPage() {
 
                   <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
                     <button
-                      onClick={() =>
-                        setProfile({
-                          id: "1",
-                          firstName: "John",
-                          lastName: "Smith",
-                          email: "john.smith@company.com",
-                          role: "ADMIN",
-                          department: "Survey Operations",
-                          phone: "+27 82 123 4567",
-                          avatar: "",
-                          preferences: {
-                            notifications: {
-                              email: true,
-                              push: true,
-                              sms: false,
-                            },
-                            theme: "light",
-                            language: "en",
-                            timezone: "Africa/Johannesburg",
-                          },
-                          security: {
-                            twoFactorEnabled: false,
-                            lastPasswordChange: "2024-01-01T00:00:00Z",
-                            loginHistory: [],
-                          },
-                        })
-                      }
+                      onClick={() => fetchProfile()}
                       className="px-4 py-2 border border-gray-300 dark:border-white/15 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Reset
