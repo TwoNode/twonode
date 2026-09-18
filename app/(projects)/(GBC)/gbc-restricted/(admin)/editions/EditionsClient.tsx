@@ -24,10 +24,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, RotateCcw, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Trash2, RotateCcw, X, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { gbcApi, type EditionAdminStats } from "@/gbc/apiClient";
 import { GBC_COLORS } from "@/gbc/colors";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import { cn } from "@/lib/utils";
 
 /**
  * Full editions management table -- one row per edition with its own
@@ -234,8 +242,6 @@ export default function EditionsClient({
                   ["venue", "Venue"],
                   ["theme", "Theme"],
                   ["subTheme", "Sub-theme"],
-                  ["startDate", "Start Date"],
-                  ["endDate", "End Date"],
                 ] as const
               ).map(([field, label]) => (
                 <div
@@ -258,6 +264,51 @@ export default function EditionsClient({
                       setForm((f) => ({ ...f, [field]: e.target.value }))
                     }
                   />
+                </div>
+              ))}
+
+              {(
+                [
+                  ["startDate", "Start Date"],
+                  ["endDate", "End Date"],
+                ] as const
+              ).map(([field, label]) => (
+                <div key={field}>
+                  <Label htmlFor={field}>
+                    {label} <span className="text-red-500">*</span>
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id={field}
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !form[field] && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form[field]
+                          ? format(new Date(form[field]), "MMM d, yyyy")
+                          : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form[field] ? new Date(form[field]) : undefined}
+                        onSelect={(date) =>
+                          date &&
+                          setForm((f) => ({
+                            ...f,
+                            [field]: format(date, "yyyy-MM-dd"),
+                          }))
+                        }
+                        autoFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ))}
             </div>

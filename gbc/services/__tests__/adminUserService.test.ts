@@ -7,13 +7,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  gBCUser: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  gBCUser: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), count: vi.fn() },
   gBCAuditLog: { create: vi.fn() },
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-const { getAllAdmins, addAdmin, updateAdminRole, deleteAdmin, toggleAdminStatus } = await import(
+const { getAllAdmins, getAllAdminsPaginated, addAdmin, updateAdminRole, deleteAdmin, toggleAdminStatus } = await import(
   "@/gbc/services/adminUserService"
 );
 
@@ -35,6 +35,46 @@ describe("getAllAdmins", () => {
     expect(mockPrisma.gBCUser.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { email: { not: "dev@test.com" } } })
     );
+  });
+});
+
+describe("getAllAdminsPaginated (statuses filter)", () => {
+  /**
+   * Prisma's BoolFilter only has equals/not (never `in` — a boolean only
+   * has two possible values), so `where.isActive = { in: statuses }` used
+   * to throw PrismaClientValidationError the moment the admin Users page
+   * called this with its default both-checked filter state. These
+   * reproduce "in" semantics by hand instead.
+   */
+  beforeEach(() => {
+    mockPrisma.gBCUser.findMany.mockResolvedValue([]);
+    mockPrisma.gBCUser.count.mockResolvedValue(0);
+  });
+
+  it("applies no isActive filter when both statuses are selected", async () => {
+    await getAllAdminsPaginated({ page: 1, pageSize: 10, statuses: [true, false] });
+    const where = mockPrisma.gBCUser.findMany.mock.calls[0][0].where;
+    expect(where.isActive).toBeUndefined();
+  });
+
+  it("filters to isActive: true when only Active is selected", async () => {
+    await getAllAdminsPaginated({ page: 1, pageSize: 10, statuses: [true] });
+    const where = mockPrisma.gBCUser.findMany.mock.calls[0][0].where;
+    expect(where.isActive).toBe(true);
+  });
+
+  it("filters to isActive: false when only Inactive is selected", async () => {
+    await getAllAdminsPaginated({ page: 1, pageSize: 10, statuses: [false] });
+    const where = mockPrisma.gBCUser.findMany.mock.calls[0][0].where;
+    expect(where.isActive).toBe(false);
+  });
+
+  it("returns an empty page without querying Prisma when no status is selected", async () => {
+    const result = await getAllAdminsPaginated({ page: 1, pageSize: 10, statuses: [] });
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+    expect(mockPrisma.gBCUser.findMany).not.toHaveBeenCalled();
+    expect(mockPrisma.gBCUser.count).not.toHaveBeenCalled();
   });
 });
 

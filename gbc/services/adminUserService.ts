@@ -54,7 +54,21 @@ export async function getAllAdminsPaginated(params: GetAllAdminsPaginatedParams)
 
   const where: any = { email: { not: process.env.DEV_EMAIL } };
   if (roles) where.role = { in: roles };
-  if (statuses) where.isActive = { in: statuses };
+  if (statuses) {
+    // Prisma's BoolFilter only has `equals`/`not` — no `in` (a boolean only
+    // has two possible values, so Prisma never generated that variant) —
+    // `{ in: statuses }` throws PrismaClientValidationError. Reproduce the
+    // same "in" semantics by hand: both selected (or none passed) means no
+    // filter, exactly one selected narrows to that value, and zero selected
+    // (both checkboxes off) should match nothing rather than everything.
+    const uniqueStatuses = Array.from(new Set(statuses));
+    if (uniqueStatuses.length === 0) {
+      return paginatedResult([], 0, page, pageSize);
+    }
+    if (uniqueStatuses.length === 1) {
+      where.isActive = uniqueStatuses[0];
+    }
+  }
   if (search) {
     where.OR = [
       { firstName: { contains: search, mode: "insensitive" } },
