@@ -500,8 +500,8 @@ export default function UserManagementPage() {
 
           {/* Stats Overview */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
                     <svg
@@ -518,8 +518,8 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Total Users
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -529,7 +529,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400">
                     <svg
@@ -546,8 +546,8 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Active Users
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -557,7 +557,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400">
                     <svg
@@ -574,8 +574,8 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Admins
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -585,7 +585,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6">
+              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
                     <svg
@@ -603,8 +603,8 @@ export default function UserManagementPage() {
                     </svg>
                   </div>
 
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Active Subscriptions
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -617,7 +617,7 @@ export default function UserManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterSubscriptionStatus("expired")}
-                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6"
+                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
               >
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
@@ -635,8 +635,8 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Expired Subscriptions
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -649,7 +649,7 @@ export default function UserManagementPage() {
               <button
                 type="button"
                 onClick={() => setFilterSubscriptionStatus("expiring_soon")}
-                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6"
+                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
               >
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
@@ -667,8 +667,8 @@ export default function UserManagementPage() {
                       />
                     </svg>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <div className="ml-4 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                       Expiring in 7 Days
                     </p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -682,7 +682,7 @@ export default function UserManagementPage() {
 
           {/* Filters and Search */}
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search Users
