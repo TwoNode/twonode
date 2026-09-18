@@ -84,19 +84,19 @@ export function AuthSplitLayout({
             instead gives each its own region, so they can't overlap
             regardless of panel height. */}
         <div className="relative z-10 flex h-full flex-col">
-          <div className="flex-1 min-h-0 flex items-center justify-center p-12 pb-4 xl:p-16 xl:pb-4">
+          <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
             <PlatformNetworkGraphic className="max-w-md" variant={networkVariant} />
           </div>
 
-          <div className="w-full p-12 pt-0 xl:p-16 xl:pt-0">
-            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-8 max-w-md">
-              <p className="text-xs font-semibold tracking-widest uppercase text-white/70 mb-3">
+          <div className="w-full p-6 pt-0 xl:p-16 xl:pt-0 shrink-0">
+            <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl p-5 xl:p-8 max-w-md">
+              <p className="text-xs font-semibold tracking-widest uppercase text-white/70 mb-2 xl:mb-3">
                 {eyebrow}
               </p>
-              <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-4 text-balance">
+              <h2 className="text-2xl xl:text-4xl font-extrabold text-white leading-tight mb-2 xl:mb-4 text-balance">
                 {headline}
               </h2>
-              <p className="text-white/80 text-base leading-relaxed">
+              <p className="text-white/80 text-sm xl:text-base leading-relaxed">
                 {description}
               </p>
             </div>
