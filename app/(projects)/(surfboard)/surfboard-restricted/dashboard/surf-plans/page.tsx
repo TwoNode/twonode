@@ -661,7 +661,7 @@ export default function SurfPlansPage() {
                     {activeTab === "person-count" ? (
                       <>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-800 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
+                          <div className="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10 whitespace-pre-wrap max-w-md">
                             {plan.surveyTitle}
                           </div>
                           {hasPotentialMismatch(plan.surveyTitle) && (
