@@ -9,6 +9,8 @@ import {
   uploadGalleryMedia as uploadGalleryMediaToS3,
 } from "@/gbc/utils/aws-s3";
 import { getActiveEdition } from "@/gbc/services/editionService";
+import { paginateQuery } from "@/lib/api/pagination";
+import type { GallerySort } from "@/gbc/types/gallery";
 
 /** Resolves a caller-supplied edition key, falling back to the currently
  * active edition, and finally to undefined (no filter / DB default) if
@@ -37,6 +39,46 @@ export async function getGalleryItems(year?: number) {
 
 export async function getAllGalleryItems() {
   return prisma.gBCGallery.findMany({ orderBy: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }] });
+}
+
+// Year stays the primary key in every sort because the admin grid groups by
+// year — a page must never straddle a year in a different order than the grid
+// draws it. `id` is a tie-breaker so offset pages stay stable between requests.
+const GALLERY_ORDER_BY: Record<GallerySort, Prisma.GBCGalleryOrderByWithRelationInput[]> = {
+  order: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+  newest: [{ year: "desc" }, { createdAt: "desc" }, { id: "asc" }],
+  oldest: [{ year: "desc" }, { createdAt: "asc" }, { id: "asc" }],
+  "name-asc": [{ year: "desc" }, { title: "asc" }, { id: "asc" }],
+  "name-desc": [{ year: "desc" }, { title: "desc" }, { id: "asc" }],
+};
+
+export interface GalleryListParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  mediaType?: "IMAGE" | "VIDEO";
+  sort?: GallerySort;
+}
+
+/** Paginated/searchable/filterable sibling of getAllGalleryItems() — the admin Gallery page. */
+export async function getGalleryItemsPaginated(params: GalleryListParams) {
+  const { page, pageSize, search, mediaType, sort = "order" } = params;
+
+  const where: Prisma.GBCGalleryWhereInput = {};
+  if (mediaType) where.mediaType = mediaType;
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  return paginateQuery(
+    (skip, take) => prisma.gBCGallery.findMany({ where, orderBy: GALLERY_ORDER_BY[sort], skip, take }),
+    () => prisma.gBCGallery.count({ where }),
+    page,
+    pageSize
+  );
 }
 
 export type GalleryItemInput = Omit<Prisma.GBCGalleryCreateInput, "id" | "createdAt" | "updatedAt">;

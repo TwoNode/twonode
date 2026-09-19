@@ -239,6 +239,13 @@ export const gbcApi = {
         method: "POST",
         body: JSON.stringify({ ticketNumbers, emailBody }),
       }),
+
+    /** Ticket numbers matching the Certificates list filters, across every page. */
+    recipients: (filters: { search?: string; checkedIn: string; edition: string }) => {
+      const query = new URLSearchParams({ checkedIn: filters.checkedIn, edition: filters.edition });
+      if (filters.search) query.set("search", filters.search);
+      return jsonFetch<{ ticketNumbers: string[] }>(`${BASE}/admin/certificates/recipients?${query}`);
+    },
   },
 
   users: {

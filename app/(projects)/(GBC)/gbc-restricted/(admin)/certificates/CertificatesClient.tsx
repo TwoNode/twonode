@@ -1,63 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Clock, Mail, CheckSquare, Square, Loader2 } from "lucide-react";
+import { CheckCircle, Mail, CheckSquare, Square, Loader2 } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
-import { Pagination } from "@/components/ui/pagination";
+import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
+import { TicketListFilters } from "@/gbc/components/admin/TicketListFilters";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import type { CheckedInFilter } from "@/gbc/utils/ticketListParams";
 
-const PAGE_SIZE = 10;
+interface CertificateTicket {
+  id: string;
+  name: string;
+  email: string;
+  ticketNumber: string;
+  checkedIn: boolean;
+  certificateSentCount: number;
+}
+
+interface CertificatesClientProps {
+  tickets: CertificateTicket[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  stats: { checkedIn: number; certificatesSent: number };
+  editions: GBCEdition[];
+  filters: { search?: string; checkedIn: CheckedInFilter; edition: string };
+}
 
 export default function CertificatesClient({
-  initialTickets,
+  tickets,
+  pagination,
+  stats,
   editions,
-}: {
-  initialTickets: any[];
-  editions: GBCEdition[];
-}) {
-  const [tickets, setTickets] = useState(initialTickets || []);
-  const [filter, setFilter] = useState<"ALL" | "CHECKED_IN" | "PENDING">("CHECKED_IN");
-  const [editionFilter, setEditionFilter] = useState("ALL");
-  const [search, setSearch] = useState("");
+  filters,
+}: CertificatesClientProps) {
+  const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [emailBody, setEmailBody] = useState(
     "Thank you for attending Geospatial Builders Conference (GBC) 2.0!\n\nWe appreciate your active participation and are thrilled to have you as part of our geospatial community."
   );
   const [isSending, setIsSending] = useState(false);
-  const [page, setPage] = useState(1);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
 
-  // A filter/search change invalidates whatever page was showing.
-  useEffect(() => {
-    setPage(1);
-  }, [filter, editionFilter, search]);
-
-  // The stat cards are scoped by edition only — not by the check-in/search
-  // filters below, which was already how they behaved.
-  const editionTickets =
-    editionFilter === "ALL" ? tickets : tickets.filter((t: any) => t.edition === editionFilter);
-
-  const filteredTickets = tickets.filter((t: any) => {
-    const matchesFilter =
-      filter === "ALL" ? true :
-      filter === "CHECKED_IN" ? t.checkedIn === true :
-      t.checkedIn === false;
-
-    const matchesEdition = editionFilter === "ALL" || t.edition === editionFilter;
-
-    const matchesSearch =
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.email.toLowerCase().includes(search.toLowerCase()) ||
-      t.ticketNumber.toLowerCase().includes(search.toLowerCase());
-
-    return matchesFilter && matchesEdition && matchesSearch;
-  });
-
-  // "Select All" operates on every filtered ticket, not just the rendered
-  // page — only the rendered list below is windowed.
-  const totalPages = Math.max(1, Math.ceil(filteredTickets.length / PAGE_SIZE));
-  const pagedTickets = filteredTickets.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const allSelected =
+    pagination.total > 0 &&
+    selectedTickets.size === pagination.total &&
+    tickets.every((t) => selectedTickets.has(t.ticketNumber));
 
   const toggleSelection = (ticketNumber: string) => {
     const newSelection = new Set(selectedTickets);
@@ -69,11 +58,27 @@ export default function CertificatesClient({
     setSelectedTickets(newSelection);
   };
 
-  const toggleSelectAll = () => {
-    if (selectedTickets.size === filteredTickets.length) {
+  // "Select All" covers every ticket matching the filters, not just the
+  // rendered page, so it asks the server for the full list of numbers.
+  const toggleSelectAll = async () => {
+    if (allSelected) {
       setSelectedTickets(new Set());
-    } else {
-      setSelectedTickets(new Set(filteredTickets.map((t: any) => t.ticketNumber)));
+      return;
+    }
+
+    setIsSelectingAll(true);
+    try {
+      const res = await gbcApi.certificates.recipients(filters);
+      if (res.success) {
+        setSelectedTickets(new Set(res.data.ticketNumbers));
+      } else {
+        toast.error(res.error || "Failed to select all attendees.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setIsSelectingAll(false);
     }
   };
 
@@ -94,14 +99,8 @@ export default function CertificatesClient({
       if (res.success) {
         toast.success(res.data.message);
         setSelectedTickets(new Set());
-        // Update local state to reflect sent count implicitly (or refetch if we wanted to)
-        const updatedTickets = tickets.map(t => {
-          if (selected.includes(t.ticketNumber)) {
-            return { ...t, certificateSentCount: (t.certificateSentCount || 0) + 1 };
-          }
-          return t;
-        });
-        setTickets(updatedTickets);
+        // Sent counts and the "Certificates Sent" stat live on the server.
+        router.refresh();
       } else {
         toast.error(res.error || "Failed to send certificates.");
       }
@@ -136,7 +135,7 @@ export default function CertificatesClient({
                 This message will appear above the "View & Download Certificate" button.
               </p>
             </div>
-            
+
             <button
               onClick={handleSendCertificates}
               disabled={isSending || selectedTickets.size === 0}
@@ -154,12 +153,12 @@ export default function CertificatesClient({
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
              <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{editionTickets.filter((t: any) => t.checkedIn).length}</p>
+             <p className="text-2xl font-bold text-gray-900">{stats.checkedIn}</p>
              <p className="text-sm text-gray-500">Checked In</p>
           </Card>
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
              <Mail className="w-8 h-8 text-blue-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{editionTickets.filter((t: any) => t.certificateSentCount > 0).length}</p>
+             <p className="text-2xl font-bold text-gray-900">{stats.certificatesSent}</p>
              <p className="text-sm text-gray-500">Certificates Sent</p>
           </Card>
         </div>
@@ -168,62 +167,36 @@ export default function CertificatesClient({
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h2 className="text-lg sm:text-xl font-bold">Select Attendees</h2>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
-              className="px-3 py-2 border rounded-lg text-sm"
-            >
-              <option value="ALL">All Tickets</option>
-              <option value="CHECKED_IN">Checked In Only</option>
-              <option value="PENDING">Pending Check-in</option>
-            </select>
-            <select
-              value={editionFilter}
-              onChange={(e) => setEditionFilter(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm"
-            >
-              <option value="ALL">All Editions</option>
-              {editions.map((edition) => (
-                <option key={edition.key} value={edition.key}>
-                  {edition.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Search by name, email, or ticket #"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="px-3 py-2 border rounded-lg text-sm w-full sm:w-64"
-            />
-          </div>
+          <TicketListFilters editions={editions} checkedIn={filters.checkedIn} edition={filters.edition} />
         </div>
 
         <div className="mb-4 flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
-          <button 
+          <button
             onClick={toggleSelectAll}
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            disabled={isSelectingAll || pagination.total === 0}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 disabled:opacity-50"
           >
-            {selectedTickets.size === filteredTickets.length && filteredTickets.length > 0 ? (
+            {isSelectingAll ? (
+              <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+            ) : allSelected ? (
               <CheckSquare className="w-5 h-5 text-purple-600" />
             ) : (
               <Square className="w-5 h-5 text-gray-400" />
             )}
-            Select All ({filteredTickets.length})
+            Select All ({pagination.total})
           </button>
           <span className="text-sm text-gray-500">{selectedTickets.size} selected</span>
         </div>
 
         <div className="space-y-2 max-h-150 overflow-y-auto pr-2">
-          {filteredTickets.length > 0 ? (
-            pagedTickets.map((ticket: any) => (
+          {tickets.length > 0 ? (
+            tickets.map((ticket) => (
               <div
                 key={ticket.id}
                 onClick={() => toggleSelection(ticket.ticketNumber)}
                 className={`flex items-center gap-4 p-3 sm:p-4 rounded-lg border transition-colors cursor-pointer ${
-                  selectedTickets.has(ticket.ticketNumber) 
-                    ? "bg-purple-50 border-purple-200" 
+                  selectedTickets.has(ticket.ticketNumber)
+                    ? "bg-purple-50 border-purple-200"
                     : "bg-white hover:bg-gray-50"
                 }`}
               >
@@ -266,12 +239,16 @@ export default function CertificatesClient({
           )}
         </div>
 
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-sm text-gray-500">
-              Page {page} of {totalPages} • {filteredTickets.length} attendees
+              Page {pagination.page} of {pagination.totalPages} • {pagination.total} attendees
             </p>
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            <SearchParamsPagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              pageSize={pagination.pageSize}
+            />
           </div>
         )}
       </Card>

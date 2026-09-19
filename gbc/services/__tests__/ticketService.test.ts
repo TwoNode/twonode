@@ -80,6 +80,9 @@ const {
   getTicketByNumber,
   getTicketAvailability,
   checkInTicket,
+  getTicketsPaginated,
+  getTicketNumbers,
+  getAttendeeStats,
 } = await import("@/gbc/services/ticketService");
 
 type AttendeeInput = Parameters<typeof createPairTicket>[0][number];
@@ -394,5 +397,115 @@ describe("checkInTicket", () => {
         checkedInBy: "admin@test.com",
       }),
     });
+  });
+});
+
+describe("getTicketsPaginated", () => {
+  it("pushes status, check-in, edition and search into one where clause and pages with skip/take", async () => {
+    mockPrisma.gBCTicket.findMany.mockResolvedValue([{ id: "t1" }]);
+    mockPrisma.gBCTicket.count.mockResolvedValue(45);
+
+    const result = await getTicketsPaginated({
+      page: 3,
+      pageSize: 10,
+      status: "COMPLETED",
+      checkedIn: true,
+      edition: "2.0",
+      search: "jane",
+    });
+
+    const expectedWhere = {
+      paymentStatus: "COMPLETED",
+      checkedIn: true,
+      edition: "2.0",
+      OR: [
+        { name: { contains: "jane", mode: "insensitive" } },
+        { email: { contains: "jane", mode: "insensitive" } },
+        { phone: { contains: "jane", mode: "insensitive" } },
+        { ticketNumber: { contains: "jane", mode: "insensitive" } },
+      ],
+    };
+    expect(mockPrisma.gBCTicket.findMany).toHaveBeenCalledWith({
+      where: expectedWhere,
+      orderBy: { createdAt: "desc" },
+      skip: 20,
+      take: 10,
+    });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: expectedWhere });
+    expect(result.pagination).toEqual({ page: 3, pageSize: 10, total: 45, totalPages: 5 });
+  });
+
+  it("treats checkedIn=false as a real filter, not as 'unset'", async () => {
+    mockPrisma.gBCTicket.findMany.mockResolvedValue([]);
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+
+    await getTicketsPaginated({ page: 1, pageSize: 10, checkedIn: false });
+
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: { checkedIn: false } });
+  });
+
+  it("omits filters that weren't supplied", async () => {
+    mockPrisma.gBCTicket.findMany.mockResolvedValue([]);
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+
+    await getTicketsPaginated({ page: 1, pageSize: 10 });
+
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: {} });
+  });
+
+  it("falls back to the last real page when the requested page is past the end", async () => {
+    mockPrisma.gBCTicket.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "last" }]);
+    mockPrisma.gBCTicket.count.mockResolvedValue(11);
+
+    const result = await getTicketsPaginated({ page: 7, pageSize: 10 });
+
+    expect(mockPrisma.gBCTicket.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 10, take: 10 }));
+    expect(result.data).toEqual([{ id: "last" }]);
+    expect(result.pagination.page).toBe(2);
+  });
+});
+
+describe("getTicketNumbers", () => {
+  it("returns only ticket numbers for the filtered set, unpaginated", async () => {
+    mockPrisma.gBCTicket.findMany.mockResolvedValue([{ ticketNumber: "GBC2-1" }, { ticketNumber: "GBC2-2" }]);
+
+    const numbers = await getTicketNumbers({ status: "COMPLETED", checkedIn: true, edition: "2.0" });
+
+    expect(numbers).toEqual(["GBC2-1", "GBC2-2"]);
+    expect(mockPrisma.gBCTicket.findMany).toHaveBeenCalledWith({
+      where: { paymentStatus: "COMPLETED", checkedIn: true, edition: "2.0" },
+      orderBy: { createdAt: "desc" },
+      select: { ticketNumber: true },
+    });
+  });
+});
+
+describe("getAttendeeStats", () => {
+  it("counts COMPLETED tickets only and derives pending from the checked-in count", async () => {
+    mockPrisma.gBCTicket.count
+      .mockResolvedValueOnce(50) // total
+      .mockResolvedValueOnce(32) // checked in
+      .mockResolvedValueOnce(20); // certificates sent
+
+    const stats = await getAttendeeStats();
+
+    expect(stats).toEqual({ total: 50, checkedIn: 32, pending: 18, certificatesSent: 20 });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({ where: { paymentStatus: "COMPLETED" } });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
+      where: { paymentStatus: "COMPLETED", checkedIn: true },
+    });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenCalledWith({
+      where: { paymentStatus: "COMPLETED", certificateSentCount: { gt: 0 } },
+    });
+  });
+
+  it("scopes every count to the edition when one is given", async () => {
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+
+    await getAttendeeStats("1.0");
+
+    for (const [args] of mockPrisma.gBCTicket.count.mock.calls) {
+      expect(args.where).toMatchObject({ paymentStatus: "COMPLETED", edition: "1.0" });
+    }
   });
 });
