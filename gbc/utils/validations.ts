@@ -120,9 +120,14 @@ export const gallerySchema = z.object({
   mediaS3Key: z.string().optional(),
   thumbnailUrl: z.string().url().optional(),
   thumbnailS3Key: z.string().optional(),
-  year: z.number().int().min(2020).max(2030),
+  // Calendar year of the event — omitted, cmsService derives it from the
+  // edition's start date so the two can't disagree.
+  year: z.number().int().min(2020).max(2030).optional(),
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),
+  // Which GBCEdition this item belongs to — omitted, cmsService resolves it
+  // to the currently active edition.
+  edition: z.string().optional(),
 });
 
 export type GalleryInput = z.infer<typeof gallerySchema>;

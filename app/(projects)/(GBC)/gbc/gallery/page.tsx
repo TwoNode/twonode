@@ -2,28 +2,31 @@
 import { Play, Image as ImageIcon } from "lucide-react";
 import { getGalleryItems } from "@/gbc/services/cmsService";
 import { getSettings } from "@/gbc/services/settingsService";
+import { getEditions } from "@/gbc/services/editionService";
 import Link from "next/link";
 import GBC2Navbar from "@/gbc/components/Navbar";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function GalleryPage() {
-  const items = await getGalleryItems();
+  const [items, editions] = await Promise.all([getGalleryItems(), getEditions()]);
 
   const socialLinks = (await getSettings()).contact;
 
-  // Group by year
-  const itemsByYear =
-    items?.reduce((acc: any, item: any) => {
-      if (!acc[item.year]) {
-        acc[item.year] = [];
-      }
-      acc[item.year].push(item);
-      return acc;
-    }, {}) || {};
-
-  const years = Object.keys(itemsByYear).sort(
-    (a, b) => parseInt(b) - parseInt(a),
-  );
+  // One section per edition, newest first — the query already orders items by
+  // edition start date, so first appearance is the right section order.
+  const sections: { key: string; name: string; items: typeof items }[] = [];
+  for (const item of items) {
+    let section = sections.find((s) => s.key === item.edition);
+    if (!section) {
+      section = {
+        key: item.edition,
+        name: editions.find((e) => e.key === item.edition)?.name ?? `GBC ${item.year}`,
+        items: [],
+      };
+      sections.push(section);
+    }
+    section.items.push(item);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -72,7 +75,7 @@ export default async function GalleryPage() {
       {/* Gallery Content */}
       <section className="py-12 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {years.length === 0 ? (
+          {sections.length === 0 ? (
             <div className="text-center py-24">
               <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-400 mb-2">
@@ -82,11 +85,11 @@ export default async function GalleryPage() {
             </div>
           ) : (
             <div className="space-y-12 sm:space-y-16">
-              {years.map((year) => (
-                <div key={year}>
+              {sections.map((section) => (
+                <div key={section.key}>
                   <div className="mb-6 sm:mb-8">
                     <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-                      GBC {year}
+                      {section.name}
                     </h2>
                     <div
                       className="h-1 w-16 sm:w-20 rounded"
@@ -95,7 +98,7 @@ export default async function GalleryPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {itemsByYear[year].map((item: any) => (
+                    {section.items.map((item) => (
                       <GalleryItem key={item.id} item={item} />
                     ))}
                   </div>

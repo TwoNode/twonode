@@ -3,11 +3,22 @@
 import { Loader2, Search } from "lucide-react";
 import { useDebouncedSearchParam, useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 import type { GalleryTypeFilter, GallerySort } from "@/gbc/types/gallery";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 const selectClass = "px-4 py-2 border rounded-lg text-sm bg-white";
 
 /** Search, media-type and sort controls for the searchParams-driven admin Gallery page. */
-export function GalleryFilters({ type, sort }: { type: GalleryTypeFilter; sort: GallerySort }) {
+export function GalleryFilters({
+  editions,
+  edition,
+  type,
+  sort,
+}: {
+  editions: GBCEdition[];
+  edition: string;
+  type: GalleryTypeFilter;
+  sort: GallerySort;
+}) {
   const updater = useSearchParamsUpdater();
   const { update, isPending } = updater;
   const { value: search, setValue: setSearch } = useDebouncedSearchParam(updater);
@@ -27,6 +38,19 @@ export function GalleryFilters({ type, sort }: { type: GalleryTypeFilter; sort: 
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
         )}
       </div>
+      <select
+        aria-label="Edition"
+        value={edition}
+        onChange={(e) => update({ edition: e.target.value, page: "" })}
+        className={selectClass}
+      >
+        <option value="all">All Editions</option>
+        {editions.map((e) => (
+          <option key={e.key} value={e.key}>
+            {e.name}
+          </option>
+        ))}
+      </select>
       <select
         aria-label="Media type"
         value={type}

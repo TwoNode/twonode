@@ -13,7 +13,7 @@ const mockPrisma = vi.hoisted(() => ({
   gBCSponsor: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   gBCPartner: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   gBCSpeaker: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-  gBCEdition: { findFirst: vi.fn() },
+  gBCEdition: { findFirst: vi.fn(), findUnique: vi.fn() },
 }));
 
 const mockAwsS3 = vi.hoisted(() => ({
@@ -38,6 +38,10 @@ const {
   createPartner,
   deleteGalleryItem,
   getGalleryItemsPaginated,
+  getGalleryItems,
+  getAllGalleryItems,
+  createGalleryItem,
+  updateGalleryItem,
   updateSponsor,
   deleteSpeaker,
   uploadSponsorLogo,
@@ -239,7 +243,7 @@ describe("edition scoping — creates", () => {
 });
 
 describe("getGalleryItemsPaginated", () => {
-  it("defaults to display order, year first, with an id tie-breaker for stable pages", async () => {
+  it("defaults to display order, newest edition first, with an id tie-breaker for stable pages", async () => {
     mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
     mockPrisma.gBCGallery.count.mockResolvedValue(0);
 
@@ -247,7 +251,7 @@ describe("getGalleryItemsPaginated", () => {
 
     expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith({
       where: {},
-      orderBy: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+      orderBy: [{ editionRef: { startDate: "desc" } }, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
       skip: 0,
       take: 20,
     });
@@ -271,11 +275,11 @@ describe("getGalleryItemsPaginated", () => {
   });
 
   it.each([
-    ["newest", [{ year: "desc" }, { createdAt: "desc" }, { id: "asc" }]],
-    ["oldest", [{ year: "desc" }, { createdAt: "asc" }, { id: "asc" }]],
-    ["name-asc", [{ year: "desc" }, { title: "asc" }, { id: "asc" }]],
-    ["name-desc", [{ year: "desc" }, { title: "desc" }, { id: "asc" }]],
-  ] as const)("keeps year as the primary key when sorting by %s", async (sort, orderBy) => {
+    ["newest", [{ editionRef: { startDate: "desc" } }, { createdAt: "desc" }, { id: "asc" }]],
+    ["oldest", [{ editionRef: { startDate: "desc" } }, { createdAt: "asc" }, { id: "asc" }]],
+    ["name-asc", [{ editionRef: { startDate: "desc" } }, { title: "asc" }, { id: "asc" }]],
+    ["name-desc", [{ editionRef: { startDate: "desc" } }, { title: "desc" }, { id: "asc" }]],
+  ] as const)("keeps the newest edition as the primary key when sorting by %s", async (sort, orderBy) => {
     mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
     mockPrisma.gBCGallery.count.mockResolvedValue(0);
 
@@ -292,5 +296,135 @@ describe("getGalleryItemsPaginated", () => {
 
     expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 20, take: 20 }));
     expect(result.pagination).toEqual({ page: 2, pageSize: 20, total: 53, totalPages: 3 });
+  });
+});
+
+describe("getGalleryItemsPaginated edition filter", () => {
+  it("scopes both the page and the count to one edition", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+    mockPrisma.gBCGallery.count.mockResolvedValue(0);
+
+    await getGalleryItemsPaginated({ page: 1, pageSize: 20, edition: "1.0" });
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { edition: "1.0" } }));
+    expect(mockPrisma.gBCGallery.count).toHaveBeenCalledWith({ where: { edition: "1.0" } });
+  });
+});
+
+describe("getGalleryItems (public)", () => {
+  it("returns only visible items across every edition by default, newest edition first", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+
+    await getGalleryItems();
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith({
+      where: { visible: true },
+      orderBy: [{ editionRef: { startDate: "desc" } }, { order: "asc" }, { createdAt: "desc" }],
+    });
+  });
+
+  it("narrows by year and edition when asked, without an implicit active-edition filter", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+
+    await getGalleryItems(2024, "1.0");
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { visible: true, year: 2024, edition: "1.0" } })
+    );
+    expect(mockPrisma.gBCEdition.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("getAllGalleryItems (admin)", () => {
+  it("includes hidden items and applies an edition filter only when given", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+
+    await getAllGalleryItems();
+    await getAllGalleryItems("2.0");
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({ where: {} }));
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: { edition: "2.0" } }));
+  });
+});
+
+describe("createGalleryItem", () => {
+  const base = { title: "Keynote", mediaType: "IMAGE", mediaUrl: "https://x/y.jpg", order: 0, visible: true } as const;
+
+  it("files the item under the supplied edition and derives the year from its start date", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue({ startDate: new Date("2024-11-23T00:00:00Z") });
+    mockPrisma.gBCGallery.create.mockResolvedValue({ id: "g1" });
+
+    await createGalleryItem({ ...base, edition: "1.0" });
+
+    expect(mockPrisma.gBCEdition.findUnique).toHaveBeenCalledWith({ where: { key: "1.0" }, select: { startDate: true } });
+    expect(mockPrisma.gBCGallery.create).toHaveBeenCalledWith({ data: { ...base, edition: "1.0", year: 2024 } });
+  });
+
+  it("falls back to the active edition when none is supplied", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue({ startDate: new Date("2027-04-30T00:00:00Z") });
+    mockPrisma.gBCGallery.create.mockResolvedValue({ id: "g1" });
+
+    await createGalleryItem(base);
+
+    expect(mockPrisma.gBCGallery.create).toHaveBeenCalledWith({ data: { ...base, edition: "3.0", year: 2027 } });
+  });
+
+  it("falls back to the schema default edition when none is supplied or active", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue({ startDate: new Date("2026-04-30T00:00:00Z") });
+    mockPrisma.gBCGallery.create.mockResolvedValue({ id: "g1" });
+
+    await createGalleryItem(base);
+
+    expect(mockPrisma.gBCEdition.findUnique).toHaveBeenCalledWith({ where: { key: "2.0" }, select: { startDate: true } });
+    expect(mockPrisma.gBCGallery.create).toHaveBeenCalledWith({ data: { ...base, edition: "2.0", year: 2026 } });
+  });
+
+  it("keeps an explicit year over the derived one", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue({ startDate: new Date("2026-04-30T00:00:00Z") });
+    mockPrisma.gBCGallery.create.mockResolvedValue({ id: "g1" });
+
+    await createGalleryItem({ ...base, edition: "2.0", year: 2025 });
+
+    expect(mockPrisma.gBCGallery.create).toHaveBeenCalledWith({ data: { ...base, edition: "2.0", year: 2025 } });
+  });
+
+  it("rejects an unknown edition with a 400 instead of hitting the foreign key", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue(null);
+
+    await expect(createGalleryItem({ ...base, edition: "9.9" })).rejects.toMatchObject({ status: 400 });
+    expect(mockPrisma.gBCGallery.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateGalleryItem", () => {
+  it("leaves edition and year alone when the edit doesn't change the edition", async () => {
+    mockPrisma.gBCGallery.update.mockResolvedValue({ id: "g1" });
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+
+    await updateGalleryItem("g1", { title: "Renamed" });
+
+    expect(mockPrisma.gBCGallery.update).toHaveBeenCalledWith({ where: { id: "g1" }, data: { title: "Renamed" } });
+    expect(mockPrisma.gBCEdition.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.gBCEdition.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("re-derives the year when the item moves to another edition", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue({ startDate: new Date("2026-04-30T00:00:00Z") });
+    mockPrisma.gBCGallery.update.mockResolvedValue({ id: "g1" });
+
+    await updateGalleryItem("g1", { title: "Renamed", edition: "2.0" });
+
+    expect(mockPrisma.gBCGallery.update).toHaveBeenCalledWith({
+      where: { id: "g1" },
+      data: { title: "Renamed", edition: "2.0", year: 2026 },
+    });
+  });
+
+  it("rejects moving an item to an unknown edition", async () => {
+    mockPrisma.gBCEdition.findUnique.mockResolvedValue(null);
+
+    await expect(updateGalleryItem("g1", { edition: "9.9" })).rejects.toMatchObject({ status: 400 });
+    expect(mockPrisma.gBCGallery.update).not.toHaveBeenCalled();
   });
 });

@@ -31,25 +31,35 @@ async function resolveEdition(edition?: string): Promise<string | undefined> {
 
 // ============ GALLERY ============
 
-export async function getGalleryItems(year?: number) {
+// Every gallery screen groups items by edition, so the newest edition leads
+// every ordering — a page can then never straddle an edition in a different
+// order than the grid draws it.
+const NEWEST_EDITION_FIRST: Prisma.GBCGalleryOrderByWithRelationInput = { editionRef: { startDate: "desc" } };
+
+export async function getGalleryItems(year?: number, edition?: string) {
   const where: Prisma.GBCGalleryWhereInput = { visible: true };
   if (year) where.year = year;
-  return prisma.gBCGallery.findMany({ where, orderBy: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }] });
+  if (edition) where.edition = edition;
+  return prisma.gBCGallery.findMany({
+    where,
+    orderBy: [NEWEST_EDITION_FIRST, { order: "asc" }, { createdAt: "desc" }],
+  });
 }
 
-export async function getAllGalleryItems() {
-  return prisma.gBCGallery.findMany({ orderBy: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }] });
+export async function getAllGalleryItems(edition?: string) {
+  return prisma.gBCGallery.findMany({
+    where: edition ? { edition } : {},
+    orderBy: [NEWEST_EDITION_FIRST, { order: "asc" }, { createdAt: "desc" }],
+  });
 }
 
-// Year stays the primary key in every sort because the admin grid groups by
-// year — a page must never straddle a year in a different order than the grid
-// draws it. `id` is a tie-breaker so offset pages stay stable between requests.
+// `id` is a tie-breaker so offset pages stay stable between requests.
 const GALLERY_ORDER_BY: Record<GallerySort, Prisma.GBCGalleryOrderByWithRelationInput[]> = {
-  order: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
-  newest: [{ year: "desc" }, { createdAt: "desc" }, { id: "asc" }],
-  oldest: [{ year: "desc" }, { createdAt: "asc" }, { id: "asc" }],
-  "name-asc": [{ year: "desc" }, { title: "asc" }, { id: "asc" }],
-  "name-desc": [{ year: "desc" }, { title: "desc" }, { id: "asc" }],
+  order: [NEWEST_EDITION_FIRST, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+  newest: [NEWEST_EDITION_FIRST, { createdAt: "desc" }, { id: "asc" }],
+  oldest: [NEWEST_EDITION_FIRST, { createdAt: "asc" }, { id: "asc" }],
+  "name-asc": [NEWEST_EDITION_FIRST, { title: "asc" }, { id: "asc" }],
+  "name-desc": [NEWEST_EDITION_FIRST, { title: "desc" }, { id: "asc" }],
 };
 
 export interface GalleryListParams {
@@ -57,15 +67,17 @@ export interface GalleryListParams {
   pageSize: number;
   search?: string;
   mediaType?: "IMAGE" | "VIDEO";
+  edition?: string;
   sort?: GallerySort;
 }
 
 /** Paginated/searchable/filterable sibling of getAllGalleryItems() — the admin Gallery page. */
 export async function getGalleryItemsPaginated(params: GalleryListParams) {
-  const { page, pageSize, search, mediaType, sort = "order" } = params;
+  const { page, pageSize, search, mediaType, edition, sort = "order" } = params;
 
   const where: Prisma.GBCGalleryWhereInput = {};
   if (mediaType) where.mediaType = mediaType;
+  if (edition) where.edition = edition;
   if (search) {
     where.OR = [
       { title: { contains: search, mode: "insensitive" } },
@@ -81,14 +93,36 @@ export async function getGalleryItemsPaginated(params: GalleryListParams) {
   );
 }
 
-export type GalleryItemInput = Omit<Prisma.GBCGalleryCreateInput, "id" | "createdAt" | "updatedAt">;
+export type GalleryItemInput = Omit<Prisma.GBCGalleryUncheckedCreateInput, "id" | "createdAt" | "updatedAt" | "year"> & {
+  /** Omitted, it's derived from the edition's start date. */
+  year?: number;
+};
 
-export async function createGalleryItem(data: GalleryItemInput) {
-  return prisma.gBCGallery.create({ data });
+/**
+ * Picks the edition an item belongs to (supplied, else the active one, else
+ * the schema default) and the calendar year that goes with it. The lookup
+ * doubles as validation: an unknown key becomes a 400 instead of a raw
+ * foreign-key error.
+ */
+async function resolveGalleryEdition(input: { edition?: string; year?: number }): Promise<{ edition: string; year: number }> {
+  const key = (await resolveEdition(input.edition)) ?? "2.0";
+  const row = await prisma.gBCEdition.findUnique({ where: { key }, select: { startDate: true } });
+  if (!row) throw new ValidationError({ edition: `Unknown edition "${key}"` });
+  return { edition: key, year: input.year ?? row.startDate.getUTCFullYear() };
 }
 
-export async function updateGalleryItem(id: string, data: GalleryItemInput) {
-  return prisma.gBCGallery.update({ where: { id }, data });
+export async function createGalleryItem(data: GalleryItemInput) {
+  const { edition, year } = await resolveGalleryEdition(data);
+  return prisma.gBCGallery.create({ data: { ...data, edition, year } });
+}
+
+export async function updateGalleryItem(id: string, data: Partial<GalleryItemInput>) {
+  // Only re-derive when the edition is actually being changed — an edit that
+  // leaves it alone must not silently move the item to the active edition.
+  if (!data.edition) return prisma.gBCGallery.update({ where: { id }, data });
+
+  const { edition, year } = await resolveGalleryEdition({ edition: data.edition, year: data.year });
+  return prisma.gBCGallery.update({ where: { id }, data: { ...data, edition, year } });
 }
 
 export async function deleteGalleryItem(id: string) {

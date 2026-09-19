@@ -41,12 +41,15 @@ import { formatDateTime } from "@/gbc/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface InquiriesTableProps {
   inquiries: any[];
+  editions: GBCEdition[];
 }
 
-export function InquiriesTable({ inquiries }: InquiriesTableProps) {
+export function InquiriesTable({ inquiries, editions }: InquiriesTableProps) {
+  const editionName = (key: string) => editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
   const [viewInquiry, setViewInquiry] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -135,6 +138,7 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Edition</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>Status</TableHead>
@@ -159,6 +163,9 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
                   </TableCell>
                   <TableCell className="text-sm">
                     {inquiry.phone || "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[12rem] truncate text-sm" title={editionName(inquiry.edition)}>
+                    {editionName(inquiry.edition)}
                   </TableCell>
                   <TableCell>
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
@@ -255,6 +262,12 @@ export function InquiriesTable({ inquiries }: InquiriesTableProps) {
                       {viewInquiry.type}
                     </span>
                   </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">
+                    Edition
+                  </label>
+                  <p className="mt-1">{editionName(viewInquiry.edition)}</p>
                 </div>
               </div>
 

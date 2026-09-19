@@ -7,7 +7,8 @@ export const GET = withAuth<GBCRole>(
   async (req) => {
     const status = req.nextUrl.searchParams.get("status") ?? undefined;
     const type = req.nextUrl.searchParams.get("type") ?? undefined;
-    const data = await getInquiries({ status, type });
+    const edition = req.nextUrl.searchParams.get("edition") ?? undefined;
+    const data = await getInquiries({ status, type, edition });
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

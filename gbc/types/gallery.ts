@@ -9,6 +9,8 @@ export interface GalleryItem {
   year: number;
   order: number;
   visible: boolean;
+  /** GBCEdition key this item belongs to. */
+  edition: string;
   mediaType: GBCMediaType;
   createdAt: Date;
   updatedAt: Date;

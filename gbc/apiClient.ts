@@ -108,6 +108,8 @@ export type Inquiry = {
   type: string | null;
   status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
   notes: string | null;
+  /** GBCEdition key current when the inquiry was submitted. */
+  edition: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -154,9 +156,12 @@ export type GalleryInput = {
   mediaS3Key?: string;
   thumbnailUrl?: string;
   thumbnailS3Key?: string;
-  year: number;
+  /** Omitted, derived from the edition's start date. */
+  year?: number;
   order?: number;
   visible?: boolean;
+  /** GBCEdition key this item belongs to — omitted, defaults to the active edition. */
+  edition?: string;
 };
 
 export type SpeakerInput = {
@@ -361,10 +366,16 @@ export const gbcApi = {
   },
 
   gallery: {
-    list: (year?: number) =>
-      jsonFetch<GalleryItem[]>(`${BASE}/gallery${year ? `?year=${year}` : ""}`),
+    list: (year?: number, edition?: string) => {
+      const params = new URLSearchParams();
+      if (year) params.set("year", String(year));
+      if (edition) params.set("edition", edition);
+      const qs = params.toString();
+      return jsonFetch<GalleryItem[]>(`${BASE}/gallery${qs ? `?${qs}` : ""}`);
+    },
 
-    listAll: () => jsonFetch<GalleryItem[]>(`${BASE}/admin/gallery`),
+    listAll: (edition?: string) =>
+      jsonFetch<GalleryItem[]>(`${BASE}/admin/gallery${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
 
     create: (input: GalleryInput) =>
       jsonFetch<GalleryItem>(`${BASE}/admin/gallery`, { method: "POST", body: JSON.stringify(input) }),
@@ -500,10 +511,11 @@ export const gbcApi = {
   },
 
   inquiries: {
-    list: (filters?: { status?: string; type?: string }) => {
+    list: (filters?: { status?: string; type?: string; edition?: string }) => {
       const params = new URLSearchParams();
       if (filters?.status) params.set("status", filters.status);
       if (filters?.type) params.set("type", filters.type);
+      if (filters?.edition) params.set("edition", filters.edition);
       const qs = params.toString();
       return jsonFetch<Inquiry[]>(`${BASE}/admin/inquiries${qs ? `?${qs}` : ""}`);
     },

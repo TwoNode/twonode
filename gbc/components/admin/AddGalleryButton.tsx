@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +17,7 @@ import { Plus, Loader2, Image, Video } from "lucide-react";
 import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { Switch } from "@/components/ui/switch";
+import { EditionSelect, useEditions } from "@/gbc/components/admin/EditionSelect";
 
 export function AddGalleryButton() {
   const [open, setOpen] = useState(false);
@@ -32,6 +26,15 @@ export function AddGalleryButton() {
   const [mediaPreview, setMediaPreview] = useState<string>("");
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">("IMAGE");
   const [visible, setVisible] = useState(true);
+  const editions = useEditions(open);
+  const [edition, setEdition] = useState("");
+
+  // Preselect the active edition (else the newest) as its own step, after the
+  // list has rendered — see the Radix note on EditionSelect.
+  useEffect(() => {
+    if (editions.length === 0 || edition) return;
+    setEdition(editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key);
+  }, [editions, edition]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -66,6 +69,11 @@ export function AddGalleryButton() {
         return;
       }
 
+      if (!edition) {
+        toast.error("Please select an edition");
+        return;
+      }
+
       const uploadResult = await gbcApi.uploads.file("gallery-media", mediaFile);
 
       if (!uploadResult.success || !uploadResult.data) {
@@ -81,7 +89,7 @@ export function AddGalleryButton() {
         mediaS3Key: uploadResult.data.key,
         thumbnailUrl: uploadResult.data.thumbnailUrl,
         thumbnailS3Key: uploadResult.data.thumbnailKey,
-        year: parseInt(formData.get("year") as string),
+        edition,
         order: parseInt(formData.get("order") as string) || 0,
         visible,
       });
@@ -197,21 +205,15 @@ export function AddGalleryButton() {
             />
           </div>
 
-          {/* Year */}
+          {/* Edition */}
           <div>
-            <Label htmlFor="year">Year *</Label>
-            <Select name="year" required disabled={isSubmitting}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Edition *</Label>
+            <EditionSelect
+              editions={editions}
+              value={edition}
+              onChange={setEdition}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Order */}

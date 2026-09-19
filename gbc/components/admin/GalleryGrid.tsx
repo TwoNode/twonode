@@ -18,30 +18,30 @@ import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { GalleryItem, GBCMediaType } from "@/gbc/types/gallery";
 import { EditGalleryModal } from "./EditGalleryModal";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface GalleryGridProps {
   items: GalleryItem[];
+  editions: GBCEdition[];
 }
 
-export function GalleryGrid({ items }: GalleryGridProps) {
+export function GalleryGrid({ items, editions }: GalleryGridProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Group by year
-  const itemsByYear = items.reduce<Record<number, GalleryItem[]>>(
-    (acc, item) => {
-      if (!acc[item.year]) {
-        acc[item.year] = [];
-      }
-      acc[item.year].push(item);
-      return acc;
-    },
-    {}
-  );
-
-  const years = Object.keys(itemsByYear)
-    .map(Number)
-    .sort((a, b) => b - a); // Sort years in descending order
+  // Group by edition, in the order the server sent them (newest edition
+  // first) — that also covers items whose edition is no longer in `editions`
+  // (a soft-deleted one) without needing a separate sort.
+  const groups: { key: string; items: GalleryItem[] }[] = [];
+  for (const item of items) {
+    let group = groups.find((g) => g.key === item.edition);
+    if (!group) {
+      group = { key: item.edition, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+  const editionName = (key: string) => editions.find((e) => e.key === key)?.name ?? `Edition ${key}`;
 
   async function handleDelete(id: string) {
     setIsDeleting(true);
@@ -76,11 +76,11 @@ export function GalleryGrid({ items }: GalleryGridProps) {
 
   return (
     <div className="space-y-12">
-      {years.map((year) => (
-        <div key={year} className="space-y-4">
-          <h2 className="text-2xl font-bold">{year}</h2>
+      {groups.map((group) => (
+        <div key={group.key} className="space-y-4">
+          <h2 className="text-2xl font-bold">{editionName(group.key)}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {itemsByYear[year].map((item) => (
+            {group.items.map((item) => (
               <GalleryItemCard
                 key={item.id}
                 item={item}
