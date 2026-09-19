@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Speaker } from "@/gbc/types/speaker";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface EditSpeakerModalProps {
   speaker: Speaker;
@@ -34,6 +35,15 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(speaker.photo);
+  const [editions, setEditions] = useState<GBCEdition[]>([]);
+  const [selectedEdition, setSelectedEdition] = useState(speaker.edition);
+
+  useEffect(() => {
+    if (!open || editions.length > 0) return;
+    gbcApi.editions.list().then((res) => {
+      if (res.success) setEditions(res.data);
+    });
+  }, [open, editions.length]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -84,6 +94,7 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
         order: parseInt(formData.get("order") as string) || 0,
         visible: formData.get("visible") === "true",
         featured: formData.get("featured") === "true",
+        edition: selectedEdition || undefined,
       });
 
       if (result.success) {
@@ -199,6 +210,33 @@ export function EditSpeakerModal({ speaker }: EditSpeakerModalProps) {
                 <SelectItem value="KEYNOTE">Keynote Speaker</SelectItem>
                 <SelectItem value="PANELIST">Panelist</SelectItem>
                 <SelectItem value="FIRESIDE_CHAT">Fireside Chat</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Edition */}
+          <div>
+            <Label htmlFor="edition">Edition *</Label>
+            <Select
+              value={selectedEdition}
+              onValueChange={(v) => v && setSelectedEdition(v)}
+              disabled={isSubmitting || editions.length === 0}
+            >
+              <SelectTrigger>
+                {/* A plain span instead of SelectValue's children override —
+                    passing children to SelectValue throws a ref/portal
+                    conflict in the installed Radix version. Select still
+                    holds the value; this only controls display. */}
+                <span>
+                  {editions.find((e) => e.key === selectedEdition)?.name ?? selectedEdition}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {editions.map((edition) => (
+                  <SelectItem key={edition.key} value={edition.key}>
+                    {edition.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

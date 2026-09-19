@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/gbc/utils/auth";
 import { getAllSponsors } from "@/gbc/services/cmsService";
+import { getEditions } from "@/gbc/services/editionService";
 import { AddSponsorButton } from "@/gbc/components/admin/AddSponsorButton";
 import { SponsorsManager } from "@/gbc/components/admin/SponsorsManager";
 import { Card } from "@/components/ui/card";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSponsorsPage() {
   await requireAdmin();
 
-  const sponsors = await getAllSponsors();
+  const [sponsors, editions] = await Promise.all([getAllSponsors(), getEditions()]);
 
   return (
     <div className="space-y-6">
@@ -57,7 +58,7 @@ export default async function AdminSponsorsPage() {
         </Card>
       ) : (
         <Card className="p-6">
-          <SponsorsManager initialSponsors={sponsors} />
+          <SponsorsManager initialSponsors={sponsors} editions={editions} />
         </Card>
       )}
     </div>

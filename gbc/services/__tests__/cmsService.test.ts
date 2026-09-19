@@ -13,6 +13,7 @@ const mockPrisma = vi.hoisted(() => ({
   gBCSponsor: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   gBCPartner: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   gBCSpeaker: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  gBCEdition: { findFirst: vi.fn() },
 }));
 
 const mockAwsS3 = vi.hoisted(() => ({
@@ -27,6 +28,14 @@ vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/gbc/utils/aws-s3", () => mockAwsS3);
 
 const {
+  getSpeakers,
+  getAllSpeakers,
+  getSponsors,
+  getAllSponsors,
+  getPartners,
+  createSpeaker,
+  createSponsor,
+  createPartner,
   deleteGalleryItem,
   updateSponsor,
   deleteSpeaker,
@@ -39,6 +48,7 @@ const {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
 });
 
 describe("deleteGalleryItem", () => {
@@ -142,5 +152,87 @@ describe("getUploadLimits", () => {
   it("returns the four upload categories", () => {
     const limits = getUploadLimits();
     expect(Object.keys(limits)).toEqual(["logo", "photo", "image", "video"]);
+  });
+});
+
+const activeEditionRow = {
+  key: "3.0",
+  name: "GBC 3.0",
+  theme: "T",
+  subTheme: "S",
+  venue: "V",
+  startDate: new Date("2027-04-30"),
+  endDate: new Date("2027-04-30"),
+  status: "ACTIVE",
+  ticketPrefix: "GBC3",
+};
+
+describe("edition scoping — public lists", () => {
+  const cases = [
+    ["getSpeakers", getSpeakers, mockPrisma.gBCSpeaker],
+    ["getSponsors", getSponsors, mockPrisma.gBCSponsor],
+    ["getPartners", getPartners, mockPrisma.gBCPartner],
+  ] as const;
+
+  it.each(cases)("%s defaults to the active edition when none is given", async (_name, fn, model) => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    await fn();
+    expect(model.findMany.mock.calls[0][0].where).toEqual({ visible: true, edition: "3.0" });
+  });
+
+  it.each(cases)("%s uses an explicit edition and never looks up the active one", async (_name, fn, model) => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    await fn("1.0");
+    expect(model.findMany.mock.calls[0][0].where).toEqual({ visible: true, edition: "1.0" });
+    expect(mockPrisma.gBCEdition.findFirst).not.toHaveBeenCalled();
+  });
+
+  it.each(cases)("%s applies no edition filter when nothing is active (site must not go blank)", async (_name, fn, model) => {
+    await fn();
+    expect(model.findMany.mock.calls[0][0].where).toEqual({ visible: true });
+  });
+});
+
+describe("edition scoping — admin lists", () => {
+  const cases = [
+    ["getAllSpeakers", getAllSpeakers, mockPrisma.gBCSpeaker],
+    ["getAllSponsors", getAllSponsors, mockPrisma.gBCSponsor],
+  ] as const;
+
+  it.each(cases)("%s returns every edition by default, even when one is active", async (_name, fn, model) => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    await fn();
+    expect(model.findMany.mock.calls[0][0].where).toEqual({});
+    expect(mockPrisma.gBCEdition.findFirst).not.toHaveBeenCalled();
+  });
+
+  it.each(cases)("%s filters to one edition when asked", async (_name, fn, model) => {
+    await fn("2.0");
+    expect(model.findMany.mock.calls[0][0].where).toEqual({ edition: "2.0" });
+  });
+});
+
+describe("edition scoping — creates", () => {
+  const cases = [
+    ["createSpeaker", createSpeaker, mockPrisma.gBCSpeaker],
+    ["createSponsor", createSponsor, mockPrisma.gBCSponsor],
+    ["createPartner", createPartner, mockPrisma.gBCPartner],
+  ] as const;
+
+  it.each(cases)("%s defaults a new row to the active edition", async (_name, fn, model) => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    await fn({ name: "X" } as never);
+    expect(model.create.mock.calls[0][0].data).toEqual({ name: "X", edition: "3.0" });
+  });
+
+  it.each(cases)("%s keeps an explicitly chosen edition", async (_name, fn, model) => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(activeEditionRow);
+    await fn({ name: "X", edition: "1.0" } as never);
+    expect(model.create.mock.calls[0][0].data).toEqual({ name: "X", edition: "1.0" });
+  });
+
+  it.each(cases)("%s leaves edition unset when none is chosen or active (DB default applies)", async (_name, fn, model) => {
+    await fn({ name: "X" } as never);
+    expect(model.create.mock.calls[0][0].data).toEqual({ name: "X" });
   });
 });

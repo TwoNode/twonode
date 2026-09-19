@@ -1,11 +1,15 @@
 import { getTickets } from "@/gbc/services/ticketService";
+import { getEditions } from "@/gbc/services/editionService";
 import CertificatesClient from "./CertificatesClient";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
 export default async function AdminCertificatesPage() {
-  const tickets = await getTickets({ status: "COMPLETED" });
+  const [tickets, editions] = await Promise.all([
+    getTickets({ status: "COMPLETED" }),
+    getEditions(),
+  ]);
 
   return (
     <div>
@@ -14,7 +18,7 @@ export default async function AdminCertificatesPage() {
         Manage and send attendance certificates
       </p>
 
-      <CertificatesClient initialTickets={tickets} />
+      <CertificatesClient initialTickets={tickets} editions={editions} />
     </div>
   );
 }

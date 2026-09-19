@@ -7,8 +7,9 @@ import { getAllSponsors, createSponsor } from "@/gbc/services/cmsService";
 import { Platform, GBCRole } from "@/utils/platform";
 
 export const GET = withAuth<GBCRole>(
-  async () => {
-    const data = await getAllSponsors();
+  async (req) => {
+    const edition = req.nextUrl.searchParams.get("edition") ?? undefined;
+    const data = await getAllSponsors(edition);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

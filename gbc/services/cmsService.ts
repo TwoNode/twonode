@@ -8,6 +8,16 @@ import {
   uploadSpeakerPhoto,
   uploadGalleryMedia as uploadGalleryMediaToS3,
 } from "@/gbc/utils/aws-s3";
+import { getActiveEdition } from "@/gbc/services/editionService";
+
+/** Resolves a caller-supplied edition key, falling back to the currently
+ * active edition, and finally to undefined (no filter / DB default) if
+ * neither is set — e.g. before any edition has been activated yet. */
+async function resolveEdition(edition?: string): Promise<string | undefined> {
+  if (edition) return edition;
+  const active = await getActiveEdition();
+  return active?.key;
+}
 
 /**
  * Migrated from gallery-actions.ts + sponsor-actions.ts + speaker-actions.ts
@@ -51,18 +61,29 @@ export async function deleteGalleryItem(id: string) {
 
 // ============ SPONSORS ============
 
-export async function getSponsors() {
-  return prisma.gBCSponsor.findMany({ where: { visible: true }, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
+/** Public-facing — defaults to the active edition when none is given, so the
+ * live site only ever shows the current event's sponsors by default. */
+export async function getSponsors(edition?: string) {
+  const resolvedEdition = await resolveEdition(edition);
+  const where: Prisma.GBCSponsorWhereInput = { visible: true };
+  if (resolvedEdition) where.edition = resolvedEdition;
+  return prisma.gBCSponsor.findMany({ where, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
 }
 
-export async function getAllSponsors() {
-  return prisma.gBCSponsor.findMany({ orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
+/** Admin-facing — includes hidden rows; no active-edition default, since an
+ * admin browsing "all sponsors" should see every edition unless they
+ * explicitly filter down via the edition selector. */
+export async function getAllSponsors(edition?: string) {
+  const where: Prisma.GBCSponsorWhereInput = {};
+  if (edition) where.edition = edition;
+  return prisma.gBCSponsor.findMany({ where, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
 }
 
-export type SponsorInput = Omit<Prisma.GBCSponsorCreateInput, "id" | "createdAt" | "updatedAt">;
+export type SponsorInput = Omit<Prisma.GBCSponsorUncheckedCreateInput, "id" | "createdAt" | "updatedAt">;
 
 export async function createSponsor(data: SponsorInput) {
-  return prisma.gBCSponsor.create({ data });
+  const edition = await resolveEdition((data as { edition?: string }).edition);
+  return prisma.gBCSponsor.create({ data: edition ? { ...data, edition } : data });
 }
 
 /** If a new logo was uploaded (newLogoS3Key set), the old S3 object is deleted after the DB write succeeds. */
@@ -86,14 +107,18 @@ export async function deleteSponsor(id: string) {
 // No admin-list/update routes exist in the source — not invented here either;
 // partner management works off the same public-visible list, create+delete only.
 
-export async function getPartners() {
-  return prisma.gBCPartner.findMany({ where: { visible: true }, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
+export async function getPartners(edition?: string) {
+  const resolvedEdition = await resolveEdition(edition);
+  const where: Prisma.GBCPartnerWhereInput = { visible: true };
+  if (resolvedEdition) where.edition = resolvedEdition;
+  return prisma.gBCPartner.findMany({ where, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
 }
 
-export type PartnerInput = Omit<Prisma.GBCPartnerCreateInput, "id" | "createdAt" | "updatedAt">;
+export type PartnerInput = Omit<Prisma.GBCPartnerUncheckedCreateInput, "id" | "createdAt" | "updatedAt">;
 
 export async function createPartner(data: PartnerInput) {
-  return prisma.gBCPartner.create({ data });
+  const edition = await resolveEdition((data as { edition?: string }).edition);
+  return prisma.gBCPartner.create({ data: edition ? { ...data, edition } : data });
 }
 
 export async function deletePartner(id: string) {
@@ -102,18 +127,29 @@ export async function deletePartner(id: string) {
 
 // ============ SPEAKERS ============
 
-export async function getSpeakers() {
-  return prisma.gBCSpeaker.findMany({ where: { visible: true }, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
+/** Public-facing — defaults to the active edition when none is given, so the
+ * live site only ever shows the current event's speakers by default. */
+export async function getSpeakers(edition?: string) {
+  const resolvedEdition = await resolveEdition(edition);
+  const where: Prisma.GBCSpeakerWhereInput = { visible: true };
+  if (resolvedEdition) where.edition = resolvedEdition;
+  return prisma.gBCSpeaker.findMany({ where, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
 }
 
-export async function getAllSpeakers() {
-  return prisma.gBCSpeaker.findMany({ orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
+/** Admin-facing — includes hidden rows; no active-edition default, since an
+ * admin browsing "all speakers" should see every edition unless they
+ * explicitly filter down via the edition selector. */
+export async function getAllSpeakers(edition?: string) {
+  const where: Prisma.GBCSpeakerWhereInput = {};
+  if (edition) where.edition = edition;
+  return prisma.gBCSpeaker.findMany({ where, orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
 }
 
-export type SpeakerInput = Omit<Prisma.GBCSpeakerCreateInput, "id" | "createdAt" | "updatedAt">;
+export type SpeakerInput = Omit<Prisma.GBCSpeakerUncheckedCreateInput, "id" | "createdAt" | "updatedAt">;
 
 export async function createSpeaker(data: SpeakerInput) {
-  return prisma.gBCSpeaker.create({ data });
+  const edition = await resolveEdition((data as { edition?: string }).edition);
+  return prisma.gBCSpeaker.create({ data: edition ? { ...data, edition } : data });
 }
 
 export async function updateSpeaker(id: string, data: SpeakerInput) {

@@ -12,22 +12,26 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { Sponsor } from "@/gbc/types/sponsor";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface SponsorsManagerProps {
   initialSponsors: Sponsor[];
+  editions: GBCEdition[];
 }
 
-export function SponsorsManager({ initialSponsors }: SponsorsManagerProps) {
+export function SponsorsManager({ initialSponsors, editions }: SponsorsManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
+  const [selectedEdition, setSelectedEdition] = useState("ALL");
 
   const filteredSponsors = initialSponsors.filter((sponsor) => {
     const matchesSearch = sponsor.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesTier = selectedTier === "ALL" || sponsor.tier === selectedTier;
+    const matchesEdition = selectedEdition === "ALL" || sponsor.edition === selectedEdition;
 
-    return matchesSearch && matchesTier;
+    return matchesSearch && matchesTier && matchesEdition;
   });
 
   return (
@@ -60,6 +64,19 @@ export function SponsorsManager({ initialSponsors }: SponsorsManagerProps) {
               <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
               <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
               <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedEdition} onValueChange={setSelectedEdition}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by edition" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Editions</SelectItem>
+              {editions.map((edition) => (
+                <SelectItem key={edition.key} value={edition.key}>
+                  {edition.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

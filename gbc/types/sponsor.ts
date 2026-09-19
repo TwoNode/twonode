@@ -8,6 +8,7 @@ export interface Sponsor {
   website?: string | null;
   order: number;
   visible: boolean;
+  edition: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -172,6 +172,8 @@ export type SpeakerInput = {
   order?: number;
   visible?: boolean;
   featured?: boolean;
+  /** GBCEdition key this speaker belongs to — omitted, defaults to the active edition. */
+  edition?: string;
 };
 
 export type SponsorInput = {
@@ -183,6 +185,8 @@ export type SponsorInput = {
   website?: string;
   order?: number;
   visible?: boolean;
+  /** GBCEdition key this sponsor belongs to — omitted, defaults to the active edition. */
+  edition?: string;
 };
 
 export type Partner = {
@@ -194,6 +198,7 @@ export type Partner = {
   website?: string | null;
   order: number;
   visible: boolean;
+  edition: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -368,9 +373,11 @@ export const gbcApi = {
   },
 
   speakers: {
-    list: () => jsonFetch<Speaker[]>(`${BASE}/speakers`),
+    list: (edition?: string) =>
+      jsonFetch<Speaker[]>(`${BASE}/speakers${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
 
-    listAll: () => jsonFetch<Speaker[]>(`${BASE}/admin/speakers`),
+    listAll: (edition?: string) =>
+      jsonFetch<Speaker[]>(`${BASE}/admin/speakers${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
 
     create: (input: SpeakerInput) =>
       jsonFetch<Speaker>(`${BASE}/admin/speakers`, { method: "POST", body: JSON.stringify(input) }),
@@ -386,9 +393,11 @@ export const gbcApi = {
   },
 
   sponsors: {
-    list: () => jsonFetch<Sponsor[]>(`${BASE}/sponsors`),
+    list: (edition?: string) =>
+      jsonFetch<Sponsor[]>(`${BASE}/sponsors${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
 
-    listAll: () => jsonFetch<Sponsor[]>(`${BASE}/admin/sponsors`),
+    listAll: (edition?: string) =>
+      jsonFetch<Sponsor[]>(`${BASE}/admin/sponsors${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
 
     create: (input: SponsorInput) =>
       jsonFetch<Sponsor>(`${BASE}/admin/sponsors`, { method: "POST", body: JSON.stringify(input) }),
@@ -406,7 +415,8 @@ export const gbcApi = {
   },
 
   partners: {
-    list: () => jsonFetch<Partner[]>(`${BASE}/partners`),
+    list: (edition?: string) =>
+      jsonFetch<Partner[]>(`${BASE}/partners${edition ? `?edition=${encodeURIComponent(edition)}` : ""}`),
   },
 
   settings: {
