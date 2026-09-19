@@ -6,12 +6,20 @@ import { CheckCircle, Clock, Mail, CheckSquare, Square, Loader2 } from "lucide-r
 import { gbcApi } from "@/gbc/apiClient";
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui/pagination";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 const PAGE_SIZE = 10;
 
-export default function CertificatesClient({ initialTickets }: { initialTickets: any[] }) {
+export default function CertificatesClient({
+  initialTickets,
+  editions,
+}: {
+  initialTickets: any[];
+  editions: GBCEdition[];
+}) {
   const [tickets, setTickets] = useState(initialTickets || []);
   const [filter, setFilter] = useState<"ALL" | "CHECKED_IN" | "PENDING">("CHECKED_IN");
+  const [editionFilter, setEditionFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [emailBody, setEmailBody] = useState(
@@ -23,7 +31,12 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
   // A filter/search change invalidates whatever page was showing.
   useEffect(() => {
     setPage(1);
-  }, [filter, search]);
+  }, [filter, editionFilter, search]);
+
+  // The stat cards are scoped by edition only — not by the check-in/search
+  // filters below, which was already how they behaved.
+  const editionTickets =
+    editionFilter === "ALL" ? tickets : tickets.filter((t: any) => t.edition === editionFilter);
 
   const filteredTickets = tickets.filter((t: any) => {
     const matchesFilter =
@@ -31,12 +44,14 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
       filter === "CHECKED_IN" ? t.checkedIn === true :
       t.checkedIn === false;
 
+    const matchesEdition = editionFilter === "ALL" || t.edition === editionFilter;
+
     const matchesSearch =
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.email.toLowerCase().includes(search.toLowerCase()) ||
       t.ticketNumber.toLowerCase().includes(search.toLowerCase());
 
-    return matchesFilter && matchesSearch;
+    return matchesFilter && matchesEdition && matchesSearch;
   });
 
   // "Select All" operates on every filtered ticket, not just the rendered
@@ -139,12 +154,12 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
              <CheckCircle className="w-8 h-8 text-green-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{tickets.filter((t: any) => t.checkedIn).length}</p>
+             <p className="text-2xl font-bold text-gray-900">{editionTickets.filter((t: any) => t.checkedIn).length}</p>
              <p className="text-sm text-gray-500">Checked In</p>
           </Card>
           <Card className="p-4 flex flex-col justify-center items-center text-center bg-gray-50">
              <Mail className="w-8 h-8 text-blue-600 mb-2" />
-             <p className="text-2xl font-bold text-gray-900">{tickets.filter((t: any) => t.certificateSentCount > 0).length}</p>
+             <p className="text-2xl font-bold text-gray-900">{editionTickets.filter((t: any) => t.certificateSentCount > 0).length}</p>
              <p className="text-sm text-gray-500">Certificates Sent</p>
           </Card>
         </div>
@@ -154,7 +169,7 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h2 className="text-lg sm:text-xl font-bold">Select Attendees</h2>
           <div className="flex flex-col sm:flex-row gap-3">
-            <select 
+            <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
               className="px-3 py-2 border rounded-lg text-sm"
@@ -162,6 +177,18 @@ export default function CertificatesClient({ initialTickets }: { initialTickets:
               <option value="ALL">All Tickets</option>
               <option value="CHECKED_IN">Checked In Only</option>
               <option value="PENDING">Pending Check-in</option>
+            </select>
+            <select
+              value={editionFilter}
+              onChange={(e) => setEditionFilter(e.target.value)}
+              className="px-3 py-2 border rounded-lg text-sm"
+            >
+              <option value="ALL">All Editions</option>
+              {editions.map((edition) => (
+                <option key={edition.key} value={edition.key}>
+                  {edition.name}
+                </option>
+              ))}
             </select>
             <input
               type="text"

@@ -4,7 +4,8 @@ import { getPartners } from "@/gbc/services/cmsService";
 
 export async function GET(req: NextRequest) {
   try {
-    const data = await getPartners();
+    const edition = req.nextUrl.searchParams.get("edition") ?? undefined;
+    const data = await getPartners(edition);
     return NextResponse.json({ success: true, data });
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });

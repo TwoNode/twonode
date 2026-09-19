@@ -86,6 +86,9 @@ export const sponsorSchema = z.object({
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),
+  // Which GBCEdition this sponsor belongs to — omitted, cmsService resolves
+  // it to the currently active edition.
+  edition: z.string().optional(),
 });
 
 export type SponsorInput = z.infer<typeof sponsorSchema>;
@@ -99,6 +102,7 @@ export const partnerSchema = z.object({
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),
+  edition: z.string().optional(),
 });
 
 export type PartnerInput = z.infer<typeof partnerSchema>;
@@ -137,6 +141,7 @@ export const speakerSchema = z.object({
   order: z.number().int().min(0).default(0),
   visible: z.boolean().default(true),
   featured: z.boolean().default(false),
+  edition: z.string().optional(),
 });
 
 export type SpeakerInput = z.infer<typeof speakerSchema>;

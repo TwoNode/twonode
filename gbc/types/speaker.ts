@@ -12,6 +12,7 @@ export interface Speaker {
   order: number;
   visible: boolean;
   featured: boolean;
+  edition: string;
   createdAt: Date;
   updatedAt: Date;
 }

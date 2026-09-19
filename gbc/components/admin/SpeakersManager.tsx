@@ -12,22 +12,26 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { Speaker } from "@/gbc/types/speaker";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface SpeakersManagerProps {
   initialSpeakers: Speaker[];
+  editions: GBCEdition[];
 }
 
-export function SpeakersManager({ initialSpeakers }: SpeakersManagerProps) {
+export function SpeakersManager({ initialSpeakers, editions }: SpeakersManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
+  const [selectedEdition, setSelectedEdition] = useState("ALL");
 
   const filteredSpeakers = initialSpeakers.filter((speaker) => {
     const matchesSearch = speaker.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesTier = selectedTier === "ALL" || speaker.tier === selectedTier;
+    const matchesEdition = selectedEdition === "ALL" || speaker.edition === selectedEdition;
 
-    return matchesSearch && matchesTier;
+    return matchesSearch && matchesTier && matchesEdition;
   });
 
   return (
@@ -60,6 +64,19 @@ export function SpeakersManager({ initialSpeakers }: SpeakersManagerProps) {
               <SelectItem value="KEYNOTE">Keynote</SelectItem>
               <SelectItem value="PANELIST">Panelist</SelectItem>
               <SelectItem value="FIRESIDE_CHAT">Fireside Chat</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedEdition} onValueChange={setSelectedEdition}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by edition" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Editions</SelectItem>
+              {editions.map((edition) => (
+                <SelectItem key={edition.key} value={edition.key}>
+                  {edition.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

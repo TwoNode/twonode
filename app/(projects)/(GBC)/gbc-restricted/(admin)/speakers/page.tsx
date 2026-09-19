@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/gbc/utils/auth";
 import { getAllSpeakers } from "@/gbc/services/cmsService";
+import { getEditions } from "@/gbc/services/editionService";
 import { AddSpeakerButton } from "@/gbc/components/admin/AddSpeakerButton";
 import { SpeakersManager } from "@/gbc/components/admin/SpeakersManager";
 import { Card } from "@/components/ui/card";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSpeakersPage() {
   await requireAdmin();
 
-  const speakers = await getAllSpeakers();
+  const [speakers, editions] = await Promise.all([getAllSpeakers(), getEditions()]);
 
   return (
     <div className="space-y-6">
@@ -57,7 +58,7 @@ export default async function AdminSpeakersPage() {
         </Card>
       ) : (
         <Card className="p-6">
-          <SpeakersManager initialSpeakers={speakers} />
+          <SpeakersManager initialSpeakers={speakers} editions={editions} />
         </Card>
       )}
     </div>

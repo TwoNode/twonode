@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,31 @@ import {
 import { gbcApi } from "@/gbc/apiClient";
 import { Plus, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 export function AddSponsorButton() {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [editions, setEditions] = useState<GBCEdition[]>([]);
+  const [defaultEdition, setDefaultEdition] = useState<string>("");
+
+  useEffect(() => {
+    if (!open || editions.length > 0) return;
+    gbcApi.editions.list().then((res) => {
+      if (res.success) setEditions(res.data);
+    });
+  }, [open, editions.length]);
+
+  // Preselect the active edition as its own step, after the list has
+  // rendered. Setting it in the same batch as the list makes Radix's hidden
+  // native <select> sync the value before its <option>s exist, which reads
+  // back as "" and clears the selection.
+  useEffect(() => {
+    if (editions.length === 0 || defaultEdition) return;
+    setDefaultEdition(editions.find((e) => e.status === "ACTIVE")?.key ?? editions[0].key);
+  }, [editions, defaultEdition]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -74,6 +93,7 @@ export function AddSponsorButton() {
         // here to avoid silently changing live behavior; see the sibling
         // bug already flagged on AddSpeakerButton (Phase 5 step 5).
         visible: formData.get("visible") === "true",
+        edition: defaultEdition || undefined,
       });
 
       if (result.success) {
@@ -102,7 +122,7 @@ export function AddSponsorButton() {
         <DialogHeader>
           <DialogTitle>Add New Sponsor</DialogTitle>
           <DialogDescription>
-            Add a new sponsor or partner for GBC 2.0
+            Add a new sponsor or partner to an edition
           </DialogDescription>
         </DialogHeader>
 
@@ -174,6 +194,33 @@ export function AddSponsorButton() {
                 <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
                 <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
                 <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Edition */}
+          <div>
+            <Label htmlFor="edition">Edition *</Label>
+            <Select
+              value={defaultEdition}
+              onValueChange={(v) => v && setDefaultEdition(v)}
+              disabled={isSubmitting || editions.length === 0}
+            >
+              <SelectTrigger>
+                {/* A plain span instead of SelectValue's children override —
+                    passing children to SelectValue throws a ref/portal
+                    conflict in the installed Radix version. Select still
+                    holds the value; this only controls display. */}
+                <span className={defaultEdition ? "" : "text-slate-500 dark:text-slate-400"}>
+                  {editions.find((e) => e.key === defaultEdition)?.name ?? "Select edition"}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {editions.map((edition) => (
+                  <SelectItem key={edition.key} value={edition.key}>
+                    {edition.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

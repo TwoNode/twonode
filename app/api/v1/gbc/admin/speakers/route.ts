@@ -7,8 +7,9 @@ import { getAllSpeakers, createSpeaker } from "@/gbc/services/cmsService";
 import { Platform, GBCRole } from "@/utils/platform";
 
 export const GET = withAuth<GBCRole>(
-  async () => {
-    const data = await getAllSpeakers();
+  async (req) => {
+    const edition = req.nextUrl.searchParams.get("edition") ?? undefined;
+    const data = await getAllSpeakers(edition);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }
