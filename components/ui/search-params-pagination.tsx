@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Pagination } from "@/components/ui/pagination";
+import { useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 
 /** For server-searchParams-driven pages (no client list state) — pushes a new URL instead of calling setState, which re-runs the server component with fresh data. */
 export function SearchParamsPagination({
@@ -13,23 +13,15 @@ export function SearchParamsPagination({
   totalPages: number;
   pageSize: number;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const pushWith = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) params.set(key, value);
-    router.push(`${pathname}?${params.toString()}`);
-  };
+  const { update } = useSearchParamsUpdater();
 
   return (
     <Pagination
       page={page}
       totalPages={totalPages}
-      onPageChange={(p) => pushWith({ page: String(p) })}
+      onPageChange={(p) => update({ page: String(p) })}
       pageSize={pageSize}
-      onPageSizeChange={(size) => pushWith({ page: "1", pageSize: String(size) })}
+      onPageSizeChange={(size) => update({ page: "1", pageSize: String(size) })}
     />
   );
 }

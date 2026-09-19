@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  gBCGallery: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  gBCGallery: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), count: vi.fn() },
   gBCSponsor: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   gBCPartner: { findMany: vi.fn(), create: vi.fn(), delete: vi.fn() },
   gBCSpeaker: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
@@ -37,6 +37,7 @@ const {
   createSponsor,
   createPartner,
   deleteGalleryItem,
+  getGalleryItemsPaginated,
   updateSponsor,
   deleteSpeaker,
   uploadSponsorLogo,
@@ -234,5 +235,62 @@ describe("edition scoping — creates", () => {
   it.each(cases)("%s leaves edition unset when none is chosen or active (DB default applies)", async (_name, fn, model) => {
     await fn({ name: "X" } as never);
     expect(model.create.mock.calls[0][0].data).toEqual({ name: "X" });
+  });
+});
+
+describe("getGalleryItemsPaginated", () => {
+  it("defaults to display order, year first, with an id tie-breaker for stable pages", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+    mockPrisma.gBCGallery.count.mockResolvedValue(0);
+
+    await getGalleryItemsPaginated({ page: 1, pageSize: 20 });
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith({
+      where: {},
+      orderBy: [{ year: "desc" }, { order: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+      skip: 0,
+      take: 20,
+    });
+  });
+
+  it("filters by media type and searches title and description case-insensitively", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+    mockPrisma.gBCGallery.count.mockResolvedValue(0);
+
+    await getGalleryItemsPaginated({ page: 1, pageSize: 20, mediaType: "VIDEO", search: "keynote" });
+
+    const where = {
+      mediaType: "VIDEO",
+      OR: [
+        { title: { contains: "keynote", mode: "insensitive" } },
+        { description: { contains: "keynote", mode: "insensitive" } },
+      ],
+    };
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(expect.objectContaining({ where }));
+    expect(mockPrisma.gBCGallery.count).toHaveBeenCalledWith({ where });
+  });
+
+  it.each([
+    ["newest", [{ year: "desc" }, { createdAt: "desc" }, { id: "asc" }]],
+    ["oldest", [{ year: "desc" }, { createdAt: "asc" }, { id: "asc" }]],
+    ["name-asc", [{ year: "desc" }, { title: "asc" }, { id: "asc" }]],
+    ["name-desc", [{ year: "desc" }, { title: "desc" }, { id: "asc" }]],
+  ] as const)("keeps year as the primary key when sorting by %s", async (sort, orderBy) => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([]);
+    mockPrisma.gBCGallery.count.mockResolvedValue(0);
+
+    await getGalleryItemsPaginated({ page: 1, pageSize: 20, sort });
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy }));
+  });
+
+  it("pages with skip/take and reports the total matching count", async () => {
+    mockPrisma.gBCGallery.findMany.mockResolvedValue([{ id: "g1" }]);
+    mockPrisma.gBCGallery.count.mockResolvedValue(53);
+
+    const result = await getGalleryItemsPaginated({ page: 2, pageSize: 20 });
+
+    expect(mockPrisma.gBCGallery.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 20, take: 20 }));
+    expect(result.pagination).toEqual({ page: 2, pageSize: 20, total: 53, totalPages: 3 });
   });
 });

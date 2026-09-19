@@ -15,3 +15,9 @@ export interface GalleryItem {
 }
 
 export type GBCMediaType = 'IMAGE' | 'VIDEO';
+
+export const GALLERY_TYPE_FILTERS = ["all", "photos", "videos"] as const;
+export type GalleryTypeFilter = (typeof GALLERY_TYPE_FILTERS)[number];
+
+export const GALLERY_SORTS = ["order", "newest", "oldest", "name-asc", "name-desc"] as const;
+export type GallerySort = (typeof GALLERY_SORTS)[number];

@@ -1,15 +1,34 @@
-import { getTickets } from "@/gbc/services/ticketService";
+import { getAttendeeStats, getTicketsPaginated } from "@/gbc/services/ticketService";
+import { getEditions } from "@/gbc/services/editionService";
 import { Card } from "@/components/ui/card";
 import { Users, CheckCircle, Clock } from "lucide-react";
+import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
+import { TicketListFilters } from "@/gbc/components/admin/TicketListFilters";
+import { parseTicketListParams, toTicketFilters } from "@/gbc/utils/ticketListParams";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-export default async function AdminAttendeesPage() {
-  const tickets = await getTickets({ status: "COMPLETED" });
+export default async function AdminAttendeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = parseTicketListParams(await searchParams, { checkedIn: "all" });
+  const filters = toTicketFilters(params);
 
-  const checkedIn = tickets?.filter((t) => t.checkedIn).length || 0;
-  const pending = tickets?.length ? tickets.length - checkedIn : 0;
+  const [result, stats, editions] = await Promise.all([
+    getTicketsPaginated({
+      ...filters,
+      status: "COMPLETED",
+      page: params.page,
+      pageSize: params.pageSize,
+    }),
+    getAttendeeStats(filters.edition),
+    getEditions(),
+  ]);
+  const tickets = result.data;
+  const isFiltered = !!(filters.search || filters.edition || filters.checkedIn !== undefined);
 
   return (
     <div>
@@ -25,9 +44,7 @@ export default async function AdminAttendeesPage() {
               <p className="text-sm sm:text-base text-gray-600 mb-1">
                 Total Attendees
               </p>
-              <p className="text-2xl sm:text-3xl font-bold">
-                {tickets?.length || 0}
-              </p>
+              <p className="text-2xl sm:text-3xl font-bold">{stats.total}</p>
             </div>
             <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
@@ -42,7 +59,7 @@ export default async function AdminAttendeesPage() {
                 Checked In
               </p>
               <p className="text-2xl sm:text-3xl font-bold text-green-600">
-                {checkedIn}
+                {stats.checkedIn}
               </p>
             </div>
             <div className="p-2 sm:p-3 bg-green-100 rounded-full">
@@ -58,7 +75,7 @@ export default async function AdminAttendeesPage() {
                 Pending Check-in
               </p>
               <p className="text-2xl sm:text-3xl font-bold text-yellow-600">
-                {pending}
+                {stats.pending}
               </p>
             </div>
             <div className="p-2 sm:p-3 bg-yellow-100 rounded-full">
@@ -71,21 +88,18 @@ export default async function AdminAttendeesPage() {
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-2">
           <h2 className="text-lg sm:text-xl font-bold">Attendee List</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Search attendees..."
-              className="px-3 sm:px-4 py-2 border rounded-lg text-xs sm:text-sm flex-1 sm:flex-none"
-            />
-            <button className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg text-xs sm:text-sm hover:bg-purple-700 transition-colors whitespace-nowrap">
-              Export
-            </button>
-          </div>
+          <button className="px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg text-xs sm:text-sm hover:bg-purple-700 transition-colors whitespace-nowrap">
+            Export
+          </button>
+        </div>
+
+        <div className="mb-4 sm:mb-6">
+          <TicketListFilters editions={editions} checkedIn={params.checkedIn} edition={params.edition} />
         </div>
 
         <div className="space-y-2 sm:space-y-3">
-          {tickets && tickets?.length > 0 ? (
-            tickets.map((ticket: any) => (
+          {tickets.length > 0 ? (
+            tickets.map((ticket) => (
               <div
                 key={ticket.id}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors gap-2 sm:gap-0"
@@ -116,10 +130,23 @@ export default async function AdminAttendeesPage() {
             ))
           ) : (
             <div className="text-center py-8 text-gray-500">
-              No attendees found
+              {isFiltered ? "No attendees match your filters" : "No attendees found"}
             </div>
           )}
         </div>
+
+        {result.pagination.totalPages > 1 && (
+          <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-gray-600">
+              Page {result.pagination.page} of {result.pagination.totalPages} • {result.pagination.total} attendees
+            </p>
+            <SearchParamsPagination
+              page={result.pagination.page}
+              totalPages={result.pagination.totalPages}
+              pageSize={result.pagination.pageSize}
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

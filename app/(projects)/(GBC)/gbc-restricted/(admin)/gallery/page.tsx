@@ -1,17 +1,49 @@
 import { requireAdmin } from "@/gbc/utils/auth";
-import { getAllGalleryItems } from "@/gbc/services/cmsService";
+import { getGalleryItemsPaginated } from "@/gbc/services/cmsService";
 import { AddGalleryButton } from "@/gbc/components/admin/AddGalleryButton";
 import { GalleryGrid } from "@/gbc/components/admin/GalleryGrid";
 import { GalleryFilters } from "@/gbc/components/admin/GalleryFilters";
 import { Card } from "@/components/ui/card";
+import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
+import { parsePageParams } from "@/lib/api/pagination";
+import {
+  GALLERY_SORTS,
+  GALLERY_TYPE_FILTERS,
+  type GallerySort,
+  type GalleryTypeFilter,
+} from "@/gbc/types/gallery";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-export default async function AdminGalleryPage() {
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+
+export default async function AdminGalleryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdmin();
 
-  const items = await getAllGalleryItems();
+  const raw = await searchParams;
+  // 20 = five full rows of the four-column grid.
+  const { page, pageSize } = parsePageParams(
+    { page: one(raw.page), pageSize: one(raw.pageSize) },
+    { defaultPageSize: 20 }
+  );
+  const search = one(raw.search)?.trim() || undefined;
+  const type = GALLERY_TYPE_FILTERS.find((t) => t === one(raw.type)) ?? ("all" as GalleryTypeFilter);
+  const sort = GALLERY_SORTS.find((s) => s === one(raw.sort)) ?? ("order" as GallerySort);
+
+  const result = await getGalleryItemsPaginated({
+    page,
+    pageSize,
+    search,
+    mediaType: type === "photos" ? "IMAGE" : type === "videos" ? "VIDEO" : undefined,
+    sort,
+  });
+  const items = result.data;
+  const isFiltered = !!search || type !== "all";
 
   return (
     <div>
@@ -31,15 +63,41 @@ export default async function AdminGalleryPage() {
           <div>
             <h2 className="text-xl font-bold">Media Library</h2>
             <p className="text-sm text-gray-500">
-              {items.length} {items.length === 1 ? "item" : "items"} in gallery
+              {result.pagination.total} {result.pagination.total === 1 ? "item" : "items"}{" "}
+              {isFiltered
+                ? `${result.pagination.total === 1 ? "matches" : "match"} your filters`
+                : "in gallery"}
             </p>
           </div>
 
-          <GalleryFilters />
+          <GalleryFilters type={type} sort={sort} />
         </div>
 
         {items.length > 0 ? (
-          <GalleryGrid items={items} />
+          <>
+            <GalleryGrid items={items} />
+            {result.pagination.totalPages > 1 && (
+              <div className="mt-8 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-sm text-gray-600">
+                  Page {result.pagination.page} of {result.pagination.totalPages}
+                </p>
+                <SearchParamsPagination
+                  page={result.pagination.page}
+                  totalPages={result.pagination.totalPages}
+                  pageSize={result.pagination.pageSize}
+                />
+              </div>
+            )}
+          </>
+        ) : isFiltered ? (
+          <div className="text-center py-16 border-2 border-dashed rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900">
+              No items match your filters
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Try a different search term or media type.
+            </p>
+          </div>
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
             <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">

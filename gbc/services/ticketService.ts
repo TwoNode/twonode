@@ -15,7 +15,7 @@ import { calculateTicketPrice, isTicketTypeAvailable } from "@/gbc/utils";
 import type { TicketPurchaseInput } from "@/gbc/utils/validations";
 import { generateTicketReceiptPdfBuffer } from "@/gbc/services/receiptPdfService";
 import type { GBCEdition, GBCTicket } from "@/prisma/generated";
-import { paginatedResult } from "@/lib/api/pagination";
+import { paginateQuery } from "@/lib/api/pagination";
 
 /**
  * Migrated from app/(projects)/(GBC)/actions/ticket-actions.ts. Pure Prisma,
@@ -429,9 +429,16 @@ export async function getTicketStats() {
   };
 }
 
-function buildTicketWhere(filters?: { status?: string; search?: string }) {
+function buildTicketWhere(filters?: {
+  status?: string;
+  search?: string;
+  checkedIn?: boolean;
+  edition?: string;
+}) {
   const where: any = {};
   if (filters?.status) where.paymentStatus = filters.status;
+  if (filters?.checkedIn !== undefined) where.checkedIn = filters.checkedIn;
+  if (filters?.edition) where.edition = filters.edition;
   if (filters?.search) {
     where.OR = [
       { name: { contains: filters.search, mode: "insensitive" } },
@@ -456,29 +463,50 @@ export async function getTickets(filters?: { status?: string; search?: string; l
   return prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, take: filters?.limit });
 }
 
-export interface GetTicketsPaginatedParams {
-  page: number;
-  pageSize: number;
+export interface TicketListFilters {
   status?: string;
   search?: string;
+  checkedIn?: boolean;
+  edition?: string;
 }
 
-/** Paginated/searchable sibling of getTickets() — the admin Tickets Management page. */
+export interface GetTicketsPaginatedParams extends TicketListFilters {
+  page: number;
+  pageSize: number;
+}
+
+/** Paginated/searchable/filterable sibling of getTickets() — the admin Tickets, Attendees and Certificates pages. */
 export async function getTicketsPaginated(params: GetTicketsPaginatedParams) {
-  const { page, pageSize, status, search } = params;
-  const where = buildTicketWhere({ status, search });
+  const { page, pageSize, ...filters } = params;
+  const where = buildTicketWhere(filters);
 
-  const [rows, total] = await Promise.all([
-    prisma.gBCTicket.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.gBCTicket.count({ where }),
+  return paginateQuery(
+    (skip, take) => prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, skip, take }),
+    () => prisma.gBCTicket.count({ where }),
+    page,
+    pageSize
+  );
+}
+
+/** Every ticket number matching the filters — lets a "select all" span pages without shipping full rows. */
+export async function getTicketNumbers(filters: TicketListFilters): Promise<string[]> {
+  const rows = await prisma.gBCTicket.findMany({
+    where: buildTicketWhere(filters),
+    orderBy: { createdAt: "desc" },
+    select: { ticketNumber: true },
+  });
+  return rows.map((r) => r.ticketNumber);
+}
+
+/** Headline counts over COMPLETED tickets, optionally scoped to one edition — independent of any list's page/search/check-in filters. */
+export async function getAttendeeStats(edition?: string) {
+  const base = buildTicketWhere({ status: "COMPLETED", edition });
+  const [total, checkedIn, certificatesSent] = await Promise.all([
+    prisma.gBCTicket.count({ where: base }),
+    prisma.gBCTicket.count({ where: { ...base, checkedIn: true } }),
+    prisma.gBCTicket.count({ where: { ...base, certificateSentCount: { gt: 0 } } }),
   ]);
-
-  return paginatedResult(rows, total, page, pageSize);
+  return { total, checkedIn, pending: total - checkedIn, certificatesSent };
 }
 
 export async function getTicketById(id: string) {

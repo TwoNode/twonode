@@ -27,24 +27,39 @@ export interface Paginated<T> {
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
-/** Parses `?page=` and `?pageSize=` off a request's search params, clamped to sane bounds. */
-export function parsePagination(
-  searchParams: URLSearchParams,
+/**
+ * Clamps raw `page`/`pageSize` values to sane bounds. Takes plain values
+ * rather than URLSearchParams so server pages (whose `searchParams` prop is a
+ * plain object) share the exact same parsing as API routes.
+ */
+export function parsePageParams(
+  raw: { page?: string | null; pageSize?: string | null },
   opts?: { defaultPageSize?: number; maxPageSize?: number }
 ): PaginationParams {
   const defaultPageSize = opts?.defaultPageSize ?? DEFAULT_PAGE_SIZE;
   const maxPageSize = opts?.maxPageSize ?? MAX_PAGE_SIZE;
 
-  const rawPage = Number(searchParams.get("page"));
+  const rawPage = Number(raw.page);
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
-  const rawPageSize = Number(searchParams.get("pageSize"));
+  const rawPageSize = Number(raw.pageSize);
   const pageSize =
     Number.isFinite(rawPageSize) && rawPageSize > 0
       ? Math.min(Math.floor(rawPageSize), maxPageSize)
       : defaultPageSize;
 
   return { page, pageSize, skip: (page - 1) * pageSize, take: pageSize };
+}
+
+/** Parses `?page=` and `?pageSize=` off a request's search params, clamped to sane bounds. */
+export function parsePagination(
+  searchParams: URLSearchParams,
+  opts?: { defaultPageSize?: number; maxPageSize?: number }
+): PaginationParams {
+  return parsePageParams(
+    { page: searchParams.get("page"), pageSize: searchParams.get("pageSize") },
+    opts
+  );
 }
 
 /** Shapes a page of results + the total matching count into the standard envelope. */
@@ -63,4 +78,27 @@ export function paginatedResult<T>(
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
     },
   };
+}
+
+/**
+ * Runs a page fetch and its count in parallel and shapes the envelope. If the
+ * requested page is past the end while rows still exist (deleting the last
+ * item on the last page, a stale bookmarked URL), it re-fetches the real last
+ * page instead of returning an empty list beside a non-zero total.
+ */
+export async function paginateQuery<T>(
+  fetchPage: (skip: number, take: number) => Promise<T[]>,
+  count: () => Promise<number>,
+  page: number,
+  pageSize: number
+): Promise<Paginated<T>> {
+  const [rows, total] = await Promise.all([fetchPage((page - 1) * pageSize, pageSize), count()]);
+  const lastPage = Math.max(1, Math.ceil(total / pageSize));
+
+  if (rows.length === 0 && total > 0 && page > lastPage) {
+    const lastRows = await fetchPage((lastPage - 1) * pageSize, pageSize);
+    return paginatedResult(lastRows, total, lastPage, pageSize);
+  }
+
+  return paginatedResult(rows, total, page, pageSize);
 }
