@@ -15,7 +15,8 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 | `AddSponsorButton.tsx` | Button + form to add a sponsor |
 | `AdminFilter.tsx` | Generic filter bar used across admin list pages |
 | `AdminMobileNav.tsx` | Mobile navigation for the admin panel |
-| `AdminSidebar.tsx` | Admin panel sidebar navigation |
+| `AdminSidebar.tsx` | Admin panel sidebar navigation (hides superadmin-only entries such as Audit Logs unless `useGBCRole()` is SUPERADMIN) |
+| `useGBCRole.ts` | Hook returning the signed-in admin's role (null until loaded) — keeps dead links out of the UI; the proxy still enforces access |
 | `AdminUsersList.tsx` | List of admin user accounts |
 | `ConfirmToggleModal.tsx` | Confirmation modal for toggling a boolean setting/state |
 | `DashboardOverview.tsx` | Admin dashboard home — overview widgets |

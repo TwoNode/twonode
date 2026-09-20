@@ -27,6 +27,7 @@ public marketing/ticketing site (`/gbc/*`) and a separate admin panel
 | Route | File | Description |
 |---|---|---|
 | `/gbc-restricted` | `gbc-restricted/(admin)/page.tsx` | Admin dashboard home/overview |
+| `/gbc-restricted/audit-logs` | `gbc-restricted/(admin)/audit-logs/page.tsx` | Audit log viewer — who did what, superadmin only (shared `AuditLogViewer`) |
 | `/gbc-restricted/attendees` | `gbc-restricted/(admin)/attendees/page.tsx` | Attendee management |
 | `/gbc-restricted/certificates` | `gbc-restricted/(admin)/certificates/page.tsx` | Certificate management/bulk issuance |
 | `/gbc-restricted/check-in` | `gbc-restricted/(admin)/check-in/page.tsx` | Event day check-in tool |
@@ -41,6 +42,7 @@ public marketing/ticketing site (`/gbc/*`) and a separate admin panel
 | `/gbc-restricted/tickets` | `gbc-restricted/(admin)/tickets/page.tsx` | Ticket management |
 | `/gbc-restricted/users` | `gbc-restricted/(admin)/users/page.tsx` | Admin/user account management |
 | `/gbc-restricted/login` | `gbc-restricted/login/page.tsx` | Admin login |
+| `/gbc-restricted/accept-invite` | `gbc-restricted/accept-invite/page.tsx` | Accept an admin invitation — set a password from the emailed single-use link |
 | `/gbc-restricted/reset-password` | `gbc-restricted/reset-password/page.tsx` | Admin password reset |
 | `/gbc-restricted/verify-email` | `gbc-restricted/verify-email/page.tsx` | Admin email verification |
 
