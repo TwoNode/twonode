@@ -5,6 +5,16 @@ import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)
 import { paginatedResult } from "@/lib/api/pagination";
 import { activeSubscriptionWhereClause } from "@/surfboard/services/subscriptionService";
 
+/**
+ * Who is performing an admin action. The audit log's `userId` is defined as
+ * "user who performed the action", so it must always be this and never the
+ * account being changed.
+ */
+export interface AdminActor {
+  id: string;
+  role: SurfboardRole;
+}
+
 /** Matches user-management/page.tsx's admin-vs-MDA tab split. */
 const ADMIN_TAB_ROLES: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
 const MDA_TAB_ROLES: SurfboardRole[] = [
@@ -138,8 +148,8 @@ export async function getUserStats() {
   };
 }
 
-export async function updateUserRole(callerRole: SurfboardRole, userId: string, newRole: SurfboardRole) {
-  if (callerRole === "ADMIN") throw new ForbiddenError();
+export async function updateUserRole(actor: AdminActor, userId: string, newRole: SurfboardRole) {
+  if (actor.role === "ADMIN") throw new ForbiddenError();
 
   const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
   if (!targetUser) throw new NotFoundError("User");
@@ -151,21 +161,21 @@ export async function updateUserRole(callerRole: SurfboardRole, userId: string, 
   });
 
   await logAuditAction({
-    userId,
+    userId: actor.id,
     action: "UPDATE_USER_ROLE",
     entity: "SurfboardUser",
     entityId: userId,
-    changes: formatChanges({ role: targetUser.role }, { role: newRole }),
+    changes: { ...formatChanges({ role: targetUser.role }, { role: newRole }), userEmail: targetUser.email },
   });
 
   return updatedUser;
 }
 
-export async function updateUserStatus(callerRole: SurfboardRole, userId: string, isActive: boolean) {
+export async function updateUserStatus(actor: AdminActor, userId: string, isActive: boolean) {
   const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
   if (!targetUser) throw new NotFoundError("User");
 
-  if (callerRole === "ADMIN" && (targetUser.role === "ADMIN" || targetUser.role === "SUPERADMIN")) {
+  if (actor.role === "ADMIN" && (targetUser.role === "ADMIN" || targetUser.role === "SUPERADMIN")) {
     throw new ForbiddenError();
   }
 
@@ -176,7 +186,7 @@ export async function updateUserStatus(callerRole: SurfboardRole, userId: string
   });
 
   await logAuditAction({
-    userId,
+    userId: actor.id,
     action: isActive ? "ACTIVATE_USER" : "DEACTIVATE_USER",
     entity: "SurfboardUser",
     entityId: userId,
@@ -186,7 +196,7 @@ export async function updateUserStatus(callerRole: SurfboardRole, userId: string
   return updatedUser;
 }
 
-export async function updateUserSubscription(input: {
+export async function updateUserSubscription(actorId: string, input: {
   userId: string;
   planCode: string;
   planName: string;
@@ -223,28 +233,76 @@ export async function updateUserSubscription(input: {
         },
       });
 
+  const snapshot = (s: { planCode: string; planName: string; amount: number; interval: string; status: string; currentEnd: Date | null }) => ({
+    planCode: s.planCode,
+    planName: s.planName,
+    amount: s.amount,
+    interval: s.interval,
+    status: s.status,
+    currentEnd: s.currentEnd,
+  });
+  await logAuditAction({
+    userId: actorId,
+    action: "UPDATE_USER_SUBSCRIPTION",
+    entity: "Subscription",
+    entityId: subscription.id,
+    changes: {
+      ...formatChanges(existingSubscription ? snapshot(existingSubscription) : null, snapshot(subscription)),
+      subscriberId: userId,
+      userEmail: user.email,
+      created: !existingSubscription,
+    },
+  });
+
   return { subscription, created: !existingSubscription };
 }
 
-export async function cancelUserSubscription(userId: string) {
+export async function cancelUserSubscription(actorId: string, userId: string) {
   const subscription = await prisma.subscription.findUnique({ where: { userId } });
   if (!subscription) throw new NotFoundError("Subscription");
 
-  return prisma.subscription.update({
+  const cancelled = await prisma.subscription.update({
     where: { userId },
     data: { status: "canceled", cancelledAt: new Date() },
   });
+
+  await logAuditAction({
+    userId: actorId,
+    action: "CANCEL_USER_SUBSCRIPTION",
+    entity: "Subscription",
+    entityId: subscription.id,
+    changes: {
+      ...formatChanges({ status: subscription.status }, { status: "canceled" }),
+      subscriberId: userId,
+      userEmail: subscription.email,
+    },
+  });
+
+  return cancelled;
 }
 
-export async function promoteToAdmin(userId: string) {
-  return prisma.surfboardUser.update({
+export async function promoteToAdmin(actorId: string, userId: string) {
+  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { role: true, email: true } });
+  if (!targetUser) throw new NotFoundError("User");
+
+  const promoted = await prisma.surfboardUser.update({
     where: { id: userId },
     data: { role: "ADMIN" },
     select: { id: true, email: true, firstName: true, lastName: true, role: true },
   });
+
+  await logAuditAction({
+    userId: actorId,
+    action: "PROMOTE_TO_ADMIN",
+    entity: "SurfboardUser",
+    entityId: userId,
+    changes: { ...formatChanges({ role: targetUser.role }, { role: "ADMIN" }), userEmail: targetUser.email },
+  });
+
+  return promoted;
 }
 
-export async function createAdmin(input: { email: string; firstName: string; lastName: string; role: SurfboardRole }) {
+export async function createAdmin(actorId: string, input: { email: string; firstName: string; lastName: string; role: SurfboardRole }) {
   const { email, firstName, lastName, role } = input;
 
   const existingUser = await prisma.surfboardUser.findUnique({ where: { email } });
@@ -263,7 +321,7 @@ export async function createAdmin(input: { email: string; firstName: string; las
   });
 
   await logAuditAction({
-    userId: newUser.id,
+    userId: actorId,
     action: "CREATE_ADMIN",
     entity: "SurfboardUser",
     entityId: newUser.id,

@@ -18,7 +18,7 @@ export const PATCH = withAuth<SurfboardRole>(
     }
     const { id } = await routeCtx.params;
     const { role } = await validateBody(req, roleSchema);
-    const data = await updateUserRole(ctx.session.role, id, role);
+    const data = await updateUserRole({ id: ctx.session.sub, role: ctx.session.role }, id, role);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
