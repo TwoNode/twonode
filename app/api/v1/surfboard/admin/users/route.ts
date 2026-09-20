@@ -35,12 +35,12 @@ const createAdminSchema = z.object({
 });
 
 export const POST = withAuth<SurfboardRole>(
-  async (req) => {
+  async (req, ctx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const body = await validateBody(req, createAdminSchema);
-    const data = await createAdmin(body as any);
+    const data = await createAdmin(ctx.session.sub, body as any);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.SUPERADMIN] }
