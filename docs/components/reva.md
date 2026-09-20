@@ -16,7 +16,7 @@ library plus files colocated directly with REVA pages under
 | `shared/index.ts` | Barrel export for the shared folder |
 | `shared/RevaFooterSection.tsx` | Public-site footer |
 | `shared/RevaHeroSection.tsx` | Public-site hero banner |
-| `shared/Welcome.tsx` | Dashboard welcome/greeting panel |
+| `shared/Welcome.tsx` | Dashboard welcome panel: initials/picture avatar, role chip, date, time-of-day greeting by first name (from the app session), two shortcut buttons, support link; `dashboardType` (`user`/`admin`) picks the default shortcuts |
 
 ## Colocated with pages (`app/(projects)/(reva)/`)
 

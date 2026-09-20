@@ -5,30 +5,33 @@ This folder contains shared components that can be used across both REVA user an
 ## Components Overview
 
 ### 1. Welcome
-A beautiful welcome component with user avatar, personalized greeting, and customizable instructions.
+The panel at the top of a dashboard: an avatar with the person's initials (or their picture), a role chip and today's date, a time-of-day greeting by first name ("Good evening, Ada"), a one-line description, two shortcut buttons and a "Contact support" link.
+
+The name, picture and role come from the app's own session (`revaApi.session.get()`, the same source as the sidebar's user menu), so it works for email-and-password accounts as well as Kinde ones. The greeting and date are worked out in the browser after mount, so the server and client markup match on first render — until then (and until the session answers) the heading is a skeleton of the same height. If the session can't be read, the panel still shows the time greeting without a name.
 
 **Props:**
-- `dashboardType?: 'user' | 'admin'` - Determines default behavior and styling
-- `customGreeting?: string` - Custom greeting text
-- `customDescription?: string` - Custom description text
-- `customInstructions?: string[]` - Array of custom instruction texts
+- `dashboardType?: 'user' | 'admin'` - Picks the default description and shortcuts
+- `customGreeting?: string` - Replaces the personalised greeting with fixed text
+- `customDescription?: string` - Replaces the one-line description
+- `customInstructions?: string[]` - Tips shown in the strip under the panel (none by default)
+- `actions?: { label; href; icon }[]` - Replaces the two default shortcuts; the first is drawn as the primary button
+
+**Defaults:**
+- `user` → "New request" and "All requests"
+- `admin` → "Review requests" and "Verify payments"
 
 **Usage:**
 ```tsx
-// User Dashboard
 import { Welcome } from "@/reva/components/shared";
+
+// User dashboard
 <Welcome />
 
-// Admin Dashboard
-<Welcome 
-  dashboardType="admin"
-  customGreeting="Welcome, Admin"
-  customInstructions={[
-    "Start by reviewing user requests or managing the system.",
-    "Have questions? Our team is here to help!"
-  ]}
-/>
+// Admin dashboard
+<Welcome dashboardType="admin" />
 ```
+
+The pure helpers (`timeGreeting`, `getInitials`, `roleLabel`) live in `reva/utils/welcome.ts`.
 
 ### 2. RevaHeroSection
 A hero section component with logo, title, description, and call-to-action button.
@@ -160,7 +163,7 @@ To migrate from individual components to shared ones:
    <Welcome />
    
    // New (with customization)
-   <Welcome dashboardType="admin" customGreeting="Welcome, Admin" />
+   <Welcome dashboardType="admin" />
    ```
 
 3. **Remove old component files** after confirming the new ones work correctly.

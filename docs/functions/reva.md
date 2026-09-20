@@ -19,6 +19,7 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 |---|---|
 | `revaAuth.ts` | REVA-specific auth helpers (session/role checks) |
 | `secureHtml.ts` | HTML sanitization helper |
+| `welcome.ts` | Pure helpers for the dashboard Welcome panel: `timeGreeting(hour)`, `getInitials(first, last)`, `roleLabel(role)` |
 
 ## `reva/access/`
 
