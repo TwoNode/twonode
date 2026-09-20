@@ -1,4 +1,3 @@
-import ToastProvider from "@/providers/ToastProvider";
 import React from "react";
 import type { Metadata } from "next";
 
@@ -20,8 +19,6 @@ export default function RevaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ToastProvider>
-      <div data-product="reva">{children}</div>
-    </ToastProvider>
+    <div data-product="reva">{children}</div>
   );
 }

@@ -56,7 +56,7 @@ Added Kinde authentication for GBC2 (Global Business Conference) platform, follo
 - **`/app/api/auth/logout_redirect/route.ts`**: Added GBC logout redirects
 
 ### 6. Layout
-- **`/app/(projects)/(GBC)/layout.tsx`**: Updated with ToastProvider and GBC metadata
+- **`/app/(projects)/(GBC)/layout.tsx`**: Updated with ToastProvider and GBC metadata (ToastProvider/`react-toastify` has since been removed; the root `ToasterComponent` serves every product)
 
 ## Route Structure
 

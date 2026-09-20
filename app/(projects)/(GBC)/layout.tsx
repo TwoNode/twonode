@@ -1,4 +1,3 @@
-import ToastProvider from "@/providers/ToastProvider";
 import type { Metadata } from "next/";
 
 export const metadata: Metadata = {
@@ -48,10 +47,8 @@ export default function GBCLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ToastProvider>
-      <div className="relative" data-product="gbc">
-        {children}
-      </div>
-    </ToastProvider>
+    <div className="relative" data-product="gbc">
+      {children}
+    </div>
   );
 }
