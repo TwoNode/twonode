@@ -7,8 +7,11 @@ import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform } from "@/utils/platform";
+import { useEditionFooterNote } from "@/gbc/hooks/useEditionFooterNote";
 
 export default function GBCAdminLogin() {
+  const footerNote = useEditionFooterNote();
+
   return (
     <AuthSplitLayout
       accent="#7C3AED"
@@ -16,7 +19,7 @@ export default function GBCAdminLogin() {
       eyebrow="GBC Admin"
       headline="Geospatial Builders Conference."
       description="Administrator access only — manage editions, tickets, and attendee records."
-      footerNote="Geospatial Builders Conference 2.0"
+      footerNote={footerNote}
       notice={
         <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
           <div className="flex items-start">

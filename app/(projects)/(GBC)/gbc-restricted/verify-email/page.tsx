@@ -4,8 +4,11 @@ import { Suspense } from "react";
 import { VerifyEmailCard } from "@/components/auth/VerifyEmailCard";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { Platform } from "@/utils/platform";
+import { useEditionFooterNote } from "@/gbc/hooks/useEditionFooterNote";
 
 export default function GBCVerifyEmailPage() {
+  const footerNote = useEditionFooterNote();
+
   return (
     <AuthSplitLayout
       accent="#7C3AED"
@@ -13,7 +16,7 @@ export default function GBCVerifyEmailPage() {
       eyebrow="GBC Admin"
       headline="Geospatial Builders Conference."
       description="Administrator access only — manage editions, tickets, and attendee records."
-      footerNote="Geospatial Builders Conference 2.0"
+      footerNote={footerNote}
     >
       <Suspense>
         <VerifyEmailCard

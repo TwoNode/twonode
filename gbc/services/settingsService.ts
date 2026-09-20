@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/prisma/generated";
+import { Prisma, type GBCEdition as GBCEditionRow } from "@/prisma/generated";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { GBCSettingsData, defaultSettings } from "@/gbc/utils/settings";
 import { writeAudit } from "@/lib/audit";
@@ -32,8 +32,6 @@ export type SettingsPatch = { [K in keyof GBCSettingsData]?: Partial<GBCSettings
 
 const SECTIONS: (keyof GBCSettingsData)[] = ["event", "contact", "tickets", "notifications", "gallery", "system"];
 
-type EditionRecord = { key: string; name: string; theme: string; subTheme: string; venue: string; startDate: Date };
-
 /**
  * The edition whose settings apply when none is asked for: the ACTIVE
  * edition, else the most recent PAST one, else the earliest UPCOMING one.
@@ -43,7 +41,7 @@ type EditionRecord = { key: string; name: string; theme: string; subTheme: strin
  *
  * A supplied key must be an existing, non-deleted edition.
  */
-export async function resolveSettingsEdition(supplied?: string): Promise<EditionRecord | null> {
+export async function resolveSettingsEdition(supplied?: string): Promise<GBCEditionRow | null> {
   if (supplied) {
     const edition = await prisma.gBCEdition.findFirst({ where: { key: supplied, deletedAt: null } });
     if (!edition) throw new NotFoundError("Edition");
@@ -60,14 +58,14 @@ export async function resolveSettingsEdition(supplied?: string): Promise<Edition
   return prisma.gBCEdition.findFirst({ where: { deletedAt: null }, orderBy: { startDate: "asc" } });
 }
 
-async function requireEdition(supplied?: string): Promise<EditionRecord> {
+async function requireEdition(supplied?: string): Promise<GBCEditionRow> {
   const edition = await resolveSettingsEdition(supplied);
   if (!edition) throw new ValidationError({ edition: "Create an edition before saving settings" });
   return edition;
 }
 
 /** Defaults for an edition with nothing saved: the generic defaults, with the event section taken from the edition itself. */
-function defaultsFor(edition: EditionRecord | null): GBCSettingsData {
+function defaultsFor(edition: GBCEditionRow | null): GBCSettingsData {
   if (!edition) return defaultSettings;
   return {
     ...defaultSettings,

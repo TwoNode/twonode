@@ -208,6 +208,9 @@ export const gbcApi = {
   editions: {
     list: () => jsonFetch<GBCEdition[]>(`${BASE}/editions`),
 
+    /** The edition the public site is about (ACTIVE, else the most recent PAST); null if none exist. */
+    current: () => jsonFetch<GBCEdition | null>(`${BASE}/editions/current`),
+
     adminStats: (key: string) => jsonFetch<EditionAdminStats>(`${BASE}/admin/editions/${encodeURIComponent(key)}/stats`),
 
     create: (input: CreateEditionInput) =>
