@@ -90,6 +90,8 @@ model GBCEdition {
   sponsors   GBCSponsor[]
   partners   GBCPartner[]
   speakers   GBCSpeaker[]
+  gallery    GBCGallery[]
+  inquiries  GBCContactInquiry[]
   eventStats GBCEventStats[]
 
   @@index([status])
@@ -224,10 +226,15 @@ model GBCGallery {
   year           Int
   order          Int          @default(0)
   visible        Boolean      @default(true)
+  /// Kept alongside `edition` as the event's calendar year — derived from the
+  /// edition's startDate when an item is created or moved to another edition.
+  edition        String       @default("2.0")
+  editionRef     GBCEdition   @relation(fields: [edition], references: [key])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   @@index([year])
+  @@index([edition])
   @@map("gbc_gallery")
 }
 
@@ -296,20 +303,25 @@ model GBCSettings {
 }
 
 model GBCContactInquiry {
-  id        String           @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  subject   String
-  message   String           @db.Text
-  type      String?
-  status    GBCInquiryStatus @default(PENDING)
-  notes     String?          @db.Text
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id         String           @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  subject    String
+  message    String           @db.Text
+  type       String?
+  status     GBCInquiryStatus @default(PENDING)
+  notes      String?          @db.Text
+  /// The edition current when the inquiry was submitted (set server-side —
+  /// the public contact form never supplies it).
+  edition    String           @default("2.0")
+  editionRef GBCEdition       @relation(fields: [edition], references: [key])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   @@index([status])
   @@index([type])
+  @@index([edition])
   @@map("gbc_contact_inquiries")
 }
 

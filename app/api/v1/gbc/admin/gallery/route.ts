@@ -7,8 +7,9 @@ import { getAllGalleryItems, createGalleryItem } from "@/gbc/services/cmsService
 import { Platform, GBCRole } from "@/utils/platform";
 
 export const GET = withAuth<GBCRole>(
-  async () => {
-    const data = await getAllGalleryItems();
+  async (req) => {
+    const edition = req.nextUrl.searchParams.get("edition") ?? undefined;
+    const data = await getAllGalleryItems(edition);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }

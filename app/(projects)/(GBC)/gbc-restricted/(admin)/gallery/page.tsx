@@ -1,11 +1,13 @@
 import { requireAdmin } from "@/gbc/utils/auth";
 import { getGalleryItemsPaginated } from "@/gbc/services/cmsService";
+import { getEditions } from "@/gbc/services/editionService";
 import { AddGalleryButton } from "@/gbc/components/admin/AddGalleryButton";
 import { GalleryGrid } from "@/gbc/components/admin/GalleryGrid";
 import { GalleryFilters } from "@/gbc/components/admin/GalleryFilters";
 import { Card } from "@/components/ui/card";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { parsePageParams } from "@/lib/api/pagination";
+import { firstParam } from "@/lib/searchParams";
 import {
   GALLERY_SORTS,
   GALLERY_TYPE_FILTERS,
@@ -15,8 +17,6 @@ import {
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
-
-const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
 
 export default async function AdminGalleryPage({
   searchParams,
@@ -28,22 +28,27 @@ export default async function AdminGalleryPage({
   const raw = await searchParams;
   // 20 = five full rows of the four-column grid.
   const { page, pageSize } = parsePageParams(
-    { page: one(raw.page), pageSize: one(raw.pageSize) },
+    { page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) },
     { defaultPageSize: 20 }
   );
-  const search = one(raw.search)?.trim() || undefined;
-  const type = GALLERY_TYPE_FILTERS.find((t) => t === one(raw.type)) ?? ("all" as GalleryTypeFilter);
-  const sort = GALLERY_SORTS.find((s) => s === one(raw.sort)) ?? ("order" as GallerySort);
+  const search = firstParam(raw.search)?.trim() || undefined;
+  const edition = firstParam(raw.edition) || "all";
+  const type = GALLERY_TYPE_FILTERS.find((t) => t === firstParam(raw.type)) ?? ("all" as GalleryTypeFilter);
+  const sort = GALLERY_SORTS.find((s) => s === firstParam(raw.sort)) ?? ("order" as GallerySort);
 
-  const result = await getGalleryItemsPaginated({
-    page,
-    pageSize,
-    search,
-    mediaType: type === "photos" ? "IMAGE" : type === "videos" ? "VIDEO" : undefined,
-    sort,
-  });
+  const [result, editions] = await Promise.all([
+    getGalleryItemsPaginated({
+      page,
+      pageSize,
+      search,
+      mediaType: type === "photos" ? "IMAGE" : type === "videos" ? "VIDEO" : undefined,
+      edition: edition === "all" ? undefined : edition,
+      sort,
+    }),
+    getEditions(),
+  ]);
   const items = result.data;
-  const isFiltered = !!search || type !== "all";
+  const isFiltered = !!search || type !== "all" || edition !== "all";
 
   return (
     <div>
@@ -70,12 +75,12 @@ export default async function AdminGalleryPage({
             </p>
           </div>
 
-          <GalleryFilters type={type} sort={sort} />
+          <GalleryFilters editions={editions} edition={edition} type={type} sort={sort} />
         </div>
 
         {items.length > 0 ? (
           <>
-            <GalleryGrid items={items} />
+            <GalleryGrid items={items} editions={editions} />
             {result.pagination.totalPages > 1 && (
               <div className="mt-8 pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-sm text-gray-600">
@@ -95,7 +100,7 @@ export default async function AdminGalleryPage({
               No items match your filters
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Try a different search term or media type.
+              Try a different search term, edition or media type.
             </p>
           </div>
         ) : (

@@ -1,10 +1,13 @@
 // src/app/admin/inquiries/page.tsx
 import { getInquiriesPaginated, getInquiryStats } from "@/gbc/services/contactService";
+import { getEditions } from "@/gbc/services/editionService";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, Clock, CheckCircle } from "lucide-react";
 import { InquiriesTable } from "@/gbc/components/admin/InquiriesTable";
 import { InquiriesFilters } from "@/gbc/components/admin/InquiriesFilters";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
+import { parsePageParams } from "@/lib/api/pagination";
+import { firstParam } from "@/lib/searchParams";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -12,15 +15,19 @@ export const dynamic = "force-dynamic";
 export default async function AdminInquiriesPage({
   searchParams,
 }: {
-  searchParams: { status?: string; type?: string; search?: string; page?: string; pageSize?: string };
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { status, type, search, page: pageParam, pageSize: pageSizeParam } = await searchParams;
-  const page = pageParam ? Math.max(1, Number(pageParam)) : 1;
-  const pageSize = pageSizeParam ? Number(pageSizeParam) : 10;
+  const raw = await searchParams;
+  const { page, pageSize } = parsePageParams({ page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) });
+  const status = firstParam(raw.status);
+  const type = firstParam(raw.type);
+  const edition = firstParam(raw.edition) || undefined;
+  const search = firstParam(raw.search)?.trim() || undefined;
 
-  const [result, stats] = await Promise.all([
-    getInquiriesPaginated({ page, pageSize, status, type, search }),
-    getInquiryStats(),
+  const [result, stats, editions] = await Promise.all([
+    getInquiriesPaginated({ page, pageSize, status, type, edition, search }),
+    getInquiryStats(edition),
+    getEditions(),
   ]);
   const inquiries = result.data;
 
@@ -84,11 +91,11 @@ export default async function AdminInquiriesPage({
 
       {/* Filters */}
       <Card className="p-6 mb-6">
-        <InquiriesFilters currentType={type} currentStatus={status} currentSearch={search} />
+        <InquiriesFilters editions={editions} currentType={type} currentStatus={status} currentEdition={edition} />
       </Card>
 
       {/* Inquiries Table */}
-      <InquiriesTable inquiries={inquiries || []} />
+      <InquiriesTable inquiries={inquiries || []} editions={editions} />
 
       {result.pagination.totalPages > 1 && (
         <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">

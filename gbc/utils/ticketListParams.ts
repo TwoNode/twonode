@@ -1,4 +1,5 @@
 import { parsePageParams } from "@/lib/api/pagination";
+import { firstParam } from "@/lib/searchParams";
 
 export type CheckedInFilter = "all" | "yes" | "no";
 
@@ -13,8 +14,6 @@ export interface TicketListParams {
   pageSize: number;
 }
 
-const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
 /**
  * One parser for the Attendees page, the Certificates page and the
  * select-all endpoint, so a URL means the same list everywhere. `defaults`
@@ -24,13 +23,13 @@ export function parseTicketListParams(
   raw: RawParams,
   defaults: { checkedIn: CheckedInFilter }
 ): TicketListParams {
-  const checkedIn = first(raw.checkedIn);
-  const { page, pageSize } = parsePageParams({ page: first(raw.page), pageSize: first(raw.pageSize) });
+  const checkedIn = firstParam(raw.checkedIn);
+  const { page, pageSize } = parsePageParams({ page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) });
 
   return {
-    search: first(raw.search)?.trim() || undefined,
+    search: firstParam(raw.search)?.trim() || undefined,
     checkedIn: checkedIn === "all" || checkedIn === "yes" || checkedIn === "no" ? checkedIn : defaults.checkedIn,
-    edition: first(raw.edition) || "all",
+    edition: firstParam(raw.edition) || "all",
     page,
     pageSize,
   };

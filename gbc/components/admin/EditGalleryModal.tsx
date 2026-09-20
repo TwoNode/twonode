@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -25,6 +18,7 @@ import { toast } from "sonner";
 import { gbcApi } from "@/gbc/apiClient";
 import { GalleryItem } from "@/gbc/types/gallery";
 import { Switch } from "@/components/ui/switch";
+import { EditionSelect, useEditions } from "@/gbc/components/admin/EditionSelect";
 
 interface EditGalleryModalProps {
   item: GalleryItem;
@@ -36,6 +30,8 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string>(item.mediaUrl);
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO">(item.mediaType);
+  const editions = useEditions(open);
+  const [edition, setEdition] = useState(item.edition);
 
   // Reset state when item changes or modal opens
   useEffect(() => {
@@ -43,6 +39,7 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
       setMediaPreview(item.mediaUrl);
       setMediaType(item.mediaType);
       setMediaFile(null);
+      setEdition(item.edition);
     }
   }, [open, item]);
 
@@ -102,7 +99,9 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
         mediaS3Key,
         thumbnailUrl,
         thumbnailS3Key,
-        year: parseInt(formData.get("year") as string),
+        // Only sent on a real move: the server re-derives `year` from the
+        // edition, which an unrelated edit must not do to a legacy item.
+        ...(edition !== item.edition ? { edition } : {}),
         order: parseInt(formData.get("order") as string) || 0,
         visible: formData.get("visible") === "true",
       });
@@ -233,26 +232,15 @@ export function EditGalleryModal({ item }: EditGalleryModalProps) {
             />
           </div>
 
-          {/* Year */}
+          {/* Edition */}
           <div>
-            <Label htmlFor="year">Year *</Label>
-            <Select
-              name="year"
-              required
-              defaultValue={item.year.toString()}
+            <Label>Edition *</Label>
+            <EditionSelect
+              editions={editions}
+              value={edition}
+              onChange={setEdition}
               disabled={isSubmitting}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
 
           {/* Order */}
