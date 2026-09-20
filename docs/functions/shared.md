@@ -56,7 +56,7 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `addBaseUrl.ts` | Prefixes a relative path with the site's base URL |
 | `email.ts` | Shared transactional email sending (per-product branding) |
 | `formatters.ts` | Date/number/currency formatting helpers |
-| `notify.tsx` | Toast/notification trigger helper |
+| `notify.tsx` | `notifyError/Success/Warning/Info` — thin wrappers over `sonner`'s `toast`, used by REVA's request forms |
 | `paystackConfig.ts` | Shared Paystack configuration |
 | `responsiveness.ts` | Responsive layout helpers |
 | `loadScript.js` | Dynamically loads an external `<script>` |

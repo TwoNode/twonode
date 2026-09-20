@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import ToastProvider from "@/providers/ToastProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -82,8 +81,6 @@ export default function RevaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ToastProvider>
-      <div data-product="reva">{children}</div>
-    </ToastProvider>
+    <div data-product="reva">{children}</div>
   );
 }
