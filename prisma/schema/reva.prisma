@@ -121,3 +121,24 @@ model RevaUser {
   updatedAt  DateTime   @updatedAt
   properties Property[]
 }
+
+/// Trail of admin-side actions on REVA (inviting/creating admins, role and
+/// status changes, deletions). `userId` is the user who performed the action,
+/// never the account it was performed on — that goes in `entityId`. Mirrors
+/// GBCAuditLog/SurfboardAuditLog.
+model RevaAuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   String?  @db.Text
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("reva_audit_logs")
+}

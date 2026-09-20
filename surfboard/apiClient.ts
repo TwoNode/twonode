@@ -1,4 +1,6 @@
+import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
+import { createAuditLogApi } from "@/lib/api/auditLogClient";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 import type {
   BatchLockRole,
@@ -280,39 +282,19 @@ export const surfboardApi = {
         }),
     },
 
-    auditLogs: {
-      list: (
-        params: {
-          page?: number;
-          pageSize?: number;
-          action?: string;
-          entity?: string;
-          userId?: string;
-          search?: string;
-          startDate?: Date;
-          endDate?: Date;
-        } = {},
-      ) => {
-        const qs = new URLSearchParams();
-        if (params.page) qs.set("page", String(params.page));
-        if (params.pageSize) qs.set("pageSize", String(params.pageSize));
-        if (params.action) qs.set("action", params.action);
-        if (params.entity) qs.set("entity", params.entity);
-        if (params.userId) qs.set("userId", params.userId);
-        if (params.search) qs.set("search", params.search);
-        if (params.startDate)
-          qs.set("startDate", params.startDate.toISOString());
-        if (params.endDate) qs.set("endDate", params.endDate.toISOString());
-        return jsonFetch<{
-          data: any[];
-          pagination: { page: number; pageSize: number; total: number; totalPages: number };
-        }>(`${BASE}/admin/audit-logs?${qs.toString()}`);
-      },
+    auditLogs: createAuditLogApi(`${BASE}/admin/audit-logs`),
 
-      filters: () =>
-        jsonFetch<{ actions: string[]; entities: string[] }>(
-          `${BASE}/admin/audit-logs/filters`,
-        ),
+    invitations: {
+      list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
+
+      create: (input: InviteAdminInput) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations`, { method: "POST", body: JSON.stringify(input) }),
+
+      resend: (id: string) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`, { method: "POST" }),
+
+      revoke: (id: string) =>
+        jsonFetch<AdminInvitationRow>(`${BASE}/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
     },
 
     users: {
@@ -340,17 +322,6 @@ export const surfboardApi = {
       },
 
       stats: () => jsonFetch<any>(`${BASE}/admin/users/stats`),
-
-      create: (input: {
-        email: string;
-        firstName: string;
-        lastName: string;
-        role: string;
-      }) =>
-        jsonFetch<any>(`${BASE}/admin/users`, {
-          method: "POST",
-          body: JSON.stringify(input),
-        }),
 
       updateRole: (id: string, role: string) =>
         jsonFetch<any>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {

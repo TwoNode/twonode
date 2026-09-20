@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { revaApi } from "@/reva/apiClient";
+import { announceInviteResult } from "@/components/admin/PendingInvitations";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -46,7 +47,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function CreateAdminUserForm() {
+export default function InviteAdminUserForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormData>({
@@ -62,16 +63,16 @@ export default function CreateAdminUserForm() {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const result = await revaApi.admin.users.create(data);
+      const result = await revaApi.admin.invitations.create(data);
 
       if (result.success) {
-        toast.success("Admin user created successfully!");
+        announceInviteResult(data.email, "sent", result.data);
         form.reset();
       } else {
-        toast.error(result.error || "Failed to create admin user");
+        toast.error(result.error || "Failed to send invitation");
       }
     } catch (error) {
-      console.error("Error creating admin user:", error);
+      console.error("Error sending invitation:", error);
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -82,10 +83,10 @@ export default function CreateAdminUserForm() {
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-          Create Admin User
+          Invite Admin User
         </CardTitle>
         <CardDescription>
-          Create a new admin or superadmin user account
+          Email a new admin or superadmin a link to set their password. Their account is created when they accept.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -165,7 +166,7 @@ export default function CreateAdminUserForm() {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Admin User"}
+              {isLoading ? "Sending..." : "Send Invitation"}
             </Button>
           </form>
         </Form>

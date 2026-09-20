@@ -8,6 +8,7 @@ import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import { Button } from "@/components/ui/button";
 import { GBC_ROUTES } from "@/gbc/access/routes";
 import { GBC_COLORS } from "@/gbc/colors";
+import { useGBCRole } from "@/gbc/components/admin/useGBCRole";
 
 /**
  * Sourced from gbc/access/routes.ts's "admin" group instead of a
@@ -16,9 +17,9 @@ import { GBC_COLORS } from "@/gbc/colors";
  * never imported anywhere). Every admin registry entry currently shares
  * the same ADMIN/SUPERADMIN role gate, and this component is only ever
  * rendered inside the gbc-restricted (admin) layout, which proxy.ts's middleware
- * has already role-gated before the page renders — so no role prop is
- * needed here, same as the array it replaces never branched on role
- * either.
+ * has already role-gated before the page renders. The one exception is the
+ * SUPERADMIN-only entries (Audit Logs): the proxy would turn an ADMIN away
+ * from them, so they're hidden here for anyone but a SUPERADMIN.
  *
  * Dark nav-bg shell + grouped sections (Overview/Program/Content/System)
  * match the GBC Design System artifact's admin sidebar -- the grouping
@@ -28,17 +29,18 @@ import { GBC_COLORS } from "@/gbc/colors";
  */
 const navigation = GBC_ROUTES.filter(
   (r) => r.group === "admin" && r.showInNav !== false
-).map((r) => ({ name: r.label, href: r.path, icon: r.icon }));
+).map((r) => ({ name: r.label, href: r.path, icon: r.icon, roles: r.roles }));
 
 const GROUPS: { label: string; items: string[] }[] = [
   { label: "Overview", items: ["Dashboard", "Tickets", "Check-In", "Attendees"] },
   { label: "Program", items: ["Editions"] },
   { label: "Content", items: ["Speakers", "Sponsors", "Gallery"] },
-  { label: "System", items: ["Inquiries", "Certificates", "Users", "Notifications", "Settings"] },
+  { label: "System", items: ["Inquiries", "Certificates", "Users", "Audit Logs", "Notifications", "Settings"] },
 ];
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const role = useGBCRole();
 
   return (
     <aside
@@ -79,7 +81,9 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
       </div>
       <nav className="px-3 py-3 flex-1 overflow-y-auto">
         {GROUPS.map((group) => {
-          const items = navigation.filter((n) => group.items.includes(n.name));
+          const items = navigation.filter(
+            (n) => group.items.includes(n.name) && role !== null && n.roles.includes(role)
+          );
           if (items.length === 0) return null;
           return (
             <div key={group.label} className="mb-1">

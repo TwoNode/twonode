@@ -11,7 +11,6 @@ colocated under `app/(projects)/(surfboard)/`.
 | `adminUserService.ts` | Admin/surveyor user account CRUD |
 | `aiExtractionService.ts` | AI-based data extraction from uploaded documents |
 | `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering |
-| `auditLogService.ts` | Audit log recording/lookup |
 | `awsService.ts` | S3 upload/download helpers |
 | `batchApprovalService.ts` | Certificate-of-Deposit batch approval workflow |
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |

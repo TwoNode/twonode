@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useConfirm } from "@/hooks/useConfirm";
+import { PendingInvitations, announceInviteResult } from "@/components/admin/PendingInvitations";
 import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
 import { ViewToggle } from "@/components/ui/view-toggle";
@@ -185,7 +186,7 @@ export default function UserManagementPage() {
     nextPaymentDate: null,
   });
 
-  // Add Admin form state
+  // Invite Admin form state
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [newAdminForm, setNewAdminForm] = useState({
     firstName: "",
@@ -362,9 +363,10 @@ export default function UserManagementPage() {
 
   const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await surfboardApi.admin.users.create(newAdminForm);
+    // Nothing is created yet: the invitee's account appears when they accept.
+    const result = await surfboardApi.admin.invitations.create(newAdminForm);
     if (result.success) {
-      toast.success("Admin user created successfully");
+      announceInviteResult(newAdminForm.email, "sent", result.data);
       setShowAddAdminModal(false);
       setNewAdminForm({
         firstName: "",
@@ -372,8 +374,6 @@ export default function UserManagementPage() {
         email: "",
         role: "ADMIN",
       });
-      reload();
-      loadStats();
     } else {
       toast.error(result.error);
     }
@@ -452,12 +452,14 @@ export default function UserManagementPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 sm:gap-0">
-                <button
-                  onClick={() => setShowAddAdminModal(true)}
-                  className="sm:mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {activeTab === "admins" ? "Add New Admin" : "Add MDA User"}
-                </button>
+                {currentUserRole === "SUPERADMIN" && (
+                  <button
+                    onClick={() => setShowAddAdminModal(true)}
+                    className="sm:mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {activeTab === "admins" ? "Invite Admin" : "Invite MDA User"}
+                  </button>
+                )}
                 <button
                   onClick={() => router.push("/surfboard-restricted/dashboard")}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -497,6 +499,10 @@ export default function UserManagementPage() {
               </nav>
             </div>
           </div>
+
+          {currentUserRole === "SUPERADMIN" && (
+            <PendingInvitations api={surfboardApi.admin.invitations} />
+          )}
 
           {/* Stats Overview */}
           {stats && (
@@ -1491,7 +1497,7 @@ export default function UserManagementPage() {
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      Add New Admin
+                      {activeTab === "admins" ? "Invite Admin" : "Invite MDA User"}
                     </h3>
                     <button
                       onClick={() => setShowAddAdminModal(false)}
@@ -1613,7 +1619,7 @@ export default function UserManagementPage() {
                         type="submit"
                         className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                       >
-                        Create Admin
+                        Send Invitation
                       </button>
                     </div>
                   </form>

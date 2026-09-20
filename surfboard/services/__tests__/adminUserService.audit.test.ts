@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const mockPrisma = vi.hoisted(() => ({
-  surfboardUser: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
+  surfboardUser: { findUnique: vi.fn(), update: vi.fn() },
   subscription: { findUnique: vi.fn(), update: vi.fn(), create: vi.fn() },
 }));
 const mockAudit = vi.hoisted(() => ({ logAuditAction: vi.fn() }));
@@ -25,7 +25,6 @@ const {
   promoteToAdmin,
   updateUserSubscription,
   cancelUserSubscription,
-  createAdmin,
 } = await import("@/surfboard/services/adminUserService");
 
 const superadmin = { id: "actor-1", role: "SUPERADMIN" } as const;
@@ -182,29 +181,6 @@ describe("cancelUserSubscription", () => {
     mockPrisma.subscription.findUnique.mockResolvedValue(null);
 
     await expect(cancelUserSubscription("actor-1", "target-1")).rejects.toMatchObject({ status: 404 });
-
-    expect(mockAudit.logAuditAction).not.toHaveBeenCalled();
-  });
-});
-
-describe("createAdmin", () => {
-  const input = { email: "new@x.com", firstName: "New", lastName: "Admin", role: "ADMIN" } as const;
-
-  it("logs the superadmin who added the admin, not the new admin themselves", async () => {
-    mockPrisma.surfboardUser.findUnique.mockResolvedValue(null);
-    mockPrisma.surfboardUser.create.mockResolvedValue({ id: "new-1", ...input });
-
-    await createAdmin("actor-1", input);
-
-    expect(mockAudit.logAuditAction).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "actor-1", action: "CREATE_ADMIN", entityId: "new-1" })
-    );
-  });
-
-  it("logs nothing when the email already exists", async () => {
-    mockPrisma.surfboardUser.findUnique.mockResolvedValue({ id: "existing" });
-
-    await expect(createAdmin("actor-1", input)).rejects.toMatchObject({ status: 409 });
 
     expect(mockAudit.logAuditAction).not.toHaveBeenCalled();
   });

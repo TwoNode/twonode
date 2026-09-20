@@ -18,6 +18,11 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 
 | File | Description |
 |---|---|
+| `adminInvitationRoutes.ts` | Factory for the four superadmin-only invitation endpoints (list/create/resend/revoke); each product's route files bind it to their platform and SUPERADMIN role |
+| `adminInvitationTypes.ts` | Client-safe invitation types + `roleLabel` |
+| `auditLogClient.ts` | `createAuditLogApi(base)` — client for a product's `/admin/audit-logs` endpoints |
+| `auditLogRoutes.ts` | Factory for the two superadmin-only audit-log endpoints (list + filter options), same pattern as the invitation routes |
+| `auditLogTypes.ts` | Client-safe audit-log types (`AuditLogEntry`, `AuditLogApi`, …) |
 | `errors.ts` | Typed API error classes (`ValidationError`, etc.) |
 | `pagination.ts` | Pagination query-param parsing helpers |
 | `types.ts` | `ApiResult<T>` and other shared API types |
@@ -28,6 +33,7 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 
 | File | Description |
 |---|---|
+| `adminInvitations.ts` | Admin invitations for all three products: create/resend/revoke/list, look up + accept by emailed single-use token (7-day expiry, only the token's hash is stored), each step audited |
 | `authApiClient.ts` | Client wrapper for native-auth endpoints (login/register/refresh) |
 | `cookies.ts` | Auth cookie read/write helpers |
 | `csrf.ts` | CSRF token generation/validation |
@@ -41,6 +47,8 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 
 | File | Description |
 |---|---|
+| `audit.ts` | `writeAudit(platform, entry)` — writes an audit row to the product's own log table (GBC/Surfboard/REVA), capturing IP and user agent; never throws. `entry.userId` is always the *acting* user |
+| `auditLogs.ts` | `listAuditLogs` / `getAuditLogFilterOptions` — reads of those tables, one implementation for all three products (each platform reads its own log and user table) |
 | `constants.ts` | App-wide constants |
 | `menu-list.ts` | Legacy/shared menu definitions |
 | `observability/logger.ts` | Structured logger |

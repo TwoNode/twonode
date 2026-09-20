@@ -6,7 +6,7 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 
 | File | Description |
 |---|---|
-| `adminUserService.ts` | Admin user account CRUD |
+| `adminUserService.ts` | Admin user management (audited via `lib/audit.ts`). New admins are invited via `lib/auth/adminInvitations.ts`, not created here |
 | `certificatePdfService.ts` | Spawns the certificate PDF worker and returns a buffer |
 | `certificateService.ts` | Certificate issuance/verification logic |
 | `cmsService.ts` | Content (site copy/settings) management |

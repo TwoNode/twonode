@@ -82,10 +82,18 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `sidebar-toggle.tsx` | Sidebar collapse/expand toggle |
 | `user-nav.tsx` | User account menu in the navbar |
 
+## `components/admin/` — shared admin-panel widgets
+
+| File | Description |
+|---|---|
+| `AuditLogViewer.tsx` | Superadmin's read-only audit log (search by actor/entity id/IP, action + entity filters, list/grid). Takes a product's `AuditLogApi`; used by GBC, Surfboard and REVA |
+| `PendingInvitations.tsx` | Admin-invitations panel (status pills, Resend, Revoke) + `announceInviteResult` toast helper; takes a product's invitations API |
+
 ## `components/auth/` — shared auth UI
 
 | File | Description |
 |---|---|
+| `AcceptInviteCard.tsx` | Accept-invitation form (set a password from the emailed link) |
 | `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right) |
 | `GoogleIcon.tsx` | Google "G" logo icon |
 | `NativeAuthCard.tsx` | Email/password login+register card |

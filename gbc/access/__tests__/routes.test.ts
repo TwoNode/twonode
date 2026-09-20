@@ -46,6 +46,19 @@ describe("canAccessRoute — admin panel", () => {
   });
 });
 
+describe("canAccessRoute — Audit Logs", () => {
+  it("is SUPERADMIN-only: the one admin page an ADMIN cannot reach", () => {
+    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.ADMIN)).toBe(false);
+    expect(canAccessRoute("/gbc-restricted/audit-logs", GBCRole.USER)).toBe(false);
+  });
+
+  it("shows in the sidebar for SUPERADMIN only", () => {
+    expect(getNavItemsForRole(GBCRole.SUPERADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(true);
+    expect(getNavItemsForRole(GBCRole.ADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(false);
+  });
+});
+
 describe("canAccessRoute — guest-facing (public)", () => {
   it("passes for any role, including null (no session at all)", () => {
     expect(canAccessRoute("/gbc/login", null)).toBe(true);

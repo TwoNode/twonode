@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@/prisma/generated";
 import { Platform } from "@/utils/platform";
 
 /**
@@ -168,5 +169,79 @@ export async function markEmailVerified(platform: Platform, id: string): Promise
     case Platform.GBC:
       await prisma.gBCUser.update({ where: { id }, data: { emailVerified: true } });
       return;
+  }
+}
+
+const toNativeAuthUser = {
+  reva: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; is_active: boolean; emailVerified: boolean }): NativeAuthUser => ({
+    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active, emailVerified: u.emailVerified, phone: null,
+  }),
+  surfboard: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; isActive: boolean; emailVerified: boolean; phoneNumber: string | null }): NativeAuthUser => ({
+    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phoneNumber,
+  }),
+  gbc: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; isActive: boolean; emailVerified: boolean; phone: string | null }): NativeAuthUser => ({
+    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phone,
+  }),
+};
+
+/** Case-insensitive, so an invitation can't create a second account that differs from an existing one only by capitalisation. */
+export async function emailInUse(platform: Platform, email: string): Promise<boolean> {
+  const where = { email: { equals: email, mode: "insensitive" as const } };
+  const select = { id: true };
+  switch (platform) {
+    case Platform.REVA:
+      return !!(await prisma.revaUser.findFirst({ where, select }));
+    case Platform.SURFBOARD:
+      return !!(await prisma.surfboardUser.findFirst({ where, select }));
+    case Platform.GBC:
+      return !!(await prisma.gBCUser.findFirst({ where, select }));
+    default:
+      return false;
+  }
+}
+
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * Creates the account for an accepted admin invitation. Separate from
+ * createNativeUser on purpose: self-registration must never be able to choose
+ * a role, while an invitation is exactly the case where a superadmin already
+ * has. The invitation link is delivered to the invited address, so following
+ * it proves ownership and the email is marked verified.
+ */
+export async function createInvitedUser(
+  platform: Platform,
+  data: { email: string; firstName: string; lastName: string; phone: string | null; role: string; passwordHash: string },
+  db: TxClient | typeof prisma = prisma
+): Promise<NativeAuthUser> {
+  const common = {
+    email: data.email,
+    passwordHash: data.passwordHash,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    authProviders: ["NATIVE" as const],
+    emailVerified: true,
+    kindeId: `native:${crypto.randomUUID()}`,
+  };
+
+  switch (platform) {
+    case Platform.REVA: {
+      const u = await db.revaUser.create({ data: { ...common, role: data.role as "ADMIN" | "SUPERADMIN", is_active: true } });
+      return toNativeAuthUser.reva(u);
+    }
+    case Platform.SURFBOARD: {
+      const u = await db.surfboardUser.create({
+        data: { ...common, role: data.role as Prisma.SurfboardUserCreateInput["role"], isActive: true, phoneNumber: data.phone },
+      });
+      return toNativeAuthUser.surfboard(u);
+    }
+    case Platform.GBC: {
+      const u = await db.gBCUser.create({
+        data: { ...common, role: data.role as "ADMIN" | "SUPERADMIN", isActive: true, phone: data.phone },
+      });
+      return toNativeAuthUser.gbc(u);
+    }
+    default:
+      throw new Error(`Unsupported platform: ${platform}`);
   }
 }

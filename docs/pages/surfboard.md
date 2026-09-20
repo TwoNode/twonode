@@ -14,6 +14,7 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard/error-login` | `surfboard/(auth)/error-login/page.tsx` | Login error page |
 | `/surfboard/reset-password` | `surfboard/(auth)/reset-password/page.tsx` | Password reset |
 | `/surfboard/verify-email` | `surfboard/(auth)/verify-email/page.tsx` | Email verification |
+| `/surfboard/accept-invite` | `surfboard/(auth)/accept-invite/page.tsx` | Accept an admin/MDA-officer invitation — set a password from the emailed single-use link |
 | `/surfboard/dashboard` | `surfboard/dashboard/page.tsx` | Dashboard home — stats, analytics, recent/shared plans |
 | `/surfboard/dashboard/map` | `surfboard/dashboard/map/page.tsx` | Map viewer |
 | `/surfboard/dashboard/viewmap` | `surfboard/dashboard/viewmap/page.tsx` | Map viewer (alternate view) |
@@ -70,7 +71,7 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard-restricted/dashboard/qr-earnings/settings` | `surfboard-restricted/dashboard/qr-earnings/settings/page.tsx` | QR-earnings settings |
 | `/surfboard-restricted/dashboard/user-management` | `surfboard-restricted/dashboard/user-management/page.tsx` | Manage surveyor/user accounts |
 | `/surfboard-restricted/dashboard/admin-tools` | `surfboard-restricted/dashboard/admin-tools/page.tsx` | Misc. admin tools |
-| `/surfboard-restricted/dashboard/audit-logs` | `surfboard-restricted/dashboard/audit-logs/page.tsx` | Audit log viewer |
+| `/surfboard-restricted/dashboard/audit-logs` | `surfboard-restricted/dashboard/audit-logs/page.tsx` | Audit log viewer — superadmin only (shared `AuditLogViewer`) |
 | `/surfboard-restricted/dashboard/notifications` | `surfboard-restricted/dashboard/notifications/page.tsx` | Notifications list |
 | `/surfboard-restricted/dashboard/settings` | `surfboard-restricted/dashboard/settings/page.tsx` | Admin settings |
 | `/surfboard-restricted/dashboard/superadmin` | `surfboard-restricted/dashboard/superadmin/page.tsx` | Superadmin-only panel |
