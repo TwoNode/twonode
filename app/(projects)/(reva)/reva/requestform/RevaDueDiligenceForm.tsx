@@ -11,7 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { revaApi } from "@/reva/apiClient";
 import Bowser from "bowser";
 import PaystackPop from "@paystack/inline-js";
@@ -42,7 +42,7 @@ import { DashboardLoadingSpinner } from "@/components/ui/loading-spinner";
 
 const notifyError = (msg: string) => toast.error(msg);
 const notifySuccess = (msg: string) => toast.success(msg);
-const notifyWarning = (msg: string) => toast.warn(msg);
+const notifyWarning = (msg: string) => toast.warning(msg);
 const notifyInfo = (msg: string) => toast.info(msg);
 
 const containerStyle = {

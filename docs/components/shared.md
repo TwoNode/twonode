@@ -131,7 +131,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `InvalidReferencePage.tsx` | "Invalid reference" error page |
 | `MyPopup.tsx` | Generic popup/modal wrapper |
 | `SetCookieFromClient.tsx` | Client-side cookie setter |
-| `ToasterComponent.tsx` | Toast provider mount point |
+| `ToasterComponent.tsx` | Mounts `sonner`'s `<Toaster>` once in the root layout — the only toast container in the app. All products (GBC, Surfboard, REVA) call `toast` from `sonner`; there is no per-product provider |
 | `YouTubeEmbed.tsx` | YouTube video embed |
 
 ## Corporate/marketing site sections (`components/` root)
@@ -179,4 +179,3 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | File | Description |
 |---|---|
 | `KindeAuthProvider.tsx` | Wraps the app with Kinde auth context |
-| `ToastProvider.tsx` | Wraps the app with the toast notification context |
