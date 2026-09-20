@@ -4,6 +4,8 @@ import { logAuditAction, createChangeLog } from "@/app/(projects)/(surfboard)/ut
 import { COD_FEES, type ZoneFeeRow } from "@/app/(projects)/(surfboard)/utils/CoDFees";
 import { DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 import { sendMail } from "@/utils/email";
+import { writeAudit } from "@/lib/audit";
+import { Platform } from "@/utils/platform";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/settingsActions.ts — a
@@ -185,8 +187,15 @@ export async function resetToDefaultSettings(userId: string) {
   return { success: true };
 }
 
-export async function toggleUserKycValidation(userId: string, status: boolean) {
+export async function toggleUserKycValidation(userId: string, status: boolean, actorId?: string) {
   await prisma.surfboardUser.update({ where: { id: userId }, data: { isKycValidated: status } });
+  await writeAudit(Platform.SURFBOARD, {
+    userId: actorId,
+    action: status ? "VALIDATE_KYC" : "REVOKE_KYC",
+    entity: "SurfboardUser",
+    entityId: userId,
+    changes: { isKycValidated: status },
+  });
   return { success: true };
 }
 

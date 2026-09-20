@@ -21,10 +21,10 @@ colocated under `app/(projects)/(surfboard)/`.
 | `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range), sharing |
 | `profileService.ts` | Surveyor profile CRUD |
 | `qrAdminService.ts` | QR-earnings admin configuration |
-| `qrEarningsService.ts` | QR-code referral earnings calculation |
+| `qrEarningsService.ts` | QR-code referral earnings calculation; bank-account verification for payouts (`toggleBankVerification`, audited with the acting admin) |
 | `receiptPdfService.ts` | Spawns the receipt PDF worker and returns a buffer |
 | `remitaVerificationService.ts` | Remita payment verification |
-| `settingsService.ts` | Platform settings CRUD |
+| `settingsService.ts` | Platform settings CRUD; surveyor KYC validation (`toggleUserKycValidation`, audited with the acting admin) |
 | `subscriptionAnalyticsService.ts` | Subscription-related analytics |
 | `subscriptionReminderService.ts` | Daily cron job: emails + WhatsApp-nudges users whose subscription expires within 3 days (dedup'd per expiry date via `expiryReminderSentAt`) |
 | `subscriptionService.ts` | Subscription plan CRUD/lifecycle |
@@ -36,6 +36,7 @@ colocated under `app/(projects)/(surfboard)/`.
 |---|---|
 | `ossg.ts` | OSSG (Osun State/coordinate system) helpers |
 | `surfAuth.ts` | Surfboard-specific auth helpers (session/role checks) |
+| `kycFilter.ts` | Filters and per-filter counts for the admin KYC review page (`matchesKycFilter`, `countByKycFilter`) |
 
 ## `surfboard/access/`
 
