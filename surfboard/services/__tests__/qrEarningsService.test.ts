@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { Platform } from "@/utils/platform";
 
 /**
  * Prisma, Paystack config, notifications, and email are all mocked — this
@@ -28,6 +29,7 @@ const mockPrisma = vi.hoisted(() => ({
 const mockGetPaystackSecretForWebhook = vi.hoisted(() => vi.fn());
 const mockCreateNotification = vi.hoisted(() => vi.fn());
 const mockSendNotificationMail = vi.hoisted(() => vi.fn());
+const mockWriteAudit = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/utils/paystackConfig", () => ({
@@ -36,6 +38,7 @@ vi.mock("@/utils/paystackConfig", () => ({
 vi.mock("@/surfboard/services/notificationService", () => ({
   createNotification: mockCreateNotification,
 }));
+vi.mock("@/lib/audit", () => ({ writeAudit: mockWriteAudit }));
 vi.mock("@/utils/email", () => ({
   sendNotificationMail: mockSendNotificationMail,
 }));
@@ -446,7 +449,7 @@ describe("toggleBankVerification", () => {
   });
 
   it("flips isVerified and stamps verifiedAt when approving", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
     await toggleBankVerification("surveyor-1", true);
     expect(mockPrisma.surveyorBankDetails.update).toHaveBeenCalledWith({
       where: { userId: "surveyor-1" },
@@ -455,11 +458,41 @@ describe("toggleBankVerification", () => {
   });
 
   it("clears verifiedAt when revoking", async () => {
-    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ userId: "surveyor-1" });
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
     await toggleBankVerification("surveyor-1", false);
     expect(mockPrisma.surveyorBankDetails.update).toHaveBeenCalledWith({
       where: { userId: "surveyor-1" },
       data: { isVerified: false, verifiedAt: null },
     });
   });
+  it("records who approved the account", async () => {
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    await toggleBankVerification("surveyor-1", true, "admin-1");
+    expect(mockWriteAudit).toHaveBeenCalledWith(
+      Platform.SURFBOARD,
+      expect.objectContaining({
+        userId: "admin-1",
+        action: "VERIFY_BANK_ACCOUNT",
+        entity: "SurveyorBankDetails",
+        entityId: "bank-1",
+        changes: { surveyorId: "surveyor-1", isVerified: true },
+      })
+    );
+  });
+
+  it("records who revoked the account", async () => {
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue({ id: "bank-1", userId: "surveyor-1" });
+    await toggleBankVerification("surveyor-1", false, "admin-1");
+    expect(mockWriteAudit).toHaveBeenCalledWith(
+      Platform.SURFBOARD,
+      expect.objectContaining({ userId: "admin-1", action: "REVOKE_BANK_ACCOUNT" })
+    );
+  });
+
+  it("writes no audit entry when there is nothing to verify", async () => {
+    mockPrisma.surveyorBankDetails.findUnique.mockResolvedValue(null);
+    await expect(toggleBankVerification("surveyor-1", true, "admin-1")).rejects.toThrow(NotFoundError);
+    expect(mockWriteAudit).not.toHaveBeenCalled();
+  });
 });
+

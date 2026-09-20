@@ -17,12 +17,12 @@ export const GET = withAuth<SurfboardRole>(
 const toggleSchema = z.object({ userId: z.string().min(1), status: z.boolean() });
 
 export const POST = withAuth<SurfboardRole>(
-  async (req) => {
+  async (req, ctx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const { userId, status } = await validateBody(req, toggleSchema);
-    const data = await toggleBankVerification(userId, status);
+    const data = await toggleBankVerification(userId, status, ctx.session.sub);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.SUPERADMIN] }

@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { createNotification } from "@/surfboard/services/notificationService";
 import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { writeAudit } from "@/lib/audit";
+import { Platform } from "@/utils/platform";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/qrEarningsActions.ts —
@@ -464,7 +466,12 @@ export async function getSurveyorsForKyc() {
   });
 }
 
-export async function toggleBankVerification(userId: string, status: boolean) {
+/**
+ * Approves (or revokes) a surveyor's payout bank account. `actorId` is the
+ * admin doing it, for the audit trail — approving a bank account is what lets
+ * a surveyor withdraw earnings, so every change is recorded.
+ */
+export async function toggleBankVerification(userId: string, status: boolean, actorId?: string) {
   const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId } });
   if (!bankDetails) {
     throw new NotFoundError("Bank details for this surveyor");
@@ -473,6 +480,14 @@ export async function toggleBankVerification(userId: string, status: boolean) {
   await prisma.surveyorBankDetails.update({
     where: { userId },
     data: { isVerified: status, verifiedAt: status ? new Date() : null },
+  });
+
+  await writeAudit(Platform.SURFBOARD, {
+    userId: actorId,
+    action: status ? "VERIFY_BANK_ACCOUNT" : "REVOKE_BANK_ACCOUNT",
+    entity: "SurveyorBankDetails",
+    entityId: bankDetails.id,
+    changes: { surveyorId: userId, isVerified: status },
   });
 
   return { success: true };

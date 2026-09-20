@@ -1,16 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Search, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Search, CheckCircle, AlertCircle, BadgeCheck, Landmark } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { SURFBOARD_COLORS, surfboardStatusBadgeStyle } from "@/surfboard/colors";
+import { KYC_FILTERS, countByKycFilter, matchesKycFilter, type KycFilter } from "@/surfboard/utils/kycFilter";
 
 interface SurveyorRow {
   id: string;
@@ -40,8 +51,14 @@ export default function KycClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loadingBankId, setLoadingBankId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<KycFilter>("all");
+  // The bank account an admin is about to verify or revoke, held while the confirmation is open.
+  const [bankTarget, setBankTarget] = useState<{ surveyor: SurveyorRow; verify: boolean } | null>(null);
+
+  const counts = useMemo(() => countByKycFilter(surveyors), [surveyors]);
 
   const filteredSurveyors = surveyors.filter((s) => {
+    if (!matchesKycFilter(s, filter)) return false;
     const searchStr = searchTerm.toLowerCase();
     const fullName = `${s.firstName || ""} ${s.lastName || ""}`.toLowerCase();
     return (
@@ -127,12 +144,37 @@ export default function KycClient({
           </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter surveyors">
+          {KYC_FILTERS.map(({ value, label }) => {
+            const active = filter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(value)}
+                className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  active
+                    ? "border-transparent bg-[#000b3d] text-white dark:bg-white dark:text-[#000b3d]"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-white/15 dark:bg-transparent dark:text-gray-300 dark:hover:bg-white/5"
+                }`}
+              >
+                {label}
+                <span
+                  className={`rounded-full px-1.5 text-xs tabular-nums ${
+                    active ? "bg-white/20 dark:bg-[#000b3d]/15" : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-400"
+                  }`}
+                >
+                  {counts[value]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="rounded-md border border-gray-200 dark:border-white/10 overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead
-              className="text-gray-700 dark:text-gray-300"
-              style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
-            >
+            <thead className="bg-gray-50 text-gray-700 dark:bg-white/5 dark:text-gray-300">
               <tr>
                 <th className="px-4 py-3 font-medium">Surveyor</th>
                 <th className="px-4 py-3 font-medium">SURCON Reg No</th>
@@ -150,7 +192,9 @@ export default function KycClient({
                     colSpan={7}
                     className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                   >
-                    No surveyors found.
+                    {filter === "all" && !searchTerm
+                      ? "No surveyors found."
+                      : "No surveyors match this filter. Try another filter or clear the search."}
                   </td>
                 </tr>
               ) : (
@@ -183,7 +227,7 @@ export default function KycClient({
                     </td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {s.bankDetails ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2">
                           <div className="flex flex-col">
                             <span className="text-gray-900 dark:text-white">
                               {s.bankDetails.accountName}
@@ -193,17 +237,43 @@ export default function KycClient({
                               {s.bankDetails.accountNumber}
                             </span>
                           </div>
-                          <Switch
-                            checked={s.bankDetails.isVerified}
-                            disabled={loadingBankId === s.id}
-                            onCheckedChange={() =>
-                              handleToggleBankVerification(
-                                s.id,
-                                s.bankDetails!.isVerified
-                              )
-                            }
-                            className="data-[state=checked]:bg-[#43AA8B]"
-                          />
+                          {s.bankDetails.isVerified ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge style={surfboardStatusBadgeStyle("success")} className="gap-1">
+                                <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
+                                Verified
+                                {s.bankDetails.verifiedAt && (
+                                  <span className="font-normal">
+                                    · {format(new Date(s.bankDetails.verifiedAt), "MMM d, yyyy")}
+                                  </span>
+                                )}
+                              </Badge>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs text-gray-600 hover:text-red-600 dark:text-gray-400"
+                                disabled={loadingBankId === s.id}
+                                onClick={() => setBankTarget({ surveyor: s, verify: false })}
+                              >
+                                Revoke
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge style={surfboardStatusBadgeStyle("warning")}>Awaiting approval</Badge>
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="h-8 gap-1.5 text-xs"
+                                disabled={loadingBankId === s.id}
+                                onClick={() => setBankTarget({ surveyor: s, verify: true })}
+                              >
+                                <Landmark className="h-3.5 w-3.5" aria-hidden />
+                                Verify account
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500 italic">Not set</span>
@@ -244,6 +314,50 @@ export default function KycClient({
             </tbody>
           </table>
         </div>
+
+        <AlertDialog open={bankTarget !== null} onOpenChange={(open) => !open && setBankTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {bankTarget?.verify ? "Verify this bank account?" : "Revoke bank verification?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm">
+                  {bankTarget?.surveyor.bankDetails && (
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-md border border-gray-200 p-3 dark:border-white/10">
+                      <dt className="text-gray-500">Surveyor</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {bankTarget.surveyor.firstName} {bankTarget.surveyor.lastName}
+                      </dd>
+                      <dt className="text-gray-500">Account name</dt>
+                      <dd className="text-gray-900 dark:text-white">{bankTarget.surveyor.bankDetails.accountName}</dd>
+                      <dt className="text-gray-500">Account</dt>
+                      <dd className="text-gray-900 dark:text-white">
+                        {bankTarget.surveyor.bankDetails.bankName} • {bankTarget.surveyor.bankDetails.accountNumber}
+                      </dd>
+                    </dl>
+                  )}
+                  <p>
+                    {bankTarget?.verify
+                      ? "Check that the account name matches the surveyor before you continue. Once verified, this surveyor can withdraw their QR earnings to this account."
+                      : "The surveyor will not be able to withdraw earnings until the account is verified again."}
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (bankTarget) void handleToggleBankVerification(bankTarget.surveyor.id, !bankTarget.verify);
+                  setBankTarget(null);
+                }}
+              >
+                {bankTarget?.verify ? "Verify account" : "Revoke"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
