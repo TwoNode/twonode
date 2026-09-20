@@ -1,4 +1,5 @@
 import type { ApiResult } from "@/lib/api/types";
+import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
@@ -65,14 +66,6 @@ export type AdminSummary = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-};
-
-export type AddAdminInput = {
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  role: "ADMIN" | "SUPERADMIN";
 };
 
 export type UploadResult = { key: string; url: string; thumbnailKey?: string; thumbnailUrl?: string };
@@ -253,6 +246,19 @@ export const gbcApi = {
     },
   },
 
+  invitations: {
+    list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
+
+    create: (input: InviteAdminInput) =>
+      jsonFetch<InviteResult>(`${BASE}/admin/invitations`, { method: "POST", body: JSON.stringify(input) }),
+
+    resend: (id: string) =>
+      jsonFetch<InviteResult>(`${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`, { method: "POST" }),
+
+    revoke: (id: string) =>
+      jsonFetch<AdminInvitationRow>(`${BASE}/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
   users: {
     list: () => jsonFetch<AdminSummary[]>(`${BASE}/admin/users`),
 
@@ -276,9 +282,6 @@ export const gbcApi = {
         pagination: { page: number; pageSize: number; total: number; totalPages: number };
       }>(`${BASE}/admin/users?${qs.toString()}`);
     },
-
-    add: (input: AddAdminInput) =>
-      jsonFetch<AdminSummary>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),
 
     updateRole: (id: string, role: "USER" | "ADMIN" | "SUPERADMIN") =>
       jsonFetch<AdminSummary>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {

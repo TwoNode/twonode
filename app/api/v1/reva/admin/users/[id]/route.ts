@@ -7,12 +7,12 @@ import { Platform, RevaRole } from "@/utils/platform";
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export const DELETE = withAuth<RevaRole>(
-  async (req, _ctx, routeCtx: RouteCtx) => {
+  async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const { id } = await routeCtx.params;
-    await deleteUser(id);
+    await deleteUser(ctx.session.sub, id);
     return NextResponse.json({ success: true });
   },
   { platform: Platform.REVA, roles: [RevaRole.SUPERADMIN] }

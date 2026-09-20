@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { withAuth } from "@/lib/api/withAuth";
-import { validateBody } from "@/lib/api/validate";
-import { validateCSRF } from "@/lib/auth/csrf";
 import { parsePagination } from "@/lib/api/pagination";
-import { getAllAdmins, getAllAdminsPaginated, addAdmin } from "@/gbc/services/adminUserService";
+import { getAllAdmins, getAllAdminsPaginated } from "@/gbc/services/adminUserService";
 import { Platform, GBCRole } from "@/utils/platform";
 
 /** Opt-in: `?page=` switches to the paginated/searchable variant (the admin Users page) — omitting it keeps the original full-array shape. */
@@ -28,24 +25,4 @@ export const GET = withAuth<GBCRole>(
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.GBC, roles: [GBCRole.ADMIN, GBCRole.SUPERADMIN] }
-);
-
-const bodySchema = z.object({
-  email: z.string().email(),
-  firstName: z.string(),
-  lastName: z.string(),
-  phone: z.string(),
-  role: z.enum(["ADMIN", "SUPERADMIN"]),
-});
-
-export const POST = withAuth<GBCRole>(
-  async (req, ctx) => {
-    if (!validateCSRF(req)) {
-      return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
-    }
-    const data = await validateBody(req, bodySchema);
-    const admin = await addAdmin(data, ctx.session.sub);
-    return NextResponse.json({ success: true, data: admin });
-  },
-  { platform: Platform.GBC, roles: [GBCRole.SUPERADMIN] }
 );

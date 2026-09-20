@@ -3,7 +3,8 @@
 import { Card } from "@/components/ui/card";
 import { Users, Shield, Search } from "lucide-react";
 import { AdminUsersList } from "@/gbc/components/admin/AdminUsersList";
-import { AddAdminModal } from "@/gbc/components/admin/AddAdminModal";
+import { InviteAdminModal } from "@/gbc/components/admin/InviteAdminModal";
+import { PendingInvitations } from "@/components/admin/PendingInvitations";
 import { AdminFilter } from "@/gbc/components/admin/AdminFilter";
 import { useEffect, useState } from "react";
 import { gbcApi } from "@/gbc/apiClient";
@@ -82,7 +83,7 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="w-full flex justify-end self-end sm:w-auto ml-auto">
-          <AddAdminModal />
+          <InviteAdminModal />
         </div>
       </div>
 
@@ -124,6 +125,8 @@ export default function AdminUsersPage() {
           </div>
         </Card>
       </div>
+
+      <PendingInvitations api={gbcApi.invitations} />
 
       {/* Admin List */}
       <Card className="p-4 sm:p-6">

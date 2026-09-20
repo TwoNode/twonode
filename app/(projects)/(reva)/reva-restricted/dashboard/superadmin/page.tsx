@@ -1,5 +1,6 @@
 import { FC } from "react";
-import CreateAdminUserForm from "../../components/CreateAdminUserForm";
+import InviteAdminUserForm from "../../components/InviteAdminUserForm";
+import RevaPendingInvitations from "../../components/RevaPendingInvitations";
 import AdminUsersList from "../../components/AdminUsersList";
 import UserRoleManagementForm from "../../components/UserRoleManagementForm";
 import AllUsersList from "../../components/AllUsersList";
@@ -44,9 +45,9 @@ const RevaPage: FC = async () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Create Admin User Form */}
+        {/* Invite Admin User Form */}
         <div>
-          <CreateAdminUserForm />
+          <InviteAdminUserForm />
         </div>
 
         {/* User Role Management Form */}
@@ -54,6 +55,8 @@ const RevaPage: FC = async () => {
           <UserRoleManagementForm users={allUsers} />
         </div>
       </div>
+
+      <RevaPendingInvitations />
 
       {/* Notification Creation Form */}
       <div className="mb-8">

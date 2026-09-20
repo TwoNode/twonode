@@ -144,7 +144,7 @@ Notifications are automatically triggered in:
 - `approveDueDiligenceReport()` - Report approval/disapproval
 - `uploadDueDiligenceReport()` - Report upload
 - `uploadDirectLinkReport()` - Direct link report upload
-- `createAdminUser()` - New admin user creation
+- `announceAdminJoined()` - An invited admin accepted their invitation and joined
 - `makeUserAdmin()` - User role promotion
 - `removeAdminPrivileges()` - Admin privilege removal
 - `deactivateUser()` - User deactivation

@@ -301,32 +301,3 @@ export async function promoteToAdmin(actorId: string, userId: string) {
 
   return promoted;
 }
-
-export async function createAdmin(actorId: string, input: { email: string; firstName: string; lastName: string; role: SurfboardRole }) {
-  const { email, firstName, lastName, role } = input;
-
-  const existingUser = await prisma.surfboardUser.findUnique({ where: { email } });
-  if (existingUser) throw new ConflictError("User with this email already exists");
-
-  const newUser = await prisma.surfboardUser.create({
-    data: {
-      email,
-      firstName,
-      lastName,
-      role,
-      kindeId: `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      isActive: true,
-      emailVerified: false,
-    },
-  });
-
-  await logAuditAction({
-    userId: actorId,
-    action: "CREATE_ADMIN",
-    entity: "SurfboardUser",
-    entityId: newUser.id,
-    changes: createChangeLog({ email, firstName, lastName, role }),
-  });
-
-  return newUser;
-}

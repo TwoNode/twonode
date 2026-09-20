@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { sendMail, sendEmailToAllSuperAdmins } from "@/utils/email";
+import { writeAudit } from "@/lib/audit";
+import { Platform } from "@/utils/platform";
 import { notifySystemAlert } from "@/reva/services/notificationService";
 import { paginatedResult } from "@/lib/api/pagination";
 
@@ -19,56 +21,30 @@ function assertNotDevAccount(email: string) {
   }
 }
 
-export async function createAdminUser(data: {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: "ADMIN" | "SUPERADMIN";
-}) {
-  assertNotDevAccount(data.email);
+const escapeHtml = (value: string) =>
+  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-  const existingUser = await prisma.revaUser.findUnique({ where: { email: data.email } });
-  if (existingUser) throw new ConflictError("User with this email already exists");
-
-  const newUser = await prisma.revaUser.create({
-    data: {
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      emailVerified: true,
-      is_active: true,
-      kindeId: `REVA_ADMIN_KINDE_ID_${Date.now()}__${Math.random().toString(36).substring(2, 11)}`,
-    },
-  });
-
+/**
+ * Admins are no longer created directly: a superadmin invites them
+ * (lib/auth/adminInvitations.ts) and the account appears when they accept.
+ * This is the team notification createAdminUser used to send, now fired at
+ * that moment. The invitation email replaces the old "account created" mail.
+ */
+export async function announceAdminJoined(data: { email: string; firstName: string; lastName: string; role: string }) {
+  const name = `${data.firstName} ${data.lastName}`.trim();
   try {
     await notifySystemAlert(
-      "Admin User Created",
-      `A new ${data.role} (${data.firstName} ${data.lastName}, ${data.email}) was created by a superadmin. You can manage admin users in the Super Admin dashboard.`
+      "Admin User Joined",
+      `A new ${data.role} (${name}, ${data.email}) accepted their invitation and joined. You can manage admin users in the Super Admin dashboard.`
     );
     await sendEmailToAllSuperAdmins({
-      subject: `REVA: New ${data.role} Created`,
-      text: `A new ${data.role} (${data.firstName} ${data.lastName}, ${data.email}) was created by a superadmin.`,
-      html: `<p>A new <b>${data.role}</b> (<b>${data.firstName} ${data.lastName}</b>, <b>${data.email}</b>) was created by a superadmin.<br>You can manage admin users in the Super Admin dashboard.</p>`,
-    });
-    await sendMail({
-      to: data.email,
-      subject: `REVA: Your ${data.role} account has been created`,
-      text: `Hello ${data.firstName},\n\nCongratulations! Your account has been created as a ${data.role} on the REVA platform. You now have access to admin features.`,
-      html: `<p>Hello <b>${data.firstName}</b>,<br><br>Congratulations! Your account has been created as a <b>${data.role}</b> on the REVA platform. You now have access to admin features.<br><br>Best regards,<br>The REVA Team</p>`,
+      subject: `REVA: New ${data.role} Joined`,
+      text: `A new ${data.role} (${name}, ${data.email}) accepted their invitation and joined.`,
+      html: `<p>A new <b>${escapeHtml(data.role)}</b> (<b>${escapeHtml(name)}</b>, <b>${escapeHtml(data.email)}</b>) accepted their invitation and joined.<br>You can manage admin users in the Super Admin dashboard.</p>`,
     });
   } catch (error) {
-    console.warn("[adminUserService] notification/email for admin creation failed:", error);
+    console.warn("[adminUserService] notification/email for admin joining failed:", error);
   }
-
-  return {
-    id: newUser.id,
-    email: newUser.email,
-    firstName: newUser.firstName,
-    lastName: newUser.lastName,
-    role: newUser.role,
-  };
 }
 
 export async function getAllAdminUsers() {
@@ -135,7 +111,7 @@ export async function getAllUsersPaginated(params: GetAllUsersPaginatedParams) {
   return paginatedResult(rows, total, page, pageSize);
 }
 
-export async function makeUserAdmin(userId: string, role: "ADMIN" | "SUPERADMIN") {
+export async function makeUserAdmin(actorId: string, userId: string, role: "ADMIN" | "SUPERADMIN") {
   const user = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
@@ -147,6 +123,14 @@ export async function makeUserAdmin(userId: string, role: "ADMIN" | "SUPERADMIN"
   const updatedUser = await prisma.revaUser.update({
     where: { id: userId },
     data: { role, is_active: true },
+  });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId,
+    action: "PROMOTE_TO_ADMIN",
+    entity: "RevaUser",
+    entityId: userId,
+    changes: { before: { role: user.role }, after: { role }, userEmail: user.email },
   });
 
   try {
@@ -172,37 +156,67 @@ export async function makeUserAdmin(userId: string, role: "ADMIN" | "SUPERADMIN"
   return updatedUser;
 }
 
-export async function removeAdminPrivileges(userId: string) {
+export async function removeAdminPrivileges(actorId: string, userId: string) {
   const user = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
 
   if (user.role === "USER") throw new ValidationError({ role: "User is not an admin" });
 
-  return prisma.revaUser.update({ where: { id: userId }, data: { role: "USER" } });
+  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { role: "USER" } });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId,
+    action: "REMOVE_ADMIN_PRIVILEGES",
+    entity: "RevaUser",
+    entityId: userId,
+    changes: { before: { role: user.role }, after: { role: "USER" }, userEmail: user.email },
+  });
+
+  return updated;
 }
 
-export async function deactivateUser(userId: string) {
+export async function deactivateUser(actorId: string, userId: string) {
   const user = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
 
   if (!user.is_active) throw new ConflictError("User is already deactivated");
 
-  return prisma.revaUser.update({ where: { id: userId }, data: { is_active: false } });
+  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { is_active: false } });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId,
+    action: "DEACTIVATE_USER",
+    entity: "RevaUser",
+    entityId: userId,
+    changes: { isActive: false, userEmail: user.email },
+  });
+
+  return updated;
 }
 
-export async function reactivateUser(userId: string) {
+export async function reactivateUser(actorId: string, userId: string) {
   const user = await prisma.revaUser.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
 
   if (user.is_active) throw new ConflictError("User is already active");
 
-  return prisma.revaUser.update({ where: { id: userId }, data: { is_active: true } });
+  const updated = await prisma.revaUser.update({ where: { id: userId }, data: { is_active: true } });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId,
+    action: "ACTIVATE_USER",
+    entity: "RevaUser",
+    entityId: userId,
+    changes: { isActive: true, userEmail: user.email },
+  });
+
+  return updated;
 }
 
-export async function deleteUser(userId: string) {
+export async function deleteUser(actorId: string, userId: string) {
   const user = await prisma.revaUser.findUnique({
     where: { id: userId },
     include: { _count: { select: { properties: true } } },
@@ -217,4 +231,12 @@ export async function deleteUser(userId: string) {
   }
 
   await prisma.revaUser.delete({ where: { id: userId } });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId,
+    action: "DELETE_USER",
+    entity: "RevaUser",
+    entityId: userId,
+    changes: { userEmail: user.email, role: user.role },
+  });
 }

@@ -9,7 +9,7 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 
 | File | Description |
 |---|---|
-| `AddAdminModal.tsx` | Modal to add a new admin user |
+| `InviteAdminModal.tsx` | Modal to invite a new admin user by email (they set their password via the emailed link) |
 | `AddGalleryButton.tsx` | Button + form to add a gallery photo |
 | `AddSpeakerButton.tsx` | Button + form to add a speaker |
 | `AddSponsorButton.tsx` | Button + form to add a sponsor |
