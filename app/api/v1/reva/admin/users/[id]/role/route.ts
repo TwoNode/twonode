@@ -15,7 +15,7 @@ const roleActionSchema = z.object({
 });
 
 export const PATCH = withAuth<RevaRole>(
-  async (req, _ctx, routeCtx: RouteCtx) => {
+  async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
@@ -24,11 +24,11 @@ export const PATCH = withAuth<RevaRole>(
 
     if (action === "promote") {
       if (!role) throw new ValidationError({ role: "role is required to promote" });
-      const data = await makeUserAdmin(id, role);
+      const data = await makeUserAdmin(ctx.session.sub, id, role);
       return NextResponse.json({ success: true, data });
     }
 
-    const data = await removeAdminPrivileges(id);
+    const data = await removeAdminPrivileges(ctx.session.sub, id);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.REVA, roles: [RevaRole.SUPERADMIN] }

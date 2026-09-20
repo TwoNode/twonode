@@ -41,6 +41,8 @@ const publicRoutes = [
   "/gbc-restricted/login",
   "/gbc-restricted/reset-password",
   "/gbc-restricted/verify-email",
+  // An invitee has no account (so no session) until they follow this link.
+  "/gbc-restricted/accept-invite",
 ];
 
 type DynamicAuthOptions = any & {

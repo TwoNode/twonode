@@ -113,6 +113,37 @@ model PasswordResetToken {
   @@index([userId, platform])
 }
 
+/// An invitation for a new admin/staff account on one product. Replaces
+/// creating the account up front: nothing exists in the product's user table
+/// until the invitee follows the emailed link and sets a password. The raw
+/// token is only ever in the email; just its sha256 hash is stored. Status is
+/// derived, not stored: accepted (acceptedAt), revoked (revokedAt), expired
+/// (expiresAt in the past) or pending. `platform` is a string discriminator
+/// like PasswordResetToken's, and the inviter is denormalised so the record
+/// stays readable if their account is later removed.
+model AdminInvitation {
+  id             String    @id @default(uuid())
+  platform       String
+  email          String
+  firstName      String
+  lastName       String
+  phone          String?
+  role           String
+  tokenHash      String    @unique
+  invitedById    String
+  invitedByName  String
+  invitedByEmail String
+  expiresAt      DateTime
+  lastSentAt     DateTime  @default(now())
+  acceptedAt     DateTime?
+  acceptedUserId String?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([platform, email])
+  @@index([platform, createdAt])
+}
+
 /// Same shape as PasswordResetToken (hashed token, expiry, single-use,
 /// platform-scoped) but kept as its own table rather than reused — a
 /// leaked/forged token here only lets someone mark an email "verified,"

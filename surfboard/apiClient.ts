@@ -1,3 +1,4 @@
+import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
 import type { QREarningsSettingsData } from "@/surfboard/services/qrEarningsService";
 import type {
@@ -315,6 +316,19 @@ export const surfboardApi = {
         ),
     },
 
+    invitations: {
+      list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
+
+      create: (input: InviteAdminInput) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations`, { method: "POST", body: JSON.stringify(input) }),
+
+      resend: (id: string) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`, { method: "POST" }),
+
+      revoke: (id: string) =>
+        jsonFetch<AdminInvitationRow>(`${BASE}/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    },
+
     users: {
       list: (
         params: {
@@ -340,17 +354,6 @@ export const surfboardApi = {
       },
 
       stats: () => jsonFetch<any>(`${BASE}/admin/users/stats`),
-
-      create: (input: {
-        email: string;
-        firstName: string;
-        lastName: string;
-        role: string;
-      }) =>
-        jsonFetch<any>(`${BASE}/admin/users`, {
-          method: "POST",
-          body: JSON.stringify(input),
-        }),
 
       updateRole: (id: string, role: string) =>
         jsonFetch<any>(`${BASE}/admin/users/${encodeURIComponent(id)}/role`, {

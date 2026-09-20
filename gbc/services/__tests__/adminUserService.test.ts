@@ -13,7 +13,7 @@ const mockPrisma = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-const { getAllAdmins, getAllAdminsPaginated, addAdmin, updateAdminRole, deleteAdmin, toggleAdminStatus } = await import(
+const { getAllAdmins, getAllAdminsPaginated, updateAdminRole, deleteAdmin, toggleAdminStatus } = await import(
   "@/gbc/services/adminUserService"
 );
 
@@ -78,30 +78,6 @@ describe("getAllAdminsPaginated (statuses filter)", () => {
   });
 });
 
-describe("addAdmin", () => {
-  it("throws ForbiddenError when the email is the DEV_EMAIL account", async () => {
-    await expect(
-      addAdmin({ email: "dev@test.com", firstName: "A", lastName: "B", phone: "", role: "ADMIN" }, "actor1")
-    ).rejects.toMatchObject({ status: 403 });
-  });
-
-  it("throws ConflictError when the email is already registered", async () => {
-    mockPrisma.gBCUser.findUnique.mockResolvedValue({ id: "existing" });
-    await expect(
-      addAdmin({ email: "a@test.com", firstName: "A", lastName: "B", phone: "", role: "ADMIN" }, "actor1")
-    ).rejects.toMatchObject({ status: 409 });
-  });
-
-  it("audit-logs the creation with the acting superadmin's id", async () => {
-    mockPrisma.gBCUser.findUnique.mockResolvedValue(null);
-    mockPrisma.gBCUser.create.mockResolvedValue({ id: "new1", email: "a@test.com" });
-    await addAdmin({ email: "a@test.com", firstName: "A", lastName: "B", phone: "", role: "ADMIN" }, "actor1");
-    expect(mockPrisma.gBCAuditLog.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: "actor1", action: "ADD_ADMIN" }) })
-    );
-  });
-});
-
 describe("updateAdminRole (self-demotion guard)", () => {
   it("throws ForbiddenError when demoting yourself", async () => {
     await expect(updateAdminRole("u1", "ADMIN", "u1")).rejects.toMatchObject({ status: 403 });
@@ -113,9 +89,17 @@ describe("updateAdminRole (self-demotion guard)", () => {
     await expect(updateAdminRole("u1", "SUPERADMIN", "u1")).resolves.toBeDefined();
   });
 
-  it("allows changing someone else's role", async () => {
-    mockPrisma.gBCUser.update.mockResolvedValue({ id: "u2", role: "ADMIN" });
+  it("allows changing someone else's role, auditing the acting admin (not the target)", async () => {
+    mockPrisma.gBCUser.update.mockResolvedValue({ id: "u2", role: "ADMIN", email: "t@test.com" });
     await expect(updateAdminRole("u2", "ADMIN", "u1")).resolves.toBeDefined();
+    expect(mockPrisma.gBCAuditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "u1",
+        action: "UPDATE_ADMIN_ROLE",
+        entityId: "u2",
+        changes: JSON.stringify({ newRole: "ADMIN", userEmail: "t@test.com" }),
+      }),
+    });
   });
 });
 
@@ -125,9 +109,17 @@ describe("deleteAdmin (self-deletion guard)", () => {
     expect(mockPrisma.gBCUser.delete).not.toHaveBeenCalled();
   });
 
-  it("allows deleting someone else", async () => {
-    mockPrisma.gBCUser.delete.mockResolvedValue({});
+  it("allows deleting someone else, auditing the acting admin and who was removed", async () => {
+    mockPrisma.gBCUser.delete.mockResolvedValue({ email: "t@test.com", role: "ADMIN" });
     await expect(deleteAdmin("u2", "u1")).resolves.toBeUndefined();
+    expect(mockPrisma.gBCAuditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "u1",
+        action: "DELETE_ADMIN",
+        entityId: "u2",
+        changes: JSON.stringify({ userEmail: "t@test.com", role: "ADMIN" }),
+      }),
+    });
   });
 });
 
@@ -142,8 +134,11 @@ describe("toggleAdminStatus (self-deactivation guard)", () => {
     await expect(toggleAdminStatus("u1", true, "u1")).resolves.toBeDefined();
   });
 
-  it("allows deactivating someone else", async () => {
-    mockPrisma.gBCUser.update.mockResolvedValue({ id: "u2", isActive: false });
+  it("allows deactivating someone else, auditing the acting admin", async () => {
+    mockPrisma.gBCUser.update.mockResolvedValue({ id: "u2", isActive: false, email: "t@test.com" });
     await expect(toggleAdminStatus("u2", false, "u1")).resolves.toBeDefined();
+    expect(mockPrisma.gBCAuditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "u1", action: "DEACTIVATE_ADMIN", entityId: "u2" }),
+    });
   });
 });

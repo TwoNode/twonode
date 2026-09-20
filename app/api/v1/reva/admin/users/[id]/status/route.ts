@@ -11,13 +11,13 @@ type RouteCtx = { params: Promise<{ id: string }> };
 const statusSchema = z.object({ active: z.boolean() });
 
 export const PATCH = withAuth<RevaRole>(
-  async (req, _ctx, routeCtx: RouteCtx) => {
+  async (req, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const { id } = await routeCtx.params;
     const { active } = await validateBody(req, statusSchema);
-    const data = active ? await reactivateUser(id) : await deactivateUser(id);
+    const data = active ? await reactivateUser(ctx.session.sub, id) : await deactivateUser(ctx.session.sub, id);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.REVA, roles: [RevaRole.SUPERADMIN] }

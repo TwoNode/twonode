@@ -61,3 +61,30 @@ export function resendVerification(input: {
 }): Promise<ApiResult<{ message: string }>> {
   return jsonFetch("/api/v1/auth/resend-verification", input);
 }
+
+export type InvitationDetails = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  roleLabel: string;
+  expiresAt: string;
+  loginPath: string;
+};
+
+/** What the accept-invite page shows before the invitee sets a password. */
+export async function getInvitation(input: { platform: Platform; token: string }): Promise<ApiResult<InvitationDetails>> {
+  const query = new URLSearchParams({ platform: input.platform, token: input.token });
+  const res = await fetch(`/api/v1/auth/invitations?${query}`);
+  return res.json();
+}
+
+export function acceptInvitation(input: {
+  platform: Platform;
+  token: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<ApiResult<{ message: string; loginPath: string }>> {
+  return jsonFetch("/api/v1/auth/accept-invite", input);
+}

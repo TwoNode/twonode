@@ -1,3 +1,4 @@
+import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
 import type { Property, OneTimeUserProperty, RevaUser, Notification, Role, NotificationAudience, NotificationType } from "@/prisma/generated";
 import type { RevaProfile, ProfileUpdateInput } from "@/reva/services/profileService";
@@ -26,13 +27,6 @@ async function formFetch<T>(url: string, formData: FormData, init?: RequestInit)
   const res = await fetch(url, { ...init, method: init?.method ?? "POST", body: formData });
   return res.json();
 }
-
-export type CreateAdminUserInput = {
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: "ADMIN" | "SUPERADMIN";
-};
 
 export type CreateNotificationInput = {
   type: NotificationType;
@@ -186,6 +180,19 @@ export const revaApi = {
   },
 
   admin: {
+    invitations: {
+      list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
+
+      create: (input: InviteAdminInput) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations`, { method: "POST", body: JSON.stringify(input) }),
+
+      resend: (id: string) =>
+        jsonFetch<InviteResult>(`${BASE}/admin/invitations/${encodeURIComponent(id)}/resend`, { method: "POST" }),
+
+      revoke: (id: string) =>
+        jsonFetch<AdminInvitationRow>(`${BASE}/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    },
+
     users: {
       list: () => jsonFetch<RevaUser[]>(`${BASE}/admin/users`),
 
@@ -203,9 +210,6 @@ export const revaApi = {
           pagination: { page: number; pageSize: number; total: number; totalPages: number };
         }>(`${BASE}/admin/users?${qs.toString()}`);
       },
-
-      create: (input: CreateAdminUserInput) =>
-        jsonFetch<RevaUser>(`${BASE}/admin/users`, { method: "POST", body: JSON.stringify(input) }),
 
       remove: (id: string) => jsonFetch<undefined>(`${BASE}/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
 

@@ -70,7 +70,7 @@ library plus files colocated directly with REVA pages under
 | `components/AdminMiniHeader.tsx` | Compact page header used across admin pages |
 | `components/AdminUsersList.tsx` | Admin user accounts list |
 | `components/AllUsersList.tsx` | All platform users list |
-| `components/CreateAdminUserForm.tsx` | Form to create a new admin user |
+| `components/InviteAdminUserForm.tsx` | Form to invite a new admin user by email (they set their password via the emailed link) |
 | `components/CreateNotificationForm.tsx` | Form to compose a notification |
 | `components/OneTimeRequestList.tsx` | One-time requests list (admin) |
 | `components/RequestsList.tsx` | Standard requests list (admin) |
