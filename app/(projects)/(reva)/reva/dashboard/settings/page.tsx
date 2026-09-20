@@ -2,6 +2,9 @@ import React from "react";
 import { getAuthenticatedRevaUser } from "@/reva/utils/revaAuth";
 import UserProfile from "./UserProfile";
 
+// Reads the session cookie on every request, so it can never be prerendered.
+export const dynamic = "force-dynamic";
+
 const Settings = async () => {
   try {
     const user = await getAuthenticatedRevaUser();
