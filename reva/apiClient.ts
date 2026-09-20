@@ -1,5 +1,6 @@
 import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { ApiResult } from "@/lib/api/types";
+import { createAuditLogApi } from "@/lib/api/auditLogClient";
 import type { Property, OneTimeUserProperty, RevaUser, Notification, Role, NotificationAudience, NotificationType } from "@/prisma/generated";
 import type { RevaProfile, ProfileUpdateInput } from "@/reva/services/profileService";
 import type { EncryptedUserData } from "@/utils/encryptedCookies";
@@ -180,6 +181,8 @@ export const revaApi = {
   },
 
   admin: {
+    auditLogs: createAuditLogApi(`${BASE}/admin/audit-logs`),
+
     invitations: {
       list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),
 

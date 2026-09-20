@@ -10,6 +10,7 @@ import {
   FilePlus,
   FileCheck2,
   FileText,
+  ScrollText,
 } from "lucide-react";
 import { RevaRole } from "@/utils/platform";
 
@@ -65,6 +66,7 @@ export const REVA_ROUTES: RevaRouteEntry[] = [
   { path: `${ADMIN_BASE}/spatial-record`, label: "Spatial Record", icon: Map, roles: ADMIN_ROLES, group: "admin", section: "Records" },
   { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings, roles: ADMIN_ROLES, group: "admin", section: "System" },
   // Sidebar shortcut shown only to SUPERADMIN today (revaAdminPanelLayout.tsx's existing canAccessRevaSuperAdminPanel conditional) — encoded here as a role restriction instead of a component-level check.
+  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: ScrollText, roles: SUPERADMIN_ONLY, group: "admin", section: "System" },
   { path: `${ADMIN_BASE}/superadmin`, label: "Superadmin", icon: Shield, roles: SUPERADMIN_ONLY, group: "admin", section: "System" },
   // ADMIN_ROLES, not SUPERADMIN-only — a real mismatch found while wiring
   // proxy.ts to this registry: the source's proxy.ts already let a plain

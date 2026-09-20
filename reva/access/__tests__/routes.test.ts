@@ -27,6 +27,13 @@ describe("canAccessRoute — admin panel", () => {
     expect(canAccessRoute("/reva-restricted/dashboard/superadmin", RevaRole.ADMIN)).toBe(false);
   });
 
+  it("restricts /audit-logs to SUPERADMIN only and shows the sidebar link to them alone", () => {
+    expect(canAccessRoute("/reva-restricted/dashboard/audit-logs", RevaRole.SUPERADMIN)).toBe(true);
+    expect(canAccessRoute("/reva-restricted/dashboard/audit-logs", RevaRole.ADMIN)).toBe(false);
+    expect(getNavItemsForRole(RevaRole.SUPERADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(true);
+    expect(getNavItemsForRole(RevaRole.ADMIN, "admin").some((r) => r.label === "Audit Logs")).toBe(false);
+  });
+
   it("/notifications is ADMIN-accessible, not SUPERADMIN-only — the source's proxy.ts already let a plain ADMIN reach it directly, only the sidebar link was SUPERADMIN-only", () => {
     expect(canAccessRoute("/reva-restricted/dashboard/notifications", RevaRole.ADMIN)).toBe(true);
     expect(canAccessRoute("/reva-restricted/dashboard/notifications", RevaRole.SUPERADMIN)).toBe(true);

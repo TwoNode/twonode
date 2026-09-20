@@ -1,4 +1,5 @@
 import type { ApiResult } from "@/lib/api/types";
+import { createAuditLogApi } from "@/lib/api/auditLogClient";
 import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/api/adminInvitationTypes";
 import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
@@ -245,6 +246,8 @@ export const gbcApi = {
       return jsonFetch<{ ticketNumbers: string[] }>(`${BASE}/admin/certificates/recipients?${query}`);
     },
   },
+
+  auditLogs: createAuditLogApi(`${BASE}/admin/audit-logs`),
 
   invitations: {
     list: () => jsonFetch<AdminInvitationRow[]>(`${BASE}/admin/invitations`),

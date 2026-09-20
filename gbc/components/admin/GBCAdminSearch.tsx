@@ -7,6 +7,7 @@ import {
 } from "@/components/dashboard/DashboardSearch";
 import { gbcApi } from "@/gbc/apiClient";
 import { GBC_ROUTES } from "@/gbc/access/routes";
+import { useGBCRole } from "@/gbc/components/admin/useGBCRole";
 import type { BadgeTone } from "@/components/dashboard/DashboardBadge";
 
 interface GBCAdminSearchProps {
@@ -20,6 +21,7 @@ export function GBCAdminSearch({
   placeholder = "Search tickets, attendees, sections…",
   variant = "default",
 }: GBCAdminSearchProps) {
+  const role = useGBCRole();
   const handleSearch = useCallback(async (query: string): Promise<DashboardSearchResult[]> => {
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) return [];
@@ -30,6 +32,8 @@ export function GBCAdminSearch({
     const matchingRoutes = GBC_ROUTES.filter(
       (r) =>
         r.group === "admin" &&
+        role !== null &&
+        r.roles.includes(role) &&
         (r.label.toLowerCase().includes(trimmed) ||
           r.path.toLowerCase().includes(trimmed))
     ).slice(0, 3);
@@ -77,7 +81,7 @@ export function GBCAdminSearch({
     }
 
     return results;
-  }, []);
+  }, [role]);
 
   return (
     <DashboardSearch

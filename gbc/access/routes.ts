@@ -16,6 +16,7 @@ import {
   MessageSquare,
   FileCheck2,
   FileText,
+  ScrollText,
   Info,
   Mail,
   Search,
@@ -31,7 +32,8 @@ import { GBCRole } from "@/utils/platform";
  * holders never get an account (GBCTicket has no relation to GBCUser), so
  * the public site itself is the "user" experience. `/gbc-restricted/{...}`
  * is a single flat admin tier here (ADMIN and SUPERADMIN both reach every
- * page below it) — unlike REVA/Surfboard, proxy.ts's current GBC branch
+ * page below it, except Audit Logs which is SUPERADMIN-only) — unlike
+ * REVA/Surfboard, proxy.ts's current GBC branch
  * never special-cases a sub-path other than /superadmin, which has no real
  * page (confirmed by reading the folder tree), so it's kept as a direct
  * role check below rather than a registry entry, same treatment as REVA's
@@ -61,6 +63,7 @@ export interface GBCRouteEntry {
 }
 
 const ADMIN_ROLES = [GBCRole.ADMIN, GBCRole.SUPERADMIN];
+const SUPERADMIN_ONLY = [GBCRole.SUPERADMIN];
 /** Guest pages need no role at all — the public site itself is the "user" experience. */
 const PUBLIC: GBCRole[] = [];
 
@@ -86,6 +89,7 @@ export const GBC_ROUTES: GBCRouteEntry[] = [
   { path: `${ADMIN_BASE}/inquiries`, label: "Inquiries", icon: MessageSquare, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/certificates`, label: "Certificates", icon: FileText, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/users`, label: "Users", icon: Users, roles: ADMIN_ROLES, group: "admin" },
+  { path: `${ADMIN_BASE}/audit-logs`, label: "Audit Logs", icon: ScrollText, roles: SUPERADMIN_ONLY, group: "admin" },
   { path: `${ADMIN_BASE}/notifications`, label: "Notifications", icon: Bell, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/settings`, label: "Settings", icon: Settings, roles: ADMIN_ROLES, group: "admin" },
   { path: `${ADMIN_BASE}/profile`, label: "Profile", icon: User, roles: ADMIN_ROLES, group: "admin", showInNav: false },
