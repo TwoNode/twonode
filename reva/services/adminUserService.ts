@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
+import { ApiError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { sendMail, sendEmailToAllSuperAdmins } from "@/utils/email";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
@@ -18,6 +18,34 @@ import { paginatedResult } from "@/lib/api/pagination";
 function assertNotDevAccount(email: string) {
   if (process.env.DEV_EMAIL && email === process.env.DEV_EMAIL) {
     throw new ForbiddenError();
+  }
+}
+
+/**
+ * A superadmin can't take these actions on their own account — a mis-click
+ * (or a stale tab) would otherwise demote, lock out or delete the person
+ * doing it. Another superadmin can, and that is audited like any other change.
+ */
+function assertNotSelf(actorId: string, targetId: string, action: "remove your own admin privileges" | "deactivate your own account" | "delete your own account") {
+  if (actorId === targetId) {
+    throw new ApiError(403, "SELF_ACTION_FORBIDDEN", `You can't ${action}. Ask another superadmin to do it.`);
+  }
+}
+
+/**
+ * Never leave the platform with no active superadmin (the only role that can
+ * invite or manage admins). Only applies when the target is an active
+ * superadmin with no active peer. The self-check already stops the usual case;
+ * this covers two superadmins acting on each other at the same moment, or an
+ * actor whose account was deactivated after they signed in.
+ */
+async function assertNotLastActiveSuperadmin(target: { id: string; role: string; is_active: boolean }) {
+  if (target.role !== "SUPERADMIN" || !target.is_active) return;
+  const others = await prisma.revaUser.count({
+    where: { role: "SUPERADMIN", is_active: true, id: { not: target.id } },
+  });
+  if (others === 0) {
+    throw new ConflictError("This is the only active superadmin. Promote or reactivate another superadmin first.");
   }
 }
 
@@ -162,6 +190,8 @@ export async function removeAdminPrivileges(actorId: string, userId: string) {
   assertNotDevAccount(user.email);
 
   if (user.role === "USER") throw new ValidationError({ role: "User is not an admin" });
+  assertNotSelf(actorId, userId, "remove your own admin privileges");
+  await assertNotLastActiveSuperadmin(user);
 
   const updated = await prisma.revaUser.update({ where: { id: userId }, data: { role: "USER" } });
 
@@ -182,6 +212,8 @@ export async function deactivateUser(actorId: string, userId: string) {
   assertNotDevAccount(user.email);
 
   if (!user.is_active) throw new ConflictError("User is already deactivated");
+  assertNotSelf(actorId, userId, "deactivate your own account");
+  await assertNotLastActiveSuperadmin(user);
 
   const updated = await prisma.revaUser.update({ where: { id: userId }, data: { is_active: false } });
 
@@ -223,6 +255,9 @@ export async function deleteUser(actorId: string, userId: string) {
   });
   if (!user) throw new NotFoundError("User");
   assertNotDevAccount(user.email);
+
+  assertNotSelf(actorId, userId, "delete your own account");
+  await assertNotLastActiveSuperadmin(user);
 
   if (user._count.properties > 0) {
     throw new ConflictError(

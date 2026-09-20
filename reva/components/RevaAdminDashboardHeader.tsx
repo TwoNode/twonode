@@ -68,7 +68,7 @@ export const RevaAdminDashboardNavbar = ({ userData }: DashboardNavbarProps) => 
               className="text-sm font-medium transition-colors duration-300"
               style={{ color: REVA_COLORS.text.light }}
             >
-              Add New Admin
+              Invite Admin
             </span>
           </Link>
         ) : (

@@ -6,7 +6,7 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 
 | File | Description |
 |---|---|
-| `adminUserService.ts` | Admin user management — promote/demote/deactivate/delete (each audited with the acting superadmin) and the "admin joined" team notification. New admins are not created here: they are invited via `lib/auth/adminInvitations.ts` |
+| `adminUserService.ts` | Admin user management — promote/demote/deactivate/delete (each audited with the acting superadmin) and the "admin joined" team notification. Guards: the seeded dev account is untouchable; a superadmin can't demote, deactivate or delete their own account (403 `SELF_ACTION_FORBIDDEN`); and the last active superadmin can't be removed (409). New admins are not created here: they are invited via `lib/auth/adminInvitations.ts` |
 | `notificationService.ts` | Notification CRUD + read/dismiss state (user + admin) |
 | `paymentService.ts` | Payment initiation/verification logic |
 | `profileService.ts` | User profile CRUD |
