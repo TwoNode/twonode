@@ -15,7 +15,7 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 | `notificationService.ts` | Admin notification CRUD + read/dismiss state |
 | `qrCheckinService.ts` | QR-code check-in verification |
 | `receiptPdfService.ts` | Spawns the receipt PDF worker and returns a buffer |
-| `settingsService.ts` | Platform settings CRUD |
+| `settingsService.ts` | Settings, **one row per edition** (`gbc_settings.edition`, unique). `resolveSettingsEdition()` picks the edition when none is given: the ACTIVE one, else the most recent PAST, else the earliest UPCOMING (so the public site never goes blank while no edition is ACTIVE). Reads never write — an edition with nothing saved reads as defaults carrying its own name/theme/venue/date, and its first save creates the row. Also per-edition reset, previous and rollback. Ticket capacity and early-bird counts are per edition too (`ticketService.ts`) |
 | `ticketService.ts` | Ticket purchase, lookup, and lifecycle logic |
 
 ## `gbc/utils/` — stateless helpers

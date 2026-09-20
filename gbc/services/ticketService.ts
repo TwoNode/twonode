@@ -39,8 +39,9 @@ export type AttendeeInput = {
   isPrimary?: boolean;
 };
 
-async function getSettings() {
-  return fetchGBCSettings();
+/** Settings are per edition — pass the edition the tickets are (being) sold under. */
+async function getSettings(edition?: string) {
+  return fetchGBCSettings(edition);
 }
 
 function resolveProfession(profession: string, otherProfession?: string): string {
@@ -103,11 +104,16 @@ function validateAttendees(attendeesData: AttendeeInput[], count: number): Atten
   return primaryAttendees[0];
 }
 
-async function assertCapacityAvailable(seatsNeeded: number, settings: Awaited<ReturnType<typeof getSettings>>) {
+async function assertCapacityAvailable(
+  seatsNeeded: number,
+  settings: Awaited<ReturnType<typeof getSettings>>,
+  edition: string
+) {
   if (settings?.tickets.pauseTicketReg) {
     throw new ConflictError("Ticket registration is currently paused.");
   }
-  const soldTickets = await prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED" } });
+  // Capacity is that edition's own: another edition's sales must not count against it.
+  const soldTickets = await prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } });
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
   if (soldTickets + seatsNeeded > maxTickets) {
     const remaining = maxTickets - soldTickets;
@@ -120,11 +126,12 @@ async function assertCapacityAvailable(seatsNeeded: number, settings: Awaited<Re
 }
 
 export async function createTicket(data: TicketPurchaseInput) {
-  const settings = await getSettings();
-  await assertCapacityAvailable(1, settings);
+  const activeEdition = await getActiveEditionInfo();
+  const settings = await getSettings(activeEdition.key);
+  await assertCapacityAvailable(1, settings, activeEdition.key);
 
   const soldEarlyBirdTickets = await prisma.gBCTicket.count({
-    where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD" },
+    where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: activeEdition.key },
   });
 
   const availability = isTicketTypeAvailable(data.ticketType as TicketType, soldEarlyBirdTickets, {
@@ -142,7 +149,6 @@ export async function createTicket(data: TicketPurchaseInput) {
   }
 
   const price = calculateTicketPrice(data.ticketType as TicketType, settings?.tickets);
-  const activeEdition = await getActiveEditionInfo();
 
   const ticket = await prisma.gBCTicket.create({
     data: {
@@ -182,11 +188,11 @@ export async function createTicket(data: TicketPurchaseInput) {
 
 async function createMultiTicket(attendeesData: AttendeeInput[], count: number, ticketType: "COMPANY" | "REGULAR") {
   const primaryAttendee = validateAttendees(attendeesData, count);
-  const settings = await getSettings();
-  await assertCapacityAvailable(count, settings);
+  const activeEdition = await getActiveEditionInfo();
+  const settings = await getSettings(activeEdition.key);
+  await assertCapacityAvailable(count, settings, activeEdition.key);
 
   const price = calculateTicketPrice(ticketType, settings?.tickets);
-  const activeEdition = await getActiveEditionInfo();
   const ticketPrefix = activeEdition.ticketPrefix;
   const edition = activeEdition.key;
 
@@ -370,18 +376,20 @@ export async function verifyPayment(reference: string, sendEmail?: boolean) {
     )
   );
 
-  const settings = await getSettings();
+  // The confirmation email describes the event the ticket was bought for.
+  const settings = await getSettings(updatedTickets[0]?.edition);
   await Promise.all(updatedTickets.map((ticket) => ensureQRAndEmail(ticket, settings, sendEmail)));
 
   return { tickets: updatedTickets, count: updatedTickets.length, amount: koboToNaira(verification.data.amount) };
 }
 
 export async function getTicketAvailability() {
+  const { key: edition } = await getActiveEditionInfo();
   const [completedTickets, soldEarlyBirdTickets] = await Promise.all([
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED" } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD" } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition } }),
   ]);
-  const settings = await getSettings();
+  const settings = await getSettings(edition);
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
 
   return { availableTickets: maxTickets - completedTickets, maxTickets, soldEarlyBirdTickets };
@@ -403,10 +411,13 @@ export async function lookupMyTicket(ticketNumber: string, email: string) {
 }
 
 export async function getTicketStats() {
-  const [statusStats, checkedInCount, soldEarlyBirdTickets] = await Promise.all([
+  // Totals span every edition; capacity ("available", "max", early-bird sold) is the current edition's own.
+  const { key: edition } = await getActiveEditionInfo();
+  const [statusStats, checkedInCount, soldEarlyBirdTickets, editionCompleted] = await Promise.all([
     prisma.gBCTicket.groupBy({ by: ["paymentStatus"], _count: { id: true }, _sum: { price: true } }),
     prisma.gBCTicket.count({ where: { checkedIn: true } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD" } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } }),
   ]);
 
   const totalTickets = statusStats.reduce((sum, stat) => sum + stat._count.id, 0);
@@ -414,7 +425,7 @@ export async function getTicketStats() {
   const pendingStat = statusStats.find((stat) => stat.paymentStatus === "PENDING");
 
   const completedTickets = completedStat?._count.id || 0;
-  const settings = await getSettings();
+  const settings = await getSettings(edition);
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
 
   return {
@@ -422,7 +433,7 @@ export async function getTicketStats() {
     completedTickets,
     pendingTickets: pendingStat?._count.id || 0,
     checkedInTickets: checkedInCount,
-    availableTickets: maxTickets - completedTickets,
+    availableTickets: maxTickets - editionCompleted,
     totalRevenue: completedStat?._sum.price || 0,
     maxTickets,
     soldEarlyBirdTickets,

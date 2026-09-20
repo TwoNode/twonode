@@ -93,6 +93,7 @@ model GBCEdition {
   gallery    GBCGallery[]
   inquiries  GBCContactInquiry[]
   eventStats GBCEventStats[]
+  settings   GBCSettings?
 
   @@index([status])
   @@index([deletedAt])
@@ -284,8 +285,13 @@ model GBCPage {
   @@map("gbc_pages")
 }
 
+/// One row per edition (edition is unique): each conference has its own event
+/// details, ticket prices/capacity, notification toggles and so on. An edition
+/// with no row yet reads as defaults until its first save creates it.
 model GBCSettings {
-  id               String   @id @default(cuid())
+  id               String     @id @default(cuid())
+  edition          String     @unique
+  editionRef       GBCEdition @relation(fields: [edition], references: [key])
   /// Stores the entire application configuration as a JSON object.
   /// Structure: GBCSettingsData (see utils/settings.ts)
   /// {
@@ -294,10 +300,10 @@ model GBCSettings {
   ///   notifications: { emailTicketConfirmation, ... },
   ///   system: { maintenanceMode, ... }
   /// }
-  settings         Json     @default("{}")
+  settings         Json       @default("{}")
   previousSettings Json?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@map("gbc_settings")
 }

@@ -2,6 +2,10 @@
  * Migration script to convert GBCSettings from key-value format to JSON format
  *
  * Run this BEFORE updating the schema to the new format
+ *
+ * HISTORICAL — do not run. It predates settings being one row per edition
+ * (gbc_settings.edition is now required and unique), so its INSERT no longer
+ * matches the table. Kept only as a record of the old key-value -> JSON step.
  * Usage: npx tsx scripts/migrate-gbc-settings.ts
  */
 

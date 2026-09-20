@@ -9,7 +9,7 @@ export const POST = withAuth<GBCRole>(
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
-    const data = await rollback(ctx.session.sub);
+    const data = await rollback(ctx.session.sub, req.nextUrl.searchParams.get("edition") || undefined);
     return NextResponse.json({ success: true, data, message: "Successfully rolled back to previous settings" });
   },
   { platform: Platform.GBC, roles: [GBCRole.SUPERADMIN] }

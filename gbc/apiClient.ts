@@ -29,6 +29,8 @@ export type GBCNotificationItem = {
 
 const BASE = "/api/v1/gbc";
 
+const editionQuery = (edition?: string) => (edition ? `?edition=${encodeURIComponent(edition)}` : "");
+
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
@@ -444,16 +446,21 @@ export const gbcApi = {
   },
 
   settings: {
-    get: () => jsonFetch<GBCSettingsData>(`${BASE}/settings`),
+    /** Without `edition`, the settings of the edition the public site shows. */
+    get: (edition?: string) => jsonFetch<GBCSettingsData>(`${BASE}/settings${editionQuery(edition)}`),
 
-    update: (patch: SettingsPatch) =>
-      jsonFetch<GBCSettingsData>(`${BASE}/admin/settings`, { method: "PATCH", body: JSON.stringify(patch) }),
+    /** Writes the given edition's settings (created on first save); without `edition`, the one the public site shows. */
+    update: (patch: SettingsPatch, edition?: string) =>
+      jsonFetch<GBCSettingsData>(`${BASE}/admin/settings${editionQuery(edition)}`, { method: "PATCH", body: JSON.stringify(patch) }),
 
-    reset: () => jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/reset`, { method: "POST" }),
+    reset: (edition?: string) =>
+      jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/reset${editionQuery(edition)}`, { method: "POST" }),
 
-    previous: () => jsonFetch<GBCSettingsData | null>(`${BASE}/admin/settings/previous`),
+    previous: (edition?: string) =>
+      jsonFetch<GBCSettingsData | null>(`${BASE}/admin/settings/previous${editionQuery(edition)}`),
 
-    rollback: () => jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/rollback`, { method: "POST" }),
+    rollback: (edition?: string) =>
+      jsonFetch<GBCSettingsData>(`${BASE}/admin/settings/rollback${editionQuery(edition)}`, { method: "POST" }),
   },
 
   tickets: {

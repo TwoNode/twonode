@@ -8,9 +8,11 @@ import { GBCSettingsData } from "@/gbc/utils/settings";
 
 interface Props {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
-export function SystemSettings({ settings }: Props) {
+export function SystemSettings({ settings, edition }: Props) {
   const [maintenanceMode, setMaintenanceMode] = useState(
     settings?.system.maintenanceMode ?? false
   );
@@ -29,7 +31,7 @@ export function SystemSettings({ settings }: Props) {
     if (key === "debugMode") setDebugMode(value);
 
     try {
-      const result = await gbcApi.settings.update({ system: { [key]: value } });
+      const result = await gbcApi.settings.update({ system: { [key]: value } }, edition);
 
       if (result.success) {
         toast.success(
