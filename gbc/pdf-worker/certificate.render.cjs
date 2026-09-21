@@ -17,9 +17,17 @@ const path = require("path");
 const fs = require("fs");
 const React = require("react");
 const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View, Image, Svg, Line } = require("@react-pdf/renderer");
-const { format } = require("date-fns");
 
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+
+// Hand-rolled instead of date-fns: date-fns ships every locale as its own
+// file (~5,300 files per copy traced into this worker's bundle), which was
+// pushing Vercel deployments over its 15,000-file upload cap. This worker
+// only ever needs "MMMM d" / "MMMM d, yyyy" in en-US, so Intl covers it with
+// zero extra dependency weight.
+function formatDate(date, opts) {
+  return new Intl.DateTimeFormat("en-US", opts).format(date);
+}
 const BACKGROUND_IMAGE_PATH = path.join(__dirname, "..", "..", "public", "gbc", "gbcCertificateBg.jpeg");
 const LOGO_PATH = path.join(__dirname, "..", "..", "public", "gbc2", "gbc2LightLogo.png");
 // Falls back to a blank line (no image) if this file is ever removed.
@@ -124,10 +132,11 @@ function cableMotif(corner) {
 function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
   const edition = ticket.editionRef;
   const attendedDate = ticket.checkedInAt ? new Date(ticket.checkedInAt) : new Date(edition.endDate);
+  const monthDay = { month: "long", day: "numeric" };
   const dateRange =
-    format(new Date(edition.startDate), "MMMM d") === format(new Date(edition.endDate), "MMMM d")
-      ? format(new Date(edition.startDate), "MMMM d, yyyy")
-      : `${format(new Date(edition.startDate), "MMMM d")}–${format(new Date(edition.endDate), "d, yyyy")}`;
+    formatDate(new Date(edition.startDate), monthDay) === formatDate(new Date(edition.endDate), monthDay)
+      ? formatDate(new Date(edition.startDate), { ...monthDay, year: "numeric" })
+      : `${formatDate(new Date(edition.startDate), monthDay)}–${new Date(edition.endDate).getDate()}, ${new Date(edition.endDate).getFullYear()}`;
 
   const content = React.createElement(
     View,
@@ -183,7 +192,11 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
         View,
         { style: styles.issuerBlock },
         React.createElement(Text, { style: styles.issuerName }, "TwoNode Technologies"),
-        React.createElement(Text, { style: styles.issuerDate }, format(attendedDate, "MMMM d, yyyy"))
+        React.createElement(
+          Text,
+          { style: styles.issuerDate },
+          formatDate(attendedDate, { month: "long", day: "numeric", year: "numeric" })
+        )
       )
     )
   );
