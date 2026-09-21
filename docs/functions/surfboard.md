@@ -10,7 +10,7 @@ colocated under `app/(projects)/(surfboard)/`.
 |---|---|
 | `adminUserService.ts` | Admin/surveyor user account CRUD |
 | `aiExtractionService.ts` | AI-based data extraction from uploaded documents |
-| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering |
+| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering; `getTopSurveyors` ranks surveyors by plan count (admin-only, counted like the Total Plans card) |
 | `awsService.ts` | S3 upload/download helpers |
 | `batchApprovalService.ts` | Certificate-of-Deposit batch approval workflow |
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |
@@ -35,6 +35,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | File | Description |
 |---|---|
 | `ossg.ts` | OSSG (Osun State/coordinate system) helpers |
+| `subscriptionExpiry.ts` | How a subscription end date reads in User Management (expired / expiring soon / ok / no end date); owns the 7-day "expiring soon" window shared with the list filter |
 | `surfAuth.ts` | Surfboard-specific auth helpers (session/role checks) |
 | `kycFilter.ts` | Filters and per-filter counts for the admin KYC review page (`matchesKycFilter`, `countByKycFilter`) |
 

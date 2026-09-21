@@ -4,6 +4,7 @@ import { ForbiddenError, NotFoundError, ConflictError } from "@/lib/api/errors";
 import { logAuditAction, createChangeLog, formatChanges } from "@/app/(projects)/(surfboard)/utils/auditLogger";
 import { paginatedResult } from "@/lib/api/pagination";
 import { activeSubscriptionWhereClause } from "@/surfboard/services/subscriptionService";
+import { EXPIRING_SOON_WINDOW_DAYS } from "@/surfboard/utils/subscriptionExpiry";
 
 /**
  * Who is performing an admin action. The audit log's `userId` is defined as
@@ -40,7 +41,6 @@ export interface GetAllUsersParams {
   subscriptionStatus?: "expired" | "expiring_soon";
 }
 
-const EXPIRING_SOON_WINDOW_DAYS = 7;
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/adminActions.ts. Broad

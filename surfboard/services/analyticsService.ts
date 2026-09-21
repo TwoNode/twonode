@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import { SurfboardRole } from "@/utils/platform";
 import { getRoleFieldPrefix } from "@/surfboard/services/planLockService";
+import { ForbiddenError } from "@/lib/api/errors";
 
 /**
  * New for Phase 2 (2026-08-24 request) — role/platform-scoped analytics.
@@ -132,6 +133,57 @@ export async function getDimensionBreakdown(
       }, 0);
     return { key: facilitator, count: row._count.id, totalDeededArea };
   });
+}
+
+export interface TopSurveyorRow {
+  userId: string;
+  name: string;
+  companyName: string | null;
+  count: number;
+}
+
+/**
+ * Surveyors ranked by how many plans they have on the platform — counted the
+ * same way as the Total Plans stat card (deleted plans and provisional types
+ * are left out), optionally within a survey-plan date range. Ties break by
+ * name so the order is stable between loads. A whole-platform ranking, so
+ * ADMIN/SUPERADMIN only; a surveyor asking for it is refused rather than
+ * handed a list of one.
+ */
+export async function getTopSurveyors(
+  scope: AnalyticsScope,
+  limit = 5,
+  range?: AnalyticsDateRange
+): Promise<TopSurveyorRow[]> {
+  if (scope.role === SurfboardRole.USER) throw new ForbiddenError();
+
+  const grouped = await prisma.surfboardPlan.groupBy({
+    by: ["userId"],
+    where: { ...dateRangeWhere(range), deleted: false, userId: { not: null }, planType: { notIn: PROVISIONAL_TYPES } },
+    _count: { id: true },
+    orderBy: { _count: { id: "desc" } },
+  });
+  if (grouped.length === 0) return [];
+
+  const users = await prisma.surfboardUser.findMany({
+    where: { id: { in: grouped.flatMap((g) => (g.userId ? [g.userId] : [])) } },
+    select: { id: true, firstName: true, lastName: true, companyName: true },
+  });
+  const byId = new Map(users.map((u) => [u.id, u]));
+
+  return grouped
+    .flatMap((g) => (g.userId ? [{ userId: g.userId, count: g._count.id }] : []))
+    .map((g) => {
+      const u = byId.get(g.userId);
+      return {
+        userId: g.userId,
+        name: u ? `${u.firstName} ${u.lastName}`.trim() : "Unknown surveyor",
+        companyName: u?.companyName ?? null,
+        count: g.count,
+      };
+    })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 export interface LodgementTrendPoint {

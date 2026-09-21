@@ -19,6 +19,7 @@ import { useServerList } from "@/hooks/useServerList";
 import { Pagination } from "@/components/ui/pagination";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/useViewMode";
+import { SubscriptionExpiry } from "./SubscriptionExpiry";
 
 interface Subscription {
   id?: string;
@@ -902,6 +903,7 @@ export default function UserManagementPage() {
                               ).toLocaleString()}
                               /{user.subscription.interval}
                             </span>
+                            <SubscriptionExpiry currentEnd={user.subscription.currentEnd} />
                           </div>
                         ) : (
                           <span className="inline-flex w-fit px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">
@@ -1098,6 +1100,7 @@ export default function UserManagementPage() {
                                 ).toLocaleString()}
                                 /{user.subscription.interval}
                               </div>
+                              <SubscriptionExpiry currentEnd={user.subscription.currentEnd} />
                             </div>
                           ) : (
                             <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">

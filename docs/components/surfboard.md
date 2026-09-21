@@ -103,6 +103,7 @@ next to the page that uses it.
 | File | Description |
 |---|---|
 | `dashboard/kyc/KycClient.tsx` | KYC review page: search, filter chips with counts (KYC pending/validated, bank awaiting/verified/missing), KYC switch, labelled "Verify account"/"Revoke" bank action behind a confirmation dialog |
+| `dashboard/user-management/SubscriptionExpiry.tsx` | One-line subscription end date under a user's plan, colour-coded (amber expiring soon, red expired) |
 | `SurfRestrictedLandingPage.tsx` | Admin landing page |
 
 ## Not found
