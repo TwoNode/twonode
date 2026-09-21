@@ -68,7 +68,7 @@ export function StatCard({
     <div
       className={cn(
         "flex items-start justify-between gap-4 rounded-2xl border p-5 shadow-sm",
-        "border-gray-200 bg-white dark:border-white/10 dark:bg-white/[0.03]",
+        "border-gray-200 bg-white dark:border-white/10 dark:bg-white/3",
         className
       )}
     >
@@ -102,7 +102,7 @@ export function StatCard({
       </div>
       <div
         className={cn(
-          "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
           !isBrand && TONE_CLASSES[tone]
         )}
         style={
