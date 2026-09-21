@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FileCheck, Layers, Receipt, Stamp } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
+import { StatCard } from "@/components/dashboard/StatCard";
 import type {
   StatCards,
   DimensionBreakdownRow,
@@ -107,27 +109,35 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Key Metrics */}
+          {/* Key Metrics. "Pending Batches" (awaiting payment) and "Pending
+              Certificates" (submitted or queried plans) count different
+              things — each card's breakdown line says which. */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatTile
+            <StatCard
               label="Total Plans"
-              value={statCards?.totalPlansCount ?? 0}
-              color="blue"
+              value={(statCards?.totalPlansCount ?? 0).toLocaleString()}
+              icon={FileCheck}
+              tone="brand"
             />
-            <StatTile
+            <StatCard
               label="Provisional Plans"
-              value={statCards?.provisionalPlansCount ?? 0}
-              color="purple"
+              value={(statCards?.provisionalPlansCount ?? 0).toLocaleString()}
+              icon={Layers}
+              tone="info"
             />
-            <StatTile
+            <StatCard
               label="Pending Batches"
-              value={statCards?.pendingBatchesCount ?? 0}
-              color="yellow"
+              value={(statCards?.pendingBatchesCount ?? 0).toLocaleString()}
+              icon={Receipt}
+              tone="warning"
+              breakdown="Awaiting payment"
             />
-            <StatTile
+            <StatCard
               label="Pending Certificates"
-              value={statCards?.pendingCertificatePlansCount ?? 0}
-              color="green"
+              value={(statCards?.pendingCertificatePlansCount ?? 0).toLocaleString()}
+              icon={Stamp}
+              tone="warning"
+              breakdown="Submitted or queried"
             />
           </div>
 
@@ -311,44 +321,6 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: "blue" | "purple" | "yellow" | "green";
-}) {
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",
-    purple:
-      "bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400",
-    yellow:
-      "bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
-    green:
-      "bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400",
-  };
-
-  return (
-    <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-full ${colorClasses[color]}`}>
-          <div className="w-6 h-6" />
-        </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            {label}
-          </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {value.toLocaleString()}
-          </p>
         </div>
       </div>
     </div>

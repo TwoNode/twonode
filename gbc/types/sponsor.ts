@@ -3,7 +3,8 @@ export interface Sponsor {
   name: string;
   logo: string;
   logoS3Key?: string | null;
-  tier: "HEADLINE" | "IMPACT" | "SUPPORTING";
+  /** Key of a sponsor tier — HEADLINE, IMPACT, SUPPORTING, or an admin-made one. */
+  tier: string;
   description?: string | null;
   website?: string | null;
   order: number;
@@ -11,4 +12,18 @@ export interface Sponsor {
   edition: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface SponsorTier {
+  key: string;
+  name: string;
+  description: string | null;
+  size: "FEATURED" | "STANDARD" | "COMPACT" | string;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SponsorTierWithCount extends SponsorTier {
+  sponsorCount: number;
 }

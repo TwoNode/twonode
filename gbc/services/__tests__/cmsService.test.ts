@@ -26,6 +26,8 @@ const mockAwsS3 = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/gbc/utils/aws-s3", () => mockAwsS3);
+// Tier existence is sponsorTierService's concern (own tests); here every tier is valid.
+vi.mock("@/gbc/services/sponsorTierService", () => ({ assertSponsorTierExists: vi.fn() }));
 
 const {
   getSpeakers,

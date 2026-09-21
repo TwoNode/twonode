@@ -4,9 +4,11 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { ShieldCheck, Receipt, Stamp, Users } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Platform } from "@/utils/platform";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
+import { StatCard } from "@/components/dashboard/StatCard";
 import type { StatCards } from "@/surfboard/services/analyticsService";
 
 interface UserData {
@@ -228,40 +230,36 @@ export default function SurfboardSuperAdminPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Platform Overview
             </h2>
+            {/* "Pending Batches" (awaiting payment) and "Pending
+                Certificates" (submitted or queried plans) count different
+                things — each card's breakdown line says which. */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {userStats?.totalUsers ?? "—"}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Users
-                </div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {(userStats?.admins ?? 0) + (userStats?.superAdmins ?? 0) ||
-                    "—"}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Admins
-                </div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {statCards?.pendingBatchesCount ?? "—"}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Pending Batches
-                </div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {statCards?.pendingCertificatePlansCount ?? "—"}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Pending Certificates
-                </div>
-              </div>
+              <StatCard
+                label="Total Users"
+                value={userStats?.totalUsers ?? "—"}
+                icon={Users}
+                tone="brand"
+              />
+              <StatCard
+                label="Admins"
+                value={(userStats?.admins ?? 0) + (userStats?.superAdmins ?? 0) || "—"}
+                icon={ShieldCheck}
+                tone="info"
+              />
+              <StatCard
+                label="Pending Batches"
+                value={statCards?.pendingBatchesCount ?? "—"}
+                icon={Receipt}
+                tone="warning"
+                breakdown="Awaiting payment"
+              />
+              <StatCard
+                label="Pending Certificates"
+                value={statCards?.pendingCertificatePlansCount ?? "—"}
+                icon={Stamp}
+                tone="warning"
+                breakdown="Submitted or queried"
+              />
             </div>
           </div>
 

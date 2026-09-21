@@ -23,14 +23,15 @@ import {
 import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Sponsor } from "@/gbc/types/sponsor";
+import { Sponsor, type SponsorTier } from "@/gbc/types/sponsor";
 import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface EditSponsorModalProps {
   sponsor: Sponsor;
+  tiers: SponsorTier[];
 }
 
-export function EditSponsorModal({ sponsor }: EditSponsorModalProps) {
+export function EditSponsorModal({ sponsor, tiers }: EditSponsorModalProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -83,7 +84,7 @@ export function EditSponsorModal({ sponsor }: EditSponsorModalProps) {
         {
           name: formData.get("name") as string,
           logo,
-          tier: formData.get("tier") as "HEADLINE" | "IMPACT" | "SUPPORTING",
+          tier: formData.get("tier") as string,
           description: (formData.get("description") as string) || undefined,
           website: (formData.get("website") as string) || undefined,
           order: parseInt(formData.get("order") as string) || 0,
@@ -190,9 +191,11 @@ export function EditSponsorModal({ sponsor }: EditSponsorModalProps) {
                 <SelectValue placeholder="Select tier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
-                <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
-                <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
+                {tiers.map((tier) => (
+                  <SelectItem key={tier.key} value={tier.key}>
+                    {tier.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

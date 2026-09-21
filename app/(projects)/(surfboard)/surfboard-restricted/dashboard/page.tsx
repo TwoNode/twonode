@@ -9,6 +9,8 @@ import {
   FileCheck,
   Activity,
   Clock,
+  Receipt,
+  Stamp,
   CheckCircle2,
   AlertTriangle,
   ArrowUpRight,
@@ -27,7 +29,7 @@ import type { StatCards } from "@/surfboard/services/analyticsService";
 const HERO_GRADIENT = `linear-gradient(135deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 35%, ${SURFBOARD_COLORS.primary.main} 70%, ${SURFBOARD_COLORS.secondary.dark} 130%)`;
 const ACCENT_GRADIENT = `linear-gradient(90deg, ${SURFBOARD_COLORS.primary.main} 0%, ${SURFBOARD_COLORS.secondary.main} 100%)`;
 
-const STAT_TONES = ["brand", "info", "warning", "success"] as const;
+type StatTone = "brand" | "info" | "warning" | "success" | "neutral";
 
 interface UserStats {
   totalUsers: number;
@@ -80,22 +82,37 @@ export default function RestrictedDashboardHome() {
     load();
   }, []);
 
-  const stats = [
+  // "Pending Batches" and "Pending Certificates" sound almost the same but
+  // count different things (see analyticsService.getStatCards): a batch is
+  // pending on *payment*, a certificate is pending on the *approval* it
+  // needs before it can be issued. Each card says so, so the two never read
+  // as duplicates of each other.
+  const stats: { title: string; value: number; icon: typeof FileCheck; tone: StatTone; breakdown?: string }[] = [
     {
       title: "Total Plans",
       value: statCards?.totalPlansCount ?? 0,
       icon: FileCheck,
+      tone: "brand",
     },
-    { title: "Active Users", value: userStats?.activeUsers ?? 0, icon: Users },
+    {
+      title: "Active Users",
+      value: userStats?.activeUsers ?? 0,
+      icon: Users,
+      tone: "info",
+    },
     {
       title: "Pending Batches",
       value: statCards?.pendingBatchesCount ?? 0,
-      icon: Clock,
+      icon: Receipt,
+      tone: "warning",
+      breakdown: "Awaiting payment",
     },
     {
       title: "Pending Certificates",
       value: statCards?.pendingCertificatePlansCount ?? 0,
-      icon: Activity,
+      icon: Stamp,
+      tone: "warning",
+      breakdown: "Submitted or queried",
     },
   ];
 
@@ -147,8 +164,9 @@ export default function RestrictedDashboardHome() {
             <StatCard
               label={stat.title}
               value={loading ? "…" : stat.value.toLocaleString()}
+              breakdown={stat.breakdown}
               icon={stat.icon}
-              tone={STAT_TONES[index % STAT_TONES.length]}
+              tone={stat.tone}
             />
           </motion.div>
         ))}
