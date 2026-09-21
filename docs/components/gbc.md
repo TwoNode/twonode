@@ -12,7 +12,7 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 | `InviteAdminModal.tsx` | Modal to invite a new admin user by email (they set their password via the emailed link) |
 | `AddGalleryButton.tsx` | Button + form to add a gallery photo |
 | `AddSpeakerButton.tsx` | Button + form to add a speaker |
-| `AddSponsorButton.tsx` | Button + form to add a sponsor |
+| `AddSponsorButton.tsx` | Button + form to add a sponsor (tier picker fed from the sponsor-tiers table) |
 | `AdminFilter.tsx` | Generic filter bar used across admin list pages |
 | `AdminMobileNav.tsx` | Mobile navigation for the admin panel |
 | `AdminSidebar.tsx` | Admin panel sidebar navigation (hides superadmin-only entries such as Audit Logs unless `useGBCRole()` is SUPERADMIN) |
@@ -41,7 +41,8 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 | `SocialLinksSettings.tsx` | Manage social media links shown on the site |
 | `SpeakersList.tsx` | List of speakers (admin) |
 | `SpeakersManager.tsx` | Speakers CRUD manager |
-| `SponsorsList.tsx` | List of sponsors (admin) |
+| `ManageSponsorTiersButton.tsx` | "Manage tiers" dialog: add, rename (name, tagline, card size), reorder and delete sponsorship levels; refreshes the page on close |
+| `SponsorsList.tsx` | List of sponsors (admin), grouped by tier in display order |
 | `SponsorsManager.tsx` | Sponsors CRUD manager |
 | `StatsCard.tsx` | Admin stat tile |
 | `SettingsEditionPicker.tsx` | Edition dropdown at the top of the Settings page (`?edition=`), with "shown on the public site" / "nothing saved yet" badges |

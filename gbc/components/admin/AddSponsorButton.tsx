@@ -24,8 +24,9 @@ import { gbcApi } from "@/gbc/apiClient";
 import { Plus, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import type { SponsorTier } from "@/gbc/types/sponsor";
 
-export function AddSponsorButton() {
+export function AddSponsorButton({ tiers }: { tiers: SponsorTier[] }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -83,7 +84,7 @@ export function AddSponsorButton() {
         name: formData.get("name") as string,
         logo: uploadResult.data.url,
         logoS3Key: uploadResult.data.key,
-        tier: formData.get("tier") as "HEADLINE" | "IMPACT" | "SUPPORTING",
+        tier: formData.get("tier") as string,
         description: (formData.get("description") as string) || undefined,
         website: (formData.get("website") as string) || undefined,
         order: parseInt(formData.get("order") as string) || 0,
@@ -191,11 +192,18 @@ export function AddSponsorButton() {
                 <SelectValue placeholder="Select tier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
-                <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
-                <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
+                {tiers.map((tier) => (
+                  <SelectItem key={tier.key} value={tier.key}>
+                    {tier.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {tiers.length === 0 && (
+              <p className="mt-1 text-sm text-amber-700">
+                There are no tiers yet. Close this and use “Manage tiers” to add one first.
+              </p>
+            )}
           </div>
 
           {/* Edition */}

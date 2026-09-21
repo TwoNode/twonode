@@ -81,7 +81,8 @@ export const sponsorSchema = z.object({
   // Not user-entered — set from the upload response so deleteSponsor's S3
   // cleanup has a key to act on. See gallerySchema's mediaS3Key comment.
   logoS3Key: z.string().optional(),
-  tier: z.enum(["HEADLINE", "IMPACT", "SUPPORTING"]),
+  // A GBCSponsorTier key — cmsService checks it exists.
+  tier: z.string().min(1, "Choose a tier"),
   description: z.string().optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   order: z.number().int().min(0).default(0),

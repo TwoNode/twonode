@@ -9,6 +9,7 @@ import {
   uploadGalleryMedia as uploadGalleryMediaToS3,
 } from "@/gbc/utils/aws-s3";
 import { getActiveEdition } from "@/gbc/services/editionService";
+import { assertSponsorTierExists } from "@/gbc/services/sponsorTierService";
 import { paginateQuery } from "@/lib/api/pagination";
 import type { GallerySort } from "@/gbc/types/gallery";
 
@@ -158,12 +159,14 @@ export async function getAllSponsors(edition?: string) {
 export type SponsorInput = Omit<Prisma.GBCSponsorUncheckedCreateInput, "id" | "createdAt" | "updatedAt">;
 
 export async function createSponsor(data: SponsorInput) {
+  await assertSponsorTierExists(data.tier);
   const edition = await resolveEdition((data as { edition?: string }).edition);
   return prisma.gBCSponsor.create({ data: edition ? { ...data, edition } : data });
 }
 
 /** If a new logo was uploaded (newLogoS3Key set), the old S3 object is deleted after the DB write succeeds. */
 export async function updateSponsor(id: string, data: SponsorInput, newLogoS3Key?: string) {
+  if (data.tier !== undefined) await assertSponsorTierExists(data.tier);
   if (newLogoS3Key) {
     const current = await prisma.gBCSponsor.findUnique({ where: { id }, select: { logoS3Key: true } });
     if (!current) throw new NotFoundError("Sponsor");
