@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.0.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -117,7 +117,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/geojson": "^7946.0.16",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^20",
+    "@types/node": "^24.13.6",
     "@types/nodemailer": "^6.4.17",
     "@types/paystack__inline-js": "^1.0.1",
     "@types/pdf-parse": "^1.1.5",
