@@ -79,7 +79,6 @@ const nextConfig = {
     "/api/v1/gbc/admin/certificates/send": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
       "./public/gbc/gbcCertificateBg.jpeg",
       "./public/gbc2/gbc2LightLogo.png",
@@ -88,7 +87,6 @@ const nextConfig = {
     "/api/v1/gbc/tickets/\\[ticketNumber\\]/certificate-pdf": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
       "./public/gbc/gbcCertificateBg.jpeg",
       "./public/gbc2/gbc2LightLogo.png",
@@ -97,37 +95,31 @@ const nextConfig = {
     "/api/v1/gbc/tickets/\\[ticketNumber\\]/receipt-pdf": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/surfboard/cod/batches/\\[batchId\\]/receipt-pdf": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets/pair": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets/group": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/payments/verify": [
       "./gbc/pdf-worker/**/*",
       "./node_modules/@react-pdf/**/*",
-      "./node_modules/date-fns/**/*",
       "./public/fonts/**/*",
     ],
   },
