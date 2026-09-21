@@ -18,9 +18,11 @@ import { GBCSettingsData, defaultSettings } from "@/gbc/utils/settings";
 
 interface TicketPricingDisplayProps {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
-export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
+export function TicketPricingDisplay({ settings, edition }: TicketPricingDisplayProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pricing, setPricing] = useState<GBCSettingsData["tickets"]>({
@@ -52,7 +54,7 @@ export function TicketPricingDisplay({ settings }: TicketPricingDisplayProps) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await gbcApi.settings.update({ tickets: pricing });
+      const result = await gbcApi.settings.update({ tickets: pricing }, edition);
 
       if (result.success) {
         toast.success("Ticket prices updated successfully");

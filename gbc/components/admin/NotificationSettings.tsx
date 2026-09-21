@@ -8,6 +8,8 @@ import { GBCSettingsData } from "@/gbc/utils/settings";
 
 interface Props {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
 type NotificationType = {
@@ -28,7 +30,7 @@ type NotificationSettings = {
   smsTicketConfirmation: boolean;
 };
 
-export function NotificationSettings({ settings }: Props) {
+export function NotificationSettings({ settings, edition }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [notificationSettings, setNotificationSettings] =
@@ -107,7 +109,7 @@ export function NotificationSettings({ settings }: Props) {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const result = await gbcApi.settings.update({ notifications: notificationSettings });
+      const result = await gbcApi.settings.update({ notifications: notificationSettings }, edition);
 
       if (result.success) {
         toast.success("Notification settings updated successfully");

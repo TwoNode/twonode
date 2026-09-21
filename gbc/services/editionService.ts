@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "@/lib/api/errors";
 import type { GBCEdition } from "@/gbc/utils/settings";
 import type { GBCEditionStatus } from "@/prisma/generated";
+import { resolveSettingsEdition } from "@/gbc/services/settingsService";
 
 /**
  * Editions live in their own gbc_editions table (see the GBCEdition model's
@@ -86,6 +87,17 @@ export async function getDeletedEditions(): Promise<(GBCEdition & { deletedAt: s
     orderBy: [{ deletedAt: "desc" }],
   });
   return rows.map((row) => ({ ...toGBCEdition(row), deletedAt: row.deletedAt!.toISOString() }));
+}
+
+/**
+ * The edition the public site is currently about — the ACTIVE one, else the
+ * most recent PAST one, else the earliest UPCOMING one (see
+ * settingsService.resolveSettingsEdition). Used wherever a page needs to name
+ * "the current edition" without hard-coding "2.0".
+ */
+export async function getCurrentEdition(): Promise<GBCEdition | null> {
+  const row = await resolveSettingsEdition();
+  return row ? toGBCEdition(row) : null;
 }
 
 export async function getActiveEdition(): Promise<GBCEdition | null> {

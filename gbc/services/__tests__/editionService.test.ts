@@ -23,6 +23,7 @@ vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 const {
   getEditions,
   getActiveEdition,
+  getCurrentEdition,
   getEditionPublicRecap,
   getEditionAdminStats,
   createEdition,
@@ -132,6 +133,34 @@ describe("getActiveEdition", () => {
     mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
     const result = await getActiveEdition();
     expect(result).toBeNull();
+  });
+});
+
+describe("getCurrentEdition (the edition the public site is about)", () => {
+  it("is the ACTIVE edition when there is one, serialized like every other edition", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValueOnce(row({ key: "3.0", name: "GBC 3.0", ticketPrefix: "GBC3" }));
+    await expect(getCurrentEdition()).resolves.toMatchObject({
+      key: "3.0",
+      name: "GBC 3.0",
+      status: "ACTIVE",
+      startDate: "2026-03-15T00:00:00.000Z",
+    });
+  });
+
+  it("with nothing ACTIVE (production today), is the most recent PAST edition — never blank", async () => {
+    mockPrisma.gBCEdition.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(row({ status: "PAST" }));
+    await expect(getCurrentEdition()).resolves.toMatchObject({ key: "2.0", name: "GBC 2.0", status: "PAST" });
+    expect(mockPrisma.gBCEdition.findFirst).toHaveBeenLastCalledWith({
+      where: { status: "PAST", deletedAt: null },
+      orderBy: { startDate: "desc" },
+    });
+  });
+
+  it("is null when no edition exists at all", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
+    await expect(getCurrentEdition()).resolves.toBeNull();
   });
 });
 

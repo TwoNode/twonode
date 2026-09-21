@@ -14,13 +14,26 @@ import { EventConfigForm } from "@/gbc/components/admin/EventConfigForm";
 import { SystemSettings } from "@/gbc/components/admin/SystemSettings";
 import { GallerySettings } from "@/gbc/components/admin/GallerySettings";
 import { SocialLinksSettings } from "@/gbc/components/admin/SocialLinksSettings";
-import { getSettings } from "@/gbc/services/settingsService";
+import { SettingsEditionPicker } from "@/gbc/components/admin/SettingsEditionPicker";
+import { getEditionSettings, resolveSettingsEdition } from "@/gbc/services/settingsService";
+import { getEditions } from "@/gbc/services/editionService";
+import { firstParam } from "@/lib/searchParams";
 
 // Admin page — never safe to statically prerender alongside the other restricted pages.
 export const dynamic = "force-dynamic";
 
-export default async function AdminSettingsPage() {
-  const settings = await getSettings();
+export default async function AdminSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const requested = firstParam((await searchParams).edition);
+  const editions = await getEditions();
+  // An unknown/deleted ?edition= falls back to the edition the public site shows rather than erroring.
+  const { edition, settings, saved } = await getEditionSettings(
+    requested && editions.some((e) => e.key === requested) ? requested : undefined
+  );
+  const publicEdition = (await resolveSettingsEdition())?.key ?? null;
 
   return (
     <div>
@@ -34,7 +47,10 @@ export default async function AdminSettingsPage() {
         </p>
       </div>
 
-      <div className="grid gap-8">
+      <SettingsEditionPicker editions={editions} edition={edition} publicEdition={publicEdition} saved={saved} />
+
+      {/* Keyed by edition so switching edition remounts the forms with that edition's values. */}
+      <div key={edition ?? "none"} className="grid gap-8">
         {/* Event Configuration */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
@@ -47,7 +63,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <EventConfigForm settings={settings || null} />
+          <EventConfigForm settings={settings || null} edition={edition ?? undefined} />
         </Card>
 
         {/* Gallery Settings */}
@@ -62,7 +78,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <GallerySettings settings={settings || null} />
+          <GallerySettings settings={settings || null} edition={edition ?? undefined} />
         </Card>
 
         {/* Ticket Settings */}
@@ -77,7 +93,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <TicketPricingDisplay settings={settings || null} />
+          <TicketPricingDisplay settings={settings || null} edition={edition ?? undefined} />
         </Card>
 
         {/* Social Links Settings */}
@@ -92,7 +108,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <SocialLinksSettings settings={settings || null} />
+          <SocialLinksSettings settings={settings || null} edition={edition ?? undefined} />
         </Card>
 
         {/* Email Notifications */}
@@ -107,7 +123,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <NotificationSettings settings={settings || null} />
+          <NotificationSettings settings={settings || null} edition={edition ?? undefined} />
         </Card>
 
         {/* System Settings */}
@@ -122,7 +138,7 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
 
-          <SystemSettings settings={settings || null} />
+          <SystemSettings settings={settings || null} edition={edition ?? undefined} />
         </Card>
       </div>
     </div>

@@ -37,9 +37,14 @@ export default function CertificatesClient({
 }: CertificatesClientProps) {
   const router = useRouter();
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
-  const [emailBody, setEmailBody] = useState(
-    "Thank you for attending Geospatial Builders Conference (GBC) 2.0!\n\nWe appreciate your active participation and are thrilled to have you as part of our geospatial community."
-  );
+  // The default message names the edition being filtered (from the database),
+  // or the conference generally when every edition is shown. `null` means the
+  // admin hasn't typed anything, so the default keeps following the filter.
+  const editionName =
+    editions.find((e) => e.key === filters.edition)?.name ?? "Geospatial Builders Conference (GBC)";
+  const defaultBody = `Thank you for attending ${editionName}!\n\nWe appreciate your active participation and are thrilled to have you as part of our geospatial community.`;
+  const [editedBody, setEditedBody] = useState<string | null>(null);
+  const emailBody = editedBody ?? defaultBody;
   const [isSending, setIsSending] = useState(false);
   const [isSelectingAll, setIsSelectingAll] = useState(false);
 
@@ -127,7 +132,7 @@ export default function CertificatesClient({
               </label>
               <textarea
                 value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
+                onChange={(e) => setEditedBody(e.target.value)}
                 className="w-full h-40 p-3 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 placeholder="Enter your congratulatory message..."
               />

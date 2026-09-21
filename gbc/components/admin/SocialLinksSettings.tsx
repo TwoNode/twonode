@@ -19,9 +19,11 @@ import {
 
 interface SocialLinksSettingsProps {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
-export function SocialLinksSettings({ settings }: SocialLinksSettingsProps) {
+export function SocialLinksSettings({ settings, edition }: SocialLinksSettingsProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,7 +46,7 @@ export function SocialLinksSettings({ settings }: SocialLinksSettingsProps) {
         ...formData,
       };
 
-      const result = await gbcApi.settings.update({ contact: updatedContact });
+      const result = await gbcApi.settings.update({ contact: updatedContact }, edition);
 
       if (result.success) {
         toast({

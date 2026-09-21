@@ -44,7 +44,8 @@ plus files colocated directly with GBC pages under `app/(projects)/(GBC)/`.
 | `SponsorsList.tsx` | List of sponsors (admin) |
 | `SponsorsManager.tsx` | Sponsors CRUD manager |
 | `StatsCard.tsx` | Admin stat tile |
-| `SystemSettings.tsx` | Platform-wide system settings |
+| `SettingsEditionPicker.tsx` | Edition dropdown at the top of the Settings page (`?edition=`), with "shown on the public site" / "nothing saved yet" badges |
+| `SystemSettings.tsx` | System settings (maintenance/debug) for the selected edition |
 | `TicketCards.tsx` | Ticket summary cards |
 | `TicketPricingDisplay.tsx` | Displays ticket pricing tiers |
 | `TicketsTable.tsx` | Table of all ticket purchases |

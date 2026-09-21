@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 
 interface Props {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
-export function GallerySettings({ settings }: Props) {
+export function GallerySettings({ settings, edition }: Props) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     enabled: settings?.gallery?.enabled ?? true,
@@ -26,7 +28,7 @@ export function GallerySettings({ settings }: Props) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const result = await gbcApi.settings.update({ gallery: formData });
+      const result = await gbcApi.settings.update({ gallery: formData }, edition);
 
       if (result.success) {
         toast.success("Gallery settings updated");

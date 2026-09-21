@@ -307,6 +307,67 @@ describe("getTicketByNumber", () => {
   });
 });
 
+describe("capacity and settings are per edition", () => {
+  const editionKeyOfCounts = () => mockPrisma.gBCTicket.count.mock.calls.map((c) => c[0]?.where?.edition);
+
+  it("createTicket reads the settings of, and counts sales in, the edition it will sell under", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_ABC" });
+    mockPrisma.gBCTicket.update.mockResolvedValue({});
+
+    await createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any);
+
+    expect(mockSettingsService.getSettings).toHaveBeenCalledWith("3.0");
+    // sold-capacity count and early-bird count are both restricted to 3.0
+    expect(mockPrisma.gBCTicket.count).toHaveBeenNthCalledWith(1, { where: { paymentStatus: "COMPLETED", edition: "3.0" } });
+    expect(mockPrisma.gBCTicket.count).toHaveBeenNthCalledWith(2, {
+      where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: "3.0" },
+    });
+  });
+
+  it("another edition's sales don't count against this edition's capacity", async () => {
+    // 2.0 sold 1000 (its full capacity); 3.0 has sold nothing, so a 3.0 purchase must go through.
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) => (where.edition === "2.0" ? 1000 : 0));
+    mockPrisma.gBCTicket.create.mockResolvedValue({ id: "t1", ticketNumber: "GBC3_ABC" });
+    mockPrisma.gBCTicket.update.mockResolvedValue({});
+
+    await expect(
+      createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any)
+    ).resolves.toBeDefined();
+  });
+
+  it("still reports sold out when this edition's own capacity is used up", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCTicket.count.mockImplementation(async ({ where }) => (where.edition === "3.0" ? 1000 : 0));
+
+    await expect(
+      createTicket({ name: "A", email: "a@test.com", gender: "MALE", profession: "OTHER", ticketType: "EARLY_BIRD" } as any)
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("the public availability is the selling edition's, not the all-time total", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue({ key: "3.0", status: "ACTIVE", ticketPrefix: "GBC3" });
+    mockPrisma.gBCTicket.count.mockResolvedValue(5);
+
+    await getTicketAvailability();
+
+    expect(editionKeyOfCounts()).toEqual(["3.0", "3.0"]);
+    expect(mockSettingsService.getSettings).toHaveBeenCalledWith("3.0");
+  });
+
+  it("with no ACTIVE edition, sells under (and reads settings of) 2.0 — the same fallback tickets are stamped with", async () => {
+    mockPrisma.gBCEdition.findFirst.mockResolvedValue(null);
+    mockPrisma.gBCTicket.count.mockResolvedValue(0);
+
+    await getTicketAvailability();
+
+    expect(mockSettingsService.getSettings).toHaveBeenCalledWith("2.0");
+    expect(editionKeyOfCounts()).toEqual(["2.0", "2.0"]);
+  });
+});
+
 describe("getTicketAvailability", () => {
   it("returns capacity numbers only, no revenue", async () => {
     mockPrisma.gBCTicket.count

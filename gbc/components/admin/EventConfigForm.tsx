@@ -35,9 +35,11 @@ type EventFormData = z.infer<typeof eventFormSchema>;
 
 interface Props {
   settings: GBCSettingsData | null;
+  /** The edition these settings belong to; saves go to that edition's row. */
+  edition?: string;
 }
 
-export function EventConfigForm({ settings }: Props) {
+export function EventConfigForm({ settings, edition }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,7 +117,7 @@ export function EventConfigForm({ settings }: Props) {
 
     try {
       // Update all event settings at once
-      const result = await gbcApi.settings.update({ event: formData });
+      const result = await gbcApi.settings.update({ event: formData }, edition);
 
       if (result.success) {
         toast.success("Event configuration updated successfully");
