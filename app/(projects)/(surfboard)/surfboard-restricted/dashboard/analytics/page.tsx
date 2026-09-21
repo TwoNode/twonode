@@ -7,6 +7,7 @@ import type {
   StatCards,
   DimensionBreakdownRow,
   TimeTrendPoint,
+  TopSurveyorRow,
 } from "@/surfboard/services/analyticsService";
 
 interface UserStats {
@@ -31,6 +32,7 @@ export default function AnalyticsPage() {
   const [statCards, setStatCards] = useState<StatCards | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [topLgas, setTopLgas] = useState<DimensionBreakdownRow[]>([]);
+  const [topSurveyors, setTopSurveyors] = useState<TopSurveyorRow[]>([]);
   const [trend, setTrend] = useState<TimeTrendPoint[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>(
     [],
@@ -41,11 +43,12 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const [statsRes, usersRes, lgaRes, trendRes, activityRes] =
+      const [statsRes, usersRes, lgaRes, surveyorRes, trendRes, activityRes] =
         await Promise.all([
           surfboardApi.analytics.stats(),
           surfboardApi.admin.users.stats(),
           surfboardApi.analytics.dimension("lga"),
+          surfboardApi.analytics.topSurveyors(5),
           surfboardApi.analytics.timeTrend(),
           surfboardApi.admin.auditLogs.list({ page: 1, pageSize: 6 }),
         ]);
@@ -53,6 +56,7 @@ export default function AnalyticsPage() {
       if (statsRes.success) setStatCards(statsRes.data);
       if (usersRes.success) setUserStats(usersRes.data);
       if (lgaRes.success) setTopLgas((lgaRes.data || []).slice(0, 5));
+      if (surveyorRes.success) setTopSurveyors(surveyorRes.data || []);
       if (trendRes.success) setTrend(trendRes.data || []);
       if (activityRes.success) setRecentActivity(activityRes.data?.data || []);
 
@@ -64,6 +68,7 @@ export default function AnalyticsPage() {
 
   const maxTrendCount = Math.max(1, ...trend.map((t) => t.count));
   const maxLgaCount = Math.max(1, ...topLgas.map((t) => t.count));
+  const maxSurveyorCount = Math.max(1, ...topSurveyors.map((t) => t.count));
 
   if (loading) {
     return (
@@ -128,6 +133,7 @@ export default function AnalyticsPage() {
 
           {/* Charts and Detailed Analytics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="space-y-8">
             {/* Top LGAs */}
             <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -162,6 +168,44 @@ export default function AnalyticsPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Top surveyors */}
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Top Surveyors by Plan Count
+              </h2>
+              {topSurveyors.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  No plan data yet.
+                </p>
+              ) : (
+                <ol className="space-y-4">
+                  {topSurveyors.map((row, index) => (
+                    <li key={row.userId} className="flex items-center gap-3">
+                      <div className="w-6 h-6 shrink-0 bg-blue-100 dark:bg-blue-500/15 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                        {index + 1}
+                      </div>
+                      <div className="w-40 shrink-0 min-w-0">
+                        <p className="truncate text-sm text-gray-800 dark:text-gray-200">{row.name}</p>
+                        {row.companyName && (
+                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">{row.companyName}</p>
+                        )}
+                      </div>
+                      <div className="flex-1 bg-gray-100 dark:bg-white/10 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${(row.count / maxSurveyorCount) * 100}%` }}
+                        />
+                      </div>
+                      <span className="w-12 shrink-0 text-right text-gray-900 dark:text-white font-semibold text-sm">
+                        {row.count}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
             </div>
 
             {/* Recent Activity */}

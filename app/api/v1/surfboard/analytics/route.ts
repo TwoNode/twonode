@@ -6,6 +6,7 @@ import {
   getDimensionBreakdown,
   getLodgementTrend,
   getTimeTrend,
+  getTopSurveyors,
   getUserDashboardAnalytics,
   type AnalyticsDimension,
   type AnalyticsDateRange,
@@ -18,7 +19,8 @@ import { Platform, SurfboardRole } from "@/utils/platform";
  * stage roles use /mda/stage-stats instead — queue depth/time-in-stage, not
  * these platform-wide numbers.
  *
- * ?section=stats|dimension|lodgement-trend|time-trend (default: stats)
+ * ?section=stats|dimension|lodgement-trend|time-trend|top-surveyors (default: stats)
+ * (top-surveyors is admin-only and takes an optional ?limit=1..20, default 5)
  * ?dimension=facilitator|lga|ward|lcda (required when section=dimension)
  */
 const DIMENSIONS = ["facilitator", "lga", "ward", "lcda"] as const;
@@ -60,6 +62,11 @@ export const GET = withAuth<SurfboardRole>(
       return NextResponse.json({ success: true, data: await getTimeTrend(scope) });
     }
 
+    if (section === "top-surveyors") {
+      const limit = Math.min(20, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 5));
+      return NextResponse.json({ success: true, data: await getTopSurveyors(scope, limit, range) });
+    }
+
     if (section === "dashboard") {
       return NextResponse.json({
         success: true,
@@ -67,7 +74,7 @@ export const GET = withAuth<SurfboardRole>(
       });
     }
 
-    throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend|dashboard" });
+    throw new ValidationError({ section: "must be one of stats|dimension|lodgement-trend|time-trend|top-surveyors|dashboard" });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER, SurfboardRole.ADMIN, SurfboardRole.SUPERADMIN] }
 );

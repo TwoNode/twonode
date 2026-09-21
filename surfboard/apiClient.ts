@@ -14,6 +14,7 @@ import type {
   MdaStageStats,
   StatCards,
   TimeTrendPoint,
+  TopSurveyorRow,
 } from "@/surfboard/services/analyticsService";
 
 /**
@@ -973,6 +974,10 @@ export const surfboardApi = {
       jsonFetch<DimensionBreakdownRow[]>(
         `${BASE}/analytics?section=dimension&dimension=${dimension}${dateRangeQuery(range)}`,
       ),
+
+    /** Surveyors ranked by plan count — ADMIN/SUPERADMIN only. */
+    topSurveyors: (limit = 5, range?: AnalyticsDateRangeParam) =>
+      jsonFetch<TopSurveyorRow[]>(`${BASE}/analytics?section=top-surveyors&limit=${limit}${dateRangeQuery(range)}`),
 
     lodgementTrend: () =>
       jsonFetch<LodgementTrend>(`${BASE}/analytics?section=lodgement-trend`),

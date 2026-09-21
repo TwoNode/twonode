@@ -58,7 +58,7 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard-restricted/login` | `surfboard-restricted/(auth)/login/page.tsx` | Admin login |
 | `/surfboard-restricted/error-login` | `surfboard-restricted/(auth)/error-login/page.tsx` | Login error page |
 | `/surfboard-restricted/dashboard` | `surfboard-restricted/dashboard/page.tsx` | Admin dashboard home |
-| `/surfboard-restricted/dashboard/analytics` | `surfboard-restricted/dashboard/analytics/page.tsx` | Platform-wide analytics |
+| `/surfboard-restricted/dashboard/analytics` | `surfboard-restricted/dashboard/analytics/page.tsx` | Platform-wide analytics: stat cards, top LGAs, top surveyors by plan count, recent activity, plans over time |
 | `/surfboard-restricted/dashboard/map` | `surfboard-restricted/dashboard/map/page.tsx` | Map viewer, all plans |
 | `/surfboard-restricted/dashboard/surf-plans` | `surfboard-restricted/dashboard/surf-plans/page.tsx` | All survey plans |
 | `/surfboard-restricted/dashboard/surf-plans/update/[id]` | `surfboard-restricted/dashboard/surf-plans/update/[id]/page.tsx` | Edit a specific plan |
@@ -69,7 +69,7 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard-restricted/dashboard/kyc` | `surfboard-restricted/dashboard/kyc/page.tsx` | Surveyor KYC review |
 | `/surfboard-restricted/dashboard/qr-earnings` | `surfboard-restricted/dashboard/qr-earnings/page.tsx` | QR-earnings overview |
 | `/surfboard-restricted/dashboard/qr-earnings/settings` | `surfboard-restricted/dashboard/qr-earnings/settings/page.tsx` | QR-earnings settings |
-| `/surfboard-restricted/dashboard/user-management` | `surfboard-restricted/dashboard/user-management/page.tsx` | Manage surveyor/user accounts |
+| `/surfboard-restricted/dashboard/user-management` | `surfboard-restricted/dashboard/user-management/page.tsx` | Manage surveyor/user accounts; each subscription shows its expiry date ("Expires Sep 24, 2026 · in 3 days", red once expired) |
 | `/surfboard-restricted/dashboard/admin-tools` | `surfboard-restricted/dashboard/admin-tools/page.tsx` | Misc. admin tools |
 | `/surfboard-restricted/dashboard/audit-logs` | `surfboard-restricted/dashboard/audit-logs/page.tsx` | Audit log viewer — superadmin only (shared `AuditLogViewer`) |
 | `/surfboard-restricted/dashboard/notifications` | `surfboard-restricted/dashboard/notifications/page.tsx` | Notifications list |
