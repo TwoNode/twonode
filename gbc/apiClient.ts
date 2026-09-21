@@ -4,7 +4,7 @@ import type { AdminInvitationRow, InviteAdminInput, InviteResult } from "@/lib/a
 import type { GBCEdition, GBCSettingsData } from "@/gbc/utils/settings";
 import type { GalleryItem } from "@/gbc/types/gallery";
 import type { Speaker } from "@/gbc/types/speaker";
-import type { Sponsor } from "@/gbc/types/sponsor";
+import type { Sponsor, SponsorTier, SponsorTierWithCount } from "@/gbc/types/sponsor";
 import type { GBCTicket, GBCUserNotificationType, GBCUserNotificationAudience } from "@/prisma/generated";
 import type { EncryptedUserData } from "@/utils/encryptedCookies";
 
@@ -181,7 +181,8 @@ export type SponsorInput = {
   name: string;
   logo: string;
   logoS3Key?: string;
-  tier: "HEADLINE" | "IMPACT" | "SUPPORTING";
+  /** Key of a sponsor tier (see gbcApi.sponsorTiers). */
+  tier: string;
   description?: string;
   website?: string;
   order?: number;
@@ -419,6 +420,28 @@ export const gbcApi = {
 
     remove: (id: string) =>
       jsonFetch<undefined>(`${BASE}/admin/speakers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  },
+
+  /** Admin-managed sponsorship levels (Headline, Impact, ...). */
+  sponsorTiers: {
+    list: () => jsonFetch<SponsorTierWithCount[]>(`${BASE}/admin/sponsor-tiers`),
+
+    create: (input: { name: string; description?: string | null; size?: string }) =>
+      jsonFetch<SponsorTier>(`${BASE}/admin/sponsor-tiers`, { method: "POST", body: JSON.stringify(input) }),
+
+    update: (key: string, patch: { name?: string; description?: string | null; size?: string }) =>
+      jsonFetch<SponsorTier>(`${BASE}/admin/sponsor-tiers/${encodeURIComponent(key)}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      }),
+
+    /** Sets the public display order to the order of `keys` (every tier, once). */
+    reorder: (keys: string[]) =>
+      jsonFetch<SponsorTier[]>(`${BASE}/admin/sponsor-tiers/order`, { method: "PUT", body: JSON.stringify({ keys }) }),
+
+    /** Refused with 409 while sponsors are still in the tier. */
+    remove: (key: string) =>
+      jsonFetch<undefined>(`${BASE}/admin/sponsor-tiers/${encodeURIComponent(key)}`, { method: "DELETE" }),
   },
 
   sponsors: {

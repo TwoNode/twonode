@@ -177,7 +177,9 @@ model GBCSponsor {
   name        String
   logo        String
   logoS3Key   String?
-  tier        GBCSponsorTier
+  /// Key of a GBCSponsorTier (HEADLINE, IMPACT, SUPPORTING, or an admin-made one).
+  tier        String
+  tierRef     GBCSponsorTier @relation(fields: [tier], references: [key])
   description String?        @db.Text
   website     String?
   order       Int            @default(0)
@@ -191,10 +193,24 @@ model GBCSponsor {
   @@map("gbc_sponsors")
 }
 
-enum GBCSponsorTier {
-  HEADLINE
-  IMPACT
-  SUPPORTING
+/// A sponsorship level. Admin-managed; the original three keep their keys so
+/// existing sponsors and code that compares against them are unaffected.
+model GBCSponsorTier {
+  /// Stable identifier (UPPER_SNAKE of the name at creation); never changes on rename.
+  key         String   @id
+  name        String
+  /// Optional line shown under the tier heading on the public sponsors page.
+  description String?
+  /// Card size on the public page: FEATURED (large), STANDARD or COMPACT.
+  size        String   @default("STANDARD")
+  /// Display order on the public page — lowest first.
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sponsors GBCSponsor[]
+
+  @@map("gbc_sponsor_tiers")
 }
 
 model GBCPartner {

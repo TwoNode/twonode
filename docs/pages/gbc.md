@@ -13,7 +13,7 @@ public marketing/ticketing site (`/gbc/*`) and a separate admin panel
 | `/gbc/contact` | `gbc/contact/page.tsx` | Contact form |
 | `/gbc/gallery` | `gbc/gallery/page.tsx` | Photo gallery |
 | `/gbc/speakers` | `gbc/speakers/page.tsx` | Speakers listing |
-| `/gbc/sponsors` | `gbc/sponsors/page.tsx` | Sponsors listing |
+| `/gbc/sponsors` | `gbc/sponsors/page.tsx` | Sponsors listing: one section per tier in the order set in the admin (card size and badge follow the tier's size); rendered per request |
 | `/gbc/editions` | `gbc/editions/page.tsx` | List of all GBC editions (1.0, 2.0, …) |
 | `/gbc/editions/[key]` | `gbc/editions/[key]/page.tsx` | Single edition detail page |
 | `/gbc/tickets` | `gbc/tickets/page.tsx` | Ticket purchase/checkout |
@@ -38,7 +38,7 @@ public marketing/ticketing site (`/gbc/*`) and a separate admin panel
 | `/gbc-restricted/profile` | `gbc-restricted/(admin)/profile/page.tsx` | Admin user profile view |
 | `/gbc-restricted/settings` | `gbc-restricted/(admin)/settings/page.tsx` | Event/platform settings, one set per edition (edition picker at the top; `?edition=`) |
 | `/gbc-restricted/speakers` | `gbc-restricted/(admin)/speakers/page.tsx` | Manage speakers |
-| `/gbc-restricted/sponsors` | `gbc-restricted/(admin)/sponsors/page.tsx` | Manage sponsors |
+| `/gbc-restricted/sponsors` | `gbc-restricted/(admin)/sponsors/page.tsx` | Manage sponsors and sponsor tiers |
 | `/gbc-restricted/tickets` | `gbc-restricted/(admin)/tickets/page.tsx` | Ticket management |
 | `/gbc-restricted/users` | `gbc-restricted/(admin)/users/page.tsx` | Admin/user account management |
 | `/gbc-restricted/login` | `gbc-restricted/login/page.tsx` | Admin login |

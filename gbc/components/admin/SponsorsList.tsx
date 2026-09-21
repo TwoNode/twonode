@@ -16,34 +16,22 @@ import {
 import { gbcApi } from "@/gbc/apiClient";
 import { Pencil, Trash2, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { Sponsor } from "@/gbc/types/sponsor";
+import { Sponsor, type SponsorTier } from "@/gbc/types/sponsor";
+import { groupSponsorsByTier } from "@/gbc/utils/sponsorTiers";
 import { EditSponsorModal } from "./EditSponsorModal";
 
 interface SponsorsListProps {
   sponsors: Sponsor[];
+  tiers: SponsorTier[];
 }
 
-type SponsorTier = "HEADLINE" | "IMPACT" | "SUPPORTING";
-
-export function SponsorsList({ sponsors }: SponsorsListProps) {
+export function SponsorsList({ sponsors, tiers }: SponsorsListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteKey, setDeleteKey] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Group sponsors by tier with proper typing
-  const sponsorsByTier = sponsors.reduce<Record<SponsorTier, Sponsor[]>>(
-    (acc, sponsor) => {
-      const tier = sponsor.tier as SponsorTier;
-      if (!acc[tier]) {
-        acc[tier] = [];
-      }
-      acc[tier].push(sponsor);
-      return acc;
-    },
-    {} as Record<SponsorTier, Sponsor[]>
-  );
-
-  const tiers: SponsorTier[] = ["HEADLINE", "IMPACT", "SUPPORTING"];
+  // Tiers in the order visitors see them; tiers with no sponsors are skipped.
+  const groups = groupSponsorsByTier(tiers, sponsors);
 
   async function handleDelete(id: string, logoS3Key?: string) {
     setIsDeleting(true);
@@ -81,18 +69,12 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
   return (
     <>
       <div className="space-y-8">
-        {tiers.map((tier) => {
-          const tierSponsors = sponsorsByTier[tier] || [];
-          if (tierSponsors.length === 0) return null;
-
+        {groups.map(({ tier, sponsors: tierSponsors }) => {
           return (
-            <div key={tier}>
+            <div key={tier.key}>
               <div className="mb-4">
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  {tier === "HEADLINE" && "💎"}
-                  {tier === "IMPACT" && "🌟"}
-                  {tier === "SUPPORTING" && "🤝"}
-                  {tier} ({tierSponsors.length})
+                <h2 className="text-2xl font-bold">
+                  {tier.name} ({tierSponsors.length})
                 </h2>
               </div>
 
@@ -101,6 +83,7 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
                   <SponsorCard
                     key={sponsor.id}
                     sponsor={sponsor}
+                    tiers={tiers}
                     onDelete={() => {
                       setDeleteId(sponsor.id);
                       if (sponsor.logoS3Key) {
@@ -147,9 +130,11 @@ export function SponsorsList({ sponsors }: SponsorsListProps) {
 
 function SponsorCard({
   sponsor,
+  tiers,
   onDelete,
 }: {
   sponsor: Sponsor;
+  tiers: SponsorTier[];
   onDelete: () => void;
 }) {
   return (
@@ -196,7 +181,7 @@ function SponsorCard({
         </div>
 
         <div className="flex gap-2">
-          <EditSponsorModal sponsor={sponsor} />
+          <EditSponsorModal sponsor={sponsor} tiers={tiers} />
           <Button
             variant="outline"
             size="sm"

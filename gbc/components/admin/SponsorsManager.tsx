@@ -11,15 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { Sponsor } from "@/gbc/types/sponsor";
+import { Sponsor, type SponsorTier } from "@/gbc/types/sponsor";
 import type { GBCEdition } from "@/gbc/utils/settings";
 
 interface SponsorsManagerProps {
   initialSponsors: Sponsor[];
   editions: GBCEdition[];
+  tiers: SponsorTier[];
 }
 
-export function SponsorsManager({ initialSponsors, editions }: SponsorsManagerProps) {
+export function SponsorsManager({ initialSponsors, editions, tiers }: SponsorsManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
   const [selectedEdition, setSelectedEdition] = useState("ALL");
@@ -61,9 +62,11 @@ export function SponsorsManager({ initialSponsors, editions }: SponsorsManagerPr
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All Tiers</SelectItem>
-              <SelectItem value="HEADLINE">Headline Sponsor</SelectItem>
-              <SelectItem value="IMPACT">Impact Sponsor</SelectItem>
-              <SelectItem value="SUPPORTING">Supporting Sponsor</SelectItem>
+              {tiers.map((tier) => (
+                <SelectItem key={tier.key} value={tier.key}>
+                  {tier.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={selectedEdition} onValueChange={setSelectedEdition}>
@@ -82,7 +85,7 @@ export function SponsorsManager({ initialSponsors, editions }: SponsorsManagerPr
         </div>
       </div>
 
-      <SponsorsList sponsors={filteredSponsors} />
+      <SponsorsList sponsors={filteredSponsors} tiers={tiers} />
     </div>
   );
 }
