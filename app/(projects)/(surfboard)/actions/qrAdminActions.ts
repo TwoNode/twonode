@@ -242,20 +242,34 @@ export async function processAdminWithdrawalRequest(
           paystackSuccess = true;
           transferCode = transferData.data.transfer_code;
         } else {
-          console.warn("Paystack Transfer API warning:", transferData.message);
-          // Allow fallback to manual payout marking if Paystack transfer fails or sandbox mode
-          paystackSuccess = true;
+          // A real transfer failure (bad recipient, insufficient Paystack
+          // balance, etc.) — no money moved. Do NOT fall through to marking
+          // this PAID: that would debit the surveyor's wallet and tell them
+          // funds were sent when they weren't. The request stays PENDING so
+          // it remains visible in the admin queue for retry.
+          console.error(
+            `Paystack Transfer API failed for withdrawal ${requestId}:`,
+            transferData.message
+          );
+          paystackSuccess = false;
         }
       } catch (err) {
-        console.warn("Paystack Transfer API error:", err);
-        paystackSuccess = true; // Fallback
+        console.error(`Paystack Transfer API error for withdrawal ${requestId}:`, err);
+        paystackSuccess = false;
       }
     } else {
-      paystackSuccess = true; // Fallback to manual approval
+      // No recipientCode on file — this is an admin recording a payout made
+      // manually outside Paystack (e.g. direct bank transfer), not a failed
+      // API call, so it's fine to proceed to marking PAID.
+      paystackSuccess = true;
     }
 
     if (!paystackSuccess) {
-      return { success: false, error: "Failed to process transfer via Paystack API." };
+      return {
+        success: false,
+        error:
+          "Paystack transfer failed — no funds were moved. The withdrawal request remains pending for retry.",
+      };
     }
 
     // Update DB models
