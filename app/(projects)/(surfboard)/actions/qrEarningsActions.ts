@@ -12,6 +12,11 @@ import { revalidatePath } from "next/cache";
 // literal text "Bearer [object Promise]". Call it fresh inside each
 // function that needs the key instead.
 
+// Thrown inside requestWithdrawal's transaction when the atomic balance
+// re-check loses the race (see comment at the throw site), so the outer
+// catch can tell it apart from a genuine unexpected error.
+class InsufficientBalanceError extends Error {}
+
 export type QREarningsSettingsData = {
   freeScanLimit: number;
   service1: {
@@ -630,16 +635,31 @@ export async function requestWithdrawal(amount: number) {
       return { success: false, error: "Insufficient available balance" };
     }
 
-    // Atomic Balance Update & Withdrawal Creation
-    const [updatedWallet, withdrawal] = await prisma.$transaction([
-      prisma.surveyorWallet.update({
-        where: { userId: user.id },
+    // The check above reads the balance outside any lock, so two concurrent
+    // requests (double-click, duplicate tab) could both pass it and both
+    // decrement, driving the balance negative. Re-check the balance inside
+    // the same atomic UPDATE via `updateMany`'s `where` clause — Postgres
+    // only matches/updates the row if the condition still holds at execution
+    // time, so a second concurrent request that already lost the race gets
+    // `count: 0` here instead of also decrementing.
+    const [updatedWallet, withdrawal] = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.surveyorWallet.updateMany({
+        where: { userId: user.id, availableBalance: { gte: amount } },
         data: {
           availableBalance: { decrement: amount },
           pendingWithdrawal: { increment: amount },
         },
-      }),
-      prisma.withdrawalRequest.create({
+      });
+
+      if (updateResult.count === 0) {
+        throw new InsufficientBalanceError();
+      }
+
+      const updatedWallet = await tx.surveyorWallet.findUniqueOrThrow({
+        where: { userId: user.id },
+      });
+
+      const withdrawal = await tx.withdrawalRequest.create({
         data: {
           userId: user.id,
           amount,
@@ -649,8 +669,10 @@ export async function requestWithdrawal(amount: number) {
           accountName: bankDetails.accountName,
           recipientCode: bankDetails.recipientCode,
         },
-      }),
-    ]);
+      });
+
+      return [updatedWallet, withdrawal] as const;
+    });
 
     // Notify Admins
     await createNotification({
@@ -670,6 +692,9 @@ export async function requestWithdrawal(amount: number) {
       data: withdrawal,
     };
   } catch (error) {
+    if (error instanceof InsufficientBalanceError) {
+      return { success: false, error: "Insufficient available balance" };
+    }
     console.error("Error requesting withdrawal:", error);
     return { success: false, error: "Failed to request withdrawal" };
   }

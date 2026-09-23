@@ -548,10 +548,14 @@ export const getUserProperties = async () => {
   }
 };
 
-export const getUserPropertyById = async (id: string) => {
+// Requires `email` alongside `id`, matching the reference+email gating this
+// codebase already uses for one-time (guest) lookups elsewhere — see
+// getOneTimeRequestByReference below. Without it, any id fetches another
+// requester's full due-diligence PII with no ownership check at all.
+export const getUserPropertyById = async (id: string, email: string) => {
   try {
-    const property = await prisma.oneTimeUserProperty.findUnique({
-      where: { id },
+    const property = await prisma.oneTimeUserProperty.findFirst({
+      where: { id, email },
     });
 
     if (!property) {
