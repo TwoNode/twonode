@@ -7,7 +7,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import sharp from "sharp";
+import { PhotonImage, SamplingFilter, crop, resize } from "@cf-wasm/photon";
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -37,6 +37,82 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.REVA_AWS_BUCKET_NAME!;
 const BUCKET_REGION = process.env.REVA_AWS_REGION!;
+
+/**
+ * Resize to exactly targetW x targetH, cropping the excess on the longer
+ * axis (center) first — equivalent to sharp's `fit: "cover", position: "center"`.
+ * Frees any intermediate crop; caller is responsible for freeing `src` and
+ * the returned image.
+ */
+function resizeCover(
+  src: PhotonImage,
+  targetW: number,
+  targetH: number
+): PhotonImage {
+  const srcW = src.get_width();
+  const srcH = src.get_height();
+  const srcAspect = srcW / srcH;
+  const targetAspect = targetW / targetH;
+
+  let region = src;
+  let croppedRegion: PhotonImage | null = null;
+
+  if (srcAspect > targetAspect) {
+    const cropW = Math.max(1, Math.round(srcH * targetAspect));
+    const x1 = Math.floor((srcW - cropW) / 2);
+    croppedRegion = crop(src, x1, 0, x1 + cropW, srcH);
+    region = croppedRegion;
+  } else if (srcAspect < targetAspect) {
+    const cropH = Math.max(1, Math.round(srcW / targetAspect));
+    const y1 = Math.floor((srcH - cropH) / 2);
+    croppedRegion = crop(src, 0, y1, srcW, y1 + cropH);
+    region = croppedRegion;
+  }
+
+  const resized = resize(region, targetW, targetH, SamplingFilter.Lanczos3);
+  croppedRegion?.free();
+  return resized;
+}
+
+/**
+ * Scale down to fit within targetW x targetH, preserving aspect ratio and
+ * never upscaling — equivalent to sharp's `fit: "inside", withoutEnlargement: true`.
+ * Caller is responsible for freeing `src` and the returned image.
+ */
+function resizeInside(
+  src: PhotonImage,
+  targetW: number,
+  targetH: number
+): PhotonImage {
+  const srcW = src.get_width();
+  const srcH = src.get_height();
+  const scale = Math.min(targetW / srcW, targetH / srcH, 1);
+  const newW = Math.max(1, Math.round(srcW * scale));
+  const newH = Math.max(1, Math.round(srcH * scale));
+  return resize(src, newW, newH, SamplingFilter.Lanczos3);
+}
+
+function processImageCover(
+  file: Buffer,
+  width: number,
+  height: number
+): PhotonImage {
+  const src = PhotonImage.new_from_byteslice(new Uint8Array(file));
+  const output = resizeCover(src, width, height);
+  src.free();
+  return output;
+}
+
+function processImageInside(
+  file: Buffer,
+  width: number,
+  height: number
+): PhotonImage {
+  const src = PhotonImage.new_from_byteslice(new Uint8Array(file));
+  const output = resizeInside(src, width, height);
+  src.free();
+  return output;
+}
 
 interface UploadOptions {
   file: Buffer;
@@ -110,13 +186,9 @@ export async function uploadToS3(
     // Generate and upload thumbnail if requested
     if (generateThumbnail && contentType.startsWith("image/")) {
       try {
-        const thumbnail = await sharp(file)
-          .resize(300, 300, {
-            fit: "cover",
-            position: "center",
-          })
-          .jpeg({ quality: 80 })
-          .toBuffer();
+        const thumbnailImage = processImageCover(file, 300, 300);
+        const thumbnail = Buffer.from(thumbnailImage.get_bytes_jpeg(80));
+        thumbnailImage.free();
 
         const thumbnailKey = key.replace(/\.[^.]+$/, "-thumb.jpg");
 
@@ -225,13 +297,9 @@ export async function uploadLogo(
   type: "sponsor" | "partner"
 ): Promise<UploadResult> {
   // Optimize image
-  const optimizedImage = await sharp(file)
-    .resize(400, 400, {
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .png({ quality: 90 })
-    .toBuffer();
+  const resizedImage = processImageInside(file, 400, 400);
+  const optimizedImage = Buffer.from(resizedImage.get_bytes());
+  resizedImage.free();
 
   return uploadToS3({
     file: optimizedImage,
@@ -249,13 +317,9 @@ export async function uploadSpeakerPhoto(
   fileName: string
 ): Promise<UploadResult> {
   // Optimize image
-  const optimizedImage = await sharp(file)
-    .resize(500, 500, {
-      fit: "cover",
-      position: "center",
-    })
-    .jpeg({ quality: 85 })
-    .toBuffer();
+  const resizedImage = processImageCover(file, 500, 500);
+  const optimizedImage = Buffer.from(resizedImage.get_bytes_jpeg(85));
+  resizedImage.free();
 
   return uploadToS3({
     file: optimizedImage,
@@ -277,13 +341,9 @@ export async function uploadGalleryMedia(
 
   if (isImage) {
     // Optimize image
-    const optimizedImage = await sharp(file)
-      .resize(1920, 1080, {
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality: 90 })
-      .toBuffer();
+    const resizedImage = processImageInside(file, 1920, 1080);
+    const optimizedImage = Buffer.from(resizedImage.get_bytes_jpeg(90));
+    resizedImage.free();
 
     return uploadToS3({
       file: optimizedImage,
