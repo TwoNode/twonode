@@ -5,14 +5,14 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { canAccessGBCSuperAdminPanel } from "@/permissions";
 import {
   getAndRefreshUserSession,
-  getUserActiveSubscription,
   SubscriptionData,
 } from "@/utils/encryptedCookies";
 import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
 import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
 import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
 import { canAccessRoute as canAccessGBCRoute } from "@/gbc/access/routes";
-import { getServerSession as getNativeSession } from "@/lib/auth/session";
+import { getServerSession as getNativeSession } from "@/lib/auth/session-edge";
+import { getUserActiveSubscriptionEdge } from "@/lib/auth/subscriptionLookup";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -241,7 +241,7 @@ async function tryNativeSession(
   const role = nativeSession.role;
   let subscription: SubscriptionData | null = null;
   if (activePlatform === Platform.SURFBOARD && pathname.startsWith("/surfboard/dashboard")) {
-    subscription = (await getUserActiveSubscription(nativeSession.sub)) as SubscriptionData | null;
+    subscription = (await getUserActiveSubscriptionEdge(nativeSession.sub)) as SubscriptionData | null;
   }
 
   const { hasAccess, redirectPath } = computeRouteAccess(pathname, role, subscription);

@@ -1,9 +1,11 @@
-import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { EncryptJWT, jwtDecrypt, JWTPayload } from "jose";
 import { Platform, RevaRole } from "@/utils/platform";
 import type { SurfboardRole, GBCRole } from "@/utils/platform";
+// Kept out of this file's own module scope deliberately — see that file's
+// comment. Only updateLastActivityAndSubscription below needs it.
+import { getUserActiveSubscription } from "@/lib/subscriptionQueries";
 
 // JWT configuration
 const JWT_ALGORITHM = "dir"; // Direct key agreement
@@ -274,37 +276,6 @@ export async function updateLastActivity(
   } catch (error) {
     console.error("Error updating last activity:", error);
     throw new Error("Failed to update session");
-  }
-}
-
-export async function getUserActiveSubscription(userId: string) {
-  try {
-    const sub = await prisma.subscription.findFirst({
-      where: {
-        userId: userId,
-        OR: [
-          { status: "active" },
-          {
-            // Include cancelled subscriptions still in grace period
-            AND: [{ status: "canceled" }, { currentEnd: { gte: new Date() } }],
-          },
-        ],
-      },
-    });
-
-    if (!sub) return null;
-
-    return {
-      status: sub.status,
-      interval: sub.interval,
-      expiresAt: sub.currentEnd,
-      subCode: sub.subCode,
-      planCode: sub.planCode,
-      emailToken: sub.emailToken,
-    } as SubscriptionData;
-  } catch (error) {
-    console.error("Error fetching user subscription:", error);
-    return null;
   }
 }
 

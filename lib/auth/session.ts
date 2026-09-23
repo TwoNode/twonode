@@ -1,28 +1,21 @@
 import crypto from "crypto";
 import { Platform } from "@/utils/platform";
 import prisma from "@/lib/prisma";
-import { verifyToken, signAccessToken, JWTPayload } from "@/lib/auth/jwt";
-import {
-  getAccessTokenCookie,
-  setAuthCookies,
-  clearAuthCookies,
-} from "@/lib/auth/cookies";
+import { signAccessToken } from "@/lib/auth/jwt";
+import { setAuthCookies, clearAuthCookies } from "@/lib/auth/cookies";
 import { findUserById } from "@/lib/auth/userLookup";
 import {
   getEncryptedUserData,
-  getUserActiveSubscription,
   type EncryptedUserData,
 } from "@/utils/encryptedCookies";
+import { getUserActiveSubscription } from "@/lib/subscriptionQueries";
+import { getServerSession } from "@/lib/auth/session-edge";
 
-export async function getServerSession(
-  platform: Platform
-): Promise<JWTPayload | null> {
-  const token = await getAccessTokenCookie(platform);
-  if (!token) return null;
-  const payload = await verifyToken(token);
-  if (!payload || payload.platform !== platform) return null;
-  return payload;
-}
+// Re-exported for existing Node-runtime callers of this file — Edge Runtime
+// code (proxy.ts) must import getServerSession from session-edge directly
+// instead, since importing it via this file would still bundle this file's
+// own Prisma import. See session-edge.ts's comment for why that matters.
+export { getServerSession };
 
 /**
  * The /api/v1/{reva,surfboard}/session routes (and the client hooks that
