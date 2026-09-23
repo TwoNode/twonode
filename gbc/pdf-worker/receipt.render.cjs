@@ -7,9 +7,17 @@
 const path = require("path");
 const React = require("react");
 const { renderToBuffer, StyleSheet, Font, Document, Page, Text, View } = require("@react-pdf/renderer");
-const { format } = require("date-fns");
 
 const fontPath = (file) => path.join(__dirname, "..", "..", "public", "fonts", file);
+
+// Hand-rolled instead of date-fns: date-fns ships every locale as its own
+// file (~5,300 files per copy traced into this worker's bundle), which was
+// pushing Vercel deployments over its 15,000-file upload cap. This worker
+// only ever needs "MMMM d, yyyy · h:mm a" in en-US, so Intl covers it with
+// zero extra dependency weight.
+function formatDate(date, opts) {
+  return new Intl.DateTimeFormat("en-US", opts).format(date);
+}
 
 Font.register({
   family: "Bricolage",
@@ -87,7 +95,10 @@ function buildReceiptElement({ ticket }) {
     ["Event", edition.name || "GBC"],
     ["Payment Reference", ticket.paymentRef || "—"],
     ["Payment Method", ticket.paymentMethod ? ticket.paymentMethod.toUpperCase() : "—"],
-    ["Date Paid", format(paymentDate, "MMMM d, yyyy · h:mm a")],
+    [
+      "Date Paid",
+      `${formatDate(paymentDate, { month: "long", day: "numeric", year: "numeric" })} · ${formatDate(paymentDate, { hour: "numeric", minute: "2-digit", hour12: true })}`,
+    ],
   ];
 
   return React.createElement(
