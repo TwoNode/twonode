@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { uploadQRCode } from "../utils/aws-s3";
 import { checkInSchema, ticketPurchaseSchema } from "../utils/validations";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@/prisma/generated";
 import {
   initializeTicketPayment,
   koboToNaira,
@@ -15,6 +16,40 @@ import { sendGBCTicketSMS } from "../utils/sms";
 import { generateQRCodeBuffer } from "../utils/qr_code";
 import { getAllGBCSettings } from "./settings-actions";
 import { sendGBCTicketConfirmation } from "../utils/email";
+
+// Thrown inside runSerializable's callback when a capacity/availability
+// check fails for real (not a serialization conflict) — lets the caller
+// surface a clean, expected error message without it looking like a retry
+// bug or an unexpected failure.
+class SoldOutError extends Error {}
+
+/**
+ * Runs `fn` in a SERIALIZABLE transaction, retrying a few times on Postgres
+ * serialization failures (Prisma error code P2034) — the expected outcome
+ * when two concurrent callers' transactions conflict, e.g. both racing the
+ * same ticket-capacity check. Non-conflict errors (including SoldOutError)
+ * propagate immediately without retrying.
+ */
+async function runSerializable<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  maxAttempts = 3
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await prisma.$transaction(fn, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (err) {
+      const isSerializationConflict =
+        err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034";
+      if (!isSerializationConflict || attempt === maxAttempts) {
+        throw err;
+      }
+    }
+  }
+  // Unreachable — the loop above always returns or throws.
+  throw new Error("runSerializable: exhausted retries without a result");
+}
 
 export async function createGBCTicket(formData: FormData) {
   try {
@@ -36,18 +71,21 @@ export async function createGBCTicket(formData: FormData) {
     // Validate input
     const validated = ticketPurchaseSchema.parse(data);
 
-    // Check ticket availability
-    const soldTickets = await prisma.gBCTicket.count({
-      where: { paymentStatus: "COMPLETED" },
-    });
-
-    // Count early bird tickets sold
-    const soldEarlyBirdTickets = await prisma.gBCTicket.count({
-      where: {
-        paymentStatus: "COMPLETED",
-        ticketType: "EARLY_BIRD",
-      },
-    });
+    // These ticket types go through their own dedicated functions
+    // (createGBCGroupTicket / createGBCPairTicket). Reject them before
+    // creating any DB row or contacting Paystack, not after — creating a
+    // ticket/payment session first and validating this afterward left a
+    // stray PENDING ticket and a live, unusable payment link behind.
+    if (validated.ticketType === "COMPANY") {
+      throw new Error(
+        "COMPANY tickets should be created via createGBCGroupTicket function."
+      );
+    }
+    if (validated.ticketType === "REGULAR") {
+      throw new Error(
+        "REGULAR (pair) tickets should be created via createGBCPairTicket function."
+      );
+    }
 
     const settingsResult = await getAllGBCSettings();
     const settings = settingsResult.success ? settingsResult.data : null;
@@ -60,55 +98,60 @@ export async function createGBCTicket(formData: FormData) {
     }
 
     const maxTickets = settings ? settings.tickets.maxCapacity : 150;
-
-    if (soldTickets >= maxTickets) {
-      return {
-        success: false,
-        error: "Sorry, all tickets are sold out",
-      };
-    }
-
-    // Check if the selected ticket type is available
     const { isTicketTypeAvailable } = await import("../utils");
-    const ticketAvailability = isTicketTypeAvailable(
-      validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
-      soldEarlyBirdTickets,
-      {
-        maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
-        earlyBirdDeadline: settings?.tickets.earlyBirdDeadline,
-      }
-    );
-
-    if (!ticketAvailability.available) {
-      return {
-        success: false,
-        error: ticketAvailability.reason || "This ticket type is not available",
-      };
-    }
 
     // Calculate price using settings
     const price = calculateTicketPrice(validated.ticketType, settings?.tickets);
 
-    // Generate a temporary ticket number (will be replaced by database default)
-    // const tempTicketNumber = `TEMP_${Date.now()}`;
+    // The capacity/availability counts and the ticket insert must be one
+    // atomic unit: reading `count()` then inserting afterward (the previous
+    // shape) lets concurrent requests near the capacity limit all read the
+    // same count, all pass the check, and all insert — overselling past
+    // maxCapacity. SERIALIZABLE makes Postgres abort one of the conflicting
+    // transactions instead (P2034), which we retry a few times.
+    const ticket = await runSerializable(async (tx) => {
+      const soldTickets = await tx.gBCTicket.count({
+        where: { paymentStatus: "COMPLETED" },
+      });
 
-    // Create ticket record first to get the real ticketNumber
-    const ticket = await prisma.gBCTicket.create({
-      data: {
-        name: validated.name,
-        email: validated.email,
-        phone: validated.phone,
-        gender: validated.gender,
-        profession:
-          validated.profession === "OTHER" && validated.otherProfession
-            ? `Other: ${validated.otherProfession}`
-            : validated.profession,
-        ticketType: validated.ticketType,
-        price,
-        paymentStatus: "PENDING",
-        // Use the temporary ticket number that will be replaced by the database default
-        // ticketNumber: tempTicketNumber,
-      },
+      if (soldTickets >= maxTickets) {
+        throw new SoldOutError("Sorry, all tickets are sold out");
+      }
+
+      const soldEarlyBirdTickets = await tx.gBCTicket.count({
+        where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD" },
+      });
+
+      const ticketAvailability = isTicketTypeAvailable(
+        validated.ticketType as "EARLY_BIRD" | "REGULAR" | "COMPANY" | "STUDENT" | "VIP",
+        soldEarlyBirdTickets,
+        {
+          maxEarlyBirdCapacity: settings?.tickets.maxEarlyBirdCapacity,
+          earlyBirdDeadline: settings?.tickets.earlyBirdDeadline,
+        }
+      );
+
+      if (!ticketAvailability.available) {
+        throw new SoldOutError(
+          ticketAvailability.reason || "This ticket type is not available"
+        );
+      }
+
+      return tx.gBCTicket.create({
+        data: {
+          name: validated.name,
+          email: validated.email,
+          phone: validated.phone,
+          gender: validated.gender,
+          profession:
+            validated.profession === "OTHER" && validated.otherProfession
+              ? `Other: ${validated.otherProfession}`
+              : validated.profession,
+          ticketType: validated.ticketType,
+          price,
+          paymentStatus: "PENDING",
+        },
+      });
     });
 
     // Initialize payment with the actual ticketNumber from the database
@@ -126,23 +169,6 @@ export async function createGBCTicket(formData: FormData) {
             : validated.profession,
       }
     );
-
-    // For COMPANY tickets created via createGBCTicket (shouldn't happen, but validate anyway)
-    if (validated.ticketType === "COMPANY") {
-      throw new Error(
-        "COMPANY tickets should be created via createGBCGroupTicket function."
-      );
-    }
-
-    // For REGULAR (pair) tickets created via createGBCTicket (shouldn't happen, but validate anyway)
-    if (validated.ticketType === "REGULAR") {
-      throw new Error(
-        "REGULAR (pair) tickets should be created via createGBCPairTicket function."
-      );
-    }
-
-    console.log("\n\n\n\n\n\n\n");
-    console.log(paymentResponse);
     console.log("\n\n\n\n\n\n\n");
 
     // Check if payment reference already exists
