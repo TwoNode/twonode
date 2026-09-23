@@ -3662,12 +3662,26 @@ export async function updatePlanRecordCopy(
   }
 }
 
+// Roles with a real business reason to verify a plan's person count or send
+// it back for query: overall admins, plus the two MDA roles whose defined
+// purpose (see SurfboardRole in prisma/schema.prisma) is record-copy
+// verification (RECORDS_I) and final verification (RECORDS_II). The
+// previous `role !== 'USER'` check let every other MDA role — ACCOUNTS,
+// CHARTING, SURCON, INTAKE, ARCHIVE, none of which review plans this way —
+// call these on any plan with no ownership or stage scoping at all.
+const PLAN_REVIEW_ROLES = [
+  "ADMIN",
+  "SUPERADMIN",
+  "MDA_SUPERADMIN",
+  "RECORDS_I",
+  "RECORDS_II",
+];
+
 // Action to verify person count
 export async function verifyPersonCount(planId: string, count: number) {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    // Only Admins using this
-    if (!user || user.role === 'USER') { // Check permissions adequately
+    if (!user || !user.role || !PLAN_REVIEW_ROLES.includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -3690,7 +3704,7 @@ export async function verifyPersonCount(planId: string, count: number) {
 export async function queryPlan(planId: string) {
   try {
     const user = await getAuthenticatedSurfUserFromCookie();
-    if (!user || user.role === 'USER') {
+    if (!user || !user.role || !PLAN_REVIEW_ROLES.includes(user.role)) {
       return { success: false, error: "Unauthorized" };
     }
 
