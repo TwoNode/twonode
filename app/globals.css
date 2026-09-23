@@ -453,6 +453,13 @@ body::-webkit-scrollbar-thumb:active {
   animation: blob 7s infinite;
 }
 
+/* Plain CSS instead of a Tailwind arbitrary-value background-image utility
+   — that form was corrupting Turbopack's build (see
+   docs/development-history/progress.md for the investigation). */
+.bg-grid {
+  background-image: url("/grid.svg");
+}
+
 .animation-delay-2000 {
   animation-delay: 2s;
 }
