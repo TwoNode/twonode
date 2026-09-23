@@ -27,7 +27,7 @@ vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 vi.mock("@/lib/auth/userLookup", () => mockLookup);
 vi.mock("@/lib/audit", () => mockAudit);
 vi.mock("@/utils/email", () => mockEmail);
-vi.mock("bcrypt", () => ({ default: { hash: vi.fn(async (p: string) => `hashed:${p}`) } }));
+vi.mock("bcryptjs", () => ({ default: { hash: vi.fn(async (p: string) => `hashed:${p}`) } }));
 
 const { Platform } = await import("@/utils/platform");
 const {
