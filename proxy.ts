@@ -5,14 +5,13 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { canAccessGBCSuperAdminPanel } from "@/permissions";
 import {
   getAndRefreshUserSession,
-  getUserActiveSubscription,
   SubscriptionData,
 } from "@/utils/encryptedCookies";
 import { Platform, SurfboardRole, RevaRole } from "@/utils/platform";
 import { canAccessRoute as canAccessSurfboardRoute } from "@/surfboard/access/routes";
 import { canAccessRoute as canAccessRevaRoute } from "@/reva/access/routes";
 import { canAccessRoute as canAccessGBCRoute } from "@/gbc/access/routes";
-import { getServerSession as getNativeSession } from "@/lib/auth/session";
+import { getServerSession as getNativeSession } from "@/lib/auth/session-edge";
 
 const ENTER_MSG = "\n\n\n ENTERING PROXY \n";
 const EXIT_MSG = "\n EXITING PROXY..... \n\n\n";
@@ -144,7 +143,18 @@ function resolveDashboardRedirect(pathname: string): string {
 function computeRouteAccess(
   pathname: string,
   role: string,
-  subscription?: SubscriptionData | null
+  subscription?: SubscriptionData | null,
+  // Set by the native-session fast path (see tryNativeSession below): that
+  // path no longer fetches subscription status itself (it was the only
+  // Prisma call anywhere in this Edge-Runtime middleware, and Netlify's Edge
+  // Runtime can't execute Prisma's native query engine). When true, the
+  // Surfboard subscription gate is skipped here and deferred to a live,
+  // Node-runtime check in the dashboard layout instead — this function still
+  // grants/denies based on role only. The legacy Kinde flow never sets this;
+  // its `subscription` argument comes from the session cookie (cached at
+  // login/refresh, not a live query), so it was never actually hitting the
+  // DB from inside middleware and needs no change.
+  deferSubscriptionCheck?: boolean
 ): { hasAccess: boolean; redirectPath?: string } {
   if (
     pathname.startsWith("/reva/dashboard") ||
@@ -171,7 +181,7 @@ function computeRouteAccess(
       pathname === "/surfboard/dashboard/settings" ||
       pathname === "/surfboard/dashboard/subscription";
 
-    if (alwaysAllowedEvenUnsubscribed) {
+    if (alwaysAllowedEvenUnsubscribed || deferSubscriptionCheck) {
       return { hasAccess: hasRoleAccess };
     }
     if (!hasRoleAccess) {
@@ -239,12 +249,17 @@ async function tryNativeSession(
   if (!nativeSession) return null;
 
   const role = nativeSession.role;
-  let subscription: SubscriptionData | null = null;
-  if (activePlatform === Platform.SURFBOARD && pathname.startsWith("/surfboard/dashboard")) {
-    subscription = (await getUserActiveSubscription(nativeSession.sub)) as SubscriptionData | null;
-  }
-
-  const { hasAccess, redirectPath } = computeRouteAccess(pathname, role, subscription);
+  // No subscription lookup here (that used to be the one Prisma call in this
+  // Edge-Runtime middleware — see computeRouteAccess's deferSubscriptionCheck
+  // param). Role access is checked now; the live subscription check for
+  // Surfboard dashboard routes happens in the dashboard layout instead,
+  // which runs in the Node runtime and can reach Prisma.
+  const { hasAccess, redirectPath } = computeRouteAccess(
+    pathname,
+    role,
+    undefined,
+    activePlatform === Platform.SURFBOARD
+  );
   console.log(
     "🛡️ Proxy [native] - Access:",
     hasAccess,
@@ -254,7 +269,13 @@ async function tryNativeSession(
 
   if (redirectPath) return createRedirectResponse(req, redirectPath);
   if (!hasAccess) return createRedirectResponse(req, resolveDashboardRedirect(pathname));
-  return NextResponse.next();
+
+  // Forward the pathname as a request header so the (Node-runtime) Surfboard
+  // dashboard layout can tell which page it's rendering without Next's App
+  // Router giving Server Components the current path directly.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 // 2. With additional proxy logic
