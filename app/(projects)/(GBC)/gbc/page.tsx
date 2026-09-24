@@ -130,7 +130,7 @@ export default function HomePage() {
         style={{ background: GBC_GRADIENTS.hero }}
       >
         <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(/grid.svg)" }} />
+        <div className="absolute inset-0 bg-grid opacity-10" />
         <div
           className="absolute inset-0 bg-cover bg-center opacity-50"
           style={{
