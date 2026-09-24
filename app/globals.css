@@ -49,6 +49,8 @@
   --color-brand-primary-light: #48cae4;
   --color-brand-secondary: #00b4d8;
   --color-brand-accent: #43aa8b;
+
+  --background-image-grid: url('/grid.svg');
 }
 
 :root {
