@@ -393,7 +393,7 @@ export default function MDADashboardHome() {
       <div
         className={`relative overflow-hidden rounded-2xl bg-linear-to-br ${roleConfig.heroGradient} p-8 mb-8 shadow-xl`}
       >
-        <div className="absolute inset-0 opacity-10" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(/grid.svg)" }} />
         <div className="absolute -right-10 -top-10 w-64 h-64 bg-white rounded-full blur-3xl opacity-10" />
         <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-white rounded-full blur-3xl opacity-10" />
 

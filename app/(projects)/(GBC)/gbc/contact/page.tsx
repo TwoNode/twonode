@@ -46,7 +46,7 @@ export default async function ContactPage() {
         className="relative py-24 text-white overflow-hidden"
         style={{ background: GBC_GRADIENTS.hero }}
       >
-        <div className="absolute inset-0 opacity-10" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(/grid.svg)" }} />
 
         {/* Animated background elements */}
         <div

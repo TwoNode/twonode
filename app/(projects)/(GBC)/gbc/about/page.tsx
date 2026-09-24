@@ -33,7 +33,7 @@ export default async function AboutPage() {
         className="relative py-16 sm:py-20 md:py-24 text-white overflow-hidden"
         style={{ background: GBC_GRADIENTS.hero }}
       >
-        <div className="absolute inset-0 opacity-10" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(/grid.svg)" }} />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
             href="/gbc"
