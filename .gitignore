@@ -56,3 +56,5 @@ node_modules
 .gemini/
 package-lock.json
 .env*
+
+.netlify/
