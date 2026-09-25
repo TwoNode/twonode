@@ -74,11 +74,28 @@ const nextConfig = {
    * the suspected cause of "certificate email not sending" in production;
    * exact routes are named narrowly per Next's docs rather than a blanket
    * '/*' to avoid bloating every function's bundle.
+   *
+   * The `./node_modules/@react-pdf/**` glob is deliberately NOT included
+   * here (bisected root cause of a separate, previously-unexplained
+   * Vercel platform failure: "Deploying outputs" erroring with an opaque,
+   * empty-message "Unexpected error", reproduced consistently in isolation
+   * down to this exact glob alone). It's also unnecessary: in this
+   * pnpm-managed repo, node_modules/@react-pdf/* are symlinks into the
+   * .pnpm store, and this glob only matches the symlinks themselves, never
+   * their real targets — so it was never actually shipping the package
+   * correctly in the first place. @react-pdf/renderer is reached via a
+   * dynamic import() in utils/email.ts, which Next's own file tracer
+   * (@vercel/nft) already follows and correctly resolves through the pnpm
+   * symlinks on its own (verified via each route's own nft.json trace
+   * manifest under .next/server — @react-pdf's full package tree, symlink
+   * targets included, is present without any help from this config). The
+   * globs below stay because they
+   * cover genuinely untraceable assets: the pdf-worker/*.cjs files
+   * (execFile'd, never imported) and runtime-loaded public/ images/fonts.
    */
   outputFileTracingIncludes: {
     "/api/v1/gbc/admin/certificates/send": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
       "./public/gbc/gbcCertificateBg.jpeg",
       "./public/gbc2/gbc2LightLogo.png",
@@ -86,7 +103,6 @@ const nextConfig = {
     ],
     "/api/v1/gbc/tickets/\\[ticketNumber\\]/certificate-pdf": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
       "./public/gbc/gbcCertificateBg.jpeg",
       "./public/gbc2/gbc2LightLogo.png",
@@ -94,32 +110,26 @@ const nextConfig = {
     ],
     "/api/v1/gbc/tickets/\\[ticketNumber\\]/receipt-pdf": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/surfboard/cod/batches/\\[batchId\\]/receipt-pdf": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets/pair": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/tickets/group": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
     "/api/v1/gbc/payments/verify": [
       "./gbc/pdf-worker/**/*",
-      "./node_modules/@react-pdf/**/*",
       "./public/fonts/**/*",
     ],
   },
