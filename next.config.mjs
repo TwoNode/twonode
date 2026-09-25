@@ -86,9 +86,10 @@ const nextConfig = {
    * correctly in the first place. @react-pdf/renderer is reached via a
    * dynamic import() in utils/email.ts, which Next's own file tracer
    * (@vercel/nft) already follows and correctly resolves through the pnpm
-   * symlinks on its own (verified via each route's .next/server/**/*.nft.json
-   * — @react-pdf's full package tree, symlink targets included, is present
-   * without any help from this config). The globs below stay because they
+   * symlinks on its own (verified via each route's own nft.json trace
+   * manifest under .next/server — @react-pdf's full package tree, symlink
+   * targets included, is present without any help from this config). The
+   * globs below stay because they
    * cover genuinely untraceable assets: the pdf-worker/*.cjs files
    * (execFile'd, never imported) and runtime-loaded public/ images/fonts.
    */
