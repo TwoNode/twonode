@@ -13,6 +13,7 @@ import RevaLoading from "@/reva/components/RevaLoading";
 import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
+import { useRouter } from "next/navigation";
 
 export default function RevaUserPanelLayout({
   children,
@@ -21,6 +22,7 @@ export default function RevaUserPanelLayout({
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
   const { user, isUser, isLoading, userData } = useRevaUserAccess();
+  const router = useRouter();
   useNativeAuthRefresh(Platform.REVA);
 
   const menuList = [
@@ -36,7 +38,10 @@ export default function RevaUserPanelLayout({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          postLogoutRedirectURL="/api/auth/logout_redirect"
+          onConfirm={() => {
+            fetch("/api/auth/logout_redirect?from=reva");
+            router.push("/reva/login");
+          }}
           trigger={
             <button
               type="button"

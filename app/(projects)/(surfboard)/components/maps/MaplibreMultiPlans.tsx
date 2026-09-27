@@ -23,7 +23,11 @@ import { applyVisualizationShift } from "../../utils/surfboardUtils";
 
 interface AllPlansMapProps {
   plans: Plan[];
+  /** Builds the URL a plan's popup should link to — differs between the facilitator and admin map viewers, which share this component. */
+  getPlanDetailUrl?: (id: string) => string;
 }
+
+const defaultGetPlanDetailUrl = (id: string) => `/surfboard/dashboard/plan?planId=${id}`;
 
 // Temporary plan structure for uploaded CSVs
 interface TempPlan extends Omit<Plan, "status"> {
@@ -309,7 +313,7 @@ const DisplayPanel = React.memo(function DisplayPanel({
   onClearTempPlans,
   onRemoveTempPlan,
 }: DisplayPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const dbPlans = useMemo(
     () => filteredPlans.filter((p) => p.status !== "UPLOADED"),
     [filteredPlans],
@@ -354,7 +358,7 @@ const DisplayPanel = React.memo(function DisplayPanel({
               : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           }`}
         >
-          Dots
+          Points
         </button>
         <button
           type="button"
@@ -365,7 +369,7 @@ const DisplayPanel = React.memo(function DisplayPanel({
               : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           }`}
         >
-          Dots + Lines
+          Points + Lines
         </button>
       </div>
       <hr className="my-2 border-gray-200 dark:border-white/10" />
@@ -387,35 +391,6 @@ const DisplayPanel = React.memo(function DisplayPanel({
           </label>
         ),
       )}
-      <hr className="my-2 border-gray-200 dark:border-white/10" />
-      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-        Database Plans ({visiblePlanIds.length})
-      </div>
-      <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
-        {dbPlans.map((p) => (
-          <label
-            key={p.id}
-            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
-          >
-            <input
-              type="checkbox"
-              checked={visiblePlanIds.includes(p.id)}
-              onChange={(e) => onToggleVisiblePlan(p.id, e.target.checked)}
-            />{" "}
-            <span
-              className="inline-block w-3 h-3 rounded-sm"
-              style={{ background: getColorForPlanType(p.planType as string) }}
-            />
-            <button
-              className="hover:underline truncate"
-              onClick={() => zoomToPlan(p.id)}
-              title="Zoom to plan"
-            >
-              {p.planNumber}
-            </button>
-          </label>
-        ))}
-      </div>
       {tempPlans.length > 0 && (
         <>
           <hr className="my-2 border-gray-200 dark:border-white/10" />
@@ -463,76 +438,33 @@ const DisplayPanel = React.memo(function DisplayPanel({
           </div>
         </>
       )}
-      </>
-      )}
-    </div>
-  );
-});
-
-interface SummaryPanelProps {
-  filteredPlans: (Plan | TempPlan)[];
-  onSelectPlan: (p: Plan | TempPlan) => void;
-}
-
-const SummaryPanel = React.memo(function SummaryPanel({
-  filteredPlans,
-  onSelectPlan,
-}: SummaryPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  if (filteredPlans.length === 0) return null;
-
-  return (
-    <div className="absolute z-40 bottom-3 right-3 max-w-lg overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        className="flex items-center justify-between w-full text-left mb-2"
-      >
-        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-          Filtered Plans ({filteredPlans.length})
-        </span>
-        {collapsed ? (
-          <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        )}
-      </button>
-      {!collapsed && (
-      <>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-gray-200 dark:border-white/10">
-        {Object.entries(PLAN_TYPE_COLORS)
-          .filter(([type]) => type !== "CSV")
-          .map(([type, color]) => (
-            <div key={type} className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                style={{ background: color }}
-              />
-              <span className="text-[11px] text-gray-600 dark:text-gray-400">
-                {type}
-              </span>
-            </div>
-          ))}
+      <hr className="my-2 border-gray-200 dark:border-white/10" />
+      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+        Database Plans ({visiblePlanIds.length})
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 overflow-x-hidden overflow-y-auto max-h-28">
-        {filteredPlans.map((p) => (
-          <button
+      <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1">
+        {dbPlans.map((p) => (
+          <label
             key={p.id}
-            className="p-2 border border-gray-200 dark:border-white/10 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-white/5 overflow-hidden"
-            onClick={() => onSelectPlan(p)}
+            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300"
           >
-            <div className="flex items-center gap-2">
-              <span
-                className="inline-block w-3 h-3 rounded-sm"
-                style={{ background: getColorForPlanType(p.planType as string) }}
-              />
-              <span className="font-medium text-sm text-gray-900 dark:text-white">{p.planNumber}</span>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-              {p.planType as string} · {p.status}
-            </div>
-          </button>
+            <input
+              type="checkbox"
+              checked={visiblePlanIds.includes(p.id)}
+              onChange={(e) => onToggleVisiblePlan(p.id, e.target.checked)}
+            />{" "}
+            <span
+              className="inline-block w-3 h-3 rounded-sm"
+              style={{ background: getColorForPlanType(p.planType as string) }}
+            />
+            <button
+              className="hover:underline truncate"
+              onClick={() => zoomToPlan(p.id)}
+              title="Zoom to plan"
+            >
+              {p.planNumber}
+            </button>
+          </label>
         ))}
       </div>
       </>
@@ -541,7 +473,55 @@ const SummaryPanel = React.memo(function SummaryPanel({
   );
 });
 
-const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
+interface SummaryPanelProps {
+  filteredPlans: (Plan | TempPlan)[];
+}
+
+const SummaryPanel = React.memo(function SummaryPanel({
+  filteredPlans,
+}: SummaryPanelProps) {
+  const [collapsed, setCollapsed] = useState(true);
+
+  if (filteredPlans.length === 0) return null;
+
+  return (
+    <div className="absolute z-40 bottom-3 right-3 max-w-xs overflow-x-hidden bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3">
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+          Legend
+        </span>
+        {collapsed ? (
+          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        ) : (
+          <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        )}
+      </button>
+      {!collapsed && (
+        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 mt-2">
+          {Object.entries(PLAN_TYPE_COLORS)
+            .filter(([type]) => type !== "CSV")
+            .map(([type, color]) => (
+              <div key={type} className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                  style={{ background: color }}
+                />
+                <span className="text-[11px] text-gray-600 dark:text-gray-400 truncate" title={type}>
+                  {type}
+                </span>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = defaultGetPlanDetailUrl }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MaplibreMap | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -690,6 +670,26 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     },
     [combinedPlans],
   );
+  // A brand-new CSV plan doesn't exist in `combinedPlans` yet at the moment
+  // handleCsvUpload runs (setTempPlans hasn't re-rendered), so the
+  // `zoomToPlan` closure captured by handleCsvUpload's own useCallback can't
+  // find it. The delayed re-zoom below fires after several re-renders have
+  // happened, so it needs whatever `zoomToPlan` is *then* (with the new
+  // plan's geometry available), not the one frozen at upload time.
+  const zoomToPlanRef = useRef(zoomToPlan);
+  zoomToPlanRef.current = zoomToPlan;
+
+  // The general "fit bounds to every visible plan" effect further down
+  // (keyed on visibilityFilteredPlans/visiblePlanIds/visibleTempPlanIds)
+  // fires right after a CSV upload changes tempPlans, and its wider fit
+  // overrides whatever specific plan we just zoomed to here — showing up as
+  // a zoom-to-plan that doesn't stick, or a zoom-in-then-zoom-out flicker
+  // for a newly uploaded plan. Re-asserting the intended zoom slightly
+  // after that effect's own fitBounds animation (duration: 500ms) settles
+  // guarantees the specific plan is what the user is left looking at,
+  // without having to fight React's effect-ordering to suppress the other
+  // effect outright.
+  const lastUploadTargetIdRef = useRef<string | null>(null);
 
   const handleCsvUpload = useCallback(async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -707,6 +707,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         const pillarIndex = headers.findIndex((h) => h.includes("pillar"));
         const eastingIndex = headers.findIndex((h) => h.includes("easting"));
         const northingIndex = headers.findIndex((h) => h.includes("northing"));
+        const stateIndex = headers.findIndex((h) => h.includes("state"));
 
         if (pillarIndex === -1 || eastingIndex === -1 || northingIndex === -1) {
           console.warn(`Skipping file ${file.name}: Missing required columns.`);
@@ -726,6 +727,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
         if (pillars.length < 3) continue;
 
+        const state =
+          stateIndex !== -1
+            ? lines[0]?.split(",")[stateIndex]?.trim() || null
+            : null;
+
         // Check for duplicates
         const signature = generatePlanSignature(pillars);
         const existingPlanId = dbPlanSignatures.get(signature);
@@ -736,6 +742,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             type: "info",
           });
           zoomToPlan(existingPlanId);
+          lastUploadTargetIdRef.current = existingPlanId;
           continue;
         }
 
@@ -749,6 +756,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
             type: "info",
           });
           zoomToPlan(existingTempPlanId);
+          lastUploadTargetIdRef.current = existingTempPlanId;
           continue;
         }
 
@@ -769,8 +777,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
 
         const polygon = turf.polygon([coords]);
         const currentDate = new Date();
+        const newPlanId = `csv-${file.name}-${Date.now()}`;
+        lastUploadTargetIdRef.current = newPlanId;
         newTempPlans.push({
-          id: `csv-${file.name}-${Date.now()}`,
+          id: newPlanId,
           planNumber: file.name.replace(/\.csv$/i, ""),
           surveyTitle: "Uploaded from CSV",
           facilitator: "Local File",
@@ -790,7 +800,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
           ward: null,
           lcda: null,
           lga: null,
-          state: null,
+          state,
           locality: null,
           isLive: false,
           dateOnSurveyPlan: currentDate,
@@ -805,6 +815,11 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     }
     setTempPlans((prev) => [...prev, ...newTempPlans]);
     if (event.target) event.target.value = "";
+
+    if (lastUploadTargetIdRef.current) {
+      const targetId = lastUploadTargetIdRef.current;
+      setTimeout(() => zoomToPlanRef.current(targetId), 600);
+    }
   }, [dbPlanSignatures, tempPlanSignatures, plans, tempPlans, zoomToPlan]);
 
   useEffect(() => {
@@ -876,6 +891,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       center: [3.3792, 6.5244],
       zoom: 10,
     });
+    map.current.addControl(new maplibregl.FullscreenControl(), "top-right");
     map.current.on("load", () => {
       if (!map.current) return;
       map.current.addSource("plansLayer", {
@@ -901,7 +917,10 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         type: "line",
         source: "plansLayer",
         paint: {
-          "line-color": ["get", "color"],
+          // Fixed red rather than per-type ["get","color"] — the outline's
+          // job is to make a plan's boundary clearly visible against any
+          // basemap, independent of its fill color.
+          "line-color": "#dc2626",
           "line-width": 2,
         },
       });
@@ -972,7 +991,13 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
                 : "N/A"
           }</li></ul></div>`;
         } else {
-          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base" style="color:${properties.color}">${properties.planNumber}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span></div>`;
+          // CSV-uploaded rows aren't real saved plans (no detail page to link to).
+          const detailUrl =
+            properties.id && properties.status !== "UPLOADED" ? getPlanDetailUrl(properties.id) : null;
+          const planNumberHtml = detailUrl
+            ? `<a href="${detailUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color:${properties.color}">${properties.planNumber}</a>`
+            : `<span style="color:${properties.color}">${properties.planNumber}</span>`;
+          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base">${planNumberHtml}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span></div>`;
         }
         popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
       };
@@ -1165,9 +1190,14 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
   useEffect(() => {
     if (!map.current || !isReady) return;
     if (!map.current.getLayer("plans-fill") || !map.current.getLayer("pillars-symbol") || !map.current.getLayer("plans-outline")) return;
+    // Default ("shape") mode shows the filled shape, its red outline, AND
+    // the pillar points together — "points" is only hidden in the
+    // "shape"-exclusive sense the display-mode toggle never actually offers
+    // (there's no shape-only mode), so it's really "points always visible,
+    // shape visible except in point-only mode."
     map.current.setLayoutProperty("plans-fill", "visibility", displayMode === "shape" ? "visible" : "none");
-    map.current.setLayoutProperty("plans-outline", "visibility", displayMode === "dots-lines" ? "visible" : "none");
-    map.current.setLayoutProperty("pillars-symbol", "visibility", displayMode === "dots" || displayMode === "dots-lines" ? "visible" : "none");
+    map.current.setLayoutProperty("plans-outline", "visibility", displayMode === "shape" || displayMode === "dots-lines" ? "visible" : "none");
+    map.current.setLayoutProperty("pillars-symbol", "visibility", "visible");
   }, [displayMode, isReady]);
 
   useEffect(() => {
@@ -1230,18 +1260,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       checked ? [...prev, id] : prev.filter((x) => x !== id),
     );
   }, []);
-  const selectSummaryPlan = useCallback(
-    (p: Plan | TempPlan) => {
-      if (p.status === "UPLOADED") {
-        setVisibleTempPlanIds((prev) => (prev.includes(p.id) ? prev : [...prev, p.id]));
-      } else {
-        setVisiblePlanIds((prev) => (prev.includes(p.id) ? prev : [...prev, p.id]));
-      }
-      zoomToPlan(p.id);
-    },
-    [zoomToPlan],
-  );
-
   return (
     <div className="relative w-full h-full font-sans">
       <div
@@ -1302,7 +1320,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         onRemoveTempPlan={removeTempPlan}
       />
 
-      <SummaryPanel filteredPlans={filteredPlans} onSelectPlan={selectSummaryPlan} />
+      <SummaryPanel filteredPlans={filteredPlans} />
     </div>
   );
 };

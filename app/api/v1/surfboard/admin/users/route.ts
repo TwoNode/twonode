@@ -11,12 +11,19 @@ export const GET = withAuth<SurfboardRole>(
     const data = await getAllUsers(ctx.session.role, {
       ...pagination,
       search: params.get("search") || undefined,
-      roleGroup: params.get("roleGroup") === "mda" ? "mda" : "admins",
+      roleGroup:
+        params.get("roleGroup") === "mda"
+          ? "mda"
+          : params.get("roleGroup") === "all"
+            ? "all"
+            : "admins",
       role: params.get("role") || undefined,
       status: params.get("status") === "active" || params.get("status") === "inactive" ? params.get("status") as "active" | "inactive" : undefined,
       subscriptionStatus:
-        params.get("subscriptionStatus") === "expired" || params.get("subscriptionStatus") === "expiring_soon"
-          ? (params.get("subscriptionStatus") as "expired" | "expiring_soon")
+        params.get("subscriptionStatus") === "expired" ||
+        params.get("subscriptionStatus") === "expiring_soon" ||
+        params.get("subscriptionStatus") === "active"
+          ? (params.get("subscriptionStatus") as "expired" | "expiring_soon" | "active")
           : undefined,
     });
     return NextResponse.json({ success: true, data });

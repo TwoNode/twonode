@@ -102,7 +102,17 @@ export default function CertificatesClient({
       const selected = Array.from(selectedTickets);
       const res = await gbcApi.certificates.sendBulk(selected, emailBody);
       if (res.success) {
-        toast.success(res.data.message);
+        // res.success only means the HTTP call succeeded — individual
+        // emails can still fail (bad SMTP creds, invalid address, etc.),
+        // so branch on the actual per-email counts rather than showing a
+        // blanket success toast that could read "Sent 0... Failed 10" in green.
+        if (res.data.failed > 0 && res.data.sent === 0) {
+          toast.error(res.data.message);
+        } else if (res.data.failed > 0) {
+          toast.warning(res.data.message);
+        } else {
+          toast.success(res.data.message);
+        }
         setSelectedTickets(new Set());
         // Sent counts and the "Certificates Sent" stat live on the server.
         router.refresh();

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { Platform } from "@/utils/platform";
+import { useTheme } from "@/hooks/useTheme";
+import { DEFAULT_ADMIN_TIMEZONE, getAdminTimezone, setAdminTimezone } from "@/lib/adminTimezone";
 
 interface AdminProfile {
   id: string;
@@ -14,12 +16,11 @@ interface AdminProfile {
   role: string;
   phone: string;
   /**
-   * Preferences/security below have no backing fields on SurfboardUser
-   * (no theme/language/timezone/2FA/login-history columns exist) — kept as
-   * fixed placeholders so the Preferences/Security/Notifications tabs still
-   * render, but they're display-only until that's designed as its own
-   * feature. Only firstName/lastName/phone (Profile tab) are real,
-   * fetched/saved via surfboardApi.profile — see fetchProfile below.
+   * Theme/timezone are real, persisted to SurfboardUser.metadata.preferences
+   * via surfboardApi.profile (see fetchProfile/handleProfileUpdate below).
+   * `notifications` and `security` still have no backing fields — kept as
+   * fixed placeholders so those tabs still render, display-only until
+   * designed as their own feature.
    */
   preferences: {
     notifications: {
@@ -27,8 +28,7 @@ interface AdminProfile {
       push: boolean;
       sms: boolean;
     };
-    theme: "light" | "dark" | "auto";
-    language: string;
+    theme: "light" | "dark";
     timezone: string;
   };
   security: {
@@ -46,8 +46,7 @@ interface AdminProfile {
 const PLACEHOLDER_PREFERENCES: AdminProfile["preferences"] = {
   notifications: { email: true, push: true, sms: false },
   theme: "light",
-  language: "en",
-  timezone: "Africa/Lagos",
+  timezone: DEFAULT_ADMIN_TIMEZONE,
 };
 
 const PLACEHOLDER_SECURITY: AdminProfile["security"] = {
@@ -74,6 +73,7 @@ interface SettingsData {
 
 export default function SettingsPage() {
   const { confirm, ConfirmDialog } = useConfirm();
+  const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -134,6 +134,15 @@ export default function SettingsPage() {
             (sessionRes.data.platform === Platform.SURFBOARD ? sessionRes.data.role : null)
           : null;
 
+      // useTheme() (the navbar toggle) is the single live source of truth
+      // for what's on screen right now, already bootstrapped from this
+      // browser's own localStorage before this page ever loads — the
+      // Preferences tab reflects and controls that same live value rather
+      // than maintaining a second, competing copy of it.
+      const savedPreferences = profileRes.data.preferences || {};
+      const timezone = savedPreferences.timezone || getAdminTimezone();
+      setAdminTimezone(timezone);
+
       setProfile({
         id: profileRes.data.id,
         firstName: profileRes.data.firstName || "",
@@ -141,7 +150,10 @@ export default function SettingsPage() {
         email: profileRes.data.email,
         role: role || "ADMIN",
         phone: profileRes.data.phoneNumber || "",
-        preferences: PLACEHOLDER_PREFERENCES,
+        preferences: {
+          ...PLACEHOLDER_PREFERENCES,
+          timezone,
+        },
         security: PLACEHOLDER_SECURITY,
       });
       setCurrentUserRole(role);
@@ -187,6 +199,8 @@ export default function SettingsPage() {
       formData.set("firstName", profile.firstName);
       formData.set("lastName", profile.lastName);
       formData.set("phoneNumber", profile.phone);
+      formData.set("theme", activeTheme);
+      formData.set("timezone", profile.preferences.timezone);
       const result = await surfboardApi.profile.update(formData);
       if (result.success) {
         toast.success("Profile updated successfully");
@@ -563,6 +577,11 @@ export default function SettingsPage() {
     });
   };
 
+  const handleTimezoneChange = (timezone: string) => {
+    setAdminTimezone(timezone);
+    setProfile((prev) => (prev ? { ...prev, preferences: { ...prev.preferences, timezone } } : prev));
+  };
+
   const handlePasswordChange = async (
     currentPassword: string,
     newPassword: string,
@@ -830,41 +849,14 @@ export default function SettingsPage() {
                         Theme
                       </label>
                       <select
-                        value={profile.preferences.theme}
+                        value={activeTheme}
                         onChange={(e) =>
-                          handlePreferenceChange(
-                            "theme",
-                            "theme",
-                            e.target.value,
-                          )
+                          setActiveTheme(e.target.value as "light" | "dark")
                         }
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
-                        <option value="auto">Auto</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Language
-                      </label>
-                      <select
-                        value={profile.preferences.language}
-                        onChange={(e) =>
-                          handlePreferenceChange(
-                            "language",
-                            "language",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="en">English</option>
-                        <option value="af">Afrikaans</option>
-                        <option value="zu">Zulu</option>
-                        <option value="xh">Xhosa</option>
                       </select>
                     </div>
 
@@ -874,15 +866,10 @@ export default function SettingsPage() {
                       </label>
                       <select
                         value={profile.preferences.timezone}
-                        onChange={(e) =>
-                          handlePreferenceChange(
-                            "timezone",
-                            "timezone",
-                            e.target.value,
-                          )
-                        }
+                        onChange={(e) => handleTimezoneChange(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
+                        <option value="Africa/Lagos">Africa/Lagos</option>
                         <option value="Africa/Johannesburg">
                           Africa/Johannesburg
                         </option>
@@ -892,6 +879,10 @@ export default function SettingsPage() {
                         <option value="Africa/Durban">Africa/Durban</option>
                         <option value="UTC">UTC</option>
                       </select>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Controls how dates are displayed across the admin
+                        panel on this device.
+                      </p>
                     </div>
                   </div>
 

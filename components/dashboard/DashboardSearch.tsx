@@ -183,7 +183,7 @@ export function DashboardSearch({
                 )}
               </span>
               {r.badge && (
-                <DashboardBadge tone={r.badge.tone} className="flex-shrink-0">
+                <DashboardBadge tone={r.badge.tone} className="shrink-0">
                   {r.badge.label}
                 </DashboardBadge>
               )}

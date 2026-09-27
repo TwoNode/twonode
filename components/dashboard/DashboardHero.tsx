@@ -83,11 +83,11 @@ export function DashboardHero({
         </div>
         {cta &&
           (cta.href ? (
-            <Link href={cta.href} className="flex-shrink-0">
+            <Link href={cta.href} className="shrink-0">
               {ctaContent}
             </Link>
           ) : (
-            <button type="button" onClick={cta.onClick} className="flex-shrink-0">
+            <button type="button" onClick={cta.onClick} className="shrink-0">
               {ctaContent}
             </button>
           ))}

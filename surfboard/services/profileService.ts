@@ -4,6 +4,11 @@ import { uploadFile } from "@/surfboard/services/awsService";
 
 /** Migrated from app/(projects)/(surfboard)/actions/profile.ts. */
 
+export type ProfilePreferences = {
+  theme?: "light" | "dark";
+  timezone?: string;
+};
+
 export type ProfileData = {
   id: string;
   firstName: string | null;
@@ -23,6 +28,7 @@ export type ProfileData = {
   payerIDType: string | null;
   isKycValidated: boolean;
   emailVerified: boolean;
+  preferences: ProfilePreferences;
 };
 
 const PROFILE_SELECT = {
@@ -44,20 +50,48 @@ const PROFILE_SELECT = {
   payerIDType: true,
   isKycValidated: true,
   emailVerified: true,
+  metadata: true,
 } as const;
+
+/** metadata is a free-form Json? column — only ever expect a plain object here. */
+function readPreferences(metadata: unknown): ProfilePreferences {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return {};
+  const preferences = (metadata as Record<string, unknown>).preferences;
+  if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) return {};
+  return preferences as ProfilePreferences;
+}
 
 export async function getProfile(userId: string) {
   const dbUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: PROFILE_SELECT });
   if (!dbUser) throw new NotFoundError("User");
-  return dbUser;
+  const { metadata, ...rest } = dbUser;
+  return { ...rest, preferences: readPreferences(metadata) };
 }
 
 export async function updateProfile(userId: string, formData: FormData) {
   const updates: Record<string, any> = {};
 
-  const currentDbUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { isKycValidated: true } });
+  const currentDbUser = await prisma.surfboardUser.findUnique({ where: { id: userId }, select: { isKycValidated: true, metadata: true } });
   if (!currentDbUser) throw new NotFoundError("User");
   const isLocked = currentDbUser.isKycValidated === true;
+
+  const theme = formData.get("theme");
+  const timezone = formData.get("timezone");
+  if (theme !== null || timezone !== null) {
+    const currentPreferences = readPreferences(currentDbUser.metadata);
+    const currentMetadata =
+      currentDbUser.metadata && typeof currentDbUser.metadata === "object" && !Array.isArray(currentDbUser.metadata)
+        ? (currentDbUser.metadata as Record<string, unknown>)
+        : {};
+    updates.metadata = {
+      ...currentMetadata,
+      preferences: {
+        ...currentPreferences,
+        ...(theme === "light" || theme === "dark" ? { theme } : {}),
+        ...(typeof timezone === "string" && timezone ? { timezone } : {}),
+      },
+    };
+  }
 
   const textFields = [
     "firstName",
@@ -102,5 +136,7 @@ export async function updateProfile(userId: string, formData: FormData) {
     }
   }
 
-  return prisma.surfboardUser.update({ where: { id: userId }, data: updates, select: PROFILE_SELECT });
+  const updated = await prisma.surfboardUser.update({ where: { id: userId }, data: updates, select: PROFILE_SELECT });
+  const { metadata, ...rest } = updated;
+  return { ...rest, preferences: readPreferences(metadata) };
 }
