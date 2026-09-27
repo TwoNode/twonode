@@ -30,7 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Trash2, RotateCcw, X, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Trash2, RotateCcw, X, Calendar as CalendarIcon, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { gbcApi, type EditionAdminStats } from "@/gbc/apiClient";
 import { GBC_COLORS } from "@/gbc/colors";
@@ -92,6 +92,9 @@ export default function EditionsClient({
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [creating, setCreating] = useState(false);
+  const [editKey, setEditKey] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [binOpen, setBinOpen] = useState(false);
   const [deletedEditions, setDeletedEditions] = useState<(GBCEdition & { deletedAt: string })[]>([]);
@@ -150,6 +153,35 @@ export default function EditionsClient({
       setCreateOpen(false);
       setForm(emptyForm);
       toast.success(`GBC ${form.key} created`);
+    } else {
+      toast.error(res.error);
+    }
+  }
+
+  function openEdit(edition: GBCEdition) {
+    setEditForm({
+      key: edition.key,
+      name: edition.name,
+      theme: edition.theme,
+      subTheme: edition.subTheme,
+      venue: edition.venue,
+      startDate: edition.startDate.slice(0, 10),
+      endDate: edition.endDate.slice(0, 10),
+      ticketPrefix: edition.ticketPrefix,
+    });
+    setEditKey(edition.key);
+  }
+
+  async function handleUpdate() {
+    if (!editKey) return;
+    setSaving(true);
+    const { key, ...rest } = editForm;
+    const res = await gbcApi.editions.update(editKey, rest);
+    setSaving(false);
+    if (res.success) {
+      setEditions(res.data);
+      setEditKey(null);
+      toast.success(`GBC ${editKey} updated`);
     } else {
       toast.error(res.error);
     }
@@ -407,6 +439,13 @@ export default function EditionsClient({
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => openEdit(edition)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleArchive(edition.key)}
                             disabled={busyKey === edition.key}
                           >
@@ -428,6 +467,13 @@ export default function EditionsClient({
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => openEdit(edition)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="text-red-600 border-red-200 hover:bg-red-50"
                             onClick={() => setDeleteTarget(edition.key)}
                             disabled={busyKey === edition.key}
@@ -444,6 +490,116 @@ export default function EditionsClient({
           </table>
         </div>
       </div>
+
+      <Dialog open={!!editKey} onOpenChange={(open) => !open && setEditKey(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit GBC {editKey}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-2">
+            <div>
+              <Label htmlFor="edit-key">Key</Label>
+              <Input id="edit-key" value={editForm.key} disabled />
+            </div>
+            <div>
+              <Label htmlFor="edit-ticketPrefix">Ticket Prefix</Label>
+              <Input
+                id="edit-ticketPrefix"
+                value={editForm.ticketPrefix}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, ticketPrefix: e.target.value }))
+                }
+              />
+            </div>
+            {(
+              [
+                ["name", "Name"],
+                ["venue", "Venue"],
+                ["theme", "Theme"],
+                ["subTheme", "Sub-theme"],
+              ] as const
+            ).map(([field, label]) => (
+              <div
+                key={field}
+                className={
+                  field === "name" || field === "theme" || field === "subTheme"
+                    ? "col-span-2"
+                    : ""
+                }
+              >
+                <Label htmlFor={`edit-${field}`}>{label}</Label>
+                <Input
+                  id={`edit-${field}`}
+                  value={editForm[field]}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, [field]: e.target.value }))
+                  }
+                />
+              </div>
+            ))}
+
+            {(
+              [
+                ["startDate", "Start Date"],
+                ["endDate", "End Date"],
+              ] as const
+            ).map(([field, label]) => (
+              <div key={field}>
+                <Label htmlFor={`edit-${field}`}>{label}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id={`edit-${field}`}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !editForm[field] && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {editForm[field]
+                        ? format(new Date(editForm[field]), "MMM d, yyyy")
+                        : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={editForm[field] ? new Date(editForm[field]) : undefined}
+                      onSelect={(date) =>
+                        date &&
+                        setEditForm((f) => ({
+                          ...f,
+                          [field]: format(date, "yyyy-MM-dd"),
+                        }))
+                      }
+                      autoFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleUpdate}
+              disabled={
+                saving ||
+                !editForm.ticketPrefix ||
+                !editForm.name ||
+                !editForm.venue ||
+                !editForm.theme ||
+                !editForm.subTheme ||
+                !editForm.startDate ||
+                !editForm.endDate
+              }
+            >
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>

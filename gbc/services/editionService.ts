@@ -164,6 +164,44 @@ export async function createEdition(data: CreateEditionInput, userId: string): P
   return getEditions();
 }
 
+export type UpdateEditionInput = Partial<
+  Omit<CreateEditionInput, "key" | "status">
+>;
+
+/**
+ * Everything except `key` and `status` — key is the primary key other
+ * tables hold a hard FK to (see the model's doc comment), so renaming it
+ * would mean cascading the change across tickets/sponsors/speakers/
+ * partners/gallery/inquiries; status is only ever changed via
+ * activateEdition/archiveEdition, which encode the exactly-one-ACTIVE
+ * business rule this update path deliberately stays out of.
+ */
+export async function updateEdition(
+  key: string,
+  data: UpdateEditionInput,
+  userId: string
+): Promise<GBCEdition[]> {
+  await getEditionOrThrow(key);
+
+  await prisma.gBCEdition.update({
+    where: { key },
+    data: {
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.theme !== undefined ? { theme: data.theme } : {}),
+      ...(data.subTheme !== undefined ? { subTheme: data.subTheme } : {}),
+      ...(data.venue !== undefined ? { venue: data.venue } : {}),
+      ...(data.startDate !== undefined ? { startDate: new Date(data.startDate) } : {}),
+      ...(data.endDate !== undefined ? { endDate: new Date(data.endDate) } : {}),
+      ...(data.ticketPrefix !== undefined ? { ticketPrefix: data.ticketPrefix } : {}),
+    },
+  });
+  await prisma.gBCAuditLog.create({
+    data: { userId, action: "UPDATE_EDITION", entity: "GBCEdition", entityId: key, changes: JSON.stringify(data) },
+  });
+
+  return getEditions();
+}
+
 export async function activateEdition(key: string, userId: string): Promise<GBCEdition[]> {
   const target = await getEditionOrThrow(key);
   if (target.status === "ACTIVE") return getEditions();

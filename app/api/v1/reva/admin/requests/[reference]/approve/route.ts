@@ -33,5 +33,10 @@ export const POST = withAuth<RevaRole>(
 
     return NextResponse.json({ success: true, ...data });
   },
-  { platform: Platform.REVA, roles: [RevaRole.ADMIN, RevaRole.SUPERADMIN] }
+  // SUPERADMIN only — matches the "Approve Report" button, which only ever
+  // renders for viewerRole === "SUPERADMIN" (AdminReportUpload.tsx /
+  // AdminDirectLinkUpload.tsx). Previously also allowed ADMIN here despite
+  // the UI hiding the button from them, a live gap: a plain ADMIN could
+  // still call this endpoint directly.
+  { platform: Platform.REVA, roles: [RevaRole.SUPERADMIN] }
 );
