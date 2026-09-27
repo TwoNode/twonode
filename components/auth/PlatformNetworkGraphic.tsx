@@ -42,7 +42,7 @@ export function PlatformNetworkGraphic({
 }) {
   if (variant === "mda") {
     return (
-      <div className={`relative aspect-square h-full max-w-full ${className}`}>
+      <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
             <line x1={MDA_MDA.x} y1={MDA_MDA.y} x2={MDA_SURFBOARD.x} y2={MDA_SURFBOARD.y} />
@@ -74,7 +74,7 @@ export function PlatformNetworkGraphic({
     // zoom, where the column's available height drops below what a
     // width-driven aspect-square box would need, pushing the headline card
     // below it off-screen.
-    <div className={`relative aspect-square h-full max-w-full ${className}`}>
+    <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
         <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
           <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
