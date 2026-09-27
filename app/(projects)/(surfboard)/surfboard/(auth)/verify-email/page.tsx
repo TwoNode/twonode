@@ -8,8 +8,8 @@ import { Platform } from "@/utils/platform";
 export default function SurfboardVerifyEmailPage() {
   return (
     <AuthSplitLayout
-      accent="#0077B6"
-      accentDark="#023E8A"
+      accent="#2563EB"
+      accentDark="#1D4ED8"
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
       description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
@@ -19,8 +19,8 @@ export default function SurfboardVerifyEmailPage() {
           platform={Platform.SURFBOARD}
           logoSrc="/surfboard/surf_logo.svg"
           logoAlt="Surfboard Logo"
-          accent="#0077B6"
-          accentDark="#023E8A"
+          accent="#2563EB"
+          accentDark="#1D4ED8"
           loginHref="/surfboard/login"
         />
       </Suspense>

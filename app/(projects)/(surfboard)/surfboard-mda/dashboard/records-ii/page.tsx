@@ -430,7 +430,7 @@ export default function RecordsIIAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
         </div>
       </div>
@@ -464,7 +464,7 @@ export default function RecordsIIAdminPage() {
                 ? "border-l-4 border-l-green-400"
                 : ""
             : isBatchMine
-              ? "border-2 border-blue-200 ring-2 ring-blue-100"
+              ? "border-2 border-violet-200 ring-2 ring-violet-100"
               : "border-2 border-gray-200 dark:border-white/10 opacity-60 grayscale-30"
         }`}
       >
@@ -472,7 +472,7 @@ export default function RecordsIIAdminPage() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <Package className="w-5 h-5 text-blue-600" />
+                <Package className="w-5 h-5 text-violet-600" />
                 <CardTitle className="text-xl">
                   Batch {batch.batchCode}
                 </CardTitle>
@@ -489,7 +489,7 @@ export default function RecordsIIAdminPage() {
                 )}
                 {!isHistory &&
                   (isBatchMine ? (
-                    <Badge className="bg-blue-100 text-blue-700">
+                    <Badge className="bg-violet-100 text-violet-700">
                       <Lock className="w-3 h-3 mr-1" />
                       Locked by you
                     </Badge>
@@ -660,13 +660,13 @@ export default function RecordsIIAdminPage() {
                     )}
 
                     {/* Record Copy Document */}
-                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mb-3">
+                    <div className="border border-violet-200 rounded-lg p-3 bg-violet-50 mb-3">
                       <div className="flex items-center gap-2 mb-2">
                         {!isHistory && (
                           <AlertTriangle className="w-4 h-4 text-amber-600" />
                         )}
-                        <FileText className="w-4 h-4 text-blue-600" />
-                        <p className="text-xs font-medium text-blue-800">
+                        <FileText className="w-4 h-4 text-violet-600" />
+                        <p className="text-xs font-medium text-violet-800">
                           {!isHistory
                             ? "Verify Physical Copy Matches Uploaded Copy"
                             : "Record Copy"}
@@ -695,7 +695,7 @@ export default function RecordsIIAdminPage() {
                             href={p.redCopyFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-violet-600 hover:bg-violet-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (
                               <ImageIcon className="w-3.5 h-3.5" />
@@ -861,13 +861,13 @@ export default function RecordsIIAdminPage() {
 
         {/* Lock Status Indicator */}
         {lockedBatchCode && (
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between p-3 bg-violet-50 rounded-lg border border-violet-200">
             <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-blue-800">
+              <Lock className="w-4 h-4 text-violet-600" />
+              <span className="text-sm text-violet-800">
                 <strong>Batch {lockedBatchCode}</strong> locked ({lockedPlanCount} plan{lockedPlanCount !== 1 ? "s" : ""})
                 {lockExpiresAt && (
-                  <span className="text-blue-600 ml-1">
+                  <span className="text-violet-600 ml-1">
                     • Expires {formatDate(lockExpiresAt)}
                   </span>
                 )}
@@ -890,7 +890,7 @@ export default function RecordsIIAdminPage() {
 
         {isLocking && (
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring batch lock...
             </span>
@@ -898,13 +898,13 @@ export default function RecordsIIAdminPage() {
         )}
 
         {/* Info Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-          <Award className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4 flex items-start gap-3">
+          <Award className="w-6 h-6 text-violet-600 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-blue-800">
+            <p className="text-sm font-medium text-violet-800">
               This is the final approval step
             </p>
-            <p className="text-sm text-blue-700 mt-1">
+            <p className="text-sm text-violet-700 mt-1">
               Only plans where all 5 approvals (Accounts, Charting, SURCON,
               Records I, Intake) are complete appear here. Batches are locked to
               you for review — {lockedPlanCount > 0 ? `${lockedPlanCount * 3} minutes` : "3 minutes per plan"}.
@@ -974,7 +974,7 @@ export default function RecordsIIAdminPage() {
           <TabsContent value="history" className="mt-6">
             {historyLoading ? (
               <div className="flex items-center justify-center h-48">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
               </div>
             ) : filteredHistoryBatches.length === 0 ? (
               <Card>
@@ -1052,11 +1052,11 @@ export default function RecordsIIAdminPage() {
                     </ul>
                   </div>
 
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800 font-medium">
+                  <div className="bg-violet-50 p-4 rounded-lg border border-violet-200">
+                    <p className="text-sm text-violet-800 font-medium">
                       What happens next:
                     </p>
-                    <ul className="text-sm text-blue-700 list-disc list-inside mt-2">
+                    <ul className="text-sm text-violet-700 list-disc list-inside mt-2">
                       <li>Plan status will change to LODGED</li>
                       <li>Data will be submitted to OSSG API</li>
                       <li>Surveyor will receive a confirmation email</li>

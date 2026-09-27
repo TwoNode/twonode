@@ -72,7 +72,7 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0077B6]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2563EB]"></div>
       </div>
     );
   }
@@ -240,7 +240,7 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
                   onClick={() => setAreaDimension(dim.id)}
                   className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                     areaDimension === dim.id
-                      ? 'bg-white text-[#023E8A] shadow-sm dark:bg-white/10 dark:text-white'
+                      ? 'bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white'
                       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   }`}
                 >

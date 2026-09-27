@@ -293,7 +293,7 @@ export default function SurfboardLandingPage() {
             <div className={styles.nodePair}>
               <div className={styles.node}>
                 <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M4 12h16M4 12l4-4M4 12l4 4" stroke="#233dff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 12h16M4 12l4-4M4 12l4 4" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div className={styles.dash} />

@@ -398,7 +398,7 @@ export default function IntakeAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             Loading intake batches...
           </p>
@@ -437,7 +437,7 @@ export default function IntakeAdminPage() {
                 ? "border-l-4 border-l-green-400"
                 : ""
             : isBatchMine
-              ? "border-2 border-blue-200 ring-2 ring-blue-100"
+              ? "border-2 border-violet-200 ring-2 ring-violet-100"
               : "border-2 border-gray-200 dark:border-white/10"
         }`}
       >
@@ -446,7 +446,7 @@ export default function IntakeAdminPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Package
-                  className={`w-5 h-5 ${isBatchMine ? "text-blue-600" : "text-gray-500 dark:text-gray-400"}`}
+                  className={`w-5 h-5 ${isBatchMine ? "text-violet-600" : "text-gray-500 dark:text-gray-400"}`}
                 />
                 <CardTitle className="text-xl">
                   Batch {batch.batchCode}
@@ -464,7 +464,7 @@ export default function IntakeAdminPage() {
                 )}
                 {!isHistory &&
                   (isBatchMine ? (
-                    <Badge className="bg-blue-100 text-blue-700">
+                    <Badge className="bg-violet-100 text-violet-700">
                       <Lock className="w-3 h-3 mr-1" />
                       Locked by you
                     </Badge>
@@ -599,10 +599,10 @@ export default function IntakeAdminPage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mt-2">
+                    <div className="border border-violet-200 rounded-lg p-3 bg-violet-50 mt-2">
                       <div className="flex items-center gap-2 mb-2">
-                        <FileText className="w-4 h-4 text-blue-600" />
-                        <p className="text-xs font-medium text-blue-800">
+                        <FileText className="w-4 h-4 text-violet-600" />
+                        <p className="text-xs font-medium text-violet-800">
                           Record Copy
                         </p>
                       </div>
@@ -627,7 +627,7 @@ export default function IntakeAdminPage() {
                             href={p.redCopyFileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-violet-600 hover:bg-violet-50 transition-colors text-xs"
                           >
                             {isImageUrl(p.redCopyFileUrl) ? (
                               <ImageIcon className="w-3.5 h-3.5" />

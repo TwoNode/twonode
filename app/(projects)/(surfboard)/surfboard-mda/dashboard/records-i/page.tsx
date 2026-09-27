@@ -348,7 +348,7 @@ export default function RecordsIAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
         </div>
       </div>
@@ -367,7 +367,7 @@ export default function RecordsIAdminPage() {
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
-              ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
+              ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
               : "border-l-4 border-l-gray-300 opacity-60 grayscale-30"
           }`}
       >
@@ -465,11 +465,11 @@ export default function RecordsIAdminPage() {
           )}
 
           {/* Record Copy */}
-          <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+          <div className="border-2 border-violet-200 rounded-lg p-4 bg-violet-50">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <p className="text-sm font-medium text-blue-800">
+                <FileText className="w-5 h-5 text-violet-600" />
+                <p className="text-sm font-medium text-violet-800">
                   Record Copy {!isHistory && "(Verify Quality & Completeness)"}
                 </p>
               </div>
@@ -497,7 +497,7 @@ export default function RecordsIAdminPage() {
                   href={plan.redCopyFileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border text-violet-600 hover:bg-violet-50 transition-colors"
                 >
                   {isImageUrl(plan.redCopyFileUrl) ? (
                     <ImageIcon className="w-4 h-4" />
@@ -644,7 +644,7 @@ export default function RecordsIAdminPage() {
 
         {isLocking && (
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring plan lock...
             </span>
@@ -702,7 +702,7 @@ export default function RecordsIAdminPage() {
           <TabsContent value="history" className="mt-6">
             {historyLoading ? (
               <div className="flex items-center justify-center h-48">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
               </div>
             ) : filteredHistoryPlans.length === 0 ? (
               <Card>

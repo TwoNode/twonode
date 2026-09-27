@@ -17,7 +17,7 @@ const ErrorState = ({ message }: { message: string }) => (
     <p className="max-w-md text-gray-600 dark:text-gray-400">{message}</p>
     <button
       onClick={() => window.location.reload()}
-      className="mt-4 rounded-md bg-[#0077B6] px-4 py-2 text-white hover:bg-[#023E8A] transition-colors"
+      className="mt-4 rounded-md bg-[#2563EB] px-4 py-2 text-white hover:bg-[#1D4ED8] transition-colors"
     >
       Try Again
     </button>

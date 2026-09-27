@@ -195,11 +195,11 @@ export default function ProfilePage() {
             </div>
 
             {/* Role Description */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h3 className="font-semibold text-blue-900 mb-2">
+            <div className="bg-violet-50 border border-violet-200 rounded-xl p-6">
+              <h3 className="font-semibold text-violet-900 mb-2">
                 Your Responsibilities
               </h3>
-              <p className="text-blue-700">
+              <p className="text-violet-700">
                 {roleDescriptions[profile.role] ||
                   "Your role involves managing certificate of deposit approvals."}
               </p>

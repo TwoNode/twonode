@@ -11,12 +11,12 @@ const SURF_COLORS = {
     base: "#0A0F1F",
   },
   brand: {
-    primary: "#38BDF8",
+    primary: "#2563EB",
   },
 };
 
 const gradientBG =
-  "bg-[radial-gradient(1200px_600px_at_50%_-20%,rgba(56,189,248,0.20),rgba(10,15,31,0))]";
+  "bg-[radial-gradient(1200px_600px_at_50%_-20%,rgba(37,99,235,0.20),rgba(10,15,31,0))]";
 
 export default function SurfboardBadgePage() {
   return (
@@ -60,7 +60,7 @@ export default function SurfboardBadgePage() {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-full max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/2 p-2 sm:p-4 backdrop-blur-md shadow-2xl shadow-cyan-900/20"
+          className="w-full max-w-2xl mx-auto rounded-3xl border border-white/10 bg-white/2 p-2 sm:p-4 backdrop-blur-md shadow-2xl shadow-blue-900/20"
         >
           <div className="relative w-full flex justify-center overflow-hidden rounded-2xl bg-black/50 ring-1 ring-white/10">
             <video
@@ -75,7 +75,7 @@ export default function SurfboardBadgePage() {
           </div>
           
           <div className="mt-8 flex flex-col items-center text-center px-4 pb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200 mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1 text-xs text-blue-200 mb-4">
               <ShieldCheck className="h-4 w-4" /> Official Surfboard Badge
             </div>
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-3">
@@ -87,11 +87,11 @@ export default function SurfboardBadgePage() {
               </p>
               <ul className="list-none space-y-2 text-left mx-auto w-fit">
                 <li className="flex items-start gap-2">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
                   <span>View the property location on a map</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
                   <span>Verify its authenticity instantly</span>
                 </li>
               </ul>
