@@ -9,7 +9,7 @@ import { Platform } from "@/utils/platform";
  * one flow instead of a generic shared template.
  */
 const PLATFORM_BRAND: Record<Platform, { name: string; accent: string; accentDark: string }> = {
-  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#0077B6", accentDark: "#023E8A" },
+  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#2563EB", accentDark: "#1D4ED8" },
   [Platform.REVA]: { name: "REVA", accent: "#008cff", accentDark: "#032740" },
   [Platform.GBC]: { name: "GBC", accent: "#7C3AED", accentDark: "#5B21B6" },
   [Platform.SCRAM]: { name: "TwoNode", accent: "#0077B6", accentDark: "#023E8A" },

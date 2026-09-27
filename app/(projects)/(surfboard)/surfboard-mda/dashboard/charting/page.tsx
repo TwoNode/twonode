@@ -363,7 +363,7 @@ export default function ChartingAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
         </div>
       </div>
@@ -380,7 +380,7 @@ export default function ChartingAdminPage() {
         className={`transition-all duration-200 ${isHistory
           ? "border-l-4 border-l-green-400"
           : isPlanLockedByMe
-            ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
+            ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
             : "opacity-60 grayscale-30"
           }`}
       >
@@ -482,7 +482,7 @@ export default function ChartingAdminPage() {
 
           {/* Possible Charting Remarks (for pending) */}
           {!isHistory && plan.possibleChartingRemarks && (
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="bg-violet-50 p-4 rounded-lg">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Possible Charting Remarks (from LASG dataset)
               </p>
@@ -553,11 +553,11 @@ export default function ChartingAdminPage() {
                         Copy
                       </Button>
                     </div>
-                    <div className="px-4 py-2 bg-blue-50 border-b border-gray-200 dark:border-white/10">
-                      <span className="text-lg font-bold text-blue-800">{isMulti ? parcelLabel : "PL"}</span>
+                    <div className="px-4 py-2 bg-violet-50 border-b border-gray-200 dark:border-white/10">
+                      <span className="text-lg font-bold text-violet-800">{isMulti ? parcelLabel : "PL"}</span>
                     </div>
                     <pre className="text-xs bg-white dark:bg-surface p-3 overflow-x-auto">
-                      {isMulti && <span className="font-bold text-blue-800">PL{"\n"}</span>}
+                      {isMulti && <span className="font-bold text-violet-800">PL{"\n"}</span>}
                       {groupText.substring(3) || "No valid coordinates"}
                     </pre>
                   </div>
@@ -576,7 +576,7 @@ export default function ChartingAdminPage() {
                 href={plan.redCopyFileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700"
               >
                 <FileText className="w-4 h-4" />
                 View Record Copy
@@ -693,7 +693,7 @@ export default function ChartingAdminPage() {
 
         {isLocking && (
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring plan lock...
             </span>
@@ -751,7 +751,7 @@ export default function ChartingAdminPage() {
           <TabsContent value="history" className="mt-6">
             {historyLoading ? (
               <div className="flex items-center justify-center h-48">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
               </div>
             ) : filteredHistoryPlans.length === 0 ? (
               <Card>
@@ -793,7 +793,7 @@ export default function ChartingAdminPage() {
 
             <div className="space-y-4">
               {actionType === "approve" && selectedPlan?.possibleChartingRemarks && (
-                <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="bg-violet-50 p-4 rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Possible Charting Remarks (from LASG)
@@ -823,7 +823,7 @@ export default function ChartingAdminPage() {
                       size="sm"
                       variant="outline"
                       onClick={handleCopyPossibleRemarks}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
                     >
                       <Copy className="w-4 h-4 mr-1" />
                       Copy Suggested Remarks

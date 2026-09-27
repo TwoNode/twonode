@@ -393,7 +393,7 @@ export default function SurconAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading plans...</p>
         </div>
       </div>
@@ -412,7 +412,7 @@ export default function SurconAdminPage() {
               ? "border-l-4 border-l-red-400"
               : "border-l-4 border-l-green-400"
             : isPlanLockedByMe
-              ? "border-l-4 border-l-blue-500 ring-2 ring-blue-200"
+              ? "border-l-4 border-l-violet-500 ring-2 ring-violet-200"
               : "opacity-60 grayscale-30"
           }`}
       >
@@ -567,11 +567,11 @@ export default function SurconAdminPage() {
           )}
 
           {/* Pillars */}
-          <div className="border-2 border-blue-200 rounded-lg overflow-hidden bg-blue-50">
-            <div className="flex items-center justify-between p-4 border-b border-blue-200">
+          <div className="border-2 border-violet-200 rounded-lg overflow-hidden bg-violet-50">
+            <div className="flex items-center justify-between p-4 border-b border-violet-200">
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-blue-600" />
-                <p className="text-sm font-medium text-blue-800">
+                <AlertCircle className="w-5 h-5 text-violet-600" />
+                <p className="text-sm font-medium text-violet-800">
                   Pillar Coordinates {!isHistory && "(Verify Against Database)"}
                 </p>
               </div>
@@ -601,13 +601,13 @@ export default function SurconAdminPage() {
                   {groupKeys.map((key) => {
                     const group = groups[Number(key)];
                     return (
-                      <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-blue-200" : ""}>
-                        <div className="px-4 py-2 bg-blue-100 border-b border-blue-200 flex justify-between items-center">
-                          <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">
+                      <div key={key} className={key !== groupKeys[0] ? "mt-6 border-t border-violet-200" : ""}>
+                        <div className="px-4 py-2 bg-violet-100 border-b border-violet-200 flex justify-between items-center">
+                          <span className="text-sm font-bold text-violet-800 uppercase tracking-wider">
                             Parcel {String.fromCharCode(65 + Number(key))}
                           </span>
                           <div className="flex items-center gap-4">
-                            <span className="text-xs text-blue-600 font-medium">
+                            <span className="text-xs text-violet-600 font-medium">
                               {group.length} pillars
                             </span>
                             <Button
@@ -634,23 +634,23 @@ export default function SurconAdminPage() {
                             </Button>
                           </div>
                         </div>
-                        <table className="min-w-full divide-y divide-blue-200">
-                          <thead className="bg-blue-50">
+                        <table className="min-w-full divide-y divide-violet-200">
+                          <thead className="bg-violet-50">
                             <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                              <th className="px-4 py-2 text-left text-xs font-medium text-violet-700 uppercase tracking-wider">
                                 Pillar #
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                              <th className="px-4 py-2 text-left text-xs font-medium text-violet-700 uppercase tracking-wider">
                                 Easting
                               </th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                              <th className="px-4 py-2 text-left text-xs font-medium text-violet-700 uppercase tracking-wider">
                                 Northing
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white dark:bg-surface divide-y divide-blue-100">
+                          <tbody className="bg-white dark:bg-surface divide-y divide-violet-100">
                             {group.map((pillar: any, index: number) => (
-                              <tr key={index} className="hover:bg-blue-50">
+                              <tr key={index} className="hover:bg-violet-50">
                                 <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                   {pillar.pillarNumber ||
                                     pillar.name ||
@@ -686,7 +686,7 @@ export default function SurconAdminPage() {
                 href={plan.redCopyFileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700"
               >
                 <FileText className="w-4 h-4" />
                 View Record Copy
@@ -760,7 +760,7 @@ export default function SurconAdminPage() {
 
         {isLocking && (
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Acquiring plan lock...
             </span>
@@ -818,7 +818,7 @@ export default function SurconAdminPage() {
           <TabsContent value="history" className="mt-6">
             {historyLoading ? (
               <div className="flex items-center justify-center h-48">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
               </div>
             ) : filteredHistoryPlans.length === 0 ? (
               <Card>

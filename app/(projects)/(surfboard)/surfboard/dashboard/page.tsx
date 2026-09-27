@@ -239,7 +239,7 @@ export default function DashboardHome() {
               onClick={() => setActiveTab(tab.id)}
               className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                 activeTab === tab.id
-                  ? "bg-white text-[#023E8A] shadow-sm dark:bg-white/10 dark:text-white"
+                  ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
@@ -251,7 +251,7 @@ export default function DashboardHome() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0077B6] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FiRefreshCw
             className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -311,7 +311,7 @@ export default function DashboardHome() {
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-[#0077B6] truncate">
+                          <p className="text-sm font-medium text-[#2563EB] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">
@@ -364,7 +364,7 @@ export default function DashboardHome() {
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-[#0077B6] truncate">
+                          <p className="text-sm font-medium text-[#2563EB] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">

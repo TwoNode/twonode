@@ -44,11 +44,11 @@
   /* Fallback brand tokens for anything rendered outside a [data-product]
      subtree — mirrors surfboard/colors.ts. Every product layout should set
      data-product so these get overridden below. */
-  --color-brand-primary: #0077b6;
-  --color-brand-primary-dark: #023e8a;
-  --color-brand-primary-light: #48cae4;
-  --color-brand-secondary: #00b4d8;
-  --color-brand-accent: #43aa8b;
+  --color-brand-primary: #2563eb;
+  --color-brand-primary-dark: #1d4ed8;
+  --color-brand-primary-light: #3b82f6;
+  --color-brand-secondary: #0284c7;
+  --color-brand-accent: #4f46e5;
 
   --background-image-grid: url('/grid.svg');
 }
@@ -77,11 +77,21 @@
 
 /* Brand tokens — mirrors surfboard/colors.ts's SURFBOARD_COLORS */
 [data-product="surfboard"] {
-  --color-brand-primary: #0077b6;
-  --color-brand-primary-dark: #023e8a;
-  --color-brand-primary-light: #48cae4;
-  --color-brand-secondary: #00b4d8;
-  --color-brand-accent: #43aa8b;
+  --color-brand-primary: #2563eb;
+  --color-brand-primary-dark: #1d4ed8;
+  --color-brand-primary-light: #3b82f6;
+  --color-brand-secondary: #0284c7;
+  --color-brand-accent: #4f46e5;
+}
+
+/* Brand tokens — mirrors surfboard/mdaColors.ts's MDA_COLORS (a re-export
+   of gbc/colors.ts's GBC_COLORS; MDA intentionally shares GBC's theme). */
+[data-product="surfboard-mda"] {
+  --color-brand-primary: #7c3aed;
+  --color-brand-primary-dark: #5b21b6;
+  --color-brand-primary-light: #a78bfa;
+  --color-brand-secondary: #ec4899;
+  --color-brand-accent: #ec4899;
 }
 
 /* Brand tokens — mirrors reva/colors.ts's REVA_COLORS.

@@ -85,7 +85,7 @@ export default function MapViewerPage() {
               <b>Status:</b> {selectedPlan.status}
             </p>
             <button
-              className="mt-4 px-6 py-2 bg-[#0077B6] text-white rounded-lg font-semibold hover:bg-[#023E8A] transition"
+              className="mt-4 px-6 py-2 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition"
               onClick={() => setSelectedPlan(null)}
             >
               Close

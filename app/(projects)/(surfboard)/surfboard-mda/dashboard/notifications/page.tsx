@@ -88,7 +88,7 @@ export default function SurfboardMdaNotificationsPage() {
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center gap-3 mb-6">
-        <Bell className="h-7 w-7 text-blue-600 shrink-0" />
+        <Bell className="h-7 w-7 text-violet-600 shrink-0" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
       </div>
 

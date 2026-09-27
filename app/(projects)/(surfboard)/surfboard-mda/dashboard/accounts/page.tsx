@@ -319,7 +319,7 @@ export default function AccountsAdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-12 h-12 animate-spin text-violet-600 mx-auto" />
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading batches...</p>
         </div>
       </div>
@@ -344,7 +344,7 @@ export default function AccountsAdminPage() {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-bold text-blue-600">{pendingCount}</p>
+          <p className="text-3xl font-bold text-violet-600">{pendingCount}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">Pending Batches</p>
         </div>
       </div>
@@ -396,7 +396,7 @@ export default function AccountsAdminPage() {
                 const isBatchMine = isBatchLockedByMe(batch.id);
                 const isDisabled = !isBatchMine;
                 return (
-                  <Card key={batch.id} className={isBatchMine ? "border-2 border-blue-200 ring-2 ring-blue-100" : "border-2 border-gray-200 dark:border-white/10"}>
+                  <Card key={batch.id} className={isBatchMine ? "border-2 border-violet-200 ring-2 ring-violet-100" : "border-2 border-gray-200 dark:border-white/10"}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
@@ -405,7 +405,7 @@ export default function AccountsAdminPage() {
                               Batch {batch.batchCode}
                             </CardTitle>
                             {isBatchMine ? (
-                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                              <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100">
                                 <Lock className="w-3 h-3 mr-1" />
                                 Locked by you
                               </Badge>
@@ -426,7 +426,7 @@ export default function AccountsAdminPage() {
                           </Button>
                         )}
                         <div className="text-right">
-                        <p className="text-2xl font-bold text-blue-600">
+                        <p className="text-2xl font-bold text-violet-600">
                           ₦{batch.totalAmount.toLocaleString()}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -449,7 +449,7 @@ export default function AccountsAdminPage() {
                             href={batch.lasgReceiptUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                            className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700 font-medium"
                           >
                             <FileText className="w-4 h-4" />
                             View LASG Receipt
@@ -470,7 +470,7 @@ export default function AccountsAdminPage() {
                             href={batch.remitaReceiptUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                            className="inline-flex items-center gap-2 text-violet-600 hover:text-violet-700 font-medium"
                           >
                             <FileText className="w-4 h-4" />
                             View Remita Receipt
@@ -519,7 +519,7 @@ export default function AccountsAdminPage() {
                                       href={url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                                      className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
                                     >
                                       <FileText className="w-3 h-3" />
                                       Query LASG {idx + 1}
@@ -531,7 +531,7 @@ export default function AccountsAdminPage() {
                                       href={url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                                      className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700"
                                     >
                                       <FileText className="w-3 h-3" />
                                       Query Remita {idx + 1}
@@ -577,7 +577,7 @@ export default function AccountsAdminPage() {
         <TabsContent value="history" className="mt-6">
           {historyLoading ? (
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
             </div>
           ) : filteredHistoryBatches.length === 0 ? (
             <Card>
@@ -660,7 +660,7 @@ export default function AccountsAdminPage() {
                           href={batch.lasgReceiptUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                          className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
                         >
                           <FileText className="w-3 h-3" />
                           Batch LASG Receipt
@@ -671,7 +671,7 @@ export default function AccountsAdminPage() {
                           href={batch.remitaReceiptUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                          className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
                         >
                           <FileText className="w-3 h-3" />
                           Batch Remita Receipt
@@ -699,7 +699,7 @@ export default function AccountsAdminPage() {
                               href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                              className="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 bg-violet-50 px-2 py-1 rounded"
                             >
                               <FileText className="w-3 h-3" />
                               {item.label}

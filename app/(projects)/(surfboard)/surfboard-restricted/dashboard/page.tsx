@@ -208,10 +208,10 @@ export default function RestrictedDashboardHome() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-[#0077B6] transition-colors">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-[#2563EB] transition-colors">
                               {action.title}
                             </h3>
-                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-[#0077B6] group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                            <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-[#2563EB] group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                           </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
                             {action.description}
@@ -288,7 +288,7 @@ export default function RestrictedDashboardHome() {
             <div className="p-4 bg-gray-50 dark:bg-white/5 border-t border-gray-100 dark:border-white/10">
               <Link
                 href="/surfboard-restricted/dashboard/audit-logs"
-                className="text-sm font-medium text-[#0077B6] hover:text-[#023E8A] flex items-center gap-1 group"
+                className="text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1 group"
               >
                 View all activity
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />

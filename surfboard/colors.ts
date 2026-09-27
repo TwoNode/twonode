@@ -3,21 +3,21 @@
 
 export const SURFBOARD_COLORS = {
   primary: {
-    main: "#0077B6", // Deep blue
-    light: "#48CAE4", // Light blue
-    dark: "#023E8A", // Navy
+    main: "#2563EB", // Blue-600
+    light: "#3B82F6", // Blue-500
+    dark: "#1D4ED8", // Blue-700
     contrastText: "#fff",
   },
   secondary: {
-    main: "#00B4D8", // Teal
-    light: "#90E0EF", // Pale teal
-    dark: "#0096C7", // Dark teal
+    main: "#0284C7", // Sky-600
+    light: "#0EA5E9", // Sky-500
+    dark: "#0369A1", // Sky-700
     contrastText: "#fff",
   },
   accent: {
-    main: "#43AA8B", // Green accent
-    light: "#90BE6D", // Light green
-    dark: "#184D47", // Deep green
+    main: "#4F46E5", // Indigo-600
+    light: "#6366F1", // Indigo-500
+    dark: "#4338CA", // Indigo-700
     contrastText: "#fff",
   },
   background: {
@@ -54,7 +54,7 @@ export const SURFBOARD_COLORS = {
 
   // ===== EXTRA COLORS =====
   sidebar: {
-    itemBorderLeft: "#0077B6",
+    itemBorderLeft: "#2563EB",
   },
 };
 
