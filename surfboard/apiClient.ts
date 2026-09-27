@@ -307,10 +307,10 @@ export const surfboardApi = {
           page?: number;
           pageSize?: number;
           search?: string;
-          roleGroup?: "admins" | "mda";
+          roleGroup?: "admins" | "mda" | "all";
           role?: string;
           status?: "active" | "inactive";
-          subscriptionStatus?: "expired" | "expiring_soon";
+          subscriptionStatus?: "expired" | "expiring_soon" | "active";
         } = {},
       ) => {
         const qs = new URLSearchParams();

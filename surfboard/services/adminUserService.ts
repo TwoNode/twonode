@@ -17,7 +17,7 @@ export interface AdminActor {
 }
 
 /** Matches user-management/page.tsx's admin-vs-MDA tab split. */
-const ADMIN_TAB_ROLES: SurfboardRole[] = ["USER", "ADMIN", "SUPERADMIN"];
+const ADMIN_TAB_ROLES: SurfboardRole[] = ["ADMIN", "SUPERADMIN"];
 const MDA_TAB_ROLES: SurfboardRole[] = [
   "RECORDS_I",
   "INTAKE",
@@ -35,10 +35,10 @@ export interface GetAllUsersParams {
   skip: number;
   take: number;
   search?: string;
-  roleGroup?: "admins" | "mda";
+  roleGroup?: "admins" | "mda" | "all";
   role?: string;
   status?: "active" | "inactive";
-  subscriptionStatus?: "expired" | "expiring_soon";
+  subscriptionStatus?: "expired" | "expiring_soon" | "active";
 }
 
 
@@ -53,14 +53,20 @@ export interface GetAllUsersParams {
  */
 
 export async function getAllUsers(callerRole: SurfboardRole, params: GetAllUsersParams) {
-  const where: NonNullable<Parameters<typeof prisma.surfboardUser.findMany>[0]>["where"] = {
-    role: { in: params.roleGroup === "mda" ? MDA_TAB_ROLES : ADMIN_TAB_ROLES },
-  };
+  const where: NonNullable<Parameters<typeof prisma.surfboardUser.findMany>[0]>["where"] = {};
+  if (params.roleGroup === "mda") {
+    where.role = { in: MDA_TAB_ROLES };
+  } else if (params.roleGroup !== "all") {
+    where.role = { in: ADMIN_TAB_ROLES };
+  }
   if (params.role && params.role !== "all") {
     where.role = params.role as SurfboardRole;
   }
   if (params.status === "active") where.isActive = true;
   if (params.status === "inactive") where.isActive = false;
+  if (params.subscriptionStatus === "active") {
+    where.subscription = { some: activeSubscriptionWhereClause() };
+  }
   if (params.subscriptionStatus === "expired") {
     where.subscription = { some: { currentEnd: { lt: new Date() } } };
   }

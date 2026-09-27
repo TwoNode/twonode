@@ -14,7 +14,13 @@ type DBPlan = {
   geometry: any; // Prisma.JsonValue | GeoJSON | null
 };
 
-export default function PlansMapClient({ plansRaw }: { plansRaw: Plan[] }) {
+export default function PlansMapClient({
+  plansRaw,
+  getPlanDetailUrl,
+}: {
+  plansRaw: Plan[];
+  getPlanDetailUrl?: (id: string) => string;
+}) {
   // const plansForMap: Plan[] = useMemo(() => {
   //   return plansRaw
   //     .map((p) => toPlanForMap(p))
@@ -25,6 +31,7 @@ export default function PlansMapClient({ plansRaw }: { plansRaw: Plan[] }) {
     <div className="h-full w-full">
       <MaplibreMultiPlansWithSearch
         plans={plansRaw}
+        getPlanDetailUrl={getPlanDetailUrl}
         // basemap="roadmap"
         // autofit
         // height="100%"

@@ -98,7 +98,10 @@ export default function AdminMapViewerPage() {
         </p>
       </div>
       <div className="min-h-0 flex-1 w-full rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
-        <PlansMapClient plansRaw={allPlans} />
+        <PlansMapClient
+          plansRaw={allPlans}
+          getPlanDetailUrl={(id) => `/surfboard-restricted/dashboard/surf-plans/update/${id}`}
+        />
       </div>
     </div>
   );

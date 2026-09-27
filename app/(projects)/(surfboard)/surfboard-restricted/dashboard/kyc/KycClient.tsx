@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { format } from "date-fns";
 import { Search, CheckCircle, AlertCircle, BadgeCheck, Landmark } from "lucide-react";
+import { formatInAdminTimezone } from "@/lib/adminTimezone";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -244,7 +244,7 @@ export default function KycClient({
                                 Verified
                                 {s.bankDetails.verifiedAt && (
                                   <span className="font-normal">
-                                    · {format(new Date(s.bankDetails.verifiedAt), "MMM d, yyyy")}
+                                    · {formatInAdminTimezone(s.bankDetails.verifiedAt)}
                                   </span>
                                 )}
                               </Badge>
@@ -280,7 +280,7 @@ export default function KycClient({
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {format(new Date(s.createdAt), "MMM d, yyyy")}
+                      {formatInAdminTimezone(s.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {s.isKycValidated ? (
