@@ -862,15 +862,24 @@ export async function calculatePlanFeeByZone(
   }>,
   ethnicity?: string | null,
 ): Promise<{ fee: number; isDoubleFee: boolean }> {
-  // Find the fee row that matches the area range
-  const feeRow = zoneFees.find(
-    (row) => areaSqM >= row.start && areaSqM <= row.end,
-  );
+  // The fee table's `start`/`end` bounds aren't contiguous (e.g. one row
+  // ends at 10000 sqm, the next starts at 10100 sqm), so matching strictly
+  // within a row's own inclusive range leaves real gaps — an area falling
+  // in one of those gaps (e.g. 10050 sqm) matched no row and silently fell
+  // through to a ₦0 fee. Sort by `start` and use the next row's `start` as
+  // the exclusive upper bound instead, so every value up to the last row's
+  // own `end` is covered.
+  const sortedFees = [...zoneFees].sort((a, b) => a.start - b.start);
+  const feeRow = sortedFees.find((row, i) => {
+    const upperExclusive =
+      i < sortedFees.length - 1 ? sortedFees[i + 1].start : row.end + 1;
+    return areaSqM >= row.start && areaSqM < upperExclusive;
+  });
 
   if (!feeRow) {
-    // If area is larger than max range, use the last row
-    const lastRow = zoneFees[zoneFees.length - 1];
-    if (areaSqM > lastRow.end) {
+    // Area is larger than the highest row's range entirely.
+    const lastRow = sortedFees[sortedFees.length - 1];
+    if (lastRow && areaSqM > lastRow.end) {
       return calculateFeeFromRow(lastRow, zone, surveyTitle, ethnicity);
     }
     console.error(`No fee range found for area: ${areaSqM} sqm`);
