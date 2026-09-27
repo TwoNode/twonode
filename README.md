@@ -25,6 +25,7 @@ Everything about how the app is built and why lives in [`docs/`](docs/README.md)
 - [`docs/payment/`](docs/payment/) — Paystack subscriptions, Certificate of Deposit payments, and the Remita two-link verification flow.
 - [`docs/surfboard/`](docs/surfboard/), [`docs/reva/`](docs/reva/), [`docs/gbc/`](docs/gbc/) — per-product user flows, user stories, and feature notes.
 - [`docs/pages/`](docs/pages/index.md), [`docs/components/`](docs/components/index.md), [`docs/functions/`](docs/functions/index.md) — full inventories of every page route, component, and service/util/hook file, one file per platform (`gbc`/`reva`/`surfboard`) plus a shared file.
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — the branch-to-environment mapping (`main` is staging, `prod` is live production).
 
 ## Learn More (Next.js)
 
@@ -34,4 +35,12 @@ Everything about how the app is built and why lives in [`docs/`](docs/README.md)
 
 ## Deploy
 
-The easiest way to deploy a Next.js app is [Vercel](https://vercel.com/new), from the creators of Next.js — see the [deployment documentation](https://nextjs.org/docs/deployment) for details.
+Branch names don't map to environments the way you'd expect:
+
+| Branch | Environment |
+| :--- | :--- |
+| `dev` | Integration — feature PRs land here first |
+| `main` | **Staging** — still being tested, not customer-facing |
+| `prod` | **Live production** — currently serving real traffic |
+
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full picture, including what to check before merging into `prod`. Hosting is on [Vercel](https://vercel.com/new).
