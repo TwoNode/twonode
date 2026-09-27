@@ -321,6 +321,22 @@ export async function getSurveyorEarningsOverview(surveyorId: string) {
   return { wallet, bankDetails, transactions, withdrawals };
 }
 
+/**
+ * Server-side aggregate rather than a client-side sum over
+ * `getSurveyorEarningsOverview`'s `transactions` — that list is capped at 50
+ * and could silently truncate a busy month.
+ */
+export async function getSurveyorEarningsThisMonth(surveyorId: string): Promise<number> {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const result = await prisma.qREarningsTransaction.aggregate({
+    where: { surveyorId, paymentStatus: "SUCCESS", createdAt: { gte: startOfMonth, lt: startOfNextMonth } },
+    _sum: { surveyorEarned: true },
+  });
+  return result._sum.surveyorEarned ?? 0;
+}
+
 export async function saveSurveyorBankDetails(
   surveyorId: string,
   input: { bankCode: string; bankName: string; accountNumber: string }

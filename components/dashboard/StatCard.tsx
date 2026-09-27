@@ -6,13 +6,14 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 import type { BadgeTone } from "./DashboardBadge";
 
-const TONE_CLASSES: Record<Exclude<BadgeTone, "danger">, string> = {
+const TONE_CLASSES: Record<BadgeTone, string> = {
   success:
     "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
   warning:
     "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
   info: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300",
   neutral: "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-300",
+  danger: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
 export interface StatCardAccent {
@@ -28,7 +29,7 @@ export interface StatCardProps {
   /** Small line under the number breaking it down, e.g. "Pending 3 · Lodged 8 · Queried 1". */
   breakdown?: string;
   icon: LucideIcon;
-  tone?: "brand" | Exclude<BadgeTone, "danger">;
+  tone?: "brand" | BadgeTone;
   /**
    * Only needed to override the platform's own brand color (rare) — by
    * default tone="brand" reads the --color-brand-primary token, which

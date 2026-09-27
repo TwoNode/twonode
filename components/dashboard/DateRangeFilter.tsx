@@ -46,7 +46,7 @@ export function DateRangeFilter({
         value={value.from ?? ""}
         onChange={(e) => onChange({ ...value, from: e.target.value || undefined })}
         max={value.to}
-        className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:[color-scheme:dark]"
+        className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:scheme-dark"
       />
       <span className="text-xs text-gray-400 dark:text-gray-500">to</span>
       <input
@@ -54,7 +54,7 @@ export function DateRangeFilter({
         value={value.to ?? ""}
         onChange={(e) => onChange({ ...value, to: e.target.value || undefined })}
         min={value.from}
-        className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:[color-scheme:dark]"
+        className="rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-sm text-gray-700 outline-none focus:border-gray-300 dark:border-white/10 dark:text-gray-200 dark:scheme-dark"
       />
       {hasRange && (
         <button

@@ -22,7 +22,13 @@ export type AnalyticsDimension = "facilitator" | "lga" | "ward" | "lcda";
 /** Dashboard-wide date filter, applied against `dateOnSurveyPlan` (not createdAt) — matches the same field the plans list/shared endpoints already filter on. */
 export type AnalyticsDateRange = { from?: Date; to?: Date };
 
-const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL_LAYOUT"];
+const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL LAYOUT"];
+
+/** "REGULAR"/"REGULAR + ADJOINING" bucket as Regular; everything else (SPECIAL, SPECIAL + ADJOINING, RE-ESTABLISHMENT) buckets as Special. */
+const REGULAR_PILLAR_TYPES = new Set(["REGULAR", "REGULAR + ADJOINING"]);
+function pillarBucket(pillarType: string): "Regular" | "Special" {
+  return REGULAR_PILLAR_TYPES.has(pillarType) ? "Regular" : "Special";
+}
 
 function dateRangeWhere(range?: AnalyticsDateRange) {
   if (!range || (!range.from && !range.to)) return {};
@@ -306,8 +312,12 @@ export interface UserDashboardAnalytics {
     planType: string;
     status: string;
   }[];
-  pillarStats: { type: string; count: number }[];
+  pendingCertificatesCount: number;
+  pillarStats: { type: string; count: number; isRegular: boolean }[];
   timeTrends: TimeTrendPoint[];
+  pendingCount: number;
+  lodgedCount: number;
+  queriedCount: number;
 }
 
 /** Own-plans-only dashboard analytics for a single surveyor — ported unchanged from surfboardActions.ts's getDashboardAnalytics. */
@@ -317,9 +327,27 @@ export async function getUserDashboardAnalytics(
 ): Promise<UserDashboardAnalytics> {
   const excludeProvisional = { notIn: PROVISIONAL_TYPES };
   const dateWhere = dateRangeWhere(range);
+  const pendingCertificateWhere = {
+    userId,
+    surveyTitle: { not: "" },
+    ...dateWhere,
+    certificateFilePaths: { isEmpty: true },
+  };
 
-  const [totalPlansCount, provisionalPlansCount, facilitatorStats, plansWithDeededArea, lgaStats, pendingCertificates, pillarStats, timeTrends] =
-    await Promise.all([
+  const [
+    totalPlansCount,
+    provisionalPlansCount,
+    facilitatorStats,
+    plansWithDeededArea,
+    lgaStats,
+    pendingCertificates,
+    pendingCertificatesCount,
+    pillarPlans,
+    timeTrends,
+    pendingCount,
+    lodgedCount,
+    queriedCount,
+  ] = await Promise.all([
       prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional, ...dateWhere } }),
       prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES }, ...dateWhere } }),
       prisma.surfboardPlan.groupBy({
@@ -339,19 +367,31 @@ export async function getUserDashboardAnalytics(
         orderBy: { _count: { id: "desc" } },
       }),
       prisma.surfboardPlan.findMany({
-        where: { userId, status: "PENDING", planType: excludeProvisional, surveyTitle: { not: "" }, ...dateWhere },
+        where: pendingCertificateWhere,
         select: { id: true, planNumber: true, surveyTitle: true, facilitator: true, updatedAt: true, planType: true, status: true },
         orderBy: { updatedAt: "desc" },
         take: 10,
       }),
-      prisma.surfboardPlan.groupBy({
-        by: ["pillarType"],
+      prisma.surfboardPlan.count({ where: pendingCertificateWhere }),
+      prisma.surfboardPlan.findMany({
         where: { userId, planType: excludeProvisional, pillarType: { not: "" }, ...dateWhere },
-        _count: { id: true },
-        orderBy: { _count: { id: "desc" } },
+        select: { pillarType: true, pillars: true },
       }),
       getTimeTrend({ role: SurfboardRole.USER, userId }, range),
-    ]);
+      prisma.surfboardPlan.count({ where: { userId, status: "PENDING", ...dateWhere } }),
+      prisma.surfboardPlan.count({ where: { userId, status: "LODGED", ...dateWhere } }),
+      prisma.surfboardPlan.count({ where: { userId, status: "QUERIED", ...dateWhere } }),
+  ]);
+
+  const pillarBuckets = { Regular: 0, Special: 0 };
+  for (const plan of pillarPlans) {
+    const bucket = pillarBucket(plan.pillarType);
+    pillarBuckets[bucket] += Array.isArray(plan.pillars) ? plan.pillars.length : 0;
+  }
+  const pillarStats = [
+    { type: "Regular", count: pillarBuckets.Regular, isRegular: true },
+    { type: "Special", count: pillarBuckets.Special, isRegular: false },
+  ];
 
   const processedFacilitatorStats = facilitatorStats.map((stat) => {
     const totalDeededArea = plansWithDeededArea
@@ -377,8 +417,12 @@ export async function getUserDashboardAnalytics(
       planType: cert.planType,
       status: cert.status,
     })),
-    pillarStats: pillarStats.map((stat) => ({ type: stat.pillarType || "UNKNOWN", count: stat._count.id })),
+    pendingCertificatesCount,
+    pillarStats,
     timeTrends,
+    pendingCount,
+    lodgedCount,
+    queriedCount,
   };
 }
 

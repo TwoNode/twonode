@@ -221,6 +221,9 @@ export const surfboardApi = {
 
     earningsOverview: () => jsonFetch<any>(`${BASE}/qr/earnings-overview`),
 
+    earningsThisMonth: () =>
+      jsonFetch<{ amount: number }>(`${BASE}/qr/earnings-this-month`),
+
     settings: () => jsonFetch<QREarningsSettingsData>(`${BASE}/qr/settings`),
 
     saveBankDetails: (input: {
@@ -527,6 +530,9 @@ export const surfboardApi = {
         `${BASE}/plans/shared-with-me?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`,
       ),
 
+    sharedAwaitingResponseCount: () =>
+      jsonFetch<{ count: number }>(`${BASE}/plans/shared-awaiting-response`),
+
     deleteAttachment: (
       planId: string,
       fileUrl: string,
@@ -644,6 +650,15 @@ export const surfboardApi = {
         method: "DELETE",
         body: JSON.stringify({ userId }),
       }),
+
+    respondToShare: (planId: string, response?: string) =>
+      jsonFetch<any>(
+        `${BASE}/plans/${encodeURIComponent(planId)}/share-response`,
+        {
+          method: "POST",
+          body: JSON.stringify({ response }),
+        },
+      ),
 
     updateStatus: (
       planId: string,

@@ -250,6 +250,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [sharedWith, setSharedWith] = useState<User[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState<string>("");
@@ -376,6 +377,26 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const handleEdit = () => {
     if (plan) {
       router.push(`/surfboard/dashboard/plan/edit?planId=${plan.id}`);
+    }
+  };
+
+  // Recipient marks a shared plan as reviewed
+  const handleMarkReviewed = async () => {
+    if (!plan) return;
+
+    setIsResponding(true);
+    try {
+      const result = await surfboardApi.plans.respondToShare(plan.id);
+      if (result.success) {
+        toast.success("Marked as reviewed");
+      } else {
+        toast.error(result.error || "Failed to mark plan as reviewed");
+      }
+    } catch (error) {
+      console.error("Error responding to share:", error);
+      toast.error("An error occurred while marking the plan as reviewed");
+    } finally {
+      setIsResponding(false);
     }
   };
 
@@ -870,6 +891,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         <span>{isDeleting ? "Deleting..." : "Delete"}</span>
                       </button>
                     </>
+                  )}
+
+                  {!isOwner && (
+                    <button
+                      onClick={handleMarkReviewed}
+                      disabled={isResponding}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileCheck2 className="w-4 h-4 mr-2" />
+                      <span>{isResponding ? "Marking..." : "Mark Reviewed"}</span>
+                    </button>
                   )}
 
                   <Button

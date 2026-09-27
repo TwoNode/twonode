@@ -332,7 +332,8 @@ model SurfboardPlan {
   userId String?
   user   SurfboardUser? @relation("PlanOwner", fields: [userId], references: [id])
 
-  sharedTo String[]
+  sharedTo       String[]
+  shareResponses SurfboardPlanShareResponse[]
 
   /// Soft delete fields
   deleted   Boolean   @default(false)
@@ -612,4 +613,23 @@ model SurfboardAuditLog {
   @@index([entity])
   @@index([createdAt])
   @@map("surfboard_audit_logs")
+}
+
+/// Tracks whether a recipient has acknowledged a shared plan, alongside the
+/// existing `SurfboardPlan.sharedTo` membership list (which only records who
+/// a plan is shared with, not whether they've responded).
+model SurfboardPlanShareResponse {
+  id               String        @id @default(uuid())
+  planId           String        @db.Uuid
+  plan             SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  sharedByUserId   String
+  sharedWithUserId String
+  sharedAt         DateTime      @default(now())
+  respondedAt      DateTime?
+  response         String?
+
+  @@unique([planId, sharedWithUserId])
+  @@index([sharedWithUserId])
+  @@index([sharedByUserId])
+  @@map("surfboard_plan_share_responses")
 }
