@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { Layers, FileText, Clock, MapPin } from 'lucide-react';
+import { Layers, FileText, Clock } from 'lucide-react';
 import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -146,7 +146,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
 
   const totalRecords = analytics.totalPlansCount + analytics.provisionalPlansCount;
   const provisionalShare = totalRecords > 0 ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100) : 0;
-  const avgPerArea = (count: number) => (count > 0 ? (analytics.totalPlansCount / count).toFixed(1) : '—');
 
   return (
     <div className="space-y-6">
@@ -186,30 +185,6 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
           }
           icon={Layers}
           tone="info"
-        />
-
-        <StatCard
-          label="Unique LGAs"
-          value={analytics.lgaStats.length}
-          breakdown={`~${avgPerArea(analytics.lgaStats.length)} records per LGA`}
-          icon={MapPin}
-          tone="success"
-        />
-
-        <StatCard
-          label="Unique LCDAs"
-          value={lcdaStats.length}
-          breakdown={`~${avgPerArea(lcdaStats.length)} records per LCDA`}
-          icon={MapPin}
-          tone="success"
-        />
-
-        <StatCard
-          label="Unique Wards"
-          value={wardStats.length}
-          breakdown={`~${avgPerArea(wardStats.length)} records per ward`}
-          icon={MapPin}
-          tone="success"
         />
       </div>
 
