@@ -132,7 +132,27 @@ const PLAN_LIST_SELECT = {
   updatedAt: true,
 } as const;
 
-function buildPlanFilterWhere(filters: PlanFilters | undefined, base: any) {
+/**
+ * Prisma's native `Json` filters can only express exact array-element
+ * containment, not "any element's field partial-matches X" — needs raw SQL.
+ * Unindexed for now (confirmed with user): table is ~2,173 rows, small
+ * enough that a full scan isn't a near-term concern; revisit with a
+ * pg_trgm index if it grows large enough to matter.
+ */
+async function findPlanIdsByPillarNumber(search: string): Promise<string[]> {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "SurfboardPlan"
+    WHERE jsonb_typeof(pillars) = 'array'
+      AND EXISTS (
+        SELECT 1 FROM jsonb_array_elements(pillars) AS pillar
+        WHERE pillar->>'pillarNumber' ILIKE ${"%" + search + "%"}
+      )
+    LIMIT 500
+  `;
+  return rows.map((r) => r.id);
+}
+
+async function buildPlanFilterWhere(filters: PlanFilters | undefined, base: any) {
   const where: any = { ...base };
   if (!filters) return where;
 
@@ -142,6 +162,10 @@ function buildPlanFilterWhere(filters: PlanFilters | undefined, base: any) {
       { surveyTitle: { contains: filters.search, mode: "insensitive" } },
       { facilitator: { contains: filters.search, mode: "insensitive" } },
     ];
+    const pillarMatchIds = await findPlanIdsByPillarNumber(filters.search);
+    if (pillarMatchIds.length > 0) {
+      where.OR.push({ id: { in: pillarMatchIds } });
+    }
   }
   if (filters.status?.length) {
     const dbStatuses = filters.status.map((s) => statusMap[s]).filter((s): s is NonNullable<typeof s> => s !== undefined);
@@ -479,7 +503,7 @@ export async function getPaginatedSurfPlans(
   { page = 1, pageSize = 10, filters, sort, noPagination }: { page?: number; pageSize?: number; filters?: PlanFilters; sort?: PlanSort; noPagination?: boolean } = {}
 ) {
   const skip = noPagination ? undefined : (page - 1) * pageSize;
-  const where = buildPlanFilterWhere(filters, { userId, deleted: false });
+  const where = await buildPlanFilterWhere(filters, { userId, deleted: false });
   const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
   const [plans, total] = await Promise.all([
@@ -508,7 +532,7 @@ export async function getPaginatedSurfPlans(
 
 export async function getAllSharedSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
   const skip = (page - 1) * pageSize;
-  const where = buildPlanFilterWhere(filters, { userId, sharedTo: { isEmpty: false }, deleted: false });
+  const where = await buildPlanFilterWhere(filters, { userId, sharedTo: { isEmpty: false }, deleted: false });
   const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
   const [plans, total] = await Promise.all([
@@ -521,7 +545,7 @@ export async function getAllSharedSurfPlans(userId: string, page = 1, pageSize =
 
 export async function getSharedWithMeSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
   const skip = (page - 1) * pageSize;
-  const where = buildPlanFilterWhere(filters, { sharedTo: { has: userId }, deleted: false });
+  const where = await buildPlanFilterWhere(filters, { sharedTo: { has: userId }, deleted: false });
   const orderBy = sort ? ({ [sort.field]: sort.order } as Prisma.SurfboardPlanOrderByWithRelationInput) : ({ createdAt: "desc" } as Prisma.SurfboardPlanOrderByWithRelationInput);
 
   const [plans, total] = await Promise.all([
@@ -831,6 +855,14 @@ export async function sharePlanWithUser(userId: string, userFirstLastName: { fir
     select: { id: true, sharedTo: true },
   });
 
+  // A fresh share (including a re-share) is fresh "awaiting response" again —
+  // reset respondedAt/response so a prior acknowledgment doesn't carry over.
+  await prisma.surfboardPlanShareResponse.upsert({
+    where: { planId_sharedWithUserId: { planId, sharedWithUserId: targetUserId } },
+    create: { planId, sharedByUserId: userId, sharedWithUserId: targetUserId },
+    update: { sharedByUserId: userId, sharedAt: new Date(), respondedAt: null, response: null },
+  });
+
   await notifyPlanShared({ planId, planNumber: plan.planNumber, sharedWithUserId: targetUserId, sharedByUser: userFirstLastName, sendEmail: true });
 
   return updatedPlan;
@@ -840,11 +872,33 @@ export async function unsharePlanWithUser(userId: string, planId: string, target
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true } });
   if (!plan) throw new NotFoundError("Plan");
 
-  return prisma.surfboardPlan.update({
+  const updatedPlan = await prisma.surfboardPlan.update({
     where: { id: planId },
     data: { sharedTo: { set: (plan.sharedTo || []).filter((id) => id !== targetUserId) } },
     select: { id: true, sharedTo: true },
   });
+
+  await prisma.surfboardPlanShareResponse.deleteMany({ where: { planId, sharedWithUserId: targetUserId } });
+
+  return updatedPlan;
+}
+
+/** Recipient marks a shared plan as reviewed — verifies they're actually a current share target first. */
+export async function respondToPlanShare(userId: string, planId: string, response: string = "ACKNOWLEDGED") {
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId }, select: { sharedTo: true, userId: true } });
+  if (!plan) throw new NotFoundError("Plan");
+  if (!(plan.sharedTo || []).includes(userId)) throw new ForbiddenError();
+
+  return prisma.surfboardPlanShareResponse.upsert({
+    where: { planId_sharedWithUserId: { planId, sharedWithUserId: userId } },
+    create: { planId, sharedByUserId: plan.userId ?? "", sharedWithUserId: userId, respondedAt: new Date(), response },
+    update: { respondedAt: new Date(), response },
+  });
+}
+
+/** Count of plans `userId` has shared out that the recipient hasn't yet acknowledged. */
+export async function getSharedAwaitingResponseCount(userId: string): Promise<number> {
+  return prisma.surfboardPlanShareResponse.count({ where: { sharedByUserId: userId, respondedAt: null } });
 }
 
 // ---------------------------------------------------------------------------

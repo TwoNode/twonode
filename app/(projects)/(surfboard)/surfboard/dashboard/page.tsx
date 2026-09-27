@@ -49,6 +49,7 @@ export default function DashboardHome() {
 
   const [recentPlans, setRecentPlans] = useState<Plan[]>([]);
   const [sharedPlans, setSharedPlans] = useState<Plan[]>([]);
+  const [planHealth, setPlanHealth] = useState({ sharedAwaitingResponse: 0, qrEarningsThisMonth: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,13 +62,19 @@ export default function DashboardHome() {
       setError(null);
 
       const dateFilters = { dateFrom: dateRange.from, dateTo: dateRange.to };
-      const [plansResult, sharedResult, sharedWithMeResult] = await Promise.all(
-        [
+      const [plansResult, sharedResult, sharedWithMeResult, sharedAwaitingResponseResult, earningsThisMonthResult] =
+        await Promise.all([
           surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
           surfboardApi.plans.shared(undefined, undefined, dateFilters),
           surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
-        ]
-      );
+          surfboardApi.plans.sharedAwaitingResponseCount(),
+          surfboardApi.qr.earningsThisMonth(),
+        ]);
+
+      setPlanHealth({
+        sharedAwaitingResponse: sharedAwaitingResponseResult.success ? sharedAwaitingResponseResult.data.count : 0,
+        qrEarningsThisMonth: earningsThisMonthResult.success ? earningsThisMonthResult.data.amount : 0,
+      });
 
       if (
         plansResult.success &&
@@ -178,7 +185,6 @@ export default function DashboardHome() {
           <StatCard
             label="Total Plans"
             value={stats.totalPlans}
-            breakdown={`Pending ${stats.pending} · Lodged ${stats.lodged} · Queried ${stats.queried}`}
             icon={FileText}
             tone="brand"
           />
@@ -200,6 +206,22 @@ export default function DashboardHome() {
         <Link href="/surfboard/dashboard/plans?status=LODGED">
           <StatCard label="Lodged" value={stats.lodged} icon={CheckCircle} tone="success" />
         </Link>
+      </div>
+
+      {/* Plan Health */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">Plan Health</h2>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Queried, needs attention" value={stats.queried} icon={AlertCircle} tone="danger" />
+          <StatCard label="Awaiting MDA review" value={stats.underReview} icon={Clock} tone="info" />
+          <StatCard label="Shared, awaiting response" value={planHealth.sharedAwaitingResponse} icon={Users} tone="warning" />
+          <StatCard
+            label="QR earnings this month"
+            value={`₦${planHealth.qrEarningsThisMonth.toLocaleString()}`}
+            icon={CheckCircle}
+            tone="success"
+          />
+        </div>
       </div>
 
       {/* Tabs + Refresh */}

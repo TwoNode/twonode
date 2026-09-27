@@ -10,7 +10,7 @@ colocated under `app/(projects)/(surfboard)/`.
 |---|---|
 | `adminUserService.ts` | Admin/surveyor user account CRUD |
 | `aiExtractionService.ts` | AI-based data extraction from uploaded documents |
-| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering; `getTopSurveyors` ranks surveyors by plan count (admin-only, counted like the Total Plans card) |
+| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering; `getTopSurveyors` ranks surveyors by plan count (admin-only, counted like the Total Plans card); `getUserDashboardAnalytics`'s `pillarStats` sums unique pillars per plan (not plan rows) bucketed Regular/Special, `pendingCertificatesCount` is a true count (`certificateFilePaths` empty, any planType) decoupled from the capped table list |
 | `awsService.ts` | S3 upload/download helpers |
 | `batchApprovalService.ts` | Certificate-of-Deposit batch approval workflow |
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |
@@ -18,10 +18,10 @@ colocated under `app/(projects)/(surfboard)/`.
 | `notificationService.ts` | Notification CRUD + read/dismiss state |
 | `paystackSubscriptionService.ts` | Paystack subscription billing logic |
 | `planLockService.ts` | Plan/batch locking (prevents concurrent edits), role-field-prefix helper |
-| `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range), sharing |
+| `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range and pillar-number substring match via raw SQL, `findPlanIdsByPillarNumber`), sharing; `respondToPlanShare`/`getSharedAwaitingResponseCount` track per-recipient acknowledgment of a shared plan (`SurfboardPlanShareResponse`, additive alongside `sharedTo`) |
 | `profileService.ts` | Surveyor profile CRUD |
 | `qrAdminService.ts` | QR-earnings admin configuration |
-| `qrEarningsService.ts` | QR-code referral earnings calculation; bank-account verification for payouts (`toggleBankVerification`, audited with the acting admin) |
+| `qrEarningsService.ts` | QR-code referral earnings calculation; bank-account verification for payouts (`toggleBankVerification`, audited with the acting admin); `getSurveyorEarningsThisMonth` is a server-side aggregate for the current calendar month (not a client-side sum over the capped `getSurveyorEarningsOverview` transaction list) |
 | `receiptPdfService.ts` | Spawns the receipt PDF worker and returns a buffer |
 | `remitaVerificationService.ts` | Remita payment verification |
 | `settingsService.ts` | Platform settings CRUD; surveyor KYC validation (`toggleUserKycValidation`, audited with the acting admin) |
