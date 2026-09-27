@@ -217,6 +217,12 @@ export const gbcApi = {
     create: (input: CreateEditionInput) =>
       jsonFetch<GBCEdition[]>(`${BASE}/admin/editions`, { method: "POST", body: JSON.stringify(input) }),
 
+    update: (key: string, input: Partial<Omit<CreateEditionInput, "key" | "status">>) =>
+      jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+
     activate: (key: string) =>
       jsonFetch<GBCEdition[]>(`${BASE}/admin/editions/${encodeURIComponent(key)}/activate`, { method: "PATCH" }),
 

@@ -15,7 +15,8 @@ import { SystemSettings } from "@/gbc/components/admin/SystemSettings";
 import { GallerySettings } from "@/gbc/components/admin/GallerySettings";
 import { SocialLinksSettings } from "@/gbc/components/admin/SocialLinksSettings";
 import { SettingsEditionPicker } from "@/gbc/components/admin/SettingsEditionPicker";
-import { getEditionSettings, resolveSettingsEdition } from "@/gbc/services/settingsService";
+import { SettingsResetRollback } from "@/gbc/components/admin/SettingsResetRollback";
+import { getEditionSettings, resolveSettingsEdition, getPreviousSettings } from "@/gbc/services/settingsService";
 import { getEditions } from "@/gbc/services/editionService";
 import { firstParam } from "@/lib/searchParams";
 
@@ -34,6 +35,7 @@ export default async function AdminSettingsPage({
     requested && editions.some((e) => e.key === requested) ? requested : undefined
   );
   const publicEdition = (await resolveSettingsEdition())?.key ?? null;
+  const previousSettings = edition ? await getPreviousSettings(edition) : null;
 
   return (
     <div>
@@ -48,6 +50,7 @@ export default async function AdminSettingsPage({
       </div>
 
       <SettingsEditionPicker editions={editions} edition={edition} publicEdition={publicEdition} saved={saved} />
+      <SettingsResetRollback edition={edition ?? null} saved={saved} hasPrevious={!!previousSettings} />
 
       {/* Keyed by edition so switching edition remounts the forms with that edition's values. */}
       <div key={edition ?? "none"} className="grid gap-8">
