@@ -588,16 +588,16 @@ export default function MDADashboardHome() {
 
       {/* Role-specific guidance */}
       {!isSuperAdmin && (
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-xl p-6 mb-8">
+        <div className="bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/30 rounded-xl p-6 mb-8">
           <div className="flex items-start gap-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
-              <Activity className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+            <div className="p-2 bg-violet-100 dark:bg-violet-500/20 rounded-lg">
+              <Activity className="w-6 h-6 text-violet-600 dark:text-violet-300" />
             </div>
             <div>
-              <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+              <h3 className="font-semibold text-violet-900 dark:text-violet-200 mb-2">
                 Your Role: {roleConfig.title}
               </h3>
-              <p className="text-blue-700 dark:text-blue-300 text-sm">
+              <p className="text-violet-700 dark:text-violet-300 text-sm">
                 {currentRole === "ACCOUNTS" &&
                   "Review LASG payment receipts and approve or disapprove batches. After approval, plans become available to other MDA roles."}
                 {currentRole === "CHARTING" &&

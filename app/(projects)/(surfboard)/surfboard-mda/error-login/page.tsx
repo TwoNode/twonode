@@ -5,8 +5,8 @@ import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 export default function SurfMDAErrorLoginPage() {
   return (
     <AuthSplitLayout
-      accent="#6D28D9"
-      accentDark="#4C1D95"
+      accent="#7C3AED"
+      accentDark="#5B21B6"
       eyebrow="MDA Portal"
       headline="Ministries, Departments & Agencies."
       description="Sign in to your MDA workspace to manage submissions, approvals, and inter-agency records."

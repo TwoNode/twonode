@@ -11,8 +11,8 @@ import { Platform, SurfboardRole } from "@/utils/platform";
 export default function SurfboardLoginPage() {
   return (
     <AuthSplitLayout
-      accent="#0077B6"
-      accentDark="#023E8A"
+      accent="#2563EB"
+      accentDark="#1D4ED8"
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
       description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
@@ -24,8 +24,8 @@ export default function SurfboardLoginPage() {
         title="Sign in to Surfboard"
         subtitle="Access your Surfboard dashboard and manage your survey plans securely."
         registerNotice="Set up your Surfboard account to create and track survey plans."
-        accent="#0077B6"
-        accentDark="#023E8A"
+        accent="#2563EB"
+        accentDark="#1D4ED8"
         allowRegister
         resolveRedirect={(role) =>
           role.toUpperCase() === SurfboardRole.USER

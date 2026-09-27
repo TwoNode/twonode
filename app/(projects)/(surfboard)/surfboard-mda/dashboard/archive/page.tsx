@@ -565,10 +565,10 @@ export default function ArchiveDashboard() {
                                         )}
 
                                         {/* Record Copy Document */}
-                                        <div className="border border-blue-200 rounded-lg p-3 bg-blue-50 mb-3">
+                                        <div className="border border-violet-200 rounded-lg p-3 bg-violet-50 mb-3">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <FileText className="w-4 h-4 text-blue-600" />
-                                                <p className="text-xs font-medium text-blue-800">
+                                                <FileText className="w-4 h-4 text-violet-600" />
+                                                <p className="text-xs font-medium text-violet-800">
                                                     Record Copy
                                                 </p>
                                             </div>
@@ -602,7 +602,7 @@ export default function ArchiveDashboard() {
                                                         href={p.redCopyFileUrl}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-blue-600 hover:bg-blue-50 transition-colors text-xs"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface rounded border text-violet-600 hover:bg-violet-50 transition-colors text-xs"
                                                     >
                                                         {isImageUrl(
                                                             p.redCopyFileUrl

@@ -645,8 +645,8 @@ export default function SettingsPage() {
                           %
                         </span>
                       </div>
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-xs text-blue-800">
+                      <div className="bg-violet-50 border border-violet-200 rounded-lg p-3">
+                        <p className="text-xs text-violet-800">
                           <strong>Example:</strong> If the original CoD fee was
                           ₦10,000 and the query response fee is{" "}
                           {mdaSettings.queryResponseFeePercent}%, the surveyor

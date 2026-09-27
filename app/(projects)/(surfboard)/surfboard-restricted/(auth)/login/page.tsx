@@ -13,8 +13,8 @@ const postLoginRedirectURL = "/api/auth/success/surf-restricted";
 export default function SurfRestrictedLoginPage() {
   return (
     <AuthSplitLayout
-      accent="#0077B6"
-      accentDark="#023E8A"
+      accent="#2563EB"
+      accentDark="#1D4ED8"
       eyebrow="Surfboard Restricted"
       headline="Restricted operations access."
       description="This area is limited to authorized Surfboard staff. Contact your administrator if you believe you should have access."
@@ -35,8 +35,8 @@ export default function SurfRestrictedLoginPage() {
         logoAlt="Surfboard Logo"
         title="Restricted Access"
         subtitle="Authorized users only. Please sign in to continue."
-        accent="#0077B6"
-        accentDark="#023E8A"
+        accent="#2563EB"
+        accentDark="#1D4ED8"
         resolveRedirect={() => "/surfboard-restricted/dashboard"}
         alternateAuth={
           <LoginLink postLoginRedirectURL={postLoginRedirectURL}>
