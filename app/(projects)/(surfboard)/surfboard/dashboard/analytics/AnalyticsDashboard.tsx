@@ -135,8 +135,8 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
     ward: wardStats.length,
   };
 
-  const regularPillars = analytics.pillarStats.find((p: any) => p.isRegular)?.count || 0;
-  const specialPillars = analytics.pillarStats.reduce((sum: number, p: any) => sum + (p.isRegular ? 0 : p.count), 0);
+  const regularPillars = analytics.pillarStats.find((p) => p.isRegular)?.count || 0;
+  const specialPillars = analytics.pillarStats.find((p) => !p.isRegular)?.count || 0;
   const totalPillars = regularPillars + specialPillars;
 
   const pillarTypeData = [
@@ -155,7 +155,7 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
         <StatCard
           label="Total Plans"
           value={analytics.totalPlansCount}
-          breakdown={`${analytics.provisionalPlansCount} provisional (${provisionalShare}% of all records)`}
+          breakdown={`Pending ${analytics.pendingCount} · Lodged ${analytics.lodgedCount} · Queried ${analytics.queriedCount}`}
           icon={Layers}
           tone="brand"
         />
@@ -170,7 +170,7 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
 
         <StatCard
           label="Pending Certificates"
-          value={analytics.pendingCertificates.length}
+          value={analytics.pendingCertificatesCount}
           breakdown="Awaiting approval"
           icon={Clock}
           tone="warning"

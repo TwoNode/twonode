@@ -265,10 +265,14 @@ export interface AnalyticsData {
   facilitatorStats: FacilitatorStat[];
   lgaStats: LGAStat[];
   pendingCertificates: PendingCertificate[];
+  pendingCertificatesCount: number;
   pillarStats: PillarStat[];
   timeTrends: TimeTrendData[];
   provisionalPlansCount: number;
   totalPlansCount: number;
+  pendingCount: number;
+  lodgedCount: number;
+  queriedCount: number;
 }
 
 export type SurfboardRole =

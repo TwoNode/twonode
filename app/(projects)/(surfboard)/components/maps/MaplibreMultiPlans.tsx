@@ -607,6 +607,19 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     return { allStatuses: Array.from(statuses), allTypes: Array.from(types) };
   }, [plans]);
 
+  /** Substring/case-insensitive match against the same fields as the plans search, plus any pillar's pillarNumber — unindexed, client-side (combinedPlans is already loaded in full). */
+  const matchesSearchQuery = useCallback(
+    (plan: Plan | TempPlan, query: string) =>
+      (plan.planNumber ?? "").toLowerCase().includes(query) ||
+      (plan.surveyTitle ?? "").toLowerCase().includes(query) ||
+      (plan.facilitator ?? "").toLowerCase().includes(query) ||
+      (Array.isArray(plan.pillars) &&
+        (plan.pillars as PillarData[]).some((p) =>
+          (p.pillarNumber ?? "").toLowerCase().includes(query),
+        )),
+    [],
+  );
+
   const filteredPlans = useMemo(() => {
     return combinedPlans.filter((plan) => {
       if (plan.status === "UPLOADED") return true;
@@ -616,22 +629,39 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         typeFilter.length === 0 || typeFilter.includes(plan.planType as string);
       const query = searchQuery.toLowerCase().trim();
       if (!query) return matchesStatus && matchesType;
-      const matchesSearch =
-        (plan.planNumber ?? "").toLowerCase().includes(query) ||
-        (plan.surveyTitle ?? "").toLowerCase().includes(query) ||
-        (plan.facilitator ?? "").toLowerCase().includes(query);
-      return matchesStatus && matchesType && matchesSearch;
+      return matchesStatus && matchesType && matchesSearchQuery(plan, query);
     });
-  }, [combinedPlans, searchQuery, statusFilter, typeFilter]);
+  }, [combinedPlans, searchQuery, statusFilter, typeFilter, matchesSearchQuery]);
+
+  // Map visibility (which polygons render): status/type only — search never
+  // hides a plan from the map, it only highlights matches (see searchMatchIds).
+  const visibilityFilteredPlans = useMemo(() => {
+    return combinedPlans.filter((plan) => {
+      if (plan.status === "UPLOADED") return true;
+      const matchesStatus =
+        statusFilter.length === 0 || statusFilter.includes(plan.status);
+      const matchesType =
+        typeFilter.length === 0 || typeFilter.includes(plan.planType as string);
+      return matchesStatus && matchesType;
+    });
+  }, [combinedPlans, statusFilter, typeFilter]);
+
+  const searchMatchIds = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return [];
+    return visibilityFilteredPlans
+      .filter((plan) => matchesSearchQuery(plan, query))
+      .map((plan) => plan.id);
+  }, [visibilityFilteredPlans, searchQuery, matchesSearchQuery]);
 
   useEffect(() => {
     setVisiblePlanIds(
-      filteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id),
+      visibilityFilteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id),
     );
     setVisibleTempPlanIds(
-      filteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id),
+      visibilityFilteredPlans.filter((p) => p.status === "UPLOADED").map((p) => p.id),
     );
-  }, [filteredPlans]);
+  }, [visibilityFilteredPlans]);
 
   useEffect(() => {
     if (notification) {
@@ -876,6 +906,16 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
         },
       });
       map.current.addLayer({
+        id: "plans-search-highlight",
+        type: "line",
+        source: "plansLayer",
+        filter: ["==", true, false],
+        paint: {
+          "line-color": "#FDE047",
+          "line-width": 4,
+        },
+      });
+      map.current.addLayer({
         id: "plans-labels",
         type: "symbol",
         source: "plansLayer",
@@ -971,7 +1011,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       const shiftsResult = await surfboardApi.settings.coordinateShifts();
       const shifts = shiftsResult.success ? shiftsResult.data : {};
 
-      filteredPlans.forEach((plan) => {
+      visibilityFilteredPlans.forEach((plan) => {
         const color = getColorForPlanType(plan.planType as string);
         const stateName = plan.state;
 
@@ -1075,6 +1115,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
       map.current?.setFilter("plans-labels", filter);
       map.current?.setFilter("pillars-symbol", pillarFilter);
 
+      // Search highlight — a distinct layer on top of plans-outline, never
+      // hiding anything; empty when there's no active search.
+      const highlightFilter = (
+        searchMatchIds.length > 0
+          ? ["in", ["get", "id"], ["literal", searchMatchIds]]
+          : ["==", true, false]
+      ) as FilterSpecification;
+      map.current?.setFilter("plans-search-highlight", highlightFilter);
+
       if (polygonFeatures.length > 0 && allVisibleIds.length > 0) {
         const visibleFeatures = polygonFeatures.filter((f) =>
           allVisibleIds.includes(f.properties?.id),
@@ -1094,7 +1143,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans }) => {
     };
 
     fetchAndRender();
-  }, [filteredPlans, isReady, visiblePlanIds, visibleTempPlanIds]);
+  }, [visibilityFilteredPlans, isReady, visiblePlanIds, visibleTempPlanIds, searchMatchIds]);
 
   useEffect(() => {
     if (!map.current || !isReady) return;
