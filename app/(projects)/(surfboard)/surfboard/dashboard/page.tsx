@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FiRefreshCw } from "react-icons/fi";
 import {
   Plus,
-  FileText,
   Users,
   Clock,
   CheckCircle,
@@ -17,7 +16,7 @@ import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
-import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import { type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -187,40 +186,6 @@ export default function DashboardHome() {
         gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
         cta={{ label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus }}
       />
-
-      {/* Date-range filter — scopes every stat, chart, and list below to plans whose dateOnSurveyPlan falls in range */}
-      <div className="flex justify-end">
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/surfboard/dashboard/plans">
-          <StatCard
-            label="Total Plans"
-            value={stats.totalPlans}
-            icon={FileText}
-            tone="brand"
-          />
-        </Link>
-
-        <Link href="/surfboard/dashboard/shared">
-          <StatCard
-            label="Shared with Me"
-            value={stats.sharedPlans}
-            icon={Users}
-            tone="info"
-          />
-        </Link>
-
-        <Link href="/surfboard/dashboard/plans?status=PENDING">
-          <StatCard label="Pending Approval" value={stats.pending} icon={Clock} tone="warning" />
-        </Link>
-
-        <Link href="/surfboard/dashboard/plans?status=LODGED">
-          <StatCard label="Lodged" value={stats.lodged} icon={CheckCircle} tone="success" />
-        </Link>
-      </div>
 
       {/* Plan Health */}
       <div>
