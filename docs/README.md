@@ -2,6 +2,8 @@
 
 ## Start here
 
+**[`DEPLOYMENT.md`](./DEPLOYMENT.md)** — the branch-to-environment mapping (`main` is staging, `prod` is live production — not what the names suggest) and what to check before merging into `prod`.
+
 **[`development-history/`](./development-history/)** — the 2026-08 architecture rebuild: why it happened, the phase-by-phase execution plan, and a completion report per phase covering exactly what was built, what was found along the way, and what's still open. This is the single most reliable source for "does X still work the way an older doc says it does" — every other document in this folder that describes current behavior was cross-checked against it. Also holds `route-inventory.md`, a living list of every route in the app, and `progress.md`, the rolling checklist.
 
 ## Per-topic
