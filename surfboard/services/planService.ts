@@ -16,6 +16,7 @@ import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfbo
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
 import { SurfboardRole } from "@/utils/platform";
 import { paginatedResult } from "@/lib/api/pagination";
+import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -1078,12 +1079,18 @@ export async function getAdminSurfPlansPaginated(params: AdminPlanListParams) {
 
 /** Status-breakdown counts for the admin Survey Plans stat cards — kept separate from the paginated list so the cards reflect the whole table, not just the current page. */
 export async function getAdminSurfPlansStats() {
+  // Excludes PROVISIONAL/PROVISIONAL LAYOUT plans, matching every other
+  // "Total Plans" figure in the app (analyticsService.getStatCards and
+  // friends) — this route counted them in, so the same admin would see two
+  // different "Total Plans" numbers on the Surf Plans page vs. the
+  // Dashboard/Analytics pages for the exact same underlying data.
+  const notProvisional = { notIn: PROVISIONAL_TYPES };
   const [total, pending, underReview, lodged, queried] = await Promise.all([
-    prisma.surfboardPlan.count({ where: { deleted: false } }),
-    prisma.surfboardPlan.count({ where: { deleted: false, status: "PENDING" } }),
-    prisma.surfboardPlan.count({ where: { deleted: false, status: "UNDER_REVIEW" } }),
-    prisma.surfboardPlan.count({ where: { deleted: false, status: "LODGED" } }),
-    prisma.surfboardPlan.count({ where: { deleted: false, status: "QUERIED" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, planType: notProvisional } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, planType: notProvisional, status: "PENDING" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, planType: notProvisional, status: "UNDER_REVIEW" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, planType: notProvisional, status: "LODGED" } }),
+    prisma.surfboardPlan.count({ where: { deleted: false, planType: notProvisional, status: "QUERIED" } }),
   ]);
   return { total, pending, underReview, lodged, queried };
 }

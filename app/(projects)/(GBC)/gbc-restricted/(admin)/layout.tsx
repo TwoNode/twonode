@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/gbc/components/admin/AdminSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import { GBCAdminSearch } from "@/gbc/components/admin/GBCAdminSearch";
 import { GBCUserMenu } from "@/gbc/components/admin/GBCUserMenu";
+import { GBCEditionSwitcher } from "@/gbc/components/admin/GBCEditionSwitcher";
 import { useState } from "react";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
@@ -50,6 +51,7 @@ export default function AdminLayout({
             <GBCAdminSearch placeholder="Search tickets, attendees, sections…" />
           </div>
           <div className="flex items-center gap-3">
+            <GBCEditionSwitcher />
             <NotificationBell platform="gbc" viewAllHref="/gbc-restricted/notifications" iconClassName="h-5 w-5 text-gray-600" />
             <GBCUserMenu />
           </div>

@@ -18,7 +18,6 @@ import {
   Bell,
   Menu,
   QrCode,
-  User as UserIcon,
 } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
@@ -33,6 +32,7 @@ import {
   type DashboardSearchResult,
 } from "@/components/dashboard/DashboardSearch";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import { UserAccountMenu } from "@/components/dashboard/UserAccountMenu";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -67,8 +67,10 @@ function SurfboardUserDashboardNavbar({
   showSubscriptionBadge?: boolean;
   sidebar?: any;
 }) {
-  const [avatarError, setAvatarError] = useState(false);
-  const initial = (user?.firstName || user?.given_name)?.charAt(0)?.toUpperCase();
+  const router = useRouter();
+  const fullName =
+    `${user?.firstName || user?.given_name || ""} ${user?.family_name || ""}`.trim() ||
+    "Facilitator";
 
   return (
     <header
@@ -127,21 +129,19 @@ function SurfboardUserDashboardNavbar({
         iconClassName="h-6 w-6 text-white"
       />
 
-      {user?.picture && !avatarError ? (
-        <img
-          src={user.picture}
-          alt="Profile"
-          className="w-12 h-12 rounded-full shadow border-2 border-white/15 bg-white object-cover"
-          onError={() => setAvatarError(true)}
-        />
-      ) : (
-        // Google-style fallback: first letter of the user's name on a colored circle.
-        <div className="flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 shadow ml-2">
-          <div className="bg-white text-blue-900 font-bold text-lg rounded-full w-10 h-10 flex justify-center items-center">
-            {initial || <UserIcon className="h-5 w-5 text-blue-900" />}
-          </div>
-        </div>
-      )}
+      <UserAccountMenu
+        name={fullName}
+        email={user?.email}
+        picture={user?.picture}
+        roleLabel="Facilitator"
+        profileHref="/surfboard/dashboard/settings"
+        settingsHref="/surfboard/dashboard/settings"
+        onLogout={() => {
+          fetch("/api/auth/logout_redirect?from=surfboard");
+          router.push("/surfboard/login");
+        }}
+        className="ml-2 ring-2 ring-white/15"
+      />
     </header>
   );
 }

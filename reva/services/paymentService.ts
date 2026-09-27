@@ -11,6 +11,8 @@ import {
 } from "@/reva/services/propertyRequestService";
 import type { Property, OneTimeUserProperty } from "@/prisma/generated";
 import { notifyPaymentReceived } from "@/reva/services/notificationService";
+import { writeAudit } from "@/lib/audit";
+import { Platform } from "@/utils/platform";
 
 /**
  * Migrated from revaActions.ts's Paystack-integrated submission/verification
@@ -221,7 +223,8 @@ export type AdminVerifyResult = {
 export async function adminVerifyTransaction(
   reference: string,
   isLive: boolean,
-  type: "authenticated" | "oneTime"
+  type: "authenticated" | "oneTime",
+  actorId?: string
 ): Promise<AdminVerifyResult> {
   const existing =
     type === "authenticated"
@@ -246,6 +249,14 @@ export async function adminVerifyTransaction(
     type === "authenticated"
       ? await updatePropertyTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField)
       : await updateOneTimeTransactionStatus(reference, "Processing", newStatus, statusMessage, errorField);
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId ?? null,
+    action: "ADMIN_VERIFY_PAYMENT",
+    entity: type === "authenticated" ? "Property" : "OneTimeUserProperty",
+    entityId: (updated as any)?.id ?? null,
+    changes: { reference, originalStatus, newStatus, isLive },
+  });
 
   return {
     reference,

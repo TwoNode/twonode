@@ -55,6 +55,8 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `prisma.ts` | Prisma client singleton |
 | `storage.ts` | File storage helpers (abstracts S3) |
 | `utils.ts` | `cn()` class-name merge helper and other generic utilities |
+| `adminTimezone.ts` | `getAdminTimezone`/`setAdminTimezone` (localStorage, mirrors `hooks/useTheme.tsx`'s pattern) + `formatInAdminTimezone(date, options)` — Surfboard admin's saved timezone preference, read synchronously without waiting on a profile fetch |
+| `qrColorPreferences.ts` | `getQrColors`/`setQrColors` (localStorage) — the QR code Dark/Light color pickers persist across sessions instead of resetting to the hardcoded default on every generation |
 
 ## `utils/`
 
