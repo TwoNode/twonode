@@ -54,6 +54,20 @@ export default function DashboardHome() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeValue>({});
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) setFirstName(res.data.firstName || "");
+    });
+  }, []);
+
+  const timeOfDayGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   const fetchData = async () => {
     try {
@@ -162,9 +176,9 @@ export default function DashboardHome() {
   return (
     <div className="space-y-6">
       <DashboardHero
-        greeting="Welcome back."
+        greeting={firstName ? `${timeOfDayGreeting()}, ${firstName}` : "Welcome back."}
         title="Dashboard"
-        description="Here's what's happening with your survey plans. Numbers update automatically as facilitators lodge and review."
+        description="Here's what's happening with your survey plans, real-time updates as you store, secure and submit record copies of your plans."
         pills={[
           `${stats.totalPlans} Plans`,
           `${stats.sharedPlans} Shared`,

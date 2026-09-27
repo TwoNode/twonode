@@ -26,6 +26,7 @@ export function useSurfUserProfile() {
     payerIDType: "",
     isKycValidated: false,
     emailVerified: false,
+    preferences: {},
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +64,7 @@ export function useSurfUserProfile() {
             payerIDType: data.payerIDType || "",
             isKycValidated: data.isKycValidated ?? false,
             emailVerified: data.emailVerified ?? false,
+            preferences: data.preferences || {},
           });
         }
       } catch (error) {

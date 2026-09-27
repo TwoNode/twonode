@@ -20,6 +20,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { useViewMode } from "@/hooks/useViewMode";
 import { SubscriptionExpiry } from "./SubscriptionExpiry";
+import { formatInAdminTimezone } from "@/lib/adminTimezone";
 
 interface Subscription {
   id?: string;
@@ -63,7 +64,7 @@ interface UserStats {
 }
 
 interface UserFilters {
-  roleGroup: "admins" | "mda";
+  roleGroup: "admins" | "mda" | "all";
   status: string;
   role: string;
   subscriptionStatus: string;
@@ -125,13 +126,14 @@ export default function UserManagementPage() {
             : undefined,
         subscriptionStatus:
           filters.subscriptionStatus === "expired" ||
-          filters.subscriptionStatus === "expiring_soon"
+          filters.subscriptionStatus === "expiring_soon" ||
+          filters.subscriptionStatus === "active"
             ? filters.subscriptionStatus
             : undefined,
       }),
     {
       initialFilters: {
-        roleGroup: "admins",
+        roleGroup: "all",
         status: "all",
         role: "all",
         subscriptionStatus: "all",
@@ -143,7 +145,7 @@ export default function UserManagementPage() {
   const filterStatus = filters.status;
   const filterRole = filters.role;
   const filterSubscriptionStatus = filters.subscriptionStatus;
-  const setActiveTab = (tab: "admins" | "mda") =>
+  const setActiveTab = (tab: "admins" | "mda" | "all") =>
     setFilters({
       roleGroup: tab,
       status: "all",
@@ -163,7 +165,11 @@ export default function UserManagementPage() {
     const roleParam = searchParams.get("role");
     if (!roleParam) return;
     setFilters({
-      roleGroup: MDA_ROLES.includes(roleParam) ? "mda" : "admins",
+      roleGroup: MDA_ROLES.includes(roleParam)
+        ? "mda"
+        : roleParam === "USER"
+          ? "all"
+          : "admins",
       status: "all",
       role: roleParam,
       subscriptionStatus: "all",
@@ -453,7 +459,7 @@ export default function UserManagementPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 sm:gap-0">
-                {currentUserRole === "SUPERADMIN" && (
+                {currentUserRole === "SUPERADMIN" && activeTab !== "all" && (
                   <button
                     onClick={() => setShowAddAdminModal(true)}
                     className="sm:mr-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -475,6 +481,18 @@ export default function UserManagementPage() {
           <div className="bg-white dark:bg-surface rounded-lg shadow-lg mb-8">
             <div className="border-b border-gray-200 dark:border-white/10 overflow-x-auto">
               <nav className="flex space-x-8 px-6 w-max min-w-full">
+                {currentUserRole === "SUPERADMIN" && (
+                  <button
+                    onClick={() => setActiveTab("all")}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === "all"
+                        ? "border-indigo-500 text-indigo-600"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    All Users
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveTab("admins")}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -507,183 +525,201 @@ export default function UserManagementPage() {
 
           {/* Stats Overview */}
           {stats && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                      />
-                    </svg>
+            <div className="space-y-4 mb-8">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 px-1">
+                  Users
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Total Users
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.totalUsers}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Total Users
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.totalUsers}
-                    </p>
+
+                  <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Active Users
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.activeUsers}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Admins
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.admins + stats.superAdmins}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Active Users
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.activeUsers}
-                    </p>
-                  </div>
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 px-1">
+                  Subscriptions
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFilterSubscriptionStatus("active")}
+                    className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
+                  >
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          />
+                        </svg>
+                      </div>
+
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Active Subscriptions
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.usersWithActiveSubscriptions}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFilterSubscriptionStatus("expired")}
+                    className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
+                  >
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Expired Subscriptions
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.expiredSubscriptions}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFilterSubscriptionStatus("expiring_soon")}
+                    className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
+                  >
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-4 min-w-0">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                          Expiring in 7 Days
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                          {stats.expiringSoonSubscriptions}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
-
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Admins
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.admins + stats.superAdmins}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-600 dark:text-yellow-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                      />
-                    </svg>
-                  </div>
-
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Active Subscriptions
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.usersWithActiveSubscriptions}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setFilterSubscriptionStatus("expired")}
-                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Expired Subscriptions
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.expiredSubscriptions}
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilterSubscriptionStatus("expiring_soon")}
-                className="text-left bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow p-6 overflow-hidden"
-              >
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-4 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
-                      Expiring in 7 Days
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                      {stats.expiringSoonSubscriptions}
-                    </p>
-                  </div>
-                </div>
-              </button>
             </div>
           )}
 
@@ -728,14 +764,29 @@ export default function UserManagementPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Roles</option>
-                  {activeTab === "admins" ? (
+                  {activeTab === "admins" && (
+                    <>
+                      <option value="SUPERADMIN">SuperAdmin</option>
+                      <option value="ADMIN">Admin</option>
+                    </>
+                  )}
+                  {activeTab === "mda" && (
+                    <>
+                      <option value="RECORDS_I">Records I</option>
+                      <option value="INTAKE">Intake</option>
+                      <option value="RECORDS_II">Records II</option>
+                      <option value="ACCOUNTS">Accounts</option>
+                      <option value="CHARTING">Charting</option>
+                      <option value="SURCON">SURCON</option>
+                      <option value="ARCHIVE">Archive</option>
+                      <option value="MDA_SUPERADMIN">MDA Super Admin</option>
+                    </>
+                  )}
+                  {activeTab === "all" && (
                     <>
                       <option value="SUPERADMIN">SuperAdmin</option>
                       <option value="ADMIN">Admin</option>
                       <option value="USER">User</option>
-                    </>
-                  ) : (
-                    <>
                       <option value="RECORDS_I">Records I</option>
                       <option value="INTAKE">Intake</option>
                       <option value="RECORDS_II">Records II</option>
@@ -759,6 +810,7 @@ export default function UserManagementPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-white/15 rounded-md bg-white dark:bg-surface text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Subscriptions</option>
+                  <option value="active">Active</option>
                   <option value="expired">Expired</option>
                   <option value="expiring_soon">Expiring in 7 Days</option>
                 </select>
@@ -822,16 +874,21 @@ export default function UserManagementPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {activeTab === "admins" ? (
+                              {activeTab !== "mda" && (
                                 <>
                                   <SelectItem value="USER">USER</SelectItem>
                                   <SelectItem value="ADMIN">ADMIN</SelectItem>
                                   <SelectItem value="SUPERADMIN">
                                     SUPERADMIN
                                   </SelectItem>
+                                </>
+                              )}
+                              {activeTab !== "admins" && (
+                                <>
                                   <SelectItem value="RECORDS_I">
                                     Records I
                                   </SelectItem>
+                                  <SelectItem value="INTAKE">Intake</SelectItem>
                                   <SelectItem value="RECORDS_II">
                                     Records II
                                   </SelectItem>
@@ -842,31 +899,11 @@ export default function UserManagementPage() {
                                     Charting
                                   </SelectItem>
                                   <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="ARCHIVE">
+                                    Archive
+                                  </SelectItem>
                                   <SelectItem value="MDA_SUPERADMIN">
                                     MDA Super Admin
-                                  </SelectItem>
-                                </>
-                              ) : (
-                                <>
-                                  <SelectItem value="RECORDS_I">
-                                    RECORDS_I
-                                  </SelectItem>
-                                  <SelectItem value="INTAKE">INTAKE</SelectItem>
-                                  <SelectItem value="RECORDS_II">
-                                    RECORDS_II
-                                  </SelectItem>
-                                  <SelectItem value="ACCOUNTS">
-                                    ACCOUNTS
-                                  </SelectItem>
-                                  <SelectItem value="CHARTING">
-                                    CHARTING
-                                  </SelectItem>
-                                  <SelectItem value="SURCON">SURCON</SelectItem>
-                                  <SelectItem value="ARCHIVE">
-                                    ARCHIVE
-                                  </SelectItem>
-                                  <SelectItem value="MDA_SUPERADMIN">
-                                    MDA_SUPERADMIN
                                   </SelectItem>
                                 </>
                               )}
@@ -1018,16 +1055,21 @@ export default function UserManagementPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {activeTab === "admins" ? (
+                              {activeTab !== "mda" && (
                                 <>
                                   <SelectItem value="USER">USER</SelectItem>
                                   <SelectItem value="ADMIN">ADMIN</SelectItem>
                                   <SelectItem value="SUPERADMIN">
                                     SUPERADMIN
                                   </SelectItem>
+                                </>
+                              )}
+                              {activeTab !== "admins" && (
+                                <>
                                   <SelectItem value="RECORDS_I">
                                     Records I
                                   </SelectItem>
+                                  <SelectItem value="INTAKE">Intake</SelectItem>
                                   <SelectItem value="RECORDS_II">
                                     Records II
                                   </SelectItem>
@@ -1038,31 +1080,11 @@ export default function UserManagementPage() {
                                     Charting
                                   </SelectItem>
                                   <SelectItem value="SURCON">SURCON</SelectItem>
+                                  <SelectItem value="ARCHIVE">
+                                    Archive
+                                  </SelectItem>
                                   <SelectItem value="MDA_SUPERADMIN">
                                     MDA Super Admin
-                                  </SelectItem>
-                                </>
-                              ) : (
-                                <>
-                                  <SelectItem value="RECORDS_I">
-                                    RECORDS_I
-                                  </SelectItem>
-                                  <SelectItem value="INTAKE">INTAKE</SelectItem>
-                                  <SelectItem value="RECORDS_II">
-                                    RECORDS_II
-                                  </SelectItem>
-                                  <SelectItem value="ACCOUNTS">
-                                    ACCOUNTS
-                                  </SelectItem>
-                                  <SelectItem value="CHARTING">
-                                    CHARTING
-                                  </SelectItem>
-                                  <SelectItem value="SURCON">SURCON</SelectItem>
-                                  <SelectItem value="ARCHIVE">
-                                    ARCHIVE
-                                  </SelectItem>
-                                  <SelectItem value="MDA_SUPERADMIN">
-                                    MDA_SUPERADMIN
                                   </SelectItem>
                                 </>
                               )}
@@ -1286,9 +1308,7 @@ export default function UserManagementPage() {
                             Created
                           </label>
                           <p className="text-gray-900 dark:text-white">
-                            {new Date(
-                              selectedUser.createdAt,
-                            ).toLocaleDateString()}
+                            {formatInAdminTimezone(selectedUser.createdAt)}
                           </p>
                         </div>
                       </div>
