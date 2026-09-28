@@ -14,7 +14,7 @@ import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
-import { type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -185,46 +185,7 @@ export default function DashboardHome() {
         cta={{ label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus }}
       />
 
-      {/* Plan Health */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/3 dark:shadow-none">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Plan Health</h2>
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          {stats.lodged} of {stats.totalPlans} plans lodged this cycle
-        </p>
-
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${stats.totalPlans > 0 ? Math.round((stats.lodged / stats.totalPlans) * 100) : 0}%`,
-              backgroundColor: SURFBOARD_COLORS.success.main,
-            }}
-          />
-        </div>
-
-        <dl className="mt-4 divide-y divide-gray-100 dark:divide-white/10">
-          <div className="flex items-center justify-between py-2.5">
-            <dt className="text-sm text-gray-600 dark:text-gray-300">Queried, needs attention</dt>
-            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{stats.queried}</dd>
-          </div>
-          <div className="flex items-center justify-between py-2.5">
-            <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
-            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{stats.underReview}</dd>
-          </div>
-          <div className="flex items-center justify-between py-2.5">
-            <dt className="text-sm text-gray-600 dark:text-gray-300">Shared, awaiting response</dt>
-            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.sharedAwaitingResponse}</dd>
-          </div>
-          <div className="flex items-center justify-between py-2.5">
-            <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>
-            <dd className="text-sm font-semibold text-gray-900 dark:text-white">
-              ₦{planHealth.qrEarningsThisMonth.toLocaleString()}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      {/* Tabs + Refresh */}
+      {/* Tabs + Filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
           {(
@@ -248,16 +209,20 @@ export default function DashboardHome() {
           ))}
         </nav>
 
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FiRefreshCw
-            className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiRefreshCw
+              className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -297,7 +262,19 @@ export default function DashboardHome() {
           </div>
         )}
 
-        {activeTab === "analytics" && <AnalyticsDashboard dateRange={dateRange} />}
+        {activeTab === "analytics" && (
+          <AnalyticsDashboard
+            dateRange={dateRange}
+            planHealth={{
+              lodged: stats.lodged,
+              totalPlans: stats.totalPlans,
+              queried: stats.queried,
+              underReview: stats.underReview,
+              sharedAwaitingResponse: planHealth.sharedAwaitingResponse,
+              qrEarningsThisMonth: planHealth.qrEarningsThisMonth,
+            }}
+          />
+        )}
 
         {activeTab === "recent" && (
           <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
