@@ -215,7 +215,7 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate subscription");
       }
 
-      const { reference, email, amount, currency = "NGN", plan } = result.data;
+      const { reference, email, amount, currency = "NGN", plan, metadata } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -225,6 +225,7 @@ export default function SubscriptionManager() {
         amount: Math.round(amount * 100),
         currency,
         planCode: plan.plan_code,
+        metadata,
         onSuccess: async (transaction: TransactionObject) => {
           try {
             console.log("Payment successful:", transaction);
@@ -288,7 +289,7 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate payment");
       }
 
-      const { reference, email, amount, currency = "NGN" } = result.data;
+      const { reference, email, amount, currency = "NGN", metadata } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -297,6 +298,7 @@ export default function SubscriptionManager() {
         email,
         amount: Math.round(amount * 100),
         currency,
+        metadata,
         onSuccess: async (transaction: TransactionObject) => {
           try {
             toast.loading("Verifying payment...", { id: "verify-onetime-payment" });
@@ -536,7 +538,7 @@ export default function SubscriptionManager() {
 
       {/* Grid of Plans */}
       <motion.div variants={itemVariants} className="relative z-10 pt-8">
-        <div className="grid lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8 items-stretch max-w-6xl mx-auto">
           {Object.values(SUBSCRIPTION_PLANS).map((plan) => {
             const isWorking = pendingPlan === plan.id;
             const isWorkingOnetime = pendingOnetimePlan === plan.id;

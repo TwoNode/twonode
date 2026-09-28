@@ -321,57 +321,24 @@ export async function initiateSubscription(
     }
 
     const isLive = process.env.NODE_ENV === "production";
-    const paystack = await createPaystackInstance(isLive);
     await logPaystackEnvironment(isLive);
 
     const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"
       }_${Date.now()}_${user.id}`;
     const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-    // Initialize transaction with plan
-    const response = await paystack.transaction.initialize({
-      email: user.email,
-      amount: plan.amount, // Convert to kobo
-      reference,
-      plan: plan.plan_code, // CRITICAL: This links the transaction to the subscription plan
-      metadata: {
-        custom_fields: [
-          {
-            display_name: "Platform",
-            variable_name: "platform",
-            value: "surfboard",
-          },
-          {
-            display_name: "Subscription Plan",
-            variable_name: "subscription_plan",
-            value: plan.name,
-          },
-          {
-            display_name: "Subscription Plan ID",
-            variable_name: "subscription_plan_id",
-            value: plan.id,
-          },
-          {
-            display_name: "Plan Code",
-            variable_name: "plan_code",
-            value: plan.plan_code,
-          },
-          {
-            display_name: "Reference",
-            variable_name: "reference",
-            value: reference,
-          },
-          { display_name: "User ID", variable_name: "user_id", value: user.id },
-          { display_name: "Email", variable_name: "email", value: user.email },
-        ],
-      },
-    });
-
-    if (!response.status) {
-      console.error("Paystack initialization error:", response);
-      throw new Error(response.message || "Failed to initialize payment");
-    }
-
+    /**
+     * No server-side paystack.transaction.initialize() call here — this
+     * checkout is entirely popup-driven via @paystack/inline-js's
+     * newTransaction() on the client (SubscriptionManager.tsx), which does
+     * its own initialize call under the hood using this reference. Calling
+     * transaction.initialize() here too registered the same reference with
+     * Paystack twice, surfacing as a "Duplicate Transaction Reference"
+     * error from the client popup — most reliably reproduced by cancelling
+     * one checkout attempt and immediately starting another (Paystack's own
+     * "resume abandoned transaction with the same parameters" logic
+     * collides with the reference already registered here).
+     */
     return {
       success: true,
       data: {
@@ -381,7 +348,37 @@ export async function initiateSubscription(
         plan,
         currency: "NGN",
         userId: user.id,
-        authorization_url: response.data.authorization_url,
+        metadata: {
+          custom_fields: [
+            {
+              display_name: "Platform",
+              variable_name: "platform",
+              value: "surfboard",
+            },
+            {
+              display_name: "Subscription Plan",
+              variable_name: "subscription_plan",
+              value: plan.name,
+            },
+            {
+              display_name: "Subscription Plan ID",
+              variable_name: "subscription_plan_id",
+              value: plan.id,
+            },
+            {
+              display_name: "Plan Code",
+              variable_name: "plan_code",
+              value: plan.plan_code,
+            },
+            {
+              display_name: "Reference",
+              variable_name: "reference",
+              value: reference,
+            },
+            { display_name: "User ID", variable_name: "user_id", value: user.id },
+            { display_name: "Email", variable_name: "email", value: user.email },
+          ],
+        },
       },
     };
   } catch (error) {
@@ -416,65 +413,15 @@ export async function initiateOneTimeSubscription(planId: PlanId) {
     }
 
     const isLive = process.env.NODE_ENV === "production";
-    const paystack = await createPaystackInstance(isLive);
     await logPaystackEnvironment(isLive);
 
     const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"
       }_${Date.now()}_${user.id}`;
     const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-    // Initialize transaction WITHOUT a plan — keeps it a one-time charge,
-    // so Transfer/USSD remain available at checkout.
-    const response = await paystack.transaction.initialize({
-      email: user.email,
-      amount: plan.amount,
-      reference,
-      metadata: {
-        type: "surfboard_onetime_subscription",
-        platform: "surfboard",
-        plan_id: planId,
-        custom_fields: [
-          {
-            display_name: "Platform",
-            variable_name: "platform",
-            value: "surfboard",
-          },
-          {
-            display_name: "Payment Type",
-            variable_name: "payment_type",
-            value: "surfboard_onetime_subscription",
-          },
-          {
-            display_name: "Subscription Plan",
-            variable_name: "subscription_plan",
-            value: plan.name,
-          },
-          {
-            display_name: "Subscription Plan ID",
-            variable_name: "subscription_plan_id",
-            value: plan.id,
-          },
-          {
-            display_name: "Plan ID",
-            variable_name: "plan_id",
-            value: planId,
-          },
-          {
-            display_name: "Reference",
-            variable_name: "reference",
-            value: reference,
-          },
-          { display_name: "User ID", variable_name: "user_id", value: user.id },
-          { display_name: "Email", variable_name: "email", value: user.email },
-        ],
-      },
-    });
-
-    if (!response.status) {
-      console.error("Paystack initialization error:", response);
-      throw new Error(response.message || "Failed to initialize payment");
-    }
-
+    // No server-side paystack.transaction.initialize() call — see
+    // initiateSubscription's identical comment for why (duplicate-reference
+    // collision with the client's own newTransaction() popup call).
     return {
       success: true,
       data: {
@@ -484,7 +431,45 @@ export async function initiateOneTimeSubscription(planId: PlanId) {
         plan,
         currency: "NGN",
         userId: user.id,
-        authorization_url: response.data.authorization_url,
+        metadata: {
+          type: "surfboard_onetime_subscription",
+          platform: "surfboard",
+          plan_id: planId,
+          custom_fields: [
+            {
+              display_name: "Platform",
+              variable_name: "platform",
+              value: "surfboard",
+            },
+            {
+              display_name: "Payment Type",
+              variable_name: "payment_type",
+              value: "surfboard_onetime_subscription",
+            },
+            {
+              display_name: "Subscription Plan",
+              variable_name: "subscription_plan",
+              value: plan.name,
+            },
+            {
+              display_name: "Subscription Plan ID",
+              variable_name: "subscription_plan_id",
+              value: plan.id,
+            },
+            {
+              display_name: "Plan ID",
+              variable_name: "plan_id",
+              value: planId,
+            },
+            {
+              display_name: "Reference",
+              variable_name: "reference",
+              value: reference,
+            },
+            { display_name: "User ID", variable_name: "user_id", value: user.id },
+            { display_name: "Email", variable_name: "email", value: user.email },
+          ],
+        },
       },
     };
   } catch (error) {
