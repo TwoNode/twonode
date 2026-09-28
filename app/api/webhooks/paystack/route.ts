@@ -4,6 +4,8 @@ import crypto from "crypto";
 import * as mailer from "@/utils/email";
 import * as reva from "@/app/(projects)/reva/actions/revaActions2";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
+import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
+import { createOrUpdateSubscription } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -340,9 +342,12 @@ async function handleSurfboard(
       await onInvoiceInformational(event, data as InvoiceData);
       break;
     case "charge.success":
-      // Check if this is a certificate payment or subscription renewal
+      // Check if this is a certificate payment, a one-time subscription
+      // payment, or a recurring subscription renewal — in that order.
       if (isCertificatePayment(data as ChargeSuccessData)) {
         await onCertificatePaymentSuccess(data as ChargeSuccessData);
+      } else if (isOneTimeSubscriptionPayment(data as ChargeSuccessData)) {
+        await onOneTimeSubscriptionChargeSuccess(data as ChargeSuccessData);
       } else {
         await onSubscriptionChargeSuccess(data as ChargeSuccessData);
       }
@@ -949,6 +954,63 @@ function isCertificatePayment(data: ChargeSuccessData): boolean {
   }
 
   return false;
+}
+
+/**
+ * Checks if a charge.success event is for a one-time (non-recurring)
+ * subscription payment — mirrors isCertificatePayment's pattern.
+ */
+function isOneTimeSubscriptionPayment(data: ChargeSuccessData): boolean {
+  const meta = data.metadata ?? {};
+  if ((meta as any).type === "surfboard_onetime_subscription") {
+    return true;
+  }
+  const ref = data.reference ?? "";
+  return ref.startsWith("SURFBOARD_ONETIME_SUB_");
+}
+
+// ---- One-time (non-recurring) subscription charge success ----
+// Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
+// call — mirrors onSubscriptionChargeSuccess's shape, but there's no
+// plan_object/subscription on this charge (initiateOneTimeSubscription never
+// attaches a plan), so the plan is resolved from metadata.plan_id instead.
+async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
+  if (!prisma) return;
+
+  const userId = await findSurfboardUserIdFromEvent(data);
+  if (!userId) {
+    console.warn("⚠️ one-time charge.success: SurfboardUser not found");
+    return;
+  }
+
+  const meta = (data.metadata ?? {}) as any;
+  const planId = meta.plan_id as PlanId | undefined;
+  const selectedPlan = planId ? SUBSCRIPTION_PLANS[planId] : undefined;
+  if (!selectedPlan) {
+    console.warn(`⚠️ one-time charge.success: unknown plan_id (${planId})`);
+    return;
+  }
+
+  try {
+    await createOrUpdateSubscription({
+      reference: data.reference || `REF-${Date.now()}`,
+      subCode: "",
+      planId: selectedPlan.id,
+      customerCode: data.customer?.customer_code ?? "",
+      customerId: String(data.customer?.id ?? ""),
+      authorization: data.authorization?.authorization_code ?? "",
+      emailToken: "",
+      status: "active",
+      paidAt: data.paid_at,
+      provider: "paystack_onetime",
+      skipHistory: true, // avoid double-counting alongside the client-driven verify call
+    });
+    console.log(
+      `✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`
+    );
+  } catch (error) {
+    console.error("Error handling one-time subscription charge.success:", error);
+  }
 }
 
 /**
