@@ -84,8 +84,14 @@ export function AuthSplitLayout({
             instead gives each its own region, so they can't overlap
             regardless of panel height. */}
         <div className="relative z-10 flex h-full w-full flex-col">
+          {/* At `lg` only (1024–1279px) — the tightest tier this panel ever
+              renders in — the graphic filled almost the whole column
+              (minimal p-6 padding, height-driven sizing with no other
+              cap), reading as oversized relative to the rest of the page.
+              `xl:max-w-none` lifts the cap once `xl:p-16`'s much larger
+              padding is already doing the same job on its own. */}
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
-            <PlatformNetworkGraphic variant={networkVariant} />
+            <PlatformNetworkGraphic variant={networkVariant} className="lg:max-w-[320px] xl:max-w-none" />
           </div>
 
           <div className="w-full p-6 pt-0 xl:p-16 xl:pt-0 shrink-0">
