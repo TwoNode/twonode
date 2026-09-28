@@ -74,8 +74,9 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
 
   // Toast pop-ups for genuinely new notifications, independent of whether
   // the dropdown is open — the badge alone is easy to miss. The first poll
-  // only records the current latest timestamp rather than toasting it, so
-  // opening the app doesn't dump every historical notification as a toast.
+  // also toasts any already-unread notifications (so opening the app on a
+  // fresh unread item doesn't require waiting for the next poll), but only
+  // those still unread — read history never re-toasts.
   const pollForNewNotifications = useCallback(async () => {
     try {
       const result = await api.list({ limit: 5 });
@@ -84,13 +85,13 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-      if (isFirstPollRef.current) {
-        isFirstPollRef.current = false;
-        lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
-        return;
-      }
+      const fresh = isFirstPollRef.current
+        ? sorted.filter((n) => !n.isRead)
+        : sorted.filter((n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current);
 
-      const fresh = sorted.filter((n) => new Date(n.createdAt).getTime() > lastSeenAtRef.current);
+      const wasFirstPoll = isFirstPollRef.current;
+      isFirstPollRef.current = false;
+
       if (fresh.length) playNotificationSound();
       fresh
         .slice()
@@ -102,7 +103,7 @@ export default function NotificationBell({ platform, viewAllHref, className = ""
           });
         });
 
-      if (fresh.length) lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
+      if (fresh.length || wasFirstPoll) lastSeenAtRef.current = new Date(sorted[0].createdAt).getTime();
     } catch {
       // Non-fatal — a missed poll just means fewer toasts, the bell badge still works.
     }

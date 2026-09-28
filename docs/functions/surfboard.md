@@ -10,7 +10,7 @@ colocated under `app/(projects)/(surfboard)/`.
 |---|---|
 | `adminUserService.ts` | Admin/surveyor user account CRUD |
 | `aiExtractionService.ts` | AI-based data extraction from uploaded documents |
-| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering; `getTopSurveyors` ranks surveyors by plan count (admin-only, counted like the Total Plans card); `getUserDashboardAnalytics`'s `pillarStats` sums unique pillars per plan (not plan rows) bucketed Regular/Special, `pendingCertificatesCount` is a true count (`certificateFilePaths` empty, any planType) decoupled from the capped table list |
+| `analyticsService.ts` | Dashboard analytics — stat cards, dimension breakdowns, trends, date-range filtering; `getTopSurveyors` ranks surveyors by plan count (admin-only, counted like the Total Plans card); `getUserDashboardAnalytics`'s `pillarStats` sums unique pillars per plan (not plan rows) bucketed Regular/Special, `pendingCertificatesCount` is a true count (`certificateFilePaths` empty, any planType) decoupled from the capped table list; exports `PROVISIONAL_TYPES` (`["PROVISIONAL", "PROVISIONAL LAYOUT"]`) — the "Total Plans" convention used throughout this file (excludes those types) that `planService.getAdminSurfPlansStats` also now follows, for one consistent Total Plans figure app-wide |
 | `awsService.ts` | S3 upload/download helpers |
 | `batchApprovalService.ts` | Certificate-of-Deposit batch approval workflow |
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |
@@ -18,7 +18,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `notificationService.ts` | Notification CRUD + read/dismiss state |
 | `paystackSubscriptionService.ts` | Paystack subscription billing logic |
 | `planLockService.ts` | Plan/batch locking (prevents concurrent edits), role-field-prefix helper |
-| `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range and pillar-number substring match via raw SQL, `findPlanIdsByPillarNumber`), sharing; `respondToPlanShare`/`getSharedAwaitingResponseCount` track per-recipient acknowledgment of a shared plan (`SurfboardPlanShareResponse`, additive alongside `sharedTo`) |
+| `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range and pillar-number substring match via raw SQL, `findPlanIdsByPillarNumber`), sharing; `respondToPlanShare`/`getSharedAwaitingResponseCount` track per-recipient acknowledgment of a shared plan (`SurfboardPlanShareResponse`, additive alongside `sharedTo`); `getAdminSurfPlansStats`'s `total`/status counts exclude `PROVISIONAL_TYPES` (imported from `analyticsService.ts`), matching every other "Total Plans" figure in the app |
 | `profileService.ts` | Surveyor profile CRUD |
 | `qrAdminService.ts` | QR-earnings admin configuration |
 | `qrEarningsService.ts` | QR-code referral earnings calculation; bank-account verification for payouts (`toggleBankVerification`, audited with the acting admin); `getSurveyorEarningsThisMonth` is a server-side aggregate for the current calendar month (not a client-side sum over the capped `getSurveyorEarningsOverview` transaction list) |

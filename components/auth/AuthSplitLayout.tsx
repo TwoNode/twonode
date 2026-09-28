@@ -83,9 +83,9 @@ export function AuthSplitLayout({
             collided with the text card. Stacking them in one flex column
             instead gives each its own region, so they can't overlap
             regardless of panel height. */}
-        <div className="relative z-10 flex h-full flex-col">
+        <div className="relative z-10 flex h-full w-full flex-col">
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
-            <PlatformNetworkGraphic className="max-w-md" variant={networkVariant} />
+            <PlatformNetworkGraphic variant={networkVariant} />
           </div>
 
           <div className="w-full p-6 pt-0 xl:p-16 xl:pt-0 shrink-0">

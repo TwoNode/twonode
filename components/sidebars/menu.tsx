@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -123,6 +123,12 @@ export function Menu({
   const isSectionCollapsed = (section: string | undefined) =>
     !!section && section !== activeSection && collapsedSections.has(section);
 
+  // A collapsed section peeks open on hover without touching the persisted
+  // collapsedSections state — moving the mouse away re-collapses it exactly
+  // as before. The active section is already exempt from collapsing at all
+  // (isSectionCollapsed above), so it's unaffected by hover either way.
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+
   // contrastText in this codebase's palettes is always a 3-digit hex ("#fff"),
   // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
   // invalid 5-digit "#fff99"). Use a literal translucent white instead of
@@ -133,7 +139,16 @@ export function Menu({
     ? "rgba(255, 255, 255, 0.6)"
     : colors.text?.muted ?? colors.primary.main;
 
-  let previousSection: string | undefined;
+  // Grouped by consecutive `section` so a whole group (heading + its items)
+  // can share one hover region — otherwise a flat map has no single element
+  // to attach onMouseEnter/onMouseLeave to that spans both the heading and
+  // the items it toggles.
+  const sectionGroups: { section?: string; items: LinkItem[] }[] = [];
+  for (const item of linkItems) {
+    const last = sectionGroups[sectionGroups.length - 1];
+    if (last && last.section === item.section) last.items.push(item);
+    else sectionGroups.push({ section: item.section, items: [item] });
+  }
 
   // The footer (avatar + logout) needs to sit flush against the sidebar's
   // real bottom edge regardless of how many nav items there are above it.
@@ -149,36 +164,59 @@ export function Menu({
     <nav className="pt-4 pb-4 h-full w-full flex flex-col box-border">
       <ScrollArea className="bg-transparent [&>div>div[style]]:block! min-h-0 flex-1">
         <ul className="flex flex-col gap-1 items-start px-2 justify-center w-full">
-          {linkItems.map((item, index) => {
-            const showHeading =
-              !!item.section && item.section !== previousSection;
-            previousSection = item.section;
-            const collapsed = isSectionCollapsed(item.section);
+          {sectionGroups.map((group, groupIndex) => {
+            const collapsedByToggle = isSectionCollapsed(group.section);
+            const isHovered = !!group.section && hoveredSection === group.section;
+            const collapsed = collapsedByToggle && !isHovered;
+            // `<ul>` only permits `<li>` as a direct child, so the shared
+            // hover region for a section (heading + its items, peeking a
+            // collapsed section open without a permanent click-toggle) is
+            // the same enter/leave pair repeated on every <li> in the group
+            // rather than one wrapping <div> — moving the mouse between
+            // sibling <li>s in the same group re-sets the same section on
+            // enter right after the leave clears it, so it never visibly
+            // flickers closed.
+            const onGroupMouseEnter = () => group.section && setHoveredSection(group.section);
+            const onGroupMouseLeave = () =>
+              setHoveredSection((prev) => (prev === group.section ? null : prev));
 
             return (
-              <li key={index} className="w-full list-none">
-                {showHeading && (
-                  <button
-                    type="button"
-                    onClick={() => item.section && toggleSection(item.section)}
-                    className="flex w-full items-center justify-between gap-1 px-3 pt-3 pb-1.5"
+              <React.Fragment key={groupIndex}>
+                {group.section && (
+                  <li
+                    className="w-full list-none"
+                    onMouseEnter={onGroupMouseEnter}
+                    onMouseLeave={onGroupMouseLeave}
                   >
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wider"
-                      style={{ color: mutedTextColor }}
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(group.section!)}
+                      className="flex w-full items-center justify-between gap-1 px-3 pt-3 pb-1.5"
                     >
-                      {item.section}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        "h-3 w-3 transition-transform duration-200",
-                        collapsed && "-rotate-90"
-                      )}
-                      style={{ color: mutedTextColor }}
-                    />
-                  </button>
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: mutedTextColor }}
+                      >
+                        {group.section}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 transition-transform duration-200",
+                          collapsed && "-rotate-90"
+                        )}
+                        style={{ color: mutedTextColor }}
+                      />
+                    </button>
+                  </li>
                 )}
-                {!collapsed && <Link
+                {group.items.map((item) => (
+                  <li
+                    key={item.url}
+                    className="w-full list-none"
+                    onMouseEnter={onGroupMouseEnter}
+                    onMouseLeave={onGroupMouseLeave}
+                  >
+                    {!collapsed && <Link
                   href={item.url}
                   onClick={() => {
                     sidebar?.toggleOpen();
@@ -293,7 +331,9 @@ export function Menu({
                     </span>
                   )}
                 </Link>}
-              </li>
+                  </li>
+                ))}
+              </React.Fragment>
             );
           })}
         </ul>

@@ -34,6 +34,7 @@ export default async function MDADashboardLayout({
     ? {
         role: encryptedUserData.role as string,
         name: `${encryptedUserData.firstName} ${encryptedUserData.lastName}`.trim(),
+        email: encryptedUserData.email as string | undefined,
       }
     : undefined;
 
@@ -43,7 +44,11 @@ export default async function MDADashboardLayout({
       logoSrc="/surfboard/surf_logo.svg"
       role={userData?.role}
       group="mda"
-      user={user?.name || userData?.name ? { picture: user?.picture, name: user?.name || userData?.name } : undefined}
+      user={
+        user?.name || userData?.name
+          ? { picture: user?.picture, name: user?.name || userData?.name, email: userData?.email }
+          : undefined
+      }
     >
       {children}
     </DashboardShell>

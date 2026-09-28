@@ -22,7 +22,7 @@ export type AnalyticsDimension = "facilitator" | "lga" | "ward" | "lcda";
 /** Dashboard-wide date filter, applied against `dateOnSurveyPlan` (not createdAt) — matches the same field the plans list/shared endpoints already filter on. */
 export type AnalyticsDateRange = { from?: Date; to?: Date };
 
-const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL LAYOUT"];
+export const PROVISIONAL_TYPES = ["PROVISIONAL", "PROVISIONAL LAYOUT"];
 
 /** "REGULAR"/"REGULAR + ADJOINING" bucket as Regular; everything else (SPECIAL, SPECIAL + ADJOINING, RE-ESTABLISHMENT) buckets as Special. */
 const REGULAR_PILLAR_TYPES = new Set(["REGULAR", "REGULAR + ADJOINING"]);

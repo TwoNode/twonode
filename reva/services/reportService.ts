@@ -4,6 +4,8 @@ import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { deleteManyFromS3, uploadToS3FromServer } from "@/app/(projects)/(reva)/reva/actions/awsActions";
 import { sendMail, sendEmailToAllAdmins } from "@/utils/email";
 import { notifyReportReady, notifySystemAlert } from "@/reva/services/notificationService";
+import { writeAudit } from "@/lib/audit";
+import { Platform } from "@/utils/platform";
 
 /**
  * Migrated from reva-restricted/actions/adminDbActions.ts's report-review
@@ -330,7 +332,12 @@ function reportMailTemplate(opts: { title: string; greeting: string; body: strin
   }${opts.path}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Report</a></div><p style="font-size: 16px;">You can now view or download your report from the dashboard.</p><p style="font-size: 14px; color: #6b7280;">Thank you for using our platform.</p></div></div>`;
 }
 
-export async function approveDueDiligenceReport(reference: string, isApproved: boolean, adminEmail: string) {
+export async function approveDueDiligenceReport(
+  reference: string,
+  isApproved: boolean,
+  adminEmail: string,
+  actorId?: string,
+) {
   const warnings: string[] = [];
   if (!reference) throw new ValidationError({ reference: "Reference is required" });
 
@@ -355,6 +362,14 @@ export async function approveDueDiligenceReport(reference: string, isApproved: b
   const result = await prisma.property.update({
     where: { reference },
     data: { report: updatedReport, status: isApproved ? AVAILABLE : PROCESSING },
+  });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId ?? null,
+    action: isApproved ? "APPROVE_REPORT" : "DISAPPROVE_REPORT",
+    entity: "Property",
+    entityId: result.id,
+    changes: { reference, isApproved, adminEmail },
   });
 
   const statusText = isApproved ? "approved" : "disapproved";
@@ -434,7 +449,12 @@ export async function approveDueDiligenceReport(reference: string, isApproved: b
  * notificationService.ts, mirroring the sibling regular-Property function
  * above instead of leaving guests silently un-notified in-app.
  */
-export async function approveOneTimeDueDiligenceReport(reference: string, isApproved: boolean, adminEmail: string) {
+export async function approveOneTimeDueDiligenceReport(
+  reference: string,
+  isApproved: boolean,
+  adminEmail: string,
+  actorId?: string,
+) {
   const warnings: string[] = [];
   if (!reference) throw new ValidationError({ reference: "Reference is required" });
 
@@ -454,6 +474,14 @@ export async function approveOneTimeDueDiligenceReport(reference: string, isAppr
   const result = await prisma.oneTimeUserProperty.update({
     where: { reference },
     data: { report: updatedReport, status: isApproved ? COMPLETED : PROCESSING },
+  });
+
+  await writeAudit(Platform.REVA, {
+    userId: actorId ?? null,
+    action: isApproved ? "APPROVE_REPORT" : "DISAPPROVE_REPORT",
+    entity: "OneTimeUserProperty",
+    entityId: result.id,
+    changes: { reference, isApproved, adminEmail },
   });
 
   const statusText = isApproved ? "approved" : "disapproved";

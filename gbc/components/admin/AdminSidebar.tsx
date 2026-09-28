@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
@@ -40,6 +40,7 @@ const GROUPS: { label: string; items: string[] }[] = [
 
 export function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const role = useGBCRole();
 
   return (
@@ -117,7 +118,10 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
         })}
 
         <ConfirmedLogoutLink
-          postLogoutRedirectURL="/api/auth/logout_redirect"
+          onConfirm={() => {
+            fetch("/api/auth/logout_redirect?from=gbc");
+            router.push("/gbc-restricted/login");
+          }}
           trigger={
             <Button
               variant="outline"

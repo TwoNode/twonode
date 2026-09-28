@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LoginLink, RegisterLink } from "@kinde-oss/kinde-auth-nextjs";
 import { REVA_COLORS } from "@/reva/colors";
 
 interface AuthLinksProps {
@@ -12,27 +12,27 @@ interface AuthLinksProps {
   showRegister?: boolean;
 }
 
+/**
+ * Both buttons point at the native login page (`/reva/login` or
+ * `/reva-restricted/login`) rather than Kinde's LoginLink/RegisterLink —
+ * REVA's user/admin sessions are native-JWT-only, and that page's
+ * NativeAuthCard already has its own login<->register toggle
+ * (`allowRegister`), so "Register" just needs to land on the same page.
+ */
 export const AuthLinks = ({
   dashboardType = "user",
   customLoginRedirect,
   customRegisterRedirect,
   showRegister = true,
 }: AuthLinksProps) => {
-  // Default redirect URLs based on dashboard type
-  const defaultLoginRedirect =
-    customLoginRedirect ||
-    (dashboardType === "admin"
-      ? "/api/auth/success/reva-restricted"
-      : "/api/auth/success/reva");
-  const defaultRegisterRedirect =
-    customRegisterRedirect ||
-    (dashboardType === "admin"
-      ? "/api/auth/success/reva-restricted"
-      : "/api/auth/success/reva");
+  const loginHref =
+    customLoginRedirect || (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
+  const registerHref =
+    customRegisterRedirect || (dashboardType === "admin" ? "/reva-restricted/login" : "/reva/login");
 
   return (
     <div className="mt-6 flex justify-center gap-4">
-      <LoginLink postLoginRedirectURL={defaultLoginRedirect}>
+      <Link href={loginHref}>
         <Button
           className="px-6 py-3 text-lg hover:border-2 transition-all"
           style={{
@@ -43,9 +43,9 @@ export const AuthLinks = ({
         >
           Sign In
         </Button>
-      </LoginLink>
+      </Link>
       {showRegister && (
-        <RegisterLink postLoginRedirectURL={defaultRegisterRedirect}>
+        <Link href={registerHref}>
           <Button
             className="px-6 py-3 text-lg hover:border-2 transition-all"
             style={{
@@ -56,7 +56,7 @@ export const AuthLinks = ({
           >
             Register
           </Button>
-        </RegisterLink>
+        </Link>
       )}
     </div>
   );

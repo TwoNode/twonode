@@ -41,6 +41,7 @@ import MaplibreMap from "../../../components/maps/MaplibreMap";
 import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { useConfirm } from "@/hooks/useConfirm";
+import { getQrColors, setQrColors } from "@/lib/qrColorPreferences";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -257,15 +258,20 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Default: strong contrast, opaque light, safe quiet zone
+  // Default: strong contrast, opaque light, safe quiet zone.
+  // Dark/Light color start from whatever the facilitator last picked
+  // (lib/qrColorPreferences) so they don't have to re-pick it every time.
   const [qrOptions, setQrOptions] = useState({
-    darkColor: "#3b82f6",
-    lightColor: "#ffffff",
+    ...getQrColors(),
     minLightAlpha: 0.1, // server clamps alpha >= 0.3
     margin: 4,
     scale: 8,
     forceOpaque: false, // set true to generate JPEG (no alpha at all)
   });
+
+  useEffect(() => {
+    setQrColors({ darkColor: qrOptions.darkColor, lightColor: qrOptions.lightColor });
+  }, [qrOptions.darkColor, qrOptions.lightColor]);
 
   function toggleMap() {
     setShowMap((v) => !v);

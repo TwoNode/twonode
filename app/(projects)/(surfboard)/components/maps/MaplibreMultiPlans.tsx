@@ -928,7 +928,18 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         id: "plans-search-highlight",
         type: "line",
         source: "plansLayer",
-        filter: ["==", true, false],
+        // No initial `filter` here — MapLibre's addLayer-time style
+        // validator rejects `["==", true, false]` ("string expected,
+        // boolean found") because it parses a 3-element `==` array as a
+        // legacy filter (which requires a property-name string in
+        // position 1) rather than an expression. That thrown error meant
+        // this layer was never actually created, so every later
+        // `setFilter("plans-search-highlight", ...)` failed with "Cannot
+        // filter non-existing layer" — the search highlight (and by
+        // extension "search plans") silently never worked. `setFilter`
+        // at runtime (below) accepts the same array fine as an
+        // expression, so the render effect sets the real filter as soon
+        // as it first runs.
         paint: {
           "line-color": "#FDE047",
           "line-width": 4,
@@ -1149,7 +1160,22 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       ) as FilterSpecification;
       map.current?.setFilter("plans-search-highlight", highlightFilter);
 
-      if (polygonFeatures.length > 0 && allVisibleIds.length > 0) {
+      // Only auto-fit the camera when every currently-available plan is
+      // visible — i.e. right after the initial load, or after a
+      // status/type filter (or a CSV upload) resets the visible set back
+      // to "everything." Unchecking one plan in the Database Plans list
+      // makes this a proper subset, which deliberately skips the fit: a
+      // per-plan visibility toggle should only hide/show that plan, never
+      // move the camera (that surprised users — the map would silently
+      // re-frame on every checkbox click). A specific zoomToPlan() call
+      // (row click, CSV upload target) is unaffected either way since it
+      // sets the camera directly rather than through this effect.
+      const availableIds = new Set(visibilityFilteredPlans.map((p) => p.id));
+      const isFullSelection =
+        allVisibleIds.length === availableIds.size &&
+        allVisibleIds.every((id) => availableIds.has(id));
+
+      if (isFullSelection && polygonFeatures.length > 0 && allVisibleIds.length > 0) {
         const visibleFeatures = polygonFeatures.filter((f) =>
           allVisibleIds.includes(f.properties?.id),
         );

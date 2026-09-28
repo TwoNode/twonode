@@ -1,8 +1,8 @@
 import { getTickets } from "@/gbc/services/ticketService";
 import { formatDate } from "@/gbc/utils";
 
-export async function RecentTickets() {
-  const tickets = await getTickets({ limit: 5 });
+export async function RecentTickets({ edition }: { edition?: string }) {
+  const tickets = await getTickets({ limit: 5, edition });
 
   if (tickets.length === 0) {
     return <p className="text-gray-500">No tickets found</p>;

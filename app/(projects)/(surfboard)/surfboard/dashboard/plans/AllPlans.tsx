@@ -94,6 +94,7 @@ import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal
 import { SubmittedBatchesModal } from "../../../components/SubmittedBatchesModal";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
+import { getQrColors } from "@/lib/qrColorPreferences";
 import {
   PlanDetailsLoadingState,
   PlanFormLoadingState,
@@ -423,8 +424,7 @@ export default function AllPlans() {
       setQrModalOpen(true); // Open modal immediately to show loading
 
       const result = await surfboardApi.plans.generateQR(planId, {
-        darkColor: "#3b82f6",
-        lightColor: "#ffffff",
+        ...getQrColors(),
         minLightAlpha: 0.3,
         margin: 4,
         scale: 8,
@@ -666,8 +666,12 @@ export default function AllPlans() {
       icon: CheckCircle,
     },
     {
+      // `redCopyStatus` has no "APPROVED" value in its enum (NOT_SUBMITTED
+      // / SUBMITTED / COMPLETED / FAILED) — this always evaluated to 0.
+      // `redCopyFileUrl` is the same field the row-level "Record Copy"
+      // badge below already treats as the source of truth for "uploaded".
       label: "Red Copy",
-      value: plans.filter((p) => p.redCopyStatus === "APPROVED").length,
+      value: plans.filter((p) => !!p.redCopyFileUrl).length,
       color: "text-blue-600 dark:text-blue-400",
       bgColor: "bg-blue-50 dark:bg-blue-500/10",
       icon: QrCode,

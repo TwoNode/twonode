@@ -11,6 +11,7 @@ import { Platform } from "@/utils/platform";
 import { Menu, LogOut } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
+import { UserAccountMenu } from "@/components/dashboard/UserAccountMenu";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import type { MenuItem } from "@/components/sidebars/menu";
 import {
@@ -45,7 +46,7 @@ export interface DashboardShellProps {
   logoSrc: string;
   role: string | null | undefined;
   group: SurfboardRouteGroup;
-  user?: { picture?: string; name?: string };
+  user?: { picture?: string; name?: string; email?: string };
   logoutRedirectUrl?: string;
 }
 
@@ -77,6 +78,15 @@ export function DashboardShell({
     : isMDARole(role)
       ? "/surfboard-mda/login"
       : "/surfboard/login";
+
+  const roleLabel = canAccessSurfSuperAdminPanel(role)
+    ? "Super Admin"
+    : canAccessSurfAdminPanel(role)
+      ? "Admin"
+      : role ?? undefined;
+  const accountBasePath = group === "mda" ? "/surfboard-mda/dashboard" : "/surfboard-restricted/dashboard";
+  const profileHref = group === "mda" ? `${accountBasePath}/profile` : `${accountBasePath}/settings`;
+  const settingsHref = `${accountBasePath}/settings`;
 
   const navItems = getNavItemsForRole(role, group).map((r) => ({
     icon: r.icon,
@@ -157,11 +167,19 @@ export function DashboardShell({
             iconClassName="h-5 w-5 text-white"
           />
           <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
-          {user?.name && (
-            <span className="hidden sm:inline text-sm font-medium text-white bg-blue-900/60 px-4 py-2 rounded-lg shadow ml-2 truncate max-w-[200px]">
-              {user.name}
-            </span>
-          )}
+          <UserAccountMenu
+            name={user?.name || "Account"}
+            email={user?.email}
+            picture={user?.picture}
+            roleLabel={roleLabel}
+            profileHref={profileHref}
+            settingsHref={settingsHref}
+            onLogout={() => {
+              fetch(logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard");
+              router.push(postLogoutPath);
+            }}
+            className="ml-2 ring-2 ring-white/15"
+          />
         </header>
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">

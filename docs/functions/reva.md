@@ -8,10 +8,10 @@ Non-component logic files specific to the REVA platform, under `reva/`.
 |---|---|
 | `adminUserService.ts` | Admin user management — promote/demote/deactivate/delete (each audited with the acting superadmin) and the "admin joined" team notification. Guards: the seeded dev account is untouchable; a superadmin can't demote, deactivate or delete their own account (403 `SELF_ACTION_FORBIDDEN`); and the last active superadmin can't be removed (409). New admins are not created here: they are invited via `lib/auth/adminInvitations.ts` |
 | `notificationService.ts` | Notification CRUD + read/dismiss state (user + admin) |
-| `paymentService.ts` | Payment initiation/verification logic |
+| `paymentService.ts` | Payment initiation/verification logic; `adminVerifyTransaction` writes a `RevaAuditLog` entry (`ADMIN_VERIFY_PAYMENT`) when passed the acting admin's `actorId` |
 | `profileService.ts` | User profile CRUD |
 | `propertyRequestService.ts` | Due-diligence request CRUD/lifecycle |
-| `reportService.ts` | Report generation/lookup, including admin request lookups |
+| `reportService.ts` | Report generation/lookup, including admin request lookups; `approveDueDiligenceReport`/`approveOneTimeDueDiligenceReport` write a `RevaAuditLog` entry (`APPROVE_REPORT`/`DISAPPROVE_REPORT`) when passed the acting admin's `actorId` — previously REVA admin's Audit Logs page was effectively always empty (almost nothing in the app called `writeAudit`) |
 
 ## `reva/utils/`
 

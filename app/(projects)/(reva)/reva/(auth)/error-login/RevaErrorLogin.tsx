@@ -1,10 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  LoginLink,
-  RegisterLink,
-} from "@kinde-oss/kinde-auth-nextjs/components";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function RevaErrorLogin() {
@@ -26,16 +23,16 @@ export default function RevaErrorLogin() {
           An error occurred during login. Please try again or contact support if
           the problem persists.
         </p>
-        <LoginLink postLoginRedirectURL="/api/auth/success/reva">
-          <Button className="w-full px-6 py-3 bg-blue-800 text-white rounded-lg font-semibold hover:bg-blue-900 transition mb-4 text-lg shadow">
+        <Link href="/reva/login" className="w-full mb-4">
+          <Button className="w-full px-6 py-3 bg-blue-800 text-white rounded-lg font-semibold hover:bg-blue-900 transition text-lg shadow">
             Try Login Again
           </Button>
-        </LoginLink>
-        <RegisterLink postLoginRedirectURL="/api/auth/success/reva">
+        </Link>
+        <Link href="/reva/login" className="w-full">
           <Button className="w-full px-6 py-3 bg-blue-100 text-blue-900 rounded-lg font-semibold hover:bg-blue-200 transition text-lg shadow">
             Register New Account
           </Button>
-        </RegisterLink>
+        </Link>
       </div>
     </div>
   );
