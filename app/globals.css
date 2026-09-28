@@ -117,6 +117,29 @@
   --color-brand-accent: #ec4899;
 }
 
+/* /v2 marketing site — its own neutral editorial palette, deliberately NOT
+   any product's brand color (the site sits above Surfboard/REVA/GBC, so none
+   of their colors should dominate it). Product accents are read directly off
+   the [data-product="…"] tokens above wherever /v2 links out to a specific
+   product. Scoped under [data-site="v2"] set on app/v2/layout.tsx's root. */
+[data-site="v2"] {
+  --v2-bg: #faf8f4;
+  --v2-fg: #17140f;
+  --v2-muted: #6b6355;
+  --v2-surface: #f2efe8;
+  --v2-border: #e4ded1;
+  --v2-accent: #b45309;
+}
+
+[data-site="v2"].dark {
+  --v2-bg: #14120e;
+  --v2-fg: #f5f1e8;
+  --v2-muted: #a79c87;
+  --v2-surface: #1d1a14;
+  --v2-border: #34301fdb;
+  --v2-accent: #f0b25c;
+}
+
 /* Import Bricolage Grotesque font */
 @font-face {
   font-family: "Bricolage Grotesque";
