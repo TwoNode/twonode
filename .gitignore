@@ -54,3 +54,7 @@ node_modules
 # other AI tool directories
 .agent/
 .gemini/
+package-lock.json
+.env*
+
+.netlify/
