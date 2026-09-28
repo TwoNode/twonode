@@ -657,7 +657,7 @@ export default function SubscriptionManager() {
                         disabled={isDisabled}
                         onClick={() => onSubscribeOnetime(plan.id)}
                         title="Pay once for this period — no auto-renewal, but includes Bank Transfer as a payment option"
-                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg"
                       >
                         {isWorkingOnetime ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
