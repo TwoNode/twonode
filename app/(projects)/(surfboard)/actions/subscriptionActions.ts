@@ -142,6 +142,7 @@ export async function createOrUpdateSubscription({
   nextPaymentDate,
   status = "active",
   skipHistory,
+  provider = "paystack",
 }: {
   planId: PlanId;
   reference: string;
@@ -154,6 +155,10 @@ export async function createOrUpdateSubscription({
   paidAt?: string | Date;
   nextPaymentDate?: string | Date;
   skipHistory?: boolean;
+  /** "paystack" (default, recurring) or "paystack_onetime" — lets
+   * disableSubscription() and the UI tell a non-recurring payment apart
+   * from a recurring subscription whose subCode just hasn't synced yet. */
+  provider?: string;
 }) {
   try {
     const session = await getAndRefreshUserSession();
@@ -191,6 +196,7 @@ export async function createOrUpdateSubscription({
       where: { userId },
       update: {
         status,
+        provider,
         planCode: plan.plan_code,
         planName: plan.name,
         interval: plan.interval,
@@ -209,6 +215,7 @@ export async function createOrUpdateSubscription({
       },
       create: {
         userId,
+        provider,
         subCode: subCode || "",
         planCode: plan.plan_code,
         planName: plan.name,
