@@ -635,6 +635,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   }, [visibilityFilteredPlans, searchQuery, matchesSearchQuery]);
 
   useEffect(() => {
+    isVisibilityResetRef.current = true;
     setVisiblePlanIds(
       visibilityFilteredPlans.filter((p) => p.status !== "UPLOADED").map((p) => p.id),
     );
@@ -653,8 +654,25 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   const flyToLoc = useCallback((lat: number, lon: number) => {
     map.current?.flyTo({ center: [lon, lat], zoom: 15 });
   }, []);
+
+  // Bounds of each plan's *rendered* polygon (after the per-state
+  // coordinate-shift correction applied in fetchAndRender below), keyed by
+  // plan id — kept in sync every time fetchAndRender runs. zoomToPlan reads
+  // from this first so it pans to where the polygon actually is, not to
+  // `plan.geometry`'s unshifted bbox (which can be meaningfully offset for
+  // any state with a configured shift, making the camera jump to empty
+  // space with the plan nowhere in view).
+  const planBoundsRef = useRef<Map<string, [number, number, number, number]>>(new Map());
+
   const zoomToPlan = useCallback(
     (planId: string) => {
+      const cachedBounds = planBoundsRef.current.get(planId);
+      if (cachedBounds) {
+        map.current?.fitBounds(cachedBounds, { padding: 50, maxZoom: 17 });
+        return;
+      }
+      // Fallback for a plan fetchAndRender hasn't rendered yet (e.g. a
+      // brand-new CSV upload, before its first render pass).
       const plan = combinedPlans.find((p) => p.id === planId);
       if (
         plan?.geometry &&
@@ -670,26 +688,26 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
     },
     [combinedPlans],
   );
-  // A brand-new CSV plan doesn't exist in `combinedPlans` yet at the moment
-  // handleCsvUpload runs (setTempPlans hasn't re-rendered), so the
-  // `zoomToPlan` closure captured by handleCsvUpload's own useCallback can't
-  // find it. The delayed re-zoom below fires after several re-renders have
-  // happened, so it needs whatever `zoomToPlan` is *then* (with the new
-  // plan's geometry available), not the one frozen at upload time.
-  const zoomToPlanRef = useRef(zoomToPlan);
-  zoomToPlanRef.current = zoomToPlan;
 
-  // The general "fit bounds to every visible plan" effect further down
-  // (keyed on visibilityFilteredPlans/visiblePlanIds/visibleTempPlanIds)
-  // fires right after a CSV upload changes tempPlans, and its wider fit
-  // overrides whatever specific plan we just zoomed to here — showing up as
-  // a zoom-to-plan that doesn't stick, or a zoom-in-then-zoom-out flicker
-  // for a newly uploaded plan. Re-asserting the intended zoom slightly
-  // after that effect's own fitBounds animation (duration: 500ms) settles
-  // guarantees the specific plan is what the user is left looking at,
-  // without having to fight React's effect-ordering to suppress the other
-  // effect outright.
-  const lastUploadTargetIdRef = useRef<string | null>(null);
+  // Consumed by fetchAndRender: when set, that effect zooms to this specific
+  // plan's just-computed bounds instead of running its normal "fit
+  // everything visible" auto-fit — deterministic (no fixed-delay timer
+  // racing an async coordinate-shift fetch of unknown latency), since it's
+  // resolved synchronously within the same render pass that computes bounds.
+  const pendingZoomTargetRef = useRef<string | null>(null);
+
+  // True only when the currently-visible set was just reset in bulk (initial
+  // load, a status/type filter change, Clear Filters, or a CSV upload) —
+  // set by the sync effect below, consumed (and reset) by fetchAndRender.
+  // Set to false. Individual checkbox toggles never touch this, so
+  // re-checking a box back to "everything visible" does NOT re-trigger the
+  // auto-fit — only an actual bulk reset does.
+  const isVisibilityResetRef = useRef(false);
+
+  // Incremented on every fetchAndRender effect run; lets a stale (superseded)
+  // async invocation detect it's no longer current and bail out. See the
+  // comment at its use site in the fetchAndRender effect below.
+  const renderGenerationRef = useRef(0);
 
   const handleCsvUpload = useCallback(async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -742,7 +760,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
             type: "info",
           });
           zoomToPlan(existingPlanId);
-          lastUploadTargetIdRef.current = existingPlanId;
+          pendingZoomTargetRef.current = existingPlanId;
           continue;
         }
 
@@ -756,7 +774,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
             type: "info",
           });
           zoomToPlan(existingTempPlanId);
-          lastUploadTargetIdRef.current = existingTempPlanId;
+          pendingZoomTargetRef.current = existingTempPlanId;
           continue;
         }
 
@@ -778,7 +796,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         const polygon = turf.polygon([coords]);
         const currentDate = new Date();
         const newPlanId = `csv-${file.name}-${Date.now()}`;
-        lastUploadTargetIdRef.current = newPlanId;
+        pendingZoomTargetRef.current = newPlanId;
         newTempPlans.push({
           id: newPlanId,
           planNumber: file.name.replace(/\.csv$/i, ""),
@@ -815,11 +833,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
     }
     setTempPlans((prev) => [...prev, ...newTempPlans]);
     if (event.target) event.target.value = "";
-
-    if (lastUploadTargetIdRef.current) {
-      const targetId = lastUploadTargetIdRef.current;
-      setTimeout(() => zoomToPlanRef.current(targetId), 600);
-    }
+    // pendingZoomTargetRef (set above per-file) is consumed by fetchAndRender
+    // once it re-renders with the new plan and computes its real bounds.
   }, [dbPlanSignatures, tempPlanSignatures, plans, tempPlans, zoomToPlan]);
 
   useEffect(() => {
@@ -975,16 +990,59 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         closeButton: true,
         closeOnClick: false,
       });
+      // Renders one plan's popup body, with a "1 of N · Next" footer when
+      // `group` has more than one plan stacked at this click point
+      // (multiple survey plans sharing the same location) — clicking Next
+      // advances through the group in the date order it was sorted in
+      // (see showPopup below: descending by dateOnSurveyPlan).
+      const renderPlanPopup = (
+        e: maplibregl.MapMouseEvent,
+        group: Record<string, any>[],
+        index: number,
+      ) => {
+        if (!map.current) return;
+        const properties = group[index];
+        // CSV-uploaded rows aren't real saved plans (no detail page to link to).
+        const detailUrl =
+          properties.id && properties.status !== "UPLOADED" ? getPlanDetailUrl(properties.id) : null;
+        const planNumberHtml = detailUrl
+          ? `<a href="${detailUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color:${properties.color}">${properties.planNumber}</a>`
+          : `<span style="color:${properties.color}">${properties.planNumber}</span>`;
+        const dateLabel = properties.dateOnSurveyPlan
+          ? new Date(properties.dateOnSurveyPlan).toLocaleDateString()
+          : "N/A";
+        const stackNav =
+          group.length > 1
+            ? `<div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-white/10 text-xs text-gray-500 dark:text-gray-400"><span>${
+                index + 1
+              } of ${group.length}</span><button type="button" id="popup-next-plan" class="px-2 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 font-medium text-gray-700 dark:text-gray-300">Next &rarr;</button></div>`
+            : "";
+        const popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base">${planNumberHtml}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><p class="text-xs text-gray-500 dark:text-gray-400">Survey date: ${dateLabel}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span>${stackNav}</div>`;
+        popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
+        if (group.length > 1) {
+          popup
+            .getElement()
+            ?.querySelector<HTMLButtonElement>("#popup-next-plan")
+            ?.addEventListener("click", () => {
+              renderPlanPopup(e, group, (index + 1) % group.length);
+            });
+        }
+      };
+
       const showPopup = (
         e: maplibregl.MapMouseEvent & {
           features?: maplibregl.MapGeoJSONFeature[];
         },
       ) => {
-        const properties = e.features?.[0].properties;
-        if (!properties || !map.current) return;
-        let popupContent = "";
-        if (properties.easting) {
-          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base text-gray-800">Pillar: ${
+        const features = e.features;
+        if (!features?.length || !map.current) return;
+        const firstProperties = features[0].properties;
+        if (!firstProperties) return;
+
+        if (firstProperties.easting !== undefined) {
+          // Pillar points don't cluster — one exact click point is one pillar.
+          const properties = firstProperties;
+          const popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base text-gray-800">Pillar: ${
             properties.pillarNumber
           }</h3><ul class="text-xs text-gray-600 dark:text-gray-400 mt-1 space-y-0.5"><li><strong>Index:</strong> ${
             properties.pointIndex ?? "N/A"
@@ -1001,16 +1059,25 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
                 ? properties.northing.toFixed(3)
                 : "N/A"
           }</li></ul></div>`;
-        } else {
-          // CSV-uploaded rows aren't real saved plans (no detail page to link to).
-          const detailUrl =
-            properties.id && properties.status !== "UPLOADED" ? getPlanDetailUrl(properties.id) : null;
-          const planNumberHtml = detailUrl
-            ? `<a href="${detailUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline" style="color:${properties.color}">${properties.planNumber}</a>`
-            : `<span style="color:${properties.color}">${properties.planNumber}</span>`;
-          popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base">${planNumberHtml}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span></div>`;
+          popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
+          return;
         }
-        popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
+
+        // Multiple plans can share one location (e.g. a resubmitted/re-surveyed
+        // plot) — maplibre hands every plans-fill feature under the click
+        // point in `features`, so dedupe by plan id and sort newest-first.
+        const uniqueByPlan = new Map<string, Record<string, any>>();
+        features.forEach((f) => {
+          const id = f.properties?.id;
+          if (id && !uniqueByPlan.has(id)) uniqueByPlan.set(id, f.properties as Record<string, any>);
+        });
+        const group = Array.from(uniqueByPlan.values()).sort((a, b) => {
+          const da = a.dateOnSurveyPlan ? new Date(a.dateOnSurveyPlan).getTime() : 0;
+          const db = b.dateOnSurveyPlan ? new Date(b.dateOnSurveyPlan).getTime() : 0;
+          return db - da;
+        });
+        if (group.length === 0) return;
+        renderPlanPopup(e, group, 0);
       };
       map.current.on("click", "plans-fill", showPopup);
       map.current.on("click", "pillars-symbol", showPopup);
@@ -1037,6 +1104,21 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
   useEffect(() => {
     if (!isReady || !map.current) return;
 
+    // This effect's dependencies can change twice in quick succession for a
+    // single logical update — e.g. a CSV upload changes tempPlans, which
+    // changes visibilityFilteredPlans (triggering this effect), and the
+    // separate sync effect above reacts to that same change a moment later
+    // by updating visiblePlanIds/visibleTempPlanIds (triggering this effect
+    // again). Both calls to the async fetchAndRender below run concurrently;
+    // without this guard, whichever one's `await` happens to resolve last
+    // wins and overwrites the other's (possibly more correct/current)
+    // planBoundsRef/pendingZoomTargetRef/isVisibilityResetRef state — a race
+    // that previously showed up as the camera settling on the wrong view
+    // after an upload. Only the most-recently-started invocation is allowed
+    // to apply its results.
+    renderGenerationRef.current += 1;
+    const myGeneration = renderGenerationRef.current;
+
     const fetchAndRender = async () => {
       const allVisibleIds = [...visiblePlanIds, ...visibleTempPlanIds];
       const polygonFeatures: Feature<
@@ -1045,6 +1127,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       const pillarFeatures: Feature<Point>[] = [];
 
       const shiftsResult = await surfboardApi.settings.coordinateShifts();
+      if (myGeneration !== renderGenerationRef.current) return; // superseded by a newer render
       const shifts = shiftsResult.success ? shiftsResult.data : {};
 
       visibilityFilteredPlans.forEach((plan) => {
@@ -1126,6 +1209,18 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         }
       });
 
+      const newBoundsMap = new Map<string, [number, number, number, number]>();
+      polygonFeatures.forEach((f) => {
+        const id = (f.properties as any)?.id;
+        if (!id) return;
+        try {
+          newBoundsMap.set(id, turf.bbox(f) as [number, number, number, number]);
+        } catch {
+          // malformed geometry — leave unset, zoomToPlan falls back to raw plan.geometry
+        }
+      });
+      planBoundsRef.current = newBoundsMap;
+
       (map.current?.getSource("plansLayer") as GeoJSONSource)?.setData({
         type: "FeatureCollection",
         features: polygonFeatures as Feature<Polygon>[],
@@ -1160,37 +1255,50 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       ) as FilterSpecification;
       map.current?.setFilter("plans-search-highlight", highlightFilter);
 
-      // Only auto-fit the camera when every currently-available plan is
-      // visible — i.e. right after the initial load, or after a
-      // status/type filter (or a CSV upload) resets the visible set back
-      // to "everything." Unchecking one plan in the Database Plans list
-      // makes this a proper subset, which deliberately skips the fit: a
-      // per-plan visibility toggle should only hide/show that plan, never
-      // move the camera (that surprised users — the map would silently
-      // re-frame on every checkbox click). A specific zoomToPlan() call
-      // (row click, CSV upload target) is unaffected either way since it
-      // sets the camera directly rather than through this effect.
-      const availableIds = new Set(visibilityFilteredPlans.map((p) => p.id));
-      const isFullSelection =
-        allVisibleIds.length === availableIds.size &&
-        allVisibleIds.every((id) => availableIds.has(id));
+      // A pending specific-plan zoom (search-list click, CSV upload target)
+      // always wins over the general auto-fit below, using the bounds just
+      // computed above from this same render pass — deterministic, not
+      // racing the coordinateShifts fetch on a fixed timer.
+      if (pendingZoomTargetRef.current) {
+        const targetId = pendingZoomTargetRef.current;
+        pendingZoomTargetRef.current = null;
+        const targetBounds = planBoundsRef.current.get(targetId);
+        if (targetBounds) {
+          map.current?.fitBounds(targetBounds, { padding: 50, maxZoom: 17 });
+        }
+      } else if (isVisibilityResetRef.current) {
+        // Only auto-fit the camera when this render was triggered by a bulk
+        // reset of the visible set (initial load, a status/type filter
+        // change, Clear Filters, or a CSV upload) — never by an individual
+        // checkbox toggle, even one that happens to land back on "every
+        // plan visible" (re-checking the last unchecked plan). That
+        // distinction is what isVisibilityResetRef tracks; a plain
+        // "everything currently visible" check can't tell those two cases
+        // apart, which previously made re-checking a box zoom out to fit
+        // all plans exactly like a filter reset would.
+        const availableIds = new Set(visibilityFilteredPlans.map((p) => p.id));
+        const isFullSelection =
+          allVisibleIds.length === availableIds.size &&
+          allVisibleIds.every((id) => availableIds.has(id));
 
-      if (isFullSelection && polygonFeatures.length > 0 && allVisibleIds.length > 0) {
-        const visibleFeatures = polygonFeatures.filter((f) =>
-          allVisibleIds.includes(f.properties?.id),
-        );
-        if (visibleFeatures.length > 0) {
-          const bounds = turf.bbox({
-            type: "FeatureCollection",
-            features: visibleFeatures as any,
-          });
-          map.current?.fitBounds(bounds as [number, number, number, number], {
-            padding: 80,
-            duration: 500,
-            maxZoom: 16,
-          });
+        if (isFullSelection && polygonFeatures.length > 0 && allVisibleIds.length > 0) {
+          const visibleFeatures = polygonFeatures.filter((f) =>
+            allVisibleIds.includes(f.properties?.id),
+          );
+          if (visibleFeatures.length > 0) {
+            const bounds = turf.bbox({
+              type: "FeatureCollection",
+              features: visibleFeatures as any,
+            });
+            map.current?.fitBounds(bounds as [number, number, number, number], {
+              padding: 80,
+              duration: 500,
+              maxZoom: 16,
+            });
+          }
         }
       }
+      isVisibilityResetRef.current = false;
     };
 
     fetchAndRender();
