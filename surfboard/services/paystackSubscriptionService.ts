@@ -125,6 +125,67 @@ export async function initiateOneTimeSubscription(
   };
 }
 
+/**
+ * Same pricing as initiateSubscription, but no `plan` attached to the
+ * Paystack transaction — a recurring `plan` makes Paystack restrict checkout
+ * to channels that can create a reusable charge authorization (Card, some
+ * wallets), silently dropping Bank Transfer since a transfer can't authorize
+ * future auto-charges. Without `plan`, the full channel set (including
+ * Transfer) is available. No Paystack subscription object is ever created
+ * for this payment — access simply expires at the end of the period unless
+ * the user pays again.
+ */
+export async function initiateOneTimeSubscription(
+  userId: string,
+  email: string,
+  planId: keyof typeof SUBSCRIPTION_PLANS
+) {
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
+  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+
+  const isLive = process.env.NODE_ENV === "production";
+  const paystack = await createPaystackInstance(isLive);
+  await logPaystackEnvironment(isLive);
+
+  const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
+  const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
+
+  const response = await paystack.transaction.initialize({
+    email,
+    amount: plan.amount,
+    reference,
+    metadata: {
+      type: "surfboard_onetime_subscription",
+      platform: "surfboard",
+      plan_id: planId,
+      custom_fields: [
+        { display_name: "Platform", variable_name: "platform", value: "surfboard" },
+        { display_name: "Payment Type", variable_name: "payment_type", value: "one-time subscription" },
+        { display_name: "Subscription Plan", variable_name: "subscription_plan", value: plan.name },
+        { display_name: "Subscription Plan ID", variable_name: "subscription_plan_id", value: plan.id },
+        { display_name: "Reference", variable_name: "reference", value: reference },
+        { display_name: "User ID", variable_name: "user_id", value: userId },
+        { display_name: "Email", variable_name: "email", value: email },
+      ],
+    },
+  });
+
+  if (!response.status) {
+    console.error("Paystack initialization error:", response);
+    throw new Error(response.message || "Failed to initialize payment");
+  }
+
+  return {
+    reference,
+    email,
+    amount: plan.amount,
+    plan,
+    currency: "NGN",
+    userId,
+    authorization_url: response.data.authorization_url,
+  };
+}
+
 export async function getOrCreatePaystackPlan(
   plan: { id: string; planCode: string; name: string; amount: number; description: string; interval: string },
   isLive: boolean
