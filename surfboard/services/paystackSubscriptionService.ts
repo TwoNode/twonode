@@ -32,17 +32,34 @@ export async function initiateSubscription(userId: string, email: string, planId
   if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
 
   const isLive = process.env.NODE_ENV === "production";
-  const paystack = await createPaystackInstance(isLive);
   await logPaystackEnvironment(isLive);
 
   const reference = `SURFBOARD_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-  const response = await paystack.transaction.initialize({
+  /**
+   * No server-side `paystack.transaction.initialize()` call here — this
+   * checkout is entirely popup-driven via `@paystack/inline-js`'s
+   * `newTransaction()` on the client (see SubscriptionManager.tsx), which
+   * does its own initialize call under the hood using this `reference`.
+   * Calling `transaction.initialize()` here too would register the same
+   * reference with Paystack twice, and surfaced as a "Duplicate Transaction
+   * Reference" error from the client-side popup, most reliably reproduced
+   * by cancelling one checkout attempt and immediately starting another
+   * (Paystack's own "resume abandoned transaction with the same
+   * parameters" logic collides with our own already-registered reference).
+   * The QR-paywall flow (qrEarningsService.ts's initiateQRServicePayment)
+   * already follows this correct pattern — reference generated locally,
+   * never pre-registered with Paystack, client popup is the sole thing
+   * that creates the transaction.
+   */
+  return {
+    reference,
     email,
     amount: plan.amount,
-    reference,
-    plan: plan.plan_code,
+    plan,
+    currency: "NGN",
+    userId,
     metadata: {
       custom_fields: [
         { display_name: "Platform", variable_name: "platform", value: "surfboard" },
@@ -54,21 +71,6 @@ export async function initiateSubscription(userId: string, email: string, planId
         { display_name: "Email", variable_name: "email", value: email },
       ],
     },
-  });
-
-  if (!response.status) {
-    console.error("Paystack initialization error:", response);
-    throw new Error(response.message || "Failed to initialize payment");
-  }
-
-  return {
-    reference,
-    email,
-    amount: plan.amount,
-    plan,
-    currency: "NGN",
-    userId,
-    authorization_url: response.data.authorization_url,
   };
 }
 
@@ -91,16 +93,21 @@ export async function initiateOneTimeSubscription(
   if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
 
   const isLive = process.env.NODE_ENV === "production";
-  const paystack = await createPaystackInstance(isLive);
   await logPaystackEnvironment(isLive);
 
   const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
   const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
 
-  const response = await paystack.transaction.initialize({
+  // No server-side `paystack.transaction.initialize()` call — see
+  // initiateSubscription's identical comment for why (duplicate-reference
+  // collision with the client's own newTransaction() popup call).
+  return {
+    reference,
     email,
     amount: plan.amount,
-    reference,
+    plan,
+    currency: "NGN",
+    userId,
     metadata: {
       type: "surfboard_onetime_subscription",
       platform: "surfboard",
@@ -115,21 +122,6 @@ export async function initiateOneTimeSubscription(
         { display_name: "Email", variable_name: "email", value: email },
       ],
     },
-  });
-
-  if (!response.status) {
-    console.error("Paystack initialization error:", response);
-    throw new Error(response.message || "Failed to initialize payment");
-  }
-
-  return {
-    reference,
-    email,
-    amount: plan.amount,
-    plan,
-    currency: "NGN",
-    userId,
-    authorization_url: response.data.authorization_url,
   };
 }
 
