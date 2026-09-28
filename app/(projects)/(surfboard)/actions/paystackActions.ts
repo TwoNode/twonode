@@ -344,7 +344,11 @@ export async function initiateSubscription(
       data: {
         reference,
         email: user.email,
-        amount: plan.amount,
+        // selectedPlan.amount (naira), NOT plan.amount (that's the Paystack
+        // Plan API's own amount, already in kobo from getOrCreatePaystackPlan
+        // -- returning it here mislabeled as naira caused a 100x-inflated
+        // charge once the client's naira->kobo *100 conversion ran on it).
+        amount: selectedPlan.amount,
         plan,
         currency: "NGN",
         userId: user.id,
@@ -427,7 +431,8 @@ export async function initiateOneTimeSubscription(planId: PlanId) {
       data: {
         reference,
         email: user.email,
-        amount: plan.amount,
+        // See initiateSubscription's identical comment — same 100x bug.
+        amount: selectedPlan.amount,
         plan,
         currency: "NGN",
         userId: user.id,
