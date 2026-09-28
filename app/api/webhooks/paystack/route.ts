@@ -9,6 +9,8 @@ import {
 import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
+import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
+import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -344,9 +346,15 @@ async function handleSurfboard(
       await onInvoiceInformational(event, data as InvoiceData);
       break;
     case "charge.success":
-      // Check if this is a certificate payment or subscription renewal
+      // Check if this is a certificate payment, a one-time (non-recurring)
+      // subscription payment, or a recurring subscription renewal — in that
+      // order, since a one-time subscription charge has no plan/plan_object/
+      // subscription and would otherwise be silently skipped by
+      // onSubscriptionChargeSuccess's "not a subscription charge" guard.
       if (isCertificatePayment(data as ChargeSuccessData)) {
         await onCertificatePaymentSuccess(data as ChargeSuccessData);
+      } else if (isOneTimeSubscriptionPayment(data as ChargeSuccessData)) {
+        await onOneTimeSubscriptionChargeSuccess(data as ChargeSuccessData);
       } else {
         await onSubscriptionChargeSuccess(data as ChargeSuccessData);
       }
@@ -646,6 +654,52 @@ async function onInvoicePaymentFailed(data: InvoiceData) {
 }
 
 // ---- Recurring charge success (renewal) ----
+// ---- One-time (non-recurring) subscription payment ----
+// Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
+// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — mirrors
+// onSubscriptionChargeSuccess below but reads planId from metadata (there's
+// no plan_object/subscription on a no-`plan` charge) and goes through the
+// upsert-safe createOrUpdateSubscription rather than a raw update, since this
+// webhook can in principle arrive before the client's own verify call does.
+async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
+  if (!prisma) return;
+
+  const userId = await findSurfboardUserIdFromEvent(data);
+  if (!userId) {
+    console.warn("⚠️ charge.success (one-time subscription): SurfboardUser not found");
+    return;
+  }
+
+  const meta = data.metadata ?? {};
+  const planId = meta.plan_id as PlanId | undefined;
+  if (!planId || !SUBSCRIPTION_PLANS[planId]) {
+    console.warn(`⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`);
+    return;
+  }
+
+  const customerId = data.customer?.id;
+  const customerCode = data.customer?.customer_code;
+  const authorization = data.authorization?.authorization_code ?? "";
+  const paidAt = data.paid_at;
+
+  await createOrUpdateSubscription({
+    userId,
+    reference: data.reference || `REF-${Date.now()}`,
+    subCode: "",
+    emailToken: "",
+    planId,
+    customerCode: customerCode ?? "",
+    customerId: customerId ? String(customerId) : "",
+    authorization,
+    status: "active",
+    paidAt,
+    skipHistory: false,
+    provider: "paystack_onetime",
+  });
+
+  console.log(`✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`);
+}
+
 async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
   if (!prisma) return;
 
@@ -1024,6 +1078,17 @@ function isSurfboardPlan(planCode?: string): boolean {
 
   // Common identifiers or prefixes
   if (planCode.includes("SURF_")) return true;
+
+  return false;
+}
+
+function isOneTimeSubscriptionPayment(data: ChargeSuccessData): boolean {
+  const meta = data.metadata ?? {};
+
+  if (meta.type === "surfboard_onetime_subscription") return true;
+
+  const ref = data.reference ?? "";
+  if (ref.startsWith("SURFBOARD_ONETIME_SUB_")) return true;
 
   return false;
 }
