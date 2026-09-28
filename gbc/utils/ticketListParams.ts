@@ -18,10 +18,16 @@ export interface TicketListParams {
  * One parser for the Attendees page, the Certificates page and the
  * select-all endpoint, so a URL means the same list everywhere. `defaults`
  * exists because the two pages open on different check-in views.
+ *
+ * `cookieEdition` is the navbar switcher's last selection (see
+ * gbc/utils/editionCookie.ts) — only used when the URL has no explicit
+ * `?edition=` of its own, so a page's own filter selection (reflected in
+ * its own URL) always wins over the navbar default.
  */
 export function parseTicketListParams(
   raw: RawParams,
-  defaults: { checkedIn: CheckedInFilter }
+  defaults: { checkedIn: CheckedInFilter },
+  cookieEdition?: string
 ): TicketListParams {
   const checkedIn = firstParam(raw.checkedIn);
   const { page, pageSize } = parsePageParams({ page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) });
@@ -29,7 +35,7 @@ export function parseTicketListParams(
   return {
     search: firstParam(raw.search)?.trim() || undefined,
     checkedIn: checkedIn === "all" || checkedIn === "yes" || checkedIn === "no" ? checkedIn : defaults.checkedIn,
-    edition: firstParam(raw.edition) || "all",
+    edition: firstParam(raw.edition) || cookieEdition || "all",
     page,
     pageSize,
   };

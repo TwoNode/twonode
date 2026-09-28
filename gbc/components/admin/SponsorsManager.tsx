@@ -13,26 +13,34 @@ import {
 import { Search } from "lucide-react";
 import { Sponsor, type SponsorTier } from "@/gbc/types/sponsor";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import { useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 
 interface SponsorsManagerProps {
   initialSponsors: Sponsor[];
   editions: GBCEdition[];
   tiers: SponsorTier[];
+  /**
+   * Server-resolved edition filter (page's own `?edition=`, falling back to
+   * the navbar switcher's cookie, falling back to "ALL") — initialSponsors
+   * is already filtered to this on the server. Changing the select below
+   * updates this page's own `?edition=`, overriding the navbar default for
+   * this page only, without touching the shared cookie.
+   */
+  selectedEdition: string;
 }
 
-export function SponsorsManager({ initialSponsors, editions, tiers }: SponsorsManagerProps) {
+export function SponsorsManager({ initialSponsors, editions, tiers, selectedEdition }: SponsorsManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
-  const [selectedEdition, setSelectedEdition] = useState("ALL");
+  const { update, isPending } = useSearchParamsUpdater();
 
   const filteredSponsors = initialSponsors.filter((sponsor) => {
     const matchesSearch = sponsor.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesTier = selectedTier === "ALL" || sponsor.tier === selectedTier;
-    const matchesEdition = selectedEdition === "ALL" || sponsor.edition === selectedEdition;
 
-    return matchesSearch && matchesTier && matchesEdition;
+    return matchesSearch && matchesTier;
   });
 
   return (
@@ -69,7 +77,11 @@ export function SponsorsManager({ initialSponsors, editions, tiers }: SponsorsMa
               ))}
             </SelectContent>
           </Select>
-          <Select value={selectedEdition} onValueChange={setSelectedEdition}>
+          <Select
+            value={selectedEdition}
+            onValueChange={(value) => update({ edition: value })}
+            disabled={isPending}
+          >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by edition" />
             </SelectTrigger>

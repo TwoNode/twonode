@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { parsePageParams } from "@/lib/api/pagination";
 import { firstParam } from "@/lib/searchParams";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 import {
   GALLERY_SORTS,
   GALLERY_TYPE_FILTERS,
@@ -32,7 +33,7 @@ export default async function AdminGalleryPage({
     { defaultPageSize: 20 }
   );
   const search = firstParam(raw.search)?.trim() || undefined;
-  const edition = firstParam(raw.edition) || "all";
+  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "all";
   const type = GALLERY_TYPE_FILTERS.find((t) => t === firstParam(raw.type)) ?? ("all" as GalleryTypeFilter);
   const sort = GALLERY_SORTS.find((s) => s === firstParam(raw.sort)) ?? ("order" as GallerySort);
 

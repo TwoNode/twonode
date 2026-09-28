@@ -4,14 +4,26 @@ import { getEditions } from "@/gbc/services/editionService";
 import { AddSpeakerButton } from "@/gbc/components/admin/AddSpeakerButton";
 import { SpeakersManager } from "@/gbc/components/admin/SpeakersManager";
 import { Card } from "@/components/ui/card";
+import { firstParam } from "@/lib/searchParams";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-export default async function AdminSpeakersPage() {
+export default async function AdminSpeakersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdmin();
 
-  const [speakers, editions] = await Promise.all([getAllSpeakers(), getEditions()]);
+  const raw = await searchParams;
+  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
+
+  const [speakers, editions] = await Promise.all([
+    getAllSpeakers(edition === "ALL" ? undefined : edition),
+    getEditions(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -26,7 +38,7 @@ export default async function AdminSpeakersPage() {
         <AddSpeakerButton />
       </div>
 
-      {speakers.length === 0 ? (
+      {speakers.length === 0 && edition === "ALL" ? (
         <Card className="p-6">
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -58,7 +70,7 @@ export default async function AdminSpeakersPage() {
         </Card>
       ) : (
         <Card className="p-6">
-          <SpeakersManager initialSpeakers={speakers} editions={editions} />
+          <SpeakersManager initialSpeakers={speakers} editions={editions} selectedEdition={edition} />
         </Card>
       )}
     </div>

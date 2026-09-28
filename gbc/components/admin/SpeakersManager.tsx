@@ -13,25 +13,34 @@ import {
 import { Search } from "lucide-react";
 import { Speaker } from "@/gbc/types/speaker";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import { useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 
 interface SpeakersManagerProps {
   initialSpeakers: Speaker[];
   editions: GBCEdition[];
+  /**
+   * Server-resolved edition filter (page's own `?edition=`, falling back to
+   * the navbar switcher's cookie, falling back to "ALL") — initialSpeakers
+   * is already filtered to this on the server, so only the tier/search
+   * filters below run client-side. Changing the select below updates this
+   * page's own `?edition=`, which overrides the navbar default for this
+   * page only, without touching the shared cookie.
+   */
+  selectedEdition: string;
 }
 
-export function SpeakersManager({ initialSpeakers, editions }: SpeakersManagerProps) {
+export function SpeakersManager({ initialSpeakers, editions, selectedEdition }: SpeakersManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTier, setSelectedTier] = useState("ALL");
-  const [selectedEdition, setSelectedEdition] = useState("ALL");
+  const { update, isPending } = useSearchParamsUpdater();
 
   const filteredSpeakers = initialSpeakers.filter((speaker) => {
     const matchesSearch = speaker.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesTier = selectedTier === "ALL" || speaker.tier === selectedTier;
-    const matchesEdition = selectedEdition === "ALL" || speaker.edition === selectedEdition;
 
-    return matchesSearch && matchesTier && matchesEdition;
+    return matchesSearch && matchesTier;
   });
 
   return (
@@ -66,7 +75,11 @@ export function SpeakersManager({ initialSpeakers, editions }: SpeakersManagerPr
               <SelectItem value="FIRESIDE_CHAT">Fireside Chat</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={selectedEdition} onValueChange={setSelectedEdition}>
+          <Select
+            value={selectedEdition}
+            onValueChange={(value) => update({ edition: value })}
+            disabled={isPending}
+          >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by edition" />
             </SelectTrigger>

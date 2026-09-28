@@ -209,7 +209,7 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate subscription");
       }
 
-      const { reference, email, amount, currency = "NGN", plan } = result.data;
+      const { reference, email, amount, currency = "NGN", plan, metadata } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -219,6 +219,7 @@ export default function SubscriptionManager() {
         amount: Math.round(amount * 100),
         currency,
         planCode: plan.plan_code,
+        metadata,
         onSuccess: async (transaction: TransactionObject) => {
           try {
             console.log("Payment successful:", transaction);
@@ -288,7 +289,7 @@ export default function SubscriptionManager() {
         throw new Error(result?.error || "Failed to initiate payment");
       }
 
-      const { reference, email, amount, currency = "NGN" } = result.data;
+      const { reference, email, amount, currency = "NGN", metadata } = result.data;
 
       const paystack = new PaystackPop();
       paystack.newTransaction({
@@ -297,6 +298,7 @@ export default function SubscriptionManager() {
         email,
         amount: Math.round(amount * 100),
         currency,
+        metadata,
         onSuccess: async (transaction: TransactionObject) => {
           try {
             toast.loading("Verifying payment...", { id: "verify-onetime-payment" });
@@ -529,7 +531,7 @@ export default function SubscriptionManager() {
 
       {/* Grid of Plans */}
       <motion.div variants={itemVariants} className="relative z-10 pt-8">
-        <div className="grid lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8 items-stretch max-w-6xl mx-auto">
           {Object.values(SUBSCRIPTION_PLANS).map((plan) => {
             const isWorking = pendingPlan === plan.id;
             const isWorkingOnetime = pendingOnetimePlan === plan.id;
@@ -657,7 +659,7 @@ export default function SubscriptionManager() {
                         disabled={isDisabled}
                         onClick={() => onSubscribeOnetime(plan.id)}
                         title="Pay once for this period — no auto-renewal, but includes Bank Transfer as a payment option"
-                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg"
                       >
                         {isWorkingOnetime ? (
                           <Loader2 className="h-4 w-4 animate-spin" />

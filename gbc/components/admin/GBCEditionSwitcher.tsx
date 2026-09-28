@@ -5,19 +5,26 @@ import { CalendarRange, Loader2 } from "lucide-react";
 import { useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 import { gbcApi } from "@/gbc/apiClient";
 import type { GBCEdition } from "@/gbc/utils/settings";
+import { GBC_EDITION_COOKIE } from "@/gbc/utils/editionCookieConstants";
 
 const LAST_EDITION_KEY = "gbc-admin-selected-edition";
+const ALL_EDITIONS_VALUE = "all";
 
 /**
  * Navbar-level edition switcher, sitting above every admin page rather than
  * duplicated per-page (previously only Settings had its own local picker —
  * SettingsEditionPicker). Writes the same `?edition=` query param the
- * dashboard page reads (via `getTicketStats`/`getTickets`), so switching
- * here immediately re-scopes the dashboard's stats and recent-tickets list
- * to the selected edition; also remembered in localStorage so a page that
- * wants a sensible default before the param is set can read it. Other
- * admin pages (Tickets, Attendees, Certificates) still have their own
- * local edition filters and don't yet read this navbar param.
+ * current page reads, so switching here immediately re-scopes that page's
+ * data to the selected edition (or clears the filter entirely for "All
+ * editions"). Also written to a cookie (gbc/utils/editionCookie.ts), not
+ * just localStorage — a plain sidebar `<Link>` doesn't carry query params
+ * across navigation, so localStorage alone can't inform a page's *server*
+ * render of the last selection; the cookie can, since it travels with the
+ * request. Every admin page that filters by edition reads that cookie as
+ * its fallback default when its own `?edition=` is absent, so the
+ * selection now persists across navigation instead of being page-local.
+ * A page's own local edition filter (if it has one) always overrides this
+ * for that page specifically — see editionCookie.ts.
  */
 export function GBCEditionSwitcher() {
   const [editions, setEditions] = useState<GBCEdition[] | null>(null);
@@ -58,10 +65,17 @@ export function GBCEditionSwitcher() {
           } catch {
             // Best-effort only — the query param below is the real state.
           }
+          try {
+            // 1 year, readable by any admin page's server render.
+            document.cookie = `${GBC_EDITION_COOKIE}=${encodeURIComponent(e.target.value)}; path=/; max-age=31536000; SameSite=Lax`;
+          } catch {
+            // Best-effort — worst case, cross-page persistence just doesn't kick in.
+          }
           update({ edition: e.target.value });
         }}
         className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
       >
+        <option value={ALL_EDITIONS_VALUE}>All editions</option>
         {editions.map((e) => (
           <option key={e.key} value={e.key}>
             {e.name}

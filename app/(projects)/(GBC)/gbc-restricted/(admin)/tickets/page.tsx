@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { parsePageParams } from "@/lib/api/pagination";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -17,7 +18,8 @@ export default async function AdminTicketsPage({
 }: {
   searchParams: { search?: string; status?: string; page?: string; pageSize?: string; edition?: string };
 }) {
-  const { search, status, page: pageParam, pageSize: pageSizeParam, edition } = await searchParams;
+  const { search, status, page: pageParam, pageSize: pageSizeParam, edition: editionParam } = await searchParams;
+  const edition = editionParam || (await getEditionCookieValue());
   const { page, pageSize } = parsePageParams({ page: pageParam, pageSize: pageSizeParam });
   const result = await getTicketsPaginated({
     page,
