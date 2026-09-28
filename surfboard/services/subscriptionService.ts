@@ -73,6 +73,7 @@ export async function createOrUpdateSubscription({
   nextPaymentDate,
   status = "active",
   skipHistory,
+  provider = "paystack",
 }: {
   userId: string;
   planId: PlanId;
@@ -86,6 +87,8 @@ export async function createOrUpdateSubscription({
   paidAt?: string | Date;
   nextPaymentDate?: string | Date;
   skipHistory?: boolean;
+  /** "paystack" (default, recurring — has a real Paystack subscription object) or "paystack_onetime" (one-off payment, no auto-renew, no subscription object to look up/disable). */
+  provider?: string;
 }) {
   const selectedPlan = SUBSCRIPTION_PLANS[planId];
   if (!selectedPlan) throw new Error("Invalid subscription plan");
@@ -103,6 +106,7 @@ export async function createOrUpdateSubscription({
     where: { userId },
     update: {
       status,
+      provider,
       planCode: plan.plan_code,
       planName: plan.name,
       interval: plan.interval,
@@ -121,6 +125,7 @@ export async function createOrUpdateSubscription({
     },
     create: {
       userId,
+      provider,
       subCode: subCode || "",
       planCode: plan.plan_code,
       planName: plan.name,

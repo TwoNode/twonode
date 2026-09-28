@@ -72,6 +72,67 @@ export async function initiateSubscription(userId: string, email: string, planId
   };
 }
 
+/**
+ * Same pricing as initiateSubscription, but no `plan` attached to the
+ * Paystack transaction — a recurring `plan` makes Paystack restrict checkout
+ * to channels that can create a reusable charge authorization (Card, some
+ * wallets), silently dropping Bank Transfer since a transfer can't authorize
+ * future auto-charges. Without `plan`, the full channel set (including
+ * Transfer) is available. No Paystack subscription object is ever created
+ * for this payment — access simply expires at the end of the period unless
+ * the user pays again.
+ */
+export async function initiateOneTimeSubscription(
+  userId: string,
+  email: string,
+  planId: keyof typeof SUBSCRIPTION_PLANS
+) {
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
+  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+
+  const isLive = process.env.NODE_ENV === "production";
+  const paystack = await createPaystackInstance(isLive);
+  await logPaystackEnvironment(isLive);
+
+  const reference = `SURFBOARD_ONETIME_SUB_${isLive ? "live" : "test"}_${Date.now()}_${userId}`;
+  const plan = await getOrCreatePaystackPlan(selectedPlan, isLive);
+
+  const response = await paystack.transaction.initialize({
+    email,
+    amount: plan.amount,
+    reference,
+    metadata: {
+      type: "surfboard_onetime_subscription",
+      platform: "surfboard",
+      plan_id: planId,
+      custom_fields: [
+        { display_name: "Platform", variable_name: "platform", value: "surfboard" },
+        { display_name: "Payment Type", variable_name: "payment_type", value: "one-time subscription" },
+        { display_name: "Subscription Plan", variable_name: "subscription_plan", value: plan.name },
+        { display_name: "Subscription Plan ID", variable_name: "subscription_plan_id", value: plan.id },
+        { display_name: "Reference", variable_name: "reference", value: reference },
+        { display_name: "User ID", variable_name: "user_id", value: userId },
+        { display_name: "Email", variable_name: "email", value: email },
+      ],
+    },
+  });
+
+  if (!response.status) {
+    console.error("Paystack initialization error:", response);
+    throw new Error(response.message || "Failed to initialize payment");
+  }
+
+  return {
+    reference,
+    email,
+    amount: plan.amount,
+    plan,
+    currency: "NGN",
+    userId,
+    authorization_url: response.data.authorization_url,
+  };
+}
+
 export async function getOrCreatePaystackPlan(
   plan: { id: string; planCode: string; name: string; amount: number; description: string; interval: string },
   isLive: boolean
@@ -162,12 +223,71 @@ export async function verifySubscription(userId: string, reference: string) {
   return { subscriptionCode, nextPaymentDate, planName: plan.name, subscription: sub };
 }
 
+/**
+ * Counterpart to verifySubscription for a one-time (no-`plan`) payment —
+ * Paystack's verify response has no plan_object/subscription for these, so
+ * this doesn't try to read one. planId is passed in by the caller (the
+ * client already knows which plan it initiated payment for) rather than
+ * round-tripped through Paystack metadata.
+ */
+export async function verifyOneTimeSubscription(
+  userId: string,
+  reference: string,
+  planId: keyof typeof SUBSCRIPTION_PLANS
+) {
+  const selectedPlan = SUBSCRIPTION_PLANS[planId];
+  if (!selectedPlan) throw new ValidationError({ planId: "Invalid subscription plan" });
+
+  const isLive = process.env.NODE_ENV === "production";
+  const paystack = await createPaystackInstance(isLive);
+
+  const verification: any = await paystack.transaction.verify({ reference });
+
+  if (verification.data?.status !== "success") {
+    throw new Error(verification.data?.gateway_response || "Payment verification failed");
+  }
+
+  const { data } = verification;
+  const customerId = data.customer.id;
+  const customerCode = data.customer.customer_code;
+  const authorization = data.authorization?.authorization_code ?? "";
+  const paidAt = data.paid_at;
+
+  const sub = await createOrUpdateSubscription({
+    userId,
+    reference,
+    subCode: "",
+    emailToken: "",
+    planId,
+    customerCode,
+    customerId: String(customerId),
+    authorization,
+    status: "active",
+    paidAt,
+    skipHistory: true,
+    provider: "paystack_onetime",
+  });
+
+  return { planName: sub.planName, subscription: sub };
+}
+
 export async function disableSubscription(userId: string): Promise<{
   message: string;
   data?: { currentEnd: Date; nextPaymentDate: Date | null };
 }> {
   const subscription = await prisma.subscription.findUnique({ where: { userId } });
   if (!subscription) throw new NotFoundError("Subscription");
+
+  // A one-time payment never has (or will ever get) a Paystack subscription
+  // object to disable — it just expires naturally at currentEnd. Distinct
+  // from the "sync pending" case below, where an empty subCode is transient
+  // (the webhook hasn't landed yet) for a genuinely recurring subscription.
+  if (subscription.provider === "paystack_onetime") {
+    return {
+      message: "This was a one-time payment with no auto-renewal — nothing to cancel. Access continues until it expires.",
+      data: { currentEnd: subscription.currentEnd || new Date(), nextPaymentDate: null },
+    };
+  }
 
   if (!subscription.subCode && subscription.status === "active") {
     throw new ValidationError({ subscription: "Subscription sync pending. Please try again soon." });
