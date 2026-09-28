@@ -25,7 +25,8 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 |---|---|
 | `auth.ts` | GBC-specific auth helpers (session/role checks) |
 | `aws-s3.ts` | S3 upload/download helpers |
-| `editionCookie.ts` | `getEditionCookieValue()` — server-side read of the navbar `GBCEditionSwitcher`'s last selection (a cookie, not just the query param, since a sidebar `<Link>` doesn't carry query params across navigation). Every edition-filtered admin page falls back to this when its own `?edition=` is absent, normalized to `undefined` for the "all editions" sentinel so callers can fold it into their own `|| "all"` default without a stray literal "all" reaching a DB filter |
+| `editionCookie.ts` | `getEditionCookieValue()` — server-side (imports `next/headers`) read of the navbar `GBCEditionSwitcher`'s last selection (a cookie, not just the query param, since a sidebar `<Link>` doesn't carry query params across navigation). Every edition-filtered admin page falls back to this when its own `?edition=` is absent, normalized to `undefined` for the "all editions" sentinel so callers can fold it into their own `\|\| "all"` default without a stray literal "all" reaching a DB filter |
+| `editionCookieConstants.ts` | Just the cookie name (`GBC_EDITION_COOKIE`), split out of `editionCookie.ts` so the Client Component switcher can import it without pulling `next/headers` into the client bundle — that combination is a real Next.js build failure (`next build`), not just a type-checker complaint |
 | `email.ts` | Transactional email sending (tickets, certificates, verification) |
 | `index.ts` | Barrel export |
 | `paystack.ts` | Paystack payment helpers |

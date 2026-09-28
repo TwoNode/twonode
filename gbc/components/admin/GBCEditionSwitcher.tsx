@@ -5,7 +5,7 @@ import { CalendarRange, Loader2 } from "lucide-react";
 import { useSearchParamsUpdater } from "@/hooks/useSearchParamsUpdater";
 import { gbcApi } from "@/gbc/apiClient";
 import type { GBCEdition } from "@/gbc/utils/settings";
-import { GBC_EDITION_COOKIE } from "@/gbc/utils/editionCookie";
+import { GBC_EDITION_COOKIE } from "@/gbc/utils/editionCookieConstants";
 
 const LAST_EDITION_KEY = "gbc-admin-selected-edition";
 const ALL_EDITIONS_VALUE = "all";

@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-
-export const GBC_EDITION_COOKIE = "gbc-admin-edition";
+import { GBC_EDITION_COOKIE } from "./editionCookieConstants";
 
 /**
  * Server-side read of the navbar GBCEditionSwitcher's last selection
