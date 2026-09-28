@@ -10,11 +10,14 @@ const LAST_EDITION_KEY = "gbc-admin-selected-edition";
 
 /**
  * Navbar-level edition switcher, sitting above every admin page rather than
- * duplicated per-page (until now only Settings had its own local picker —
- * SettingsEditionPicker). Writes the same `?edition=` query param that
- * page reads, so switching here immediately re-scopes any page that
- * already supports it; also remembered in localStorage so a page that
- * wants a sensible default before the param is set can read it.
+ * duplicated per-page (previously only Settings had its own local picker —
+ * SettingsEditionPicker). Writes the same `?edition=` query param the
+ * dashboard page reads (via `getTicketStats`/`getTickets`), so switching
+ * here immediately re-scopes the dashboard's stats and recent-tickets list
+ * to the selected edition; also remembered in localStorage so a page that
+ * wants a sensible default before the param is set can read it. Other
+ * admin pages (Tickets, Attendees, Certificates) still have their own
+ * local edition filters and don't yet read this navbar param.
  */
 export function GBCEditionSwitcher() {
   const [editions, setEditions] = useState<GBCEdition[] | null>(null);
