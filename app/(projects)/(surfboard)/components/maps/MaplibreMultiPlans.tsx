@@ -943,18 +943,6 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         id: "plans-search-highlight",
         type: "line",
         source: "plansLayer",
-        // No initial `filter` here — MapLibre's addLayer-time style
-        // validator rejects `["==", true, false]` ("string expected,
-        // boolean found") because it parses a 3-element `==` array as a
-        // legacy filter (which requires a property-name string in
-        // position 1) rather than an expression. That thrown error meant
-        // this layer was never actually created, so every later
-        // `setFilter("plans-search-highlight", ...)` failed with "Cannot
-        // filter non-existing layer" — the search highlight (and by
-        // extension "search plans") silently never worked. `setFilter`
-        // at runtime (below) accepts the same array fine as an
-        // expression, so the render effect sets the real filter as soon
-        // as it first runs.
         paint: {
           "line-color": "#FDE047",
           "line-width": 4,
@@ -1230,15 +1218,25 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
         features: pillarFeatures,
       });
 
+      // `false` (a bare boolean), not `["==", true, false]` — MapLibre's
+      // filter validator parses a 3-element array starting with `"=="` as
+      // a *legacy* filter (which requires a property-name string in
+      // position 1, not a boolean), so that array threw "string expected,
+      // boolean found" on every setFilter call whenever nothing was
+      // selected/matched, logging a console error each render without
+      // actually breaking the "nothing visible" behavior (setFilter left
+      // the layer's previous filter in place on a thrown validation
+      // error). A bare boolean is valid as an expression-style filter and
+      // means exactly the same thing: match nothing.
       const filter = (
         allVisibleIds.length > 0
           ? ["in", ["get", "id"], ["literal", allVisibleIds]]
-          : ["==", true, false]
+          : false
       ) as FilterSpecification;
       const pillarFilter = (
         allVisibleIds.length > 0
           ? ["in", ["get", "planId"], ["literal", allVisibleIds]]
-          : ["==", true, false]
+          : false
       ) as FilterSpecification;
 
       map.current?.setFilter("plans-fill", filter);
@@ -1251,7 +1249,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       const highlightFilter = (
         searchMatchIds.length > 0
           ? ["in", ["get", "id"], ["literal", searchMatchIds]]
-          : ["==", true, false]
+          : false
       ) as FilterSpecification;
       map.current?.setFilter("plans-search-highlight", highlightFilter);
 

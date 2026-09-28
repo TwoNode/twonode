@@ -83,15 +83,20 @@ const nextConfig = {
    * pnpm-managed repo, node_modules/@react-pdf/* are symlinks into the
    * .pnpm store, and this glob only matches the symlinks themselves, never
    * their real targets — so it was never actually shipping the package
-   * correctly in the first place. @react-pdf/renderer is reached via a
-   * dynamic import() in utils/email.ts, which Next's own file tracer
-   * (@vercel/nft) already follows and correctly resolves through the pnpm
-   * symlinks on its own (verified via each route's own nft.json trace
-   * manifest under .next/server — @react-pdf's full package tree, symlink
-   * targets included, is present without any help from this config). The
-   * globs below stay because they
-   * cover genuinely untraceable assets: the pdf-worker/*.cjs files
-   * (execFile'd, never imported) and runtime-loaded public/ images/fonts.
+   * correctly in the first place. @react-pdf/renderer is instead traced
+   * via a real (never-awaited-for-value, just for its side effect on the
+   * tracer) `import("@react-pdf/renderer")` placed directly in each
+   * *Service.ts file that owns a pdf-worker (certificatePdfService.ts,
+   * both receiptPdfService.ts files) — @vercel/nft follows a literal
+   * dynamic-import specifier and correctly resolves the full transitive
+   * tree through the pnpm symlinks on its own. (An earlier version of
+   * this comment claimed that hint already existed in utils/email.ts and
+   * was verified working — it did not actually exist in the code, which
+   * is why certificate emails kept failing in production; re-verify with
+   * a real build + each route's .next/*.nft.json after touching any of
+   * this.) The globs below stay because they cover genuinely untraceable
+   * assets: the pdf-worker/*.cjs files (execFile'd, never imported) and
+   * runtime-loaded public/ images/fonts.
    */
   outputFileTracingIncludes: {
     "/api/v1/gbc/admin/certificates/send": [
