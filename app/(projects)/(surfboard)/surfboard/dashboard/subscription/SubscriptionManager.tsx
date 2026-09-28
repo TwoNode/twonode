@@ -661,7 +661,7 @@ export default function SubscriptionManager() {
                         size="sm"
                         disabled={isWorkingOnetime || isDisabled}
                         onClick={() => onSubscribeOnetime(plan.id)}
-                        className="w-full mt-2 h-9 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg"
                       >
                         {isWorkingOnetime ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
