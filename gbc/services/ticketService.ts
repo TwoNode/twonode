@@ -48,10 +48,20 @@ function resolveProfession(profession: string, otherProfession?: string): string
   return profession === "OTHER" && otherProfession ? `Other: ${otherProfession}` : profession;
 }
 
-/** Falls back to GBC2/"2.0" (the previous hardcoded prefix/key) if no edition is marked ACTIVE — defensive, shouldn't happen once editions are seeded. Queries gbc_editions directly (see editionService.ts) rather than the settings blob editions used to live in. */
+/**
+ * The current edition — ACTIVE if one is marked, else the latest edition by
+ * start date (matches editionService.ts's getEditions() ordering). Used to
+ * scope ticket stats/numbering when no edition is explicitly requested.
+ * Previously fell back to a hardcoded "2.0"/GBC2 when nothing was ACTIVE,
+ * which meant the dashboard silently showed an old edition's numbers even
+ * after a newer edition existed — now it always finds a real edition,
+ * hardcoding "2.0" only if the table is genuinely empty.
+ */
 async function getActiveEditionInfo(): Promise<{ key: string; ticketPrefix: string }> {
   const active = await prisma.gBCEdition.findFirst({ where: { status: "ACTIVE" } });
-  return { key: active?.key ?? "2.0", ticketPrefix: active?.ticketPrefix ?? "GBC2" };
+  if (active) return { key: active.key, ticketPrefix: active.ticketPrefix };
+  const latest = await prisma.gBCEdition.findFirst({ where: { deletedAt: null }, orderBy: { startDate: "desc" } });
+  return { key: latest?.key ?? "2.0", ticketPrefix: latest?.ticketPrefix ?? "GBC2" };
 }
 
 /** Same shape as the old dbgenerated default (prefix + 6 hex chars), just computed in application code so the prefix can vary per edition. */

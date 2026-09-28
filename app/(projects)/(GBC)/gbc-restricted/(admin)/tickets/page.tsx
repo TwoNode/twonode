@@ -15,15 +15,16 @@ export const dynamic = "force-dynamic";
 export default async function AdminTicketsPage({
   searchParams,
 }: {
-  searchParams: { search?: string; status?: string; page?: string; pageSize?: string };
+  searchParams: { search?: string; status?: string; page?: string; pageSize?: string; edition?: string };
 }) {
-  const { search, status, page: pageParam, pageSize: pageSizeParam } = await searchParams;
+  const { search, status, page: pageParam, pageSize: pageSizeParam, edition } = await searchParams;
   const { page, pageSize } = parsePageParams({ page: pageParam, pageSize: pageSizeParam });
   const result = await getTicketsPaginated({
     page,
     pageSize,
     search,
     status: status && status !== "all" ? status : undefined,
+    edition,
   });
   const tickets: Ticket[] = result.data;
 
@@ -42,6 +43,7 @@ export default async function AdminTicketsPage({
       <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
         <form className="flex flex-col md:flex-row gap-3 sm:gap-4">
           <input type="hidden" name="page" value="1" />
+          {edition && <input type="hidden" name="edition" value={edition} />}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5" />
