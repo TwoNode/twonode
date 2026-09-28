@@ -239,8 +239,8 @@ export function AnalyticsDashboard({ dateRange }: { dateRange?: DateRangeValue }
 
         {/* Time Trends */}
         <BarChart
-          title="Monthly Lodgements"
-          subtitle="Number of plans lodged per month"
+          title="Monthly Uploads"
+          subtitle="Number of plans uploaded per month"
           data={analytics.timeTrends.map(item => ({
             label: item.period,
             value: item.count,

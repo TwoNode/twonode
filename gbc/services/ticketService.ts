@@ -410,14 +410,21 @@ export async function lookupMyTicket(ticketNumber: string, email: string) {
   return ticket;
 }
 
-export async function getTicketStats() {
-  // Totals span every edition; capacity ("available", "max", early-bird sold) is the current edition's own.
-  const { key: edition } = await getActiveEditionInfo();
+/**
+ * Defaults to the active edition when none is passed (dashboard's original
+ * behavior). Passing an edition key scopes every count — including
+ * `totalTickets`/`pendingTickets`, which previously spanned all editions
+ * regardless of which one was "current" — so the GBC admin edition switcher
+ * can show a past or future edition's own numbers instead of always the
+ * active edition's.
+ */
+export async function getTicketStats(edition?: string) {
+  const editionKey = edition ?? (await getActiveEditionInfo()).key;
   const [statusStats, checkedInCount, soldEarlyBirdTickets, editionCompleted] = await Promise.all([
-    prisma.gBCTicket.groupBy({ by: ["paymentStatus"], _count: { id: true }, _sum: { price: true } }),
-    prisma.gBCTicket.count({ where: { checkedIn: true } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition } }),
-    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition } }),
+    prisma.gBCTicket.groupBy({ by: ["paymentStatus"], _count: { id: true }, _sum: { price: true }, where: { edition: editionKey } }),
+    prisma.gBCTicket.count({ where: { checkedIn: true, edition: editionKey } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", ticketType: "EARLY_BIRD", edition: editionKey } }),
+    prisma.gBCTicket.count({ where: { paymentStatus: "COMPLETED", edition: editionKey } }),
   ]);
 
   const totalTickets = statusStats.reduce((sum, stat) => sum + stat._count.id, 0);
@@ -425,7 +432,7 @@ export async function getTicketStats() {
   const pendingStat = statusStats.find((stat) => stat.paymentStatus === "PENDING");
 
   const completedTickets = completedStat?._count.id || 0;
-  const settings = await getSettings(edition);
+  const settings = await getSettings(editionKey);
   const maxTickets = settings ? settings.tickets.maxCapacity : 1000;
 
   return {
@@ -469,7 +476,7 @@ function buildTicketWhere(filters?: {
  * RecentTickets' explicit `limit: 5` and the (uncalled) admin API route's
  * optional limit are both unaffected.
  */
-export async function getTickets(filters?: { status?: string; search?: string; limit?: number }) {
+export async function getTickets(filters?: { status?: string; search?: string; limit?: number; edition?: string }) {
   const where = buildTicketWhere(filters);
   return prisma.gBCTicket.findMany({ where, orderBy: { createdAt: "desc" }, take: filters?.limit });
 }

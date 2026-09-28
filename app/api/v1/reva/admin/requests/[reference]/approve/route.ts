@@ -28,8 +28,8 @@ export const POST = withAuth<RevaRole>(
     const existing = await getAnyRequestByReferenceForAdmin(reference);
     const data =
       existing.type === "property"
-        ? await approveDueDiligenceReport(reference, isApproved, admin.email)
-        : await approveOneTimeDueDiligenceReport(reference, isApproved, admin.email);
+        ? await approveDueDiligenceReport(reference, isApproved, admin.email, ctx.session.sub)
+        : await approveOneTimeDueDiligenceReport(reference, isApproved, admin.email, ctx.session.sub);
 
     return NextResponse.json({ success: true, ...data });
   },

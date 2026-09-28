@@ -718,6 +718,11 @@ export default function SurfboardPlanForm({
 
     if (updatedGroups.length === 0) {
       setField("geometry", null);
+      // No parcels left to derive Ward/LCDA/LGA/State from — clear the
+      // Administrative Information fields instead of leaving them showing
+      // whichever removed parcel last populated them, so a fresh CSV upload
+      // fills them in from scratch rather than silently keeping stale data.
+      setForm((prev) => ({ ...prev, ward: null, lcda: null, lga: null, state: null }));
       return;
     }
 
@@ -728,6 +733,18 @@ export default function SurfboardPlanForm({
       geom = await generateMultiPolygonFromPillarGroups(updatedGroups);
     }
     setField("geometry", geom as any);
+
+    // Re-derive Ward/LCDA/LGA/State from whichever parcel is now first —
+    // otherwise removing parcel 1 (whose boundaries the fields were showing)
+    // left them stuck on that removed parcel's data instead of parcel 2's.
+    const newFirst = nextParcels[0];
+    setForm((prev) => ({
+      ...prev,
+      ward: newFirst.ward ?? null,
+      lcda: newFirst.lcda ?? null,
+      lga: newFirst.lga ?? null,
+      state: newFirst.state ?? null,
+    }));
   }
 
   // Upload helper (unchanged)
@@ -970,6 +987,42 @@ export default function SurfboardPlanForm({
     if (overs.length) errs.files = "Some selected files exceed 50MB";
 
     setErrors(errs);
+
+    // Previously a failed submit just silently did nothing beyond setting
+    // `errors` — on this long, multi-step form the user had no way to tell
+    // *which* field(s) were missing without scrolling around hunting for
+    // red text. Scroll to (and focus, for the native highlight ring) the
+    // first invalid field instead, in the same top-to-bottom order the
+    // checks above run in (Object.keys preserves insertion order).
+    const firstErrorField = Object.keys(errs)[0];
+    if (firstErrorField) {
+      // A handful of error keys don't share their input's `id` verbatim
+      // (e.g. the "cad" error belongs to the "cadFiles" input) — this maps
+      // the mismatched ones; every other key already matches its element id.
+      const ERROR_FIELD_TO_ELEMENT_ID: Record<string, string> = {
+        pillars: "pillarsCsv",
+        cad: "cadFiles",
+        pdf: "pdfFiles",
+        cert: "certFiles",
+        referencePlanNumber: "referencePlan",
+        reasonForWithdrawalAndResubmission: "reasonForWithdrawal",
+        pillarTypeReferencePlanNumber: "pillarTypeReferencePlan",
+        parcels: "pillarsCsv",
+      };
+      const targetId = ERROR_FIELD_TO_ELEMENT_ID[firstErrorField] ?? firstErrorField;
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (typeof (el as HTMLElement).focus === "function") {
+          (el as HTMLElement).focus({ preventScroll: true });
+        }
+      }
+      const count = Object.keys(errs).length;
+      toast.error(
+        count > 1 ? `Please fill in ${count} required fields` : "Please fill in the required field",
+      );
+    }
+
     return Object.keys(errs).length === 0;
   }
 

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { User, Settings, LogOut } from "lucide-react";
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs/components";
 import { gbcApi } from "@/gbc/apiClient";
 import {
   DropdownMenu,
@@ -46,6 +46,7 @@ interface GBCUserMenuProps {
 }
 
 export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
+  const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -175,10 +176,13 @@ export function GBCUserMenu({ size = 36, className }: GBCUserMenuProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <LogoutLink postLogoutRedirectURL="/api/auth/logout_redirect">
-                Log out
-              </LogoutLink>
+            <AlertDialogAction
+              onClick={() => {
+                fetch("/api/auth/logout_redirect?from=gbc");
+                router.push("/gbc-restricted/login");
+              }}
+            >
+              Log out
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

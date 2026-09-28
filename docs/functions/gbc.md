@@ -17,7 +17,7 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 | `receiptPdfService.ts` | Spawns the receipt PDF worker and returns a buffer |
 | `settingsService.ts` | Settings, **one row per edition** (`gbc_settings.edition`, unique). `resolveSettingsEdition()` picks the edition when none is given: the ACTIVE one, else the most recent PAST, else the earliest UPCOMING (so the public site never goes blank while no edition is ACTIVE). Reads never write — an edition with nothing saved reads as defaults carrying its own name/theme/venue/date, and its first save creates the row. Also per-edition reset, previous and rollback. Ticket capacity and early-bird counts are per edition too (`ticketService.ts`) |
 | `sponsorTierService.ts` | Sponsorship levels (Headline, Impact, …) as admin-managed rows: create (key derived once from the name, never changes on rename), update, reorder, delete (refused while sponsors are in the tier), all audited. `assertSponsorTierExists` is used when a sponsor is saved |
-| `ticketService.ts` | Ticket purchase, lookup, and lifecycle logic |
+| `ticketService.ts` | Ticket purchase, lookup, and lifecycle logic. `getTicketStats(edition?)` and `getTickets({..., edition?})` default to the active edition when no edition is given (the admin dashboard's navbar edition switcher passes its `?edition=` selection through) |
 
 ## `gbc/utils/` — stateless helpers
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
@@ -20,6 +21,7 @@ export default function RevaAdminPanelLayout({
   children: React.ReactNode;
 }) {
   const sidebar = useStore(useSidebar, (x) => x);
+  const router = useRouter();
   const { user, isAdmin, isLoading, userData } = useRevaAdminAccess();
   useNativeAuthRefresh(Platform.REVA);
 
@@ -38,7 +40,10 @@ export default function RevaAdminPanelLayout({
       element: (
         <ConfirmedLogoutLink
           key="logout"
-          postLogoutRedirectURL="/api/auth/logout_redirect"
+          onConfirm={() => {
+            fetch("/api/auth/logout_redirect?from=reva");
+            router.push("/reva-restricted/login");
+          }}
           trigger={
             <button
               type="button"

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FiRefreshCw } from "react-icons/fi";
 import {
   Plus,
-  Users,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -14,7 +13,6 @@ import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
 import { type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
 import {
@@ -188,19 +186,42 @@ export default function DashboardHome() {
       />
 
       {/* Plan Health */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">Plan Health</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Queried, needs attention" value={stats.queried} icon={AlertCircle} tone="danger" />
-          <StatCard label="Awaiting MDA review" value={stats.underReview} icon={Clock} tone="info" />
-          <StatCard label="Shared, awaiting response" value={planHealth.sharedAwaitingResponse} icon={Users} tone="warning" />
-          <StatCard
-            label="QR earnings this month"
-            value={`₦${planHealth.qrEarningsThisMonth.toLocaleString()}`}
-            icon={CheckCircle}
-            tone="success"
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/3 dark:shadow-none">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Plan Health</h2>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          {stats.lodged} of {stats.totalPlans} plans lodged this cycle
+        </p>
+
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${stats.totalPlans > 0 ? Math.round((stats.lodged / stats.totalPlans) * 100) : 0}%`,
+              backgroundColor: SURFBOARD_COLORS.success.main,
+            }}
           />
         </div>
+
+        <dl className="mt-4 divide-y divide-gray-100 dark:divide-white/10">
+          <div className="flex items-center justify-between py-2.5">
+            <dt className="text-sm text-gray-600 dark:text-gray-300">Queried, needs attention</dt>
+            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{stats.queried}</dd>
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
+            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{stats.underReview}</dd>
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <dt className="text-sm text-gray-600 dark:text-gray-300">Shared, awaiting response</dt>
+            <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.sharedAwaitingResponse}</dd>
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>
+            <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+              ₦{planHealth.qrEarningsThisMonth.toLocaleString()}
+            </dd>
+          </div>
+        </dl>
       </div>
 
       {/* Tabs + Refresh */}

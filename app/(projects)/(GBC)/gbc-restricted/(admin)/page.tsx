@@ -7,12 +7,17 @@ import { GBC_COLORS } from "@/gbc/colors";
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ edition?: string }>;
+}) {
+  const { edition } = await searchParams;
   const user = {
     name: "John Doe",
     id: "1",
   };
-  const stats = await getTicketStats();
+  const stats = await getTicketStats(edition);
 
   return (
     <div>
@@ -25,7 +30,7 @@ export default async function AdminDashboard() {
           <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 dark:text-white">
             Recent Tickets
           </h2>
-          <RecentTickets />
+          <RecentTickets edition={edition} />
         </div>
 
         {/* Quick Actions */}
