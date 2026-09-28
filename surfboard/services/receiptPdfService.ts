@@ -6,6 +6,12 @@ import { SurfboardRole } from "@/utils/platform";
 
 const WORKER_PATH = path.join(process.cwd(), "surfboard", "pdf-worker", "receipt.render.cjs");
 
+// Tracing hint only — see gbc/services/certificatePdfService.ts's identical
+// comment for the full explanation. This worker also renders via
+// @react-pdf/renderer and is equally invisible to Next's automatic
+// output-file-tracing.
+void import("@react-pdf/renderer").catch(() => {});
+
 /**
  * Batch payment never reaches `BatchPaymentStatus.COMPLETED` in the current
  * approval chain (grep-confirmed: no writer ever sets it) — Accounts
