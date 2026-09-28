@@ -160,10 +160,17 @@ export default function SubscriptionManager() {
     return "You don't have an active subscription";
   }, [current, isSubscriptionActive, isSubscriptionInGracePeriod]);
 
+  const isOnetimeSubscription = current?.provider === "paystack_onetime";
+
   const getNextBillingText = useMemo(() => {
     if (!current) return "";
 
     if (isSubscriptionActive) {
+      if (isOnetimeSubscription) {
+        return current.currentEnd
+          ? `Expires on ${formatLocalDate(current.currentEnd)} — pay again to renew`
+          : "One-time payment — no auto-renewal";
+      }
       if (current.nextPaymentDate || current.currentEnd) {
         return `Next billing: ${formatLocalDate(
           current.nextPaymentDate || current.currentEnd
@@ -177,7 +184,7 @@ export default function SubscriptionManager() {
     }
 
     return "No active subscription";
-  }, [current, isSubscriptionActive, isSubscriptionInGracePeriod]);
+  }, [current, isSubscriptionActive, isSubscriptionInGracePeriod, isOnetimeSubscription]);
 
   type TransactionObject = {
     reference: string;
@@ -255,6 +262,76 @@ export default function SubscriptionManager() {
       console.error("Subscription error:", error);
       toast.error(error?.message || "Failed to initiate subscription");
       setPendingPlan(null);
+    }
+  };
+
+  const [pendingOnetimePlan, setPendingOnetimePlan] = useState<PlanId | null>(null);
+
+  /**
+   * Same amount/period as onSubscribe, but no `planCode` passed to Paystack —
+   * that's what makes Paystack attach a recurring `plan` to the transaction
+   * and, in turn, restrict checkout to channels that can create a reusable
+   * charge authorization (no Bank Transfer). Without it, Transfer is
+   * available, at the cost of no auto-renewal — the user pays again manually
+   * when the period ends.
+   */
+  const onSubscribeOnetime = async (planId: PlanId) => {
+    if (!publicKey) {
+      toast.error("Server Error: Misconfigured Payment setup");
+      return;
+    }
+
+    setPendingOnetimePlan(planId);
+    try {
+      const result = await surfboardApi.subscription.initiateOnetime(planId);
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to initiate payment");
+      }
+
+      const { reference, email, amount, currency = "NGN" } = result.data;
+
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: publicKey,
+        reference,
+        email,
+        amount: Math.round(amount * 100),
+        currency,
+        onSuccess: async (transaction: TransactionObject) => {
+          try {
+            toast.loading("Verifying payment...", { id: "verify-onetime-payment" });
+            const verification = await surfboardApi.subscription.verifyOnetime(reference, planId);
+            toast.dismiss("verify-onetime-payment");
+
+            if (verification?.success) {
+              toast.success("Payment successful — access activated!");
+              const updatedSubResult = await surfboardApi.subscription.get();
+              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
+              setPendingOnetimePlan(null);
+              globalThis.location.reload();
+            } else {
+              throw new Error(verification?.error || "Verification failed");
+            }
+          } catch (error: any) {
+            console.error("Verification error:", error);
+            toast.error(error.message || "Failed to verify payment");
+            setPendingOnetimePlan(null);
+          }
+        },
+        onCancel: () => {
+          toast.info("Payment cancelled");
+          setPendingOnetimePlan(null);
+        },
+        onError: (error: { message: string }) => {
+          console.error("Payment error:", error);
+          toast.error(error.message || "Payment failed");
+          setPendingOnetimePlan(null);
+        },
+      });
+    } catch (error: any) {
+      console.error("One-time payment error:", error);
+      toast.error(error?.message || "Failed to initiate payment");
+      setPendingOnetimePlan(null);
     }
   };
 
@@ -410,7 +487,7 @@ export default function SubscriptionManager() {
                 <div className="flex-1 text-center md:text-left space-y-4">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 font-semibold text-sm mb-2">
                     <Crown className="h-4 w-4" />
-                    VIP Member
+                    {isOnetimeSubscription ? "One-Time Access" : "VIP Member"}
                   </div>
                   <h3 className="text-4xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
                     {SUBSCRIPTION_PLANS[current.interval as keyof typeof SUBSCRIPTION_PLANS]?.name || current.planName}
@@ -425,7 +502,7 @@ export default function SubscriptionManager() {
                   </div>
                 </div>
                 
-                {isSubscriptionActive && (
+                {isSubscriptionActive && !isOnetimeSubscription && (
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="shrink-0 w-full md:w-auto">
                     <Button
                       variant="ghost"
@@ -455,12 +532,15 @@ export default function SubscriptionManager() {
         <div className="grid lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
           {Object.values(SUBSCRIPTION_PLANS).map((plan) => {
             const isWorking = pendingPlan === plan.id;
+            const isWorkingOnetime = pendingOnetimePlan === plan.id;
             const isCurrent = current?.planCode === plan.planCode;
             const isPopular = plan.interval === "quarterly";
             const isDisabled =
               isWorking ||
+              isWorkingOnetime ||
               (isSubscriptionActive && !isCurrent) ||
-              !!pendingPlan;
+              !!pendingPlan ||
+              !!pendingOnetimePlan;
 
             return (
               <motion.div
@@ -569,6 +649,23 @@ export default function SubscriptionManager() {
                         "Select Plan"
                       )}
                     </Button>
+
+                    {!isCurrent && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isDisabled}
+                        onClick={() => onSubscribeOnetime(plan.id)}
+                        title="Pay once for this period — no auto-renewal, but includes Bank Transfer as a payment option"
+                        className="w-full mt-2 h-9 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      >
+                        {isWorkingOnetime ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "or pay once (Transfer available), no auto-renew"
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </motion.div>

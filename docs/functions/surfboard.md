@@ -16,7 +16,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |
 | `mdaRemarkService.ts` | MDA stage remarks/reasons CRUD |
 | `notificationService.ts` | Notification CRUD + read/dismiss state |
-| `paystackSubscriptionService.ts` | Paystack subscription billing logic |
+| `paystackSubscriptionService.ts` | Paystack subscription billing logic. `initiateSubscription`/`verifySubscription` attach a Paystack `plan` (recurring — Bank Transfer unavailable at checkout, since a transfer can't authorize future auto-charges). `initiateOneTimeSubscription`/`verifyOneTimeSubscription` are the non-recurring counterpart — same pricing, no `plan` attached (Transfer available), no auto-renewal; persists `Subscription.provider = "paystack_onetime"` so `disableSubscription()` and the UI can tell it apart from a genuinely-recurring subscription with an empty `subCode` (a transient "not yet synced" state, vs. a one-time payment's permanently-empty `subCode`) |
 | `planLockService.ts` | Plan/batch locking (prevents concurrent edits), role-field-prefix helper |
 | `planService.ts` | Survey plan CRUD, filtering (including `dateOnSurveyPlan` range and pillar-number substring match via raw SQL, `findPlanIdsByPillarNumber`), sharing; `respondToPlanShare`/`getSharedAwaitingResponseCount` track per-recipient acknowledgment of a shared plan (`SurfboardPlanShareResponse`, additive alongside `sharedTo`); `getAdminSurfPlansStats`'s `total`/status counts exclude `PROVISIONAL_TYPES` (imported from `analyticsService.ts`), matching every other "Total Plans" figure in the app |
 | `profileService.ts` | Surveyor profile CRUD |

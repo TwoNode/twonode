@@ -1051,6 +1051,19 @@ export const surfboardApi = {
         body: JSON.stringify({ reference }),
       }),
 
+    /** No Paystack `plan` attached — a one-off payment with no auto-renewal, but unlike `initiate` it makes Bank Transfer available at checkout. */
+    initiateOnetime: (planId: string) =>
+      jsonFetch<any>(`${BASE}/subscription/initiate-onetime`, {
+        method: "POST",
+        body: JSON.stringify({ planId }),
+      }),
+
+    verifyOnetime: (reference: string, planId: string) =>
+      jsonFetch<any>(`${BASE}/subscription/verify-onetime`, {
+        method: "POST",
+        body: JSON.stringify({ reference, planId }),
+      }),
+
     disable: () =>
       jsonFetch<{
         message: string;

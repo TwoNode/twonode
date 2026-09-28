@@ -125,8 +125,17 @@ function NativeAuthCardInner({
       // Only honor the return-to path on a login, not a fresh registration —
       // a brand-new account has no reason to land back on whatever gated
       // page bounced the visitor to login in the first place.
+      //
+      // No router.refresh() here — it was firing right after push() and
+      // intermittently racing it: refresh() re-fetches the RSC payload for
+      // the *current* (login) route, and if that lands before push()'s own
+      // navigation commits, it can cancel the pending push outright, so the
+      // redirect silently never happens (this was the root cause of the
+      // "sometimes login just doesn't redirect" reports — reproduced
+      // locally as a ~1-in-3 failure rate with this call present). push()
+      // already fetches a fresh RSC payload for the destination route on
+      // its own, so refresh() was redundant here even when it didn't race.
       router.push(mode === "login" && safeReturnTo ? safeReturnTo : resolveRedirect(result.data.role));
-      router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
       setIsSubmitting(false);
