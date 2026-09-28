@@ -6,15 +6,24 @@ import { ManageSponsorTiersButton } from "@/gbc/components/admin/ManageSponsorTi
 import { AddSponsorButton } from "@/gbc/components/admin/AddSponsorButton";
 import { SponsorsManager } from "@/gbc/components/admin/SponsorsManager";
 import { Card } from "@/components/ui/card";
+import { firstParam } from "@/lib/searchParams";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
 
-export default async function AdminSponsorsPage() {
+export default async function AdminSponsorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdmin();
 
+  const raw = await searchParams;
+  const edition = firstParam(raw.edition) || (await getEditionCookieValue()) || "ALL";
+
   const [sponsors, editions, tiers] = await Promise.all([
-    getAllSponsors(),
+    getAllSponsors(edition === "ALL" ? undefined : edition),
     getEditions(),
     getSponsorTiersWithCounts(),
   ]);
@@ -35,7 +44,7 @@ export default async function AdminSponsorsPage() {
         </div>
       </div>
 
-      {sponsors.length === 0 ? (
+      {sponsors.length === 0 && edition === "ALL" ? (
         <Card className="p-6">
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -67,7 +76,7 @@ export default async function AdminSponsorsPage() {
         </Card>
       ) : (
         <Card className="p-6">
-          <SponsorsManager initialSponsors={sponsors} editions={editions} tiers={tiers} />
+          <SponsorsManager initialSponsors={sponsors} editions={editions} tiers={tiers} selectedEdition={edition} />
         </Card>
       )}
     </div>

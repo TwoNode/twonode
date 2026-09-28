@@ -5,6 +5,7 @@ import { Users, CheckCircle, Clock } from "lucide-react";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { TicketListFilters } from "@/gbc/components/admin/TicketListFilters";
 import { parseTicketListParams, toTicketFilters } from "@/gbc/utils/ticketListParams";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function AdminAttendeesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = parseTicketListParams(await searchParams, { checkedIn: "all" });
+  const params = parseTicketListParams(await searchParams, { checkedIn: "all" }, await getEditionCookieValue());
   const filters = toTicketFilters(params);
 
   const [result, stats, editions] = await Promise.all([
