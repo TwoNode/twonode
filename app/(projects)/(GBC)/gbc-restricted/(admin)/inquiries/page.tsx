@@ -8,6 +8,7 @@ import { InquiriesFilters } from "@/gbc/components/admin/InquiriesFilters";
 import { SearchParamsPagination } from "@/components/ui/search-params-pagination";
 import { parsePageParams } from "@/lib/api/pagination";
 import { firstParam } from "@/lib/searchParams";
+import { getEditionCookieValue } from "@/gbc/utils/editionCookie";
 
 // Admin page gated by a real per-request auth check (requireAdmin) — never safe to statically prerender.
 export const dynamic = "force-dynamic";
@@ -21,7 +22,8 @@ export default async function AdminInquiriesPage({
   const { page, pageSize } = parsePageParams({ page: firstParam(raw.page), pageSize: firstParam(raw.pageSize) });
   const status = firstParam(raw.status);
   const type = firstParam(raw.type);
-  const edition = firstParam(raw.edition) || undefined;
+  const rawEdition = firstParam(raw.edition);
+  const edition = rawEdition === "all" ? undefined : rawEdition || (await getEditionCookieValue());
   const search = firstParam(raw.search)?.trim() || undefined;
 
   const [result, stats, editions] = await Promise.all([

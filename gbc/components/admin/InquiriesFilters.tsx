@@ -21,10 +21,13 @@ export function InquiriesFilters({
   const { update, isPending } = updater;
   const { value: search, setValue: setSearch } = useDebouncedSearchParam(updater);
 
-  // "all" drops the param; every filter change also drops `page` so the list
-  // restarts on page 1.
+  // Every filter change also drops `page` so the list restarts on page 1.
+  // Unlike `type`/`status` below, "all" is kept as an explicit `edition=all`
+  // rather than deleted — deleting it would fall through to the navbar
+  // edition switcher's cookie default (gbc/utils/editionCookie.ts), silently
+  // overriding an explicit "show all editions" choice made on this page.
   const onSelect = (key: string) => (e: React.ChangeEvent<HTMLSelectElement>) =>
-    update({ [key]: e.target.value === "all" ? "" : e.target.value, page: "" });
+    update({ [key]: key === "edition" ? e.target.value : e.target.value === "all" ? "" : e.target.value, page: "" });
 
   return (
     <div className="flex flex-col md:flex-row gap-4" aria-busy={isPending}>

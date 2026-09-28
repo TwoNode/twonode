@@ -25,6 +25,7 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 |---|---|
 | `auth.ts` | GBC-specific auth helpers (session/role checks) |
 | `aws-s3.ts` | S3 upload/download helpers |
+| `editionCookie.ts` | `getEditionCookieValue()` — server-side read of the navbar `GBCEditionSwitcher`'s last selection (a cookie, not just the query param, since a sidebar `<Link>` doesn't carry query params across navigation). Every edition-filtered admin page falls back to this when its own `?edition=` is absent, normalized to `undefined` for the "all editions" sentinel so callers can fold it into their own `|| "all"` default without a stray literal "all" reaching a DB filter |
 | `email.ts` | Transactional email sending (tickets, certificates, verification) |
 | `index.ts` | Barrel export |
 | `paystack.ts` | Paystack payment helpers |
@@ -32,6 +33,7 @@ Non-component logic files specific to the GBC platform, under `gbc/`.
 | `settings.ts` | Settings read/parse helpers |
 | `sms.ts` | SMS sending helpers |
 | `sponsorTiers.ts` | Sponsor-tier helpers: `tierKeyFromName`, card sizes (FEATURED/STANDARD/COMPACT), `sortTiers`, `groupSponsorsByTier` (shared by the public page and the admin list) |
+| `ticketListParams.ts` | `parseTicketListParams`/`toTicketFilters` — one URL-param parser shared by the Attendees page, Certificates page and the certificate recipients endpoint, so a URL means the same list everywhere. Takes an optional cookie-derived edition (see `editionCookie.ts`) as the fallback default when the URL has no explicit `?edition=` |
 | `validations.ts` | Input validation helpers |
 
 ## `gbc/hooks/`
