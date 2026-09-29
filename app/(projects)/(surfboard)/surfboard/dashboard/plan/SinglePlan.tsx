@@ -21,6 +21,8 @@ import {
   Lock,
   Paperclip,
   Upload,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import type {
   PillarData,
@@ -268,6 +270,15 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   >([]);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
 
+  // Per-plan Comments — a shared discussion thread visible to the owner and
+  // every current recipient (unlike the private attachments above).
+  const [comments, setComments] = useState<
+    { id: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }[]
+  >([]);
+  const [newComment, setNewComment] = useState("");
+  const [isPostingComment, setIsPostingComment] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   // Default: strong contrast, opaque light, safe quiet zone.
   // Dark/Light color start from whatever the facilitator last picked
   // (lib/qrColorPreferences) so they don't have to re-pick it every time.
@@ -348,6 +359,47 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     if (!isOwner) fetchViewerAttachments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId, isOwner]);
+
+  const fetchComments = async () => {
+    const result = await surfboardApi.plans.comments.list(planId);
+    if (result.success) setComments(result.data);
+  };
+
+  useEffect(() => {
+    fetchComments();
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) setCurrentUserId(res.data.id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
+
+  const handlePostComment = async () => {
+    const body = newComment.trim();
+    if (!body) return;
+    try {
+      setIsPostingComment(true);
+      const result = await surfboardApi.plans.comments.add(planId, body);
+      if (!result.success) throw new Error(result.error || "Failed to post comment");
+      setComments((prev) => [...prev, result.data]);
+      setNewComment("");
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to post comment");
+    } finally {
+      setIsPostingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const result = await surfboardApi.plans.comments.delete(planId, commentId);
+      if (!result.success) throw new Error(result.error || "Failed to delete comment");
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
+    }
+  };
 
   const handleUploadViewerAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1492,6 +1544,76 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 No private attachments yet.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Comments — shared discussion, visible to the owner and every current recipient */}
+        {(isOwner ? sharedWith.length > 0 : true) && (
+          <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+              <MessageSquare className="h-5 w-5 text-gray-400" />
+              Comments
+            </h3>
+
+            <div className="space-y-4 mb-4 max-h-96 overflow-y-auto pr-1">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {comment.authorName}
+                        </span>
+                        {comment.isOwner && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                            Surveyor
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">
+                          {new Date(comment.createdAt).toLocaleString()}
+                          {comment.editedAt ? " (edited)" : ""}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mt-0.5">
+                        {comment.body}
+                      </p>
+                    </div>
+                    {comment.authorId === currentUserId && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-gray-400 hover:text-red-600 shrink-0"
+                        title="Delete comment"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No comments yet — start the discussion.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-end gap-2 pt-3 border-t border-gray-100 dark:border-white/10">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                rows={2}
+                maxLength={2000}
+                className="flex-1 resize-none rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handlePostComment}
+                disabled={isPostingComment || !newComment.trim()}
+                className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+              >
+                {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Post
+              </button>
+            </div>
           </div>
         )}
 
