@@ -516,7 +516,7 @@ export default function HomePage() {
       <HomeSponsors />
 
       {/* Gallery Section */}
-      <HomeGallery />
+      <HomeGallery gallery={settings?.gallery} />
 
       {/* CTA Section */}
       <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>

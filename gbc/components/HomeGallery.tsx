@@ -4,8 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Play, Image as ImageIcon } from "lucide-react";
 import { gbcApi } from "@/gbc/apiClient";
+import type { GBCSettingsData } from "@/gbc/utils/settings";
 
-export default function HomeGallery() {
+export default function HomeGallery({
+  gallery,
+}: {
+  /** Admin-configured gallery settings — undefined while the parent's settings fetch is still in flight (renders using the previous hardcoded defaults until it resolves). */
+  gallery?: GBCSettingsData["gallery"];
+}) {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -13,9 +19,15 @@ export default function HomeGallery() {
     const fetchGalleryItems = async () => {
       setIsLoading(true);
       try {
+        // No year param here on purpose: this is a "highlights" teaser
+        // across all editions/years, not a year-scoped view. `defaultYear`
+        // is only meant to seed a year-filter *control* (gated behind
+        // `showYearFilter`) — there's no such control on this teaser, and
+        // hard-filtering by it here previously hid every item once the
+        // setting's year didn't match the data's actual year.
         const galleryResult = await gbcApi.gallery.list();
         if (galleryResult.success) {
-          setItems(galleryResult.data?.slice(0, 6) ?? []);
+          setItems(galleryResult.data?.slice(0, gallery?.itemsPerPage ?? 6) ?? []);
         }
       } catch (error) {
         console.error("Error fetching gallery items:", error);
@@ -25,7 +37,12 @@ export default function HomeGallery() {
     };
 
     fetchGalleryItems();
-  }, []);
+  }, [gallery?.itemsPerPage]);
+
+  // Settings hasn't resolved yet (gallery === undefined) — render with the
+  // defaults above rather than blocking on it. Once it resolves, only hide
+  // the section if the admin explicitly disabled it.
+  if (gallery?.enabled === false) return null;
 
   return (
     <section className="py-12 sm:py-16 bg-gray-50 dark:bg-surface">
