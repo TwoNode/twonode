@@ -182,6 +182,59 @@ export async function convertCoordinates(
   }
 }
 
+/**
+ * Header-cell normalization shared by parseCSVContent below and the Map
+ * Viewer's own CSV upload (MaplibreMultiPlans.tsx's handleCsvUpload, which
+ * used to have its own, less careful copy of this — just a lowercase +
+ * split, no whitespace/punctuation stripping or BOM handling). Strips a
+ * leading UTF-8 BOM (`﻿`) first: a common artifact of CSVs exported
+ * from Excel, otherwise silently prepended to the *first* header cell only,
+ * which can shift which "variation" that specific column matches (or fail
+ * to match at all) depending on the exact check.
+ */
+export function normalizeCsvHeader(h: string): string {
+  return h
+    .replace(/^﻿/, "")
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .join("") // Remove all spaces
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ""); // Remove any remaining special characters
+}
+
+/** First column (in variation-list order, most-specific first) whose normalized name includes that variation as a substring. -1 if none match. */
+export function findCsvColumnIndex(header: string[], variations: string[]): number {
+  for (const variation of variations) {
+    const index = header.findIndex((h) => h.includes(variation));
+    if (index !== -1) return index;
+  }
+  return -1;
+}
+
+const PILLAR_VARIATIONS = [
+  "pillarnumber",
+  "pillarno",
+  "pillarnumbers",
+  "pillarnos",
+  "pillar",
+];
+const EASTING_VARIATIONS = ["easting", "eastings", "x"];
+const NORTHING_VARIATIONS = ["northing", "northings", "y"];
+
+/** Pillar/easting/northing column indices, shared by parseCSVContent and handleCsvUpload. */
+export function resolvePillarColumnIndices(header: string[]): {
+  pillarNumberIndex: number;
+  eastingIndex: number;
+  northingIndex: number;
+} {
+  return {
+    pillarNumberIndex: findCsvColumnIndex(header, PILLAR_VARIATIONS),
+    eastingIndex: findCsvColumnIndex(header, EASTING_VARIATIONS),
+    northingIndex: findCsvColumnIndex(header, NORTHING_VARIATIONS),
+  };
+}
+
 // Enhanced CSV parsing with better error handling and flexible column name matching
 export function parseCSVContent(csvContent: string): PillarData[] {
   try {
@@ -191,40 +244,9 @@ export function parseCSVContent(csvContent: string): PillarData[] {
     }
 
     // Parse header and normalize column names
-    const header = lines[0].split(",").map(
-      (h) =>
-        h
-          .trim()
-          .split(/\s+/)
-          .map((word) => word.trim())
-          .join("") // Remove all spaces
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "") // Remove any remaining special characters
-    );
+    const header = lines[0].split(",").map(normalizeCsvHeader);
 
-    // Define possible column name variations
-    const pillarVariations = [
-      "pillarnumber",
-      "pillarno",
-      "pillarnumbers",
-      "pillarnos",
-      "pillar",
-    ];
-    const eastingVariations = ["easting", "eastings", "x"];
-    const northingVariations = ["northing", "northings", "y"];
-
-    // Find column indices with flexible matching
-    const findColumnIndex = (variations: string[]): number => {
-      for (const variation of variations) {
-        const index = header.findIndex((h) => h.includes(variation));
-        if (index !== -1) return index;
-      }
-      return -1;
-    };
-
-    const pillarNumberIndex = findColumnIndex(pillarVariations);
-    const eastingIndex = findColumnIndex(eastingVariations);
-    const northingIndex = findColumnIndex(northingVariations);
+    const { pillarNumberIndex, eastingIndex, northingIndex } = resolvePillarColumnIndices(header);
 
     // Validate required columns
     const missingColumns = [];
