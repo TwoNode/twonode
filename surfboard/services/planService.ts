@@ -11,6 +11,7 @@ import {
   notifyPlanUpdated,
 } from "@/surfboard/services/notificationService";
 import { getPlanQRAccessState, incrementPlanQRScanCount } from "@/surfboard/services/qrEarningsService";
+import { requireActiveSubscription } from "@/surfboard/services/subscriptionService";
 import { PLAN_TYPES } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
@@ -280,6 +281,7 @@ export async function getPlanPublicUrl(planId: string): Promise<string> {
 }
 
 export async function generatePlanQRCode(userId: string, planId: string, options: QRCodeOptions = {}): Promise<{ qrCodeDataUrl: string }> {
+  await requireActiveSubscription(userId);
   if (!isValidPlanId(planId)) throw new ValidationError({ planId: "Invalid plan ID format" });
 
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { id: true, planNumber: true } });
@@ -314,6 +316,7 @@ export async function generatePlanQRCode(userId: string, planId: string, options
 // ---------------------------------------------------------------------------
 
 export async function createSurfPlan(userId: string, userFirstLastName: { firstName: string; lastName: string }, dto: SurfboardPlanDTO) {
+  await requireActiveSubscription(userId);
   if (!dto.planNumber || !dto.surveyTitle || !dto.deededArea || !dto.facilitator || !dto.pillarType || !dto.dateOnSurveyPlan) {
     throw new ValidationError({ dto: "Missing required fields" });
   }
@@ -395,6 +398,7 @@ export async function createSurfPlan(userId: string, userFirstLastName: { firstN
 }
 
 export async function updateSurfPlan(userId: string, userFirstLastName: { firstName: string; lastName: string }, dto: SurfboardPlanDTO) {
+  await requireActiveSubscription(userId);
   if (!dto.id) throw new ValidationError({ id: "Missing id" });
 
   const existing = await prisma.surfboardPlan.findUnique({ where: { id: dto.id } });
@@ -844,6 +848,7 @@ export async function searchUsers(callerEmail: string, query: string): Promise<S
 }
 
 export async function sharePlanWithUser(userId: string, userFirstLastName: { firstName: string; lastName: string }, planId: string, targetUserId: string) {
+  await requireActiveSubscription(userId);
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true, planNumber: true } });
   if (!plan) throw new NotFoundError("Plan");
 
@@ -870,6 +875,7 @@ export async function sharePlanWithUser(userId: string, userFirstLastName: { fir
 }
 
 export async function unsharePlanWithUser(userId: string, planId: string, targetUserId: string) {
+  await requireActiveSubscription(userId);
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true } });
   if (!plan) throw new NotFoundError("Plan");
 

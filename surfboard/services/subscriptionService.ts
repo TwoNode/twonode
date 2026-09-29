@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
 import { getOrCreatePaystackPlan } from "@/surfboard/services/paystackSubscriptionService";
+import { SubscriptionRequiredError } from "@/lib/api/errors";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/subscriptionActions.ts.
@@ -48,6 +49,19 @@ export async function getUserActiveSubscription(userId: string) {
   if (!isSubActiveOrGrace(sub.status, currentEnd)) return null;
 
   return sub;
+}
+
+/**
+ * Server-side gate for capability-only actions (create/edit/share plans, QR
+ * create/withdraw) — per the "Shared Access" vision (subscription determines
+ * capability, access determines visibility), read paths must NOT call this;
+ * only actions that create/change content should. proxy.ts's middleware gate
+ * covers most of these at the page level already, but this is the actual
+ * enforcement a direct API call can't bypass.
+ */
+export async function requireActiveSubscription(userId: string): Promise<void> {
+  const sub = await getUserActiveSubscription(userId);
+  if (!sub) throw new SubscriptionRequiredError();
 }
 
 export async function getUserAndActiveSub(userId: string) {
