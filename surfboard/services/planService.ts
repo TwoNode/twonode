@@ -135,6 +135,7 @@ const PLAN_LIST_SELECT = {
   reasonForWithdrawalAndResubmission: true,
   createdAt: true,
   updatedAt: true,
+  sharedTo: true,
 } as const;
 
 /**

@@ -183,7 +183,6 @@ function computeRouteAccess(
       pathname === "/surfboard/dashboard/plans" ||
       pathname === "/surfboard/dashboard/plan" ||
       pathname === "/surfboard/dashboard/queried-plans" ||
-      pathname === "/surfboard/dashboard/shared" ||
       pathname === "/surfboard/dashboard/map" ||
       pathname === "/surfboard/dashboard/viewmap";
 

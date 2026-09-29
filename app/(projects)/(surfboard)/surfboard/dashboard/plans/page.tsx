@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListChecks, Share2, AlertCircle } from "lucide-react";
+import { ListChecks, AlertCircle } from "lucide-react";
 import AllPlans from "./AllPlans";
-import SharedPlans from "../shared/SharedPlans";
 import QueriedPlans from "./QueriedPlans";
 import { surfboardApi } from "@/surfboard/apiClient";
 
-const VALID_TABS = ["all", "shared", "queried"] as const;
+// "Shared Plans" was retired as a separate tab — "Shared Access" is now a
+// filter inside All Plans (Shared with me / My Shared Plans), per the
+// Shared Access vision: filters, not tabs.
+const VALID_TABS = ["all", "queried"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 export default function PlansPage() {
@@ -53,16 +55,11 @@ export default function PlansPage() {
         className="w-full"
       >
         <div className="mb-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-sm grid-cols-2">
             <TabsTrigger value="all" className="flex items-center gap-2">
               <ListChecks className="w-4 h-4" />
               <span className="hidden sm:inline">All Plans</span>
               <span className="sm:hidden">All</span>
-            </TabsTrigger>
-            <TabsTrigger value="shared" className="flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Shared Plans</span>
-              <span className="sm:hidden">Shared</span>
             </TabsTrigger>
             <TabsTrigger value="queried" className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
@@ -79,10 +76,6 @@ export default function PlansPage() {
 
         <TabsContent value="all" className="mt-0">
           <AllPlans />
-        </TabsContent>
-
-        <TabsContent value="shared" className="mt-0">
-          <SharedPlans />
         </TabsContent>
 
         <TabsContent value="queried" className="mt-0">
