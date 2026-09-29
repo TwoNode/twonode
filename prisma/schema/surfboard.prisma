@@ -332,8 +332,10 @@ model SurfboardPlan {
   userId String?
   user   SurfboardUser? @relation("PlanOwner", fields: [userId], references: [id])
 
-  sharedTo       String[]
-  shareResponses SurfboardPlanShareResponse[]
+  sharedTo          String[]
+  shareResponses    SurfboardPlanShareResponse[]
+  shareInvites      SurfboardPlanShareInvite[]
+  viewerAttachments SurfboardPlanViewerAttachment[]
 
   /// Soft delete fields
   deleted   Boolean   @default(false)
@@ -632,4 +634,47 @@ model SurfboardPlanShareResponse {
   @@index([sharedWithUserId])
   @@index([sharedByUserId])
   @@map("surfboard_plan_share_responses")
+}
+
+/// Shares a plan with an email address that has no SurfboardUser account yet
+/// (mirrors AdminInvitation's token/hash/expiry shape — see
+/// lib/auth/adminInvitations.ts — but grants plan access on acceptance
+/// rather than creating a staff account). Resolved automatically the moment
+/// a SurfboardUser row with a matching email is created (see the surfboard
+/// Kinde auth-success callback), not via a manual accept step — matches the
+/// "immediate access" decision for existing-user shares.
+model SurfboardPlanShareInvite {
+  id               String        @id @default(uuid())
+  planId           String        @db.Uuid
+  plan             SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  email            String
+  tokenHash        String        @unique
+  sharedByUserId   String
+  invitedAt        DateTime      @default(now())
+  expiresAt        DateTime
+  acceptedByUserId String?
+  acceptedAt       DateTime?
+
+  @@index([email])
+  @@index([planId])
+  @@map("surfboard_plan_share_invites")
+}
+
+/// A shared-plan recipient's own private attachment — fully private to that
+/// one viewer, invisible to the surveyor AND to other recipients of the
+/// same plan (per the Shared Access PRD's privacy decision). Deliberately
+/// its own table rather than an extension of SurfboardPlan's plain
+/// pdfFilePaths/cadFilePaths/certificateFilePaths String[] arrays, which
+/// have no per-user scoping concept at all.
+model SurfboardPlanViewerAttachment {
+  id        String        @id @default(uuid())
+  planId    String        @db.Uuid
+  plan      SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  viewerId  String
+  url       String
+  fileName  String
+  createdAt DateTime      @default(now())
+
+  @@index([planId, viewerId])
+  @@map("surfboard_plan_viewer_attachments")
 }

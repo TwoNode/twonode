@@ -46,7 +46,7 @@ export default function DashboardHome() {
 
   const [recentPlans, setRecentPlans] = useState<Plan[]>([]);
   const [sharedPlans, setSharedPlans] = useState<Plan[]>([]);
-  const [planHealth, setPlanHealth] = useState({ sharedAwaitingResponse: 0, qrEarningsThisMonth: 0 });
+  const [planHealth, setPlanHealth] = useState({ qrEarningsThisMonth: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,17 +73,15 @@ export default function DashboardHome() {
       setError(null);
 
       const dateFilters = { dateFrom: dateRange.from, dateTo: dateRange.to };
-      const [plansResult, sharedResult, sharedWithMeResult, sharedAwaitingResponseResult, earningsThisMonthResult] =
+      const [plansResult, sharedResult, sharedWithMeResult, earningsThisMonthResult] =
         await Promise.all([
           surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
           surfboardApi.plans.shared(undefined, undefined, dateFilters),
           surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
-          surfboardApi.plans.sharedAwaitingResponseCount(),
           surfboardApi.qr.earningsThisMonth(),
         ]);
 
       setPlanHealth({
-        sharedAwaitingResponse: sharedAwaitingResponseResult.success ? sharedAwaitingResponseResult.data.count : 0,
         qrEarningsThisMonth: earningsThisMonthResult.success ? earningsThisMonthResult.data.amount : 0,
       });
 
@@ -270,7 +268,6 @@ export default function DashboardHome() {
               totalPlans: stats.totalPlans,
               queried: stats.queried,
               underReview: stats.underReview,
-              sharedAwaitingResponse: planHealth.sharedAwaitingResponse,
               qrEarningsThisMonth: planHealth.qrEarningsThisMonth,
             }}
           />

@@ -35,6 +35,7 @@ import {
   Plus,
   Loader2,
   AlertTriangle,
+  Share2,
 } from "lucide-react";
 import {
   Select,
@@ -116,6 +117,14 @@ interface PlanFilters {
 const PLAN_STATUSES = ["PENDING", "UNDER_REVIEW", "LODGED", "QUERIED"];
 const PLAN_TYPES = Array.from(Object.values(PLAN_TYPES_OBJ));
 
+/** "Shared Access": which plans to load. Filters, not tabs — see out/Surfboard Shared Access.pdf. */
+type PlanScope = "mine" | "sharedWithMe" | "mySharedPlans";
+const SCOPE_OPTIONS: { id: PlanScope; label: string }[] = [
+  { id: "mine", label: "My Plans" },
+  { id: "sharedWithMe", label: "Shared with me" },
+  { id: "mySharedPlans", label: "My Shared Plans" },
+];
+
 export default function AllPlans() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
@@ -128,6 +137,7 @@ export default function AllPlans() {
     status: [],
     planType: [],
   });
+  const [scope, setScope] = useState<PlanScope>("mine");
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -171,21 +181,20 @@ export default function AllPlans() {
   ) => {
     try {
       setLoading(true);
-      const result = await surfboardApi.plans.list({
-        page,
-        pageSize,
-        filters: {
-          status: filters.status.length > 0 ? filters.status : undefined,
-          planType: filters.planType.length > 0 ? filters.planType : undefined,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-          search: search || undefined,
-        },
-        sort: {
-          field: "dateOnSurveyPlan" as any,
-          order: "desc",
-        },
-      });
+      const scopedFilters = {
+        status: filters.status.length > 0 ? filters.status : undefined,
+        planType: filters.planType.length > 0 ? filters.planType : undefined,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        search: search || undefined,
+      };
+      const sort = { field: "dateOnSurveyPlan" as any, order: "desc" as const };
+      const result =
+        scope === "sharedWithMe"
+          ? await surfboardApi.plans.sharedWithMe(page, pageSize, scopedFilters, sort)
+          : scope === "mySharedPlans"
+            ? await surfboardApi.plans.shared(page, pageSize, scopedFilters, sort)
+            : await surfboardApi.plans.list({ page, pageSize, filters: scopedFilters, sort });
 
       if (result?.success && result?.data) {
         setPlans(result.data.plans || []);
@@ -223,7 +232,7 @@ export default function AllPlans() {
       loadPlans(1, pagination.pageSize);
     }, 500);
     return () => clearTimeout(timer);
-  }, [filters, search]);
+  }, [filters, search, scope]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -573,6 +582,35 @@ export default function AllPlans() {
       default:
         return "bg-gray-400";
     }
+  };
+
+  /** "Shared Access" badge: who this plan is shared with/by, when relevant to the current scope. */
+  const SharedBadge = ({ plan }: { plan: any }) => {
+    if (scope === "sharedWithMe") {
+      const owner = plan.user;
+      const ownerName = owner ? [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email : null;
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20"
+          title={ownerName ? `Shared by ${ownerName}` : "Shared with you"}
+        >
+          <Share2 className="w-3 h-3" />
+          {ownerName ? `Shared by ${ownerName}` : "Shared with you"}
+        </span>
+      );
+    }
+    if (plan.sharedTo?.length > 0) {
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20"
+          title={`Shared with ${plan.sharedTo.length} ${plan.sharedTo.length === 1 ? "person" : "people"}`}
+        >
+          <Share2 className="w-3 h-3" />
+          Shared ({plan.sharedTo.length})
+        </span>
+      );
+    }
+    return null;
   };
 
   const getStatusIcon = (status: string) => {
@@ -968,6 +1006,24 @@ export default function AllPlans() {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Scope — "Shared Access": My Plans / Shared with me / My Shared Plans */}
+      <div className="mb-4 inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
+        {SCOPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => setScope(opt.id)}
+            className={cn(
+              "rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+              scope === opt.id
+                ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Filters Bar */}
@@ -1614,6 +1670,10 @@ export default function AllPlans() {
                               {plan.surveyTitle || "Untitled"}
                             </div>
 
+                            <div className="mt-1">
+                              <SharedBadge plan={plan} />
+                            </div>
+
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                               <span>{plan?.pillars?.length || 0} pillars</span>
                               <span>•</span>
@@ -1753,61 +1813,65 @@ export default function AllPlans() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleEditPlan(plan.id)}
-                                disabled={isPlanLocked(plan)}
-                                className={
-                                  isPlanLocked(plan)
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <Edit className="w-4 h-4 mr-2" />
-                                {isPlanLocked(plan)
-                                  ? "Edit Plan (Locked)"
-                                  : "Edit Plan"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  if (!isKycValidated) {
-                                    toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
-                                    return;
-                                  }
-                                  setSelectedPlans([plan.id]);
-                                  setBatchModalOpen(true);
-                                }}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Submit for Certificate
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleGenerateQrCode(plan.id)}
-                              >
-                                <QrCode className="w-4 h-4 mr-2" />
-                                QR Code
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteClick(plan.id)}
-                                disabled={
-                                  (isDeleting && planToDelete === plan.id) ||
-                                  isPlanLocked(plan)
-                                }
-                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : ""
-                                  }`}
-                              >
-                                {isDeleting && planToDelete === plan.id ? (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                )}
-                                {isDeleting && planToDelete === plan.id
-                                  ? "Deleting..."
-                                  : isPlanLocked(plan)
-                                    ? "Delete (Locked)"
-                                    : "Delete Plan"}
-                              </DropdownMenuItem>
+                              {scope !== "sharedWithMe" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditPlan(plan.id)}
+                                    disabled={isPlanLocked(plan)}
+                                    className={
+                                      isPlanLocked(plan)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    {isPlanLocked(plan)
+                                      ? "Edit Plan (Locked)"
+                                      : "Edit Plan"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      if (!isKycValidated) {
+                                        toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+                                        return;
+                                      }
+                                      setSelectedPlans([plan.id]);
+                                      setBatchModalOpen(true);
+                                    }}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Submit for Certificate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleGenerateQrCode(plan.id)}
+                                  >
+                                    <QrCode className="w-4 h-4 mr-2" />
+                                    QR Code
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteClick(plan.id)}
+                                    disabled={
+                                      (isDeleting && planToDelete === plan.id) ||
+                                      isPlanLocked(plan)
+                                    }
+                                    className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                      }`}
+                                  >
+                                    {isDeleting && planToDelete === plan.id ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                    )}
+                                    {isDeleting && planToDelete === plan.id
+                                      ? "Deleting..."
+                                      : isPlanLocked(plan)
+                                        ? "Delete (Locked)"
+                                        : "Delete Plan"}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -2009,6 +2073,8 @@ export default function AllPlans() {
                       <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
                     </div>
 
+                    <SharedBadge plan={plan} />
+
                     {/* Record Copy Status */}
                     <div className="flex items-center gap-2 text-xs">
                       {plan.redCopyFileUrl ? (
@@ -2072,61 +2138,65 @@ export default function AllPlans() {
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleEditPlan(plan.id)}
-                            disabled={isPlanLocked(plan)}
-                            className={
-                              isPlanLocked(plan)
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            {isPlanLocked(plan)
-                              ? "Edit Plan (Locked)"
-                              : "Edit Plan"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!isKycValidated) {
-                                toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
-                                return;
-                              }
-                              setSelectedPlans([plan.id]);
-                              setBatchModalOpen(true);
-                            }}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Submit for Certificate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleGenerateQrCode(plan.id)}
-                          >
-                            <QrCode className="w-4 h-4 mr-2" />
-                            QR Code
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(plan.id)}
-                            disabled={
-                              (isDeleting && planToDelete === plan.id) ||
-                              isPlanLocked(plan)
-                            }
-                            className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                              }`}
-                          >
-                            {isDeleting && planToDelete === plan.id ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4 mr-2" />
-                            )}
-                            {isDeleting && planToDelete === plan.id
-                              ? "Deleting..."
-                              : isPlanLocked(plan)
-                                ? "Delete (Locked)"
-                                : "Delete Plan"}
-                          </DropdownMenuItem>
+                          {scope !== "sharedWithMe" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => handleEditPlan(plan.id)}
+                                disabled={isPlanLocked(plan)}
+                                className={
+                                  isPlanLocked(plan)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                {isPlanLocked(plan)
+                                  ? "Edit Plan (Locked)"
+                                  : "Edit Plan"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (!isKycValidated) {
+                                    toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+                                    return;
+                                  }
+                                  setSelectedPlans([plan.id]);
+                                  setBatchModalOpen(true);
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Submit for Certificate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleGenerateQrCode(plan.id)}
+                              >
+                                <QrCode className="w-4 h-4 mr-2" />
+                                QR Code
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(plan.id)}
+                                disabled={
+                                  (isDeleting && planToDelete === plan.id) ||
+                                  isPlanLocked(plan)
+                                }
+                                className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                  }`}
+                              >
+                                {isDeleting && planToDelete === plan.id ? (
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                )}
+                                {isDeleting && planToDelete === plan.id
+                                  ? "Deleting..."
+                                  : isPlanLocked(plan)
+                                    ? "Delete (Locked)"
+                                    : "Delete Plan"}
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

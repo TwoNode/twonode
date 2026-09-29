@@ -3,6 +3,16 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
+/**
+ * Last-resort fallback only — catches errors thrown before any root-layout
+ * group (app/(main), app/(noPopUp), app/(projects), app/v2 — see their own
+ * error.tsx, backed by components/ErrorFallback.tsx) has a chance to mount.
+ * This is the one file allowed to render its own <html>/<body>: the
+ * `global-error` filename is what makes Next.js treat it as a full root
+ * layout replacement; naming this `error.tsx` (as it previously was) meant
+ * it sat above every route group without a layout.tsx to pair with, so it
+ * was never actually reachable for real page errors.
+ */
 export default function ErrorPage({
   error,
   reset,

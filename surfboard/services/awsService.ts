@@ -31,7 +31,7 @@ const BUCKET = process.env.SURFBOARD_AWS_BUCKET_NAME || (process.env.REVA_AWS_BU
 
 export async function uploadSurfboardFileToS3(
   file: File,
-  fileType: "pdf" | "cad" | "certificate" | "redcopy",
+  fileType: "pdf" | "cad" | "certificate" | "redcopy" | "viewer-attachment",
   userId: string,
   planNumber?: string,
   filename?: string

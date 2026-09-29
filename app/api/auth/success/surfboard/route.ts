@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
 import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
+import { acceptPendingPlanShareInvites } from "@/surfboard/services/planService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +50,9 @@ export async function GET(request: NextRequest) {
             subscription: true, // Will be empty for new users
           },
         });
+        // Resolve any plans shared to this email before the account existed
+        // (Surfboard "Shared Access" — see invitePlanShareByEmail).
+        if (dbUser.email) await acceptPendingPlanShareInvites(dbUser.id, dbUser.email);
       }
     }
 

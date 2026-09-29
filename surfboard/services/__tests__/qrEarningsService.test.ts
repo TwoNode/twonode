@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotFoundError, ValidationError } from "@/lib/api/errors";
+import { NotFoundError, SubscriptionRequiredError, ValidationError } from "@/lib/api/errors";
 import { Platform } from "@/utils/platform";
 
 /**
@@ -23,6 +23,7 @@ const mockPrisma = vi.hoisted(() => ({
   surveyorBankDetails: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn() },
   withdrawalRequest: { findMany: vi.fn(), create: vi.fn() },
   surfboardUser: { findUnique: vi.fn(), findMany: vi.fn() },
+  subscription: { findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -405,6 +406,23 @@ describe("saveSurveyorBankDetails", () => {
 });
 
 describe("requestWithdrawal", () => {
+  beforeEach(() => {
+    // Withdrawal is a subscription-gated capability (per the Shared Access
+    // vision) — an active subscription is the default here so the rest of
+    // these tests keep exercising their original scenarios; the no-sub
+    // case gets its own test below.
+    mockPrisma.subscription.findUnique.mockResolvedValue({
+      status: "active",
+      currentEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+  });
+
+  it("rejects when the surveyor has no active subscription", async () => {
+    mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    await expect(requestWithdrawal("surveyor-1", 500)).rejects.toThrow(SubscriptionRequiredError);
+    expect(mockPrisma.surveyorBankDetails.findUnique).not.toHaveBeenCalled();
+  });
+
   it("rejects a non-positive amount before touching the database", async () => {
     await expect(requestWithdrawal("surveyor-1", 0)).rejects.toThrow(ValidationError);
     expect(mockPrisma.surveyorBankDetails.findUnique).not.toHaveBeenCalled();
