@@ -910,25 +910,27 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     </button>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateQrCode}
-                    disabled={isGeneratingQr}
-                    className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
-                  >
-                    {isGeneratingQr ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span>Generating</span>
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="h-4 w-4 mr-2" />
-                        <span>QR Code</span>
-                      </>
-                    )}
-                  </Button>
+                  {isOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateQrCode}
+                      disabled={isGeneratingQr}
+                      className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
+                    >
+                      {isGeneratingQr ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span>Generating</span>
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="h-4 w-4 mr-2" />
+                          <span>QR Code</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
