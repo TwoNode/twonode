@@ -19,7 +19,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Plan, PillarData, PLAN_TYPES } from "../../types/surfboardTypes";
 import proj4 from "proj4";
 import { surfboardApi } from "@/surfboard/apiClient";
-import { applyVisualizationShift } from "../../utils/surfboardUtils";
+import { applyVisualizationShift, normalizeCsvHeader, resolvePillarColumnIndices, findCsvColumnIndex } from "../../utils/surfboardUtils";
 
 interface AllPlansMapProps {
   plans: Plan[];
@@ -105,6 +105,12 @@ interface LocationResult {
 interface SearchFiltersPanelProps {
   searchQuery: string;
   onSearchQueryChange: (v: string) => void;
+  /** Plans currently matching searchQuery (+ status/type filters) — rendered as a
+   * dropdown under the input itself, since previously the only feedback for a
+   * search was the (easy to miss) filtered "Database Plans" checklist elsewhere
+   * on the page. */
+  searchSuggestions: Array<{ id: string; planNumber: string; surveyTitle: string; facilitator: string }>;
+  onSelectSearchSuggestion: (planId: string) => void;
   statusFilter: string[];
   onToggleStatus: (s: string) => void;
   typeFilter: string[];
@@ -124,6 +130,8 @@ interface SearchFiltersPanelProps {
 const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
   searchQuery,
   onSearchQueryChange,
+  searchSuggestions,
+  onSelectSearchSuggestion,
   statusFilter,
   onToggleStatus,
   typeFilter,
@@ -141,6 +149,14 @@ const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
 }: SearchFiltersPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Dismissed on selection, re-armed as soon as the query changes again —
+  // mirrors why the location dropdown disappears on pick (there it's driven
+  // by locResults being cleared; searchSuggestions is a derived list with no
+  // setter of its own, so dismissal needs its own flag instead).
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+  useEffect(() => {
+    setSuggestionsDismissed(false);
+  }, [searchQuery]);
 
   return (
     <div className="absolute z-50 top-2 left-2 max-w-[calc(100vw-1rem)] bg-white/95 dark:bg-surface/95 rounded-xl border border-gray-200 dark:border-white/10 shadow-md p-3 space-y-2">
@@ -197,7 +213,7 @@ const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
             </div>
           )}
         </div>
-        <div>
+        <div className="relative">
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             Search Plans
           </label>
@@ -208,6 +224,27 @@ const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
             placeholder="Plan number, title, facilitator..."
             className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
           />
+          {searchQuery.trim() && !suggestionsDismissed && searchSuggestions.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg shadow-md max-h-48 overflow-y-auto">
+              {searchSuggestions.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5"
+                  onClick={() => {
+                    onSelectSearchSuggestion(plan.id);
+                    onSearchQueryChange(plan.planNumber);
+                    setSuggestionsDismissed(true);
+                  }}
+                >
+                  <div className="font-medium text-gray-900 dark:text-white truncate">{plan.planNumber}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {plan.surveyTitle}{plan.facilitator ? ` · ${plan.facilitator}` : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col max-sm:grid grid-cols-2 gap-1 items-center">
@@ -613,6 +650,16 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
     });
   }, [combinedPlans, searchQuery, statusFilter, typeFilter, matchesSearchQuery]);
 
+  // Top matches shown as a dropdown directly under the Search Plans input —
+  // filteredPlans itself already drives the (easy-to-miss, separately
+  // positioned) "Database Plans" checklist; capped since a broad query can
+  // match dozens of plans and this is meant to be a quick-pick list, not a
+  // second results table.
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return filteredPlans.slice(0, 8);
+  }, [filteredPlans, searchQuery]);
+
   // Map visibility (which polygons render): status/type only — search never
   // hides a plan from the map, it only highlights matches (see searchMatchIds).
   const visibilityFilteredPlans = useMemo(() => {
@@ -721,11 +768,15 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       try {
         const text = await file.text();
         const lines = text.trim().split("\n");
-        const headers = lines.shift()?.toLowerCase().split(",") || [];
-        const pillarIndex = headers.findIndex((h) => h.includes("pillar"));
-        const eastingIndex = headers.findIndex((h) => h.includes("easting"));
-        const northingIndex = headers.findIndex((h) => h.includes("northing"));
-        const stateIndex = headers.findIndex((h) => h.includes("state"));
+        // Shared with parseCSVContent (surfboardUtils.ts) — this used to be
+        // its own, less careful copy (just lowercase + split, no
+        // whitespace/punctuation stripping or BOM handling), which could
+        // fail to recognize header variants like "Pillar No." or a BOM'd
+        // first column that the other CSV upload flow already handled fine.
+        const headers = (lines.shift() ?? "").split(",").map(normalizeCsvHeader);
+        const { pillarNumberIndex: pillarIndex, eastingIndex, northingIndex } =
+          resolvePillarColumnIndices(headers);
+        const stateIndex = findCsvColumnIndex(headers, ["state"]);
 
         if (pillarIndex === -1 || eastingIndex === -1 || northingIndex === -1) {
           console.warn(`Skipping file ${file.name}: Missing required columns.`);
@@ -1420,6 +1471,8 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
       <SearchFiltersPanel
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
+        searchSuggestions={searchSuggestions}
+        onSelectSearchSuggestion={zoomToPlan}
         statusFilter={statusFilter}
         onToggleStatus={toggleStatus}
         typeFilter={typeFilter}
