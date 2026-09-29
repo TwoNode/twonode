@@ -89,7 +89,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `utils/prismaErrorHandler.ts` | Normalizes Prisma errors into API-friendly errors |
 | `utils/recordCopyVerification.ts` | Record-copy verification logic |
 | `utils/remita.ts` | Remita payment gateway helpers |
-| `utils/surfboardUtils.ts` | General Surfboard helper functions |
+| `utils/surfboardUtils.ts` | General Surfboard helper functions. `parseCSVContent` parses an uploaded pillar CSV via `normalizeCsvHeader` (strips BOM, whitespace, punctuation, lowercases) and `findCsvColumnIndex`/`resolvePillarColumnIndices` (substring-matches against ordered header-variation lists, e.g. "Pillar No.", "Easting(X)", "Northings (Y)") so header formatting differences don't break column detection; also used directly by `MaplibreMultiPlans.tsx`'s CSV-upload handler |
 | `utils/validation.ts` | Form/input validation helpers |
 | `hooks/useBatchLock.ts` | Lock/unlock state for a Certificate-of-Deposit batch |
 | `hooks/usePlanLock.ts` | Lock/unlock state for a single plan |
