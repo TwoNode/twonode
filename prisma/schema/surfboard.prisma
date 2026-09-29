@@ -336,6 +336,7 @@ model SurfboardPlan {
   shareResponses    SurfboardPlanShareResponse[]
   shareInvites      SurfboardPlanShareInvite[]
   viewerAttachments SurfboardPlanViewerAttachment[]
+  comments          SurfboardPlanComment[]
 
   /// Soft delete fields
   deleted   Boolean   @default(false)
@@ -677,4 +678,22 @@ model SurfboardPlanViewerAttachment {
 
   @@index([planId, viewerId])
   @@map("surfboard_plan_viewer_attachments")
+}
+
+/// A shared discussion thread on a plan — visible to the owner and every
+/// current recipient (unlike SurfboardPlanViewerAttachment, which is
+/// deliberately private per-viewer). Not gated by subscription: reading/
+/// discussing a shared plan shouldn't require paying, same principle as
+/// the rest of Shared Access.
+model SurfboardPlanComment {
+  id        String        @id @default(uuid())
+  planId    String        @db.Uuid
+  plan      SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime      @default(now())
+  editedAt  DateTime?
+
+  @@index([planId])
+  @@map("surfboard_plan_comments")
 }

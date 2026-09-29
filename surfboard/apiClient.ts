@@ -676,6 +676,24 @@ export const surfboardApi = {
         ),
     },
 
+    /** Shared discussion thread on a plan — visible to the owner and every current recipient. */
+    comments: {
+      list: (planId: string) =>
+        jsonFetch<
+          { id: string; planId: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }[]
+        >(`${BASE}/plans/${encodeURIComponent(planId)}/comments`),
+      add: (planId: string, body: string) =>
+        jsonFetch<{ id: string; planId: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/comments`,
+          { method: "POST", body: JSON.stringify({ body }) }
+        ),
+      delete: (planId: string, commentId: string) =>
+        jsonFetch<{ id: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/comments/${encodeURIComponent(commentId)}`,
+          { method: "DELETE" }
+        ),
+    },
+
     respondToShare: (planId: string, response?: string) =>
       jsonFetch<any>(
         `${BASE}/plans/${encodeURIComponent(planId)}/share-response`,

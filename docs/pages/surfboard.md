@@ -21,8 +21,7 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard/dashboard/newplan` | `surfboard/dashboard/newplan/page.tsx` | Create a new survey plan |
 | `/surfboard/dashboard/plan` | `surfboard/dashboard/plan/page.tsx` | Single plan view |
 | `/surfboard/dashboard/plan/edit` | `surfboard/dashboard/plan/edit/page.tsx` | Edit a plan |
-| `/surfboard/dashboard/plans` | `surfboard/dashboard/plans/page.tsx` | All of the surveyor's plans |
-| `/surfboard/dashboard/shared` | `surfboard/dashboard/shared/page.tsx` | Plans shared with/by the surveyor |
+| `/surfboard/dashboard/plans` | `surfboard/dashboard/plans/page.tsx` | All of the surveyor's plans — "My Plans"/"Shared with me"/"My Shared Plans" scope filter (Shared Access), "Queried Plans" tab. The old standalone `/surfboard/dashboard/shared` route was retired — Shared Access is a filter here now, not a separate page |
 | `/surfboard/dashboard/queried-plans` | `surfboard/dashboard/queried-plans/page.tsx` | Plans returned with a query/objection |
 | `/surfboard/dashboard/notifications` | `surfboard/dashboard/notifications/page.tsx` | Notifications list |
 | `/surfboard/dashboard/qr-earnings` | `surfboard/dashboard/qr-earnings/page.tsx` | QR-code referral earnings |

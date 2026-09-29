@@ -52,10 +52,18 @@ export default function DashboardHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeValue>({});
   const [firstName, setFirstName] = useState("");
+  // /newplan is subscription-gated server-side (proxy.ts + createSurfPlan) —
+  // hide this CTA rather than send an unsubscribed user into a page that
+  // immediately redirects them out. Same check surfboardUserPanelLayout.tsx
+  // uses for the sidebar's own "New Plan" button.
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
 
   useEffect(() => {
     surfboardApi.profile.get().then((res) => {
       if (res.success) setFirstName(res.data.firstName || "");
+    });
+    surfboardApi.subscription.userAndActiveSub().then((res) => {
+      setHasSubscriptionAccess(res.success ? !!res.data?.subscription : false);
     });
   }, []);
 
@@ -180,7 +188,7 @@ export default function DashboardHome() {
           `${stats.pending} Pending`,
         ]}
         gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
-        cta={{ label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus }}
+        cta={hasSubscriptionAccess ? { label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus } : undefined}
       />
 
       {/* Tabs + Filters */}

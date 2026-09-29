@@ -175,8 +175,10 @@ export function AnalyticsDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview — each tile now carries a breakdown line for context instead of a bare number */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Stats Overview — each tile now carries a breakdown line for context instead of a bare number.
+          4 columns, not 5: at 5-across each card is too narrow and the breakdown line (e.g. "Pending 0 · Lodged 0 · Queried 0")
+          gets clipped — the 5th "Shared Access" tile wraps to its own row instead. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Plans"
           value={analytics.totalPlansCount}

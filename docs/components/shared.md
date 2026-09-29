@@ -124,6 +124,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | File | Description |
 |---|---|
 | `ConfirmedLogoutLink.tsx` | Logout link/button wrapped in a confirmation dialog |
+| `ErrorFallback.tsx` | Shared "Try again / Go Home" UI for a root-layout group's `error.tsx`. This app uses Next's "multiple root layouts" pattern (`app/(main)`, `app/(noPopUp)`, `app/(projects)`, `app/v2` — each defines its own `<html>`/`<body>`, no shared `app/layout.tsx`), so a single top-level `error.tsx` is never actually mounted for any of them; each group needs its own `error.tsx` (mirrors how `not-found.tsx` was already duplicated per group). `app/global-error.tsx` is the one file allowed to render its own `<html>`/`<body>` — a last-resort fallback for errors thrown before any group's layout mounts |
 | `NotificationBell.tsx` | Dropdown notification bell (generic over platform) |
 | `UserAvatar.tsx` | Session-fetching avatar with initials fallback (generic over platform) |
 | `CountdownComponent.tsx` | Countdown timer |
