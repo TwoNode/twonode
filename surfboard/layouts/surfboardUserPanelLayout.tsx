@@ -207,14 +207,18 @@ export default function SurfboardUserPanelLayout({
       label: "Plans",
       url: `${dashboardUrl}/plans`,
       section: "Plans",
-      requiresSubscription: true,
+      // Read-only access — proxy.ts's alwaysAllowedEvenUnsubscribed list
+      // permits this page for anyone, subscribed or not (viewing owned and
+      // shared-to-you plans shouldn't require paying). Creating/editing a
+      // plan is still capability-gated server-side and in the UI itself.
+      requiresSubscription: false,
     },
     {
       icon: Map,
       label: "Map Viewer",
       url: `${dashboardUrl}/map`,
       section: "Plans",
-      requiresSubscription: true,
+      requiresSubscription: false,
     },
     {
       icon: CreditCard,
@@ -325,11 +329,14 @@ export default function SurfboardUserPanelLayout({
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
             enableRailCollapse
-            primaryAction={{
+            // /newplan stays subscription-gated (proxy.ts + createSurfPlan's
+            // requireActiveSubscription) — hide the CTA rather than send an
+            // unsubscribed user into a page that will just redirect them out.
+            primaryAction={hasSubscriptionAccess ? {
               label: "New Plan",
               href: `${dashboardUrl}/newplan`,
               icon: Plus,
-            }}
+            } : undefined}
           />
         </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
