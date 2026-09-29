@@ -60,6 +60,16 @@ export interface MenuProps {
    * which is always dark now regardless of product.
    */
   variant?: "auto" | "dark";
+  /**
+   * Icon-only rendering for a rail-collapsed sidebar: labels, section
+   * headings, and badges are hidden (each link's `title` attribute carries
+   * the label as a native tooltip instead). Named `iconOnly` rather than
+   * "collapsed" to avoid colliding with the per-section accordion-collapse
+   * state already tracked locally below (a different, orthogonal concept —
+   * a section can be click-collapsed while the sidebar itself is at full
+   * width, and vice versa).
+   */
+  iconOnly?: boolean;
 }
 
 export function Menu({
@@ -69,6 +79,7 @@ export function Menu({
   userRole,
   colorPalette,
   variant = "auto",
+  iconOnly = false,
 }: MenuProps) {
   const colors = colorPalette || require("@/reva/colors").REVA_COLORS;
   const pathname = usePathname();
@@ -167,7 +178,10 @@ export function Menu({
           {sectionGroups.map((group, groupIndex) => {
             const collapsedByToggle = isSectionCollapsed(group.section);
             const isHovered = !!group.section && hoveredSection === group.section;
-            const collapsed = collapsedByToggle && !isHovered;
+            // Icon-only rail mode always shows every item as an icon — the
+            // per-section accordion (for hiding less-used groups at full
+            // width) doesn't apply when there's no label to hide.
+            const collapsed = !iconOnly && collapsedByToggle && !isHovered;
             // `<ul>` only permits `<li>` as a direct child, so the shared
             // hover region for a section (heading + its items, peeking a
             // collapsed section open without a permanent click-toggle) is
@@ -182,7 +196,12 @@ export function Menu({
 
             return (
               <React.Fragment key={groupIndex}>
-                {group.section && (
+                {group.section && iconOnly && groupIndex > 0 && (
+                  <li className="w-full list-none px-3 py-1.5" aria-hidden>
+                    <div className="h-px w-full" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  </li>
+                )}
+                {group.section && !iconOnly && (
                   <li
                     className="w-full list-none"
                     onMouseEnter={onGroupMouseEnter}
@@ -221,8 +240,10 @@ export function Menu({
                   onClick={() => {
                     sidebar?.toggleOpen();
                   }}
+                  title={iconOnly ? item.label : undefined}
                   className={cn(
-                    "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg px-2.5 transition-all duration-200 ease-in-out"
+                    "group flex flex-row items-center gap-3 w-full h-11 lg:h-12 rounded-lg transition-all duration-200 ease-in-out",
+                    iconOnly ? "justify-center px-0" : "px-2.5"
                   )}
                   style={{
                     background: isDark
@@ -261,7 +282,7 @@ export function Menu({
                   }}
                 >
                   <span
-                    className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
+                    className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 border"
                     style={{
                       backgroundColor: isDark
                         ? isActive(item.url)
@@ -293,8 +314,25 @@ export function Menu({
                           : colors.primary.main,
                       }}
                     />
+                    {/* Icon-only rail still needs to surface "needs attention"
+                        badges somehow — a dot stands in for the hidden count
+                        pill so nothing urgent goes invisible when collapsed. */}
+                    {iconOnly && item.badge !== undefined && (
+                      <span
+                        className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+                        style={{
+                          background: item.badgeAttention ? "#F59E0B" : "var(--color-brand-primary-light)",
+                          // Matches Sidebar's SIDEBAR_INK rail background so the
+                          // dot's border reads as a notch cut into the rail
+                          // rather than a mismatched outline (menu.tsx doesn't
+                          // import that constant to avoid a circular import
+                          // with sidebar.tsx, which imports Menu from here).
+                          borderColor: "#0A0F16",
+                        }}
+                      />
+                    )}
                   </span>
-                  <span
+                  {!iconOnly && <span
                     className="text-[13px] font-['Eudoxus Sans'] transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1"
                     style={{
                       color: isDark
@@ -310,8 +348,8 @@ export function Menu({
                     }}
                   >
                     {item.label}
-                  </span>
-                  {item.badge !== undefined && (
+                  </span>}
+                  {!iconOnly && item.badge !== undefined && (
                     <span
                       className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md px-1.5 text-[10.5px] font-bold"
                       style={{
@@ -350,7 +388,7 @@ export function Menu({
           borderColor: isDark ? "rgba(255,255,255,0.1)" : `${colors.primary.light}22`,
         }}
       >
-          <div className="flex items-center gap-2.5">
+          <div className={cn("flex items-center gap-2.5", iconOnly && "flex-col gap-2")}>
             <div className="relative shrink-0">
               {userImageUrl && !avatarError ? (
                 <img
@@ -403,7 +441,7 @@ export function Menu({
               />
             </div>
 
-            {userName && (
+            {userName && !iconOnly && (
               <div className="min-w-0 flex-1">
                 <strong
                   className="block truncate text-[12.5px] font-semibold"

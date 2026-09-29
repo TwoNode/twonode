@@ -7,12 +7,14 @@ import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform, SurfboardRole } from "@/utils/platform";
+import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 
 export default function SurfboardLoginPage() {
   return (
     <AuthSplitLayout
       accent="#2563EB"
       accentDark="#1D4ED8"
+      background={SURFBOARD_GRADIENTS.hero}
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
       description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."

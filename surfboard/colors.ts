@@ -64,3 +64,11 @@ export function surfboardStatusBadgeStyle(
   const color = SURFBOARD_COLORS[tone].main;
   return { backgroundColor: `${color}1A`, color };
 }
+
+// Matches the public landing page's --sfl-primary/--sfl-primary-2/--sfl-secondary
+// gradient (surfboard-landing.module.css) exactly, so the login split-panel and
+// dashboard header read as the same identity as the marketing site instead of
+// the brighter, unrelated blue-600 gradient they used before.
+export const SURFBOARD_GRADIENTS = {
+  hero: "linear-gradient(155deg, #000b3d 0%, #141c4d 45%, #233dff 140%)",
+};
