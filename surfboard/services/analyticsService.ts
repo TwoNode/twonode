@@ -3,6 +3,7 @@ import { Prisma } from "@/prisma/generated";
 import { SurfboardRole } from "@/utils/platform";
 import { getRoleFieldPrefix } from "@/surfboard/services/planLockService";
 import { ForbiddenError } from "@/lib/api/errors";
+import { isSubActiveOrGrace } from "@/surfboard/services/subscriptionService";
 
 /**
  * New for Phase 2 (2026-08-24 request) — role/platform-scoped analytics.
@@ -298,10 +299,45 @@ export async function getTimeTrend(scope: AnalyticsScope, range?: AnalyticsDateR
     .map(([period, count]) => ({ period, count }));
 }
 
+/**
+ * "Numbers of plans shared to a user with active/expired or without
+ * subscription" — one count per (plan, recipient) pair this user has
+ * shared out, bucketed by the recipient's OWN subscription status right
+ * now. Deliberately per-share, not per-unique-recipient: sharing 3 plans
+ * with the same unsubscribed facilitator counts 3 toward "none".
+ */
+async function computeSharedAccessStats(userId: string): Promise<{ status: "active" | "expired" | "none"; count: number }[]> {
+  const sharedPlans = await prisma.surfboardPlan.findMany({
+    where: { userId, sharedTo: { isEmpty: false }, deleted: false },
+    select: { sharedTo: true },
+  });
+  const recipientIds = [...new Set(sharedPlans.flatMap((p) => p.sharedTo))];
+  if (!recipientIds.length) return [{ status: "active", count: 0 }, { status: "expired", count: 0 }, { status: "none", count: 0 }];
+
+  const subs = await prisma.subscription.findMany({ where: { userId: { in: recipientIds } } });
+  const subByUserId = new Map(subs.map((s) => [s.userId, s]));
+
+  const buckets = { active: 0, expired: 0, none: 0 };
+  for (const plan of sharedPlans) {
+    for (const recipientId of plan.sharedTo) {
+      const sub = subByUserId.get(recipientId);
+      if (!sub) buckets.none += 1;
+      else if (isSubActiveOrGrace(sub.status, sub.currentEnd)) buckets.active += 1;
+      else buckets.expired += 1;
+    }
+  }
+  return [
+    { status: "active", count: buckets.active },
+    { status: "expired", count: buckets.expired },
+    { status: "none", count: buckets.none },
+  ];
+}
+
 export interface UserDashboardAnalytics {
   totalPlansCount: number;
   provisionalPlansCount: number;
   facilitatorStats: { facilitator: string; count: number; totalArea: number }[];
+  sharedAccessStats: { status: "active" | "expired" | "none"; count: number }[];
   lgaStats: { lga: string; count: number }[];
   pendingCertificates: {
     id: string;
@@ -347,6 +383,7 @@ export async function getUserDashboardAnalytics(
     pendingCount,
     lodgedCount,
     queriedCount,
+    sharedAccessStats,
   ] = await Promise.all([
       prisma.surfboardPlan.count({ where: { userId, planType: excludeProvisional, ...dateWhere } }),
       prisma.surfboardPlan.count({ where: { userId, planType: { in: PROVISIONAL_TYPES }, ...dateWhere } }),
@@ -381,6 +418,7 @@ export async function getUserDashboardAnalytics(
       prisma.surfboardPlan.count({ where: { userId, status: "PENDING", ...dateWhere } }),
       prisma.surfboardPlan.count({ where: { userId, status: "LODGED", ...dateWhere } }),
       prisma.surfboardPlan.count({ where: { userId, status: "QUERIED", ...dateWhere } }),
+      computeSharedAccessStats(userId),
   ]);
 
   const pillarBuckets = { Regular: 0, Special: 0 };
@@ -407,6 +445,7 @@ export async function getUserDashboardAnalytics(
     totalPlansCount,
     provisionalPlansCount,
     facilitatorStats: processedFacilitatorStats,
+    sharedAccessStats,
     lgaStats: lgaStats.map((stat) => ({ lga: stat.lga || "Unknown", count: stat._count.id })),
     pendingCertificates: pendingCertificates.map((cert) => ({
       id: cert.id,

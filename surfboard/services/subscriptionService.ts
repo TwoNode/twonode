@@ -18,7 +18,8 @@ import { SubscriptionRequiredError } from "@/lib/api/errors";
 
 const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
 
-function isSubActiveOrGrace(status: string | null | undefined, expiresAt: Date | null) {
+/** Exported for bulk classification (e.g. analyticsService's sharedAccessStats) — getUserActiveSubscription/getUserAndActiveSub apply this same rule one row at a time via findUnique. */
+export function isSubActiveOrGrace(status: string | null | undefined, expiresAt: Date | null) {
   const isValid = expiresAt ? new Date() <= new Date(expiresAt.getTime() + GRACE_PERIOD_MS) : true;
   const isActive = (status === "active" || status === "past_due") && isValid;
   const isCancelledButValid = status === "canceled" && isValid;

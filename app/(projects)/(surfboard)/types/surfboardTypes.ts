@@ -261,8 +261,14 @@ export interface TimeTrendData {
   totalArea: number;
 }
 
+export interface SharedAccessStat {
+  status: "active" | "expired" | "none";
+  count: number;
+}
+
 export interface AnalyticsData {
   facilitatorStats: FacilitatorStat[];
+  sharedAccessStats: SharedAccessStat[];
   lgaStats: LGAStat[];
   pendingCertificates: PendingCertificate[];
   pendingCertificatesCount: number;
