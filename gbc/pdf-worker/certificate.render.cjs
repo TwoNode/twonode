@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 10, fontWeight: 600, color: GOLD, letterSpacing: 3, marginBottom: 18 },
   presentedTo: { fontSize: 11, fontWeight: 500, color: MUTED, marginBottom: 10 },
   name: {
-    fontSize: 34,
     fontWeight: 800,
     color: INK,
     marginBottom: 16,
@@ -95,6 +94,19 @@ const styles = StyleSheet.create({
   issuerName: { fontSize: 10, fontWeight: 700, color: INK, marginBottom: 2 },
   issuerDate: { fontSize: 8, fontWeight: 500, color: MUTED },
 });
+
+// The name box has no fixed width (it's centered in a flex column, sized to
+// the page's content area), so react-pdf wraps a long name onto a second
+// line rather than clip it — that's fine at the default size, but a genuinely
+// long full name (with honorifics, hyphenation, etc.) at 34px bold reads as
+// cramped against the certificate's fixed vertical layout. Shrinking the
+// font for longer names keeps it to roughly one comfortable line instead.
+function nameFontSize(name) {
+  const length = (name || "").length;
+  if (length > 34) return 22;
+  if (length > 24) return 28;
+  return 34;
+}
 
 function cableMotif(corner) {
   const isTopRight = corner === "topRight";
@@ -156,7 +168,7 @@ function buildCertificateElement({ ticket, verificationUrl, qrCodeDataUrl }) {
       { style: styles.center },
       React.createElement(Text, { style: styles.eyebrow }, "CERTIFICATE OF ATTENDANCE"),
       React.createElement(Text, { style: styles.presentedTo }, "This certifies that"),
-      React.createElement(Text, { style: styles.name }, ticket.name),
+      React.createElement(Text, { style: [styles.name, { fontSize: nameFontSize(ticket.name) }] }, ticket.name),
       React.createElement(
         Text,
         { style: styles.body },
