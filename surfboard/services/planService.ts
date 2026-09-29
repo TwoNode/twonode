@@ -580,7 +580,17 @@ export async function getSurfPlanById(userId: string, id: string, options?: { fo
   });
   if (!plan) throw new NotFoundError("Plan (or access denied)");
 
-  return { ...withGeometry(plan), isOwner: plan.userId === userId };
+  // Resolved for the owner's Share modal / "who has access" display — the
+  // plan itself only stores sharedTo as a plain id array (SharedPlanModal
+  // needs full user objects, same shape searchUsers returns).
+  const sharedToUsers = plan.sharedTo.length
+    ? await prisma.surfboardUser.findMany({
+        where: { id: { in: plan.sharedTo } },
+        select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true },
+      })
+    : [];
+
+  return { ...withGeometry(plan), isOwner: plan.userId === userId, sharedToUsers };
 }
 
 export async function getSurfPlanByIdWithSurveyor(userId: string, id: string) {

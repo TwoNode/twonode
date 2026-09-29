@@ -174,6 +174,10 @@ export default function AllPlans() {
 
   // User Profile Data
   const [isKycValidated, setIsKycValidated] = useState<boolean>(true); // Default to true to prevent flash
+  // /newplan is subscription-gated server-side (proxy.ts + createSurfPlan) —
+  // hide this CTA rather than send an unsubscribed user into a page that
+  // immediately redirects them out.
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
 
   const loadPlans = async (
     page = pagination.page,
@@ -224,6 +228,9 @@ export default function AllPlans() {
       if (res.success) {
         setIsKycValidated(res.data.isKycValidated);
       }
+    });
+    surfboardApi.subscription.userAndActiveSub().then((res) => {
+      setHasSubscriptionAccess(res.success ? !!res.data?.subscription : false);
     });
   }, []);
 
@@ -956,16 +963,18 @@ export default function AllPlans() {
                 <span className="hidden sm:inline">My Batches</span>
                 <span className="sm:hidden">Batches</span>
               </button>
-              <button
-                onClick={() =>
-                  (window.location.href = "/surfboard/dashboard/newplan")
-                }
-                className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-sm font-bold shadow-lg shadow-black/20 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                style={{ color: "var(--color-brand-primary-dark)" }}
-              >
-                <Plus className="w-4 h-4" />
-                New Plan
-              </button>
+              {hasSubscriptionAccess && (
+                <button
+                  onClick={() =>
+                    (window.location.href = "/surfboard/dashboard/newplan")
+                  }
+                  className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-sm font-bold shadow-lg shadow-black/20 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ color: "var(--color-brand-primary-dark)" }}
+                >
+                  <Plus className="w-4 h-4" />
+                  New Plan
+                </button>
+              )}
             </div>
           </div>
         </div>

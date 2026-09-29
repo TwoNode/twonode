@@ -306,6 +306,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       if (result.success) {
         const data = result.data;
         setIsOwner(result?.data?.isOwner || false);
+        setSharedWith(data.sharedToUsers || []);
         setPlan({
           ...data,
           createdAt: new Date(data.createdAt),
@@ -356,9 +357,12 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   };
 
   useEffect(() => {
-    if (!isOwner) fetchViewerAttachments();
+    // Wait for fetchPlanData to resolve the real isOwner value first —
+    // isOwner's default (false) would otherwise fire this for the owner
+    // too, on every load, always hitting a 403.
+    if (!loading && !isOwner) fetchViewerAttachments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planId, isOwner]);
+  }, [planId, isOwner, loading]);
 
   const fetchComments = async () => {
     const result = await surfboardApi.plans.comments.list(planId);
