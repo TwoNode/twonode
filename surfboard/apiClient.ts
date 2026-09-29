@@ -530,9 +530,6 @@ export const surfboardApi = {
         `${BASE}/plans/shared-with-me?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`,
       ),
 
-    sharedAwaitingResponseCount: () =>
-      jsonFetch<{ count: number }>(`${BASE}/plans/shared-awaiting-response`),
-
     deleteAttachment: (
       planId: string,
       fileUrl: string,
@@ -650,6 +647,13 @@ export const surfboardApi = {
         method: "DELETE",
         body: JSON.stringify({ userId }),
       }),
+
+    /** Shares by email, whether or not the recipient has an account yet — see invitePlanShareByEmail. */
+    inviteByEmail: (planId: string, email: string) =>
+      jsonFetch<{ invited: boolean; email: string; expiresAt: string; inviteId: string } | { id: string; sharedTo: string[] }>(
+        `${BASE}/plans/${encodeURIComponent(planId)}/share/invite`,
+        { method: "POST", body: JSON.stringify({ email }) }
+      ),
 
     respondToShare: (planId: string, response?: string) =>
       jsonFetch<any>(

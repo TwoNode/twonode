@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Search, UserPlus, UserX } from "lucide-react";
+import { X, Search, UserPlus, UserX, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +29,9 @@ export function SharePlanModal({
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [sharedUsers, setSharedUsers] = useState<User[]>(sharedWith);
+  const [isInviting, setIsInviting] = useState(false);
   const { toast } = useToast();
+  const isEmailQuery = /\S+@\S+\.\S+/.test(searchQuery.trim());
 
   // Update shared users when prop changes
   useEffect(() => {
@@ -95,6 +97,37 @@ export function SharePlanModal({
         description: error instanceof Error ? error.message : "Failed to share plan. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleInviteByEmail = async () => {
+    const email = searchQuery.trim();
+    setIsInviting(true);
+    try {
+      const result = await surfboardApi.plans.inviteByEmail(planId, email);
+      if (!result.success) {
+        throw new Error(result.error || "Failed to invite by email");
+      }
+
+      if ("invited" in result.data) {
+        toast({
+          title: "Invitation sent",
+          description: `${email} doesn't have an account yet — we emailed them an invite. They'll see this plan as soon as they sign up.`,
+        });
+      } else {
+        toast({ title: "Success", description: `Shared plan with ${email}` });
+      }
+      setSearchQuery("");
+      setSearchResults([]);
+    } catch (error) {
+      console.error("Error inviting by email:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to invite by email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInviting(false);
     }
   };
 
@@ -205,6 +238,30 @@ export function SharePlanModal({
                     ))}
                   </div>
                 </ScrollArea>
+              ) : isEmailQuery ? (
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        <Mail className="h-3.5 w-3.5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{searchQuery.trim()}</p>
+                      <p className="text-xs text-muted-foreground">No account yet — invite by email</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInviteByEmail}
+                    disabled={isInviting}
+                    className="h-8"
+                  >
+                    <UserPlus className="mr-1 h-3.5 w-3.5" />
+                    {isInviting ? "Inviting..." : "Invite"}
+                  </Button>
+                </div>
               ) : (
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   No users found

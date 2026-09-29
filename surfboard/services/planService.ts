@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@/prisma/generated";
 import QRCode from "qrcode";
+import crypto from "crypto";
 import { headers } from "next/headers";
 import { computeGeometryDetails, type GeometryInput } from "@/app/(projects)/(surfboard)/utils/dbUtils";
 import { deleteMultipleSurfboardFilesFromS3WithUrl, uploadSurfboardFileToS3 } from "@/surfboard/services/awsService";
@@ -15,9 +16,11 @@ import { requireActiveSubscription } from "@/surfboard/services/subscriptionServ
 import { PLAN_TYPES } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import type { SurfboardPlanDTO } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
-import { SurfboardRole } from "@/utils/platform";
+import { Platform, SurfboardRole } from "@/utils/platform";
 import { paginatedResult } from "@/lib/api/pagination";
 import { PROVISIONAL_TYPES } from "@/surfboard/services/analyticsService";
+import { emailInUse } from "@/lib/auth/userLookup";
+import { sendPlanShareInviteEmail } from "@/utils/email";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/surfboardActions.ts —
@@ -861,17 +864,118 @@ export async function sharePlanWithUser(userId: string, userFirstLastName: { fir
     select: { id: true, sharedTo: true },
   });
 
-  // A fresh share (including a re-share) is fresh "awaiting response" again —
-  // reset respondedAt/response so a prior acknowledgment doesn't carry over.
+  // Immediate access, no accept step (Shared Access vision): sharedTo above
+  // already grants access the instant this runs. This row is now a pure
+  // audit trail of who shared what with whom and when — a re-share must NOT
+  // reset respondedAt/response, since there's no "awaiting response" state
+  // to reset back into.
   await prisma.surfboardPlanShareResponse.upsert({
     where: { planId_sharedWithUserId: { planId, sharedWithUserId: targetUserId } },
     create: { planId, sharedByUserId: userId, sharedWithUserId: targetUserId },
-    update: { sharedByUserId: userId, sharedAt: new Date(), respondedAt: null, response: null },
+    update: { sharedByUserId: userId, sharedAt: new Date() },
   });
 
   await notifyPlanShared({ planId, planNumber: plan.planNumber, sharedWithUserId: targetUserId, sharedByUser: userFirstLastName, sendEmail: true });
 
   return updatedPlan;
+}
+
+const PLAN_SHARE_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const hashInviteToken = (raw: string) => crypto.createHash("sha256").update(raw).digest("hex");
+
+/**
+ * Shares a plan with an email address that may or may not already have a
+ * Surfboard account. An existing account behaves exactly like
+ * sharePlanWithUser (immediate access, no accept step). A brand-new email
+ * gets a SurfboardPlanShareInvite row + email instead — access is granted
+ * automatically the moment a SurfboardUser with that email is created (see
+ * the surfboard Kinde auth-success callback), not via a manual accept step,
+ * matching the immediate-access decision for existing-user shares.
+ */
+export async function invitePlanShareByEmail(
+  userId: string,
+  userFirstLastName: { firstName: string; lastName: string },
+  planId: string,
+  email: string
+) {
+  await requireActiveSubscription(userId);
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail || !normalizedEmail.includes("@")) throw new ValidationError({ email: "A valid email is required" });
+
+  const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { id: true, sharedTo: true, planNumber: true } });
+  if (!plan) throw new NotFoundError("Plan");
+
+  if (await emailInUse(Platform.SURFBOARD, normalizedEmail)) {
+    const existingUser = await prisma.surfboardUser.findFirst({ where: { email: { equals: normalizedEmail, mode: "insensitive" } }, select: { id: true } });
+    if (!existingUser) throw new NotFoundError("User");
+    return sharePlanWithUser(userId, userFirstLastName, planId, existingUser.id);
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + PLAN_SHARE_INVITE_TTL_MS);
+  const sharedByName = [userFirstLastName.firstName, userFirstLastName.lastName].filter(Boolean).join(" ") || "A surveyor";
+
+  // A newer invite for the same plan+email supersedes any still-open one,
+  // same reasoning as AdminInvitation: an older leaked/forwarded link stops
+  // being usable to resolve access.
+  const invite = await prisma.$transaction(async (tx) => {
+    const open = await tx.surfboardPlanShareInvite.findMany({
+      where: { planId, email: normalizedEmail, acceptedAt: null },
+      select: { id: true },
+    });
+    if (open.length) {
+      await tx.surfboardPlanShareInvite.deleteMany({ where: { id: { in: open.map((o) => o.id) } } });
+    }
+    return tx.surfboardPlanShareInvite.create({
+      data: { planId, email: normalizedEmail, tokenHash: hashInviteToken(rawToken), sharedByUserId: userId, expiresAt },
+    });
+  });
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
+  const signupUrl = `${siteUrl}/api/auth/register?post_login_redirect_url=${encodeURIComponent("/api/auth/success/surfboard")}&login_hint=${encodeURIComponent(normalizedEmail)}`;
+  await sendPlanShareInviteEmail({ to: normalizedEmail, sharedByName, planNumber: plan.planNumber, signupUrl, expiresAt });
+
+  return { invited: true, email: normalizedEmail, expiresAt, inviteId: invite.id };
+}
+
+/**
+ * Resolves any pending plan-share invites for a newly created SurfboardUser
+ * — called once, right after `prisma.surfboardUser.create` in the auth
+ * flow. Never throws: a resolution failure must not block the user's login.
+ */
+export async function acceptPendingPlanShareInvites(userId: string, email: string): Promise<void> {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
+    const now = new Date();
+    const invites = await prisma.surfboardPlanShareInvite.findMany({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" }, acceptedAt: null, expiresAt: { gt: now } },
+      select: { id: true, planId: true, sharedByUserId: true },
+    });
+    if (!invites.length) return;
+
+    for (const invite of invites) {
+      const plan = await prisma.surfboardPlan.findUnique({ where: { id: invite.planId }, select: { sharedTo: true } });
+      if (!plan) continue;
+      await prisma.$transaction([
+        prisma.surfboardPlan.update({
+          where: { id: invite.planId },
+          data: { sharedTo: { set: [...new Set([...(plan.sharedTo || []), userId])] } },
+        }),
+        prisma.surfboardPlanShareInvite.update({
+          where: { id: invite.id },
+          data: { acceptedByUserId: userId, acceptedAt: now },
+        }),
+        prisma.surfboardPlanShareResponse.upsert({
+          where: { planId_sharedWithUserId: { planId: invite.planId, sharedWithUserId: userId } },
+          create: { planId: invite.planId, sharedByUserId: invite.sharedByUserId, sharedWithUserId: userId },
+          update: { sharedByUserId: invite.sharedByUserId, sharedAt: now },
+        }),
+      ]);
+    }
+  } catch (error) {
+    console.error("Error resolving pending plan share invites:", error);
+  }
 }
 
 export async function unsharePlanWithUser(userId: string, planId: string, targetUserId: string) {
@@ -901,11 +1005,6 @@ export async function respondToPlanShare(userId: string, planId: string, respons
     create: { planId, sharedByUserId: plan.userId ?? "", sharedWithUserId: userId, respondedAt: new Date(), response },
     update: { respondedAt: new Date(), response },
   });
-}
-
-/** Count of plans `userId` has shared out that the recipient hasn't yet acknowledged. */
-export async function getSharedAwaitingResponseCount(userId: string): Promise<number> {
-  return prisma.surfboardPlanShareResponse.count({ where: { sharedByUserId: userId, respondedAt: null } });
 }
 
 // ---------------------------------------------------------------------------

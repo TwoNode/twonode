@@ -26,7 +26,6 @@ export interface PlanHealthSummary {
   totalPlans: number;
   queried: number;
   underReview: number;
-  sharedAwaitingResponse: number;
   qrEarningsThisMonth: number;
 }
 
@@ -252,10 +251,6 @@ export function AnalyticsDashboard({
             <div className="flex items-center justify-between py-2.5">
               <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
               <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.underReview}</dd>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-gray-600 dark:text-gray-300">Shared, awaiting response</dt>
-              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.sharedAwaitingResponse}</dd>
             </div>
             <div className="flex items-center justify-between py-2.5">
               <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>

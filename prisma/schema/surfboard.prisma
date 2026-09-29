@@ -334,6 +334,7 @@ model SurfboardPlan {
 
   sharedTo       String[]
   shareResponses SurfboardPlanShareResponse[]
+  shareInvites   SurfboardPlanShareInvite[]
 
   /// Soft delete fields
   deleted   Boolean   @default(false)
@@ -632,4 +633,28 @@ model SurfboardPlanShareResponse {
   @@index([sharedWithUserId])
   @@index([sharedByUserId])
   @@map("surfboard_plan_share_responses")
+}
+
+/// Shares a plan with an email address that has no SurfboardUser account yet
+/// (mirrors AdminInvitation's token/hash/expiry shape — see
+/// lib/auth/adminInvitations.ts — but grants plan access on acceptance
+/// rather than creating a staff account). Resolved automatically the moment
+/// a SurfboardUser row with a matching email is created (see the surfboard
+/// Kinde auth-success callback), not via a manual accept step — matches the
+/// "immediate access" decision for existing-user shares.
+model SurfboardPlanShareInvite {
+  id               String        @id @default(uuid())
+  planId           String        @db.Uuid
+  plan             SurfboardPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  email            String
+  tokenHash        String        @unique
+  sharedByUserId   String
+  invitedAt        DateTime      @default(now())
+  expiresAt        DateTime
+  acceptedByUserId String?
+  acceptedAt       DateTime?
+
+  @@index([email])
+  @@index([planId])
+  @@map("surfboard_plan_share_invites")
 }

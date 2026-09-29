@@ -273,6 +273,58 @@ export const sendAdminInvitationEmail = async ({
 };
 
 /**
+ * Surfboard's "Shared Access" invite — a surveyor shares a plan with an
+ * email address that has no account yet. Same visual shape as
+ * sendAdminInvitationEmail, but the link takes the invitee to signup, not
+ * an accept-password page: access is granted automatically the moment a
+ * SurfboardUser row with this email exists (see the Kinde auth-success
+ * callback), so there's no separate "accept" step to link to.
+ */
+export const sendPlanShareInviteEmail = async ({
+  to,
+  sharedByName,
+  planNumber,
+  signupUrl,
+  expiresAt,
+}: {
+  to: string;
+  sharedByName: string;
+  planNumber: string;
+  signupUrl: string;
+  expiresAt: Date;
+}) => {
+  const brand = PLATFORM_BRAND[Platform.SURFBOARD];
+  const subject = `${sharedByName} shared a survey plan with you on ${brand.name}`;
+  const bodyLine = `${sharedByName} has shared survey plan ${planNumber} with you on ${brand.name}. Sign up with this email address to view it.`;
+  const expiry = expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+  const text = `Hi,\n\n${bodyLine}\n\n${signupUrl}\n\nThis invitation expires on ${expiry}. If you weren't expecting this, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>Hi,</p>
+        <p>${escapeHtml(bodyLine)}</p>
+        <p style="margin: 24px 0;">
+          <a href="${signupUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Sign up to view plan</a>
+        </p>
+        <p style="color:#666;font-size:13px;">This invitation expires on ${expiry}. If you weren't expecting this, you can safely ignore this email.</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
+    </div>
+  `;
+
+  return sendMail({ to, subject, text, html, fromName: `${brand.name} · TwoNode Technologies` });
+};
+
+/**
  * POST /api/v1/auth/verify-email's counterpart. Sent on native registration
  * and from POST /api/v1/auth/resend-verification — same token shape as the
  * password-reset flow (EmailVerificationToken, hashed, 1hr expiry,
