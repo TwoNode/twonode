@@ -5,6 +5,8 @@ import { PlatformNetworkGraphic } from "./PlatformNetworkGraphic";
 export type AuthSplitLayoutProps = {
   accent: string;
   accentDark: string;
+  /** Overrides the default `linear-gradient(135deg, accentDark, accent)` right-panel background with a full CSS gradient value (e.g. to match a product's own landing-page gradient exactly). */
+  background?: string;
   eyebrow: string;
   headline: string;
   description: string;
@@ -20,6 +22,7 @@ export type AuthSplitLayoutProps = {
 export function AuthSplitLayout({
   accent,
   accentDark,
+  background,
   eyebrow,
   headline,
   description,
@@ -52,7 +55,7 @@ export function AuthSplitLayout({
 
       <div
         className="relative hidden lg:flex flex-1 overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${accentDark}, ${accent})` }}
+        style={{ background: background ?? `linear-gradient(135deg, ${accentDark}, ${accent})` }}
       >
         <div
           className="absolute inset-0 opacity-[0.12]"

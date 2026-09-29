@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Menu, MenuProps } from "@/components/sidebars/menu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
+
+/**
+ * Desktop icon-only rail width. Layouts that reserve horizontal space for
+ * the sidebar (a sibling "spacer" div sized off `sideBarWidthClass`) should
+ * switch to this class when `useSidebar().isRailCollapsed` is true, so
+ * collapsing the rail actually gives the content area the freed-up space
+ * back instead of just leaving a gap next to a narrower `<aside>`.
+ */
+export const RAIL_WIDTH_CLASS = " lg:w-[76px] ";
 
 export interface SidebarProps extends MenuProps {
   sideBarWidthClass: string;
@@ -25,6 +34,16 @@ export interface SidebarProps extends MenuProps {
    * instead of just another menu row.
    */
   primaryAction?: { label: string; href: string; icon?: LucideIcon };
+  /**
+   * Opt-in: shows a collapse toggle and lets the rail shrink to
+   * `RAIL_WIDTH_CLASS` (icon-only) on desktop, persisted via
+   * `useSidebar().isRailCollapsed`. Off by default so products that haven't
+   * asked for this (and whose layout doesn't shrink the sidebar's reserved
+   * space to match — see RAIL_WIDTH_CLASS's doc comment) aren't silently
+   * affected by another product's collapse preference sharing the same
+   * store.
+   */
+  enableRailCollapse?: boolean;
 }
 
 /**
@@ -44,23 +63,31 @@ export function Sidebar({
   title,
   logoSrc,
   primaryAction,
+  enableRailCollapse = false,
 }: SidebarProps) {
   const sidebar = useStore(useSidebar, (x) => x);
 
   if (!sidebar) return null;
+
+  // Collapsed to icon-only width, and not currently being hovered back open.
+  const isRail = enableRailCollapse && sidebar.isRailCollapsed;
+  const isPeeking = isRail && sidebar.isHover;
+  const showFull = !isRail || isPeeking;
 
   return (
     <aside
       className={cn(
         "absolute inset-0 z-50 transition-all ease-in-out duration-300",
         "w-[240px] border-r shadow-lg",
-        sideBarWidthClass,
+        showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
       style={{
         background: SIDEBAR_INK,
         borderColor: "rgba(255, 255, 255, 0.08)",
       }}
+      onMouseEnter={() => isRail && sidebar.setIsHover(true)}
+      onMouseLeave={() => isRail && sidebar.setIsHover(false)}
     >
       <div className="relative h-full justify-between flex flex-col overflow-hidden">
         {title && (
@@ -76,9 +103,11 @@ export function Sidebar({
                   className="w-11 h-11 rounded-full shadow border border-white/15 bg-white object-contain shrink-0"
                 />
               )}
-              <span className="text-lg font-bold text-white tracking-wide truncate">
-                {title}
-              </span>
+              {showFull && (
+                <span className="text-lg font-bold text-white tracking-wide truncate">
+                  {title}
+                </span>
+              )}
             </div>
             <button
               onClick={() => sidebar?.toggleOpen()}
@@ -90,22 +119,43 @@ export function Sidebar({
           </div>
         )}
 
+        {enableRailCollapse && (
+          <button
+            onClick={() => sidebar?.toggleRailCollapsed()}
+            className="hidden lg:flex absolute top-3 -right-3 z-10 h-6 w-6 items-center justify-center rounded-full border shadow-md transition-transform duration-300"
+            style={{ background: SIDEBAR_INK, borderColor: "rgba(255,255,255,0.15)" }}
+            aria-label={isRail ? "Expand sidebar" : "Collapse sidebar"}
+            title={isRail ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft
+              className={cn(
+                "h-3.5 w-3.5 text-white/70 transition-transform duration-300",
+                isRail && "rotate-180",
+              )}
+            />
+          </button>
+        )}
+
         <div className="flex-1 flex flex-col min-h-0 px-2">
           {primaryAction && (
             <div className="px-1 pb-2 pt-3">
               <Link
                 href={primaryAction.href}
                 onClick={() => sidebar?.toggleOpen()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-lg shadow-black/30 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                title={showFull ? undefined : primaryAction.label}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-lg shadow-black/30 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]",
+                  showFull ? "justify-center px-4" : "justify-center px-0",
+                )}
                 style={{
                   background:
                     "linear-gradient(120deg, var(--color-brand-primary-dark), var(--color-brand-primary))",
                 }}
               >
                 {primaryAction.icon && (
-                  <primaryAction.icon className="h-4 w-4" />
+                  <primaryAction.icon className="h-4 w-4 shrink-0" />
                 )}
-                {primaryAction.label}
+                {showFull && primaryAction.label}
               </Link>
             </div>
           )}
@@ -116,6 +166,7 @@ export function Sidebar({
               userImageUrl={userImageUrl}
               userName={userName}
               userRole={userRole}
+              iconOnly={!showFull}
               variant="dark"
             />
           </div>
