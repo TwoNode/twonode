@@ -72,7 +72,7 @@ next to the page that uses it.
 |---|---|
 | `(auth)/error-login/error-login.tsx` | Login-error page content |
 | `(auth)/error-login/SurfboardErrorLogin.tsx` | Login-error page component |
-| `dashboard/analytics/AnalyticsDashboard.tsx` | Analytics tab — stats, charts, dimension breakdowns |
+| `dashboard/analytics/AnalyticsDashboard.tsx` | Analytics tab — stats, charts, dimension breakdowns. Stats Overview row has a "Shared Access" tile (Active N · Expired N · None N, from `analyticsService.ts`'s `sharedAccessStats`) alongside the existing Facilitators tile — 4 columns, not 5, so the breakdown lines don't clip; the 5th tile wraps to its own row |
 | `dashboard/analytics/BarChart.tsx` | Reusable bar chart |
 | `dashboard/analytics/PieChart.tsx` | Reusable (donut-capable) pie chart |
 | `dashboard/analytics/StatsCard.tsx` | Analytics stat tile |
@@ -81,13 +81,12 @@ next to the page that uses it.
 | `dashboard/plan/edit/EditPlan.tsx` | Edit-plan flow |
 | `dashboard/plan/RedCopyButton.tsx` | Trigger red-copy submission |
 | `dashboard/plan/RedCopyModal.tsx` | Red-copy submission modal |
-| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user |
-| `dashboard/plan/SinglePlan.tsx` | Single plan detail page content |
-| `dashboard/plans/AllPlans.tsx` | All plans list/table |
+| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user — existing-user search, plus an "invite by email" fallback (`isEmailQuery` + no search results) for an address with no Surfboard account yet, calling `invitePlanShareByEmail` |
+| `dashboard/plan/SinglePlan.tsx` | Single plan detail page content. Edit/Delete/Share/QR Code buttons are `isOwner`-gated (all four are owner-only server-side); non-owners see a "Mark Reviewed" button instead. "My Private Attachments" section (upload/list/delete, `surfboardApi.plans.viewerAttachments`) renders only for non-owner viewers. "Comments" section (thread + composer, `surfboardApi.plans.comments`) renders whenever the plan is actually shared — visible to the owner and every recipient, unlike the private-attachments section |
+| `dashboard/plans/AllPlans.tsx` | All plans list/table. Scope switcher ("My Plans" / "Shared with me" / "My Shared Plans" — filters, not tabs) swaps the underlying list call (`plans.list`/`plans.sharedWithMe`/`plans.shared`); a "Shared" badge shows who a plan is shared by (recipient view) or how many people it's shared with (owner view); row/card action menus hide Edit/Delete/Certificate/QR in the "Shared with me" scope, since those are owner-only operations |
 | `dashboard/plans/QueriedPlans.tsx` | Queried plans list |
 | `dashboard/settings/InquiryModal.tsx` | Submit a support inquiry |
 | `dashboard/settings/SurveyorProfileSettings.tsx` | Surveyor profile/settings form |
-| `dashboard/shared/SharedPlans.tsx` | Plans shared with/by the surveyor |
 | `dashboard/subscription/callback/SubCallback.tsx` | Subscription payment callback handler |
 | `dashboard/subscription/SubscriptionAdminFAB.tsx` | Floating action button for subscription admin actions |
 | `dashboard/subscription/SubscriptionManager.tsx` | Subscription plan management UI |

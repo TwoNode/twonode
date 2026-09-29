@@ -23,7 +23,7 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `auditLogClient.ts` | `createAuditLogApi(base)` — client for a product's `/admin/audit-logs` endpoints |
 | `auditLogRoutes.ts` | Factory for the two superadmin-only audit-log endpoints (list + filter options), same pattern as the invitation routes |
 | `auditLogTypes.ts` | Client-safe audit-log types (`AuditLogEntry`, `AuditLogApi`, …) |
-| `errors.ts` | Typed API error classes (`ValidationError`, etc.) |
+| `errors.ts` | Typed API error classes (`ValidationError`, etc.); `SubscriptionRequiredError` (403, `SUBSCRIPTION_REQUIRED`) — distinct from `ForbiddenError` so the client can tell "not allowed at all" apart from "would be allowed with an active subscription," used by Surfboard's Shared Access capability gates |
 | `pagination.ts` | Pagination query-param parsing helpers |
 | `types.ts` | `ApiResult<T>` and other shared API types |
 | `validate.ts` | Request body/schema validation helpers |
@@ -64,7 +64,7 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 |---|---|
 | `removeIDFromParcel.ts` | Strips internal IDs from parcel/geometry data before returning to the client |
 | `addBaseUrl.ts` | Prefixes a relative path with the site's base URL |
-| `email.ts` | Shared transactional email sending (per-product branding) |
+| `email.ts` | Shared transactional email sending (per-product branding); `sendPlanShareInviteEmail` is Surfboard's Shared Access email-invite (a plan shared with an email that has no account yet), same visual template as `sendAdminInvitationEmail` but the link goes to signup, not an accept-password page — access resolves automatically once a matching account exists (`planService.ts`'s `acceptPendingPlanShareInvites`), no separate accept step |
 | `formatters.ts` | Date/number/currency formatting helpers |
 | `notify.tsx` | `notifyError/Success/Warning/Info` — thin wrappers over `sonner`'s `toast`, used by REVA's request forms |
 | `paystackConfig.ts` | Shared Paystack configuration |
