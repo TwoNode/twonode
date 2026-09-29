@@ -530,9 +530,6 @@ export const surfboardApi = {
         `${BASE}/plans/shared-with-me?${buildPlanListQuery(page ?? 1, pageSize ?? 10, filters, sort)}`,
       ),
 
-    sharedAwaitingResponseCount: () =>
-      jsonFetch<{ count: number }>(`${BASE}/plans/shared-awaiting-response`),
-
     deleteAttachment: (
       planId: string,
       fileUrl: string,
@@ -650,6 +647,34 @@ export const surfboardApi = {
         method: "DELETE",
         body: JSON.stringify({ userId }),
       }),
+
+    /** Shares by email, whether or not the recipient has an account yet — see invitePlanShareByEmail. */
+    inviteByEmail: (planId: string, email: string) =>
+      jsonFetch<{ invited: boolean; email: string; expiresAt: string; inviteId: string } | { id: string; sharedTo: string[] }>(
+        `${BASE}/plans/${encodeURIComponent(planId)}/share/invite`,
+        { method: "POST", body: JSON.stringify({ email }) }
+      ),
+
+    /** A recipient's own private attachments on a shared plan — never visible to the owner or other recipients. */
+    viewerAttachments: {
+      list: (planId: string) =>
+        jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }[]>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`
+        ),
+      upload: (planId: string, file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return formFetch<{ id: string; url: string; fileName: string; createdAt: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`,
+          formData
+        );
+      },
+      delete: (planId: string, attachmentId: string) =>
+        jsonFetch<{ id: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments/${encodeURIComponent(attachmentId)}`,
+          { method: "DELETE" }
+        ),
+    },
 
     respondToShare: (planId: string, response?: string) =>
       jsonFetch<any>(

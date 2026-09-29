@@ -20,7 +20,6 @@ import {
   Archive,
   UserCircle,
   CreditCard,
-  Share2,
   AlertTriangle,
   Wrench,
   ShieldAlert,
@@ -114,7 +113,8 @@ export const SURFBOARD_ROUTES: SurfboardRouteEntry[] = [
   { path: `${USER_BASE}/plan`, label: "Plan", icon: FileText, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
   { path: `${USER_BASE}/newplan`, label: "New Plan", icon: FilePlus2, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
   { path: `${USER_BASE}/queried-plans`, label: "Queried Plans", icon: AlertTriangle, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
-  { path: `${USER_BASE}/shared`, label: "Shared With Me", icon: Share2, roles: USER_PANEL_ROLES, group: "user", section: "Plans" },
+  // Standalone "Shared With Me" page retired — "Shared Access" is now a
+  // filter inside My Plans (see plans/AllPlans.tsx), not a separate route.
   { path: `${USER_BASE}/map`, label: "Map", icon: Map, roles: USER_PANEL_ROLES, group: "user", section: "Map" },
   { path: `${USER_BASE}/viewmap`, label: "View Map", icon: MapPin, roles: USER_PANEL_ROLES, group: "user", section: "Map" },
   { path: `${USER_BASE}/spcode-verification`, label: "SP Code Verification", icon: BadgeCheck, roles: USER_PANEL_ROLES, group: "user", section: "Map" },

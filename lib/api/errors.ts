@@ -52,6 +52,17 @@ export class RateLimitError extends ApiError {
     super(429, "RATE_LIMITED", "Too many requests");
   }
 }
+/**
+ * Distinct from ForbiddenError so callers (and the client) can tell "you're
+ * not allowed to do this at all" apart from "you'd be allowed if your
+ * subscription were active" — the latter should prompt an upgrade CTA
+ * rather than a generic permission-denied message.
+ */
+export class SubscriptionRequiredError extends ApiError {
+  constructor(message = "An active subscription is required for this action") {
+    super(403, "SUBSCRIPTION_REQUIRED", message);
+  }
+}
 
 /**
  * Prisma error-code -> friendly message table. Ported from the existing

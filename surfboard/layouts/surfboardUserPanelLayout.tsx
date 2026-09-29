@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/sidebars/sidebar";
+import { RAIL_WIDTH_CLASS, Sidebar } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
-import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import { SURFBOARD_COLORS, SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
 import { surfboardApi } from "@/surfboard/apiClient";
@@ -70,14 +70,12 @@ function SurfboardUserDashboardNavbar({
   const router = useRouter();
   const fullName =
     `${user?.firstName || user?.given_name || ""} ${user?.family_name || ""}`.trim() ||
-    "Facilitator";
+    "Surveyor";
 
   return (
     <header
       className="w-full h-20 flex items-center px-6 shadow-md border-b border-white/10 relative"
-      style={{
-        background: `linear-gradient(135deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 40%, ${SURFBOARD_COLORS.primary.main} 100%)`,
-      }}
+      style={{ background: SURFBOARD_GRADIENTS.hero }}
     >
       <div className="flex flex-row-reverse lg:flex-row items-center gap-3">
         {/* Hamburger Menu Button */}
@@ -133,7 +131,7 @@ function SurfboardUserDashboardNavbar({
         name={fullName}
         email={user?.email}
         picture={user?.picture}
-        roleLabel="Facilitator"
+        roleLabel="Surveyor"
         profileHref="/surfboard/dashboard/settings"
         settingsHref="/surfboard/dashboard/settings"
         onLogout={() => {
@@ -209,14 +207,18 @@ export default function SurfboardUserPanelLayout({
       label: "Plans",
       url: `${dashboardUrl}/plans`,
       section: "Plans",
-      requiresSubscription: true,
+      // Read-only access — proxy.ts's alwaysAllowedEvenUnsubscribed list
+      // permits this page for anyone, subscribed or not (viewing owned and
+      // shared-to-you plans shouldn't require paying). Creating/editing a
+      // plan is still capability-gated server-side and in the UI itself.
+      requiresSubscription: false,
     },
     {
       icon: Map,
       label: "Map Viewer",
       url: `${dashboardUrl}/map`,
       section: "Plans",
-      requiresSubscription: true,
+      requiresSubscription: false,
     },
     {
       icon: CreditCard,
@@ -313,19 +315,28 @@ export default function SurfboardUserPanelLayout({
           />
         )}
 
-        <div className={sideBarWidthClass + "h-full max-h-full"}>
+        <div
+          className={cn(
+            sidebar.isRailCollapsed ? RAIL_WIDTH_CLASS : sideBarWidthClass,
+            "h-full max-h-full transition-[width] ease-in-out duration-300"
+          )}
+        >
           <Sidebar
             items={menuList}
             userImageUrl={user?.picture}
             userName={user?.firstName || user?.given_name}
-            userRole="Facilitator"
+            userRole="Surveyor"
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
-            primaryAction={{
+            enableRailCollapse
+            // /newplan stays subscription-gated (proxy.ts + createSurfPlan's
+            // requireActiveSubscription) — hide the CTA rather than send an
+            // unsubscribed user into a page that will just redirect them out.
+            primaryAction={hasSubscriptionAccess ? {
               label: "New Plan",
               href: `${dashboardUrl}/newplan`,
               icon: Plus,
-            }}
+            } : undefined}
           />
         </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">

@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   File,
   Lock,
+  Paperclip,
+  Upload,
 } from "lucide-react";
 import type {
   PillarData,
@@ -258,6 +260,14 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Private per-viewer attachments (Shared Access) — a recipient's own
+  // notes/files on a shared plan, never visible to the surveyor or other
+  // recipients. Only fetched/shown for non-owner viewers.
+  const [viewerAttachments, setViewerAttachments] = useState<
+    { id: string; url: string; fileName: string; createdAt: string }[]
+  >([]);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+
   // Default: strong contrast, opaque light, safe quiet zone.
   // Dark/Light color start from whatever the facilitator last picked
   // (lib/qrColorPreferences) so they don't have to re-pick it every time.
@@ -328,6 +338,46 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   useEffect(() => {
     setPublicUrl(`${window.location.origin}/surfboardplan/${planId}`);
   }, [planId]);
+
+  const fetchViewerAttachments = async () => {
+    const result = await surfboardApi.plans.viewerAttachments.list(planId);
+    if (result.success) setViewerAttachments(result.data);
+  };
+
+  useEffect(() => {
+    if (!isOwner) fetchViewerAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId, isOwner]);
+
+  const handleUploadViewerAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setIsUploadingAttachment(true);
+      const result = await surfboardApi.plans.viewerAttachments.upload(planId, file);
+      if (!result.success) throw new Error(result.error || "Failed to upload attachment");
+      setViewerAttachments((prev) => [result.data, ...prev]);
+      toast.success("Attachment added — only you can see this");
+    } catch (error) {
+      console.error("Error uploading viewer attachment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload attachment");
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const handleDeleteViewerAttachment = async (attachmentId: string) => {
+    try {
+      const result = await surfboardApi.plans.viewerAttachments.delete(planId, attachmentId);
+      if (!result.success) throw new Error(result.error || "Failed to delete attachment");
+      setViewerAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+      toast.success("Attachment removed");
+    } catch (error) {
+      console.error("Error deleting viewer attachment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete attachment");
+    }
+  };
 
   const handleGenerateQrCode = async () => {
     try {
@@ -910,25 +960,27 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     </button>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateQrCode}
-                    disabled={isGeneratingQr}
-                    className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
-                  >
-                    {isGeneratingQr ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span>Generating</span>
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="h-4 w-4 mr-2" />
-                        <span>QR Code</span>
-                      </>
-                    )}
-                  </Button>
+                  {isOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateQrCode}
+                      disabled={isGeneratingQr}
+                      className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
+                    >
+                      {isGeneratingQr ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span>Generating</span>
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="h-4 w-4 mr-2" />
+                          <span>QR Code</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1380,6 +1432,68 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             )}
           </div>
         </div>
+
+        {/* Private Attachments — recipient-only, never visible to the surveyor or other recipients */}
+        {!isOwner && (
+          <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                <Paperclip className="h-5 w-5 text-gray-400" />
+                My Private Attachments
+              </h3>
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer">
+                {isUploadingAttachment ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                Add file
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleUploadViewerAttachment}
+                  disabled={isUploadingAttachment}
+                />
+              </label>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Only visible to you — not the surveyor or anyone else this plan is shared with.
+            </p>
+            {viewerAttachments.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {viewerAttachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-3"
+                  >
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 min-w-0 hover:text-blue-600"
+                    >
+                      <File className="h-4 w-4 shrink-0 text-gray-400" />
+                      <span className="text-sm truncate" title={attachment.fileName}>
+                        {attachment.fileName}
+                      </span>
+                    </a>
+                    <button
+                      onClick={() => handleDeleteViewerAttachment(attachment.id)}
+                      className="text-gray-400 hover:text-red-600 shrink-0"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No private attachments yet.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Geometry Section */}
         <div className="bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 p-4 shadow-sm">

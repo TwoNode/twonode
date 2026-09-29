@@ -57,7 +57,7 @@ them — see the file header comments for why.
 
 | File | Description |
 |---|---|
-| `certificate.render.cjs` | Renders the certificate PDF (name, QR, bridge-photo background) |
+| `certificate.render.cjs` | Renders the certificate PDF (name, QR, bridge-photo background). `nameFontSize(name)` scales the attendee-name text down (34pt → 28pt → 22pt) as the name gets longer, so long names shrink to fit instead of risking overflow past the certificate frame |
 | `receipt.render.cjs` | Renders the ticket payment receipt PDF |
 
 ## `gbc/types/`

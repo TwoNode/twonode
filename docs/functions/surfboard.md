@@ -68,7 +68,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | File | Description |
 |---|---|
 | `surfboard/apiClient.ts` | Typed client wrapper around `/api/v1/surfboard/*` routes |
-| `surfboard/colors.ts` | Surfboard brand color palette (blue/teal) |
+| `surfboard/colors.ts` | Surfboard brand color palette (blue/teal). `SURFBOARD_GRADIENTS.hero` is the navy→electric-blue gradient matching the public landing page (`surfboard-landing.module.css`) exactly, reused on the login page and the surveyor dashboard header so all three surfaces read as one identity |
 | `surfboard/statusTone.ts` | Maps plan/payment status strings to display labels and badge tones |
 
 ## Shared across the three Surfboard shells, colocated (`app/(projects)/(surfboard)/`)
@@ -89,7 +89,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `utils/prismaErrorHandler.ts` | Normalizes Prisma errors into API-friendly errors |
 | `utils/recordCopyVerification.ts` | Record-copy verification logic |
 | `utils/remita.ts` | Remita payment gateway helpers |
-| `utils/surfboardUtils.ts` | General Surfboard helper functions |
+| `utils/surfboardUtils.ts` | General Surfboard helper functions. `parseCSVContent` parses an uploaded pillar CSV via `normalizeCsvHeader` (strips BOM, whitespace, punctuation, lowercases) and `findCsvColumnIndex`/`resolvePillarColumnIndices` (substring-matches against ordered header-variation lists, e.g. "Pillar No.", "Easting(X)", "Northings (Y)") so header formatting differences don't break column detection; also used directly by `MaplibreMultiPlans.tsx`'s CSV-upload handler |
 | `utils/validation.ts` | Form/input validation helpers |
 | `hooks/useBatchLock.ts` | Lock/unlock state for a Certificate-of-Deposit batch |
 | `hooks/usePlanLock.ts` | Lock/unlock state for a single plan |

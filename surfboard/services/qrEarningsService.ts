@@ -4,6 +4,7 @@ import { getPaystackSecretForWebhook } from "@/utils/paystackConfig";
 import { NotFoundError, ValidationError } from "@/lib/api/errors";
 import { writeAudit } from "@/lib/audit";
 import { Platform } from "@/utils/platform";
+import { requireActiveSubscription } from "@/surfboard/services/subscriptionService";
 
 /**
  * Migrated from app/(projects)/(surfboard)/actions/qrEarningsActions.ts —
@@ -403,6 +404,7 @@ export async function saveSurveyorBankDetails(
 }
 
 export async function requestWithdrawal(surveyorId: string, amount: number) {
+  await requireActiveSubscription(surveyorId);
   if (amount <= 0) throw new ValidationError({ amount: "Amount must be greater than zero" });
 
   const bankDetails = await prisma.surveyorBankDetails.findUnique({ where: { userId: surveyorId } });

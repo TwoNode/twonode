@@ -123,6 +123,13 @@ export function DashboardShell({
 
   if (!sidebar) return null;
 
+  // MDA gets GBC's pattern: a dark sidebar paired with a plain light topbar,
+  // brand color only in small accent details (focus rings, the toggle
+  // button's hover state) rather than a full dark header. Admin/superadmin
+  // (surfboard-restricted) keeps the original dark gradient header — not in
+  // scope for this pass.
+  const isMda = group === "mda";
+
   return (
     <div className="h-screen max-h-screen overflow-hidden w-screen max-w-screen flex">
       {sidebar.isOpen && (
@@ -149,24 +156,38 @@ export function DashboardShell({
         className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background"
       >
         <header
-          className="w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow border-b border-blue-100"
-          style={{ background: "var(--color-brand-primary-dark)" }}
+          className={
+            isMda
+              ? "w-full h-16 shrink-0 flex items-center px-4 sm:px-6 border-b border-gray-200 bg-white"
+              : "w-full h-16 shrink-0 flex items-center px-4 sm:px-6 shadow border-b border-blue-100"
+          }
+          style={isMda ? undefined : { background: "var(--color-brand-primary-dark)" }}
         >
           <button
             onClick={() => sidebar?.toggleOpen()}
-            className="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
+            className={
+              isMda
+                ? "p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-all duration-200 lg:hidden"
+                : "p-2 -ml-2 rounded-lg hover:bg-white/10 transition-all duration-200 lg:hidden"
+            }
             aria-label="Toggle sidebar"
           >
-            <Menu className="w-6 h-6 text-white" />
+            <Menu className={isMda ? "w-6 h-6 text-gray-600" : "w-6 h-6 text-white"} />
           </button>
           <div className="flex-1" />
           <NotificationBell
             platform="surfboard"
             viewAllHref={group === "mda" ? "/surfboard-mda/dashboard/notifications" : "/surfboard-restricted/dashboard/notifications"}
             className="mr-1"
-            iconClassName="h-5 w-5 text-white"
+            iconClassName={isMda ? "h-5 w-5 text-gray-600" : "h-5 w-5 text-white"}
           />
-          <ThemeToggle className="mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20" />
+          <ThemeToggle
+            className={
+              isMda
+                ? "mr-2 border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                : "mr-2 border-white/25 bg-white/10 text-white hover:bg-white/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+            }
+          />
           <UserAccountMenu
             name={user?.name || "Account"}
             email={user?.email}
@@ -178,7 +199,7 @@ export function DashboardShell({
               fetch(logoutRedirectUrl ?? "/api/auth/logout_redirect?from=surfboard");
               router.push(postLogoutPath);
             }}
-            className="ml-2 ring-2 ring-white/15"
+            className={isMda ? "ml-2 ring-2 ring-blue-100" : "ml-2 ring-2 ring-white/15"}
           />
         </header>
 

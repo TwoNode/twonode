@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Layers, FileText, Clock } from 'lucide-react';
+import { Layers, FileText, Clock, Share2 } from 'lucide-react';
 import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -26,7 +26,6 @@ export interface PlanHealthSummary {
   totalPlans: number;
   queried: number;
   underReview: number;
-  sharedAwaitingResponse: number;
   qrEarningsThisMonth: number;
 }
 
@@ -166,10 +165,18 @@ export function AnalyticsDashboard({
   const totalRecords = analytics.totalPlansCount + analytics.provisionalPlansCount;
   const provisionalShare = totalRecords > 0 ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100) : 0;
 
+  // "Shared Access": numbers of plans shared to a user with active/expired/no subscription.
+  const sharedAccessByStatus = {
+    active: analytics.sharedAccessStats.find((s) => s.status === "active")?.count ?? 0,
+    expired: analytics.sharedAccessStats.find((s) => s.status === "expired")?.count ?? 0,
+    none: analytics.sharedAccessStats.find((s) => s.status === "none")?.count ?? 0,
+  };
+  const totalSharedAccess = sharedAccessByStatus.active + sharedAccessByStatus.expired + sharedAccessByStatus.none;
+
   return (
     <div className="space-y-6">
       {/* Stats Overview — each tile now carries a breakdown line for context instead of a bare number */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           label="Total Plans"
           value={analytics.totalPlansCount}
@@ -204,6 +211,14 @@ export function AnalyticsDashboard({
           }
           icon={Layers}
           tone="info"
+        />
+
+        <StatCard
+          label="Shared Access"
+          value={totalSharedAccess}
+          breakdown={`Active ${sharedAccessByStatus.active} · Expired ${sharedAccessByStatus.expired} · None ${sharedAccessByStatus.none}`}
+          icon={Share2}
+          tone="success"
         />
       </div>
 
@@ -252,10 +267,6 @@ export function AnalyticsDashboard({
             <div className="flex items-center justify-between py-2.5">
               <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
               <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.underReview}</dd>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-gray-600 dark:text-gray-300">Shared, awaiting response</dt>
-              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.sharedAwaitingResponse}</dd>
             </div>
             <div className="flex items-center justify-between py-2.5">
               <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>

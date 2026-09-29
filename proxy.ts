@@ -166,10 +166,25 @@ function computeRouteAccess(
     // Nav/role access comes from surfboard/access/routes.ts (the same
     // registry DashboardShell reads) — subscription gating is separate.
     const hasRoleAccess = canAccessSurfboardRoute(pathname, role);
+    // "Shared Access" vision (out/Surfboard Shared Access.pdf): subscription
+    // determines capability, access determines visibility. A user with no
+    // subscription (e.g. a facilitator who was shared a plan) or an
+    // expired-subscription surveyor should still be able to VIEW their own
+    // and shared-to-them plans read-only — only creating/editing/sharing
+    // content is capability-gated. These read-only pages were previously
+    // caught by the blanket redirect below along with everything else,
+    // which made the "Shared With Me" page itself unreachable for exactly
+    // the users it exists for. `/plan/edit` (a separate nested route from
+    // `/plan`) is deliberately NOT included here — editing stays gated.
     const alwaysAllowedEvenUnsubscribed =
       pathname === "/surfboard/dashboard" ||
       pathname === "/surfboard/dashboard/settings" ||
-      pathname === "/surfboard/dashboard/subscription";
+      pathname === "/surfboard/dashboard/subscription" ||
+      pathname === "/surfboard/dashboard/plans" ||
+      pathname === "/surfboard/dashboard/plan" ||
+      pathname === "/surfboard/dashboard/queried-plans" ||
+      pathname === "/surfboard/dashboard/map" ||
+      pathname === "/surfboard/dashboard/viewmap";
 
     if (alwaysAllowedEvenUnsubscribed) {
       return { hasAccess: hasRoleAccess };

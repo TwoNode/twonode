@@ -8,9 +8,31 @@ import GBC2Navbar from "@/gbc/components/Navbar";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function GalleryPage() {
-  const [items, editions] = await Promise.all([getGalleryItems(), getEditions()]);
+  const settings = await getSettings();
+  const gallerySettings = settings.gallery;
+  const socialLinks = settings.contact;
 
-  const socialLinks = (await getSettings()).contact;
+  // No year filter applied here: `defaultYear` is only meant to seed a
+  // year-filter *control* gated behind `gallerySettings.showYearFilter`,
+  // which isn't built yet (new UI, out of scope for this fix). Hard-filtering
+  // by defaultYear unconditionally previously hid every item whenever the
+  // setting's year didn't match the actual data's year (confirmed live:
+  // defaultYear defaulted to 2025, all real items are tagged 2024).
+  const [allItems, editions] = await Promise.all([getGalleryItems(), getEditions()]);
+  const items = allItems.slice(0, gallerySettings?.itemsPerPage ?? allItems.length);
+
+  if (gallerySettings?.enabled === false) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <GBC2Navbar />
+        <div className="text-center py-24">
+          <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-400 mb-2">Gallery unavailable</h2>
+          <p className="text-gray-500">The gallery is currently disabled.</p>
+        </div>
+      </div>
+    );
+  }
 
   // One section per edition, newest first — the query already orders items by
   // edition start date, so first appearance is the right section order.
