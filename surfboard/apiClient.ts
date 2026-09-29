@@ -655,6 +655,27 @@ export const surfboardApi = {
         { method: "POST", body: JSON.stringify({ email }) }
       ),
 
+    /** A recipient's own private attachments on a shared plan — never visible to the owner or other recipients. */
+    viewerAttachments: {
+      list: (planId: string) =>
+        jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }[]>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`
+        ),
+      upload: (planId: string, file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return formFetch<{ id: string; url: string; fileName: string; createdAt: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`,
+          formData
+        );
+      },
+      delete: (planId: string, attachmentId: string) =>
+        jsonFetch<{ id: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments/${encodeURIComponent(attachmentId)}`,
+          { method: "DELETE" }
+        ),
+    },
+
     respondToShare: (planId: string, response?: string) =>
       jsonFetch<any>(
         `${BASE}/plans/${encodeURIComponent(planId)}/share-response`,
