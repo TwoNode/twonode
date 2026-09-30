@@ -57,6 +57,13 @@ const nextConfig = {
       allowedOrigins: ["localhost:3000", "127.0.0.1:3000"],
       bodySizeLimit: "10mb",
     },
+    // Turbopack emits server-chunk .map files regardless of
+    // productionBrowserSourceMaps (that flag only covers the browser
+    // bundle). On this app they added ~1,800 files / ~120MB to the
+    // deploy output — over half its total size — which is the likely
+    // cause of Vercel's "Deploying outputs" step failing once the build
+    // actually completes.
+    turbopackSourceMaps: false,
   },
 
   /**

@@ -10,6 +10,8 @@ export const metadata = {
   description: "Meet our distinguished speakers at GBC 2.0",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function SpeakersPage() {
   const allSpeakers = await getSpeakers();
 

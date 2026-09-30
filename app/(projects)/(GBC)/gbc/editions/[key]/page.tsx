@@ -7,6 +7,8 @@ import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 type PageProps = { params: Promise<{ key: string }> };
 
+export const dynamic = "force-dynamic";
+
 export default async function EditionRecapPage({ params }: PageProps) {
   const { key } = await params;
 

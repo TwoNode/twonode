@@ -8,6 +8,8 @@ export const metadata = {
   title: "Past Editions - GBC",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function PastEditionsPage() {
   const editions = await getEditions();
   const past = editions
