@@ -71,8 +71,7 @@ export function SurveyorBankSettings({
     }
   }, [initialBankDetails]);
 
-  const handleSaveBankDetails = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveBankDetails = async () => {
     if (!accountNumber || accountNumber.length !== 10) {
       toast.error("Please enter a valid 10-digit NUBAN account number");
       return;
@@ -140,7 +139,14 @@ export function SurveyorBankSettings({
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
-        <form onSubmit={handleSaveBankDetails} className="space-y-6">
+        {/* Not a <form>: this card renders inside the outer Settings page's
+            own <form> (settings/page.tsx). A nested <form> here used to let
+            this submit bubble up and also fire the outer form's unrelated
+            profile-save handler on every click — two concurrent requests and
+            a stray "Failed to update profile" toast that made a successful
+            bank save look broken. Plain container + explicit button
+            onClick avoids the nested-form class of bug entirely. */}
+        <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Select Bank */}
             <div className="space-y-2">
@@ -199,7 +205,8 @@ export function SurveyorBankSettings({
 
           <div className="flex justify-end">
             <Button
-              type="submit"
+              type="button"
+              onClick={handleSaveBankDetails}
               disabled={loading || accountNumber.length !== 10}
               className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md font-semibold px-6"
             >
@@ -216,7 +223,7 @@ export function SurveyorBankSettings({
               )}
             </Button>
           </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

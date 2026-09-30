@@ -27,7 +27,7 @@ export const useSidebar = create(
       // class in components/sidebars/sidebar.tsx.
       isOpen: false,
       isHover: false,
-      isRailCollapsed: false,
+      isRailCollapsed: true,
       settings: { disabled: false, isHoverOpen: false },
       toggleOpen: () => {
         set({ isOpen: !get().isOpen });

@@ -12,6 +12,8 @@ export const metadata = {
     "Get in touch with the GBC 2.0 team for inquiries about sponsorship, speaking opportunities, technical support, or general questions.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ContactPage() {
   // Fetch settings from database
   const settings = await getSettings();

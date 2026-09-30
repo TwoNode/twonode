@@ -406,21 +406,56 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   };
 
   const handleUploadViewerAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = "";
-    if (!file) return;
+    if (files.length === 0) return;
     try {
       setIsUploadingAttachment(true);
-      const result = await surfboardApi.plans.viewerAttachments.upload(planId, file);
-      if (!result.success) throw new Error(result.error || "Failed to upload attachment");
-      setViewerAttachments((prev) => [result.data, ...prev]);
-      toast.success("Attachment added — only you can see this");
-    } catch (error) {
-      console.error("Error uploading viewer attachment:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to upload attachment");
+      // Sequential, not Promise.all: the endpoint is single-file (one POST
+      // per attachment), and sequential upload gives a stable, readable
+      // per-file failure list instead of interleaved errors.
+      const uploaded: typeof viewerAttachments = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        try {
+          const result = await surfboardApi.plans.viewerAttachments.upload(planId, file);
+          if (!result.success) throw new Error(result.error || "Failed to upload attachment");
+          uploaded.push(result.data);
+        } catch (error) {
+          console.error(`Error uploading viewer attachment "${file.name}":`, error);
+          failed.push(file.name);
+        }
+      }
+      if (uploaded.length > 0) {
+        setViewerAttachments((prev) => [...uploaded, ...prev]);
+        toast.success(
+          uploaded.length === 1
+            ? "Attachment added — only you can see this"
+            : `${uploaded.length} attachments added — only you can see these`
+        );
+      }
+      if (failed.length > 0) {
+        toast.error(`Failed to upload: ${failed.join(", ")}`);
+      }
     } finally {
       setIsUploadingAttachment(false);
     }
+  };
+
+  const handleDownloadPillarsCsv = () => {
+    if (!plan?.pillars || plan.pillars.length === 0) return;
+    const headers = ["Pillar Number", "Easting", "Northing"];
+    const rows = plan.pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${plan.planNumber || planId}-pillars.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleDeleteViewerAttachment = async (attachmentId: string) => {
@@ -529,22 +564,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     return [sum[0] / pillars.length, sum[1] / pillars.length];
   };
 
-  const handleShareUpdate = async (updatedUsers: User[]) => {
-    try {
-      // TODO: Call API to update shared users in the backend
-      // const response = await fetch(`/api/plans/${planId}/share`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ userIds: updatedUsers.map(u => u.id) })
-      // });
-      // if (!response.ok) throw new Error('Failed to update shared users');
-
-      setSharedWith(updatedUsers);
-      toast.success("Sharing settings updated");
-    } catch (error) {
-      console.error("Error updating shared users:", error);
-      toast.error("Failed to update sharing settings");
-    }
+  // The actual share/invite API call already happened inside
+  // SharePlanModal's own handleAddUser/handleInviteByEmail before this
+  // callback fires — this just syncs the parent's local list.
+  const handleShareUpdate = (updatedUsers: User[]) => {
+    setSharedWith(updatedUsers);
   };
 
   // Function to handle copying the public URL to clipboard
@@ -1506,6 +1530,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 Add file
                 <input
                   type="file"
+                  multiple
                   className="hidden"
                   onChange={handleUploadViewerAttachment}
                   disabled={isUploadingAttachment}
@@ -1751,10 +1776,19 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
         {/* Pillars Table */}
         <div className="bg-white dark:bg-surface rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Pillars ({plan.pillars?.length || 0})
             </h3>
+            {(plan.pillars?.length ?? 0) > 0 && (
+              <button
+                onClick={handleDownloadPillarsCsv}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download CSV
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

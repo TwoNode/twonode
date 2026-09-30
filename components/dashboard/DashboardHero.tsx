@@ -15,6 +15,9 @@ export interface DashboardHeroProps {
   description: string;
   pills?: string[];
   cta?: DashboardHeroCta;
+  /** Rendered to the left of `cta`, in a lighter outline style — a secondary
+   * action (e.g. "My Batches" next to "New Plan"), not the primary one. */
+  secondaryCta?: DashboardHeroCta;
   /** e.g. `linear-gradient(120deg, ${colors.primary.dark}, ${colors.primary.main})` */
   gradient: string;
   className?: string;
@@ -30,6 +33,7 @@ export function DashboardHero({
   description,
   pills,
   cta,
+  secondaryCta,
   gradient,
   className,
 }: DashboardHeroProps) {
@@ -38,6 +42,13 @@ export function DashboardHero({
     <span className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-gray-900 shadow-lg transition hover:opacity-90">
       {CtaIcon && <CtaIcon className="h-4 w-4" />}
       {cta.label}
+    </span>
+  );
+  const SecondaryCtaIcon = secondaryCta?.icon;
+  const secondaryCtaContent = secondaryCta && (
+    <span className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-white/20">
+      {SecondaryCtaIcon && <SecondaryCtaIcon className="h-4 w-4" />}
+      {secondaryCta.label}
     </span>
   );
 
@@ -81,16 +92,30 @@ export function DashboardHero({
             </div>
           )}
         </div>
-        {cta &&
-          (cta.href ? (
-            <Link href={cta.href} className="shrink-0">
-              {ctaContent}
-            </Link>
-          ) : (
-            <button type="button" onClick={cta.onClick} className="shrink-0">
-              {ctaContent}
-            </button>
-          ))}
+        {(cta || secondaryCta) && (
+          <div className="flex shrink-0 items-center gap-3">
+            {secondaryCta &&
+              (secondaryCta.href ? (
+                <Link href={secondaryCta.href} className="shrink-0">
+                  {secondaryCtaContent}
+                </Link>
+              ) : (
+                <button type="button" onClick={secondaryCta.onClick} className="shrink-0">
+                  {secondaryCtaContent}
+                </button>
+              ))}
+            {cta &&
+              (cta.href ? (
+                <Link href={cta.href} className="shrink-0">
+                  {ctaContent}
+                </Link>
+              ) : (
+                <button type="button" onClick={cta.onClick} className="shrink-0">
+                  {ctaContent}
+                </button>
+              ))}
+          </div>
+        )}
       </div>
     </section>
   );

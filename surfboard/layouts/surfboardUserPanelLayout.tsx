@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
+import { AnnouncementModal } from "@/app/(projects)/(surfboard)/components/AnnouncementModal";
 import { SURFBOARD_COLORS, SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
@@ -329,6 +330,7 @@ export default function SurfboardUserPanelLayout({
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
             enableRailCollapse
+            railBackground={SURFBOARD_GRADIENTS.hero}
             // /newplan stays subscription-gated (proxy.ts + createSurfPlan's
             // requireActiveSubscription) — hide the CTA rather than send an
             // unsubscribed user into a page that will just redirect them out.
@@ -358,6 +360,7 @@ export default function SurfboardUserPanelLayout({
           {children}
         </div>
       </div>
+      <AnnouncementModal />
     </div>
   );
 }

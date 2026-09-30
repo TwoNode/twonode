@@ -178,6 +178,10 @@ export default function AllPlans() {
   // hide this CTA rather than send an unsubscribed user into a page that
   // immediately redirects them out.
   const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
+  // Independent of `scope`/`pagination.total` (which only reflect whichever
+  // scope tab is currently active) — a dedicated lightweight fetch just to
+  // badge the "Shared with me" tab with its own count up front.
+  const [sharedWithMeCount, setSharedWithMeCount] = useState<number | null>(null);
 
   const loadPlans = async (
     page = pagination.page,
@@ -231,6 +235,9 @@ export default function AllPlans() {
     });
     surfboardApi.subscription.userAndActiveSub().then((res) => {
       setHasSubscriptionAccess(res.success ? !!res.data?.subscription : false);
+    });
+    surfboardApi.plans.sharedWithMe(1, 1, {}, undefined).then((res) => {
+      if (res.success) setSharedWithMeCount(res.data.total);
     });
   }, []);
 
@@ -1024,13 +1031,25 @@ export default function AllPlans() {
             key={opt.id}
             onClick={() => setScope(opt.id)}
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+              "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
               scope === opt.id
                 ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
                 : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             )}
           >
             {opt.label}
+            {opt.id === "sharedWithMe" && !!sharedWithMeCount && (
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold",
+                  scope === "sharedWithMe"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+                    : "bg-gray-200 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                )}
+              >
+                {sharedWithMeCount}
+              </span>
+            )}
           </button>
         ))}
       </div>

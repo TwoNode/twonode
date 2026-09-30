@@ -12,8 +12,12 @@ import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 export default function SurfboardLoginPage() {
   return (
     <AuthSplitLayout
-      accent="#2563EB"
-      accentDark="#1D4ED8"
+      // Matches SURFBOARD_GRADIENTS.hero's own two endpoints (electric blue /
+      // navy) so the heading, subtitle, and Sign-in button read as the same
+      // "new blue" identity as the background panel, instead of the older
+      // flat #2563EB blue.
+      accent="#233dff"
+      accentDark="#141c4d"
       background={SURFBOARD_GRADIENTS.hero}
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
@@ -26,8 +30,8 @@ export default function SurfboardLoginPage() {
         title="Sign in to Surfboard"
         subtitle="Access your Surfboard dashboard and manage your survey plans securely."
         registerNotice="Set up your Surfboard account to create and track survey plans."
-        accent="#2563EB"
-        accentDark="#1D4ED8"
+        accent="#233dff"
+        accentDark="#141c4d"
         allowRegister
         resolveRedirect={(role) =>
           role.toUpperCase() === SurfboardRole.USER

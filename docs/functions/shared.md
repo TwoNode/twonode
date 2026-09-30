@@ -12,7 +12,7 @@ Logic used across two or more platforms, under the top-level `hooks/`,
 | `use-mobile.tsx` | Responsive breakpoint (mobile) detection |
 | `use-store.ts` | Generic Zustand-style store selector hook |
 | `useNativeAuthRefresh.ts` | Refreshes the native (email/password) auth session, per platform |
-| `use-sidebar.ts` | Sidebar open/collapsed state store. `isOpen` is the mobile slide-over; `isRailCollapsed`/`toggleRailCollapsed` is the desktop icon-rail collapse (opt-in per product via `<Sidebar enableRailCollapse>`); `isHover`/`setIsHover` drives a collapsed rail temporarily peeking open on hover without touching the persisted collapse state |
+| `use-sidebar.ts` | Sidebar open/collapsed state store. `isOpen` is the mobile slide-over; `isRailCollapsed`/`toggleRailCollapsed` is the desktop icon-rail collapse (opt-in per product via `<Sidebar enableRailCollapse>`, now also enabled on Surfboard admin+MDA and both REVA dashboards, not just Surfboard surveyor), defaults to `true` (collapsed) rather than expanded; `isHover`/`setIsHover` drives a collapsed rail temporarily peeking open on hover without touching the persisted collapse state |
 
 ## `lib/api/` — API route plumbing
 

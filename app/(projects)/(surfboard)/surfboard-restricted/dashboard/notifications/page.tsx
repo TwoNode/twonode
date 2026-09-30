@@ -175,6 +175,9 @@ export default function AdminNotificationsPage() {
     audience: "ALL_USERS" as NotificationAudience,
     link: "",
     sendEmail: false,
+    showAsModal: false,
+    startsAt: "",
+    endsAt: "",
   });
 
   const loadStats = async () => {
@@ -201,6 +204,9 @@ export default function AdminNotificationsPage() {
         audience: formData.audience,
         link: formData.link || undefined,
         sendEmail: formData.sendEmail,
+        showAsModal: formData.showAsModal,
+        startsAt: formData.startsAt || undefined,
+        endsAt: formData.endsAt || undefined,
       });
 
       if (result.success) {
@@ -213,6 +219,9 @@ export default function AdminNotificationsPage() {
           audience: "ALL_USERS",
           link: "",
           sendEmail: false,
+          showAsModal: false,
+          startsAt: "",
+          endsAt: "",
         });
         reload();
         loadStats();
@@ -418,6 +427,49 @@ export default function AdminNotificationsPage() {
                     Send email notification
                   </Label>
                 </div>
+
+                {/* Show as modal announcement */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showAsModal"
+                    checked={formData.showAsModal}
+                    onChange={(e) =>
+                      setFormData({ ...formData, showAsModal: e.target.checked })
+                    }
+                    className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
+                  />
+                  <Label htmlFor="showAsModal" className="cursor-pointer">
+                    Show as modal announcement on login
+                  </Label>
+                </div>
+
+                {formData.showAsModal && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startsAt">Starts (optional)</Label>
+                      <Input
+                        id="startsAt"
+                        type="datetime-local"
+                        value={formData.startsAt}
+                        onChange={(e) =>
+                          setFormData({ ...formData, startsAt: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endsAt">Ends (optional)</Label>
+                      <Input
+                        id="endsAt"
+                        type="datetime-local"
+                        value={formData.endsAt}
+                        onChange={(e) =>
+                          setFormData({ ...formData, endsAt: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <DialogFooter>
