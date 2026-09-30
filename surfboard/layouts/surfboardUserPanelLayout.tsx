@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ConfirmedLogoutLink } from "@/components/ConfirmedLogoutLink";
 import NotificationBell from "@/components/NotificationBell";
+import { AnnouncementModal } from "@/app/(projects)/(surfboard)/components/AnnouncementModal";
 import { SURFBOARD_COLORS, SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 import { sideBarWidthClass } from "@/reva/layouts/revaAdminPanelLayout";
 import Link from "next/link";
@@ -359,6 +360,7 @@ export default function SurfboardUserPanelLayout({
           {children}
         </div>
       </div>
+      <AnnouncementModal />
     </div>
   );
 }

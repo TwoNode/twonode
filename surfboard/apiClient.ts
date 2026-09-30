@@ -1240,11 +1240,26 @@ export const surfboardApi = {
       link?: string;
       metadata?: any;
       sendEmail?: boolean;
+      showAsModal?: boolean;
+      startsAt?: string;
+      endsAt?: string;
     }) =>
       jsonFetch<{ id: string }>(`${BASE}/notifications`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
+
+    /** Current active (showAsModal, in its startsAt/endsAt window, matches this
+     * user, not yet dismissed) announcement, if any — surfboardUserPanelLayout.tsx
+     * shows it as a blocking modal on mount rather than leaving it in the bell. */
+    activeAnnouncement: () =>
+      jsonFetch<{
+        id: string;
+        type: string;
+        title: string;
+        message: string;
+        link: string | null;
+      } | null>(`${BASE}/notifications/active-announcement`),
 
     unreadCount: () =>
       jsonFetch<{ count: number }>(`${BASE}/notifications/unread-count`),

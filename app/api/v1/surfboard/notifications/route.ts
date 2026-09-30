@@ -45,6 +45,9 @@ const createSchema = z.object({
   link: z.string().optional(),
   metadata: z.any().optional(),
   sendEmail: z.boolean().optional(),
+  showAsModal: z.boolean().optional(),
+  startsAt: z.coerce.date().optional(),
+  endsAt: z.coerce.date().optional(),
 });
 
 export const POST = withAuth<SurfboardRole>(
