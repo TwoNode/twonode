@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Search, UserPlus, UserX, Mail } from "lucide-react";
+import { X, Search, UserPlus, UserX, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,6 +30,7 @@ export function SharePlanModal({
   const [isSearching, setIsSearching] = useState(false);
   const [sharedUsers, setSharedUsers] = useState<User[]>(sharedWith);
   const [isInviting, setIsInviting] = useState(false);
+  const [sharingUserId, setSharingUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const isEmailQuery = /\S+@\S+\.\S+/.test(searchQuery.trim());
 
@@ -73,9 +74,11 @@ export function SharePlanModal({
   };
 
   const handleAddUser = async (user: User) => {
+    if (sharingUserId) return; // one share in flight at a time
+    setSharingUserId(user.id);
     try {
       const result = await surfboardApi.plans.share(planId, user.id);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to share plan');
       }
@@ -97,6 +100,8 @@ export function SharePlanModal({
         description: error instanceof Error ? error.message : "Failed to share plan. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSharingUserId(null);
     }
   };
 
@@ -229,9 +234,14 @@ export function SharePlanModal({
                           variant="outline"
                           size="sm"
                           onClick={() => handleAddUser(user)}
+                          disabled={sharingUserId !== null}
                           className="h-8"
                         >
-                          <UserPlus className="mr-1 h-3.5 w-3.5" />
+                          {sharingUserId === user.id ? (
+                            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <UserPlus className="mr-1 h-3.5 w-3.5" />
+                          )}
                           Share
                         </Button>
                       </div>
