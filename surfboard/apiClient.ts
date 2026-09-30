@@ -650,7 +650,10 @@ export const surfboardApi = {
 
     /** Shares by email, whether or not the recipient has an account yet — see invitePlanShareByEmail. */
     inviteByEmail: (planId: string, email: string) =>
-      jsonFetch<{ invited: boolean; email: string; expiresAt: string; inviteId: string } | { id: string; sharedTo: string[] }>(
+      jsonFetch<
+        | { invited: boolean; email: string; expiresAt: string; inviteId: string; emailSent: boolean }
+        | { id: string; sharedTo: string[]; sharedUser?: { id: string; firstName: string; lastName: string; email: string; surconRegNumber: string | null } }
+      >(
         `${BASE}/plans/${encodeURIComponent(planId)}/share/invite`,
         { method: "POST", body: JSON.stringify({ email }) }
       ),
