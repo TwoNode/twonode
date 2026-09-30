@@ -88,8 +88,17 @@ export default function SurfMapViewerPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] w-full">
-      <PlansMapClient plansRaw={allPlans} />
+    // h-full (not a second guessed calc(100vh-Npx)) so this self-sizes to
+    // whatever the dashboard shell's content pane actually gives it — the
+    // previous hardcoded calc(100vh-64px) undercounted the real navbar (80px)
+    // + content padding (32px) chrome by 48px, pushing the map's own
+    // bottom-anchored "Plan Display"/"Legend" panels below the visible
+    // viewport. min-h-0 + overflow-hidden on the inner flex-1 child mirrors
+    // the admin map viewer's already-correct pattern.
+    <div className="flex h-full w-full flex-col">
+      <div className="min-h-0 flex-1 w-full overflow-hidden">
+        <PlansMapClient plansRaw={allPlans} />
+      </div>
     </div>
   );
 }
