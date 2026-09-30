@@ -329,6 +329,7 @@ export default function SurfboardUserPanelLayout({
             colorPalette={SURFBOARD_COLORS}
             sideBarWidthClass={sideBarWidthClass}
             enableRailCollapse
+            railBackground={SURFBOARD_GRADIENTS.hero}
             // /newplan stays subscription-gated (proxy.ts + createSurfPlan's
             // requireActiveSubscription) — hide the CTA rather than send an
             // unsubscribed user into a page that will just redirect them out.

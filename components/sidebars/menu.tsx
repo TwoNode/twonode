@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -139,6 +139,17 @@ export function Menu({
   // as before. The active section is already exempt from collapsing at all
   // (isSectionCollapsed above), so it's unaffected by hover either way.
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  // Closing a hovered-open section is debounced: moving the mouse from a
+  // section header across the small gap onto its first item (or between two
+  // sibling items) briefly leaves both <li>s at once. Closing immediately on
+  // that leave used to unmount the item's <Link> (see the `collapsed &&`
+  // guard below) before the cursor arrived, so the mouseenter it was moving
+  // toward never fired and the section stayed shut. Delaying the close lets
+  // the very next mouseenter (on any sibling in the same group) cancel it.
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+  }, []);
 
   // contrastText in this codebase's palettes is always a 3-digit hex ("#fff"),
   // which breaks naive `${hex}99` alpha-suffix concatenation (produces the
@@ -190,9 +201,19 @@ export function Menu({
             // sibling <li>s in the same group re-sets the same section on
             // enter right after the leave clears it, so it never visibly
             // flickers closed.
-            const onGroupMouseEnter = () => group.section && setHoveredSection(group.section);
-            const onGroupMouseLeave = () =>
-              setHoveredSection((prev) => (prev === group.section ? null : prev));
+            const onGroupMouseEnter = () => {
+              if (closeTimeoutRef.current) {
+                clearTimeout(closeTimeoutRef.current);
+                closeTimeoutRef.current = null;
+              }
+              if (group.section) setHoveredSection(group.section);
+            };
+            const onGroupMouseLeave = () => {
+              if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+              closeTimeoutRef.current = setTimeout(() => {
+                setHoveredSection((prev) => (prev === group.section ? null : prev));
+              }, 150);
+            };
 
             return (
               <React.Fragment key={groupIndex}>
