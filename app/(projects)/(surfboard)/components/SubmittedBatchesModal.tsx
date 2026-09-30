@@ -10,6 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ import {
   ChevronDown,
   Copy,
   Download,
+  Search,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -66,10 +68,13 @@ interface Batch {
   userPaymentRef: string | null;
   userPaymentDate: Date | null;
   createdAt: Date;
+  lasgReceiptUrl?: string | null;
+  remitaReceiptUrl?: string | null;
   plans: Array<{
     id: string;
     planNumber: string;
     surveyTitle: string;
+    facilitator?: string | null;
     status: string;
     redCopyStatus: string;
     physicalCopySubmitted: boolean;
@@ -104,6 +109,7 @@ export function SubmittedBatchesModal({
   const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -305,6 +311,21 @@ export function SubmittedBatchesModal({
     }
   };
 
+  const filteredBatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return batches;
+    return batches.filter(
+      (batch) =>
+        batch.batchCode.toLowerCase().includes(q) ||
+        batch.plans.some(
+          (plan) =>
+            plan.planNumber?.toLowerCase().includes(q) ||
+            plan.surveyTitle?.toLowerCase().includes(q) ||
+            plan.facilitator?.toLowerCase().includes(q)
+        )
+    );
+  }, [batches, searchQuery]);
+
   return (
     <>
       {ConfirmDialog}
@@ -347,6 +368,17 @@ export function SubmittedBatchesModal({
               </Button>
             )}
           </div>
+          {batches.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by batch number, plan number, title, or facilitator..."
+                className="pl-9"
+              />
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4 px-1">
@@ -373,9 +405,18 @@ export function SubmittedBatchesModal({
                 here with full details
               </p>
             </div>
+          ) : filteredBatches.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
+                <Search className="w-20 h-20 text-gray-300" />
+              </div>
+              <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
+                No batches match "{searchQuery}"
+              </p>
+            </div>
           ) : (
             <Accordion type="single" collapsible className="space-y-4">
-              {batches.map((batch, index) => (
+              {filteredBatches.map((batch, index) => (
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
@@ -498,7 +539,19 @@ export function SubmittedBatchesModal({
                         )}
 
                         {canDownloadReceipt(batch.paymentStatus) && (
-                          <a href={`/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`}>
+                          // Prefer the real LASG payment receipt when one's
+                          // on file — the self-generated PDF (twonode's own
+                          // batch summary) was the only option here before,
+                          // which isn't the actual government receipt.
+                          <a
+                            href={
+                              batch.lasgReceiptUrl ||
+                              `/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`
+                            }
+                            {...(batch.lasgReceiptUrl
+                              ? { target: "_blank", rel: "noopener noreferrer" }
+                              : {})}
+                          >
                             <Button
                               size="sm"
                               variant="outline"
