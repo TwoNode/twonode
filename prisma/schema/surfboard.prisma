@@ -388,11 +388,19 @@ model SurfboardNotification {
   audience    SurfboardNotificationAudience @default(SPECIFIC_USERS)
   link        String?
   metadata    Json?
+  // Modal announcement fields — an admin-authored important message shown
+  // as a blocking modal on login (not just the bell dropdown), active only
+  // between startsAt/endsAt. Reuses dismissedBy so it doesn't reappear every
+  // page nav within the same session once acknowledged.
+  showAsModal Boolean                       @default(false)
+  startsAt    DateTime?
+  endsAt      DateTime?
   createdAt   DateTime                      @default(now())
   updatedAt   DateTime                      @updatedAt
 
   @@index([createdAt])
   @@index([audience])
+  @@index([showAsModal, startsAt, endsAt])
 }
 
 // --------------------------------------------------------------------------------

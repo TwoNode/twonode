@@ -715,11 +715,14 @@ export async function getUserBatches(userId: string) {
       userPaymentRef: true,
       userPaymentDate: true,
       createdAt: true,
+      lasgReceiptUrl: true,
+      remitaReceiptUrl: true,
       plans: {
         select: {
           id: true,
           planNumber: true,
           surveyTitle: true,
+          facilitator: true,
           status: true,
           redCopyStatus: true,
           physicalCopySubmitted: true,

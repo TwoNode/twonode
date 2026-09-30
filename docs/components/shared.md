@@ -57,7 +57,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | File | Description |
 |---|---|
 | `DashboardBadge.tsx` | Shared status-badge look (tone system) |
-| `DashboardHero.tsx` | Gradient greeting banner at the top of a dashboard page |
+| `DashboardHero.tsx` | Gradient greeting banner at the top of a dashboard page. Optional `secondaryCta`, rendered to the left of `cta` in a lighter outline style (e.g. Surfboard dashboard's "My Batches" next to "New Plan") |
 | `DashboardSearch.tsx` | Debounced topbar search with live results dropdown |
 | `DateRangeFilter.tsx` | Two-input date-range filter (used by Surfboard's dashboard analytics) |
 | `StatCard.tsx` | Tone-tinted stat tile with icon and optional breakdown line |
@@ -67,8 +67,8 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 
 | File | Description |
 |---|---|
-| `menu.tsx` | Renders the nav item list + pinned footer (avatar, logout) |
-| `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button) |
+| `menu.tsx` | Renders the nav item list + pinned footer (avatar, logout). A collapsed section's items only mount while hovered/peeking; closing that hover is debounced (~150ms, cancelled by the next enter in the same group) so moving the cursor across the small gap between a section header and its first item — or between sibling items — doesn't unmount the item the cursor is moving toward before it arrives |
+| `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button). `enableRailCollapse` now also used by Surfboard admin+MDA (`DashboardShell.tsx`) and both REVA dashboards, not just Surfboard surveyor. Collapse toggle button sits outside the content div's `overflow-hidden` boundary (previously clipped in half by it) and uses the brand accent color instead of blending into the rail. Optional `railBackground` prop overrides the shared near-black fill (Surfboard surveyor passes its hero gradient; every other consumer is unaffected). Peeking rail gets a higher z-index only while peeking, so it doesn't lose a z-index tie with page content (e.g. a map viewer's own floating panels) on DOM order |
 
 ## `components/admin-panel/` — shared admin shell chrome
 
@@ -97,6 +97,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right) |
 | `GoogleIcon.tsx` | Google "G" logo icon |
 | `NativeAuthCard.tsx` | Email/password login+register card |
+| `PlatformNetworkGraphic.tsx` | The connected-logo graphic on `AuthSplitLayout`'s branded panel. `variant="default"` (TwoNode hub + Surfboard/REVA/GBC/open-slot satellites) vs `variant="mda"` (a single TwoNode↔MDA connection, offset in x so the line reads as a real diagonal, not stacked dead-vertical) |
 | `ResetPasswordCard.tsx` | Password reset form card |
 | `VerifyEmailCard.tsx` | Email verification status card |
 

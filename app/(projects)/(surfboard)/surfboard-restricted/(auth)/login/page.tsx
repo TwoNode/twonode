@@ -7,14 +7,19 @@ import { NativeAuthCard } from "@/components/auth/NativeAuthCard";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { GoogleIcon } from "@/components/auth/GoogleIcon";
 import { Platform } from "@/utils/platform";
+import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 
 const postLoginRedirectURL = "/api/auth/success/surf-restricted";
 
 export default function SurfRestrictedLoginPage() {
   return (
     <AuthSplitLayout
-      accent="#2563EB"
-      accentDark="#1D4ED8"
+      // Same hero gradient + matching accent as the surveyor login page, so
+      // admin reads as the same brand identity instead of falling back to a
+      // different flat blue formula.
+      accent="#233dff"
+      accentDark="#141c4d"
+      background={SURFBOARD_GRADIENTS.hero}
       eyebrow="Surfboard Restricted"
       headline="Restricted operations access."
       description="This area is limited to authorized Surfboard staff. Contact your administrator if you believe you should have access."
@@ -35,8 +40,8 @@ export default function SurfRestrictedLoginPage() {
         logoAlt="Surfboard Logo"
         title="Restricted Access"
         subtitle="Authorized users only. Please sign in to continue."
-        accent="#2563EB"
-        accentDark="#1D4ED8"
+        accent="#233dff"
+        accentDark="#141c4d"
         resolveRedirect={() => "/surfboard-restricted/dashboard"}
         alternateAuth={
           <LoginLink postLoginRedirectURL={postLoginRedirectURL}>

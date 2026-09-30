@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/sidebars/sidebar";
+import { Sidebar, RAIL_WIDTH_CLASS } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
@@ -85,7 +85,12 @@ export default function RevaAdminPanelLayout({
         />
       )}
 
-      <div className={sideBarWidthClass + " relative h-full shrink-0"}>
+      <div
+        className={
+          (sidebar.isRailCollapsed ? RAIL_WIDTH_CLASS : sideBarWidthClass) +
+          " relative h-full shrink-0 transition-[width] ease-in-out duration-300"
+        }
+      >
         <Sidebar
           items={sidebarItems}
           userImageUrl={user?.picture!}
@@ -94,6 +99,7 @@ export default function RevaAdminPanelLayout({
           sideBarWidthClass={sideBarWidthClass}
           title="REVA Admin"
           logoSrc="/reva/revaLogo.png"
+          enableRailCollapse
         />
       </div>
 

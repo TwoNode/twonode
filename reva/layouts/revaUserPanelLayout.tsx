@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/sidebars/sidebar";
+import { Sidebar, RAIL_WIDTH_CLASS } from "@/components/sidebars/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
@@ -89,13 +89,19 @@ export default function RevaUserPanelLayout({
           />
         )}
 
-        <div className={sideBarWidthClass + "h-full max-h-full"}>
+        <div
+          className={
+            (sidebar.isRailCollapsed ? RAIL_WIDTH_CLASS : sideBarWidthClass) +
+            "h-full max-h-full transition-[width] ease-in-out duration-300"
+          }
+        >
           <Sidebar
             items={menuList}
             userImageUrl={user?.picture!}
             userName={userName}
             userRole={userData?.role}
             sideBarWidthClass={sideBarWidthClass}
+            enableRailCollapse
           />
         </div>
 

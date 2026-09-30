@@ -15,7 +15,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `batchApprovalService.ts` | Certificate-of-Deposit batch approval workflow |
 | `codFeeService.ts` | Certificate-of-Deposit fee calculation |
 | `mdaRemarkService.ts` | MDA stage remarks/reasons CRUD |
-| `notificationService.ts` | Notification CRUD + read/dismiss state |
+| `notificationService.ts` | Notification CRUD + read/dismiss state. `createNotification`/`SurfboardNotification` support `showAsModal`/`startsAt`/`endsAt` — an admin-authored announcement important enough to show as a blocking modal on login, not just the bell dropdown, only while active in its optional date window; `getActiveModalAnnouncement(userId, role)` resolves the current one (if any) matching the caller's audience and not yet in `dismissedBy`, reusing `getUserNotifications`' own audience-matching shape |
 | `planCommentService.ts` | Per-plan Comments (Shared Access) — a shared discussion thread visible to the plan's owner and everyone in `sharedTo` (unlike `planViewerAttachmentService.ts`, deliberately not private). `addPlanComment`/`getPlanComments`/`deletePlanComment`; `assertCanAccessComments` checks the caller is the owner or a recipient before any read/write, not subscription-gated (access-not-capability, same principle as reading a shared plan). Author names resolved in one bulk `findMany`, not N+1; each returned comment carries `isOwner` so the UI can badge the surveyor's own replies |
 | `planViewerAttachmentService.ts` | Private per-viewer plan attachments (Shared Access) — a shared-plan recipient's own files, fully private: never visible to the owner or to any other recipient of the same share. `addViewerAttachment`/`getViewerAttachments`/`deleteViewerAttachment`, every function scoped by BOTH `planId` and `viewerId` (never `planId` alone); `assertIsRecipient` (must be in the plan's `sharedTo`) doubles as the privacy boundary, not just a UI hide |
 | `paystackSubscriptionService.ts` | Paystack subscription billing logic. `initiateSubscription`/`verifySubscription` attach a Paystack `plan` (recurring — Bank Transfer unavailable at checkout, since a transfer can't authorize future auto-charges). `initiateOneTimeSubscription`/`verifyOneTimeSubscription` are the non-recurring counterpart — same pricing, no `plan` attached (Transfer available), no auto-renewal; persists `Subscription.provider = "paystack_onetime"` so `disableSubscription()` and the UI can tell it apart from a genuinely-recurring subscription with an empty `subCode` (a transient "not yet synced" state, vs. a one-time payment's permanently-empty `subCode`) |
@@ -25,7 +25,7 @@ colocated under `app/(projects)/(surfboard)/`.
 | `qrAdminService.ts` | QR-earnings admin configuration |
 | `qrEarningsService.ts` | QR-code referral earnings calculation; bank-account verification for payouts (`toggleBankVerification`, audited with the acting admin); `getSurveyorEarningsThisMonth` is a server-side aggregate for the current calendar month (not a client-side sum over the capped `getSurveyorEarningsOverview` transaction list); `requestWithdrawal` calls `requireActiveSubscription` first (Shared Access capability gate — see `planService.ts`); `initiateQRServicePayment` is deliberately NOT gated, since it's paid by an anonymous member of the public scanning the plan's QR code, not the surveyor |
 | `receiptPdfService.ts` | Spawns the receipt PDF worker and returns a buffer |
-| `remitaVerificationService.ts` | Remita payment verification |
+| `remitaVerificationService.ts` | Remita payment verification. `getUserBatches` (surveyor-facing "My Batches") now also selects `lasgReceiptUrl`/`remitaReceiptUrl` and each plan's `facilitator` — previously only the admin/MDA-facing batch query selected the real LASG receipt link, so the surveyor's own "Receipt" button could only ever point at the self-generated PDF summary |
 | `settingsService.ts` | Platform settings CRUD; surveyor KYC validation (`toggleUserKycValidation`, audited with the acting admin) |
 | `subscriptionAnalyticsService.ts` | Subscription-related analytics |
 | `subscriptionReminderService.ts` | Daily cron job: emails + WhatsApp-nudges users whose subscription expires within 3 days (dedup'd per expiry date via `expiryReminderSentAt`) |
@@ -57,7 +57,7 @@ colocated under `app/(projects)/(surfboard)/`.
 
 | File | Description |
 |---|---|
-| `surfboardUserPanelLayout.tsx` | Surveyor dashboard shell layout (navbar + sidebar composition) |
+| `surfboardUserPanelLayout.tsx` | Surveyor dashboard shell layout (navbar + sidebar composition). Sidebar passes `railBackground={SURFBOARD_GRADIENTS.hero}`. Mounts `AnnouncementModal` once, which fetches the current active modal-announcement notification on app-shell mount |
 
 ## `surfboard/pdf-worker/` — standalone Node PDF renderer
 

@@ -37,6 +37,7 @@ import {
   FileCheck,
   AlertTriangle,
   Sparkles,
+  Download,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -697,6 +698,25 @@ export default function SurfboardPlanForm({
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleDownloadPillarsCsv() {
+    if (pillars.length === 0) return;
+    // Reconstructs from the parsed rows already held in state, not the
+    // original uploaded file bytes — the raw File objects aren't kept once
+    // parsed (see csvFiles' doc comment above).
+    const headers = ["Pillar Number", "Easting", "Northing"];
+    const rows = pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "pillars.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   async function removeParcel(index: number) {
@@ -2158,13 +2178,23 @@ export default function SurfboardPlanForm({
                       Pillar Summary
                     </h3>
                   </div>
-                  <a
-                    href="#pillar-summary"
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                    aria-label="Anchor link to Pillar Summary"
-                  >
-                    #
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPillarsCsv}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download CSV
+                    </button>
+                    <a
+                      href="#pillar-summary"
+                      className="text-xs text-gray-400 hover:text-gray-600"
+                      aria-label="Anchor link to Pillar Summary"
+                    >
+                      #
+                    </a>
+                  </div>
                 </div>
                 <hr className="border-dashed border-gray-200" />
                 <div className="grid grid-cols-2 gap-2 text-sm">

@@ -34,6 +34,12 @@ export type CreateNotificationInput = {
   /** Best-effort WhatsApp copy of the notification — silently a no-op for
    * recipients with no phone on file, or when no provider is configured. */
   sendWhatsApp?: boolean;
+  /** Shown as a blocking modal on login (not just the bell dropdown), only
+   * while active between startsAt/endsAt — for announcements important
+   * enough that a dropdown item could easily be missed. */
+  showAsModal?: boolean;
+  startsAt?: Date;
+  endsAt?: Date;
 };
 
 export type NotificationWithUser = {
@@ -58,6 +64,9 @@ export async function createNotification(input: CreateNotificationInput) {
       userIds: input.userIds || [],
       link: input.link,
       metadata: input.metadata || {},
+      showAsModal: input.showAsModal ?? false,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
     },
   });
 
@@ -248,6 +257,49 @@ export async function getUserNotifications(
       if (!includeDismissed && n.isDismissed) return false;
       return true;
     });
+}
+
+/**
+ * The current active (showAsModal, now between startsAt/endsAt, audience
+ * matches this user, not yet dismissed by them) announcement, if any —
+ * shown as a blocking modal rather than left in the bell dropdown. Reuses
+ * dismissedBy as the "seen" marker so it doesn't reappear every page nav
+ * within the same session once acknowledged.
+ */
+export async function getActiveModalAnnouncement(
+  userId: string,
+  role: SurfboardRole
+): Promise<NotificationWithUser | null> {
+  const now = new Date();
+  const where: any = {
+    showAsModal: true,
+    OR: [{ audience: "ALL_USERS" }, { userIds: { has: userId } }],
+    AND: [
+      { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+      { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+    ],
+  };
+  if (role === "ADMIN" || role === "SUPERADMIN") where.OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
+
+  const notification = await prisma.surfboardNotification.findFirst({
+    where,
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!notification || notification.dismissedBy.includes(userId)) return null;
+
+  return {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    audience: notification.audience,
+    link: notification.link,
+    createdAt: notification.createdAt,
+    isRead: notification.readBy.includes(userId),
+    isDismissed: false,
+  };
 }
 
 /**

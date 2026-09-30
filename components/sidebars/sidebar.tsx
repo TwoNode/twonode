@@ -44,6 +44,13 @@ export interface SidebarProps extends MenuProps {
    * store.
    */
   enableRailCollapse?: boolean;
+  /**
+   * Optional override for the rail's background (any valid CSS `background`
+   * value — a flat color or a gradient string). Defaults to the shared
+   * near-black `SIDEBAR_INK` so products that haven't asked for their own
+   * identity here are unaffected.
+   */
+  railBackground?: string;
 }
 
 /**
@@ -64,6 +71,7 @@ export function Sidebar({
   logoSrc,
   primaryAction,
   enableRailCollapse = false,
+  railBackground,
 }: SidebarProps) {
   const sidebar = useStore(useSidebar, (x) => x);
 
@@ -77,18 +85,48 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "absolute inset-0 z-50 transition-all ease-in-out duration-300",
+        "absolute inset-0 transition-all ease-in-out duration-300",
+        // Peeking open needs to beat page content it's floating over (e.g. a
+        // map viewer's own z-50 panels) — bump above that tie only while
+        // peeking, not all the time, so it never fights other z-50 chrome
+        // (navbars, dropdowns) during normal collapsed/expanded states.
+        isPeeking ? "z-[100]" : "z-50",
         "w-[240px] border-r shadow-lg",
         showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
       style={{
-        background: SIDEBAR_INK,
+        background: railBackground || SIDEBAR_INK,
         borderColor: "rgba(255, 255, 255, 0.08)",
       }}
       onMouseEnter={() => isRail && sidebar.setIsHover(true)}
       onMouseLeave={() => isRail && sidebar.setIsHover(false)}
     >
+      {enableRailCollapse && (
+        <button
+          onClick={() => sidebar?.toggleRailCollapsed()}
+          // Sibling of the overflow-hidden content div below (not nested
+          // inside it) so this isn't clipped by that div's overflow
+          // boundary — it used to be a child of that div, which cut roughly
+          // half the button off since it pokes out past the div's own
+          // right edge via -right-3.
+          className="hidden lg:flex absolute top-3 -right-4 z-10 h-8 w-8 items-center justify-center rounded-full border-2 shadow-lg transition-transform duration-300 hover:scale-110"
+          style={{
+            background: "var(--color-brand-primary, #2563EB)",
+            borderColor: "rgba(255,255,255,0.35)",
+          }}
+          aria-label={isRail ? "Expand sidebar" : "Collapse sidebar"}
+          title={isRail ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <ChevronLeft
+            className={cn(
+              "h-4 w-4 text-white transition-transform duration-300",
+              isRail && "rotate-180",
+            )}
+          />
+        </button>
+      )}
+
       <div className="relative h-full justify-between flex flex-col overflow-hidden">
         {title && (
           <div
@@ -117,23 +155,6 @@ export function Sidebar({
               <X className="w-5 h-5 text-white/70" />
             </button>
           </div>
-        )}
-
-        {enableRailCollapse && (
-          <button
-            onClick={() => sidebar?.toggleRailCollapsed()}
-            className="hidden lg:flex absolute top-3 -right-3 z-10 h-6 w-6 items-center justify-center rounded-full border shadow-md transition-transform duration-300"
-            style={{ background: SIDEBAR_INK, borderColor: "rgba(255,255,255,0.15)" }}
-            aria-label={isRail ? "Expand sidebar" : "Collapse sidebar"}
-            title={isRail ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <ChevronLeft
-              className={cn(
-                "h-3.5 w-3.5 text-white/70 transition-transform duration-300",
-                isRail && "rotate-180",
-              )}
-            />
-          </button>
         )}
 
         <div className="flex-1 flex flex-col min-h-0 px-2">
