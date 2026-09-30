@@ -1109,6 +1109,11 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
       ward: plan.ward,
       lga: plan.lga,
       owner: plan.user ?? null,
+      // The map popup shows this as "Surveyor" — the registered platform
+      // user accountable for the plan, not the plan's own free-text
+      // `facilitator` field, which was never selected here and always
+      // rendered as the literal string "undefined" in the popup.
+      facilitator: plan.user ? `${plan.user.firstName} ${plan.user.lastName}`.trim() : "Unknown",
     })),
   };
 }
