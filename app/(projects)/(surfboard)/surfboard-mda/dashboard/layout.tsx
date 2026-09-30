@@ -41,7 +41,7 @@ export default async function MDADashboardLayout({
   return (
     <DashboardShell
       title="Surfboard MDA"
-      logoSrc="/surfboard/surf_logo.svg"
+      logoSrc="/surfboard/surf_logo_mda.svg"
       role={userData?.role}
       group="mda"
       user={
