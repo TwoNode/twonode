@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api/withAuth";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { ValidationError } from "@/lib/api/errors";
-import { addViewerAttachment, getViewerAttachments } from "@/surfboard/services/planViewerAttachmentService";
+import { finalizeViewerAttachment, getViewerAttachments } from "@/surfboard/services/planViewerAttachmentService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 type RouteCtx = { params: Promise<{ planId: string }> };
@@ -17,18 +17,22 @@ export const GET = withAuth<SurfboardRole>(
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }
 );
 
-/** multipart/form-data — the attachment file itself, not a JSON body. */
+/**
+ * Step 2 of the direct-to-S3 upload flow (see presign/route.ts for step 1):
+ * the browser has already PUT the file straight to S3 — this just records
+ * it. JSON body, not multipart, since no file bytes pass through here.
+ */
 export const POST = withAuth<SurfboardRole>(
   async (req: NextRequest, ctx, routeCtx: RouteCtx) => {
     if (!validateCSRF(req)) {
       return NextResponse.json({ success: false, error: "Cross-origin request blocked" }, { status: 403 });
     }
     const { planId } = await routeCtx.params;
-    const form = await req.formData();
-    const file = form.get("file");
-    if (!(file instanceof File)) throw new ValidationError({ file: "Missing file" });
+    const body = await req.json();
+    const { fileName, key, fileUrl } = body || {};
+    if (!fileName || !key || !fileUrl) throw new ValidationError({ file: "Missing file metadata" });
 
-    const data = await addViewerAttachment(planId, ctx.session.sub, file);
+    const data = await finalizeViewerAttachment(planId, ctx.session.sub, fileName, key, fileUrl);
     return NextResponse.json({ success: true, data });
   },
   { platform: Platform.SURFBOARD, roles: [SurfboardRole.USER] }

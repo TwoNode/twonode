@@ -68,7 +68,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | File | Description |
 |---|---|
 | `menu.tsx` | Renders the nav item list + pinned footer (avatar, logout). A collapsed section's items only mount while hovered/peeking; closing that hover is debounced (~150ms, cancelled by the next enter in the same group) so moving the cursor across the small gap between a section header and its first item — or between sibling items — doesn't unmount the item the cursor is moving toward before it arrives |
-| `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button). `enableRailCollapse` now also used by Surfboard admin+MDA (`DashboardShell.tsx`) and both REVA dashboards, not just Surfboard surveyor. Collapse toggle button sits outside the content div's `overflow-hidden` boundary (previously clipped in half by it) and uses the brand accent color instead of blending into the rail. Optional `railBackground` prop overrides the shared near-black fill (Surfboard surveyor passes its hero gradient; every other consumer is unaffected). Peeking rail (desktop hover) OR the mobile drawer being open both get a higher z-index than the default, so the sidebar doesn't lose a z-index tie with page content (e.g. a map viewer's own Search & Filters panel) on DOM order — previously only the desktop peek case was covered, so opening the sidebar on mobile still lost that tie and showed page content overlapping the sidebar's own nav labels |
+| `sidebar.tsx` | Sidebar shell (rail, optional branding header, optional primary-action button). `enableRailCollapse` now also used by Surfboard admin+MDA (`DashboardShell.tsx`) and both REVA dashboards, not just Surfboard surveyor. Collapse toggle button sits outside the content div's `overflow-hidden` boundary (previously clipped in half by it) and uses the brand accent color instead of blending into the rail — overridable per product via the new `toggleColor` prop (Surfboard MDA passes its indigo accent, so the button doesn't clash with a non-blue `railBackground`). Optional `railBackground` prop overrides the shared near-black fill (Surfboard surveyor passes its hero gradient, MDA passes `SURFBOARD_GRADIENTS.mda`; every other consumer is unaffected). Peeking rail gets a higher z-index only while peeking, so it doesn't lose a z-index tie with page content (e.g. a map viewer's own floating panels) on DOM order |
 
 ## `components/admin-panel/` — shared admin shell chrome
 
@@ -76,7 +76,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 |---|---|
 | `collapse-menu-button.tsx` | Collapsible submenu button |
 | `content-layout.tsx` | Page content wrapper for admin shells |
-| `DashboardShell.tsx` | Top-level admin dashboard shell (navbar + sidebar composition) |
+| `DashboardShell.tsx` | Top-level admin dashboard shell (navbar + sidebar composition). MDA (`isMda`) now gets a full indigo treatment carried through from its own login page (`SURFBOARD_GRADIENTS.mda`, same accentDark/accent pair as its `AuthSplitLayout` background) across the sidebar rail, the navbar (previously plain white, brand color only in small accent details), and `UserAccountMenu`'s `accentColor`/`accentColorDark` (previously always defaulted to Surfboard blue regardless of product) |
 | `navbar.tsx` | Admin panel top navbar |
 | `sheet-menu.tsx` | Mobile slide-in menu |
 | `sidebar-toggle.tsx` | Sidebar collapse/expand toggle |

@@ -26,6 +26,7 @@ import {
   XCircle,
   Eye,
   UploadCloud,
+  Share2,
 } from "lucide-react";
 import { RemitaPaymentModal } from "./RemitaPaymentModal";
 import { surfboardApi } from "@/surfboard/apiClient";
@@ -923,12 +924,14 @@ interface BatchSelectionBarProps {
   selectedCount: number;
   onSubmit: () => void;
   onClear: () => void;
+  onShare?: () => void;
 }
 
 export function BatchSelectionBar({
   selectedCount,
   onSubmit,
   onClear,
+  onShare,
 }: BatchSelectionBarProps) {
   if (selectedCount === 0) return null;
 
@@ -956,6 +959,18 @@ export function BatchSelectionBar({
             >
               Clear
             </Button>
+
+            {onShare && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onShare}
+                className="border-gray-300 dark:border-white/15 flex-1 sm:flex-none whitespace-nowrap"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+            )}
 
             <Button
               size="sm"

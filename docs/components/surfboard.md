@@ -12,7 +12,7 @@ next to the page that uses it.
 | `AIAutofillButton.tsx` | Autofills a plan form from an uploaded document via AI extraction |
 | `AmendPlanModal.tsx` | Modal to amend/correct a submitted plan |
 | `AnnouncementModal.tsx` | Blocking modal for an admin-authored "important announcement" notification (`showAsModal`, active within its `startsAt`/`endsAt` window) — fetched once per app-shell mount, built on `components/ui/dialog.tsx` (Radix + portal) so it always renders above page content |
-| `CertificateBatchSelection.tsx` | Select plans to include in a certificate batch |
+| `CertificateBatchSelection.tsx` | Select plans to include in a certificate batch. `BatchSelectionBar` (also exported here) gained an optional `onShare` prop — a "Share" button alongside "Submit for Certificate" when provided |
 | `CertificateStatus.tsx` | Certificate status badge/indicator |
 | `DownloadSubmissionLetterBtn.tsx` | Download the plan's submission letter |
 | `ErrorStates.tsx` | Shared error-state UI |
@@ -82,7 +82,8 @@ next to the page that uses it.
 | `dashboard/plan/edit/EditPlan.tsx` | Edit-plan flow |
 | `dashboard/plan/RedCopyButton.tsx` | Trigger red-copy submission |
 | `dashboard/plan/RedCopyModal.tsx` | Red-copy submission modal |
-| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user — existing-user search, plus an "invite by email" fallback (`isEmailQuery` + no search results) for an address with no Surfboard account yet, calling `invitePlanShareByEmail`. Per-result "Share" button shows a loading state and disables while a share is in flight |
+| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user — existing-user search, plus an "invite by email" fallback (`isEmailQuery` + no search results) for an address with no Surfboard account yet, calling `invitePlanShareByEmail`. Per-result "Share" button shows a loading state and disables while a share is in flight. The existing-user email-invite branch now also updates the "Shared with" list immediately (server returns the target's profile as `sharedUser`, previously missing — the list stayed stale until a page reload); a failed invite email is now reported honestly (`emailSent: false`) instead of always showing "Invitation sent"; removing someone's access now asks for confirmation first (`AlertDialog`) |
+| `BulkSharePlanModal.tsx` | Share several plans with one user/email in one action, from the Plans list's multi-select bar — no per-plan "shared with" list (too much to render for N plans), just a share action with a success/failure count summary. Same underlying `plans.share`/`plans.inviteByEmail` calls as `SharePlanModal.tsx`, looped sequentially |
 | `dashboard/plan/SinglePlan.tsx` | Single plan detail page content. Edit/Delete/Share/QR Code buttons are `isOwner`-gated (all four are owner-only server-side); non-owners see a "Mark Reviewed" button instead. "My Private Attachments" section (upload/list/delete, `surfboardApi.plans.viewerAttachments`) renders only for non-owner viewers, supports uploading multiple files at once (sequential single-file POSTs, per-file failure list). "Comments" section (thread + composer, `surfboardApi.plans.comments`) renders whenever the plan is actually shared — visible to the owner and every recipient, unlike the private-attachments section. Pillars table has a "Download CSV" button reconstructing the pillar CSV client-side from `plan.pillars` |
 | `dashboard/plans/AllPlans.tsx` | All plans list/table. Scope switcher ("My Plans" / "Shared with me" / "My Shared Plans" — filters, not tabs) swaps the underlying list call (`plans.list`/`plans.sharedWithMe`/`plans.shared`); "Shared with me" carries its own count badge from a dedicated lightweight fetch on mount (the scope switcher's own `pagination.total` only reflects whichever scope is currently active); a "Shared" badge shows who a plan is shared by (recipient view) or how many people it's shared with (owner view); row/card action menus hide Edit/Delete/Certificate/QR in the "Shared with me" scope, since those are owner-only operations |
 | `dashboard/plans/QueriedPlans.tsx` | Queried plans list |
@@ -96,7 +97,7 @@ next to the page that uses it.
 
 | File | Description |
 |---|---|
-| `surfboardplan/[id]/PublicSurfPlan.tsx` | Public/shareable plan viewer |
+| `surfboardplan/[id]/PublicSurfPlan.tsx` | Public/shareable plan viewer. Fixed a response-shape mismatch: `getGatedPublicSurfPlan` returns `{ plan, accessInfo }`, but this component was treating that whole wrapper as the flat plan object (`setPlanData(res.data)`) — every field read off it (`planNumber`, `pillars`, `geometry`, `centroid`, `user`) was `undefined`, rendering "Survey Plan undefined" with a blank body instead of either real content or a clear error. Now correctly reads `res.data.plan`/`res.data.accessInfo` |
 
 ## Admin shell (`surfboard-restricted/`)
 
