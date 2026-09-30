@@ -34,6 +34,8 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 
 ## MDA shell (`/surfboard-mda`)
 
+The per-stage review pages below (`intake`/`records-i`/`records-ii`/`charting`/`surcon`/`archive`/`settings`/`profile`) share a near-duplicate "info box" pattern (a `bg-{emerald,green,amber,purple}-50` panel for surveyor info / warnings / possible remarks) that had no dark-mode background override at all, while the value text inside them already used `dark:text-white` — in dark mode this rendered as white text on a near-white box, illegible. Fixed across all of them with matching `dark:bg-{color}-500/10`/`dark:border-{color}-500/20` overrides; the reject-button destructive styling (`border-red-300 text-red-600 hover:bg-red-50`) got the same treatment.
+
 | Route | File | Description |
 |---|---|---|
 | `/surfboard-mda/login` | `surfboard-mda/login/page.tsx` | MDA officer login |

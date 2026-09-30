@@ -206,7 +206,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Info Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
               <p className="text-sm text-amber-800">
                 <strong>Note:</strong> To update your profile information or
                 change your role, please contact your system administrator.

@@ -456,7 +456,7 @@ export default function ChartingAdminPage() {
 
           {/* Charting Remarks (for history) */}
           {isHistory && plan.chartingRemarks && (
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Charting Remarks
               </p>
@@ -586,7 +586,7 @@ export default function ChartingAdminPage() {
 
           {/* Surveyor Information */}
           {plan.user && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <User className="w-5 h-5 text-emerald-600" />
                 <h4 className="text-sm font-semibold text-emerald-800">
@@ -650,7 +650,7 @@ export default function ChartingAdminPage() {
               <Button
                 onClick={() => handleActionClick(plan, "query")}
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                className="flex-1 border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
                 disabled={isDisabled}
               >
                 <XCircle className="w-4 h-4 mr-2" />
