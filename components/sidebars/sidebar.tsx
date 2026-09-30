@@ -51,6 +51,8 @@ export interface SidebarProps extends MenuProps {
    * identity here are unaffected.
    */
   railBackground?: string;
+  /** Overrides the collapse-toggle button's fill — defaults to Surfboard blue, so a product with its own `railBackground` isn't stuck with a clashing blue button. */
+  toggleColor?: string;
 }
 
 /**
@@ -72,6 +74,7 @@ export function Sidebar({
   primaryAction,
   enableRailCollapse = false,
   railBackground,
+  toggleColor,
 }: SidebarProps) {
   const sidebar = useStore(useSidebar, (x) => x);
 
@@ -112,7 +115,7 @@ export function Sidebar({
           // right edge via -right-3.
           className="hidden lg:flex absolute top-3 -right-4 z-10 h-8 w-8 items-center justify-center rounded-full border-2 shadow-lg transition-transform duration-300 hover:scale-110"
           style={{
-            background: "var(--color-brand-primary, #2563EB)",
+            background: toggleColor || "var(--color-brand-primary, #2563EB)",
             borderColor: "rgba(255,255,255,0.35)",
           }}
           aria-label={isRail ? "Expand sidebar" : "Collapse sidebar"}
