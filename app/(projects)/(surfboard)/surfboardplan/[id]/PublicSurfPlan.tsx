@@ -266,10 +266,18 @@ function PlanDetails({ planId }: { planId: string }) {
           setError("Plan not found");
           return;
         }
-        setPlanData(res.data);
+        // getGatedPublicSurfPlan returns { plan, accessInfo } — this was
+        // previously treated as the flat plan object itself (setPlanData
+        // (res.data)), so every field read off it (planNumber, pillars,
+        // geometry, centroid, user) was undefined and accessInfo was read
+        // from the wrong level entirely — the page rendered its shell with
+        // "Survey Plan undefined" and a blank body instead of either real
+        // content or a clear error.
+        const planPayload = res.data.plan;
+        setPlanData(planPayload);
 
         // Fetch QR Access State from the gated response
-        const accessRes = (res as any).accessInfo;
+        const accessRes = res.data.accessInfo;
         if (accessRes && accessRes.success) {
           setQrAccessInfo(accessRes);
           if (
@@ -289,14 +297,14 @@ function PlanDetails({ planId }: { planId: string }) {
 
         // Process pillars for the map
         const pillars =
-          typeof res.data.pillars === "string"
-            ? JSON.parse(res.data.pillars)
-            : res.data.pillars || [];
+          typeof planPayload.pillars === "string"
+            ? JSON.parse(planPayload.pillars)
+            : planPayload.pillars || [];
 
         const geometry =
-          typeof res.data.geometry === "string"
-            ? JSON.parse(res.data.geometry)
-            : res.data.geometry;
+          typeof planPayload.geometry === "string"
+            ? JSON.parse(planPayload.geometry)
+            : planPayload.geometry;
 
         // Set initial center from first pillar or use centroid if available
         if (geometry && geometry[0]?.coordinates) {
@@ -305,11 +313,11 @@ function PlanDetails({ planId }: { planId: string }) {
             geometry[0].coordinates[0],
           ]);
         } else if (
-          res.data.centroid &&
-          Array.isArray(res.data.centroid) &&
-          res.data.centroid.length >= 2
+          planPayload.centroid &&
+          Array.isArray(planPayload.centroid) &&
+          planPayload.centroid.length >= 2
         ) {
-          setInitialCenter([res.data.centroid[1], res.data.centroid[0]]);
+          setInitialCenter([planPayload.centroid[1], planPayload.centroid[0]]);
         }
       } catch (err) {
         console.error("Error fetching plan data:", err);

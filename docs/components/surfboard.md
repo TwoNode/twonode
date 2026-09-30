@@ -97,7 +97,7 @@ next to the page that uses it.
 
 | File | Description |
 |---|---|
-| `surfboardplan/[id]/PublicSurfPlan.tsx` | Public/shareable plan viewer |
+| `surfboardplan/[id]/PublicSurfPlan.tsx` | Public/shareable plan viewer. Fixed a response-shape mismatch: `getGatedPublicSurfPlan` returns `{ plan, accessInfo }`, but this component was treating that whole wrapper as the flat plan object (`setPlanData(res.data)`) — every field read off it (`planNumber`, `pillars`, `geometry`, `centroid`, `user`) was `undefined`, rendering "Survey Plan undefined" with a blank body instead of either real content or a clear error. Now correctly reads `res.data.plan`/`res.data.accessInfo` |
 
 ## Admin shell (`surfboard-restricted/`)
 
