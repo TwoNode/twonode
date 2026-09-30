@@ -89,11 +89,15 @@ export function Sidebar({
     <aside
       className={cn(
         "absolute inset-0 transition-all ease-in-out duration-300",
-        // Peeking open needs to beat page content it's floating over (e.g. a
-        // map viewer's own z-50 panels) — bump above that tie only while
-        // peeking, not all the time, so it never fights other z-50 chrome
-        // (navbars, dropdowns) during normal collapsed/expanded states.
-        isPeeking ? "z-[100]" : "z-50",
+        // Peeking open (desktop hover) or the mobile drawer being open both
+        // float the sidebar over page content that hasn't shifted its own
+        // margin to make room — needs to beat that content's z-50 panels
+        // (e.g. a map viewer's own Search & Filters box, previously winning
+        // the tie on DOM order and covering the sidebar's nav labels on
+        // mobile). Bump above that tie only in these overlay cases, not all
+        // the time, so it never fights other z-50 chrome (navbars,
+        // dropdowns) during normal collapsed/expanded desktop states.
+        (isPeeking || sidebar.isOpen) ? "z-[100]" : "z-50",
         "w-[240px] border-r shadow-lg",
         showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
