@@ -8,6 +8,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Package,
 } from "lucide-react";
 import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
@@ -15,6 +16,7 @@ import { SURFBOARD_COLORS } from "@/surfboard/colors";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
 import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import { SubmittedBatchesModal } from "../../components/SubmittedBatchesModal";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -57,6 +59,7 @@ export default function DashboardHome() {
   // immediately redirects them out. Same check surfboardUserPanelLayout.tsx
   // uses for the sidebar's own "New Plan" button.
   const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
+  const [showBatchesModal, setShowBatchesModal] = useState(false);
 
   useEffect(() => {
     surfboardApi.profile.get().then((res) => {
@@ -188,7 +191,14 @@ export default function DashboardHome() {
           `${stats.pending} Pending`,
         ]}
         gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
+        secondaryCta={{ label: "My Batches", onClick: () => setShowBatchesModal(true), icon: Package }}
         cta={hasSubscriptionAccess ? { label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus } : undefined}
+      />
+
+      <SubmittedBatchesModal
+        isOpen={showBatchesModal}
+        onClose={() => setShowBatchesModal(false)}
+        onSuccess={() => fetchData()}
       />
 
       {/* Tabs + Filters */}
