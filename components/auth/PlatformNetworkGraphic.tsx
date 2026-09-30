@@ -23,8 +23,10 @@ const NODES = [
 // real diagonal instead of a dead-straight vertical drop.
 const MDA_MDA = { x: 41, y: 20 };
 const MDA_SURFBOARD = { x: 59, y: 56 };
-const MDA_MDA_SIZE = "17%";
-const MDA_SURFBOARD_SIZE = "13%"; // smaller than MDA — MDA is the primary mark here
+// Matches the default variant's satellite node size (NODE_SIZE below) —
+// MDA no longer gets a bespoke larger scale than the other login pages.
+const MDA_MDA_SIZE = "9%";
+const MDA_SURFBOARD_SIZE = "9%";
 
 /**
  * Replaces the old static twonode-network.svg (blank white squares, no
@@ -95,7 +97,7 @@ export function PlatformNetworkGraphic({
       {/* Hub — TwoNode */}
       <div
         className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg"
-        style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "16%", aspectRatio: "1" }}
+        style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "13%", aspectRatio: "1" }}
       >
         <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
       </div>
@@ -105,7 +107,7 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
             title="More platforms coming soon"
           >
             <Plus className="h-1/3 w-1/3 text-white/40" />
@@ -117,7 +119,7 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-lg"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "22%" }}
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "18%" }}
           >
             <img src="/gbc2/gbc2DarkLogo.png" alt="GBC" className="h-full w-full object-contain" />
           </div>
@@ -125,7 +127,7 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
           >
             {n.kind === "surfboard" && (
               <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
