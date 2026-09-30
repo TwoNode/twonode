@@ -11,6 +11,7 @@ next to the page that uses it.
 |---|---|
 | `AIAutofillButton.tsx` | Autofills a plan form from an uploaded document via AI extraction |
 | `AmendPlanModal.tsx` | Modal to amend/correct a submitted plan |
+| `AnnouncementModal.tsx` | Blocking modal for an admin-authored "important announcement" notification (`showAsModal`, active within its `startsAt`/`endsAt` window) — fetched once per app-shell mount, built on `components/ui/dialog.tsx` (Radix + portal) so it always renders above page content |
 | `CertificateBatchSelection.tsx` | Select plans to include in a certificate batch |
 | `CertificateStatus.tsx` | Certificate status badge/indicator |
 | `DownloadSubmissionLetterBtn.tsx` | Download the plan's submission letter |
@@ -33,8 +34,8 @@ next to the page that uses it.
 | `RemarkSelector.tsx` | Select a standard MDA remark/reason |
 | `RemitaPaymentModal.tsx` | Remita payment modal |
 | `SubmitConfirmationModal.tsx` | Confirm-before-submit modal |
-| `SubmittedBatchesModal.tsx` | View submitted Certificate-of-Deposit batches |
-| `SurfboardPlanForm.tsx` | Plan create/edit form |
+| `SubmittedBatchesModal.tsx` | View submitted Certificate-of-Deposit batches. "Receipt" button prefers the real LASG receipt (`batch.lasgReceiptUrl`) when on file, falling back to the self-generated PDF summary otherwise — previously always linked to the PDF summary since the underlying query never selected the LASG link. Search bar filters by batch code, plan number, title, or facilitator |
+| `SurfboardPlanForm.tsx` | Plan create/edit form. Pillar Summary section has a "Download CSV" button (Pillar Number/Easting/Northing) reconstructing from the already-parsed `pillars` state |
 | `UnlockButton.tsx` | Force-unlock a locked plan |
 | `VerificationResultModal.tsx` | Shows a verification result (SPCode/record copy) |
 
@@ -72,7 +73,7 @@ next to the page that uses it.
 |---|---|
 | `(auth)/error-login/error-login.tsx` | Login-error page content |
 | `(auth)/error-login/SurfboardErrorLogin.tsx` | Login-error page component |
-| `dashboard/analytics/AnalyticsDashboard.tsx` | Analytics tab — stats, charts, dimension breakdowns. Stats Overview row has a "Shared Access" tile (Active N · Expired N · None N, from `analyticsService.ts`'s `sharedAccessStats`) alongside the existing Facilitators tile — 4 columns, not 5, so the breakdown lines don't clip; the 5th tile wraps to its own row |
+| `dashboard/analytics/AnalyticsDashboard.tsx` | Analytics tab — stats, charts, dimension breakdowns. Stats Overview row has a "Shared Access" tile (Active N · Expired N · None N, from `analyticsService.ts`'s `sharedAccessStats`) alongside the existing Facilitators tile — 5 tiles on one line on large screens (tighter per-card padding than `StatCard`'s default so the breakdown line has room), wrapping on smaller screens |
 | `dashboard/analytics/BarChart.tsx` | Reusable bar chart |
 | `dashboard/analytics/PieChart.tsx` | Reusable (donut-capable) pie chart |
 | `dashboard/analytics/StatsCard.tsx` | Analytics stat tile |
@@ -81,12 +82,12 @@ next to the page that uses it.
 | `dashboard/plan/edit/EditPlan.tsx` | Edit-plan flow |
 | `dashboard/plan/RedCopyButton.tsx` | Trigger red-copy submission |
 | `dashboard/plan/RedCopyModal.tsx` | Red-copy submission modal |
-| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user — existing-user search, plus an "invite by email" fallback (`isEmailQuery` + no search results) for an address with no Surfboard account yet, calling `invitePlanShareByEmail` |
-| `dashboard/plan/SinglePlan.tsx` | Single plan detail page content. Edit/Delete/Share/QR Code buttons are `isOwner`-gated (all four are owner-only server-side); non-owners see a "Mark Reviewed" button instead. "My Private Attachments" section (upload/list/delete, `surfboardApi.plans.viewerAttachments`) renders only for non-owner viewers. "Comments" section (thread + composer, `surfboardApi.plans.comments`) renders whenever the plan is actually shared — visible to the owner and every recipient, unlike the private-attachments section |
-| `dashboard/plans/AllPlans.tsx` | All plans list/table. Scope switcher ("My Plans" / "Shared with me" / "My Shared Plans" — filters, not tabs) swaps the underlying list call (`plans.list`/`plans.sharedWithMe`/`plans.shared`); a "Shared" badge shows who a plan is shared by (recipient view) or how many people it's shared with (owner view); row/card action menus hide Edit/Delete/Certificate/QR in the "Shared with me" scope, since those are owner-only operations |
+| `dashboard/plan/SharePlanModal.tsx` | Share a plan with another user — existing-user search, plus an "invite by email" fallback (`isEmailQuery` + no search results) for an address with no Surfboard account yet, calling `invitePlanShareByEmail`. Per-result "Share" button shows a loading state and disables while a share is in flight |
+| `dashboard/plan/SinglePlan.tsx` | Single plan detail page content. Edit/Delete/Share/QR Code buttons are `isOwner`-gated (all four are owner-only server-side); non-owners see a "Mark Reviewed" button instead. "My Private Attachments" section (upload/list/delete, `surfboardApi.plans.viewerAttachments`) renders only for non-owner viewers, supports uploading multiple files at once (sequential single-file POSTs, per-file failure list). "Comments" section (thread + composer, `surfboardApi.plans.comments`) renders whenever the plan is actually shared — visible to the owner and every recipient, unlike the private-attachments section. Pillars table has a "Download CSV" button reconstructing the pillar CSV client-side from `plan.pillars` |
+| `dashboard/plans/AllPlans.tsx` | All plans list/table. Scope switcher ("My Plans" / "Shared with me" / "My Shared Plans" — filters, not tabs) swaps the underlying list call (`plans.list`/`plans.sharedWithMe`/`plans.shared`); "Shared with me" carries its own count badge from a dedicated lightweight fetch on mount (the scope switcher's own `pagination.total` only reflects whichever scope is currently active); a "Shared" badge shows who a plan is shared by (recipient view) or how many people it's shared with (owner view); row/card action menus hide Edit/Delete/Certificate/QR in the "Shared with me" scope, since those are owner-only operations |
 | `dashboard/plans/QueriedPlans.tsx` | Queried plans list |
 | `dashboard/settings/InquiryModal.tsx` | Submit a support inquiry |
-| `dashboard/settings/SurveyorProfileSettings.tsx` | Surveyor profile/settings form |
+| `dashboard/settings/SurveyorProfileSettings.tsx` | Surveyor profile/settings form. `SurveyorBankSettings`'s save button is a plain `type="button"` + `onClick`, not a nested `<form>` — it renders inside the outer Settings page's own `<form>`, and a nested one used to let the bank-save submit bubble into the outer form's unrelated profile-save handler on every click |
 | `dashboard/subscription/callback/SubCallback.tsx` | Subscription payment callback handler |
 | `dashboard/subscription/SubscriptionAdminFAB.tsx` | Floating action button for subscription admin actions |
 | `dashboard/subscription/SubscriptionManager.tsx` | Subscription plan management UI |

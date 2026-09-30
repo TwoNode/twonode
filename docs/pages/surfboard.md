@@ -71,6 +71,6 @@ shells: the surveyor-facing site (`/surfboard/*`), the MDA officer shell
 | `/surfboard-restricted/dashboard/user-management` | `surfboard-restricted/dashboard/user-management/page.tsx` | Manage surveyor/user accounts; each subscription shows its expiry date ("Expires Sep 24, 2026 · in 3 days", red once expired) |
 | `/surfboard-restricted/dashboard/admin-tools` | `surfboard-restricted/dashboard/admin-tools/page.tsx` | Misc. admin tools |
 | `/surfboard-restricted/dashboard/audit-logs` | `surfboard-restricted/dashboard/audit-logs/page.tsx` | Audit log viewer — superadmin only (shared `AuditLogViewer`) |
-| `/surfboard-restricted/dashboard/notifications` | `surfboard-restricted/dashboard/notifications/page.tsx` | Notifications list |
+| `/surfboard-restricted/dashboard/notifications` | `surfboard-restricted/dashboard/notifications/page.tsx` | Notifications list. "Create Notification" dialog can mark one as a modal announcement (start/end date window), shown as a blocking modal on the surveyor dashboard rather than only in the bell dropdown |
 | `/surfboard-restricted/dashboard/settings` | `surfboard-restricted/dashboard/settings/page.tsx` | Admin settings |
 | `/surfboard-restricted/dashboard/superadmin` | `surfboard-restricted/dashboard/superadmin/page.tsx` | Superadmin-only panel |
