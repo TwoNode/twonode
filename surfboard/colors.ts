@@ -71,4 +71,9 @@ export function surfboardStatusBadgeStyle(
 // the brighter, unrelated blue-600 gradient they used before.
 export const SURFBOARD_GRADIENTS = {
   hero: "linear-gradient(155deg, #000b3d 0%, #141c4d 45%, #233dff 140%)",
+  // Same accent/accentDark pair as the MDA login page (AuthSplitLayout's
+  // default `linear-gradient(135deg, accentDark, accent)` formula,
+  // reproduced here as a constant) so the MDA dashboard's sidebar/navbar
+  // read as the same identity as its own login page, not a different blue.
+  mda: "linear-gradient(135deg, #5B21B6, #7C3AED)",
 };

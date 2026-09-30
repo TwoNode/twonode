@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "stream";
 
 /**
@@ -65,6 +66,35 @@ export async function uploadSurfboardFileToS3(
     console.error(`Error uploading ${fileType} file to S3:`, error);
     throw new Error(`Failed to upload ${fileType} file to S3: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
+}
+
+/**
+ * A presigned PUT URL for the browser to upload directly to S3, bypassing
+ * our own Vercel route handler entirely — Route Handlers (unlike Server
+ * Actions) aren't covered by next.config.mjs's bodySizeLimit and sit behind
+ * Vercel's platform-level ~4.5MB request body cap, which broke uploads of
+ * real multi-MB survey report PDFs. Key format matches
+ * uploadSurfboardFileToS3's exactly so both paths are interchangeable.
+ */
+export async function getPresignedUploadUrl(
+  fileType: "pdf" | "cad" | "certificate" | "redcopy" | "viewer-attachment",
+  userId: string,
+  fileName: string,
+  contentType: string,
+  planNumber?: string
+) {
+  const uniqueSuffix = planNumber ? `${planNumber}__${Date.now()}` : `${Date.now()}__${Math.random().toString(36).substring(2, 15)}`;
+  const prefix = userId ? `surfboard/${userId}/${fileType}` : `surfboard/${fileType}`;
+  const key = `${prefix}/${uniqueSuffix}__${fileName}`;
+
+  const uploadUrl = await getSignedUrl(
+    s3,
+    new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
+    { expiresIn: 300 }
+  );
+  const fileUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
+
+  return { uploadUrl, key, fileUrl };
 }
 
 export async function uploadSurfboardFileWithAuth(

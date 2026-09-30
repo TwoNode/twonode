@@ -650,7 +650,10 @@ export const surfboardApi = {
 
     /** Shares by email, whether or not the recipient has an account yet — see invitePlanShareByEmail. */
     inviteByEmail: (planId: string, email: string) =>
-      jsonFetch<{ invited: boolean; email: string; expiresAt: string; inviteId: string } | { id: string; sharedTo: string[] }>(
+      jsonFetch<
+        | { invited: boolean; email: string; expiresAt: string; inviteId: string; emailSent: boolean }
+        | { id: string; sharedTo: string[]; sharedUser?: { id: string; firstName: string; lastName: string; email: string; surconRegNumber: string | null } }
+      >(
         `${BASE}/plans/${encodeURIComponent(planId)}/share/invite`,
         { method: "POST", body: JSON.stringify({ email }) }
       ),
@@ -661,12 +664,28 @@ export const surfboardApi = {
         jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }[]>(
           `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`
         ),
-      upload: (planId: string, file: File) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        return formFetch<{ id: string; url: string; fileName: string; createdAt: string }>(
+      // Direct-to-S3: presign, PUT the bytes straight to S3 (bypasses
+      // Vercel's Route Handler body-size cap, which broke multi-MB PDF
+      // uploads), then finalize to record the attachment.
+      upload: async (planId: string, file: File) => {
+        const presign = await jsonFetch<{ uploadUrl: string; key: string; fileUrl: string }>(
+          `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments/presign`,
+          { method: "POST", body: JSON.stringify({ fileName: file.name, contentType: file.type || "application/octet-stream" }) }
+        );
+        if (!presign.success) return presign as any;
+
+        const putRes = await fetch(presign.data.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+        });
+        if (!putRes.ok) {
+          return { success: false, error: "Failed to upload attachment" } as const;
+        }
+
+        return jsonFetch<{ id: string; url: string; fileName: string; createdAt: string }>(
           `${BASE}/plans/${encodeURIComponent(planId)}/viewer-attachments`,
-          formData
+          { method: "POST", body: JSON.stringify({ fileName: file.name, key: presign.data.key, fileUrl: presign.data.fileUrl }) }
         );
       },
       delete: (planId: string, attachmentId: string) =>

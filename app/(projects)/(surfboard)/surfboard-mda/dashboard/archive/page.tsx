@@ -392,7 +392,7 @@ export default function ArchiveDashboard() {
                 <CardContent className="space-y-4">
                     {/* Surveyor Information */}
                     {batch.submitter && (
-                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-3">
                                 <User className="w-5 h-5 text-emerald-600" />
                                 <h4 className="text-sm font-semibold text-emerald-800">
@@ -554,7 +554,7 @@ export default function ArchiveDashboard() {
 
                                         {/* Charting Remarks */}
                                         {p.chartingRemarks && (
-                                            <div className="bg-purple-50 p-3 rounded-lg mb-3">
+                                            <div className="bg-purple-50 dark:bg-purple-500/10 p-3 rounded-lg mb-3">
                                                 <p className="text-xs font-medium text-purple-800 mb-1">
                                                     Charting Remarks
                                                 </p>
@@ -624,7 +624,7 @@ export default function ArchiveDashboard() {
 
                                         {/* Archive details (history) */}
                                         {isHistory && p.archiveReceivedAt && (
-                                            <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-start gap-3">
+                                            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 p-3 rounded-lg flex items-start gap-3">
                                                 <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                                                 <div className="space-y-1">
                                                     <p className="text-sm font-medium text-green-900">
@@ -839,7 +839,7 @@ export default function ArchiveDashboard() {
                     </DialogHeader>
 
                     <div className="py-4 space-y-4">
-                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-4 rounded-lg">
                             <p className="text-sm text-amber-800">
                                 By archiving, you confirm that:
                             </p>

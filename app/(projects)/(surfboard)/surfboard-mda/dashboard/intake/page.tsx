@@ -522,7 +522,7 @@ export default function IntakeAdminPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {batch.submitter && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <User className="w-5 h-5 text-emerald-600" />
                 <h4 className="text-sm font-semibold text-emerald-800">
@@ -689,7 +689,7 @@ export default function IntakeAdminPage() {
                           onClick={() =>
                             handlePlanActionClick(p, batch, "query")
                           }
-                          className="border-red-300 text-red-600 hover:bg-red-50 text-xs h-8"
+                          className="border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-xs h-8"
                           disabled={isDisabled || isPlanProcessing}
                         >
                           <XCircle className="w-3 h-3 mr-1" />
@@ -722,7 +722,7 @@ export default function IntakeAdminPage() {
               <Button
                 onClick={() => handleBatchActionClick(batch, "query")}
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                className="flex-1 border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
                 disabled={isDisabled}
               >
                 <XCircle className="w-4 h-4 mr-2" />
@@ -859,7 +859,7 @@ export default function IntakeAdminPage() {
 
             <div className="space-y-4">
               {actionType === "approve" ? (
-                <div className="bg-green-50 p-4 rounded-lg">
+                <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg">
                   <p className="text-sm text-green-800">
                     By approving, you confirm that:
                   </p>

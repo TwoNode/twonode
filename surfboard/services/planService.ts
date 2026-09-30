@@ -866,7 +866,10 @@ export async function sharePlanWithUser(userId: string, userFirstLastName: { fir
   const plan = await prisma.surfboardPlan.findUnique({ where: { id: planId, userId }, select: { sharedTo: true, planNumber: true } });
   if (!plan) throw new NotFoundError("Plan");
 
-  const targetUser = await prisma.surfboardUser.findUnique({ where: { id: targetUserId }, select: { id: true } });
+  const targetUser = await prisma.surfboardUser.findUnique({
+    where: { id: targetUserId },
+    select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true },
+  });
   if (!targetUser) throw new NotFoundError("User");
 
   const updatedPlan = await prisma.surfboardPlan.update({
@@ -888,7 +891,12 @@ export async function sharePlanWithUser(userId: string, userFirstLastName: { fir
 
   await notifyPlanShared({ planId, planNumber: plan.planNumber, sharedWithUserId: targetUserId, sharedByUser: userFirstLastName, sendEmail: true });
 
-  return updatedPlan;
+  // The caller (SharePlanModal) needs the target's profile, not just their
+  // id, to add them to the "Shared with" list without a full refetch —
+  // this was previously missing here (present when sharing via search
+  // results, since the client already had it from the search response),
+  // which left the list stuck showing stale data until the next page load.
+  return { ...updatedPlan, sharedUser: targetUser };
 }
 
 const PLAN_SHARE_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -944,9 +952,16 @@ export async function invitePlanShareByEmail(
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.twonodetechnologies.com";
   const signupUrl = `${siteUrl}/api/auth/register?post_login_redirect_url=${encodeURIComponent("/api/auth/success/surfboard")}&login_hint=${encodeURIComponent(normalizedEmail)}`;
-  await sendPlanShareInviteEmail({ to: normalizedEmail, sharedByName, planNumber: plan.planNumber, signupUrl, expiresAt });
+  // sendMail swallows its own errors and returns {success:false} rather
+  // than throwing, so this was previously never checked — the invite row
+  // was created either way and the caller always reported "Invitation
+  // sent" even when the email itself silently failed.
+  const emailResult = await sendPlanShareInviteEmail({ to: normalizedEmail, sharedByName, planNumber: plan.planNumber, signupUrl, expiresAt });
+  if (!emailResult.success) {
+    console.error("Plan share invite email failed to send", { planId, email: normalizedEmail, inviteId: invite.id });
+  }
 
-  return { invited: true, email: normalizedEmail, expiresAt, inviteId: invite.id };
+  return { invited: true, email: normalizedEmail, expiresAt, inviteId: invite.id, emailSent: emailResult.success };
 }
 
 /**
@@ -1109,6 +1124,11 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
       ward: plan.ward,
       lga: plan.lga,
       owner: plan.user ?? null,
+      // The map popup shows this as "Surveyor" — the registered platform
+      // user accountable for the plan, not the plan's own free-text
+      // `facilitator` field, which was never selected here and always
+      // rendered as the literal string "undefined" in the popup.
+      facilitator: plan.user ? `${plan.user.firstName} ${plan.user.lastName}`.trim() : "Unknown",
     })),
   };
 }

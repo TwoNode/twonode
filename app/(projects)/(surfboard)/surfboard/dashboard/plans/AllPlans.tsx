@@ -93,6 +93,7 @@ import {
 } from "../../../components/CertificateBatchSelection";
 import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal";
 import { SubmittedBatchesModal } from "../../../components/SubmittedBatchesModal";
+import { BulkSharePlanModal } from "../../../components/BulkSharePlanModal";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
 import { getQrColors } from "@/lib/qrColorPreferences";
@@ -168,6 +169,7 @@ export default function AllPlans() {
 
   // Batch Selection State
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+  const [showBulkShareModal, setShowBulkShareModal] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [showBatchesModal, setShowBatchesModal] = useState(false);
@@ -517,6 +519,11 @@ export default function AllPlans() {
     } else {
       setSelectedPlans(plans.map((p) => p.id));
     }
+  };
+
+  const handleBulkShare = () => {
+    if (selectedPlans.length === 0) return;
+    setShowBulkShareModal(true);
   };
 
   const handleBatchSubmit = () => {
@@ -2502,6 +2509,13 @@ export default function AllPlans() {
         selectedCount={selectedPlans.length}
         onSubmit={handleBatchSubmit}
         onClear={() => setSelectedPlans([])}
+        onShare={handleBulkShare}
+      />
+
+      <BulkSharePlanModal
+        isOpen={showBulkShareModal}
+        onClose={() => setShowBulkShareModal(false)}
+        plans={plans.filter((p) => selectedPlans.includes(p.id))}
       />
 
       {/* Record Copy Upload Modal */}

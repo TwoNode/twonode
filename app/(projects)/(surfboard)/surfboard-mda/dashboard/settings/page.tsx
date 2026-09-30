@@ -326,7 +326,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Info Banner */}
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
                   <p className="text-sm text-amber-800">
                     <strong>Note:</strong> Profile information is managed by
                     your system administrator. Contact them to make changes.

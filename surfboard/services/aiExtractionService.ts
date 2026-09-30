@@ -906,6 +906,8 @@ Return ONLY valid JSON, no markdown, no explanation:
   "transactionAnchor": "169767640-8154445-175",
   "amountPaid": 2000.00,
   "payerName": "Mr Rafiu Olamide Abowaba",
+  "payerId": "16976764",
+  "payerType": "N",
   "transactionDate": "2025-12-14"
 }
 
@@ -918,7 +920,7 @@ DO NOT guess or hallucinate values.`;
 ${cleanedContent}
 === END CONTENT ===
 
-Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`;
+Return the JSON with transactionAnchor, amountPaid, payerName, payerId, payerType, transactionDate.`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -987,6 +989,13 @@ Return the JSON with transactionAnchor, amountPaid, payerName, transactionDate.`
         transactionAnchor,
         amountPaid,
         payerName: String(result.payerName || "").trim(),
+        // Previously extracted by the AI per the prompt above but never
+        // mapped into this returned object — remitaVerificationService.ts's
+        // payer-ID mismatch check (`if (finalPayerId)`) silently never ran
+        // for any non-legacy receipt URL as a result, since lasgData.payerId
+        // was always undefined regardless of what the receipt actually said.
+        payerId: String(result.payerId || "").replace(/\D/g, "").trim(),
+        payerType: String(result.payerType || "").trim(),
         transactionDate: String(result.transactionDate || "").trim(),
       },
     };
