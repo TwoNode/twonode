@@ -7,6 +7,8 @@ import Link from "next/link";
 import GBC2Navbar from "@/gbc/components/Navbar";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
+export const dynamic = "force-dynamic";
+
 export default async function GalleryPage() {
   const settings = await getSettings();
   const gallerySettings = settings.gallery;

@@ -13,6 +13,8 @@ import { getSettings } from "@/gbc/services/settingsService";
 import GBC2Navbar from "@/gbc/components/Navbar";
 import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
+export const dynamic = "force-dynamic";
+
 export default async function AboutPage() {
   // Fetch settings for dynamic event information
   const settings = await getSettings();

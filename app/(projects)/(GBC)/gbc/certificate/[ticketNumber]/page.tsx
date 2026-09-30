@@ -10,6 +10,8 @@ interface PageProps {
   };
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CertificatePage({ params }: PageProps) {
   const ticket = await getTicketByNumber(params.ticketNumber).catch(() => null);
 
