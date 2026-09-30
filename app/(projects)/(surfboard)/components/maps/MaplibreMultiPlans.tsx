@@ -221,7 +221,7 @@ const SearchFiltersPanel = React.memo(function SearchFiltersPanel({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
-            placeholder="Plan number, title, facilitator..."
+            placeholder="Plan number, title, surveyor..."
             className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface-muted text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-1 focus:ring-blue-400"
           />
           {searchQuery.trim() && !suggestionsDismissed && searchSuggestions.length > 0 && (
@@ -1056,7 +1056,7 @@ const AllPlansMap: React.FC<AllPlansMapProps> = ({ plans, getPlanDetailUrl = def
                 index + 1
               } of ${group.length}</span><button type="button" id="popup-next-plan" class="px-2 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 font-medium text-gray-700 dark:text-gray-300">Next &rarr;</button></div>`
             : "";
-        const popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base">${planNumberHtml}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Facilitator: ${properties.facilitator}</p><p class="text-xs text-gray-500 dark:text-gray-400">Survey date: ${dateLabel}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span>${stackNav}</div>`;
+        const popupContent = `<div class="p-1 font-sans"><h3 class="font-bold text-base">${planNumberHtml}</h3><p class="text-sm text-gray-600 dark:text-gray-400">${properties.surveyTitle}</p><p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Surveyor: ${properties.facilitator ?? "Unknown"}</p><p class="text-xs text-gray-500 dark:text-gray-400">Survey date: ${dateLabel}</p><span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-700 dark:text-gray-300">${properties.status}</span>${stackNav}</div>`;
         popup.setLngLat(e.lngLat).setHTML(popupContent).addTo(map.current);
         if (group.length > 1) {
           popup
