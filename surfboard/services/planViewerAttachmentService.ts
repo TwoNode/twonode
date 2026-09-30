@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/api/errors";
-import { uploadSurfboardFileToS3 } from "@/surfboard/services/awsService";
+import { getPresignedUploadUrl } from "@/surfboard/services/awsService";
 
 /**
  * Private per-viewer attachments on a shared plan (Shared Access PRD):
@@ -25,15 +25,41 @@ export async function getViewerAttachments(planId: string, viewerId: string) {
   });
 }
 
-export async function addViewerAttachment(planId: string, viewerId: string, file: File) {
+/**
+ * Step 1 of the direct-to-S3 upload flow: a short-lived presigned PUT URL
+ * the browser uses to send the file straight to S3, bypassing our own
+ * route handler (and Vercel's ~4.5MB platform body-size cap on Route
+ * Handlers, which broke uploads of real multi-MB survey report PDFs).
+ */
+export async function getViewerAttachmentUploadUrl(
+  planId: string,
+  viewerId: string,
+  fileName: string,
+  contentType: string
+) {
   await assertIsRecipient(planId, viewerId);
-  if (!file || file.size === 0) throw new ValidationError({ file: "A file is required" });
+  if (!fileName) throw new ValidationError({ file: "A file name is required" });
+  return getPresignedUploadUrl("viewer-attachment", viewerId, fileName, contentType, planId);
+}
 
-  const uploadResult = await uploadSurfboardFileToS3(file, "viewer-attachment", viewerId, planId);
-  if (!uploadResult.url) throw new ValidationError({ file: "Failed to upload attachment" });
+/** Step 2: called after the browser's direct S3 PUT succeeds, to record the attachment. */
+export async function finalizeViewerAttachment(
+  planId: string,
+  viewerId: string,
+  fileName: string,
+  key: string,
+  fileUrl: string
+) {
+  await assertIsRecipient(planId, viewerId);
+  // The key is server-generated in step 1 and scoped to this viewer/plan —
+  // reject anything else so a client can't finalize an attachment record
+  // pointing at an S3 object it was never issued a presigned URL for.
+  if (!key.startsWith(`surfboard/${viewerId}/viewer-attachment/${planId}__`)) {
+    throw new ForbiddenError();
+  }
 
   return prisma.surfboardPlanViewerAttachment.create({
-    data: { planId, viewerId, url: uploadResult.url, fileName: file.name },
+    data: { planId, viewerId, url: fileUrl, fileName },
   });
 }
 
