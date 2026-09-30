@@ -266,13 +266,20 @@ export default function DashboardHome() {
                   />
                 </svg>
               </div>
-              <div className="ml-3">
+              <div className="ml-3 flex-1 flex items-center justify-between gap-4">
                 <p
                   className="text-sm"
                   style={{ color: SURFBOARD_COLORS.error.dark }}
                 >
                   {error}
                 </p>
+                <button
+                  onClick={handleRefresh}
+                  className="shrink-0 text-sm font-semibold underline hover:no-underline"
+                  style={{ color: SURFBOARD_COLORS.error.dark }}
+                >
+                  Try Again
+                </button>
               </div>
             </div>
           </div>
