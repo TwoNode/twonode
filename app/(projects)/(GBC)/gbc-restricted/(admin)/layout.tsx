@@ -9,6 +9,7 @@ import { GBCEditionSwitcher } from "@/gbc/components/admin/GBCEditionSwitcher";
 import { Suspense, useState } from "react";
 import { useNativeAuthRefresh } from "@/hooks/useNativeAuthRefresh";
 import { Platform } from "@/utils/platform";
+import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBanner";
 
 export default function AdminLayout({
   children,
@@ -60,7 +61,10 @@ export default function AdminLayout({
         </div>
 
         {/* Content */}
-        <div className="container mx-auto p-4 sm:p-6 md:p-8">{children}</div>
+        <div className="container mx-auto p-4 sm:p-6 md:p-8">
+          <VerificationNagBanner platform={Platform.GBC} verifyHref="/gbc-restricted/verify-email" />
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -6,6 +6,9 @@ import { findUserById } from "@/lib/auth/userLookup";
 import { handleApiError } from "@/lib/api/errors";
 import { UnauthenticatedError } from "@/lib/api/errors";
 
+import { computeMustVerifyNow, computeVerificationGraceEndsAt } from "@/lib/auth/emailVerificationGate";
+import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+
 const platformParam = z.nativeEnum(Platform);
 
 export async function GET(req: NextRequest) {
@@ -22,9 +25,22 @@ export async function GET(req: NextRequest) {
     const user = await findUserById(platform, session.sub);
     if (!user || !user.isActive) throw new UnauthenticatedError();
 
+    const config = await getEmailVerificationSettings(platform);
+    const mustVerifyNow = await computeMustVerifyNow(platform, user);
+    const verificationGraceEndsAt = await computeVerificationGraceEndsAt(platform, user);
+
     return NextResponse.json({
       success: true,
-      data: { id: user.id, email: user.email, role: user.role.toLowerCase() },
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role.toLowerCase(),
+        emailVerified: user.emailVerified,
+        emailVerifiedVia: user.emailVerifiedVia,
+        mustVerifyNow,
+        verificationMethod: config.method,
+        verificationGraceEndsAt,
+      },
     });
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });

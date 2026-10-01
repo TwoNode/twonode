@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
 import { issueSession } from "@/lib/auth/session";
 import { Platform, RevaRole } from "@/utils/platform";
+import { markEmailVerified } from "@/lib/auth/userLookup";
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,10 +39,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (!dbUser.emailVerified) {
+      await markEmailVerified(Platform.REVA, dbUser.id, "OAUTH");
+      dbUser.emailVerified = true;
+    }
+
     // Also mint a native session (additive; must never break the existing
     // Kinde login flow if it fails).
     try {
-      await issueSession(dbUser.id, dbUser.role, Platform.REVA);
+      await issueSession(dbUser.id, dbUser.role, Platform.REVA, undefined, dbUser);
     } catch (err) {
       console.error("issueSession failed for reva-restricted callback:", err);
     }

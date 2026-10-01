@@ -13,6 +13,7 @@ import {
   getUserActiveSubscription,
   type EncryptedUserData,
 } from "@/utils/encryptedCookies";
+import { computeMustVerifyNow } from "@/lib/auth/emailVerificationGate";
 
 export async function getServerSession(
   platform: Platform
@@ -97,7 +98,8 @@ export async function issueSession(
   userId: string,
   role: string,
   platform: Platform,
-  refreshMaxAgeSeconds: number = 30 * 24 * 60 * 60
+  refreshMaxAgeSeconds: number = 30 * 24 * 60 * 60,
+  userVerification?: { emailVerified: boolean; createdAt: Date }
 ): Promise<void> {
   const familyId = crypto.randomUUID();
   const rawRefreshToken = crypto.randomBytes(32).toString("hex");
@@ -113,7 +115,17 @@ export async function issueSession(
     },
   });
 
-  const accessToken = await signAccessToken({ sub: userId, role, platform });
+  const user = userVerification ?? (await findUserById(platform, userId));
+  const emailVerified = user?.emailVerified ?? false;
+  const mustVerifyNow = user ? await computeMustVerifyNow(platform, user) : false;
+
+  const accessToken = await signAccessToken({
+    sub: userId,
+    role,
+    platform,
+    emailVerified,
+    mustVerifyNow,
+  });
   await setAuthCookies(platform, accessToken, rawRefreshToken, refreshMaxAgeSeconds);
 }
 
@@ -185,7 +197,14 @@ export async function rotateRefreshToken(
     }),
   ]);
 
-  const newAccessToken = await signAccessToken({ sub: user.id, role: user.role, platform });
+  const mustVerifyNow = await computeMustVerifyNow(platform, user);
+  const newAccessToken = await signAccessToken({
+    sub: user.id,
+    role: user.role,
+    platform,
+    emailVerified: user.emailVerified,
+    mustVerifyNow,
+  });
   const remainingSeconds = Math.max(
     0,
     Math.floor((currentToken.expiresAt.getTime() - Date.now()) / 1000)

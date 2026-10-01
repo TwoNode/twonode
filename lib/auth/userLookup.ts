@@ -25,8 +25,87 @@ export type NativeAuthUser = {
   role: string;
   isActive: boolean;
   emailVerified: boolean;
+  emailVerifiedVia: string | null;
+  createdAt: Date;
   /** Not tracked on RevaUser today, so always null for Platform.REVA. */
   phone: string | null;
+};
+
+const toNativeAuthUser = {
+  reva: (u: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    passwordHash: string | null;
+    role: string;
+    is_active: boolean;
+    emailVerified: boolean;
+    emailVerifiedVia?: string | null;
+    createdAt: Date;
+  }): NativeAuthUser => ({
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    passwordHash: u.passwordHash,
+    role: u.role,
+    isActive: u.is_active,
+    emailVerified: u.emailVerified,
+    emailVerifiedVia: u.emailVerifiedVia ?? null,
+    createdAt: u.createdAt,
+    phone: null,
+  }),
+  surfboard: (u: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    passwordHash: string | null;
+    role: string;
+    isActive: boolean;
+    emailVerified: boolean;
+    emailVerifiedVia?: string | null;
+    phoneNumber: string | null;
+    createdAt: Date;
+  }): NativeAuthUser => ({
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    passwordHash: u.passwordHash,
+    role: u.role,
+    isActive: u.isActive,
+    emailVerified: u.emailVerified,
+    emailVerifiedVia: u.emailVerifiedVia ?? null,
+    createdAt: u.createdAt,
+    phone: u.phoneNumber,
+  }),
+  gbc: (u: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    passwordHash: string | null;
+    role: string;
+    isActive: boolean;
+    emailVerified: boolean;
+    emailVerifiedVia?: string | null;
+    phone: string | null;
+    createdAt: Date;
+  }): NativeAuthUser => ({
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    passwordHash: u.passwordHash,
+    role: u.role,
+    isActive: u.isActive,
+    emailVerified: u.emailVerified,
+    emailVerifiedVia: u.emailVerifiedVia ?? null,
+    createdAt: u.createdAt,
+    phone: u.phone,
+  }),
 };
 
 export async function findUserByEmail(
@@ -36,21 +115,15 @@ export async function findUserByEmail(
   switch (platform) {
     case Platform.REVA: {
       const u = await prisma.revaUser.findUnique({ where: { email } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active, emailVerified: u.emailVerified, phone: null }
-        : null;
+      return u ? toNativeAuthUser.reva(u) : null;
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.findUnique({ where: { email } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phoneNumber }
-        : null;
+      return u ? toNativeAuthUser.surfboard(u) : null;
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.findUnique({ where: { email } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phone }
-        : null;
+      return u ? toNativeAuthUser.gbc(u) : null;
     }
     default:
       return null;
@@ -64,21 +137,15 @@ export async function findUserById(
   switch (platform) {
     case Platform.REVA: {
       const u = await prisma.revaUser.findUnique({ where: { id } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active, emailVerified: u.emailVerified, phone: null }
-        : null;
+      return u ? toNativeAuthUser.reva(u) : null;
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.findUnique({ where: { id } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phoneNumber }
-        : null;
+      return u ? toNativeAuthUser.surfboard(u) : null;
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.findUnique({ where: { id } });
-      return u
-        ? { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phone }
-        : null;
+      return u ? toNativeAuthUser.gbc(u) : null;
     }
     default:
       return null;
@@ -107,7 +174,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`, // kindeId is required+unique; native-only accounts get a placeholder, never a real Kinde id
         },
       });
-      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active, emailVerified: u.emailVerified, phone: null };
+      return toNativeAuthUser.reva(u);
     }
     case Platform.SURFBOARD: {
       const u = await prisma.surfboardUser.create({
@@ -120,7 +187,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
-      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: null };
+      return toNativeAuthUser.surfboard(u);
     }
     case Platform.GBC: {
       const u = await prisma.gBCUser.create({
@@ -133,7 +200,7 @@ export async function createNativeUser(
           kindeId: `native:${crypto.randomUUID()}`,
         },
       });
-      return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: null };
+      return toNativeAuthUser.gbc(u);
     }
     default:
       throw new Error(`Unsupported platform: ${platform}`);
@@ -158,31 +225,23 @@ export async function updatePasswordHash(
   }
 }
 
-export async function markEmailVerified(platform: Platform, id: string): Promise<void> {
+export async function markEmailVerified(
+  platform: Platform,
+  id: string,
+  via: "OTP" | "LINK" | "OAUTH" = "LINK"
+): Promise<void> {
   switch (platform) {
     case Platform.REVA:
-      await prisma.revaUser.update({ where: { id }, data: { emailVerified: true } });
+      await prisma.revaUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
       return;
     case Platform.SURFBOARD:
-      await prisma.surfboardUser.update({ where: { id }, data: { emailVerified: true } });
+      await prisma.surfboardUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
       return;
     case Platform.GBC:
-      await prisma.gBCUser.update({ where: { id }, data: { emailVerified: true } });
+      await prisma.gBCUser.update({ where: { id }, data: { emailVerified: true, emailVerifiedVia: via } });
       return;
   }
 }
-
-const toNativeAuthUser = {
-  reva: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; is_active: boolean; emailVerified: boolean }): NativeAuthUser => ({
-    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.is_active, emailVerified: u.emailVerified, phone: null,
-  }),
-  surfboard: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; isActive: boolean; emailVerified: boolean; phoneNumber: string | null }): NativeAuthUser => ({
-    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phoneNumber,
-  }),
-  gbc: (u: { id: string; email: string; firstName: string | null; lastName: string | null; passwordHash: string | null; role: string; isActive: boolean; emailVerified: boolean; phone: string | null }): NativeAuthUser => ({
-    id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, passwordHash: u.passwordHash, role: u.role, isActive: u.isActive, emailVerified: u.emailVerified, phone: u.phone,
-  }),
-};
 
 /** Case-insensitive, so an invitation can't create a second account that differs from an existing one only by capitalisation. */
 export async function emailInUse(platform: Platform, email: string): Promise<boolean> {
@@ -221,6 +280,7 @@ export async function createInvitedUser(
     lastName: data.lastName,
     authProviders: ["NATIVE" as const],
     emailVerified: true,
+    emailVerifiedVia: "LINK",
     kindeId: `native:${crypto.randomUUID()}`,
   };
 

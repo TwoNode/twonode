@@ -8,6 +8,9 @@ import { handleApiError } from "@/lib/api/errors";
 import { findUserByEmail } from "@/lib/auth/userLookup";
 import { issueAndSendVerificationEmail } from "@/lib/auth/emailVerification";
 
+import { issueAndSendVerificationOtp } from "@/lib/auth/emailVerificationOtp";
+import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+
 const resendSchema = z.object({
   platform: z.nativeEnum(Platform),
   email: z.string().email(),
@@ -20,7 +23,7 @@ const resendSchema = z.object({
 function genericResponse() {
   return NextResponse.json({
     success: true,
-    data: { message: "If that email is registered and unverified, we've sent a new link to it." },
+    data: { message: "If that email is registered and unverified, we've sent a verification code or link to it." },
   });
 }
 
@@ -48,7 +51,12 @@ export async function POST(req: NextRequest) {
 
     const user = await findUserByEmail(platform, email);
     if (user && user.isActive && !user.emailVerified) {
-      await issueAndSendVerificationEmail(platform, user);
+      const config = await getEmailVerificationSettings(platform);
+      if (config.method === "OTP") {
+        await issueAndSendVerificationOtp(platform, user);
+      } else {
+        await issueAndSendVerificationEmail(platform, user);
+      }
     }
 
     return genericResponse();

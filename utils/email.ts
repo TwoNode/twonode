@@ -377,6 +377,54 @@ export const sendVerificationEmail = async ({
 };
 
 /**
+ * A 6-digit numeric code sent to verify email address.
+ */
+export const sendEmailVerificationOtp = async ({
+  to,
+  firstName,
+  code,
+  platform,
+}: {
+  to: string;
+  firstName: string;
+  code: string;
+  platform: Platform;
+}) => {
+  const brand = PLATFORM_BRAND[platform] || PLATFORM_BRAND[Platform.SURFBOARD];
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  const text = `${greeting}\n\nYour ${brand.name} email verification code is: ${code}\n\nEnter this code to verify your email address. This code expires in 10 minutes and can only be used once. If you didn't create an account, you can safely ignore this email.\n\nTwoNode Technologies — https://www.twonodetechnologies.com`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <div style="padding: 20px 0; border-bottom: 3px solid ${brand.accent};">
+        <span style="font-size: 15px; font-weight: 700; color: ${brand.accentDark}; letter-spacing: .02em;">${brand.name}</span>
+        <span style="font-size: 12px; color: #888; margin-left: 8px;">by TwoNode Technologies</span>
+      </div>
+      <div style="padding: 28px 0;">
+        <p>${greeting}</p>
+        <p>Please enter this code to verify your email address for your ${brand.name} account:</p>
+        <p style="margin: 24px 0; text-align: center;">
+          <span style="background:#f4f4f5;color:${brand.accentDark};padding:14px 28px;border-radius:8px;font-weight:700;font-size:28px;letter-spacing:.15em;display:inline-block;">${code}</span>
+        </p>
+        <p style="color:#666;font-size:13px;">This code expires in 10 minutes and can only be used once. If you didn't create this account, you can safely ignore this email.</p>
+      </div>
+      <div style="padding: 20px 0; border-top: 1px solid #e5e5e5; color: #888; font-size: 12px;">
+        <a href="https://www.twonodetechnologies.com" style="color: ${brand.accentDark}; text-decoration: none; font-weight: 600;">TwoNode Technologies</a>
+        &nbsp;&middot;&nbsp;
+        <a href="mailto:info@twonodetechnologies.com" style="color: #888; text-decoration: none;">info@twonodetechnologies.com</a>
+      </div>
+    </div>
+  `;
+
+  return sendMail({
+    to,
+    subject: `Verify your email address for ${brand.name}`,
+    text,
+    html,
+    fromName: `${brand.name} · TwoNode Technologies`,
+  });
+};
+
+/**
  * A download-gate code, requested fresh every time someone tries to
  * download a report or document — not a login/verification token, so it's
  * a short human-typed code rather than a link.
