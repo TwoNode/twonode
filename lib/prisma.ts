@@ -10,8 +10,8 @@ declare global {
 // Set connection_limit to 5 to prevent exhausting AWS RDS connection limits on serverless
 const databaseUrl = process.env.DATABASE_URL;
 const poolParams = databaseUrl?.includes("?")
-  ? "&connection_limit=5&pool_timeout=30"
-  : "?connection_limit=5&pool_timeout=30";
+  ? "&connection_limit=7&pool_timeout=30"
+  : "?connection_limit=7&pool_timeout=30";
 const connectionString = `${databaseUrl}${poolParams}`;
 
 const prisma =
