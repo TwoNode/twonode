@@ -34,7 +34,7 @@ next to the page that uses it.
 | `RemarkSelector.tsx` | Select a standard MDA remark/reason |
 | `RemitaPaymentModal.tsx` | Remita payment modal |
 | `SubmitConfirmationModal.tsx` | Confirm-before-submit modal |
-| `SubmittedBatchesModal.tsx` | View submitted Certificate-of-Deposit batches. "Receipt" button prefers the real LASG receipt (`batch.lasgReceiptUrl`) when on file, falling back to the self-generated PDF summary otherwise — previously always linked to the PDF summary since the underlying query never selected the LASG link. Search bar filters by batch code, plan number, title, or facilitator |
+| `SubmittedBatchesModal.tsx` | View submitted Certificate-of-Deposit batches. Active/History tabs (server-paginated via `cod.batches.listPaginated`'s `scope` param, 10/page) — a batch moves to History once every plan in it has reached LODGED, so completed work stops accumulating in the default view. "Receipt" is now a dropdown offering LASG Receipt / Remita Receipt (each disabled if not on file) / Payment Summary (PDF) (twonode's own self-generated summary, always available) — previously a single link that silently preferred whichever real receipt happened to be on file. Search bar (batch code, plan number, title, or facilitator) is server-side now, not a client-side filter over one fully-fetched array |
 | `SurfboardPlanForm.tsx` | Plan create/edit form. Pillar Summary section has a "Download CSV" button (Pillar Number/Easting/Northing) reconstructing from the already-parsed `pillars` state |
 | `UnlockButton.tsx` | Force-unlock a locked plan |
 | `VerificationResultModal.tsx` | Shows a verification result (SPCode/record copy) |

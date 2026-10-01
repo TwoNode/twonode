@@ -4,7 +4,7 @@ import { withAuth } from "@/lib/api/withAuth";
 import { validateBody } from "@/lib/api/validate";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { parsePagination } from "@/lib/api/pagination";
-import { getBatchesByStatus, getBatchesByStatusPaginated, getUserBatches, submitRedCopyBatch } from "@/surfboard/services/remitaVerificationService";
+import { getBatchesByStatus, getBatchesByStatusPaginated, getUserBatches, getUserBatchesPaginated, submitRedCopyBatch } from "@/surfboard/services/remitaVerificationService";
 import { Platform, SurfboardRole } from "@/utils/platform";
 
 /**
@@ -13,9 +13,11 @@ import { Platform, SurfboardRole } from "@/utils/platform";
  * two separate getUserBatches()/getBatchesByStatus() actions collapsed into
  * one route since they're the same resource at different scopes.
  *
- * Opt-in: only the admin Batch Management page passes `page` — the
- * surveyor-facing submitted-batches modal never does, and expects a plain
- * array back, so its request/response shape is left untouched.
+ * Opt-in: passing `page` switches to the paginated envelope shape — for
+ * ADMIN/SUPERADMIN that's the admin Batch Management page; for USER it's
+ * the surveyor-facing "My Batches" modal's Active/History tabs (`scope`).
+ * Omitting `page` keeps the original plain-array shape for both roles
+ * (e.g. dashboard stat tiles that still want everything in one shot).
  */
 export const GET = withAuth<SurfboardRole>(
   async (req, ctx) => {
@@ -32,6 +34,16 @@ export const GET = withAuth<SurfboardRole>(
         return NextResponse.json({ success: true, data });
       }
       const data = await getBatchesByStatus(status, ctx.session.role);
+      return NextResponse.json({ success: true, data });
+    }
+    if (params.has("page")) {
+      const pagination = parsePagination(params);
+      const scope = params.get("scope") === "history" ? "history" : "active";
+      const data = await getUserBatchesPaginated(ctx.session.sub, {
+        ...pagination,
+        scope,
+        search: params.get("search") || undefined,
+      });
       return NextResponse.json({ success: true, data });
     }
     const data = await getUserBatches(ctx.session.sub);
