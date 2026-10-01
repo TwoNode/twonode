@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/ui/pagination";
+import {
   FileText,
   Loader2,
   CreditCard,
@@ -40,6 +47,7 @@ import {
   Copy,
   Download,
   Search,
+  History,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -110,10 +118,23 @@ export function SubmittedBatchesModal({
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [physicalSubmittingBatchId, setPhysicalSubmittingBatchId] = useState<string | null>(null);
+
+  // Active/History split: a batch moves to History once every plan in it
+  // has reached LODGED — nothing further to do on it. Each tab is its own
+  // paginated, server-filtered query (not a client-side slice of
+  // everything), since history accumulates indefinitely.
+  const [scope, setScope] = useState<"active" | "history">("active");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [historyCount, setHistoryCount] = useState<number | null>(null);
 
   // PDF generation state: stores fetched PDF data keyed by batchId
   const [pdfDataMap, setPdfDataMap] = useState<Record<string, RedCopyBatchPDFData>>({});
@@ -127,19 +148,30 @@ export function SubmittedBatchesModal({
   );
   */
 
-  // Fetch batches when modal opens
+  // Debounce search, same pattern as the admin list pages.
   useEffect(() => {
-    if (isOpen) {
-      loadBatches();
-    }
-  }, [isOpen]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  const loadBatches = async () => {
+  // A scope switch or new search query invalidates the current page.
+  useEffect(() => {
+    setPage(1);
+  }, [scope, debouncedSearch]);
+
+  const loadBatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await surfboardApi.cod.batches.list();
+      const result = await surfboardApi.cod.batches.listPaginated({
+        page,
+        pageSize,
+        scope,
+        search: debouncedSearch || undefined,
+      });
       if (result.success) {
-        setBatches(result.data);
+        setBatches(result.data.data);
+        setTotal(result.data.pagination.total);
+        setTotalPages(result.data.pagination.totalPages);
       } else {
         toast.error(result.error || "Failed to load batches");
       }
@@ -149,7 +181,27 @@ export function SubmittedBatchesModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, pageSize, scope, debouncedSearch]);
+
+  const loadCounts = useCallback(async () => {
+    const [activeRes, historyRes] = await Promise.all([
+      surfboardApi.cod.batches.listPaginated({ page: 1, pageSize: 1, scope: "active" }),
+      surfboardApi.cod.batches.listPaginated({ page: 1, pageSize: 1, scope: "history" }),
+    ]);
+    if (activeRes.success) setActiveCount(activeRes.data.pagination.total);
+    if (historyRes.success) setHistoryCount(historyRes.data.pagination.total);
+  }, []);
+
+  // Fetch batches whenever the modal is open and the query changes; counts
+  // only need refreshing on open or after something that could move a
+  // batch between tabs (payment/physical-submission success, delete-all).
+  useEffect(() => {
+    if (isOpen) loadBatches();
+  }, [isOpen, loadBatches]);
+
+  useEffect(() => {
+    if (isOpen) loadCounts();
+  }, [isOpen, loadCounts]);
 
   const [paymentBatch, setPaymentBatch] = useState<{
     id: string;
@@ -298,7 +350,7 @@ export function SubmittedBatchesModal({
         toast.success(
           `Successfully deleted ${result.data.deletedCount} batch(es)`,
         );
-        await loadBatches();
+        await Promise.all([loadBatches(), loadCounts()]);
         router.refresh();
       } else {
         toast.error(result.error || "Failed to delete batches");
@@ -310,21 +362,6 @@ export function SubmittedBatchesModal({
       setIsDeleting(false);
     }
   };
-
-  const filteredBatches = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return batches;
-    return batches.filter(
-      (batch) =>
-        batch.batchCode.toLowerCase().includes(q) ||
-        batch.plans.some(
-          (plan) =>
-            plan.planNumber?.toLowerCase().includes(q) ||
-            plan.surveyTitle?.toLowerCase().includes(q) ||
-            plan.facilitator?.toLowerCase().includes(q)
-        )
-    );
-  }, [batches, searchQuery]);
 
   return (
     <>
@@ -346,7 +383,7 @@ export function SubmittedBatchesModal({
                 </DialogDescription>
               </div>
             </div>
-            {process.env.NODE_ENV !== "production" && batches.length > 0 && (
+            {process.env.NODE_ENV !== "production" && (activeCount || 0) + (historyCount || 0) > 0 && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -368,16 +405,45 @@ export function SubmittedBatchesModal({
               </Button>
             )}
           </div>
-          {batches.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by batch number, plan number, title, or facilitator..."
-                className="pl-9"
-              />
-            </div>
+
+          {((activeCount || 0) + (historyCount || 0) > 0) && (
+            <>
+              {/* Active/History tabs — a batch moves to History once every
+                  plan in it has reached LODGED. */}
+              <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 w-fit">
+                {([
+                  { id: "active" as const, label: "Active", count: activeCount },
+                  { id: "history" as const, label: "History", count: historyCount },
+                ]).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setScope(opt.id)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                      scope === opt.id
+                        ? "bg-white dark:bg-surface text-blue-700 dark:text-blue-400 shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {opt.id === "history" && <History className="w-3.5 h-3.5" />}
+                    {opt.label}
+                    {opt.count != null && opt.count > 0 && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">({opt.count})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by batch number, plan number, title, or facilitator..."
+                  className="pl-9"
+                />
+              </div>
+            </>
           )}
         </DialogHeader>
 
@@ -395,28 +461,36 @@ export function SubmittedBatchesModal({
           ) : batches.length === 0 ? (
             <div className="text-center py-16">
               <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
-                <FileText className="w-20 h-20 text-gray-300" />
+                {debouncedSearch ? (
+                  <Search className="w-20 h-20 text-gray-300" />
+                ) : scope === "history" ? (
+                  <History className="w-20 h-20 text-gray-300" />
+                ) : (
+                  <FileText className="w-20 h-20 text-gray-300" />
+                )}
               </div>
               <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
-                No batches submitted yet
+                {debouncedSearch
+                  ? `No batches match "${debouncedSearch}"`
+                  : scope === "history"
+                    ? "No batches in history yet"
+                    : (activeCount || 0) + (historyCount || 0) === 0
+                      ? "No batches submitted yet"
+                      : "No active batches"}
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">
-                Submit plans for Certificate of Deposit to see them displayed
-                here with full details
-              </p>
-            </div>
-          ) : filteredBatches.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
-                <Search className="w-20 h-20 text-gray-300" />
-              </div>
-              <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
-                No batches match "{searchQuery}"
+                {debouncedSearch
+                  ? "Try a different batch number, plan number, title, or facilitator."
+                  : scope === "history"
+                    ? "Batches move here once every plan in them has been lodged."
+                    : (activeCount || 0) + (historyCount || 0) === 0
+                      ? "Submit plans for Certificate of Deposit to see them displayed here with full details"
+                      : "Every submitted batch has been fully lodged — check the History tab."}
               </p>
             </div>
           ) : (
             <Accordion type="single" collapsible className="space-y-4">
-              {filteredBatches.map((batch, index) => (
+              {batches.map((batch, index) => (
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
@@ -539,28 +613,51 @@ export function SubmittedBatchesModal({
                         )}
 
                         {canDownloadReceipt(batch.paymentStatus) && (
-                          // Prefer the real LASG payment receipt when one's
-                          // on file — the self-generated PDF (twonode's own
-                          // batch summary) was the only option here before,
-                          // which isn't the actual government receipt.
-                          <a
-                            href={
-                              batch.lasgReceiptUrl ||
-                              `/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`
-                            }
-                            {...(batch.lasgReceiptUrl
-                              ? { target: "_blank", rel: "noopener noreferrer" }
-                              : {})}
-                          >
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Receipt
-                            </Button>
-                          </a>
+                          // Lets the user choose which receipt they need
+                          // instead of always linking to whichever one
+                          // happened to be on file — the real LASG receipt
+                          // and the real Remita receipt are two different
+                          // documents, plus twonode's own self-generated
+                          // batch-summary PDF as a fallback (always
+                          // available, never the actual government receipt).
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Receipt
+                                <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {batch.lasgReceiptUrl ? (
+                                <DropdownMenuItem asChild>
+                                  <a href={batch.lasgReceiptUrl} target="_blank" rel="noopener noreferrer">
+                                    LASG Receipt
+                                  </a>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem disabled>LASG Receipt (not available)</DropdownMenuItem>
+                              )}
+                              {batch.remitaReceiptUrl ? (
+                                <DropdownMenuItem asChild>
+                                  <a href={batch.remitaReceiptUrl} target="_blank" rel="noopener noreferrer">
+                                    Remita Receipt
+                                  </a>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem disabled>Remita Receipt (not available)</DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem asChild>
+                                <a href={`/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`}>
+                                  Payment Summary (PDF)
+                                </a>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         )}
                       </div>
                     </div>
@@ -641,6 +738,15 @@ export function SubmittedBatchesModal({
             </Accordion>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="shrink-0 pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {total} batch{total === 1 ? "" : "es"}
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DialogContent>
 
       {/* Manual Remita Payment Iframe Dialog */}
@@ -650,7 +756,7 @@ export function SubmittedBatchesModal({
           onClose={handleClosePayment}
           batchData={paymentBatch}
           onSuccess={async () => {
-            await loadBatches();
+            await Promise.all([loadBatches(), loadCounts()]);
             if (onSuccess) onSuccess();
           }}
         />
@@ -664,7 +770,7 @@ export function SubmittedBatchesModal({
           batchCode={batches.find((b) => b.id === physicalSubmittingBatchId)?.batchCode || ""}
           plans={batches.find((b) => b.id === physicalSubmittingBatchId)?.plans || []}
           onSuccess={async () => {
-            await loadBatches();
+            await Promise.all([loadBatches(), loadCounts()]);
             if (onSuccess) onSuccess();
           }}
         />

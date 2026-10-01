@@ -740,6 +740,80 @@ export async function getUserBatches(userId: string) {
   });
 }
 
+const USER_BATCH_SELECT = {
+  id: true,
+  batchCode: true,
+  planCount: true,
+  totalFees: true,
+  systemCharges: true,
+  totalAmount: true,
+  paymentStatus: true,
+  userPaymentRef: true,
+  userPaymentDate: true,
+  createdAt: true,
+  lasgReceiptUrl: true,
+  remitaReceiptUrl: true,
+  plans: {
+    select: {
+      id: true,
+      planNumber: true,
+      surveyTitle: true,
+      facilitator: true,
+      status: true,
+      redCopyStatus: true,
+      physicalCopySubmitted: true,
+      physicalCopySubmittedAt: true,
+      accountsStatus: true,
+      chartingStatus: true,
+      recordsIStatus: true,
+      surconStatus: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
+  submitter: { select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true, payerID: true, payerIDType: true } },
+} as const;
+
+/**
+ * Paginated sibling of getUserBatches, for "My Batches" ("Active" / history
+ * split): a batch moves to "history" once every plan in it has reached
+ * LODGED — nothing further for the surveyor to do on it. Kept as a separate
+ * function (not a getUserBatches option) since the plain array shape is
+ * still used elsewhere (e.g. dashboard stat tiles) and shouldn't change.
+ */
+export async function getUserBatchesPaginated(
+  userId: string,
+  options: { page: number; pageSize: number; skip: number; take: number; scope: "active" | "history"; search?: string }
+) {
+  const historyFilter = { plans: { some: {}, every: { status: "LODGED" as const } } };
+  const activeFilter = { plans: { some: { status: { not: "LODGED" as const } } } };
+
+  const where: any = {
+    submittedBy: userId,
+    ...(options.scope === "history" ? historyFilter : activeFilter),
+  };
+  if (options.search) {
+    where.OR = [
+      { batchCode: { contains: options.search, mode: "insensitive" } },
+      { plans: { some: { planNumber: { contains: options.search, mode: "insensitive" } } } },
+      { plans: { some: { surveyTitle: { contains: options.search, mode: "insensitive" } } } },
+      { plans: { some: { facilitator: { contains: options.search, mode: "insensitive" } } } },
+    ];
+  }
+
+  const [total, batches] = await Promise.all([
+    prisma.certificateOfDepositBatch.count({ where }),
+    prisma.certificateOfDepositBatch.findMany({
+      where,
+      select: USER_BATCH_SELECT,
+      orderBy: { createdAt: "desc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+  ]);
+
+  return paginatedResult(batches, total, options.page, options.pageSize);
+}
+
 export async function getBatchPDFData(userId: string, batchId: string) {
   const batch = await prisma.certificateOfDepositBatch.findFirst({
     where: { id: batchId, submittedBy: userId },
