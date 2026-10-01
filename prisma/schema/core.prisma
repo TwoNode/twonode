@@ -179,6 +179,37 @@ model EmailVerificationOtp {
   @@index([userId, platform])
 }
 
+/// Pre-verification registration (OTP-first, account-second): holds a
+/// signup's data until its secret — a 6-digit OTP or a link token,
+/// whichever the platform's `method` setting picked at issue time — is
+/// confirmed, so no User row — verified or not — is ever created for an
+/// email nobody has proven ownership of. codeHash stores sha256(secret);
+/// passwordHash is already bcrypt-hashed before being stored here, same as
+/// a real account's passwordHash. `method` is stamped at issue time (not
+/// re-read from settings at completion) so a mid-flight admin settings
+/// change can't desync what was actually emailed from what completion
+/// thinks it's checking. complete() reads email/passwordHash/firstName/
+/// lastName from THIS row only, never from the client, so verifying one
+/// email can't be used to create an account under a different, unverified
+/// one.
+model PendingRegistration {
+  id           String    @id @default(uuid())
+  platform     String
+  email        String
+  firstName    String
+  lastName     String
+  passwordHash String
+  method       String    @default("OTP") // "OTP" | "LINK" — fixed at issue time
+  codeHash     String
+  attempts     Int       @default(0)
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([platform, email])
+  @@index([expiresAt])
+}
+
 model LoginAttempt {
   id         String   @id @default(uuid())
   identifier String
