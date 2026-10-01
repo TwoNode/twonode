@@ -18,7 +18,16 @@ import { surfboardApi } from "@/surfboard/apiClient";
  * components/ui/dialog.tsx (Radix + portal) rather than a hand-rolled
  * fixed-overlay modal, so it always renders above page content regardless of
  * any ancestor's own stacking context.
+ *
+ * Per-login behaviour: the server no longer uses dismissedBy as a gate, so
+ * an active campaign surfaces on every new login. sessionStorage is used as
+ * the within-session "already shown" marker — closing the modal in one tab
+ * keeps it closed for that tab/session, but a fresh login (new sessionStorage
+ * scope) will show it again. dismissedBy is still written for analytics.
  */
+
+const SESSION_KEY_PREFIX = "surf_announcement_seen_";
+
 export function AnnouncementModal() {
   const [announcement, setAnnouncement] = useState<{
     id: string;
@@ -30,7 +39,18 @@ export function AnnouncementModal() {
 
   useEffect(() => {
     surfboardApi.notifications.activeAnnouncement().then((res) => {
-      if (res.success && res.data) setAnnouncement(res.data);
+      if (!res.success || !res.data) return;
+
+      const id = res.data.id;
+      const sessionKey = `${SESSION_KEY_PREFIX}${id}`;
+
+      // Already shown and dismissed within this session — don't re-pop.
+      // sessionStorage is cleared automatically when the tab is closed or
+      // the user logs out (which either navigates away or clears storage),
+      // so a fresh login always gets a clean slate.
+      if (sessionStorage.getItem(sessionKey)) return;
+
+      setAnnouncement(res.data);
     });
   }, []);
 
@@ -38,7 +58,11 @@ export function AnnouncementModal() {
 
   const handleDismiss = async () => {
     setDismissing(true);
+    // Mark in sessionStorage so we don't re-pop within this session.
+    sessionStorage.setItem(`${SESSION_KEY_PREFIX}${announcement.id}`, "1");
     try {
+      // Still fire the server dismiss for audit/analytics — it no longer
+      // gates the modal from reappearing on the next login.
       await surfboardApi.notifications.dismiss(announcement.id);
     } finally {
       setAnnouncement(null);
@@ -62,7 +86,9 @@ export function AnnouncementModal() {
         <DialogFooter className="gap-2 sm:gap-0">
           {announcement.link && (
             <Button variant="outline" asChild>
-              <a href={announcement.link}>Learn more</a>
+              <a href={announcement.link} target="_blank" rel="noopener noreferrer">
+                Learn more
+              </a>
             </Button>
           )}
           <Button onClick={handleDismiss} disabled={dismissing}>

@@ -2,41 +2,58 @@
 
 import { Plus } from "lucide-react";
 
-// Node centers as percentages of the square container — carried over from
-// the old twonode-network.svg's 400x400 viewBox (hub ~200,176; satellites
-// at 304,88 / 336,234 / 146,322 / 64,156) so the layout reads the same,
-// just with real logos instead of blank squares.
-const HUB = { x: 50, y: 45 };
+// ---------------------------------------------------------------------------
+// Coordinate system: 0-100 percentage-based square viewBox.
+// Node centers match the SVG viewBox so that SVG lines terminate exactly
+// at the visual center of every logo circle/pill.
+//
+// Node size as a % of container width:
+//   Hub      → 13%   (rounded-2xl square)
+//   Satellite → 9%   (rounded-full circle)
+//   GBC pill  → 18%  (wide pill — wordmark only)
+//   Open slot → 9%   (dashed circle)
+//
+// The SVG lines are now clipped so they appear to terminate at the *edge*
+// of each logo badge rather than running through its center — calculated
+// as: shorten each endpoint by half that node's visual radius (in % units).
+// ---------------------------------------------------------------------------
+
+const HUB = { x: 50, y: 44 };
+// Half-widths in viewBox % units (used to shorten line endpoints)
+const HUB_R = 6.5;   // half of 13%
+const NODE_R = 4.5;  // half of 9%
+const GBC_R  = 9;    // half of 18%
+
 const NODES = [
-  { x: 76, y: 22, kind: "surfboard" as const },
-  { x: 84, y: 58.5, kind: "reva" as const },
-  { x: 36.5, y: 80.5, kind: "gbc" as const },
-  { x: 16, y: 39, kind: "open" as const }, // deliberately empty — room for what's next
+  { x: 76, y: 22,   kind: "surfboard" as const, r: NODE_R },
+  { x: 84, y: 58.5, kind: "reva"      as const, r: NODE_R },
+  { x: 36.5, y: 80.5, kind: "gbc"    as const, r: GBC_R  },
+  { x: 16,  y: 39,  kind: "open"     as const, r: NODE_R },
 ];
 
-// MDA-facing pages only surface a single MDA↔Surfboard connection, stacked
-// vertically (MDA on top, since that's the audience signing in) and larger
-// than the default graphic's hub — the other consumer-facing product logos
-// (TwoNode, REVA, GBC) aren't relevant to an internal government-agency
-// audience using the Surfboard MDA workspace specifically.
-// Offset in x (not stacked at the same x) so the connecting line reads as a
-// real diagonal instead of a dead-straight vertical drop.
-const MDA_MDA = { x: 41, y: 20 };
-const MDA_SURFBOARD = { x: 59, y: 56 };
-// Matches the default variant's satellite node size (NODE_SIZE below) —
-// MDA no longer gets a bespoke larger scale than the other login pages.
-const MDA_MDA_SIZE = "9%";
-const MDA_SURFBOARD_SIZE = "9%";
+/** Shorten a line segment so endpoints sit on node badge edges, not centers. */
+function clippedLine(
+  x1: number, y1: number, r1: number,
+  x2: number, y2: number, r2: number,
+) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return { x1, y1, x2, y2 };
+  const ux = dx / dist;
+  const uy = dy / dist;
+  return {
+    x1: x1 + ux * r1,
+    y1: y1 + uy * r1,
+    x2: x2 - ux * r2,
+    y2: y2 - uy * r2,
+  };
+}
 
-/**
- * Replaces the old static twonode-network.svg (blank white squares, no
- * actual branding) with TwoNode's logo at the hub and each live product's
- * logo at its node, plus one open slot left unfilled to signal the network
- * is still growing.
- *
- * `variant="mda"` swaps that node set for a single TwoNode↔MDA connection,
- * used on the MDA portal's auth pages.
- */
+// MDA variant ----------------------------------------------------------------
+const MDA_MDA      = { x: 41, y: 20, r: NODE_R };
+const MDA_SURFBOARD = { x: 59, y: 56, r: NODE_R };
+
 export function PlatformNetworkGraphic({
   className = "",
   variant = "default",
@@ -45,24 +62,35 @@ export function PlatformNetworkGraphic({
   variant?: "default" | "mda";
 }) {
   if (variant === "mda") {
+    const line = clippedLine(
+      MDA_MDA.x, MDA_MDA.y, MDA_MDA.r,
+      MDA_SURFBOARD.x, MDA_SURFBOARD.y, MDA_SURFBOARD.r,
+    );
     return (
       <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
-            <line x1={MDA_MDA.x} y1={MDA_MDA.y} x2={MDA_SURFBOARD.x} y2={MDA_SURFBOARD.y} />
-          </g>
+          <defs>
+            <linearGradient id="mda-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.5" />
+            </linearGradient>
+          </defs>
+          <line
+            x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
+            stroke="url(#mda-line-grad)" strokeWidth="0.8" strokeLinecap="round"
+          />
         </svg>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: MDA_MDA_SIZE, aspectRatio: "1" }}
+          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: "9%", aspectRatio: "1" }}
         >
           <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
         </div>
 
         <div
           className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: MDA_SURFBOARD_SIZE, aspectRatio: "1" }}
+          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: "9%", aspectRatio: "1" }}
         >
           <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
         </div>
@@ -70,55 +98,99 @@ export function PlatformNetworkGraphic({
     );
   }
 
-  const nodes = NODES;
+  // ---------------------------------------------------------------------------
+  // Default variant — full 4-platform network
+  // ---------------------------------------------------------------------------
+
+  // Outer ring: connect nodes clockwise so the ring follows the spatial layout
+  // Surfboard(0) → REVA(1) → GBC(2) → Open(3) → Surfboard(0)
+  const ringPairs: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 0]];
 
   return (
-    // Sized by height (not width) so it shrinks to fit its flex-1 column on
-    // short viewports — e.g. a laptop screen or a user at 125%+ browser
-    // zoom, where the column's available height drops below what a
-    // width-driven aspect-square box would need, pushing the headline card
-    // below it off-screen.
     <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        <g stroke="#FFFFFF" strokeOpacity="0.25" strokeWidth="0.4" strokeLinecap="round">
-          <line x1={NODES[0].x} y1={NODES[0].y} x2={NODES[1].x} y2={NODES[1].y} />
-          <line x1={NODES[1].x} y1={NODES[1].y} x2={NODES[2].x} y2={NODES[2].y} />
-          <line x1={NODES[2].x} y1={NODES[2].y} x2={NODES[3].x} y2={NODES[3].y} />
-          <line x1={NODES[3].x} y1={NODES[3].y} x2={NODES[0].x} y2={NODES[0].y} />
+        <defs>
+          {/* Gradient for hub→node spokes */}
+          <linearGradient id="spoke-grad" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.55" />
+          </linearGradient>
+          {/* Subtle ring gradient */}
+          <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.15" />
+          </linearGradient>
+        </defs>
+
+        {/* Outer satellite-to-satellite ring */}
+        <g strokeLinecap="round">
+          {ringPairs.map(([a, b]) => {
+            const na = NODES[a];
+            const nb = NODES[b];
+            const seg = clippedLine(na.x, na.y, na.r, nb.x, nb.y, nb.r);
+            return (
+              <line
+                key={`ring-${a}-${b}`}
+                x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
+                stroke="#ffffff" strokeOpacity="0.25" strokeWidth="0.45"
+                strokeDasharray="1.5 1.8"
+              />
+            );
+          })}
         </g>
-        {/* Primary hub connections */}
-        <g stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="0.7" strokeLinecap="round">
-          {nodes.map((n) => (
-            <line key={n.kind} x1={HUB.x} y1={HUB.y} x2={n.x} y2={n.y} />
-          ))}
+
+        {/* Hub → satellite spokes */}
+        <g strokeLinecap="round">
+          {NODES.map((n) => {
+            const seg = clippedLine(HUB.x, HUB.y, HUB_R, n.x, n.y, n.r);
+            return (
+              <line
+                key={`spoke-${n.kind}`}
+                x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2}
+                stroke="#ffffff" strokeOpacity="0.75" strokeWidth="0.65"
+              />
+            );
+          })}
         </g>
+
+        {/* Pulse circles on spokes — animate-ping on small dots at midpoint */}
+        {NODES.map((n) => {
+          const midX = (HUB.x + n.x) / 2;
+          const midY = (HUB.y + n.y) / 2;
+          return (
+            <circle
+              key={`pulse-${n.kind}`}
+              cx={midX} cy={midY} r="0.8"
+              fill="#ffffff" fillOpacity="0.6"
+            />
+          );
+        })}
       </svg>
 
       {/* Hub — TwoNode */}
       <div
-        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg"
+        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-xl z-10"
         style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "13%", aspectRatio: "1" }}
       >
         <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
       </div>
 
-      {nodes.map((n) =>
+      {/* Satellite nodes */}
+      {NODES.map((n) =>
         n.kind === "open" ? (
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40"
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40 z-10"
             style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
             title="More platforms coming soon"
           >
             <Plus className="h-1/3 w-1/3 text-white/40" />
           </div>
         ) : n.kind === "gbc" ? (
-          // GBC's only lockup is a wide 4:1 wordmark with no compact icon
-          // variant, so it gets a pill badge instead of a circle — a circle
-          // this small shrinks it past legibility.
+          // GBC wide wordmark pill
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-lg"
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-lg z-10"
             style={{ left: `${n.x}%`, top: `${n.y}%`, width: "18%" }}
           >
             <img src="/gbc2/gbc2DarkLogo.png" alt="GBC" className="h-full w-full object-contain" />
@@ -126,7 +198,7 @@ export function PlatformNetworkGraphic({
         ) : (
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg z-10"
             style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
           >
             {n.kind === "surfboard" && (
