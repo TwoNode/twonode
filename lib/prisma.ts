@@ -7,11 +7,11 @@ declare global {
 }
 
 // Add connection pool configuration to the database URL
-// Applied in all environments since dev also connects to remote AWS RDS
+// Set connection_limit to 5 to prevent exhausting AWS RDS connection limits on serverless
 const databaseUrl = process.env.DATABASE_URL;
 const poolParams = databaseUrl?.includes("?")
-  ? "&connection_limit=10&pool_timeout=30"
-  : "?connection_limit=10&pool_timeout=30";
+  ? "&connection_limit=5&pool_timeout=30"
+  : "?connection_limit=5&pool_timeout=30";
 const connectionString = `${databaseUrl}${poolParams}`;
 
 const prisma =
@@ -29,9 +29,7 @@ const prisma =
     datasourceUrl: connectionString,
   });
 
-// In development, enable HMR by storing the Prisma instance in globalThis
-if (process.env.NODE_ENV !== "production") {
-  globalThis.prisma = prisma;
-}
+// Cache Prisma instance on globalThis in all environments so warm serverless lambdas reuse connections
+globalThis.prisma = prisma;
 
 export default prisma;
