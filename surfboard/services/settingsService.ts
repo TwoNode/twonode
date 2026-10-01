@@ -132,6 +132,30 @@ export async function getCoordinateShifts(): Promise<Record<string, { eastingShi
 
 export async function updateSettings(userId: string, newSettings: SurfboardSettingsData) {
   const currentSettings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
+  const currentMerged = currentSettings?.settings
+    ? mergeSettings(currentSettings.settings, DEFAULT_SETTINGS)
+    : DEFAULT_SETTINGS;
+
+  // Server is the sole authority for enforcedSince — never trust a
+  // client-supplied value, and only stamp it fresh on a genuine
+  // false->true enable transition. Otherwise every account created
+  // between this feature's deploy date and whenever a superadmin
+  // actually enables it would wrongly get zero grace period (the static
+  // default's hardcoded date, not the real enable moment).
+  if (newSettings.emailVerification) {
+    const wasEnabled = currentMerged.emailVerification?.enabled === true;
+    const nowEnabled = newSettings.emailVerification.enabled === true;
+    newSettings = {
+      ...newSettings,
+      emailVerification: {
+        ...newSettings.emailVerification,
+        enforcedSince:
+          !wasEnabled && nowEnabled
+            ? new Date().toISOString()
+            : currentMerged.emailVerification?.enforcedSince || DEFAULT_SETTINGS.emailVerification!.enforcedSince,
+      },
+    };
+  }
 
   const newSettingsRecord = await prisma.surfboardSettings.create({
     data: { settings: newSettings as any, previousSettings: currentSettings?.settings || {}, updatedById: userId },

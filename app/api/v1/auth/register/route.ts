@@ -1,27 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
-import { ConflictError, handleApiError } from "@/lib/api/errors";
-import { findUserByEmail, createNativeUser } from "@/lib/auth/userLookup";
-import { issueAndSendVerificationEmail } from "@/lib/auth/emailVerification";
-import { issueAndSendVerificationOtp } from "@/lib/auth/emailVerificationOtp";
-import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+import { handleApiError } from "@/lib/api/errors";
+import { completePendingRegistration } from "@/lib/auth/pendingRegistration";
 import { issueSession } from "@/lib/auth/session";
-import { computeMustVerifyNow } from "@/lib/auth/emailVerificationGate";
 
 const registerSchema = z.object({
   platform: z.nativeEnum(Platform),
-  email: z.string().email(),
-  password: z.string().min(6),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  // No `role` field, deliberately — see lib/auth/userLookup.ts's createNativeUser.
+  pendingRegistrationId: z.string().min(1),
+  // Accepts either a 6-digit OTP or a long link token — whichever the
+  // platform's method setting had this registration use (see
+  // lib/auth/pendingRegistration.ts). The hash comparison doesn't care
+  // which; only the length floor is a shared sanity check.
+  code: z.string().min(6),
+  // Deliberately no `email` field — the account is created from the
+  // PendingRegistration row's own stored email (see
+  // lib/auth/pendingRegistration.ts's send-otp step), never from this
+  // request body, so a manipulated client can't verify one address and
+  // attach the result to another.
 });
 
+/**
+ * Final step of OTP/link-first registration (see send-otp/route.ts for the
+ * first): verifies the code or link token and creates the account
+ * atomically. By the time this returns success, emailVerified is already
+ * true (via whichever method was actually used) — there's no
+ * unverified-account window. This route used to accept
+ * {email,password,firstName,lastName} directly and create the account
+ * immediately; it's been fully repurposed to this 2-step flow (its only
+ * caller, NativeAuthCard.tsx, now drives both steps) rather than kept
+ * alongside a separate /register/complete path.
+ */
 export async function POST(req: NextRequest) {
   try {
     if (!validateCSRF(req)) {
@@ -31,38 +43,22 @@ export async function POST(req: NextRequest) {
     const clientIp = getClientIp(req);
     if (!(await checkRateLimit(`register:${clientIp}`))) {
       return NextResponse.json(
-        { success: false, error: "Too many registration attempts. Please try again later." },
+        { success: false, error: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
 
-    const { platform, email, password, firstName, lastName } = await validateBody(req, registerSchema);
+    const { platform, pendingRegistrationId, code } = await validateBody(req, registerSchema);
 
-    const existing = await findUserByEmail(platform, email);
-    if (existing) {
-      await recordAttempt(`register:${clientIp}`);
-      throw new ConflictError("Email address is already registered");
-    }
-
-    const passwordHash = await bcrypt.hash(password, 12);
-    const user = await createNativeUser(platform, { email, passwordHash, firstName, lastName });
-
-    // Send verification code or link according to platform configuration.
-    // Best-effort delivery — failure shouldn't hard-fail signup, but user will land
-    // on a gate screen with a working Resend option.
-    const config = await getEmailVerificationSettings(platform);
+    let user;
     try {
-      if (config.method === "OTP") {
-        await issueAndSendVerificationOtp(platform, user);
-      } else {
-        await issueAndSendVerificationEmail(platform, user);
-      }
+      user = await completePendingRegistration(platform, pendingRegistrationId, code);
     } catch (err) {
-      console.error("Failed to send verification on registration:", err);
+      await recordAttempt(`register:${clientIp}`);
+      throw err;
     }
 
     await issueSession(user.id, user.role, platform, 30 * 24 * 60 * 60, user);
-    const mustVerifyNow = await computeMustVerifyNow(platform, user);
 
     return NextResponse.json({
       success: true,
@@ -71,7 +67,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role.toLowerCase(),
         emailVerified: user.emailVerified,
-        mustVerifyNow,
+        mustVerifyNow: false,
       },
     });
   } catch (err) {

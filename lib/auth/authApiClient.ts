@@ -23,14 +23,31 @@ export function login(input: {
   return jsonFetch("/api/v1/auth/login", input);
 }
 
-export function register(input: {
+/** Step 1 of OTP/link-first registration — holds the signup and emails a code or link per the platform's method setting. No account exists yet. */
+export function registerSendOtp(input: {
   platform: Platform;
   email: string;
   password: string;
   firstName: string;
   lastName: string;
+}): Promise<ApiResult<{ pendingRegistrationId: string; method: "OTP" | "LINK" }>> {
+  return jsonFetch("/api/v1/auth/register/send-otp", input);
+}
+
+/** Step 2 — verifies the code and creates the account in one step; returns a signed-in session like login(). */
+export function registerComplete(input: {
+  platform: Platform;
+  pendingRegistrationId: string;
+  code: string;
 }): Promise<ApiResult<SessionUser>> {
   return jsonFetch("/api/v1/auth/register", input);
+}
+
+export function registerResendOtp(input: {
+  platform: Platform;
+  pendingRegistrationId: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/register/resend-otp", input);
 }
 
 export function requestPasswordReset(input: {

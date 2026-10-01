@@ -51,6 +51,21 @@ export async function updateSettings(
     },
   };
 
+  // Server is the sole authority for enforcedSince — never trust a
+  // caller-supplied value, and only stamp it fresh on a genuine
+  // false->true enable transition. Otherwise every account created
+  // between this feature's deploy date and whenever a superadmin
+  // actually enables it would wrongly get zero grace period (the static
+  // default's hardcoded date, not the real enable moment).
+  if (newSettings.emailVerification) {
+    const wasEnabled = current.emailVerification.enabled === true;
+    const nowEnabled = merged.emailVerification.enabled === true;
+    merged.emailVerification.enforcedSince =
+      !wasEnabled && nowEnabled
+        ? new Date().toISOString()
+        : current.emailVerification.enforcedSince;
+  }
+
   const existing = await prisma.revaSettings.findFirst({ orderBy: { updatedAt: "desc" } });
   if (existing) {
     await prisma.revaSettings.update({
