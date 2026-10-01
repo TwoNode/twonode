@@ -163,6 +163,22 @@ model EmailVerificationToken {
   @@index([userId, platform])
 }
 
+/// 6-digit numeric OTP for email verification (alternative to link token).
+/// codeHash stores sha256(rawCode) so the raw code is never persisted.
+/// Wrong guesses increment `attempts`, capped at 5 independently of IP rate limiting.
+model EmailVerificationOtp {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
 model LoginAttempt {
   id         String   @id @default(uuid())
   identifier String

@@ -122,6 +122,7 @@ model GBCUser {
   /// (app/api/v1/auth/verify-email), regardless of which authProviders
   /// the account has — same as RevaUser/SurfboardUser.
   emailVerified Boolean @default(false)
+  emailVerifiedVia String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

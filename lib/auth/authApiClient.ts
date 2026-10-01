@@ -55,11 +55,35 @@ export function verifyEmail(input: {
   return jsonFetch("/api/v1/auth/verify-email", input);
 }
 
+export function verifyEmailOtp(input: {
+  platform: Platform;
+  code: string;
+  userId?: string;
+}): Promise<ApiResult<{ message: string }>> {
+  return jsonFetch("/api/v1/auth/verify-email-otp", input);
+}
+
 export function resendVerification(input: {
   platform: Platform;
   email: string;
 }): Promise<ApiResult<{ message: string }>> {
   return jsonFetch("/api/v1/auth/resend-verification", input);
+}
+
+export type MeResponse = {
+  id: string;
+  email: string;
+  role: string;
+  emailVerified: boolean;
+  emailVerifiedVia: string | null;
+  mustVerifyNow: boolean;
+  verificationMethod: "OTP" | "LINK";
+  verificationGraceEndsAt: string | null;
+};
+
+export async function getMe(platform: Platform): Promise<ApiResult<MeResponse>> {
+  const res = await fetch(`/api/v1/auth/me?platform=${encodeURIComponent(platform)}`);
+  return res.json();
 }
 
 export type InvitationDetails = {

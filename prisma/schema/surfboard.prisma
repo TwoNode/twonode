@@ -31,6 +31,7 @@ model SurfboardUser {
   lastName                 String
   role                     SurfboardRole @default(USER)
   emailVerified            Boolean       @default(false)
+  emailVerifiedVia         String?
   emailVerificationToken   String?
   emailVerificationExpires DateTime?
 

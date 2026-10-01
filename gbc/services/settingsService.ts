@@ -30,7 +30,7 @@ import { Platform } from "@/utils/platform";
 
 export type SettingsPatch = { [K in keyof GBCSettingsData]?: Partial<GBCSettingsData[K]> };
 
-const SECTIONS: (keyof GBCSettingsData)[] = ["event", "contact", "tickets", "notifications", "gallery", "system"];
+const SECTIONS: (keyof GBCSettingsData)[] = ["event", "contact", "tickets", "notifications", "gallery", "system", "emailVerification"];
 
 /**
  * The edition whose settings apply when none is asked for: the ACTIVE
@@ -88,6 +88,7 @@ function mergeWithDefaults(saved: Partial<GBCSettingsData>, base: GBCSettingsDat
     notifications: { ...base.notifications, ...(saved.notifications || {}) },
     gallery: { ...base.gallery, ...(saved.gallery || {}) },
     system: { ...base.system, ...(saved.system || {}) },
+    emailVerification: { ...base.emailVerification, ...(saved.emailVerification || {}) },
   };
 }
 

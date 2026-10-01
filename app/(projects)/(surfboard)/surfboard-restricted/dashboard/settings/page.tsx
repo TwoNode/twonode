@@ -58,6 +58,7 @@ const PLACEHOLDER_SECURITY: AdminProfile["security"] = {
 import { COD_FEES, type ZoneFeeRow } from "../../../utils/CoDFees";
 import { nigerianStates, DEFAULT_COORDINATE_SHIFTS } from "@/lib/constants";
 import { useConfirm } from "@/hooks/useConfirm";
+import { ShieldCheck, Mail, KeyRound } from "lucide-react";
 
 interface SettingsData {
   zoneFees: ZoneFeeRow[];
@@ -69,6 +70,12 @@ interface SettingsData {
     string,
     { eastingShift: number; northingShift: number }
   >;
+  emailVerification?: {
+    enabled: boolean;
+    method: "OTP" | "LINK";
+    gracePeriodDays: number;
+    enforcedSince: string;
+  };
 }
 
 export default function SettingsPage() {
@@ -92,6 +99,12 @@ export default function SettingsPage() {
     codPolicyContent: "",
     queryResponseFeePercent: 10,
     coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
+    emailVerification: {
+      enabled: false,
+      method: "OTP",
+      gracePeriodDays: 30,
+      enforcedSince: "2026-10-01T00:00:00.000Z",
+    },
   });
   const [originalSettings, setOriginalSettings] = useState<SettingsData>({
     zoneFees: COD_FEES,
@@ -100,9 +113,16 @@ export default function SettingsPage() {
     codPolicyContent: "",
     queryResponseFeePercent: 10,
     coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
+    emailVerification: {
+      enabled: false,
+      method: "OTP",
+      gracePeriodDays: 30,
+      enforcedSince: "2026-10-01T00:00:00.000Z",
+    },
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [emailVerificationSaving, setEmailVerificationSaving] = useState(false);
   const [editingFeeIndex, setEditingFeeIndex] = useState<number | null>(null);
 
   // CSV Upload state
@@ -228,6 +248,47 @@ export default function SettingsPage() {
       toast.error("An error occurred while saving settings");
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  const handleSaveEmailVerification = async (updates: Partial<{
+    enabled: boolean;
+    method: "OTP" | "LINK";
+    gracePeriodDays: number;
+  }>) => {
+    const currentVerification = settings.emailVerification || {
+      enabled: false,
+      method: "OTP" as const,
+      gracePeriodDays: 30,
+      enforcedSince: new Date().toISOString(),
+    };
+    const nextVerification = {
+      ...currentVerification,
+      ...updates,
+    };
+
+    setEmailVerificationSaving(true);
+    const updatedSettings: SettingsData = {
+      ...settings,
+      emailVerification: nextVerification,
+    };
+    setSettings(updatedSettings);
+
+    try {
+      const result = await surfboardApi.settings.update(updatedSettings);
+      if (result.success) {
+        toast.success("Email verification settings updated successfully");
+        setOriginalSettings(updatedSettings);
+      } else {
+        toast.error(result.error || "Failed to update email verification settings");
+        setSettings(originalSettings);
+      }
+    } catch (error) {
+      console.error("Error saving email verification settings:", error);
+      toast.error("Failed to save email verification settings");
+      setSettings(originalSettings);
+    } finally {
+      setEmailVerificationSaving(false);
     }
   };
 
@@ -928,36 +989,118 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                            Two-Factor Authentication
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Add an extra layer of security to your account
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-6 space-y-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
+                            <ShieldCheck className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                              Email Verification Enforcement
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Require new accounts to verify their email before accessing the dashboard. Existing
+                              accounts are grandfathered in with a configurable grace period.
+                            </p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={settings.emailVerification?.enabled ?? false}
+                            onChange={(e) =>
+                              handleSaveEmailVerification({ enabled: e.target.checked })
+                            }
+                            disabled={emailVerificationSaving || settingsLoading}
+                          />
+                          <div className="w-11 h-6 bg-gray-200 dark:bg-white/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
+                        </label>
+                      </div>
+
+                      {/* Verification Method & Grace Period Configuration */}
+                      <div className="pt-4 border-t border-gray-200 dark:border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                            Verification Method
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEmailVerification({ method: "OTP" })}
+                              disabled={emailVerificationSaving || settingsLoading}
+                              className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm font-medium transition ${
+                                (settings.emailVerification?.method ?? "OTP") === "OTP"
+                                  ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 font-semibold"
+                                  : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+                              }`}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                              <span>OTP Code</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEmailVerification({ method: "LINK" })}
+                              disabled={emailVerificationSaving || settingsLoading}
+                              className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm font-medium transition ${
+                                settings.emailVerification?.method === "LINK"
+                                  ? "border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 font-semibold"
+                                  : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+                              }`}
+                            >
+                              <Mail className="h-4 w-4" />
+                              <span>Magic Link</span>
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(settings.emailVerification?.method ?? "OTP") === "OTP"
+                              ? "Sends a 6-digit one-time code valid for 15 minutes."
+                              : "Sends a magic link that verifies account upon click."}
                           </p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <span
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              profile.security.twoFactorEnabled
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+
+                        <div className="space-y-2">
+                          <label
+                            htmlFor="surfboard-grace-period"
+                            className="text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
                           >
-                            {profile.security.twoFactorEnabled
-                              ? "Enabled"
-                              : "Disabled"}
-                          </span>
-                          <button
-                            onClick={() => setShowTwoFactorModal(true)}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                          >
-                            {profile.security.twoFactorEnabled
-                              ? "Disable"
-                              : "Enable"}
-                          </button>
+                            Grace Period for Existing Accounts
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="surfboard-grace-period"
+                              type="number"
+                              min={1}
+                              max={365}
+                              value={settings.emailVerification?.gracePeriodDays ?? 30}
+                              onChange={(e) => {
+                                const days = Math.max(1, parseInt(e.target.value) || 1);
+                                setSettings((prev) => ({
+                                  ...prev,
+                                  emailVerification: {
+                                    ...(prev.emailVerification || {
+                                      enabled: false,
+                                      method: "OTP",
+                                      gracePeriodDays: 30,
+                                      enforcedSince: new Date().toISOString(),
+                                    }),
+                                    gracePeriodDays: days,
+                                  },
+                                }));
+                              }}
+                              onBlur={(e) => {
+                                const days = Math.max(1, parseInt(e.target.value) || 1);
+                                handleSaveEmailVerification({ gracePeriodDays: days });
+                              }}
+                              disabled={emailVerificationSaving || settingsLoading}
+                              className="w-24 px-3 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-lg text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-500 dark:text-gray-400">days</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Pre-existing accounts have this many days to verify before lockout.
+                          </p>
                         </div>
                       </div>
                     </div>
