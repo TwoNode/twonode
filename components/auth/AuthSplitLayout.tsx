@@ -94,7 +94,12 @@ export function AuthSplitLayout({
               `xl:max-w-none` lifts the cap once `xl:p-16`'s much larger
               padding is already doing the same job on its own. */}
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
-            <PlatformNetworkGraphic variant={networkVariant} className="lg:max-w-[320px] xl:max-w-none" />
+            {/* Capped at a fixed size (not just height-driven) on every
+                tier, including xl — previously uncapped there, so on a tall
+                panel the whole diagram (lines + nodes together, not just
+                the node icons) filled nearly the whole column instead of
+                reading as one compact graphic. */}
+            <PlatformNetworkGraphic variant={networkVariant} className="max-w-[240px] lg:max-w-[260px] xl:max-w-[300px]" />
           </div>
 
           <div className="w-full p-6 pt-0 xl:p-16 xl:pt-0 shrink-0">

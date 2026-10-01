@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -44,6 +43,7 @@ import {
   FileText,
   Share2,
   X,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -77,6 +77,9 @@ interface Notification {
   createdAt: Date;
   isRead: boolean;
   isDismissed: boolean;
+  showAsModal?: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
 }
 
 const audienceIcons: Record<NotificationAudience, React.ReactNode> = {
@@ -130,6 +133,9 @@ export default function AdminNotificationsPage() {
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [creating, setCreating] = useState(false);
+  // Non-null while the dialog is editing an existing notification rather
+  // than composing a new one — same dialog/form, different submit handler.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useViewMode("notifications", "list");
 
   const {
@@ -168,7 +174,7 @@ export default function AdminNotificationsPage() {
     setFilters((f) => ({ ...f, audience }));
 
   // Form state
-  const [formData, setFormData] = useState({
+  const EMPTY_FORM = {
     type: "INFO" as NotificationType,
     title: "",
     message: "",
@@ -178,7 +184,8 @@ export default function AdminNotificationsPage() {
     showAsModal: false,
     startsAt: "",
     endsAt: "",
-  });
+  };
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   const loadStats = async () => {
     const result = await surfboardApi.notifications.stats();
@@ -189,7 +196,38 @@ export default function AdminNotificationsPage() {
     loadStats();
   }, []);
 
-  const handleCreate = async () => {
+  // ISO string (as the API returns it) -> the local-time value a
+  // <input type="datetime-local"> needs, trimmed to minute precision.
+  const toDatetimeLocal = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const openCreateDialog = () => {
+    setEditingId(null);
+    setFormData(EMPTY_FORM);
+    setShowCreateDialog(true);
+  };
+
+  const openEditDialog = (notification: Notification) => {
+    setEditingId(notification.id);
+    setFormData({
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      audience: notification.audience,
+      link: notification.link || "",
+      sendEmail: false,
+      showAsModal: notification.showAsModal ?? false,
+      startsAt: toDatetimeLocal(notification.startsAt),
+      endsAt: toDatetimeLocal(notification.endsAt),
+    });
+    setShowCreateDialog(true);
+  };
+
+  const handleSave = async () => {
     if (!formData.title.trim() || !formData.message.trim()) {
       toast.error("Title and message are required");
       return;
@@ -197,40 +235,42 @@ export default function AdminNotificationsPage() {
 
     try {
       setCreating(true);
-      const result = await surfboardApi.notifications.create({
-        type: formData.type,
-        title: formData.title,
-        message: formData.message,
-        audience: formData.audience,
-        link: formData.link || undefined,
-        sendEmail: formData.sendEmail,
-        showAsModal: formData.showAsModal,
-        startsAt: formData.startsAt || undefined,
-        endsAt: formData.endsAt || undefined,
-      });
+      const result = editingId
+        ? await surfboardApi.notifications.update(editingId, {
+            type: formData.type,
+            title: formData.title,
+            message: formData.message,
+            audience: formData.audience,
+            link: formData.link || null,
+            showAsModal: formData.showAsModal,
+            startsAt: formData.startsAt || null,
+            endsAt: formData.endsAt || null,
+          })
+        : await surfboardApi.notifications.create({
+            type: formData.type,
+            title: formData.title,
+            message: formData.message,
+            audience: formData.audience,
+            link: formData.link || undefined,
+            sendEmail: formData.sendEmail,
+            showAsModal: formData.showAsModal,
+            startsAt: formData.startsAt || undefined,
+            endsAt: formData.endsAt || undefined,
+          });
 
       if (result.success) {
-        toast.success("Notification created successfully");
+        toast.success(editingId ? "Notification updated" : "Notification created successfully");
         setShowCreateDialog(false);
-        setFormData({
-          type: "INFO",
-          title: "",
-          message: "",
-          audience: "ALL_USERS",
-          link: "",
-          sendEmail: false,
-          showAsModal: false,
-          startsAt: "",
-          endsAt: "",
-        });
+        setEditingId(null);
+        setFormData(EMPTY_FORM);
         reload();
         loadStats();
       } else {
-        toast.error(result.error || "Failed to create notification");
+        toast.error(result.error || `Failed to ${editingId ? "update" : "create"} notification`);
       }
     } catch (error) {
-      console.error("Error creating notification:", error);
-      toast.error("Error creating notification");
+      console.error(`Error ${editingId ? "updating" : "creating"} notification:`, error);
+      toast.error(`Error ${editingId ? "updating" : "creating"} notification`);
     } finally {
       setCreating(false);
     }
@@ -311,17 +351,17 @@ export default function AdminNotificationsPage() {
           </div>
 
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Notification
-              </Button>
-            </DialogTrigger>
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Notification
+            </Button>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Create New Notification</DialogTitle>
+                <DialogTitle>{editingId ? "Edit Notification" : "Create New Notification"}</DialogTitle>
                 <DialogDescription>
-                  Send a notification to users or admins
+                  {editingId
+                    ? "Editing doesn't re-send the email or WhatsApp copy — those already went out when it was first created."
+                    : "Send a notification to users or admins"}
                 </DialogDescription>
               </DialogHeader>
 
@@ -412,21 +452,25 @@ export default function AdminNotificationsPage() {
                   />
                 </div>
 
-                {/* Send Email */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="sendEmail"
-                    checked={formData.sendEmail}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sendEmail: e.target.checked })
-                    }
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
-                  />
-                  <Label htmlFor="sendEmail" className="cursor-pointer">
-                    Send email notification
-                  </Label>
-                </div>
+                {/* Send Email — one-shot, fires only on creation; editing
+                    an existing notification can't re-send it, so this is
+                    hidden rather than shown-but-ignored. */}
+                {!editingId && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="sendEmail"
+                      checked={formData.sendEmail}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sendEmail: e.target.checked })
+                      }
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15"
+                    />
+                    <Label htmlFor="sendEmail" className="cursor-pointer">
+                      Send email notification
+                    </Label>
+                  </div>
+                )}
 
                 {/* Show as modal announcement */}
                 <div className="flex items-center space-x-2">
@@ -444,32 +488,36 @@ export default function AdminNotificationsPage() {
                   </Label>
                 </div>
 
-                {formData.showAsModal && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startsAt">Starts (optional)</Label>
-                      <Input
-                        id="startsAt"
-                        type="datetime-local"
-                        value={formData.startsAt}
-                        onChange={(e) =>
-                          setFormData({ ...formData, startsAt: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endsAt">Ends (optional)</Label>
-                      <Input
-                        id="endsAt"
-                        type="datetime-local"
-                        value={formData.endsAt}
-                        onChange={(e) =>
-                          setFormData({ ...formData, endsAt: e.target.value })
-                        }
-                      />
-                    </div>
+                {/* Scheduling window — applies to every notification, not
+                    just modal announcements: Starts delays when it appears
+                    in the bell feed (and unread count) at all, letting an
+                    admin queue one up ahead of time; Ends hides it again
+                    once past that time, same window a modal announcement
+                    already used for its active period. */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startsAt">Starts (optional)</Label>
+                    <Input
+                      id="startsAt"
+                      type="datetime-local"
+                      value={formData.startsAt}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startsAt: e.target.value })
+                      }
+                    />
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <Label htmlFor="endsAt">Ends (optional)</Label>
+                    <Input
+                      id="endsAt"
+                      type="datetime-local"
+                      value={formData.endsAt}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endsAt: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
               <DialogFooter>
@@ -480,12 +528,14 @@ export default function AdminNotificationsPage() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleCreate} disabled={creating}>
+                <Button onClick={handleSave} disabled={creating}>
                   {creating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
+                      {editingId ? "Saving..." : "Creating..."}
                     </>
+                  ) : editingId ? (
+                    <>Save Changes</>
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
@@ -630,14 +680,23 @@ export default function AdminNotificationsPage() {
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {format(new Date(notification.createdAt), "MMM d, yyyy")}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(notification.id)}
-                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(notification)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(notification.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -737,6 +796,13 @@ export default function AdminNotificationsPage() {
                       {format(new Date(notification.createdAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(notification)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

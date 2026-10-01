@@ -621,14 +621,44 @@ export default function AllPlans() {
       );
     }
     if (plan.sharedTo?.length > 0) {
+      // sharedToUsers (resolved names, batch-fetched alongside the list
+      // query) lets this show who a plan is actually shared with on
+      // hover/tap, without a trip to the single-plan page — falls back to
+      // just the count if the names somehow didn't come back with this
+      // plan (e.g. a stale cached row).
+      const names: { id: string; firstName: string; lastName: string; email: string }[] = plan.sharedToUsers || [];
       return (
-        <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20"
-          title={`Shared with ${plan.sharedTo.length} ${plan.sharedTo.length === 1 ? "person" : "people"}`}
-        >
-          <Share2 className="w-3 h-3" />
-          Shared ({plan.sharedTo.length})
-        </span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+            >
+              <Share2 className="w-3 h-3" />
+              Shared ({plan.sharedTo.length})
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Shared with
+            </p>
+            {names.length > 0 ? (
+              <ul className="space-y-1.5">
+                {names.map((u) => (
+                  <li key={u.id} className="text-sm text-gray-900 dark:text-white truncate">
+                    {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.email}
+                    <span className="block text-xs text-gray-500 dark:text-gray-400 truncate">{u.email}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {plan.sharedTo.length} {plan.sharedTo.length === 1 ? "person" : "people"}
+              </p>
+            )}
+          </PopoverContent>
+        </Popover>
       );
     }
     return null;
@@ -2515,6 +2545,7 @@ export default function AllPlans() {
       <BulkSharePlanModal
         isOpen={showBulkShareModal}
         onClose={() => setShowBulkShareModal(false)}
+        onShared={() => loadPlans()}
         plans={plans.filter((p) => selectedPlans.includes(p.id))}
       />
 
