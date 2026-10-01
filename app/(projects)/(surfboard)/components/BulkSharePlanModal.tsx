@@ -20,6 +20,10 @@ interface SearchUser {
 interface BulkSharePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Fired once at least one plan in the batch was shared successfully —
+   * lets the caller refresh its list so "Shared (N)" badges/filters reflect
+   * the new access immediately instead of only after a manual page reload. */
+  onShared?: () => void;
   plans: { id: string; planNumber: string }[];
 }
 
@@ -30,7 +34,7 @@ interface BulkSharePlanModalProps {
  * N plans at once) — it's a pure add-access action with a results summary,
  * same underlying share/invite calls as SharePlanModal, just looped.
  */
-export function BulkSharePlanModal({ isOpen, onClose, plans }: BulkSharePlanModalProps) {
+export function BulkSharePlanModal({ isOpen, onClose, onShared, plans }: BulkSharePlanModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -82,6 +86,7 @@ export function BulkSharePlanModal({ isOpen, onClose, plans }: BulkSharePlanModa
       if (succeeded === 0 && failed.length > 0) {
         toast({ title: "Error", description: "Failed to share any of the selected plans.", variant: "destructive" });
       }
+      if (succeeded > 0) onShared?.();
       if (failed.length === 0) {
         setSearchQuery("");
         setSearchResults([]);

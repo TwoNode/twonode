@@ -743,12 +743,17 @@ export const surfboardApi = {
           `${BASE}/cod/batches${status ? `?status=${encodeURIComponent(status)}` : ""}`,
         ),
 
-      /** Admin-only, paginated/searchable variant of list() — the admin Batch Management page. */
-      listPaginated: (params: { page?: number; pageSize?: number; status?: string; search?: string } = {}) => {
+      /**
+       * Paginated/searchable variant of list() — for ADMIN/SUPERADMIN this
+       * is the admin Batch Management page (`status` filter); for USER it's
+       * "My Batches"' Active/History tabs (`scope`, default "active").
+       */
+      listPaginated: (params: { page?: number; pageSize?: number; status?: string; scope?: "active" | "history"; search?: string } = {}) => {
         const qs = new URLSearchParams();
         qs.set("page", String(params.page ?? 1));
         if (params.pageSize) qs.set("pageSize", String(params.pageSize));
         if (params.status) qs.set("status", params.status);
+        if (params.scope) qs.set("scope", params.scope);
         if (params.search) qs.set("search", params.search);
         return jsonFetch<{
           data: any[];
@@ -1293,6 +1298,36 @@ export const surfboardApi = {
       jsonFetch<{ success: boolean }>(
         `${BASE}/notifications/${encodeURIComponent(id)}/dismiss`,
         { method: "POST" },
+      ),
+
+    update: (
+      id: string,
+      input: Partial<{
+        type:
+          | "INFO"
+          | "SUCCESS"
+          | "WARNING"
+          | "ERROR"
+          | "SYSTEM"
+          | "PLAN"
+          | "SHARING";
+        title: string;
+        message: string;
+        audience:
+          | "SPECIFIC_USERS"
+          | "GENERAL_ADMINS"
+          | "SUPERADMIN"
+          | "ALL_USERS";
+        userIds: string[];
+        link: string | null;
+        showAsModal: boolean;
+        startsAt: string | null;
+        endsAt: string | null;
+      }>,
+    ) =>
+      jsonFetch<{ id: string }>(
+        `${BASE}/notifications/${encodeURIComponent(id)}`,
+        { method: "PATCH", body: JSON.stringify(input) },
       ),
 
     remove: (id: string) =>

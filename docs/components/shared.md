@@ -94,7 +94,7 @@ Used by every product's dashboard shell (GBC/REVA/Surfboard).
 | File | Description |
 |---|---|
 | `AcceptInviteCard.tsx` | Accept-invitation form (set a password from the emailed link) |
-| `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right) |
+| `AuthSplitLayout.tsx` | Two-panel auth page layout (form left, branded gradient + network graphic right). `PlatformNetworkGraphic` is now capped at a fixed max-width on every tier (`max-w-[240px]`→`xl:max-w-[300px]`), not just height-driven — previously uncapped at `xl`, so on a tall panel the whole diagram (lines + nodes together, not just the node icons within it) filled nearly the whole column instead of reading as one compact graphic |
 | `GoogleIcon.tsx` | Google "G" logo icon |
 | `NativeAuthCard.tsx` | Email/password login+register card |
 | `PlatformNetworkGraphic.tsx` | The connected-logo graphic on `AuthSplitLayout`'s branded panel. `variant="default"` (TwoNode hub + Surfboard/REVA/GBC/open-slot satellites) vs `variant="mda"` (a single TwoNode↔MDA connection, offset in x so the line reads as a real diagonal, not stacked dead-vertical) |

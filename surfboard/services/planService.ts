@@ -498,6 +498,25 @@ export async function updateSurfPlan(userId: string, userFirstLastName: { firstN
 // Reads / listing
 // ---------------------------------------------------------------------------
 
+/**
+ * Batch-resolves every plan's `sharedTo` id array into full user objects in
+ * one query (not N+1 per plan) — same shape getSurfPlanById already returns
+ * as `sharedToUsers`, now also attached to list results so the Plans page
+ * can show who a plan is shared with without a trip to the single-plan page.
+ */
+async function withSharedToUsers<T extends { sharedTo: string[] }>(plans: T[]): Promise<(T & { sharedToUsers: { id: string; firstName: string; lastName: string; email: string; surconRegNumber: string | null }[] })[]> {
+  const allIds = Array.from(new Set(plans.flatMap((p) => p.sharedTo)));
+  if (!allIds.length) return plans.map((p) => ({ ...p, sharedToUsers: [] }));
+
+  const users = await prisma.surfboardUser.findMany({
+    where: { id: { in: allIds } },
+    select: { id: true, firstName: true, lastName: true, email: true, surconRegNumber: true },
+  });
+  const byId = new Map(users.map((u) => [u.id, u]));
+
+  return plans.map((p) => ({ ...p, sharedToUsers: p.sharedTo.map((id) => byId.get(id)).filter((u): u is NonNullable<typeof u> => !!u) }));
+}
+
 export async function getAllSurfPlans(userId: string) {
   const plans = await prisma.surfboardPlan.findMany({
     where: { userId, deleted: false },
@@ -536,7 +555,8 @@ export async function getPaginatedSurfPlans(
     prisma.surfboardPlan.count({ where }),
   ]);
 
-  return { plans: plans.map(withGeometry), total, totalPages: noPagination ? 1 : Math.ceil(total / pageSize) };
+  const withShared = await withSharedToUsers(plans);
+  return { plans: withShared.map(withGeometry), total, totalPages: noPagination ? 1 : Math.ceil(total / pageSize) };
 }
 
 export async function getAllSharedSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
@@ -549,7 +569,8 @@ export async function getAllSharedSurfPlans(userId: string, page = 1, pageSize =
     prisma.surfboardPlan.count({ where }),
   ]);
 
-  return { plans: plans.map(withGeometry), total, totalPages: Math.ceil(total / pageSize) };
+  const withShared = await withSharedToUsers(plans);
+  return { plans: withShared.map(withGeometry), total, totalPages: Math.ceil(total / pageSize) };
 }
 
 export async function getSharedWithMeSurfPlans(userId: string, page = 1, pageSize = 10, filters?: PlanFilters, sort?: PlanSort) {
@@ -1100,6 +1121,7 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
         geometry: true,
         pillars: true,
         state: true,
+        dateOnSurveyPlan: true,
         user: { select: { firstName: true, lastName: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -1123,6 +1145,11 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
       state: plan.state,
       ward: plan.ward,
       lga: plan.lga,
+      // The map popup's own "Survey date" line reads this straight off
+      // feature properties — never selected here before, so it always
+      // rendered the popup's "N/A" fallback regardless of the plan's
+      // actual date (same missing-select pattern as `facilitator` above).
+      dateOnSurveyPlan: plan.dateOnSurveyPlan,
       owner: plan.user ?? null,
       // The map popup shows this as "Surveyor" — the registered platform
       // user accountable for the plan, not the plan's own free-text
