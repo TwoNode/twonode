@@ -261,14 +261,24 @@ export interface TimeTrendData {
   totalArea: number;
 }
 
+export interface SharedAccessStat {
+  status: "active" | "expired" | "none";
+  count: number;
+}
+
 export interface AnalyticsData {
   facilitatorStats: FacilitatorStat[];
+  sharedAccessStats: SharedAccessStat[];
   lgaStats: LGAStat[];
   pendingCertificates: PendingCertificate[];
+  pendingCertificatesCount: number;
   pillarStats: PillarStat[];
   timeTrends: TimeTrendData[];
   provisionalPlansCount: number;
   totalPlansCount: number;
+  pendingCount: number;
+  lodgedCount: number;
+  queriedCount: number;
 }
 
 export type SurfboardRole =

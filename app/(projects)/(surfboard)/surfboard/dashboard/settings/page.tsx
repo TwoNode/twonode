@@ -16,9 +16,10 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
-import { sendAccountUpdateInquiry } from "../../../actions/settingsActions";
-import { getSurveyorEarningsOverview } from "../../../actions/qrEarningsActions";
-import { useSurfUserProfile } from "@/hooks/useSurfUserProfile";
+import { surfboardApi } from "@/surfboard/apiClient";
+import { resendVerification } from "@/lib/auth/authApiClient";
+import { Platform } from "@/utils/platform";
+import { useSurfUserProfile } from "@/surfboard/hooks/useSurfUserProfile";
 import { nigerianStates } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { InquiryModal } from "./InquiryModal";
@@ -42,10 +43,11 @@ export default function SettingsPage() {
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
   const [inquiryText, setInquiryText] = useState("");
   const [isSendingInquiry, setIsSendingInquiry] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [bankDetails, setBankDetails] = useState<any>(null);
 
   useEffect(() => {
-    getSurveyorEarningsOverview().then((res) => {
+    surfboardApi.qr.earningsOverview().then((res) => {
       if (res.success && res.data) {
         setBankDetails(res.data.bankDetails);
       }
@@ -111,7 +113,7 @@ export default function SettingsPage() {
 
   const handleSendInquiry = async (details: string) => {
     setIsSendingInquiry(true);
-    const res = await sendAccountUpdateInquiry(details);
+    const res = await surfboardApi.settings.sendAccountUpdateInquiry(details);
     setIsSendingInquiry(false);
     if (res.success) {
       toast.success("Request sent to admin.");
@@ -121,18 +123,34 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      const result = await resendVerification({ platform: Platform.SURFBOARD, email: userData.email });
+      if (result.success) {
+        toast.success("If your email isn't verified yet, a new link is on its way.");
+      } else {
+        toast.error(result.error || "Failed to resend verification email");
+      }
+    } catch {
+      toast.error("An error occurred while resending the verification email");
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+      <div className="flex items-center justify-center min-h-[60vh] bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-background dark:via-background dark:to-background">
         <div className="flex flex-col items-center space-y-4">
           <div className="relative">
             <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
             <Loader2 className="w-12 h-12 animate-spin text-blue-600 relative z-10" />
           </div>
-          <p className="text-xl font-semibold text-gray-900">
+          <p className="text-xl font-semibold text-gray-900 dark:text-white">
             Loading your profile...
           </p>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Please wait while we load your information
           </p>
         </div>
@@ -141,7 +159,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-background dark:via-background dark:to-background">
       <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         {/* Header Section */}
         <motion.div
@@ -161,11 +179,11 @@ export default function SettingsPage() {
               <div className="p-2 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
                 <Settings className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
                 Account Settings
               </h1>
             </div>
-            <p className="text-gray-600 text-sm sm:text-base ml-14">
+            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base ml-14">
               Manage your profile, security, and preferences
             </p>
           </div>
@@ -176,10 +194,10 @@ export default function SettingsPage() {
             transition={{ delay: 0.1 }}
             className="w-full lg:w-auto"
           >
-            <Card className="p-4 sm:p-5 bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="p-4 sm:p-5 bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-blue-600" />
                     Profile Completion
                   </span>
@@ -219,7 +237,7 @@ export default function SettingsPage() {
             className="space-y-6"
             onValueChange={setActiveTab}
           >
-            <TabsList className="grid w-full grid-cols-3 max-w-lg h-12 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg h-12 bg-white/80 dark:bg-surface/80 backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm">
               <TabsTrigger
                 value="personal"
                 className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all"
@@ -248,8 +266,8 @@ export default function SettingsPage() {
 
             <form onSubmit={handleSubmit}>
               <TabsContent value="personal" className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="border-b border-gray-100 pb-4">
+                <Card className="bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
                     <CardTitle className="text-xl sm:text-2xl">
                       Personal Information
                     </CardTitle>
@@ -271,7 +289,7 @@ export default function SettingsPage() {
                           name="prefix"
                           value={userData.prefix || ""}
                           onChange={handleInputChange}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          className="w-full p-2.5 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           disabled={isSaving || isLocked}
                         >
                           <option value="">Select prefix</option>
@@ -301,7 +319,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           required
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -319,7 +337,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           required
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -337,7 +355,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           placeholder="e.g. Jr., Sr., III"
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -353,11 +371,33 @@ export default function SettingsPage() {
                           type="email"
                           value={userData.email}
                           disabled
-                          className="bg-gray-100 border-gray-300"
+                          className="bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/15"
                         />
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Contact support to change your email address
                         </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              userData.emailVerified
+                                ? "bg-green-100 text-green-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {userData.emailVerified ? "Verified" : "Not Verified"}
+                          </span>
+                          {!userData.emailVerified && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResendVerification}
+                              disabled={isResendingVerification}
+                            >
+                              {isResendingVerification ? "Sending..." : "Resend verification email"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -372,7 +412,7 @@ export default function SettingsPage() {
                           name="residenceState"
                           value={userData.residenceState || ""}
                           onChange={handleInputChange}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          className="w-full p-2.5 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           disabled={isSaving || isLocked}
                         >
                           <option value="">Select state</option>
@@ -399,7 +439,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           placeholder="e.g. +234 800 000 0000"
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -417,7 +457,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           placeholder="Enter your address"
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -447,7 +487,7 @@ export default function SettingsPage() {
                           }}
                           placeholder="Enter payer ID"
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -463,7 +503,7 @@ export default function SettingsPage() {
                           name="payerIDType"
                           value={userData.payerIDType || ""}
                           onChange={handleInputChange}
-                          className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          className="w-full p-2.5 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           disabled={isSaving || isLocked}
                         >
                           <option value="">Select type</option>
@@ -477,8 +517,8 @@ export default function SettingsPage() {
               </TabsContent>
 
               <TabsContent value="professional" className="space-y-6">
-                <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="border-b border-gray-100 pb-4">
+                <Card className="bg-white/80 dark:bg-surface/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
                     <CardTitle className="text-xl sm:text-2xl">
                       Professional Information
                     </CardTitle>
@@ -501,7 +541,7 @@ export default function SettingsPage() {
                           value={userData.companyName || ""}
                           onChange={handleInputChange}
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -519,7 +559,7 @@ export default function SettingsPage() {
                           onChange={handleInputChange}
                           disabled={isSaving || isLocked}
                           placeholder="e.g. SURCON/RN/0000"
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
 
@@ -536,12 +576,12 @@ export default function SettingsPage() {
                           value={userData.surconRegName || ""}
                           onChange={handleInputChange}
                           disabled={isSaving || isLocked}
-                          className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-gray-100 dark:border-white/10">
                       <div className="space-y-3">
                         <Label className="text-sm font-semibold">
                           Company Logo
@@ -549,7 +589,7 @@ export default function SettingsPage() {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                           {userData.logo ? (
                             <div className="relative group">
-                              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 shadow-md">
+                              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-white/10 shadow-md">
                                 <img
                                   src={userData.logo}
                                   alt="Company Logo"
@@ -569,12 +609,12 @@ export default function SettingsPage() {
                           ) : (
                             <label
                               htmlFor="logo"
-                              className={`border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center w-full sm:w-32 h-24 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all ${
+                              className={`border-2 border-dashed border-gray-300 dark:border-white/15 rounded-xl p-4 flex flex-col items-center justify-center w-full sm:w-32 h-24 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all ${
                                 isSaving ? "opacity-50 cursor-not-allowed" : ""
                               }`}
                             >
-                              <Upload className="w-6 h-6 mb-1 text-gray-400" />
-                              <p className="text-xs text-gray-500 text-center">
+                              <Upload className="w-6 h-6 mb-1 text-gray-400 dark:text-gray-500" />
+                              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                                 Upload
                               </p>
                             </label>
@@ -595,12 +635,12 @@ export default function SettingsPage() {
                               document.getElementById("logo")?.click()
                             }
                             disabled={isSaving}
-                            className="w-full sm:w-auto border-gray-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                            className="w-full sm:w-auto border-gray-300 dark:border-white/15 hover:bg-blue-50 hover:border-blue-400 transition-colors"
                           >
                             {userData.logo ? "Change" : "Upload"} Logo
                           </Button>
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Recommended: 300x300px, Max 5MB
                         </p>
                       </div>
@@ -612,7 +652,7 @@ export default function SettingsPage() {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                           {userData.signature ? (
                             <div className="relative group">
-                              <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-gray-200 bg-white p-2 shadow-md">
+                              <div className="relative w-32 h-24 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-surface p-2 shadow-md">
                                 <img
                                   src={userData.signature}
                                   alt="Signature"
@@ -632,12 +672,12 @@ export default function SettingsPage() {
                           ) : (
                             <label
                               htmlFor="signature"
-                              className={`border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center w-full sm:w-32 h-24 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all ${
+                              className={`border-2 border-dashed border-gray-300 dark:border-white/15 rounded-xl p-4 flex flex-col items-center justify-center w-full sm:w-32 h-24 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all ${
                                 isSaving ? "opacity-50 cursor-not-allowed" : ""
                               }`}
                             >
-                              <FileSignature className="w-6 h-6 mb-1 text-gray-400" />
-                              <p className="text-xs text-gray-500 text-center">
+                              <FileSignature className="w-6 h-6 mb-1 text-gray-400 dark:text-gray-500" />
+                              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                                 Upload
                               </p>
                             </label>
@@ -658,12 +698,12 @@ export default function SettingsPage() {
                               document.getElementById("signature")?.click()
                             }
                             disabled={isSaving || isLocked}
-                            className="w-full sm:w-auto border-gray-300 hover:bg-blue-50 hover:border-blue-400 transition-colors"
+                            className="w-full sm:w-auto border-gray-300 dark:border-white/15 hover:bg-blue-50 hover:border-blue-400 transition-colors"
                           >
                             {userData.signature ? "Change" : "Upload"} Signature
                           </Button>
                         </div>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Recommended: 300x100px, Max 5MB
                         </p>
                       </div>
@@ -686,7 +726,7 @@ export default function SettingsPage() {
                   variant="outline"
                   onClick={() => window.location.reload()}
                   disabled={isSaving || isLocked}
-                  className="w-full sm:w-auto border-gray-300 hover:bg-gray-100 transition-colors"
+                  className="w-full sm:w-auto border-gray-300 dark:border-white/15 hover:bg-gray-100 transition-colors"
                 >
                   Cancel
                 </Button>

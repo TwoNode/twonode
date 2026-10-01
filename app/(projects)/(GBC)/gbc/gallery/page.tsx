@@ -1,40 +1,67 @@
 // src/app/(public)/gallery/page.tsx
 import { Play, Image as ImageIcon } from "lucide-react";
-import { getGalleryItems } from "../../actions/gallery-actions";
-import { getAllGBCSettings } from "../../actions/settings-actions";
+import { getGalleryItems } from "@/gbc/services/cmsService";
+import { getSettings } from "@/gbc/services/settingsService";
+import { getEditions } from "@/gbc/services/editionService";
 import Link from "next/link";
-import GBC2Navbar from "../../components/Navbar";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+
+export const dynamic = "force-dynamic";
 
 export default async function GalleryPage() {
-  const galleryResult = await getGalleryItems();
-  const items = galleryResult.success ? galleryResult.data : [];
+  const settings = await getSettings();
+  const gallerySettings = settings.gallery;
+  const socialLinks = settings.contact;
 
-  const settingsResult = await getAllGBCSettings();
-  const socialLinks = settingsResult.success
-    ? settingsResult.data?.contact
-    : null;
+  // No year filter applied here: `defaultYear` is only meant to seed a
+  // year-filter *control* gated behind `gallerySettings.showYearFilter`,
+  // which isn't built yet (new UI, out of scope for this fix). Hard-filtering
+  // by defaultYear unconditionally previously hid every item whenever the
+  // setting's year didn't match the actual data's year (confirmed live:
+  // defaultYear defaulted to 2025, all real items are tagged 2024).
+  const [allItems, editions] = await Promise.all([getGalleryItems(), getEditions()]);
+  const items = allItems.slice(0, gallerySettings?.itemsPerPage ?? allItems.length);
 
-  // Group by year
-  const itemsByYear =
-    items?.reduce((acc: any, item: any) => {
-      if (!acc[item.year]) {
-        acc[item.year] = [];
-      }
-      acc[item.year].push(item);
-      return acc;
-    }, {}) || {};
+  if (gallerySettings?.enabled === false) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <GBC2Navbar />
+        <div className="text-center py-24">
+          <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-400 mb-2">Gallery unavailable</h2>
+          <p className="text-gray-500">The gallery is currently disabled.</p>
+        </div>
+      </div>
+    );
+  }
 
-  const years = Object.keys(itemsByYear).sort(
-    (a, b) => parseInt(b) - parseInt(a)
-  );
+  // One section per edition, newest first — the query already orders items by
+  // edition start date, so first appearance is the right section order.
+  const sections: { key: string; name: string; items: typeof items }[] = [];
+  for (const item of items) {
+    let section = sections.find((s) => s.key === item.edition);
+    if (!section) {
+      section = {
+        key: item.edition,
+        name: editions.find((e) => e.key === item.edition)?.name ?? `GBC ${item.year}`,
+        items: [],
+      };
+      sections.push(section);
+    }
+    section.items.push(item);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
+        <div className="absolute inset-0 bg-grid opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
             href="/gbc"
@@ -72,7 +99,7 @@ export default async function GalleryPage() {
       {/* Gallery Content */}
       <section className="py-12 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {years.length === 0 ? (
+          {sections.length === 0 ? (
             <div className="text-center py-24">
               <ImageIcon className="h-24 w-24 text-gray-300 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-gray-400 mb-2">
@@ -82,17 +109,20 @@ export default async function GalleryPage() {
             </div>
           ) : (
             <div className="space-y-12 sm:space-y-16">
-              {years.map((year) => (
-                <div key={year}>
+              {sections.map((section) => (
+                <div key={section.key}>
                   <div className="mb-6 sm:mb-8">
                     <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-                      GBC {year}
+                      {section.name}
                     </h2>
-                    <div className="h-1 w-16 sm:w-20 bg-purple-600 rounded" />
+                    <div
+                      className="h-1 w-16 sm:w-20 rounded"
+                      style={{ background: GBC_COLORS.primary.main }}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {itemsByYear[year].map((item: any) => (
+                    {section.items.map((item) => (
                       <GalleryItem key={item.id} item={item} />
                     ))}
                   </div>
@@ -192,7 +222,10 @@ function GalleryItem({ item }: { item: any }) {
             )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <Play className="h-8 w-8 text-purple-600 ml-1" />
+                <Play
+                  className="h-8 w-8 ml-1"
+                  style={{ color: GBC_COLORS.primary.main }}
+                />
               </div>
             </div>
           </>

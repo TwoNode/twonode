@@ -1,9 +1,10 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, RevaRole } from "@/utils/platform";
+import { markEmailVerified } from "@/lib/auth/userLookup";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +33,19 @@ export async function GET(request: NextRequest) {
       throw new Error("Failed to create or find user in database");
     }
 
+    if (!dbUser.emailVerified) {
+      await markEmailVerified(Platform.REVA, dbUser.id, "OAUTH");
+      dbUser.emailVerified = true;
+    }
+
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.SCRAM, undefined, dbUser);
+    } catch (err) {
+      console.error("issueSession failed for scram callback:", err);
+    }
+
     // Create encrypted user data
     const userData = {
       platform: Platform.SCRAM,
@@ -46,8 +60,9 @@ export async function GET(request: NextRequest) {
     const redirectUrl = "/scram/dashboard";
 
     // Redirect to the beautiful redirect page with redirectionPage param
-    const redirectPageUrl = addBaseUrl(
-      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`
+    const redirectPageUrl = new URL(
+      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`,
+      request.url
     );
     const response = NextResponse.redirect(redirectPageUrl);
     const responseWithCookie = await setEncryptedUserCookie(userData, response);

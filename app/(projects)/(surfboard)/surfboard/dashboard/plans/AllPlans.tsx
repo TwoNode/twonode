@@ -3,15 +3,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  getPaginatedSurfPlans,
-  getSurfPlanById,
-  permanentlyDeleteSurfPlan,
-  generatePlanQRCode,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import { getProfile } from "@/app/(projects)/(surfboard)/actions/profile";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -40,6 +35,7 @@ import {
   Plus,
   Loader2,
   AlertTriangle,
+  Share2,
 } from "lucide-react";
 import {
   Select,
@@ -97,8 +93,10 @@ import {
 } from "../../../components/CertificateBatchSelection";
 import { RecordCopyUploadModal } from "../../../components/RecordCopyUploadModal";
 import { SubmittedBatchesModal } from "../../../components/SubmittedBatchesModal";
+import { BulkSharePlanModal } from "../../../components/BulkSharePlanModal";
 import SurfboardPlanForm from "../../../components/SurfboardPlanForm";
 import OptimizedSinglePlanDetails from "../../../components/OptimizedSinglePlanDetails";
+import { getQrColors } from "@/lib/qrColorPreferences";
 import {
   PlanDetailsLoadingState,
   PlanFormLoadingState,
@@ -120,8 +118,17 @@ interface PlanFilters {
 const PLAN_STATUSES = ["PENDING", "UNDER_REVIEW", "LODGED", "QUERIED"];
 const PLAN_TYPES = Array.from(Object.values(PLAN_TYPES_OBJ));
 
+/** "Shared Access": which plans to load. Filters, not tabs — see out/Surfboard Shared Access.pdf. */
+type PlanScope = "mine" | "sharedWithMe" | "mySharedPlans";
+const SCOPE_OPTIONS: { id: PlanScope; label: string }[] = [
+  { id: "mine", label: "My Plans" },
+  { id: "sharedWithMe", label: "Shared with me" },
+  { id: "mySharedPlans", label: "My Shared Plans" },
+];
+
 export default function AllPlans() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,6 +138,7 @@ export default function AllPlans() {
     status: [],
     planType: [],
   });
+  const [scope, setScope] = useState<PlanScope>("mine");
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -161,12 +169,21 @@ export default function AllPlans() {
 
   // Batch Selection State
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
+  const [showBulkShareModal, setShowBulkShareModal] = useState(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [showBatchesModal, setShowBatchesModal] = useState(false);
 
   // User Profile Data
   const [isKycValidated, setIsKycValidated] = useState<boolean>(true); // Default to true to prevent flash
+  // /newplan is subscription-gated server-side (proxy.ts + createSurfPlan) —
+  // hide this CTA rather than send an unsubscribed user into a page that
+  // immediately redirects them out.
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
+  // Independent of `scope`/`pagination.total` (which only reflect whichever
+  // scope tab is currently active) — a dedicated lightweight fetch just to
+  // badge the "Shared with me" tab with its own count up front.
+  const [sharedWithMeCount, setSharedWithMeCount] = useState<number | null>(null);
 
   const loadPlans = async (
     page = pagination.page,
@@ -174,21 +191,20 @@ export default function AllPlans() {
   ) => {
     try {
       setLoading(true);
-      const result = await getPaginatedSurfPlans({
-        page,
-        pageSize,
-        filters: {
-          status: filters.status.length > 0 ? filters.status : undefined,
-          planType: filters.planType.length > 0 ? filters.planType : undefined,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-          search: search || undefined,
-        },
-        sort: {
-          field: "dateOnSurveyPlan" as any,
-          order: "desc",
-        },
-      });
+      const scopedFilters = {
+        status: filters.status.length > 0 ? filters.status : undefined,
+        planType: filters.planType.length > 0 ? filters.planType : undefined,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        search: search || undefined,
+      };
+      const sort = { field: "dateOnSurveyPlan" as any, order: "desc" as const };
+      const result =
+        scope === "sharedWithMe"
+          ? await surfboardApi.plans.sharedWithMe(page, pageSize, scopedFilters, sort)
+          : scope === "mySharedPlans"
+            ? await surfboardApi.plans.shared(page, pageSize, scopedFilters, sort)
+            : await surfboardApi.plans.list({ page, pageSize, filters: scopedFilters, sort });
 
       if (result?.success && result?.data) {
         setPlans(result.data.plans || []);
@@ -214,10 +230,16 @@ export default function AllPlans() {
   useEffect(() => {
     loadPlans(1, pagination.pageSize);
     // Load profile to check KYC validation status
-    getProfile().then((res) => {
-      if (res.data) {
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) {
         setIsKycValidated(res.data.isKycValidated);
       }
+    });
+    surfboardApi.subscription.userAndActiveSub().then((res) => {
+      setHasSubscriptionAccess(res.success ? !!res.data?.subscription : false);
+    });
+    surfboardApi.plans.sharedWithMe(1, 1, {}, undefined).then((res) => {
+      if (res.success) setSharedWithMeCount(res.data.total);
     });
   }, []);
 
@@ -226,7 +248,7 @@ export default function AllPlans() {
       loadPlans(1, pagination.pageSize);
     }, 500);
     return () => clearTimeout(timer);
-  }, [filters, search]);
+  }, [filters, search, scope]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -381,8 +403,8 @@ export default function AllPlans() {
   const refreshSelectedPlan = async (planId: string) => {
     try {
       setModalLoading(true);
-      const result = await getSurfPlanById(planId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.plans.get(planId);
+      if (result.success) {
         setSelectedPlan(result.data);
         // Also update the plan in the plans array
         setPlans((prevPlans) =>
@@ -426,16 +448,15 @@ export default function AllPlans() {
       setQrCodeDataUrl(null); // Reset previous QR code
       setQrModalOpen(true); // Open modal immediately to show loading
 
-      const result = await generatePlanQRCode(planId, {
-        darkColor: "#3b82f6",
-        lightColor: "#ffffff",
+      const result = await surfboardApi.plans.generateQR(planId, {
+        ...getQrColors(),
         minLightAlpha: 0.3,
         margin: 4,
         scale: 8,
         forceOpaque: false,
       });
 
-      if (result.success && result.data) {
+      if (result.success) {
         setQrCodeDataUrl(result.data.qrCodeDataUrl);
       } else {
         toast.error(result.error || "Failed to generate QR code");
@@ -462,7 +483,7 @@ export default function AllPlans() {
     setIsDeleting(true);
     toast.loading("Deleting plan...", { duration: Infinity });
     try {
-      const result = await permanentlyDeleteSurfPlan(planToDelete);
+      const result = await surfboardApi.plans.permanentDelete(planToDelete);
       if (result.success) {
         toast.success("Plan deleted successfully");
         setDeleteDialogOpen(false);
@@ -498,6 +519,11 @@ export default function AllPlans() {
     } else {
       setSelectedPlans(plans.map((p) => p.id));
     }
+  };
+
+  const handleBulkShare = () => {
+    if (selectedPlans.length === 0) return;
+    setShowBulkShareModal(true);
   };
 
   const handleBatchSubmit = () => {
@@ -552,16 +578,90 @@ export default function AllPlans() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "LODGED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20";
       case "PENDING":
-        return "bg-amber-100 text-amber-700 border-amber-200";
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20";
       case "QUERIED":
-        return "bg-rose-100 text-rose-700 border-rose-200";
+        return "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20";
       case "UNDER_REVIEW":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10";
     }
+  };
+
+  const getStatusDotColor = (status: string) => {
+    switch (status) {
+      case "LODGED":
+        return "bg-emerald-500";
+      case "PENDING":
+        return "bg-amber-500";
+      case "QUERIED":
+        return "bg-rose-500";
+      case "UNDER_REVIEW":
+        return "bg-blue-500";
+      default:
+        return "bg-gray-400";
+    }
+  };
+
+  /** "Shared Access" badge: who this plan is shared with/by, when relevant to the current scope. */
+  const SharedBadge = ({ plan }: { plan: any }) => {
+    if (scope === "sharedWithMe") {
+      const owner = plan.user;
+      const ownerName = owner ? [owner.firstName, owner.lastName].filter(Boolean).join(" ") || owner.email : null;
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20"
+          title={ownerName ? `Shared by ${ownerName}` : "Shared with you"}
+        >
+          <Share2 className="w-3 h-3" />
+          {ownerName ? `Shared by ${ownerName}` : "Shared with you"}
+        </span>
+      );
+    }
+    if (plan.sharedTo?.length > 0) {
+      // sharedToUsers (resolved names, batch-fetched alongside the list
+      // query) lets this show who a plan is actually shared with on
+      // hover/tap, without a trip to the single-plan page — falls back to
+      // just the count if the names somehow didn't come back with this
+      // plan (e.g. a stale cached row).
+      const names: { id: string; firstName: string; lastName: string; email: string }[] = plan.sharedToUsers || [];
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+            >
+              <Share2 className="w-3 h-3" />
+              Shared ({plan.sharedTo.length})
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Shared with
+            </p>
+            {names.length > 0 ? (
+              <ul className="space-y-1.5">
+                {names.map((u) => (
+                  <li key={u.id} className="text-sm text-gray-900 dark:text-white truncate">
+                    {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.email}
+                    <span className="block text-xs text-gray-500 dark:text-gray-400 truncate">{u.email}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {plan.sharedTo.length} {plan.sharedTo.length === 1 ? "person" : "people"}
+              </p>
+            )}
+          </PopoverContent>
+        </Popover>
+      );
+    }
+    return null;
   };
 
   const getStatusIcon = (status: string) => {
@@ -636,26 +736,34 @@ export default function AllPlans() {
     {
       label: "Total Plans",
       value: pagination.total,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
+      icon: FileText,
     },
     {
       label: "Pending",
       value: plans.filter((p) => p.status === "PENDING").length,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-500/10",
+      icon: Clock,
     },
     {
       label: "Lodged",
       value: plans.filter((p) => p.status === "LODGED").length,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
+      icon: CheckCircle,
     },
     {
+      // `redCopyStatus` has no "APPROVED" value in its enum (NOT_SUBMITTED
+      // / SUBMITTED / COMPLETED / FAILED) — this always evaluated to 0.
+      // `redCopyFileUrl` is the same field the row-level "Record Copy"
+      // badge below already treats as the source of truth for "uploaded".
       label: "Red Copy",
-      value: plans.filter((p) => p.redCopyStatus === "APPROVED").length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      value: plans.filter((p) => !!p.redCopyFileUrl).length,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-500/10",
+      icon: QrCode,
     },
   ];
 
@@ -665,7 +773,7 @@ export default function AllPlans() {
       {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm"
+          className="bg-white dark:bg-surface rounded-lg p-4 border border-gray-100 dark:border-white/10 shadow-sm"
         >
           <Skeleton className="h-8 w-16 mb-2" />
           <Skeleton className="h-4 w-24" />
@@ -675,7 +783,7 @@ export default function AllPlans() {
   );
 
   const TableRowSkeleton = () => (
-    <tr className="border-b border-gray-200">
+    <tr className="border-b border-gray-200 dark:border-white/10">
       <td className="px-6 py-4">
         <Skeleton className="h-4 w-4" />
       </td>
@@ -762,10 +870,10 @@ export default function AllPlans() {
   );
 
   const PlansListSkeleton = () => (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-white/5">
             <tr>
               <th className="px-6 py-3 text-left">
                 <Skeleton className="h-4 w-4" />
@@ -831,7 +939,7 @@ export default function AllPlans() {
         </div>
 
         {/* Filters Skeleton */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-gray-200 dark:border-white/10 p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <Skeleton className="flex-1 h-10" />
             <div className="flex gap-3">
@@ -852,55 +960,80 @@ export default function AllPlans() {
     <div className="min-h-full w-full max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Survey Plans</h1>
-            {!isKycValidated && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-start gap-3 mt-4">
-                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
-                <div>
-                  <p className="font-medium text-sm">Action Required: Surveyor KYC Validation</p>
-                  <p className="text-xs opacity-90 mt-1">
-                    Your profile is pending validation. You will not be able to submit plans for CoD until an administrator has reviewed and validated your profile. Please ensure all your details are correctly set in the Settings page.
-                  </p>
-                </div>
-              </div>
-            )}
-            <p className="text-gray-600 mt-1">
-              Manage and review all survey plan submissions
-            </p>
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-            <Button
-              variant="outline"
-              onClick={() => setShowBatchesModal(true)}
-              className="flex-1 sm:flex-none"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">My Batches</span>
-              <span className="sm:hidden">Batches</span>
-            </Button>
-            <Button
-              onClick={() =>
-                (window.location.href = "/surfboard/dashboard/newplan")
-              }
-              className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Plan
-            </Button>
+        <div
+          className="relative overflow-hidden rounded-2xl px-6 py-7 sm:px-8 sm:py-8 mb-6 shadow-lg"
+          style={{
+            background:
+              "linear-gradient(120deg, var(--color-brand-primary-dark), var(--color-brand-primary))",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-4 -bottom-18 h-40 w-40 rounded-full bg-white/10"
+            aria-hidden
+          />
+
+          <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-1">
+                Survey plans
+              </p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                Your Survey Plans
+              </h1>
+              <p className="text-white/75 mt-1.5 max-w-xl text-sm">
+                Manage and review all your survey plan submissions in one place.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full lg:w-auto shrink-0">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors disabled:opacity-50 backdrop-blur-xs"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+              <button
+                onClick={() => setShowBatchesModal(true)}
+                className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors backdrop-blur-xs"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">My Batches</span>
+                <span className="sm:hidden">Batches</span>
+              </button>
+              {hasSubscriptionAccess && (
+                <button
+                  onClick={() =>
+                    (window.location.href = "/surfboard/dashboard/newplan")
+                  }
+                  className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-sm font-bold shadow-lg shadow-black/20 transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ color: "var(--color-brand-primary-dark)" }}
+                >
+                  <Plus className="w-4 h-4" />
+                  New Plan
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {!isKycValidated && (
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-xl flex items-start gap-3 mb-6">
+            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="font-medium text-sm">Action Required: Surveyor KYC Validation</p>
+              <p className="text-xs opacity-90 mt-1">
+                Your profile is pending validation. You will not be able to submit plans for CoD until an administrator has reviewed and validated your profile. Please ensure all your details are correctly set in the Settings page.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -910,57 +1043,103 @@ export default function AllPlans() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`${stat.bgColor} rounded-lg p-4 border border-gray-100 shadow-sm`}
+              className="group relative overflow-hidden rounded-xl bg-white dark:bg-surface p-4 border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
-              <div className={`text-2xl font-bold ${stat.color} mb-1`}>
-                {stat.value}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className={`text-2xl font-bold ${stat.color} tabular-nums leading-tight`}>
+                    {stat.value}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{stat.label}</div>
+                </div>
+                <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </div>
 
+      {/* Scope — "Shared Access": My Plans / Shared with me / My Shared Plans */}
+      <div className="mb-4 inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
+        {SCOPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => setScope(opt.id)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+              scope === opt.id
+                ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            )}
+          >
+            {opt.label}
+            {opt.id === "sharedWithMe" && !!sharedWithMeCount && (
+              <span
+                className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold",
+                  scope === "sharedWithMe"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300"
+                    : "bg-gray-200 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                )}
+              >
+                {sharedWithMeCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Filters Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white dark:bg-surface rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-3 mb-6">
+        <div className="flex flex-col lg:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search by plan number, title, or location..."
+              placeholder="Search by plan number, title, facilitator, or pillar number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-white/5 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-surface focus:border-blue-200 transition-colors"
             />
           </div>
 
-          <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-            <Button
-              variant={showFilters ? "default" : "outline"}
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
+              className={cn(
+                "inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium border transition-colors",
+                showFilters
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-white dark:bg-surface border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+              )}
             >
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">Filters</span>
               {hasActiveFilters() && (
-                <Badge className="ml-1 bg-white text-blue-600 hover:bg-white">
+                <span
+                  className={cn(
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
+                    showFilters ? "bg-white/25 text-white" : "bg-blue-100 text-blue-700"
+                  )}
+                >
                   {filters.status.length +
                     filters.planType.length +
                     (filters.dateFrom ? 1 : 0) +
                     (filters.dateTo ? 1 : 0)}
-                </Badge>
+                </span>
               )}
-            </Button>
+            </button>
 
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <div className="flex bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/15 rounded-lg p-1 gap-1">
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "px-3 py-2 transition-colors",
+                  "px-2.5 py-1.5 rounded-md transition-colors",
                   viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-white dark:bg-surface text-blue-600 shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
                 )}
                 title="List view"
               >
@@ -969,10 +1148,10 @@ export default function AllPlans() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "px-3 py-2 transition-colors border-l border-gray-300",
+                  "px-2.5 py-1.5 rounded-md transition-colors",
                   viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    ? "bg-white dark:bg-surface text-blue-600 shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
                 )}
                 title="Grid view"
               >
@@ -983,7 +1162,7 @@ export default function AllPlans() {
             <button
               onClick={handleExport}
               disabled={plans.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export</span>
@@ -1001,12 +1180,12 @@ export default function AllPlans() {
             exit={{ opacity: 0, height: 0 }}
             className="mb-4 overflow-hidden"
           >
-            <div className="flex flex-wrap gap-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex flex-wrap gap-2 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/20">
               {filters.status.map((status) => (
                 <Badge
                   key={status}
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">Status: {status}</span>
                   <X
@@ -1019,7 +1198,7 @@ export default function AllPlans() {
                 <Badge
                   key={type}
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">Type: {type}</span>
                   <X
@@ -1031,7 +1210,7 @@ export default function AllPlans() {
               {filters.dateFrom && (
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">
                     From: {format(filters.dateFrom, "MMM d, yyyy")}
@@ -1045,7 +1224,7 @@ export default function AllPlans() {
               {filters.dateTo && (
                 <Badge
                   variant="secondary"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-surface"
                 >
                   <span className="text-xs font-medium">
                     To: {format(filters.dateTo, "MMM d, yyyy")}
@@ -1078,11 +1257,11 @@ export default function AllPlans() {
             exit={{ opacity: 0, height: 0 }}
             className="mb-6 overflow-hidden"
           >
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-surface rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Status
                   </label>
                   <div className="space-y-2.5">
@@ -1095,9 +1274,9 @@ export default function AllPlans() {
                           type="checkbox"
                           checked={filters.status.includes(status)}
                           onChange={() => handleStatusChange(status)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         />
-                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 transition-colors">
                           {status.replace("_", " ")}
                         </span>
                       </label>
@@ -1107,7 +1286,7 @@ export default function AllPlans() {
 
                 {/* Plan Type Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Plan Type
                   </label>
                   <div className="space-y-2.5 max-h-48 overflow-y-auto pr-2">
@@ -1120,9 +1299,9 @@ export default function AllPlans() {
                           type="checkbox"
                           checked={filters.planType.includes(type)}
                           onChange={() => handlePlanTypeChange(type)}
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                         />
-                        <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                        <span className="ml-3 text-sm text-gray-700 dark:text-gray-300 group-hover:text-gray-900 transition-colors">
                           {type}
                         </span>
                       </label>
@@ -1132,7 +1311,7 @@ export default function AllPlans() {
 
                 {/* Date Range Filter */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
                     Date Range
                   </label>
 
@@ -1144,8 +1323,8 @@ export default function AllPlans() {
                           "w-full h-auto transition-all duration-200",
                           "py-2 px-3 sm:py-3 sm:px-4",
                           "justify-between text-left font-normal",
-                          "bg-white hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
-                          "border-2 border-gray-200 hover:border-blue-300",
+                          "bg-white dark:bg-surface hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50",
+                          "border-2 border-gray-200 dark:border-white/10 hover:border-blue-300",
                           "shadow-sm hover:shadow-md",
                           !filters.dateFrom &&
                           !filters.dateTo &&
@@ -1174,7 +1353,7 @@ export default function AllPlans() {
                                   </span>
                                 </div>
                                 <svg
-                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 shrink-0"
+                                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500 shrink-0"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -1203,10 +1382,10 @@ export default function AllPlans() {
                               </div>
                             ) : (
                               <div className="flex flex-col">
-                                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                                   Select Date Range
                                 </span>
-                                <span className="text-[0.65rem] sm:text-xs text-gray-500 hidden sm:block">
+                                <span className="text-[0.65rem] sm:text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
                                   Choose from presets or custom dates
                                 </span>
                               </div>
@@ -1214,7 +1393,7 @@ export default function AllPlans() {
                           </div>
                         </div>
                         <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0"
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500 shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1229,13 +1408,13 @@ export default function AllPlans() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200"
+                      className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-6xl p-2 shadow-2xl border-2 border-gray-200 dark:border-white/10"
                       align="start"
                     >
                       <div className="flex flex-col lg:flex-row max-h-[80vh] overflow-auto">
                         {/* Preset Options - Enhanced Design */}
-                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
-                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-white">
+                        <div className="border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-white/10 bg-linear-to-br from-gray-50 to-white lg:min-w-[200px]">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-surface">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-md">
                                 <svg
@@ -1252,7 +1431,7 @@ export default function AllPlans() {
                                   />
                                 </svg>
                               </div>
-                              <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
                                 Quick Select
                               </h3>
                             </div>
@@ -1358,7 +1537,7 @@ export default function AllPlans() {
                               <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-orange-500 mr-2 sm:mr-3"></span>
                               Last year
                             </Button>
-                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200">
+                            <div className="pt-2 sm:pt-2.5 lg:pt-3 mt-2 sm:mt-2.5 lg:mt-3 border-t border-gray-200 dark:border-white/10">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1388,14 +1567,14 @@ export default function AllPlans() {
                         </div>
 
                         {/* Calendar Pickers - Side by Side on Desktop */}
-                        <div className="bg-white flex-1">
-                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 bg-linear-to-r from-blue-50 to-purple-50">
+                        <div className="bg-white dark:bg-surface flex-1">
+                          <div className="p-3 sm:p-4 lg:p-5 border-b border-gray-200 dark:border-white/10 bg-linear-to-r from-blue-50 to-purple-50">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 sm:p-2 bg-linear-to-br from-blue-500 to-blue-600 rounded-md shadow-sm">
                                   <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                                 </div>
-                                <span className="text-xs sm:text-sm font-bold text-gray-900">
+                                <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                                   Custom Range
                                 </span>
                               </div>
@@ -1406,7 +1585,7 @@ export default function AllPlans() {
                               <div>
                                 <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
                                   <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-blue-500 to-blue-600 rounded-full"></div>
-                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                                     Start Date
                                   </label>
                                 </div>
@@ -1431,7 +1610,7 @@ export default function AllPlans() {
                               <div>
                                 <div className="mb-2 sm:mb-3 lg:mb-4 flex items-center gap-2">
                                   <div className="w-1 h-4 sm:h-5 bg-linear-to-b from-purple-500 to-purple-600 rounded-full"></div>
-                                  <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                  <label className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                                     End Date
                                   </label>
                                 </div>
@@ -1467,12 +1646,12 @@ export default function AllPlans() {
 
       {/* Plans Table/Grid */}
       {viewMode === "list" ? (
-        <div className="grid grid-cols-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="grid grid-cols-1 bg-white dark:bg-surface rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-100 dark:divide-white/10">
+              <thead className="bg-gray-50/80 dark:bg-white/5">
                 <tr>
-                  <th className="px-6 py-3 text-left">
+                  <th className="px-6 py-3.5 text-left">
                     <Checkbox
                       checked={
                         plans.length > 0 &&
@@ -1482,37 +1661,39 @@ export default function AllPlans() {
                       aria-label="Select all"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Plan Details
                   </th>
-                  <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden lg:table-cell px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Location
                   </th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Facilitator
                   </th>
-                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden md:table-cell px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Survey Date
                   </th>
-                  <th className="hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="hidden xl:table-cell px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Updated
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3.5 text-right text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-surface divide-y divide-gray-100 dark:divide-white/10">
                 {plans.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No plans found</p>
-                      <p className="text-sm text-gray-400 mt-1">
+                    <td colSpan={6} className="px-6 py-16 text-center">
+                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 dark:bg-white/5">
+                        <FileText className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 font-medium">No plans found</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                         Try adjusting your search or filters
                       </p>
                     </td>
@@ -1524,7 +1705,7 @@ export default function AllPlans() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2, delay: index * 0.03 }}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-gray-50/80 dark:hover:bg-white/5 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <Checkbox
@@ -1535,26 +1716,30 @@ export default function AllPlans() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
-                          <div className="p-2 bg-blue-50 rounded-lg shrink-0">
-                            <FileText className="w-5 h-5 text-blue-600" />
+                          <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0 ring-1 ring-inset ring-blue-100 dark:ring-blue-500/20">
+                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div className="min-w-0">
                             <Link
                               href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                              className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors block max-w-xs"
+                              className="font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 transition-colors block max-w-xs"
                               title={plan.planNumber || "N/A"}
                             >
                               {plan.planNumber || "N/A"}
                             </Link>
 
                             <div
-                              className="text-sm text-gray-600 truncate max-w-xs"
+                              className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs"
                               title={plan.surveyTitle || "Untitled"}
                             >
                               {plan.surveyTitle || "Untitled"}
                             </div>
 
-                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+                            <div className="mt-1">
+                              <SharedBadge plan={plan} />
+                            </div>
+
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
                               <span>{plan?.pillars?.length || 0} pillars</span>
                               <span>•</span>
                               <span>
@@ -1563,7 +1748,7 @@ export default function AllPlans() {
                               <span>•</span>
                               {plan.redCopyFileUrl ? (
                                 <span
-                                  className="inline-flex items-center gap-1 text-green-600"
+                                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"
                                   title="Record copy uploaded"
                                 >
                                   <CheckCircle className="w-3 h-3" />
@@ -1571,7 +1756,7 @@ export default function AllPlans() {
                                 </span>
                               ) : (
                                 <span
-                                  className="inline-flex items-center gap-1 text-amber-600"
+                                  className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"
                                   title="Record copy not uploaded"
                                 >
                                   <Clock className="w-3 h-3" />
@@ -1598,29 +1783,29 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden lg:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div className="min-w-0">
                             {plan.ward && (
-                              <div className="text-sm text-gray-900 truncate">
+                              <div className="text-sm text-gray-900 dark:text-white truncate">
                                 {plan.ward}
                               </div>
                             )}
                             {plan.lga && (
-                              <div className="text-xs text-gray-500 truncate">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {plan.lga}
                               </div>
                             )}
                             {!plan.ward && !plan.lga && (
-                              <div className="text-sm text-gray-500">N/A</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">N/A</div>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                           <div
-                            className="text-sm text-gray-900 truncate max-w-[150px]"
+                            className="text-sm text-gray-900 dark:text-white truncate max-w-[150px]"
                             title={plan.facilitator || "N/A"}
                           >
                             {plan.facilitator || "N/A"}
@@ -1655,8 +1840,8 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div className="text-sm text-gray-900">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {plan.dateOnSurveyPlan
                               ? new Date(
                                 plan.dateOnSurveyPlan
@@ -1667,8 +1852,8 @@ export default function AllPlans() {
                       </td>
                       <td className="hidden xl:table-cell px-6 py-4">
                         <div className="flex items-start gap-2">
-                          <CalendarIcon className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div className="text-sm text-gray-900">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5" />
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {plan.updatedAt
                               ? new Date(plan.updatedAt).toLocaleDateString()
                               : "N/A"}
@@ -1680,7 +1865,7 @@ export default function AllPlans() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                                 title="More actions"
                               >
                                 <MoreVertical className="w-4 h-4" />
@@ -1693,6 +1878,333 @@ export default function AllPlans() {
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
+                              {scope !== "sharedWithMe" && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditPlan(plan.id)}
+                                    disabled={isPlanLocked(plan)}
+                                    className={
+                                      isPlanLocked(plan)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    {isPlanLocked(plan)
+                                      ? "Edit Plan (Locked)"
+                                      : "Edit Plan"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      if (!isKycValidated) {
+                                        toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
+                                        return;
+                                      }
+                                      setSelectedPlans([plan.id]);
+                                      setBatchModalOpen(true);
+                                    }}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Submit for Certificate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleGenerateQrCode(plan.id)}
+                                  >
+                                    <QrCode className="w-4 h-4 mr-2" />
+                                    QR Code
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteClick(plan.id)}
+                                    disabled={
+                                      (isDeleting && planToDelete === plan.id) ||
+                                      isPlanLocked(plan)
+                                    }
+                                    className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                      }`}
+                                  >
+                                    {isDeleting && planToDelete === plan.id ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                    )}
+                                    {isDeleting && planToDelete === plan.id
+                                      ? "Deleting..."
+                                      : isPlanLocked(plan)
+                                        ? "Delete (Locked)"
+                                        : "Delete Plan"}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {plans.length > 0 && (
+            <div className="bg-gray-50/60 dark:bg-white/5 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-100 dark:border-white/10 gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Showing{" "}
+                <span className="font-medium">
+                  {(pagination.page - 1) * pagination.pageSize + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(
+                    pagination.page * pagination.pageSize,
+                    pagination.total
+                  )}
+                </span>{" "}
+                of <span className="font-medium">{pagination.total}</span> plans
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={pagination.pageSize.toString()}
+                  onValueChange={handlePageSizeChange}
+                >
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 20, 50].map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        Show {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(1)}
+                    disabled={pagination.page === 1}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.totalPages)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="h-9 w-9 p-0"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Grid View */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-16">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 dark:bg-white/5">
+                <FileText className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 font-medium">No plans found</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            plans.map((plan, index) => (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
+                <Card className="rounded-xl border-gray-100 dark:border-white/10 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 relative">
+                  {/* Selection Checkbox for Grid */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <Checkbox
+                      checked={selectedPlans.includes(plan.id)}
+                      onCheckedChange={() => handleSelectPlan(plan.id)}
+                      className="bg-white/80 backdrop-blur-xs border-gray-300 dark:border-white/15 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                  </div>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg shrink-0 ring-1 ring-inset ring-blue-100 dark:ring-blue-500/20">
+                          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            href={`/surfboard/dashboard/plan?planId=${plan.id}`}
+                          >
+                            <CardTitle className="text-base truncate hover:text-blue-600 transition-colors cursor-pointer">
+                              {plan.planNumber || "N/A"}
+                            </CardTitle>
+                          </Link>
+                          <CardDescription className="text-sm truncate">
+                            {plan.surveyTitle || "Untitled"}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            getDisplayStatus(plan)
+                          )}`}
+                        >
+                          {getStatusIcon(getDisplayStatus(plan))}
+                        </span>
+                        {/* Queried Indicator */}
+                        {isQueried(plan) && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                            title={`Queried by ${getQueryInfo(plan).queriedBy}${getQueryInfo(plan).comment
+                                ? `: ${getQueryInfo(plan).comment}`
+                                : ""
+                              }`}
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            Queried
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Location with LGA/Ward hierarchy like list view */}
+                    <div className="flex items-start gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        {plan.ward && (
+                          <div className="text-sm text-gray-900 dark:text-white truncate">
+                            {plan.ward}
+                          </div>
+                        )}
+                        {plan.lga && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {plan.lga}
+                          </div>
+                        )}
+                        {!plan.ward && !plan.lga && (
+                          <span className="text-gray-600 dark:text-gray-400">N/A</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Facilitator */}
+                    <div className="flex items-start gap-2 text-sm">
+                      <User className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                      <span
+                        className="text-gray-600 dark:text-gray-400 truncate"
+                        title={plan.facilitator || "N/A"}
+                      >
+                        {plan.facilitator || "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Pillars and Area */}
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <span>{plan.pillars?.length || 0} pillars</span>
+                      <span>•</span>
+                      <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
+                    </div>
+
+                    <SharedBadge plan={plan} />
+
+                    {/* Record Copy Status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {plan.redCopyFileUrl ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Record Copy Uploaded</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-full">
+                          <Clock className="w-3 h-3" />
+                          <span>No Record Copy</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Survey Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600 dark:text-gray-400">Survey:</span>
+                      <span>
+                        {plan.dateOnSurveyPlan
+                          ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
+                          : "No date"}
+                      </span>
+                    </div>
+
+                    {/* Updated Date */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="font-medium text-gray-600 dark:text-gray-400">
+                        Updated:
+                      </span>
+                      <span>
+                        {plan.updatedAt
+                          ? new Date(plan.updatedAt).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleViewPlan(plan.id)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="px-3">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => handleViewPlan(plan.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          {scope !== "sharedWithMe" && (
+                            <>
                               <DropdownMenuItem
                                 onClick={() => handleEditPlan(plan.id)}
                                 disabled={isPlanLocked(plan)}
@@ -1748,323 +2260,8 @@ export default function AllPlans() {
                                     ? "Delete (Locked)"
                                     : "Delete Plan"}
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {plans.length > 0 && (
-            <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
-              <div className="text-sm text-gray-600">
-                Showing{" "}
-                <span className="font-medium">
-                  {(pagination.page - 1) * pagination.pageSize + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(
-                    pagination.page * pagination.pageSize,
-                    pagination.total
-                  )}
-                </span>{" "}
-                of <span className="font-medium">{pagination.total}</span> plans
-              </div>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={pagination.pageSize.toString()}
-                  onValueChange={handlePageSizeChange}
-                >
-                  <SelectTrigger className="w-[110px] h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[5, 10, 20, 50].map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        Show {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(1)}
-                    disabled={pagination.page === 1}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.totalPages)}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className="h-9 w-9 p-0"
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Grid View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-12">
-              <FileText className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-gray-500">No plans found</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          ) : (
-            plans.map((plan, index) => (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-              >
-                <Card className="hover:shadow-lg transition-shadow relative">
-                  {/* Selection Checkbox for Grid */}
-                  <div className="absolute top-3 right-3 z-10">
-                    <Checkbox
-                      checked={selectedPlans.includes(plan.id)}
-                      onCheckedChange={() => handleSelectPlan(plan.id)}
-                      className="bg-white/80 backdrop-blur-xs border-gray-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                    />
-                  </div>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="p-2 bg-blue-50 rounded-lg shrink-0">
-                          <FileText className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                          >
-                            <CardTitle className="text-base truncate hover:text-blue-600 transition-colors cursor-pointer">
-                              {plan.planNumber || "N/A"}
-                            </CardTitle>
-                          </Link>
-                          <CardDescription className="text-sm truncate">
-                            {plan.surveyTitle || "Untitled"}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                            getDisplayStatus(plan)
-                          )}`}
-                        >
-                          {getStatusIcon(getDisplayStatus(plan))}
-                        </span>
-                        {/* Queried Indicator */}
-                        {isQueried(plan) && (
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
-                            title={`Queried by ${getQueryInfo(plan).queriedBy}${getQueryInfo(plan).comment
-                                ? `: ${getQueryInfo(plan).comment}`
-                                : ""
-                              }`}
-                          >
-                            <AlertTriangle className="w-3 h-3" />
-                            Queried
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Location with LGA/Ward hierarchy like list view */}
-                    <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        {plan.ward && (
-                          <div className="text-sm text-gray-900 truncate">
-                            {plan.ward}
-                          </div>
-                        )}
-                        {plan.lga && (
-                          <div className="text-xs text-gray-500 truncate">
-                            {plan.lga}
-                          </div>
-                        )}
-                        {!plan.ward && !plan.lga && (
-                          <span className="text-gray-600">N/A</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Facilitator */}
-                    <div className="flex items-start gap-2 text-sm">
-                      <User className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                      <span
-                        className="text-gray-600 truncate"
-                        title={plan.facilitator || "N/A"}
-                      >
-                        {plan.facilitator || "N/A"}
-                      </span>
-                    </div>
-
-                    {/* Pillars and Area */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{plan.pillars?.length || 0} pillars</span>
-                      <span>•</span>
-                      <span>{(plan.areaSqM || 0).toLocaleString()} m²</span>
-                    </div>
-
-                    {/* Record Copy Status */}
-                    <div className="flex items-center gap-2 text-xs">
-                      {plan.redCopyFileUrl ? (
-                        <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>Record Copy Uploaded</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                          <Clock className="w-3 h-3" />
-                          <span>No Record Copy</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Survey Date */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-gray-600">Survey:</span>
-                      <span>
-                        {plan.dateOnSurveyPlan
-                          ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
-                          : "No date"}
-                      </span>
-                    </div>
-
-                    {/* Updated Date */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-gray-600">
-                        Updated:
-                      </span>
-                      <span>
-                        {plan.updatedAt
-                          ? new Date(plan.updatedAt).toLocaleDateString()
-                          : "N/A"}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 pt-3 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleViewPlan(plan.id)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="px-3">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => handleViewPlan(plan.id)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleEditPlan(plan.id)}
-                            disabled={isPlanLocked(plan)}
-                            className={
-                              isPlanLocked(plan)
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            {isPlanLocked(plan)
-                              ? "Edit Plan (Locked)"
-                              : "Edit Plan"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!isKycValidated) {
-                                toast.error("You must complete your KYC validation in the Settings page to submit plans for CoD.");
-                                return;
-                              }
-                              setSelectedPlans([plan.id]);
-                              setBatchModalOpen(true);
-                            }}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Submit for Certificate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleGenerateQrCode(plan.id)}
-                          >
-                            <QrCode className="w-4 h-4 mr-2" />
-                            QR Code
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(plan.id)}
-                            disabled={
-                              (isDeleting && planToDelete === plan.id) ||
-                              isPlanLocked(plan)
-                            }
-                            className={`text-red-600 focus:text-red-600 focus:bg-red-50 ${isPlanLocked(plan)
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                              }`}
-                          >
-                            {isDeleting && planToDelete === plan.id ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4 mr-2" />
-                            )}
-                            {isDeleting && planToDelete === plan.id
-                              ? "Deleting..."
-                              : isPlanLocked(plan)
-                                ? "Delete (Locked)"
-                                : "Delete Plan"}
-                          </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -2078,8 +2275,8 @@ export default function AllPlans() {
 
       {/* Pagination for Grid View */}
       {viewMode === "grid" && plans.length > 0 && (
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
+        <div className="mt-6 bg-white dark:bg-surface rounded-xl shadow-sm border border-gray-200 dark:border-white/10 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Showing{" "}
             <span className="font-medium">
               {(pagination.page - 1) * pagination.pageSize + 1}
@@ -2128,7 +2325,7 @@ export default function AllPlans() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded min-w-[100px] text-center">
+              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-surface border border-gray-200 dark:border-white/15 rounded-lg min-w-[100px] text-center">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <Button
@@ -2184,10 +2381,10 @@ export default function AllPlans() {
                         </div>
 
                         <div className="text-center space-y-1">
-                          <p className="text-base font-semibold text-gray-900">
+                          <p className="text-base font-semibold text-gray-900 dark:text-white">
                             Refreshing Plan Data
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Please wait while we update the information...
                           </p>
                         </div>
@@ -2240,10 +2437,10 @@ export default function AllPlans() {
                           </div>
                         </div>
                         <div className="text-center space-y-1">
-                          <p className="text-base font-semibold text-gray-900">
+                          <p className="text-base font-semibold text-gray-900 dark:text-white">
                             Saving Changes
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             Please wait while we save your updates...
                           </p>
                         </div>
@@ -2292,11 +2489,11 @@ export default function AllPlans() {
             <DialogTitle>Plan QR Code</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            <div className="p-4 bg-white rounded-lg border">
+            <div className="p-4 bg-white dark:bg-surface rounded-lg border">
               {isGeneratingQr || !qrCodeDataUrl ? (
                 <div className="w-64 h-64 flex flex-col items-center justify-center gap-3">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-                  <p className="text-sm text-gray-600 font-medium">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                     Generating QR Code...
                   </p>
                 </div>
@@ -2342,6 +2539,14 @@ export default function AllPlans() {
         selectedCount={selectedPlans.length}
         onSubmit={handleBatchSubmit}
         onClear={() => setSelectedPlans([])}
+        onShare={handleBulkShare}
+      />
+
+      <BulkSharePlanModal
+        isOpen={showBulkShareModal}
+        onClose={() => setShowBulkShareModal(false)}
+        onShared={() => loadPlans()}
+        plans={plans.filter((p) => selectedPlans.includes(p.id))}
       />
 
       {/* Record Copy Upload Modal */}

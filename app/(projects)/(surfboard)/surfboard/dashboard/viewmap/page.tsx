@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
 
 const samplePlans = [
   {
@@ -36,7 +37,12 @@ export default function MapViewerPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold text-blue-900 mb-6">Map Viewer</h1>
+      <h1
+        className="text-2xl font-bold mb-6"
+        style={{ color: SURFBOARD_COLORS.primary.dark }}
+      >
+        Map Viewer
+      </h1>
       <div className="mb-4 flex flex-col md:flex-row gap-4 items-center justify-between">
         <input
           type="text"
@@ -47,15 +53,23 @@ export default function MapViewerPage() {
         />
         {/* TODO: Add more filter controls if needed */}
       </div>
-      <div className="w-full h-[500px] bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+      <div
+        className="w-full h-[500px] rounded-xl flex items-center justify-center mb-6"
+        style={{ backgroundColor: SURFBOARD_COLORS.surface.main }}
+      >
         {/* TODO: Integrate ArcGIS/Google Maps here. Render polygons for filteredPlans. */}
-        <span className="text-blue-700">[Map Placeholder]</span>
+        <span style={{ color: SURFBOARD_COLORS.primary.main }}>
+          [Map Placeholder]
+        </span>
       </div>
       {/* Popup for plan details */}
       {selectedPlan && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-            <h2 className="text-xl font-bold text-blue-900 mb-2">
+          <div className="bg-white dark:bg-surface rounded-xl shadow-lg p-8 max-w-md w-full">
+            <h2
+              className="text-xl font-bold mb-2"
+              style={{ color: SURFBOARD_COLORS.primary.dark }}
+            >
               {selectedPlan.title}
             </h2>
             <p className="mb-1">
@@ -71,7 +85,7 @@ export default function MapViewerPage() {
               <b>Status:</b> {selectedPlan.status}
             </p>
             <button
-              className="mt-4 px-6 py-2 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition"
+              className="mt-4 px-6 py-2 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition"
               onClick={() => setSelectedPlan(null)}
             >
               Close

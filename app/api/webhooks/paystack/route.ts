@@ -2,10 +2,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import * as mailer from "@/utils/email";
-import * as reva from "@/app/(projects)/reva/actions/revaActions2";
+import {
+  updatePropertyTransactionStatus,
+  updateOneTimeTransactionStatus,
+} from "@/reva/services/propertyRequestService";
+import { notifyPaymentReceived as notifyRevaPaymentReceived } from "@/reva/services/notificationService";
 import { computePeriodPerTimestamp } from "@/app/(projects)/(surfboard)/utils/computePeriod";
+import { verifyPayment as verifyGBCTicketPayment } from "@/gbc/services/ticketService";
+import { createOrUpdateSubscription } from "@/surfboard/services/subscriptionService";
 import { SUBSCRIPTION_PLANS, type PlanId } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import { createOrUpdateSubscription } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -148,8 +153,7 @@ export async function POST(req: NextRequest) {
     } else if (platform === "reva") {
       await handleReva(event, data as any);
     } else if (platform === "gbc") {
-      // For now, GBC events are logged but not processed here
-      await onUnhandled(event, data);
+      await handleGBC(event, data as any);
     } else {
       await onUnhandled(event, data);
     }
@@ -342,8 +346,11 @@ async function handleSurfboard(
       await onInvoiceInformational(event, data as InvoiceData);
       break;
     case "charge.success":
-      // Check if this is a certificate payment, a one-time subscription
-      // payment, or a recurring subscription renewal — in that order.
+      // Check if this is a certificate payment, a one-time (non-recurring)
+      // subscription payment, or a recurring subscription renewal — in that
+      // order, since a one-time subscription charge has no plan/plan_object/
+      // subscription and would otherwise be silently skipped by
+      // onSubscriptionChargeSuccess's "not a subscription charge" guard.
       if (isCertificatePayment(data as ChargeSuccessData)) {
         await onCertificatePaymentSuccess(data as ChargeSuccessData);
       } else if (isOneTimeSubscriptionPayment(data as ChargeSuccessData)) {
@@ -647,6 +654,52 @@ async function onInvoicePaymentFailed(data: InvoiceData) {
 }
 
 // ---- Recurring charge success (renewal) ----
+// ---- One-time (non-recurring) subscription payment ----
+// Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
+// call (app/api/v1/surfboard/subscription/verify-onetime/route.ts) — mirrors
+// onSubscriptionChargeSuccess below but reads planId from metadata (there's
+// no plan_object/subscription on a no-`plan` charge) and goes through the
+// upsert-safe createOrUpdateSubscription rather than a raw update, since this
+// webhook can in principle arrive before the client's own verify call does.
+async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
+  if (!prisma) return;
+
+  const userId = await findSurfboardUserIdFromEvent(data);
+  if (!userId) {
+    console.warn("⚠️ charge.success (one-time subscription): SurfboardUser not found");
+    return;
+  }
+
+  const meta = data.metadata ?? {};
+  const planId = meta.plan_id as PlanId | undefined;
+  if (!planId || !SUBSCRIPTION_PLANS[planId]) {
+    console.warn(`⚠️ charge.success (one-time subscription): missing/invalid plan_id in metadata (${planId})`);
+    return;
+  }
+
+  const customerId = data.customer?.id;
+  const customerCode = data.customer?.customer_code;
+  const authorization = data.authorization?.authorization_code ?? "";
+  const paidAt = data.paid_at;
+
+  await createOrUpdateSubscription({
+    userId,
+    reference: data.reference || `REF-${Date.now()}`,
+    subCode: "",
+    emailToken: "",
+    planId,
+    customerCode: customerCode ?? "",
+    customerId: customerId ? String(customerId) : "",
+    authorization,
+    status: "active",
+    paidAt,
+    skipHistory: false,
+    provider: "paystack_onetime",
+  });
+
+  console.log(`✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`);
+}
+
 async function onSubscriptionChargeSuccess(data: ChargeSuccessData) {
   if (!prisma) return;
 
@@ -757,37 +810,119 @@ async function onInvoiceInformational(event: string, data: InvoiceData) {
 }
 
 // ─────────────────────────── Reva (one‑time) ───────────────────────────
-async function handleReva(event: string, data: ChargeSuccessData) {
+/**
+ * Migrated off revaActions2.ts (which was dead everywhere else in the repo
+ * but live here — see docs/development-history/phases/phase-3-reva.md's
+ * "corrections" section) onto propertyRequestService.ts/notificationService.ts.
+ * Rewritten more defensively than the version it replaces, in the same
+ * spirit as this file's own onCertificatePaymentSuccess (the Surfboard
+ * equivalent) rather than just swapping imports 1:1 — this file processes
+ * three products' webhooks, so a REVA-specific bug here has historically
+ * been easy to miss:
+ *  - Uses normalizeMetadata() (the same helper detectPlatform() above
+ *    already relies on) instead of reading data.metadata directly — the
+ *    source read it raw, so a stringified metadata payload would have
+ *    routed correctly but then failed to parse here.
+ *  - Looks the record up first and returns cleanly (no throw, no retry)
+ *    if it's missing or already Paid, instead of letting a bare
+ *    optional-chained call silently no-op on a missing function — a real
+ *    misconfiguration (e.g. a bad import) now surfaces as a thrown error
+ *    the outer handler logs and Paystack retries, not silence.
+ *  - Reconciles the paid amount against the record's totalCost the same
+ *    way onCertificatePaymentSuccess already does for Surfboard — logs a
+ *    mismatch rather than failing, since Paystack's signature already
+ *    guarantees the payload is authentic and a stuck payer is worse than
+ *    a flagged-for-review one.
+ *  - Passes the already-updated row straight into notifyPaymentReceived
+ *    instead of the source's separate re-fetch call.
+ */
+/** Exported for direct unit testing (see app/api/webhooks/__tests__/) — not called from outside this file otherwise. */
+export async function handleReva(event: string, data: ChargeSuccessData) {
   if (event !== "charge.success") return onUnhandled(event, data as any);
-  const m = data.metadata ?? {};
-  const ref = (m.reference ||
-    getField(m.custom_fields, "reference") ||
+
+  const meta = normalizeMetadata(data.metadata);
+  const reference = (meta.reference ||
+    getField(meta.custom_fields, "reference") ||
     data.reference) as string | undefined;
-  const isAuth = Boolean(
-    m.isAuthenticated || getField(m.custom_fields, "isAuthenticated")
+  const isAuthenticated = Boolean(
+    meta.isAuthenticated || getField(meta.custom_fields, "isAuthenticated") === "true"
   );
-  if (!ref) {
-    console.warn("[reva] missing reference");
+
+  if (!reference) {
+    console.warn("[reva-webhook] charge.success missing reference", { event });
     return;
   }
 
-  const updateFn = isAuth
-    ? reva?.updatePropertyTransactionStatus
-    : reva?.updateOneTimeTransactionStatus;
-  await updateFn?.(ref, "Completed", "Paid", "Payment confirmed", null);
+  const existing = isAuthenticated
+    ? await prisma.property.findUnique({ where: { reference } })
+    : await prisma.oneTimeUserProperty.findUnique({ where: { reference } });
 
-  try {
-    const tx = await (isAuth
-      ? reva?.authGetTransactionData?.(ref)
-      : reva?.getTransactionData?.(ref));
-    const dataObj = tx?.data ?? tx;
-    if ((tx?.success || dataObj) && reva?.notifyPaymentReceived)
-      await reva.notifyPaymentReceived(dataObj, undefined);
-  } catch (e) {
-    console.warn("[reva] notifyPaymentReceived failed", e);
+  if (!existing) {
+    console.warn(
+      `[reva-webhook] no ${isAuthenticated ? "Property" : "OneTimeUserProperty"} found for reference ${reference} — nothing to update`
+    );
+    return;
   }
 
-  console.log(`✅ reva charge.success: ${ref}`);
+  if (existing.paymentStatus === "Paid") {
+    console.log(`[reva-webhook] ${reference} already marked Paid (idempotent, likely already confirmed client-side)`);
+    return;
+  }
+
+  const expectedKobo = Math.round((existing.totalCost ?? 0) * 100);
+  const paidKobo = data.amount ?? 0;
+  if (Math.abs(expectedKobo - paidKobo) > 1) {
+    console.error(`[reva-webhook] amount mismatch for ${reference}`, { expectedKobo, paidKobo });
+    // Log but don't fail — matches onCertificatePaymentSuccess's own choice
+    // for the same situation: still confirm the payment for manual review
+    // rather than leaving a real payer stuck.
+  }
+
+  const updated = isAuthenticated
+    ? await updatePropertyTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null)
+    : await updateOneTimeTransactionStatus(reference, "Processing", "Paid", "Payment completed successfully", null);
+
+  await notifyRevaPaymentReceived(updated, isAuthenticated ? (updated as any).userId ?? undefined : undefined);
+
+  console.log(`✅ [reva-webhook] charge.success confirmed: ${reference}`);
+}
+
+/**
+ * Closes the gap this file's platform dispatch had for GBC — events used to
+ * just fall through to onUnhandled(), so a ticket's only path from PENDING
+ * to COMPLETED was the success page's client-side redirect actually
+ * reaching the browser; if that redirect never happened (closed tab,
+ * network failure mid-redirect, abandoned after paying), the ticket sat
+ * PENDING forever with no fallback. Wired onto ticketService.verifyPayment
+ * (spec step 11) — the same function the success page calls, so this is a
+ * safety net using the identical verification logic, not a second
+ * implementation to keep in sync.
+ *
+ * The success page (gbc/tickets/success/page.tsx) itself still calls the
+ * old verifyGBCPayment from ticket-actions.ts, not repointed here — matches
+ * this phase's established scope (unmigrated consumers stay on the legacy
+ * action file until their own dedicated repointing pass). Both paths are
+ * individually idempotent (Paystack's own verify call, plus the
+ * already-COMPLETED check below), so having two call sites during the
+ * transition is safe.
+ */
+export async function handleGBC(event: string, data: ChargeSuccessData) {
+  if (event !== "charge.success") return onUnhandled(event, data as any);
+
+  const reference = data.reference;
+  if (!reference) {
+    console.warn("[gbc-webhook] charge.success missing reference", { event });
+    return;
+  }
+
+  const tickets = await prisma.gBCTicket.findMany({ where: { paymentRef: reference } });
+  if (tickets.length > 0 && tickets.every((t) => t.paymentStatus === "COMPLETED")) {
+    console.log(`[gbc-webhook] ${reference} already fully COMPLETED (idempotent) — skipping re-verify`);
+    return;
+  }
+
+  await verifyGBCTicketPayment(reference);
+  console.log(`✅ [gbc-webhook] charge.success confirmed: ${reference}`);
 }
 
 // ─────────────────────────── Certificate of Deposit (one-time) ───────────────────────────
@@ -885,8 +1020,20 @@ function normalizeMetadata(input: unknown): Record<string, any> {
   return {};
 }
 
-function escapeHtml(str: string) {
-  return str.replace(
+/**
+ * Pre-existing bug found while live-verifying the REVA repoint (unrelated
+ * to REVA specifically — hits every platform's diagnostic email): diffToHtml
+ * passes JSON.stringify(before/after) straight through, but
+ * JSON.stringify(undefined) returns undefined (not the string "undefined")
+ * whenever a diffed field is new/removed between events — the very common
+ * case of a first-ever webhook for an entity, where every field is "new".
+ * escapeHtml(undefined).replace(...) then threw, caught by the caller's own
+ * try/catch so it never broke webhook processing, but silently dropped the
+ * diagnostic email's diff table. Coercing to a string here fixes it at the
+ * one shared choke point instead of at each of escapeHtml's 6 call sites.
+ */
+function escapeHtml(str: unknown) {
+  return String(str ?? "").replace(
     /[&<>"']/g,
     (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
@@ -935,6 +1082,17 @@ function isSurfboardPlan(planCode?: string): boolean {
   return false;
 }
 
+function isOneTimeSubscriptionPayment(data: ChargeSuccessData): boolean {
+  const meta = data.metadata ?? {};
+
+  if (meta.type === "surfboard_onetime_subscription") return true;
+
+  const ref = data.reference ?? "";
+  if (ref.startsWith("SURFBOARD_ONETIME_SUB_")) return true;
+
+  return false;
+}
+
 function isCertificatePayment(data: ChargeSuccessData): boolean {
   const meta = data.metadata ?? {};
 
@@ -954,63 +1112,6 @@ function isCertificatePayment(data: ChargeSuccessData): boolean {
   }
 
   return false;
-}
-
-/**
- * Checks if a charge.success event is for a one-time (non-recurring)
- * subscription payment — mirrors isCertificatePayment's pattern.
- */
-function isOneTimeSubscriptionPayment(data: ChargeSuccessData): boolean {
-  const meta = data.metadata ?? {};
-  if ((meta as any).type === "surfboard_onetime_subscription") {
-    return true;
-  }
-  const ref = data.reference ?? "";
-  return ref.startsWith("SURFBOARD_ONETIME_SUB_");
-}
-
-// ---- One-time (non-recurring) subscription charge success ----
-// Defense-in-depth backstop alongside the client-driven verifyOneTimeSubscription
-// call — mirrors onSubscriptionChargeSuccess's shape, but there's no
-// plan_object/subscription on this charge (initiateOneTimeSubscription never
-// attaches a plan), so the plan is resolved from metadata.plan_id instead.
-async function onOneTimeSubscriptionChargeSuccess(data: ChargeSuccessData) {
-  if (!prisma) return;
-
-  const userId = await findSurfboardUserIdFromEvent(data);
-  if (!userId) {
-    console.warn("⚠️ one-time charge.success: SurfboardUser not found");
-    return;
-  }
-
-  const meta = (data.metadata ?? {}) as any;
-  const planId = meta.plan_id as PlanId | undefined;
-  const selectedPlan = planId ? SUBSCRIPTION_PLANS[planId] : undefined;
-  if (!selectedPlan) {
-    console.warn(`⚠️ one-time charge.success: unknown plan_id (${planId})`);
-    return;
-  }
-
-  try {
-    await createOrUpdateSubscription({
-      reference: data.reference || `REF-${Date.now()}`,
-      subCode: "",
-      planId: selectedPlan.id,
-      customerCode: data.customer?.customer_code ?? "",
-      customerId: String(data.customer?.id ?? ""),
-      authorization: data.authorization?.authorization_code ?? "",
-      emailToken: "",
-      status: "active",
-      paidAt: data.paid_at,
-      provider: "paystack_onetime",
-      skipHistory: true, // avoid double-counting alongside the client-driven verify call
-    });
-    console.log(
-      `✅ charge.success (one-time subscription): ${data.reference} for user ${userId}`
-    );
-  } catch (error) {
-    console.error("Error handling one-time subscription charge.success:", error);
-  }
 }
 
 /**

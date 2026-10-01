@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PieChartData {
   label: string;
@@ -30,6 +31,7 @@ export function PieChart({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState({ width, height });
   const total = data.reduce((sum, item) => sum + item.value, 0);
+  const { theme } = useTheme();
 
   // Handle window resize
   useEffect(() => {
@@ -99,42 +101,42 @@ export function PieChart({
     
     // Add center text for donut chart
     if (donut && donutValue !== undefined) {
-      ctx.fillStyle = '#1F2937'; // gray-800
+      ctx.fillStyle = theme === 'dark' ? '#F9FAFB' : '#1F2937'; // gray-50 / gray-800
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      
+
       // Main value
       ctx.font = 'bold 24px Inter, sans-serif';
       ctx.fillText(String(donutValue), centerX, centerY - 10);
-      
+
       // Label
       if (donutLabel) {
         ctx.font = '12px Inter, sans-serif';
-        ctx.fillStyle = '#6B7280'; // gray-500
+        ctx.fillStyle = theme === 'dark' ? '#9CA3AF' : '#6B7280'; // gray-400 / gray-500
         ctx.fillText(donutLabel, centerX, centerY + 20);
       }
     }
-  }, [data, dimensions, total, donut, donutLabel, donutValue]);
+  }, [data, dimensions, total, donut, donutLabel, donutValue, theme]);
 
   if (total === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mb-4">{subtitle}</p>}
+      <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
+        {subtitle && <p className="text-sm text-gray-500 mb-4 dark:text-gray-400">{subtitle}</p>}
         <div className="flex items-center justify-center" style={{ height }}>
-          <p className="text-gray-500">No data available</p>
+          <p className="text-gray-500 dark:text-gray-400">No data available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
+        {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
       </div>
-      
+
       <div className="flex flex-col items-center justify-center">
         <div className="relative">
           <canvas
@@ -144,7 +146,7 @@ export function PieChart({
             className="w-full h-auto"
           />
         </div>
-        
+
         <div className="mt-4 w-full">
           <div className="grid grid-cols-2 gap-2">
             {data.map((item, index) => (
@@ -153,8 +155,8 @@ export function PieChart({
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-gray-700 truncate">{item.label}</span>
-                <span className="text-gray-500 ml-auto">
+                <span className="text-gray-700 truncate dark:text-gray-300">{item.label}</span>
+                <span className="text-gray-500 ml-auto dark:text-gray-400">
                   {Math.round((item.value / total) * 100)}%
                 </span>
               </div>

@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2, Home } from "lucide-react";
-import { verifyBatchPayment } from "../../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 function PaymentCallbackContent() {
   const searchParams = useSearchParams();
@@ -33,7 +33,11 @@ function PaymentCallbackContent() {
       }
 
       try {
-        const result = await verifyBatchPayment(reference);
+        // batchId is unused server-side — verifyBatchPayment looks the batch up by reference
+        const result = await surfboardApi.cod.batches.verifyPayment(
+          "_",
+          reference,
+        );
 
         if (result.success) {
           setStatus("success");
@@ -61,7 +65,7 @@ function PaymentCallbackContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-white/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           {status === "loading" && (
@@ -110,10 +114,10 @@ function PaymentCallbackContent() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <p className="text-center text-gray-600">{message}</p>
+          <p className="text-center text-gray-600 dark:text-gray-400">{message}</p>
 
           {status === "success" && (
-            <div className="bg-green-50 p-4 rounded-lg text-sm text-green-800">
+            <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg text-sm text-green-800 dark:text-green-300">
               <p className="font-medium mb-2">What happens next?</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>
@@ -128,7 +132,7 @@ function PaymentCallbackContent() {
           )}
 
           {status === "error" && (
-            <div className="bg-red-50 p-4 rounded-lg text-sm text-red-800">
+            <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-lg text-sm text-red-800 dark:text-red-300">
               <p className="font-medium mb-2">Need help?</p>
               <p>
                 If you believe this is an error, please contact our support team
@@ -155,7 +159,7 @@ export default function PaymentCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-white/5">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
         </div>
       }

@@ -23,11 +23,7 @@ import {
   ArrowRight,
   Info,
 } from "lucide-react";
-import {
-  initiateQRServicePayment,
-  verifyQRServicePayment,
-  getPlanQRAccessState,
-} from "../actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import {
   Service1Illustration,
@@ -151,14 +147,14 @@ export default function QRPaywallModal({
 
     setLoading(true);
     try {
-      const res = await initiateQRServicePayment(
+      const res = await surfboardApi.qr.initiatePayment({
         planId,
-        selectedService,
+        serviceType: selectedService,
         payerEmail,
-        payerName
-      );
+        payerName,
+      });
 
-      if (!res.success || !res.data) {
+      if (!res.success) {
         toast.error(res.error || "Could not initialize payment");
         setLoading(false);
         return;
@@ -186,15 +182,15 @@ export default function QRPaywallModal({
         },
         callback: function (response: any) {
           toast.loading("Verifying payment...");
-          verifyQRServicePayment(reference, response.reference)
+          surfboardApi.qr.verifyPayment(reference, response.reference)
             .then((verifyRes) => {
-              if (verifyRes.success && verifyRes.accessToken) {
+              if (verifyRes.success && verifyRes.data.accessToken) {
                 toast.dismiss();
                 toast.success("Payment successful! Unlocking 1-hour access.");
-                onPaymentSuccess(verifyRes.accessToken);
+                onPaymentSuccess(verifyRes.data.accessToken);
               } else {
                 toast.dismiss();
-                toast.error(verifyRes.error || "Payment verification failed");
+                toast.error((!verifyRes.success && verifyRes.error) || "Payment verification failed");
               }
               setLoading(false);
             })
@@ -226,12 +222,12 @@ export default function QRPaywallModal({
     const toastId = toast.loading("Verifying access code...");
 
     try {
-      const res = await getPlanQRAccessState(planId, code);
+      const res = await surfboardApi.qr.accessState(planId, code);
 
-      if (res.success && res.accessState === "PAID_ACTIVE") {
+      if (res.success && res.data?.accessState === "PAID_ACTIVE") {
         toast.success("Access code verified!", { id: toastId });
         onPaymentSuccess(code);
-      } else if (res.success && res.accessState === "EXPIRED") {
+      } else if (res.success && res.data?.accessState === "EXPIRED") {
         toast.error("This access code has expired. Please purchase access again.", {
           id: toastId,
         });

@@ -1,4 +1,3 @@
-import ToastProvider from "@/providers/ToastProvider";
 import type { Metadata } from "next/";
 
 export const metadata: Metadata = {
@@ -32,9 +31,13 @@ export const metadata: Metadata = {
     images: ["/favicon.jpg"],
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/gbc2/favicon/favicon.ico", sizes: "any" },
+      { url: "/gbc2/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/gbc2/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/gbc2/favicon/favicon.ico",
+    apple: "/gbc2/favicon/apple-touch-icon.png",
   },
 };
 
@@ -44,8 +47,8 @@ export default function GBCLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ToastProvider>
-      <div className="relative">{children}</div>
-    </ToastProvider>
+    <div className="relative" data-product="gbc">
+      {children}
+    </div>
   );
 }

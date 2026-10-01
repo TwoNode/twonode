@@ -13,15 +13,15 @@ import {
   Zap,
   AlertCircle,
 } from "lucide-react";
-import { getGBCTicketStats } from "../actions/ticket-actions";
-import { getSponsors } from "../actions/sponsor-actions";
-import { getAllGBCSettings } from "../actions/settings-actions";
+import { gbcApi } from "@/gbc/apiClient";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+import type { GBCEdition } from "@/gbc/utils/settings";
 
 // Import new components
-import HomeSpeakers from "@/app/(projects)/(GBC)/components/HomeSpeakers";
-import HomeSponsors from "@/app/(projects)/(GBC)/components/HomeSponsors";
-import HomeGallery from "@/app/(projects)/(GBC)/components/HomeGallery";
-import GBC2Navbar from "../components/Navbar";
+import HomeSpeakers from "@/gbc/components/HomeSpeakers";
+import HomeSponsors from "@/gbc/components/HomeSponsors";
+import HomeGallery from "@/gbc/components/HomeGallery";
+import GBC2Navbar from "@/gbc/components/Navbar";
 
 // Loading skeleton component
 const TextSkeleton = ({ className }: { className?: string }) => (
@@ -32,6 +32,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
+  const [pastEditions, setPastEditions] = useState<GBCEdition[]>([]);
 
   // Get settings with fallbacks
   const eventName =
@@ -89,9 +90,10 @@ export default function HomePage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [statsResult, settingsResult] = await Promise.all([
-          getGBCTicketStats(),
-          getAllGBCSettings(),
+        const [statsResult, settingsResult, editionsResult] = await Promise.all([
+          gbcApi.tickets.availability(),
+          gbcApi.settings.get(),
+          gbcApi.editions.list(),
         ]);
 
         if (statsResult.success) {
@@ -99,6 +101,13 @@ export default function HomePage() {
         }
         if (settingsResult.success) {
           setSettings(settingsResult.data);
+        }
+        if (editionsResult.success) {
+          setPastEditions(
+            editionsResult.data
+              .filter((e) => e.status === "PAST")
+              .sort((a, b) => b.key.localeCompare(a.key, undefined, { numeric: true }))
+          );
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -116,9 +125,12 @@ export default function HomePage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] sm:min-h-[70vh] pt-6 flex items-center justify-center overflow-hidden bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600">
+      <section
+        className="relative min-h-[60vh] sm:min-h-[70vh] pt-6 flex items-center justify-center overflow-hidden"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
         <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        <div className="absolute inset-0 bg-grid opacity-10" />
         <div
           className="absolute inset-0 bg-cover bg-center opacity-50"
           style={{
@@ -179,7 +191,8 @@ export default function HomePage() {
               <Link href="/gbc/tickets">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-4 bg-white text-purple-600 hover:bg-gray-100 btn-glow"
+                  className="text-lg px-8 py-4 bg-white hover:bg-gray-100 btn-glow"
+                  style={{ color: GBC_COLORS.primary.main }}
                 >
                   Buy Tickets Now
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -214,7 +227,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 sm:py-16 bg-gray-50">
+      <section className="py-12 sm:py-16 bg-gray-50 dark:bg-surface">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             <div className="text-center hidden">
@@ -225,10 +238,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
                     {stats?.completedTickets ?? 0}
                   </div>
-                  <div className="text-sm sm:text-base text-gray-600">
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     Tickets Sold
                   </div>
                 </>
@@ -242,10 +255,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
                     {stats?.maxTickets ?? 0}
                   </div>
-                  <div className="text-sm sm:text-base text-gray-600">
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     Total Capacity
                   </div>
                 </>
@@ -259,10 +272,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
                     50+
                   </div>
-                  <div className="text-sm sm:text-base text-gray-600">
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     Speakers
                   </div>
                 </>
@@ -276,10 +289,10 @@ export default function HomePage() {
                 </>
               ) : (
                 <>
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-600 mb-1 sm:mb-2">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-1 sm:mb-2" style={{ color: GBC_COLORS.primary.main }}>
                     100+
                   </div>
-                  <div className="text-sm sm:text-base text-gray-600">
+                  <div className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     Companies
                   </div>
                 </>
@@ -290,13 +303,13 @@ export default function HomePage() {
       </section>
 
       {/* What is GBC Section */}
-      <section className="py-16 sm:py-20 md:py-24 bg-white">
+      <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">
               What is GBC?
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed px-2">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed px-2">
               The Geospatial Builders Conference (GBC) is Nigeria's premier
               annual platform dedicated to unlocking the power of geospatial
               technology as capital. It is not just a gathering of geospatial
@@ -306,34 +319,34 @@ export default function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-purple-50 to-indigo-50">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-purple-50 to-white dark:from-surface dark:to-surface">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.primary.main }}>
                 <Users className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Connect</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Connect</h3>
+              <p className="text-gray-600 dark:text-gray-400">
                 Network with innovators, decision makers, and investors from
                 across industries
               </p>
             </div>
 
-            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-blue-50 to-indigo-50">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-pink-50 to-white dark:from-surface dark:to-surface">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.secondary.main }}>
                 <TrendingUp className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Showcase</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Showcase</h3>
+              <p className="text-gray-600 dark:text-gray-400">
                 Discover groundbreaking projects and practical applications of
                 geospatial tech
               </p>
             </div>
 
-            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-indigo-50 to-purple-50">
-              <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="text-center p-8 rounded-lg hover:shadow-xl transition-shadow bg-linear-to-br from-white to-purple-50 dark:from-surface dark:to-surface">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: GBC_COLORS.primary.main }}>
                 <Zap className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3">Transform</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900 dark:text-white">Transform</h3>
+              <p className="text-gray-600 dark:text-gray-400">
                 Drive transformation in land administration, energy, and
                 sustainable growth
               </p>
@@ -341,6 +354,75 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Past Editions Section */}
+      {!isLoading && pastEditions.length > 0 && (
+        <section className="py-16 sm:py-20 md:py-24 bg-white dark:bg-background">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-end justify-between gap-4 mb-10 sm:mb-12 max-w-5xl mx-auto">
+              <div>
+                <div
+                  className="text-xs font-bold uppercase tracking-wider mb-2"
+                  style={{ color: GBC_COLORS.secondary.dark }}
+                >
+                  Past Editions
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                  {pastEditions.length} edition{pastEditions.length > 1 ? "s" : ""} run so far
+                </h2>
+              </div>
+              <Link
+                href="/gbc/editions"
+                className="text-sm font-semibold whitespace-nowrap"
+                style={{ color: GBC_COLORS.primary.main }}
+              >
+                View all editions →
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {pastEditions.slice(0, 3).map((edition, i) => (
+                <Link
+                  key={edition.key}
+                  href={`/gbc/editions/${edition.key}`}
+                  className="group block rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-xl transition-shadow overflow-hidden bg-white dark:bg-surface"
+                >
+                  <div
+                    className="h-20 flex items-start justify-between p-4 text-white"
+                    style={{
+                      background:
+                        i % 2 === 0
+                          ? `linear-gradient(135deg, ${GBC_COLORS.primary.dark}, ${GBC_COLORS.primary.main})`
+                          : `linear-gradient(135deg, ${GBC_COLORS.primary.main}, ${GBC_COLORS.secondary.main})`,
+                    }}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wide bg-white/15 px-2 py-1 rounded-full">
+                      Past
+                    </span>
+                    <span className="font-mono text-xs opacity-80">
+                      {new Date(edition.startDate).getFullYear()}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">GBC {edition.key}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{edition.theme}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mt-3">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {edition.venue}
+                    </div>
+                    <div
+                      className="text-xs font-semibold mt-3 group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1"
+                      style={{ color: GBC_COLORS.primary.main }}
+                    >
+                      View recap <ArrowRight className="h-3 w-3" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Industries Section */}
       <section className="py-16 sm:py-20 md:py-24 bg-gray-900 text-white">
@@ -370,7 +452,7 @@ export default function HomePage() {
                 key={index}
                 className="p-4 sm:p-6 bg-white/10 rounded-lg backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer"
               >
-                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 mb-2 sm:mb-3 text-purple-400" />
+                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 mb-2 sm:mb-3" style={{ color: GBC_COLORS.primary.light }} />
                 <h3 className="font-semibold text-sm sm:text-base">
                   {industry}
                 </h3>
@@ -382,22 +464,22 @@ export default function HomePage() {
 
       {/* Important Notices */}
       {!isLoading && importantNotices.length > 0 && (
-        <section className="py-8 sm:py-12 bg-white">
+        <section className="py-8 sm:py-12 bg-white dark:bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
-              <div className="relative overflow-hidden rounded-2xl bg-amber-50 border border-amber-100 shadow-lg">
+              <div className="relative overflow-hidden rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 shadow-lg">
                 <div className="absolute top-0 left-0 w-1.5 h-full bg-linear-to-b from-amber-400 to-orange-500" />
                 <div className="p-6 sm:p-8">
                   <div className="flex items-start gap-4 sm:gap-6">
-                    <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
+                    <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm">
                       <AlertCircle className="h-6 w-6" />
                     </div>
                     <div className="flex-1 space-y-4">
                       <div className="flex items-center gap-3">
-                        <div className="sm:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
+                        <div className="sm:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm">
                           <AlertCircle className="h-4 w-4" />
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                           Important Updates
                         </h3>
                       </div>
@@ -406,9 +488,9 @@ export default function HomePage() {
                           (notice: string, index: number) => (
                             <div
                               key={index}
-                              className="flex gap-3 text-gray-700"
+                              className="flex gap-3 text-gray-700 dark:text-gray-300"
                             >
-                              <span className="text-amber-500 font-bold mt-0.5">
+                              <span className="text-amber-500 dark:text-amber-400 font-bold mt-0.5">
                                 •
                               </span>
                               <p className="text-base sm:text-lg leading-relaxed">
@@ -434,10 +516,10 @@ export default function HomePage() {
       <HomeSponsors />
 
       {/* Gallery Section */}
-      <HomeGallery />
+      <HomeGallery gallery={settings?.gallery} />
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
+      <section className="py-16 sm:py-20 md:py-24 text-white" style={{ background: GBC_GRADIENTS.primary }}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
             Ready to Join GBC 2.0?
@@ -552,7 +634,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                   <Link href="/gbc/tickets?tier=regular" className="w-full">
-                    <Button className="w-full bg-white hover:bg-gray-100 text-purple-600 font-bold">
+                    <Button className="w-full bg-white hover:bg-gray-100 font-bold" style={{ color: GBC_COLORS.primary.main }}>
                       Select Ticket for 2
                     </Button>
                   </Link>
@@ -622,7 +704,8 @@ export default function HomePage() {
               <Link href="/gbc/tickets">
                 <Button
                   size="lg"
-                  className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
+                  className="text-lg px-8 py-6 bg-white hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1"
+                  style={{ color: GBC_COLORS.primary.main }}
                 >
                   Get Your Ticket Now
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -650,7 +733,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">GBC 2.0</h3>
+              <h3 className="text-xl font-bold mb-4">{eventName}</h3>
               <p className="text-gray-400">
                 Nigeria's premier geospatial technology conference
               </p>

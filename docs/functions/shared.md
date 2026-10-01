@@ -1,0 +1,82 @@
+# Shared — Functions (hooks, lib, utils, types)
+
+Logic used across two or more platforms, under the top-level `hooks/`,
+`lib/`, `utils/`, and `types/` folders.
+
+## `hooks/`
+
+| File | Description |
+|---|---|
+| `useTheme.tsx` | Light/dark theme state + toggle |
+| `use-toast.ts` | Toast notification hook |
+| `use-mobile.tsx` | Responsive breakpoint (mobile) detection |
+| `use-store.ts` | Generic Zustand-style store selector hook |
+| `useNativeAuthRefresh.ts` | Refreshes the native (email/password) auth session, per platform |
+| `use-sidebar.ts` | Sidebar open/collapsed state store. `isOpen` is the mobile slide-over; `isRailCollapsed`/`toggleRailCollapsed` is the desktop icon-rail collapse (opt-in per product via `<Sidebar enableRailCollapse>`, now also enabled on Surfboard admin+MDA and both REVA dashboards, not just Surfboard surveyor), defaults to `true` (collapsed) rather than expanded; `isHover`/`setIsHover` drives a collapsed rail temporarily peeking open on hover without touching the persisted collapse state |
+
+## `lib/api/` — API route plumbing
+
+| File | Description |
+|---|---|
+| `adminInvitationRoutes.ts` | Factory for the four superadmin-only invitation endpoints (list/create/resend/revoke); each product's route files bind it to their platform and SUPERADMIN role |
+| `adminInvitationTypes.ts` | Client-safe invitation types + `roleLabel` |
+| `auditLogClient.ts` | `createAuditLogApi(base)` — client for a product's `/admin/audit-logs` endpoints |
+| `auditLogRoutes.ts` | Factory for the two superadmin-only audit-log endpoints (list + filter options), same pattern as the invitation routes |
+| `auditLogTypes.ts` | Client-safe audit-log types (`AuditLogEntry`, `AuditLogApi`, …) |
+| `errors.ts` | Typed API error classes (`ValidationError`, etc.); `SubscriptionRequiredError` (403, `SUBSCRIPTION_REQUIRED`) — distinct from `ForbiddenError` so the client can tell "not allowed at all" apart from "would be allowed with an active subscription," used by Surfboard's Shared Access capability gates |
+| `pagination.ts` | Pagination query-param parsing helpers |
+| `types.ts` | `ApiResult<T>` and other shared API types |
+| `validate.ts` | Request body/schema validation helpers |
+| `withAuth.ts` | Auth wrapper for route handlers — session check, role gating, error handling |
+
+## `lib/auth/` — authentication
+
+| File | Description |
+|---|---|
+| `adminInvitations.ts` | Admin invitations for all three products: create/resend/revoke/list, look up + accept by emailed single-use token (7-day expiry, only the token's hash is stored), each step audited |
+| `authApiClient.ts` | Client wrapper for native-auth endpoints (login/register/refresh) |
+| `cookies.ts` | Auth cookie read/write helpers |
+| `csrf.ts` | CSRF token generation/validation |
+| `emailVerification.ts` | Email verification token generation/validation |
+| `jwt.ts` | JWT sign/verify helpers |
+| `rateLimit.ts` | Request rate limiting |
+| `session.ts` | Session read/create/destroy logic |
+| `userLookup.ts` | Cross-platform user lookup by id/email |
+
+## `lib/` — other
+
+| File | Description |
+|---|---|
+| `audit.ts` | `writeAudit(platform, entry)` — writes an audit row to the product's own log table (GBC/Surfboard/REVA), capturing IP and user agent; never throws. `entry.userId` is always the *acting* user |
+| `auditLogs.ts` | `listAuditLogs` / `getAuditLogFilterOptions` — reads of those tables, one implementation for all three products (each platform reads its own log and user table) |
+| `constants.ts` | App-wide constants |
+| `menu-list.ts` | Legacy/shared menu definitions |
+| `observability/logger.ts` | Structured logger |
+| `prisma.ts` | Prisma client singleton |
+| `storage.ts` | File storage helpers (abstracts S3) |
+| `utils.ts` | `cn()` class-name merge helper and other generic utilities |
+| `adminTimezone.ts` | `getAdminTimezone`/`setAdminTimezone` (localStorage, mirrors `hooks/useTheme.tsx`'s pattern) + `formatInAdminTimezone(date, options)` — Surfboard admin's saved timezone preference, read synchronously without waiting on a profile fetch |
+| `qrColorPreferences.ts` | `getQrColors`/`setQrColors` (localStorage) — the QR code Dark/Light color pickers persist across sessions instead of resetting to the hardcoded default on every generation |
+
+## `utils/`
+
+| File | Description |
+|---|---|
+| `removeIDFromParcel.ts` | Strips internal IDs from parcel/geometry data before returning to the client |
+| `addBaseUrl.ts` | Prefixes a relative path with the site's base URL |
+| `email.ts` | Shared transactional email sending (per-product branding); `sendPlanShareInviteEmail` is Surfboard's Shared Access email-invite (a plan shared with an email that has no account yet), same visual template as `sendAdminInvitationEmail` but the link goes to signup, not an accept-password page — access resolves automatically once a matching account exists (`planService.ts`'s `acceptPendingPlanShareInvites`), no separate accept step |
+| `formatters.ts` | Date/number/currency formatting helpers |
+| `notify.tsx` | `notifyError/Success/Warning/Info` — thin wrappers over `sonner`'s `toast`, used by REVA's request forms |
+| `paystackConfig.ts` | Shared Paystack configuration |
+| `responsiveness.ts` | Responsive layout helpers |
+| `loadScript.js` | Dynamically loads an external `<script>` |
+| `platform.ts` | `Platform` enum and per-platform role types |
+| `encryptedCookies.ts` | Encrypted cookie read/write helpers |
+
+## `types/`
+
+| File | Description |
+|---|---|
+| `PaystackWebhookType.ts` | Paystack webhook payload types |
+| `UserData.ts` | Shared user data shape |
+| `UserSchemaTypes.ts` | Shared user schema types |

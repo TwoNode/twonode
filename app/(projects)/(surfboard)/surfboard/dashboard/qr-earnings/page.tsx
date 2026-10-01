@@ -44,10 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  getSurveyorEarningsOverview,
-  requestWithdrawal,
-} from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { toast } from "sonner";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -62,8 +59,8 @@ export default function QREarningsPage() {
   const fetchOverview = async () => {
     setLoading(true);
     try {
-      const res = await getSurveyorEarningsOverview();
-      if (res.success && res.data) {
+      const res = await surfboardApi.qr.earningsOverview();
+      if (res.success) {
         setData(res.data);
       } else {
         toast.error(res.error || "Failed to load earnings overview");
@@ -94,7 +91,7 @@ export default function QREarningsPage() {
 
     setSubmittingWithdrawal(true);
     try {
-      const res = await requestWithdrawal(amountNum);
+      const res = await surfboardApi.qr.requestWithdrawal(amountNum);
       if (res.success) {
         toast.success("Withdrawal request submitted successfully!");
         setWithdrawalModalOpen(false);
@@ -114,7 +111,7 @@ export default function QREarningsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-3" />
-        <p className="text-gray-600 font-medium text-sm">
+        <p className="text-gray-600 dark:text-gray-400 font-medium text-sm">
           Loading your QR Earnings dashboard...
         </p>
       </div>
@@ -132,17 +129,17 @@ export default function QREarningsPage() {
   const withdrawals = data?.withdrawals || [];
 
   return (
-    <div className="min-h-screen bg-slate-50/60 p-4 sm:p-6 lg:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-background p-4 sm:p-6 lg:p-8 space-y-8">
       {/* Header & Withdrawal Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <div className="p-2.5 bg-blue-600 rounded-xl text-white shadow-md">
               <Wallet className="w-6 h-6" />
             </div>
             QR Code Earnings
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
             Track passive income from client survey plan QR code scans and
             manage payouts.
           </p>
@@ -165,10 +162,10 @@ export default function QREarningsPage() {
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 text-base">
+              <h4 className="font-bold text-slate-900 dark:text-white text-base">
                 Bank Account Required for Payouts
               </h4>
-              <p className="text-sm text-slate-600 mt-0.5">
+              <p className="text-sm text-slate-600 dark:text-gray-300 mt-0.5">
                 You are accumulating earnings from plan scans! Please set up
                 your verified bank account under Settings to enable
                 withdrawals.
@@ -208,7 +205,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Total Earned */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -228,7 +225,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Pending Withdrawal */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -248,7 +245,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Total Withdrawn */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
@@ -271,7 +268,7 @@ export default function QREarningsPage() {
       {/* Transaction History & Withdrawals Tabs */}
       <div className="space-y-6">
         {/* Recent Transactions Table */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardHeader className="border-b border-slate-100 p-6">
             <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -283,7 +280,7 @@ export default function QREarningsPage() {
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50">
+              <TableHeader className="bg-slate-50 dark:bg-surface">
                 <TableRow>
                   <TableHead className="font-bold">Plan Number</TableHead>
                   <TableHead className="font-bold">Service Type</TableHead>
@@ -345,7 +342,7 @@ export default function QREarningsPage() {
         </Card>
 
         {/* Withdrawal History Table */}
-        <Card className="bg-white border-slate-200 shadow-md">
+        <Card className="bg-white dark:bg-surface border-slate-200 shadow-md">
           <CardHeader className="border-b border-slate-100 p-6">
             <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-indigo-600" />
@@ -357,7 +354,7 @@ export default function QREarningsPage() {
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50">
+              <TableHeader className="bg-slate-50 dark:bg-surface">
                 <TableRow>
                   <TableHead className="font-bold">Reference</TableHead>
                   <TableHead className="font-bold">Bank Details</TableHead>
@@ -445,7 +442,7 @@ export default function QREarningsPage() {
             </div>
           ) : (
             <form onSubmit={handleWithdrawalSubmit} className="space-y-4 pt-2">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-surface border border-slate-200 dark:border-white/10">
                 <span className="text-xs font-semibold text-slate-500 uppercase">
                   Payout Destination Bank
                 </span>

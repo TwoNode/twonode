@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 
 export default function SurfboardErrorLogin() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 via-teal-50 to-blue-100 px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 via-sky-50 to-blue-100 px-4 py-12">
+      <div className="bg-white dark:bg-surface rounded-2xl shadow-xl p-8 max-w-md w-full text-center flex flex-col items-center">
         <div className="flex justify-center mb-6">
           <img
             src="/surfboard/surf_logo.svg"
             alt="Surfboard Logo"
-            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white"
+            className="w-20 h-20 rounded-full shadow-lg border-4 border-blue-100 object-contain bg-white dark:bg-surface"
             style={{ background: "white" }}
           />
         </div>

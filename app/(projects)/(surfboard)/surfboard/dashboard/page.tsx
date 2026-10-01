@@ -2,21 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { FiRefreshCw } from "react-icons/fi";
 import {
-  FiPlus,
-  FiFileText,
-  FiUsers,
-  FiClock,
-  FiCheckCircle,
-  FiAlertCircle,
-  FiRefreshCw,
-} from "react-icons/fi";
-import {
-  getAllSharedSurfPlans,
-  getSharedWithMeSurfPlans,
-  getAllSurfPlans,
-} from "../../actions/surfboardActions";
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Package,
+} from "lucide-react";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
+import { SURFBOARD_COLORS } from "@/surfboard/colors";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { DashboardBadge } from "@/components/dashboard/DashboardBadge";
+import { DateRangeFilter, type DateRangeValue } from "@/components/dashboard/DateRangeFilter";
+import { SubmittedBatchesModal } from "../../components/SubmittedBatchesModal";
+import {
+  surfboardPlanStatusLabel,
+  surfboardPlanStatusTone,
+} from "@/surfboard/statusTone";
 
 interface Plan {
   id: string;
@@ -44,9 +48,34 @@ export default function DashboardHome() {
 
   const [recentPlans, setRecentPlans] = useState<Plan[]>([]);
   const [sharedPlans, setSharedPlans] = useState<Plan[]>([]);
+  const [planHealth, setPlanHealth] = useState({ qrEarningsThisMonth: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRangeValue>({});
+  const [firstName, setFirstName] = useState("");
+  // /newplan is subscription-gated server-side (proxy.ts + createSurfPlan) —
+  // hide this CTA rather than send an unsubscribed user into a page that
+  // immediately redirects them out. Same check surfboardUserPanelLayout.tsx
+  // uses for the sidebar's own "New Plan" button.
+  const [hasSubscriptionAccess, setHasSubscriptionAccess] = useState(true);
+  const [showBatchesModal, setShowBatchesModal] = useState(false);
+
+  useEffect(() => {
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) setFirstName(res.data.firstName || "");
+    });
+    surfboardApi.subscription.userAndActiveSub().then((res) => {
+      setHasSubscriptionAccess(res.success ? !!res.data?.subscription : false);
+    });
+  }, []);
+
+  const timeOfDayGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   const fetchData = async () => {
     try {
@@ -54,9 +83,18 @@ export default function DashboardHome() {
       setRefreshing(true);
       setError(null);
 
-      const [plansResult, sharedResult, sharedWithMeResult] = await Promise.all(
-        [getAllSurfPlans(), getAllSharedSurfPlans(), getSharedWithMeSurfPlans()]
-      );
+      const dateFilters = { dateFrom: dateRange.from, dateTo: dateRange.to };
+      const [plansResult, sharedResult, sharedWithMeResult, earningsThisMonthResult] =
+        await Promise.all([
+          surfboardApi.plans.list({ noPagination: true, filters: dateFilters }),
+          surfboardApi.plans.shared(undefined, undefined, dateFilters),
+          surfboardApi.plans.sharedWithMe(undefined, undefined, dateFilters),
+          surfboardApi.qr.earningsThisMonth(),
+        ]);
+
+      setPlanHealth({
+        qrEarningsThisMonth: earningsThisMonthResult.success ? earningsThisMonthResult.data.amount : 0,
+      });
 
       if (
         plansResult.success &&
@@ -121,253 +159,103 @@ export default function DashboardHome() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange.from, dateRange.to]);
 
   const handleRefresh = () => {
     fetchData();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "LODGED":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <FiCheckCircle className="mr-1" /> Lodged
-          </span>
-        );
-      case "PENDING":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            <FiClock className="mr-1" /> Pending
-          </span>
-        );
-      case "QUERIED":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <FiAlertCircle className="mr-1" /> Queried
-          </span>
-        );
-      case "UNDER_REVIEW":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <FiCheckCircle className="mr-1" /> Under Review
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        );
-    }
+  const STATUS_ICON: Record<string, typeof CheckCircle> = {
+    LODGED: CheckCircle,
+    PENDING: Clock,
+    QUERIED: AlertCircle,
+    UNDER_REVIEW: CheckCircle,
   };
+
+  const getStatusBadge = (status: string) => (
+    <DashboardBadge tone={surfboardPlanStatusTone(status)} icon={STATUS_ICON[status]}>
+      {surfboardPlanStatusLabel(status)}
+    </DashboardBadge>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Welcome back! Here's what's happening with your survey plans.
-          </p>
-        </div>
-        <div className="flex space-x-3 w-full sm:w-auto">
+      <DashboardHero
+        greeting={firstName ? `${timeOfDayGreeting()}, ${firstName}` : "Welcome back."}
+        title="Dashboard"
+        description="Here's what's happening with your survey plans, real-time updates as you store, secure and submit record copies of your plans."
+        pills={[
+          `${stats.totalPlans} Plans`,
+          `${stats.sharedPlans} Shared`,
+          `${stats.pending} Pending`,
+        ]}
+        gradient={`linear-gradient(120deg, #0A0F16 0%, ${SURFBOARD_COLORS.primary.dark} 55%, ${SURFBOARD_COLORS.primary.main} 100%)`}
+        secondaryCta={{ label: "My Batches", onClick: () => setShowBatchesModal(true), icon: Package }}
+        cta={hasSubscriptionAccess ? { label: "New Plan", href: "/surfboard/dashboard/newplan", icon: Plus } : undefined}
+      />
+
+      <SubmittedBatchesModal
+        isOpen={showBatchesModal}
+        onClose={() => setShowBatchesModal(false)}
+        onSuccess={() => fetchData()}
+      />
+
+      {/* Tabs + Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-white/10 dark:bg-white/5">
+          {(
+            [
+              { id: "analytics", label: "Analytics" },
+              { id: "recent", label: "Recent Activity" },
+              { id: "shared", label: "Shared with Me" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === tab.id
+                  ? "bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiRefreshCw
               className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
             />
             Refresh
           </button>
-          <Link
-            href="/surfboard/dashboard/newplan"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <FiPlus className="mr-2 h-4 w-4" />
-            New Plan
-          </Link>
         </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="shrink-0 bg-blue-500 rounded-md p-3">
-                <FiFileText className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Plans
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.totalPlans}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                View all plans
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="shrink-0 bg-green-500 rounded-md p-3">
-                <FiUsers className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Shared with Me
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.sharedPlans}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/shared"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                View shared plans
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="shrink-0 bg-yellow-500 rounded-md p-3">
-                <FiClock className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pending Approval
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.pending}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans?status=PENDING"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                View pending
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center">
-              <div className="shrink-0 bg-green-500 rounded-md p-3">
-                <FiCheckCircle className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Lodged
-                  </dt>
-                  <dd className="flex items-baseline">
-                    <div className="text-2xl font-semibold text-gray-900">
-                      {stats.lodged}
-                    </div>
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-4 sm:px-6">
-            <div className="text-sm">
-              <Link
-                href="/surfboard/dashboard/plans?status=LODGED"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                View lodged
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`${
-              activeTab === "analytics"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab("recent")}
-            className={`${
-              activeTab === "recent"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Recent Activity
-          </button>
-          <button
-            onClick={() => setActiveTab("shared")}
-            className={`${
-              activeTab === "shared"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            Shared with Me
-          </button>
-        </nav>
       </div>
 
       {/* Tab Content */}
       <div className="mt-6">
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div
+            className="border-l-4 p-4 mb-6"
+            style={{
+              backgroundColor: `${SURFBOARD_COLORS.error.main}1A`,
+              borderColor: SURFBOARD_COLORS.error.main,
+            }}
+          >
             <div className="flex">
               <div className="shrink-0">
                 <svg
-                  className="h-5 w-5 text-red-400"
+                  className="h-5 w-5"
+                  style={{ color: SURFBOARD_COLORS.error.main }}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -378,28 +266,51 @@ export default function DashboardHome() {
                   />
                 </svg>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="ml-3 flex-1 flex items-center justify-between gap-4">
+                <p
+                  className="text-sm"
+                  style={{ color: SURFBOARD_COLORS.error.dark }}
+                >
+                  {error}
+                </p>
+                <button
+                  onClick={handleRefresh}
+                  className="shrink-0 text-sm font-semibold underline hover:no-underline"
+                  style={{ color: SURFBOARD_COLORS.error.dark }}
+                >
+                  Try Again
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === "analytics" && <AnalyticsDashboard />}
+        {activeTab === "analytics" && (
+          <AnalyticsDashboard
+            dateRange={dateRange}
+            planHealth={{
+              lodged: stats.lodged,
+              totalPlans: stats.totalPlans,
+              queried: stats.queried,
+              underReview: stats.underReview,
+              qrEarningsThisMonth: planHealth.qrEarningsThisMonth,
+            }}
+          />
+        )}
 
         {activeTab === "recent" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul role="list" className="divide-y divide-gray-200">
+          <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {recentPlans.length > 0 ? (
                 recentPlans.map((plan) => (
                   <li key={plan.id}>
                     <Link
                       href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                      className="block hover:bg-gray-50"
+                      className="block hover:bg-gray-50 dark:hover:bg-white/5"
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-blue-600 truncate">
+                          <p className="text-sm font-medium text-[#2563EB] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">
@@ -408,11 +319,11 @@ export default function DashboardHome() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className="sm:flex">
-                            <p className="flex items-center text-sm text-gray-500">
+                            <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                               {plan.facilitator || "No facilitator"}
                             </p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                             <p>
                               Updated{" "}
                               <time
@@ -433,7 +344,7 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No recent plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No recent plans found</p>
                 </div>
               )}
             </ul>
@@ -441,24 +352,30 @@ export default function DashboardHome() {
         )}
 
         {activeTab === "shared" && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul role="list" className="divide-y divide-gray-200">
+          <div className="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-200 dark:bg-white/3 dark:shadow-none dark:border-white/10">
+            <ul role="list" className="divide-y divide-gray-200 dark:divide-white/10">
               {sharedPlans.length > 0 ? (
                 sharedPlans.map((plan) => (
                   <li key={plan.id}>
                     <Link
                       href={`/surfboard/dashboard/plan?planId=${plan.id}`}
-                      className="block hover:bg-gray-50"
+                      className="block hover:bg-gray-50 dark:hover:bg-white/5"
                     >
                       <div className="px-4 py-4 sm:px-6">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-blue-600 truncate">
+                          <p className="text-sm font-medium text-[#2563EB] truncate">
                             {plan.planNumber} - {plan.surveyTitle}
                           </p>
                           <div className="ml-2 shrink-0 flex">
                             {getStatusBadge(plan.status)}
                             {!plan.isOwner && (
-                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              <span
+                                className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                style={{
+                                  backgroundColor: `${SURFBOARD_COLORS.secondary.main}1A`,
+                                  color: SURFBOARD_COLORS.secondary.dark,
+                                }}
+                              >
                                 Shared
                               </span>
                             )}
@@ -466,11 +383,11 @@ export default function DashboardHome() {
                         </div>
                         <div className="mt-2 flex justify-between">
                           <div className="sm:flex">
-                            <p className="flex items-center text-sm text-gray-500">
+                            <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                               {plan.facilitator || "No facilitator"}
                             </p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                             <p>
                               Shared on{" "}
                               <time
@@ -491,7 +408,7 @@ export default function DashboardHome() {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No shared plans found</p>
+                  <p className="text-gray-500 dark:text-gray-400">No shared plans found</p>
                 </div>
               )}
             </ul>

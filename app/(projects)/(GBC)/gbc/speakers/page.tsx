@@ -1,19 +1,19 @@
-import { getSpeakers } from "../../actions/speaker-actions";
-import GBC2Navbar from "../../components/Navbar";
-import { Speaker } from "../../types/speaker";
+import { getSpeakers } from "@/gbc/services/cmsService";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { Speaker } from "@/gbc/types/speaker";
 import { Card } from "@/components/ui/card";
 import { Linkedin, Twitter, Building2 } from "lucide-react";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export const metadata = {
   title: "Speakers | GBC 2.0",
   description: "Meet our distinguished speakers at GBC 2.0",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function SpeakersPage() {
-  const speakersResult = await getSpeakers();
-  const allSpeakers: Speaker[] = speakersResult.success
-    ? speakersResult.data || []
-    : [];
+  const allSpeakers = await getSpeakers();
 
   // Group speakers by tier
   const keynoteSpeakers = allSpeakers.filter((s) => s.tier === "KEYNOTE");
@@ -27,7 +27,7 @@ export default async function SpeakersPage() {
        <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="bg-linear-to-r from-purple-600 to-indigo-600 text-white py-20">
+      <section className="text-white py-20" style={{ background: GBC_GRADIENTS.primary }}>
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
@@ -45,7 +45,7 @@ export default async function SpeakersPage() {
         {keynoteSpeakers.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 bg-linear-to-r from-purple-100 to-indigo-100 px-6 py-3 rounded-full mb-4">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: GBC_COLORS.surface.main }}>
                 <span className="text-3xl">🎤</span>
                 <h2 className="text-3xl font-bold text-gray-900">
                   Keynote Speakers
@@ -69,7 +69,7 @@ export default async function SpeakersPage() {
         {panelists.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 bg-linear-to-r from-blue-100 to-cyan-100 px-6 py-3 rounded-full mb-4">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: "#FCE7F3" }}>
                 <span className="text-3xl">💬</span>
                 <h2 className="text-3xl font-bold text-gray-900">Panelists</h2>
               </div>
@@ -90,7 +90,7 @@ export default async function SpeakersPage() {
         {firesideSpeakers.length > 0 && (
           <section className="mb-20">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-3 bg-linear-to-r from-orange-100 to-red-100 px-6 py-3 rounded-full mb-4">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full mb-4" style={{ background: GBC_COLORS.surface.main }}>
                 <span className="text-3xl">🔥</span>
                 <h2 className="text-3xl font-bold text-gray-900">
                   Fireside Chat
@@ -143,7 +143,10 @@ function SpeakerCard({
           }`}
         />
         {speaker.featured && (
-          <div className="absolute top-4 right-4 bg-linear-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+          <div
+            className="absolute top-4 right-4 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg"
+            style={{ background: GBC_GRADIENTS.primary }}
+          >
             ⭐ Featured
           </div>
         )}
@@ -158,7 +161,7 @@ function SpeakerCard({
           {speaker.name}
         </h3>
 
-        <p className="text-purple-600 font-semibold mb-2">{speaker.title}</p>
+        <p className="font-semibold mb-2" style={{ color: GBC_COLORS.primary.main }}>{speaker.title}</p>
 
         {speaker.company && (
           <div className="flex items-center gap-2 text-gray-600 mb-4">

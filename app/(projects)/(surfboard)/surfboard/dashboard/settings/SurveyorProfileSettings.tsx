@@ -21,7 +21,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
-import { saveSurveyorBankDetails } from "@/app/(projects)/(surfboard)/actions/qrEarningsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 export const NIGERIAN_BANKS = [
   { code: "044", name: "Access Bank" },
@@ -71,8 +71,7 @@ export function SurveyorBankSettings({
     }
   }, [initialBankDetails]);
 
-  const handleSaveBankDetails = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveBankDetails = async () => {
     if (!accountNumber || accountNumber.length !== 10) {
       toast.error("Please enter a valid 10-digit NUBAN account number");
       return;
@@ -88,13 +87,13 @@ export function SurveyorBankSettings({
     const toastId = toast.loading("Resolving bank account with Paystack...");
 
     try {
-      const res = await saveSurveyorBankDetails({
+      const res = await surfboardApi.qr.saveBankDetails({
         bankCode: selectedBank.code,
         bankName: selectedBank.name,
         accountNumber,
       });
 
-      if (res.success && res.data) {
+      if (res.success) {
         toast.success(`Verified: ${res.data.accountName}`, { id: toastId });
         setBankDetails(res.data);
       } else {
@@ -113,8 +112,8 @@ export function SurveyorBankSettings({
   };
 
   return (
-    <Card className="bg-white/80 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
-      <CardHeader className="border-b border-gray-100 pb-4">
+    <Card className="bg-white/80 backdrop-blur-sm border-gray-200 dark:border-white/10 shadow-lg hover:shadow-xl transition-shadow">
+      <CardHeader className="border-b border-gray-100 dark:border-white/10 pb-4">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -140,7 +139,14 @@ export function SurveyorBankSettings({
         </div>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
-        <form onSubmit={handleSaveBankDetails} className="space-y-6">
+        {/* Not a <form>: this card renders inside the outer Settings page's
+            own <form> (settings/page.tsx). A nested <form> here used to let
+            this submit bubble up and also fire the outer form's unrelated
+            profile-save handler on every click — two concurrent requests and
+            a stray "Failed to update profile" toast that made a successful
+            bank save look broken. Plain container + explicit button
+            onClick avoids the nested-form class of bug entirely. */}
+        <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Select Bank */}
             <div className="space-y-2">
@@ -152,7 +158,7 @@ export function SurveyorBankSettings({
                 value={bankCode}
                 onChange={(e) => setBankCode(e.target.value)}
                 disabled={loading}
-                className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
+                className="w-full p-2.5 border border-gray-300 dark:border-white/15 rounded-lg bg-white dark:bg-surface focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium"
               >
                 {NIGERIAN_BANKS.map((b) => (
                   <option key={b.code} value={b.code}>
@@ -177,7 +183,7 @@ export function SurveyorBankSettings({
                   setAccountNumber(e.target.value.replace(/\D/g, ""))
                 }
                 disabled={loading}
-                className="border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tracking-wider font-mono text-base"
+                className="border-gray-300 dark:border-white/15 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tracking-wider font-mono text-base"
               />
             </div>
           </div>
@@ -189,7 +195,7 @@ export function SurveyorBankSettings({
                 <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
                   Verified Account Name
                 </span>
-                <h4 className="text-lg font-bold text-gray-900 mt-0.5">
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
                   {bankDetails.accountName}
                 </h4>
               </div>
@@ -199,7 +205,8 @@ export function SurveyorBankSettings({
 
           <div className="flex justify-end">
             <Button
-              type="submit"
+              type="button"
+              onClick={handleSaveBankDetails}
               disabled={loading || accountNumber.length !== 10}
               className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md font-semibold px-6"
             >
@@ -216,7 +223,7 @@ export function SurveyorBankSettings({
               )}
             </Button>
           </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

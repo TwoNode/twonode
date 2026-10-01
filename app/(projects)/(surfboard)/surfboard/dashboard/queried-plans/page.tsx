@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, FileText, Loader2, Edit3, ArrowLeft } from "lucide-react";
-import { getQueriedPlansForUser } from "../../../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { AmendPlanModal } from "../../../components/AmendPlanModal";
 import Link from "next/link";
 
@@ -52,9 +52,9 @@ export default function QueriedPlansPage() {
   const fetchQueriedPlans = async () => {
     try {
       setLoading(true);
-      const result = await getQueriedPlansForUser();
-      if (result.success && result.data) {
-        setPlans(result.data.plans as any);
+      const result = await surfboardApi.plans.queried();
+      if (result.success) {
+        setPlans(result.data as any);
       } else {
         toast.error(result.error || "Failed to fetch queried plans");
       }
@@ -108,7 +108,7 @@ export default function QueriedPlansPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading queried plans...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading queried plans...</p>
         </div>
       </div>
     );
@@ -125,8 +125,8 @@ export default function QueriedPlansPage() {
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">Queried Plans</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Queried Plans</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Plans that require amendments before resubmission
           </p>
         </div>
@@ -152,8 +152,8 @@ export default function QueriedPlansPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="w-16 h-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg">No queried plans</p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No queried plans</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
               All your plans are in good standing
             </p>
           </CardContent>
@@ -200,25 +200,25 @@ export default function QueriedPlansPage() {
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   {/* Location Info */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg">
                     <div>
-                      <p className="text-xs text-gray-500">LGA</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">LGA</p>
                       <p className="text-sm font-medium">{plan.lga || "N/A"}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Ward</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Ward</p>
                       <p className="text-sm font-medium">
                         {plan.ward || "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">LCDA</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">LCDA</p>
                       <p className="text-sm font-medium">
                         {plan.lcda || "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Deeded Area</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Deeded Area</p>
                       <p className="text-sm font-medium">{plan.deededArea}</p>
                     </div>
                   </div>
@@ -226,7 +226,7 @@ export default function QueriedPlansPage() {
                   {/* Query Comments */}
                   {queryComments.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         Query Reasons:
                       </p>
                       {queryComments.map((item, index) => (

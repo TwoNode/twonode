@@ -1,9 +1,10 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { addBaseUrl } from "@/utils/addBaseUrl";
 import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
+import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
+import { markEmailVerified } from "@/lib/auth/userLookup";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,6 +42,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (!dbUser.emailVerified) {
+      await markEmailVerified(Platform.SURFBOARD, dbUser.id, "OAUTH");
+      dbUser.emailVerified = true;
+    }
+
+    // Also mint a native session (additive; must never break the existing
+    // Kinde login flow if it fails).
+    try {
+      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD, undefined, dbUser);
+    } catch (err) {
+      console.error("issueSession failed for surf-restricted callback:", err);
+    }
+
     // Create encrypted user data
     const userData = {
       platform: Platform.SURFBOARD,
@@ -56,12 +70,12 @@ export async function GET(request: NextRequest) {
     const postLoginRaw =
       request.nextUrl.searchParams.get("post_login_redirect_url") ||
       request.cookies.get("my_redirect_url")?.value;
-    const fallbackUrl = "/surf-restricted/dashboard";
+    const fallbackUrl = "/surfboard-restricted/dashboard";
 
     const redirectUrl = (() => {
       if (
         postLoginRaw &&
-        postLoginRaw.startsWith("/surf-restricted/dashboard")
+        postLoginRaw.startsWith("/surfboard-restricted/dashboard")
       ) {
         const url = new URL(postLoginRaw, process.env.BASE_URL);
         return url.pathname + "?" + url.searchParams.toString();
@@ -70,14 +84,15 @@ export async function GET(request: NextRequest) {
     })();
 
     // Redirect to the beautiful redirect page with redirectionPage param
-    const redirectPageUrl = addBaseUrl(
-      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`
+    const redirectPageUrl = new URL(
+      `/redirect?redirectionPage=${encodeURIComponent(redirectUrl)}`,
+      request.url
     );
     const response = NextResponse.redirect(redirectPageUrl);
     const responseWithCookie = await setEncryptedUserCookie(userData, response);
     return responseWithCookie;
   } catch (error) {
-    console.error("Error in GET /auth/success/surf-restricted:", error);
-    return NextResponse.redirect(addBaseUrl("/surf-restricted/error-login"));
+    console.error("Error in GET /auth/success/surfboard-restricted:", error);
+    return NextResponse.redirect(new URL("/surfboard-restricted/error-login", request.url));
   }
 }

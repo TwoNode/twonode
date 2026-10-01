@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { convertCoordinates, applyVisualizationShift } from "@/app/(projects)/(surfboard)/utils/surfboardUtils";
-import { getCoordinateShifts } from "@/app/(projects)/(surfboard)/actions/settingsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import type { PillarData } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
 
 // Fix for Leaflet marker icons in Next.js
@@ -53,7 +53,8 @@ export default function MapPreview({
         }).addTo(map);
 
         // Fetch coordinate shifts and apply
-        const coordinateShifts = await getCoordinateShifts();
+        const shiftsResult = await surfboardApi.settings.coordinateShifts();
+        const coordinateShifts = shiftsResult.success ? shiftsResult.data : {};
         const visualPillars = applyVisualizationShift(pillars, state, coordinateShifts);
 
         // Convert all coordinates asynchronously
@@ -155,9 +156,9 @@ export default function MapPreview({
   if (pillars.length === 0) {
     return (
       <div
-        className={`bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center ${className}`}
+        className={`bg-gray-50 dark:bg-white/5 border-2 border-dashed border-gray-300 dark:border-white/15 rounded-lg p-8 text-center ${className}`}
       >
-        <div className="text-gray-400 mb-4">
+        <div className="text-gray-400 dark:text-gray-500 mb-4">
           <svg
             className="mx-auto h-12 w-12"
             fill="none"
@@ -172,8 +173,8 @@ export default function MapPreview({
             />
           </svg>
         </div>
-        <p className="text-gray-600">No survey data to display</p>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-gray-600 dark:text-gray-400">No survey data to display</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           Upload a CSV file to see the map preview
         </p>
       </div>

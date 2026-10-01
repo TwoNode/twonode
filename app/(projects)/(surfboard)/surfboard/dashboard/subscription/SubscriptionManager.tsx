@@ -27,15 +27,8 @@ import {
   SUBSCRIPTION_PLANS,
   type PlanId,
 } from "@/app/(projects)/(surfboard)/utils/paystackSubscription";
-import {
-  initiateSubscription,
-  verifySubscription,
-  disableSubscription,
-  initiateOneTimeSubscription,
-  verifyOneTimeSubscription,
-} from "@/app/(projects)/(surfboard)/actions/paystackActions";
 import PaystackPop from "@paystack/inline-js";
-import { getUserActiveSubscription } from "../../../actions/subscriptionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import SubscriptionAdminFAB from "./SubscriptionAdminFAB";
 
 // Date utilities
@@ -55,7 +48,6 @@ export default function SubscriptionManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [current, setCurrent] = useState<any>(null);
   const [pendingPlan, setPendingPlan] = useState<PlanId | null>(null);
-  const [pendingOnetimePlan, setPendingOnetimePlan] = useState<PlanId | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isDisabling, setIsDisabling] = useState(false);
@@ -73,8 +65,8 @@ export default function SubscriptionManager() {
     const fetchSubscription = async () => {
       try {
         setIsLoading(true);
-        const subscription = await getUserActiveSubscription();
-        setCurrent(subscription || null);
+        const result = await surfboardApi.subscription.get();
+        setCurrent((result.success ? result.data : null) || null);
       } catch (error) {
         console.error("Error fetching subscription:", error);
         toast.error("Failed to load subscription data");
@@ -91,8 +83,8 @@ export default function SubscriptionManager() {
   useEffect(() => {
     if (success) {
       toast.success("Subscription updated successfully");
-      getUserActiveSubscription().then((sub) => {
-        setCurrent(sub);
+      surfboardApi.subscription.get().then((result) => {
+        setCurrent(result.success ? result.data : null);
         setPendingPlan(null);
       });
       // Refresh layout
@@ -144,8 +136,6 @@ export default function SubscriptionManager() {
     return current.status === "active" && !current.cancelledAt;
   }, [current]);
 
-  const isOnetimeSubscription = current?.provider === "paystack_onetime";
-
   const isSubscriptionInGracePeriod = useMemo(() => {
     if (!current?.currentEnd) return false;
     const gracePeriodDays = 1;
@@ -170,12 +160,16 @@ export default function SubscriptionManager() {
     return "You don't have an active subscription";
   }, [current, isSubscriptionActive, isSubscriptionInGracePeriod]);
 
+  const isOnetimeSubscription = current?.provider === "paystack_onetime";
+
   const getNextBillingText = useMemo(() => {
     if (!current) return "";
 
     if (isSubscriptionActive) {
-      if (isOnetimeSubscription && current.currentEnd) {
-        return `Expires on ${formatLocalDate(current.currentEnd)} — pay again to renew`;
+      if (isOnetimeSubscription) {
+        return current.currentEnd
+          ? `Expires on ${formatLocalDate(current.currentEnd)} — pay again to renew`
+          : "One-time payment — no auto-renewal";
       }
       if (current.nextPaymentDate || current.currentEnd) {
         return `Next billing: ${formatLocalDate(
@@ -190,7 +184,7 @@ export default function SubscriptionManager() {
     }
 
     return "No active subscription";
-  }, [current, isSubscriptionActive, isSubscriptionInGracePeriod]);
+  }, [current, isSubscriptionActive, isSubscriptionInGracePeriod, isOnetimeSubscription]);
 
   type TransactionObject = {
     reference: string;
@@ -210,8 +204,8 @@ export default function SubscriptionManager() {
 
     setPendingPlan(planId);
     try {
-      const result = await initiateSubscription(planId);
-      if (!result?.success || !result.data) {
+      const result = await surfboardApi.subscription.initiate(planId);
+      if (!result?.success) {
         throw new Error(result?.error || "Failed to initiate subscription");
       }
 
@@ -231,14 +225,14 @@ export default function SubscriptionManager() {
             console.log("Payment successful:", transaction);
             toast.loading("Verifying payment...", { id: "verify-payment" });
 
-            const verification = await verifySubscription(reference);
+            const verification = await surfboardApi.subscription.verify(reference);
 
             toast.dismiss("verify-payment");
 
             if (verification?.success) {
               toast.success("Subscription activated successfully!");
-              const updatedSub = await getUserActiveSubscription();
-              setCurrent(updatedSub);
+              const updatedSubResult = await surfboardApi.subscription.get();
+              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
               setPendingPlan(null);
               globalThis.location.reload();
             } else {
@@ -272,10 +266,16 @@ export default function SubscriptionManager() {
     }
   };
 
-  // Non-recurring counterpart to onSubscribe — no `planCode` passed to
-  // Paystack's popup, which keeps the transaction one-time and leaves
-  // Bank Transfer available as a checkout channel (attaching a plan code
-  // restricts checkout to channels that can authorize future auto-charges).
+  const [pendingOnetimePlan, setPendingOnetimePlan] = useState<PlanId | null>(null);
+
+  /**
+   * Same amount/period as onSubscribe, but no `planCode` passed to Paystack —
+   * that's what makes Paystack attach a recurring `plan` to the transaction
+   * and, in turn, restrict checkout to channels that can create a reusable
+   * charge authorization (no Bank Transfer). Without it, Transfer is
+   * available, at the cost of no auto-renewal — the user pays again manually
+   * when the period ends.
+   */
   const onSubscribeOnetime = async (planId: PlanId) => {
     if (!publicKey) {
       toast.error("Server Error: Misconfigured Payment setup");
@@ -284,8 +284,8 @@ export default function SubscriptionManager() {
 
     setPendingOnetimePlan(planId);
     try {
-      const result = await initiateOneTimeSubscription(planId);
-      if (!result?.success || !result.data) {
+      const result = await surfboardApi.subscription.initiateOnetime(planId);
+      if (!result?.success) {
         throw new Error(result?.error || "Failed to initiate payment");
       }
 
@@ -302,29 +302,22 @@ export default function SubscriptionManager() {
         onSuccess: async (transaction: TransactionObject) => {
           try {
             toast.loading("Verifying payment...", { id: "verify-onetime-payment" });
-
-            const verification = await verifyOneTimeSubscription(reference, planId);
-
+            const verification = await surfboardApi.subscription.verifyOnetime(reference, planId);
             toast.dismiss("verify-onetime-payment");
 
             if (verification?.success) {
               toast.success("Payment successful — access activated!");
-              const updatedSub = await getUserActiveSubscription();
-              setCurrent(updatedSub);
+              const updatedSubResult = await surfboardApi.subscription.get();
+              setCurrent(updatedSubResult.success ? updatedSubResult.data : null);
               setPendingOnetimePlan(null);
               globalThis.location.reload();
             } else {
               throw new Error(verification?.error || "Verification failed");
             }
           } catch (error: any) {
-            console.error("One-time verification error:", error);
+            console.error("Verification error:", error);
             toast.error(error.message || "Failed to verify payment");
             setPendingOnetimePlan(null);
-            router.push(
-              `/surfboard/dashboard/subscription?error=${encodeURIComponent(
-                error.message || "verification_failed"
-              )}`
-            );
           }
         },
         onCancel: () => {
@@ -332,13 +325,13 @@ export default function SubscriptionManager() {
           setPendingOnetimePlan(null);
         },
         onError: (error: { message: string }) => {
-          console.error("One-time payment error:", error);
+          console.error("Payment error:", error);
           toast.error(error.message || "Payment failed");
           setPendingOnetimePlan(null);
         },
       });
     } catch (error: any) {
-      console.error("One-time subscription error:", error);
+      console.error("One-time payment error:", error);
       toast.error(error?.message || "Failed to initiate payment");
       setPendingOnetimePlan(null);
     }
@@ -368,7 +361,7 @@ export default function SubscriptionManager() {
 
     setIsDisabling(true);
     try {
-      const result = await disableSubscription();
+      const result = await surfboardApi.subscription.disable();
 
       if (result.success) {
         toast.success(
@@ -379,15 +372,15 @@ export default function SubscriptionManager() {
           ...current,
           status: "canceled",
           cancelledAt: new Date(),
-          currentEnd: result.data?.currentEnd,
+          currentEnd: result.data?.data?.currentEnd,
         });
 
         setShowConfirmation(false);
-      } else if (result.error === "sync_pending") {
+      } else if (result.error?.toLowerCase().includes("sync pending")) {
         toast.info("Subscription setup is still finalizing. Please try again in 1-2 minutes.");
         setShowConfirmation(false);
       } else {
-        toast.error(result.message || "Failed to cancel subscription");
+        toast.error(result.error || "Failed to cancel subscription");
       }
     } catch (error) {
       console.error("Error cancelling subscription:", error);
@@ -517,7 +510,7 @@ export default function SubscriptionManager() {
                       variant="ghost"
                       onClick={() => setShowConfirmation(true)}
                       disabled={isDisabling}
-                      className="w-full h-12 px-8 rounded-xl font-semibold text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      className="w-full h-12 px-8 rounded-xl font-semibold text-slate-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                     >
                       {isDisabling ? (
                         <>
@@ -546,6 +539,7 @@ export default function SubscriptionManager() {
             const isPopular = plan.interval === "quarterly";
             const isDisabled =
               isWorking ||
+              isWorkingOnetime ||
               (isSubscriptionActive && !isCurrent) ||
               !!pendingPlan ||
               !!pendingOnetimePlan;
@@ -657,12 +651,14 @@ export default function SubscriptionManager() {
                         "Select Plan"
                       )}
                     </Button>
+
                     {!isCurrent && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={isWorkingOnetime || isDisabled}
+                        disabled={isDisabled}
                         onClick={() => onSubscribeOnetime(plan.id)}
+                        title="Pay once for this period — no auto-renewal, but includes Bank Transfer as a payment option"
                         className="w-full mt-2 h-9 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg"
                       >
                         {isWorkingOnetime ? (

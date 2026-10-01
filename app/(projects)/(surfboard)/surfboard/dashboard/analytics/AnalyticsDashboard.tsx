@@ -1,25 +1,57 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
-import { FiUsers, FiMapPin, FiClock, FiFileText, FiPieChart, FiLayers } from 'react-icons/fi';
+import Link from 'next/link';
+import { Layers, FileText, Clock, Share2 } from 'lucide-react';
 import { BarChart } from './BarChart';
 import { PieChart, generateColors } from './PieChart';
-import { StatsCard } from './StatsCard';
-import { getDashboardAnalytics } from '@/app/(projects)/(surfboard)/actions/surfboardActions';
+import { StatCard } from '@/components/dashboard/StatCard';
+import { surfboardApi } from '@/surfboard/apiClient';
+import { SURFBOARD_COLORS } from '@/surfboard/colors';
+import type { DateRangeValue } from '@/components/dashboard/DateRangeFilter';
 import type { AnalyticsData } from '@/app/(projects)/(surfboard)/types/surfboardTypes';
+import type { DimensionBreakdownRow } from '@/surfboard/services/analyticsService';
 
-export function AnalyticsDashboard() {
+const AREA_DIMENSIONS = [
+  { id: 'lga', label: 'LGA' },
+  { id: 'lcda', label: 'LCDA' },
+  { id: 'ward', label: 'Ward' },
+] as const;
+type AreaDimension = (typeof AREA_DIMENSIONS)[number]['id'];
+
+const CHART_HEIGHT = 400;
+
+export interface PlanHealthSummary {
+  lodged: number;
+  totalPlans: number;
+  queried: number;
+  underReview: number;
+  qrEarningsThisMonth: number;
+}
+
+export function AnalyticsDashboard({
+  dateRange,
+  planHealth,
+}: {
+  dateRange?: DateRangeValue;
+  planHealth: PlanHealthSummary;
+}) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wardStats, setWardStats] = useState<DimensionBreakdownRow[]>([]);
+  const [lcdaStats, setLcdaStats] = useState<DimensionBreakdownRow[]>([]);
+  const [areaDimension, setAreaDimension] = useState<AreaDimension>('lga');
 
   useEffect(() => {
+    const range = { dateFrom: dateRange?.from, dateTo: dateRange?.to };
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const result = await getDashboardAnalytics();
-        
-        if (result.success && result.data) {
+        const result = await surfboardApi.analytics.dashboard(range);
+
+        if (result.success) {
           setAnalytics(result.data);
         } else {
           setError(result.error || 'Failed to load analytics data');
@@ -33,19 +65,39 @@ export function AnalyticsDashboard() {
     };
 
     fetchAnalytics();
-  }, []);
+
+    // Ward/LCDA breakdowns come from the newer generic dimension endpoint —
+    // fetched separately so a failure here never blocks the main dashboard.
+    // Both are fetched unconditionally (not just the selected one) so the
+    // "Unique Wards/LCDAs" tiles and the dimension toggle below never need
+    // a second round-trip when the user switches tabs.
+    const fetchAreaBreakdowns = async () => {
+      try {
+        const [wardResult, lcdaResult] = await Promise.all([
+          surfboardApi.analytics.dimension('ward', range),
+          surfboardApi.analytics.dimension('lcda', range),
+        ]);
+        if (wardResult.success) setWardStats(wardResult.data);
+        if (lcdaResult.success) setLcdaStats(lcdaResult.data);
+      } catch (err) {
+        console.error('Error fetching ward/LCDA breakdowns:', err);
+      }
+    };
+
+    fetchAreaBreakdowns();
+  }, [dateRange?.from, dateRange?.to]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2563EB]"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-400 p-4">
+      <div className="bg-red-50 border-l-4 border-red-400 p-4 dark:bg-red-500/10 dark:border-red-500/60">
         <div className="flex">
           <div className="shrink-0">
             <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -53,7 +105,7 @@ export function AnalyticsDashboard() {
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         </div>
       </div>
@@ -63,7 +115,7 @@ export function AnalyticsDashboard() {
   if (!analytics) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No analytics data available</p>
+        <p className="text-gray-500 dark:text-gray-400">No analytics data available</p>
       </div>
     );
   }
@@ -79,75 +131,116 @@ export function AnalyticsDashboard() {
     value: item.count,
   }));
 
-  const pillarData = analytics.pillarStats.map((item, index) => ({
-    label: item.type,
+  const wardData = wardStats.map(item => ({
+    label: item.key || 'Unknown',
     value: item.count,
-    color: generateColors(analytics.pillarStats.length)[index],
   }));
 
-  const regularPillars = analytics.pillarStats.find(p => p.isRegular)?.count || 0;
-  const specialPillars = analytics.pillarStats.reduce((sum, p) => sum + (p.isRegular ? 0 : p.count), 0);
+  const lcdaData = lcdaStats.map(item => ({
+    label: item.key || 'Unknown',
+    value: item.count,
+  }));
+
+  const areaDataByDimension: Record<AreaDimension, typeof lgaData> = {
+    lga: lgaData,
+    lcda: lcdaData,
+    ward: wardData,
+  };
+
+  const areaCountByDimension: Record<AreaDimension, number> = {
+    lga: analytics.lgaStats.length,
+    lcda: lcdaStats.length,
+    ward: wardStats.length,
+  };
+
+  const regularPillars = analytics.pillarStats.find((p) => p.isRegular)?.count || 0;
+  const specialPillars = analytics.pillarStats.find((p) => !p.isRegular)?.count || 0;
   const totalPillars = regularPillars + specialPillars;
-  
+
   const pillarTypeData = [
     { label: 'Regular', value: regularPillars, color: '#10B981' },
     { label: 'Special', value: specialPillars, color: '#F59E0B' },
   ];
 
+  const totalRecords = analytics.totalPlansCount + analytics.provisionalPlansCount;
+  const provisionalShare = totalRecords > 0 ? Math.round((analytics.provisionalPlansCount / totalRecords) * 100) : 0;
+
+  // "Shared Access": numbers of plans shared to a user with active/expired/no subscription.
+  const sharedAccessByStatus = {
+    active: analytics.sharedAccessStats.find((s) => s.status === "active")?.count ?? 0,
+    expired: analytics.sharedAccessStats.find((s) => s.status === "expired")?.count ?? 0,
+    none: analytics.sharedAccessStats.find((s) => s.status === "none")?.count ?? 0,
+  };
+  const totalSharedAccess = sharedAccessByStatus.active + sharedAccessByStatus.expired + sharedAccessByStatus.none;
+
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Plans"
+      {/* Stats Overview — 5 tiles on one line on large screens (wraps below
+          that). Tighter padding than StatCard's default so the breakdown
+          line has room at 5-across instead of clipping like an earlier
+          5-column attempt did. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <StatCard
+          label="Total Plans"
           value={analytics.totalPlansCount}
-          icon={<FiLayers className="w-6 h-6" />}
-          color="blue"
+          breakdown={`Pending ${analytics.pendingCount} · Lodged ${analytics.lodgedCount} · Queried ${analytics.queriedCount}`}
+          icon={Layers}
+          tone="brand"
+          className="p-4"
         />
-        
-        <StatsCard
-          title="Provisional Plans"
+
+        <StatCard
+          label="Provisional Plans"
           value={analytics.provisionalPlansCount}
-          icon={<FiFileText className="w-6 h-6" />}
-          color="orange"
+          breakdown={`${provisionalShare}% of ${totalRecords} total records`}
+          icon={FileText}
+          tone="warning"
+          className="p-4"
         />
-        
-        <StatsCard
-          title="Pending Certificates"
-          value={analytics.pendingCertificates.length}
-          icon={<FiClock className="w-6 h-6" />}
-          color="red"
+
+        <StatCard
+          label="Pending Certificates"
+          value={analytics.pendingCertificatesCount}
+          breakdown="Awaiting approval"
+          icon={Clock}
+          tone="warning"
+          className="p-4"
         />
-        
-        <StatsCard
-          title="Unique LGAs"
-          value={analytics.lgaStats.length}
-          icon={<FiMapPin className="w-6 h-6" />}
-          color="green"
+
+        <StatCard
+          label="Facilitators"
+          value={analytics.facilitatorStats.length}
+          breakdown={
+            analytics.facilitatorStats[0]
+              ? `Top: ${analytics.facilitatorStats[0].facilitator} (${analytics.facilitatorStats[0].count})`
+              : undefined
+          }
+          icon={Layers}
+          tone="info"
+          className="p-4"
+        />
+
+        <StatCard
+          label="Shared Access"
+          value={totalSharedAccess}
+          breakdown={`Active ${sharedAccessByStatus.active} · Expired ${sharedAccessByStatus.expired} · None ${sharedAccessByStatus.none}`}
+          icon={Share2}
+          tone="success"
+          className="p-4"
         />
       </div>
 
-      {/* Main Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Facilitator Stats */}
+      {/* Main Charts — two 3-up rows, in DOM order so the grid auto-flows correctly */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Row 1: Facilitator Stats | Pillar Type Analysis | Plan Health */}
         <BarChart
           title="Records by Facilitator"
           subtitle="Top facilitators by number of records"
           data={facilitatorData}
-          height={400}
+          height={CHART_HEIGHT}
           maxItems={8}
         />
 
-        {/* LGA Distribution */}
-        <BarChart
-          title="Records by LGA"
-          subtitle="Records distribution across Local Government Areas"
-          data={lgaData}
-          height={400}
-          maxItems={8}
-        />
-
-        {/* Pillar Type Analysis */}
         <PieChart
           title="Pillar Type Analysis"
           subtitle="Distribution of regular vs special pillars"
@@ -155,74 +248,117 @@ export function AnalyticsDashboard() {
           donut
           donutLabel="Total Pillars"
           donutValue={totalPillars}
-          height={400}
+          height={CHART_HEIGHT}
         />
 
-        {/* Time Trends */}
+        <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Plan Health</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {planHealth.lodged} of {planHealth.totalPlans} plans lodged this cycle
+          </p>
+
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${planHealth.totalPlans > 0 ? Math.round((planHealth.lodged / planHealth.totalPlans) * 100) : 0}%`,
+                backgroundColor: SURFBOARD_COLORS.success.main,
+              }}
+            />
+          </div>
+
+          <dl className="mt-4 divide-y divide-gray-100 dark:divide-white/10" style={{ minHeight: CHART_HEIGHT - 60 }}>
+            <div className="flex items-center justify-between py-2.5">
+              <dt className="text-sm text-gray-600 dark:text-gray-300">Queried, needs attention</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.queried}</dd>
+            </div>
+            <div className="flex items-center justify-between py-2.5">
+              <dt className="text-sm text-gray-600 dark:text-gray-300">Awaiting MDA review</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">{planHealth.underReview}</dd>
+            </div>
+            <div className="flex items-center justify-between py-2.5">
+              <dt className="text-sm text-gray-600 dark:text-gray-300">QR earnings this month</dt>
+              <dd className="text-sm font-semibold text-gray-900 dark:text-white">
+                ₦{planHealth.qrEarningsThisMonth.toLocaleString()}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Row 2: Monthly Uploads | Records by Area | Pending Certificates */}
         <BarChart
-          title="Monthly Lodgements"
-          subtitle="Number of plans lodged per month"
+          title="Monthly Uploads"
+          subtitle="Number of plans uploaded per month"
           data={analytics.timeTrends.map(item => ({
             label: item.period,
             value: item.count,
           }))}
-          height={400}
+          height={CHART_HEIGHT}
           maxItems={12}
         />
-      </div>
-      
-      {/* Pending Certificates Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Pending Certificates</h3>
-          <p className="mt-1 text-sm text-gray-500">Recently updated certificates awaiting approval</p>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plan Number
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Survey Title
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Facilitator
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Updated
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {analytics.pendingCertificates.length > 0 ? (
-                analytics.pendingCertificates.map((cert) => (
-                  <tr key={cert.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {cert.planNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cert.surveyTitle}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cert.facilitator}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(cert.updatedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No pending certificates
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+
+        {/* Area distribution — one chart, switchable between LGA / LCDA / Ward instead of three parallel copies */}
+        <BarChart
+          title={`Records by ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}`}
+          subtitle={`${areaCountByDimension[areaDimension]} unique ${AREA_DIMENSIONS.find(d => d.id === areaDimension)!.label}${areaCountByDimension[areaDimension] === 1 ? '' : 's'} · toggle to compare`}
+          data={areaDataByDimension[areaDimension]}
+          height={CHART_HEIGHT}
+          maxItems={8}
+          actions={
+            <div className="inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/10 dark:bg-white/5">
+              {AREA_DIMENSIONS.map((dim) => (
+                <button
+                  key={dim.id}
+                  type="button"
+                  onClick={() => setAreaDimension(dim.id)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    areaDimension === dim.id
+                      ? 'bg-white text-[#1D4ED8] shadow-sm dark:bg-white/10 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {dim.label}
+                </button>
+              ))}
+            </div>
+          }
+        />
+
+        {/* Pending Certificates — each row links straight to that plan's detail page */}
+        <div className="bg-white rounded-lg shadow p-6 dark:bg-white/3 dark:shadow-none dark:border dark:border-white/10">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Pending Certificates</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Recently updated, awaiting approval</p>
+
+          <div className="mt-4 -mx-2 overflow-y-auto" style={{ maxHeight: CHART_HEIGHT - 60 }}>
+            {analytics.pendingCertificates.length > 0 ? (
+              <ul className="space-y-1">
+                {analytics.pendingCertificates.map((cert) => (
+                  <li key={cert.id}>
+                    <Link
+                      href={`/surfboard/dashboard/plan?planId=${cert.id}`}
+                      className="block rounded-lg px-2 py-2 hover:bg-gray-50 dark:hover:bg-white/5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {cert.planNumber}
+                        </p>
+                        <p className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(cert.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {cert.surveyTitle} · {cert.facilitator}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-gray-500 dark:text-gray-400">No pending certificates</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

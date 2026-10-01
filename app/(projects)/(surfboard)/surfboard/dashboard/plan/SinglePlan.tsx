@@ -19,14 +19,11 @@ import {
   AlertTriangle,
   File,
   Lock,
+  Paperclip,
+  Upload,
+  MessageSquare,
+  Send,
 } from "lucide-react";
-import {
-  getSurfPlanById,
-  deleteSurfPlan,
-  generatePlanQRCode,
-  getPlanPublicUrl,
-  updateSurfPlan,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
 import type {
   PillarData,
   Plan,
@@ -46,7 +43,9 @@ import { Copy } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import MaplibreMap from "../../../components/maps/MaplibreMap";
 import Link from "next/link";
-import { deleteSurfboardFileFromS3 } from "../../../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
+import { useConfirm } from "@/hooks/useConfirm";
+import { getQrColors, setQrColors } from "@/lib/qrColorPreferences";
 
 interface PlanWithPillars extends Omit<Plan, "pillars"> {
   status: "PENDING" | "LODGED" | "QUERIED" | "UNDER_REVIEW";
@@ -121,7 +120,7 @@ const FileCard = ({
       case "cert":
         return <FileCheck2 className="h-5 w-5 text-green-500 mr-2" />;
       default:
-        return <File className="h-5 w-5 text-gray-500 mr-2" />;
+        return <File className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" />;
     }
   };
 
@@ -142,7 +141,7 @@ const FileCard = ({
               e.stopPropagation();
               setShowConfirm(true);
             }}
-            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity ml-2"
+            className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-gray-500 hover:text-red-500 transition-opacity ml-2"
             title="Delete file"
             disabled={isDeleting}
           >
@@ -194,17 +193,17 @@ const FileCard = ({
       {/* Confirmation Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-surface rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-start">
               <div className="shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Delete File
                 </h3>
                 <div className="mt-2">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Are you sure you want to delete this file? This action
                     cannot be undone.
                   </p>
@@ -224,7 +223,7 @@ const FileCard = ({
               </button>
               <button
                 type="button"
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-white/15 shadow-sm px-4 py-2 bg-white dark:bg-surface text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -247,6 +246,7 @@ interface SinglePlanDetailsProps {
 }
 
 export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [plan, setPlan] = useState<PlanWithPillars | null>(null);
   const [loading, setLoading] = useState(true);
@@ -255,21 +255,44 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const [sharedWith, setSharedWith] = useState<User[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [publicUrl, setPublicUrl] = useState<string>("");
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Default: strong contrast, opaque light, safe quiet zone
+  // Private per-viewer attachments (Shared Access) — a recipient's own
+  // notes/files on a shared plan, never visible to the surveyor or other
+  // recipients. Only fetched/shown for non-owner viewers.
+  const [viewerAttachments, setViewerAttachments] = useState<
+    { id: string; url: string; fileName: string; createdAt: string }[]
+  >([]);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+
+  // Per-plan Comments — a shared discussion thread visible to the owner and
+  // every current recipient (unlike the private attachments above).
+  const [comments, setComments] = useState<
+    { id: string; authorId: string; authorName: string; isOwner: boolean; body: string; createdAt: string; editedAt: string | null }[]
+  >([]);
+  const [newComment, setNewComment] = useState("");
+  const [isPostingComment, setIsPostingComment] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Default: strong contrast, opaque light, safe quiet zone.
+  // Dark/Light color start from whatever the facilitator last picked
+  // (lib/qrColorPreferences) so they don't have to re-pick it every time.
   const [qrOptions, setQrOptions] = useState({
-    darkColor: "#3b82f6",
-    lightColor: "#ffffff",
+    ...getQrColors(),
     minLightAlpha: 0.1, // server clamps alpha >= 0.3
     margin: 4,
     scale: 8,
     forceOpaque: false, // set true to generate JPEG (no alpha at all)
   });
+
+  useEffect(() => {
+    setQrColors({ darkColor: qrOptions.darkColor, lightColor: qrOptions.lightColor });
+  }, [qrOptions.darkColor, qrOptions.lightColor]);
 
   function toggleMap() {
     setShowMap((v) => !v);
@@ -279,10 +302,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   const fetchPlanData = async () => {
     try {
       setLoading(true);
-      const result = await getSurfPlanById(planId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.plans.get(planId);
+      if (result.success) {
         const data = result.data;
         setIsOwner(result?.data?.isOwner || false);
+        setSharedWith(data.sharedToUsers || []);
         setPlan({
           ...data,
           createdAt: new Date(data.createdAt),
@@ -324,16 +348,133 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
   }, [planId, router]);
 
   useEffect(() => {
-    getPlanPublicUrl(planId)
-      .then(setPublicUrl)
-      .catch(() => {});
+    setPublicUrl(`${window.location.origin}/surfboardplan/${planId}`);
   }, [planId]);
+
+  const fetchViewerAttachments = async () => {
+    const result = await surfboardApi.plans.viewerAttachments.list(planId);
+    if (result.success) setViewerAttachments(result.data);
+  };
+
+  useEffect(() => {
+    // Wait for fetchPlanData to resolve the real isOwner value first —
+    // isOwner's default (false) would otherwise fire this for the owner
+    // too, on every load, always hitting a 403.
+    if (!loading && !isOwner) fetchViewerAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId, isOwner, loading]);
+
+  const fetchComments = async () => {
+    const result = await surfboardApi.plans.comments.list(planId);
+    if (result.success) setComments(result.data);
+  };
+
+  useEffect(() => {
+    fetchComments();
+    surfboardApi.profile.get().then((res) => {
+      if (res.success) setCurrentUserId(res.data.id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
+
+  const handlePostComment = async () => {
+    const body = newComment.trim();
+    if (!body) return;
+    try {
+      setIsPostingComment(true);
+      const result = await surfboardApi.plans.comments.add(planId, body);
+      if (!result.success) throw new Error(result.error || "Failed to post comment");
+      setComments((prev) => [...prev, result.data]);
+      setNewComment("");
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to post comment");
+    } finally {
+      setIsPostingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const result = await surfboardApi.plans.comments.delete(planId, commentId);
+      if (!result.success) throw new Error(result.error || "Failed to delete comment");
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
+    }
+  };
+
+  const handleUploadViewerAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = "";
+    if (files.length === 0) return;
+    try {
+      setIsUploadingAttachment(true);
+      // Sequential, not Promise.all: the endpoint is single-file (one POST
+      // per attachment), and sequential upload gives a stable, readable
+      // per-file failure list instead of interleaved errors.
+      const uploaded: typeof viewerAttachments = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        try {
+          const result = await surfboardApi.plans.viewerAttachments.upload(planId, file);
+          if (!result.success) throw new Error(result.error || "Failed to upload attachment");
+          uploaded.push(result.data);
+        } catch (error) {
+          console.error(`Error uploading viewer attachment "${file.name}":`, error);
+          failed.push(file.name);
+        }
+      }
+      if (uploaded.length > 0) {
+        setViewerAttachments((prev) => [...uploaded, ...prev]);
+        toast.success(
+          uploaded.length === 1
+            ? "Attachment added — only you can see this"
+            : `${uploaded.length} attachments added — only you can see these`
+        );
+      }
+      if (failed.length > 0) {
+        toast.error(`Failed to upload: ${failed.join(", ")}`);
+      }
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const handleDownloadPillarsCsv = () => {
+    if (!plan?.pillars || plan.pillars.length === 0) return;
+    const headers = ["Pillar Number", "Easting", "Northing"];
+    const rows = plan.pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${plan.planNumber || planId}-pillars.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteViewerAttachment = async (attachmentId: string) => {
+    try {
+      const result = await surfboardApi.plans.viewerAttachments.delete(planId, attachmentId);
+      if (!result.success) throw new Error(result.error || "Failed to delete attachment");
+      setViewerAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+      toast.success("Attachment removed");
+    } catch (error) {
+      console.error("Error deleting viewer attachment:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete attachment");
+    }
+  };
 
   const handleGenerateQrCode = async () => {
     try {
       setIsGeneratingQr(true);
-      const res = await generatePlanQRCode(planId, qrOptions as any);
-      if (res.success && res.data) {
+      const res = await surfboardApi.plans.generateQR(planId, qrOptions as any);
+      if (res.success) {
         setQrCodeDataUrl(res.data.qrCodeDataUrl);
         setIsQrModalOpen(true);
       } else {
@@ -352,16 +493,19 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     if (!plan) return;
 
     if (
-      !confirm(
-        "Are you sure you want to delete this plan? This action cannot be undone.",
-      )
+      !(await confirm({
+        title: "Delete this plan?",
+        description: "This action cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
 
     setIsDeleting(true);
     try {
-      const result = await deleteSurfPlan(plan.id);
+      const result = await surfboardApi.plans.delete(plan.id);
       if (result.success) {
         toast.success("Plan deleted successfully");
         router.push("/surfboard/dashboard/plans");
@@ -383,6 +527,26 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     }
   };
 
+  // Recipient marks a shared plan as reviewed
+  const handleMarkReviewed = async () => {
+    if (!plan) return;
+
+    setIsResponding(true);
+    try {
+      const result = await surfboardApi.plans.respondToShare(plan.id);
+      if (result.success) {
+        toast.success("Marked as reviewed");
+      } else {
+        toast.error(result.error || "Failed to mark plan as reviewed");
+      }
+    } catch (error) {
+      console.error("Error responding to share:", error);
+      toast.error("An error occurred while marking the plan as reviewed");
+    } finally {
+      setIsResponding(false);
+    }
+  };
+
   // Calculate center from pillars for the map
   const getMapCenter = (pillars: PillarData[]): [number, number] => {
     if (!pillars || pillars.length === 0) return [6.5244, 3.3792]; // Default to Lagos
@@ -400,22 +564,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
     return [sum[0] / pillars.length, sum[1] / pillars.length];
   };
 
-  const handleShareUpdate = async (updatedUsers: User[]) => {
-    try {
-      // TODO: Call API to update shared users in the backend
-      // const response = await fetch(`/api/plans/${planId}/share`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ userIds: updatedUsers.map(u => u.id) })
-      // });
-      // if (!response.ok) throw new Error('Failed to update shared users');
-
-      setSharedWith(updatedUsers);
-      toast.success("Sharing settings updated");
-    } catch (error) {
-      console.error("Error updating shared users:", error);
-      toast.error("Failed to update sharing settings");
-    }
+  // The actual share/invite API call already happened inside
+  // SharePlanModal's own handleAddUser/handleInviteByEmail before this
+  // callback fires — this just syncs the parent's local list.
+  const handleShareUpdate = (updatedUsers: User[]) => {
+    setSharedWith(updatedUsers);
   };
 
   // Function to handle copying the public URL to clipboard
@@ -459,7 +612,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </DialogHeader>
 
         <div className="flex flex-col items-center space-y-4">
-          <div className="p-4 bg-white rounded-lg border">
+          <div className="p-4 bg-white dark:bg-surface rounded-lg border">
             {qrCodeDataUrl ? (
               <img
                 src={qrCodeDataUrl}
@@ -622,7 +775,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <Button
             variant="outline"
             onClick={async () => {
-              const res = await generatePlanQRCode(planId, qrOptions as any);
+              const res = await surfboardApi.plans.generateQR(planId, qrOptions as any);
               if (res.success && res.data)
                 setQrCodeDataUrl(res.data.qrCodeDataUrl);
             }}
@@ -692,11 +845,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         try {
-          await deleteSurfboardFileFromS3({ url: file });
+          await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
           console.error("S3 delete failed, proceeding with DB update:", s3Error);
         }
-        await updateSurfPlan({
+        await surfboardApi.plans.update(plan!.id, {
           ...INITIALS(plan),
           [field]: plan?.[field].filter((f) => f !== file),
         } as any);
@@ -738,7 +891,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           <h1 className="text-2xl font-bold text-gray-800 mb-4">
             Plan Not Found
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             The requested plan could not be found.
           </p>
           <button
@@ -754,32 +907,33 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {ConfirmDialog}
       <div className="mb-8">
         <div className="mb-8">
           {/* Header Card with Gradient Background */}
-          <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+          <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-surface dark:to-surface rounded-xl p-6 mb-6 shadow-sm border border-gray-100 dark:border-white/10">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 {/* Plan Info */}
                 <div className="space-y-2">
-                  <div className="inline-block bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full mb-2 shadow-sm">
-                    <span className="text-xs font-medium text-blue-700 uppercase tracking-wider">
+                  <div className="inline-block bg-white/80 dark:bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full mb-2 shadow-sm">
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider">
                       Survey Plan
                     </span>
                   </div>
-                  <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     {plan.planNumber}
                   </h1>
-                  <p className="text-lg text-gray-600 max-w-2xl">
+                  <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl">
                     {plan.surveyTitle}
                   </p>
 
                   {/* Plan Type Badges */}
                   <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
                       {plan.planType}
                     </span>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300">
                       {plan.pillarType}
                     </span>
                     {isPlanLocked(plan) && (
@@ -796,7 +950,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   <button
                     onClick={handleRefresh}
                     disabled={isRefreshing}
-                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                   >
                     {isRefreshing ? (
                       <>
@@ -813,7 +967,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   <button
                     onClick={toggleMap}
-                    className="px-4 py-2 bg-white border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-white dark:bg-surface border border-blue-100 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
                     <span>{showMap ? "Hide Map" : "View Map"}</span>
@@ -833,7 +987,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         onClick={handleEdit}
                         className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
                           isPlanLocked(plan)
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            ? "bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                             : "bg-amber-500 text-white hover:bg-amber-600"
                         }`}
                         disabled={isDeleting || isPlanLocked(plan)}
@@ -855,7 +1009,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                         onClick={handleDelete}
                         className={`px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md ${
                           isPlanLocked(plan)
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            ? "bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                             : "bg-red-500 text-white hover:bg-red-600"
                         }`}
                         disabled={isDeleting || isPlanLocked(plan)}
@@ -875,25 +1029,38 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     </>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateQrCode}
-                    disabled={isGeneratingQr}
-                    className="h-10 px-4 border-gray-200 hover:bg-gray-50 flex items-center justify-center"
-                  >
-                    {isGeneratingQr ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span>Generating</span>
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="h-4 w-4 mr-2" />
-                        <span>QR Code</span>
-                      </>
-                    )}
-                  </Button>
+                  {!isOwner && (
+                    <button
+                      onClick={handleMarkReviewed}
+                      disabled={isResponding}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 flex items-center justify-center shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileCheck2 className="w-4 h-4 mr-2" />
+                      <span>{isResponding ? "Marking..." : "Mark Reviewed"}</span>
+                    </button>
+                  )}
+
+                  {isOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateQrCode}
+                      disabled={isGeneratingQr}
+                      className="h-10 px-4 border-gray-200 dark:border-white/10 hover:bg-gray-50 flex items-center justify-center"
+                    >
+                      {isGeneratingQr ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span>Generating</span>
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="h-4 w-4 mr-2" />
+                          <span>QR Code</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -910,7 +1077,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
         {/* Map Section */}
         {!showMap && plan && (
-          <div className="bg-white rounded-2xl shadow p-6">
+          <div className="bg-white dark:bg-surface rounded-2xl shadow p-6">
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
               Map Preview
             </h2>
@@ -931,9 +1098,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         <div className="space-y-6 mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Plan Information Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-blue-500 mr-2"
                     fill="none"
@@ -953,29 +1120,29 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
               <div className="p-6 space-y-4">
                 <div className="flex items-start">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Plan Number
                     </p>
-                    <p className="mt-1 text-gray-900 font-medium">
+                    <p className="mt-1 text-gray-900 dark:text-white font-medium">
                       {plan.planNumber}
                     </p>
                     {plan.referencePlanNumber && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Reference Number
                         </p>
-                        <p className="mt-1 text-gray-700">
+                        <p className="mt-1 text-gray-700 dark:text-gray-300">
                           {plan.referencePlanNumber}
                         </p>
                       </div>
                     )}
                     {plan.withdrawalAndResubmissionStatus && plan.withdrawalAndResubmissionStatus !== "No_Action" && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Withdrawal Status
                         </p>
                         <span className={`inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          plan.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                          plan.withdrawalAndResubmissionStatus === 'Withdrawn' ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300'
                         }`}>
                           {plan.withdrawalAndResubmissionStatus}
                         </span>
@@ -984,10 +1151,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     {/* @ts-ignore - reasonForWithdrawalAndResubmission may not be in PlanWithPillars type yet */}
                     {plan.reasonForWithdrawalAndResubmission && (
                       <div className="mt-2">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Reason for Withdrawal
                         </p>
-                        <p className="mt-1 text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">
+                        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
                           {/* @ts-ignore */}
                           {plan.reasonForWithdrawalAndResubmission}
                         </p>
@@ -999,9 +1166,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-white/10">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Survey Title
                     </p>
                     {/* @ts-ignore */}
@@ -1009,57 +1176,57 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       <div className="mt-2 space-y-2">
                         {/* @ts-ignore */}
                         {plan.parcels.map((parcel: any, idx: number) => (
-                          <div key={idx} className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <span className="font-medium text-gray-600">Polygon {idx + 1}: </span>
-                            <span className="text-gray-700">{parcel.surveyTitle || plan.surveyTitle}</span>
+                          <div key={idx} className="bg-gray-50 dark:bg-white/5 p-2 rounded border border-gray-100 dark:border-white/10">
+                            <span className="font-medium text-gray-600 dark:text-gray-400">Polygon {idx + 1}: </span>
+                            <span className="text-gray-700 dark:text-gray-300">{parcel.surveyTitle || plan.surveyTitle}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-1 text-gray-700">{plan.surveyTitle}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.surveyTitle}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Plan Type
                       </p>
-                      <p className="mt-1 text-gray-700">{plan.planType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.planType}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Pillar Type
                       </p>
-                      <p className="mt-1 text-gray-700">{plan.pillarType}</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.pillarType}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Facilitator
                     </p>
-                    <p className="mt-1 text-gray-700">
+                    <p className="mt-1 text-gray-700 dark:text-gray-300">
                       {plan.facilitator || "N/A"}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Date on Plan
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.dateOnSurveyPlan
                           ? new Date(plan.dateOnSurveyPlan).toLocaleDateString()
                           : "N/A"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Date Lodged
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.dateLodged
                           ? new Date(plan.dateLodged).toLocaleDateString()
                           : "Not lodged"}
@@ -1071,9 +1238,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </div>
 
             {/* Location Details Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-green-50 to-emerald-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-green-500 mr-2"
                     fill="none"
@@ -1100,26 +1267,26 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 <div className="space-y-4">
                   {plan.ward && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Ward</p>
-                      <p className="mt-1 text-gray-700">{plan.ward}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ward</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.ward}</p>
                     </div>
                   )}
                   {plan.lcda && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">LCDA</p>
-                      <p className="mt-1 text-gray-700">{plan.lcda}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LCDA</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lcda}</p>
                     </div>
                   )}
                   {plan.lga && (
                     <div>
-                      <p className="text-sm font-medium text-gray-500">LGA</p>
-                      <p className="mt-1 text-gray-700">{plan.lga}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">LGA</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">{plan.lga}</p>
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-white/10">
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Area</p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Area</p>
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.areaSqM
                           ? plan.areaSqM < 10000
                             ? `${plan.areaSqM.toLocaleString(undefined, {
@@ -1133,10 +1300,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Deeded Area
                       </p>
-                      <p className="mt-1 text-gray-700">
+                      <p className="mt-1 text-gray-700 dark:text-gray-300">
                         {plan.deededArea || "N/A"}
                       </p>
                     </div>
@@ -1144,11 +1311,11 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                   {plan.centroid &&
                     Array.isArray(plan.centroid) &&
                     plan.centroid.length >= 2 && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Centroid Coordinates
                         </p>
-                        <p className="mt-1 text-gray-700 font-mono text-sm">
+                        <p className="mt-1 text-gray-700 dark:text-gray-300 font-mono text-sm">
                           {`${typeof plan.centroid[1] === "number" ? plan.centroid[1].toFixed(6) : plan.centroid[1]}°N, ${typeof plan.centroid[0] === "number" ? plan.centroid[0].toFixed(6) : plan.centroid[0]}°E`}
                         </p>
                         <button
@@ -1184,9 +1351,9 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
             </div>
 
             {/* Timestamps Card */}
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-              <div className="bg-linear-to-r from-purple-50 to-violet-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <div className="bg-white dark:bg-surface rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="bg-linear-to-r from-purple-50 to-violet-50 dark:from-surface dark:to-surface px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                   <svg
                     className="w-5 h-5 text-purple-500 mr-2"
                     fill="none"
@@ -1222,10 +1389,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Created
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {new Date(plan.createdAt).toLocaleString(undefined, {
                           year: "numeric",
                           month: "short",
@@ -1253,10 +1420,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                       </svg>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Last Updated
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {new Date(plan.updatedAt).toLocaleString(undefined, {
                           year: "numeric",
                           month: "short",
@@ -1265,7 +1432,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                           minute: "2-digit",
                         })}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {plan.updatedAt !== plan.createdAt
                           ? "Updated"
                           : "Created"}{" "}
@@ -1281,8 +1448,8 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </div>
 
         {/* Documents Section */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Documents</h3>
+        <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Documents</h3>
           <div className="space-y-4">
             {/* PDF Files */}
             {plan.pdfFilePaths?.length > 0 && (
@@ -1346,21 +1513,154 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
           </div>
         </div>
 
+        {/* Private Attachments — recipient-only, never visible to the surveyor or other recipients */}
+        {!isOwner && (
+          <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                <Paperclip className="h-5 w-5 text-gray-400" />
+                My Private Attachments
+              </h3>
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer">
+                {isUploadingAttachment ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                Add file
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleUploadViewerAttachment}
+                  disabled={isUploadingAttachment}
+                />
+              </label>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Only visible to you — not the surveyor or anyone else this plan is shared with.
+            </p>
+            {viewerAttachments.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {viewerAttachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-3"
+                  >
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 min-w-0 hover:text-blue-600"
+                    >
+                      <File className="h-4 w-4 shrink-0 text-gray-400" />
+                      <span className="text-sm truncate" title={attachment.fileName}>
+                        {attachment.fileName}
+                      </span>
+                    </a>
+                    <button
+                      onClick={() => handleDeleteViewerAttachment(attachment.id)}
+                      className="text-gray-400 hover:text-red-600 shrink-0"
+                      title="Remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No private attachments yet.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Comments — shared discussion, visible to the owner and every current recipient */}
+        {(isOwner ? sharedWith.length > 0 : true) && (
+          <div className="bg-white dark:bg-surface p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+              <MessageSquare className="h-5 w-5 text-gray-400" />
+              Comments
+            </h3>
+
+            <div className="space-y-4 mb-4 max-h-96 overflow-y-auto pr-1">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {comment.authorName}
+                        </span>
+                        {comment.isOwner && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                            Surveyor
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">
+                          {new Date(comment.createdAt).toLocaleString()}
+                          {comment.editedAt ? " (edited)" : ""}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap mt-0.5">
+                        {comment.body}
+                      </p>
+                    </div>
+                    {comment.authorId === currentUserId && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-gray-400 hover:text-red-600 shrink-0"
+                        title="Delete comment"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No comments yet — start the discussion.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-end gap-2 pt-3 border-t border-gray-100 dark:border-white/10">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                rows={2}
+                maxLength={2000}
+                className="flex-1 resize-none rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handlePostComment}
+                disabled={isPostingComment || !newComment.trim()}
+                className="h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+              >
+                {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Post
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Geometry Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+        <div className="bg-white dark:bg-surface rounded-lg border border-gray-200 dark:border-white/10 p-4 shadow-sm">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center">
             <MapPinIcon className="h-5 w-5 text-blue-500 mr-2" />
             Geometry Coordinates
           </h3>
 
-          <div className="bg-gray-50 rounded-md p-3 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-white/5 rounded-md p-3 border border-gray-100 dark:border-white/10">
             {plan.geometry ? (
               <div className="space-y-4">
                 {(() => {
                   const geometry = handleGeometryDisplay();
                   if (!geometry || !geometry.coordinates?.length) {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         No geometry data available
                       </div>
                     );
@@ -1407,7 +1707,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                     );
                   } else {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         Unsupported geometry type: {geometry.type}
                       </div>
                     );
@@ -1415,7 +1715,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   if (boundaries.length === 0) {
                     return (
-                      <div className="text-gray-500 italic">
+                      <div className="text-gray-500 dark:text-gray-400 italic">
                         No valid coordinates found
                       </div>
                     );
@@ -1423,17 +1723,17 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
 
                   return boundaries.map((boundary, i) => (
                     <div key={i} className="space-y-2">
-                      <div className="flex items-center text-sm font-medium text-gray-700">
+                      <div className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
                         <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-700 text-xs font-mono mr-2">
                           {i + 1}
                         </span>
                         {boundary.label}
-                        <span className="ml-2 text-xs text-gray-500 font-normal">
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal">
                           ({boundary.points.length} points)
                         </span>
                       </div>
 
-                      <div className="ml-7 bg-white border border-gray-200 rounded-md p-2 max-h-40 overflow-y-auto">
+                      <div className="ml-7 bg-white dark:bg-surface border border-gray-200 dark:border-white/10 rounded-md p-2 max-h-40 overflow-y-auto">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
                           {boundary.points.map((coord, j) => {
                             if (!Array.isArray(coord) || coord.length < 2)
@@ -1445,10 +1745,10 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                                 key={j}
                                 className="flex items-center py-1 px-2 hover:bg-gray-50 rounded"
                               >
-                                <span className="text-gray-500 w-5">
+                                <span className="text-gray-500 dark:text-gray-400 w-5">
                                   {j + 1}.
                                 </span>
-                                <span className="text-gray-700">
+                                <span className="text-gray-700 dark:text-gray-300">
                                   {typeof x === "number"
                                     ? x.toFixed(6)
                                     : String(x)}
@@ -1467,7 +1767,7 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
                 })()}
               </div>
             ) : (
-              <div className="text-center py-4 text-gray-500">
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                 No boundary coordinates available
               </div>
             )}
@@ -1475,43 +1775,52 @@ export default function SinglePlanDetails({ planId }: SinglePlanDetailsProps) {
         </div>
 
         {/* Pillars Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
+        <div className="bg-white dark:bg-surface rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Pillars ({plan.pillars?.length || 0})
             </h3>
+            {(plan.pillars?.length ?? 0) > 0 && (
+              <button
+                onClick={handleDownloadPillarsCsv}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download CSV
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-white/5">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Pillar #
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Easting
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Northing
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Point Index
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                 {plan.pillars?.map((pillar, index) => (
                   <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {pillar.pillarNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.easting?.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.northing?.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {pillar.pointIndex}
                     </td>
                   </tr>

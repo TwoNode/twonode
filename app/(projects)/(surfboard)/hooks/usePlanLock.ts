@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  getAndLockOldestAvailablePlan,
-  releaseAllLocksForUser,
-} from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 type MDARole = "CHARTING" | "SURCON" | "RECORDS_I" | "RECORDS_II";
 
@@ -46,47 +43,62 @@ export function usePlanLock({
   const [lockError, setLockError] = useState<string | null>(null);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
-    null
+    null,
   );
 
   const hasLock = useRef(false);
   const isUnmounting = useRef(false);
+  // Guards against overlapping acquireLock() calls (React Strict Mode's
+  // double-invoked mount effect, or a fast refresh->approve->refresh
+  // sequence) racing each other's setIsLocking(true/false) — without this,
+  // whichever call's "finally" fires first can be stomped by the other's
+  // setIsLocking(true), leaving the "Acquiring plan lock..." spinner and the
+  // stale locked-plan banner stuck until a manual page refresh.
+  const inFlightRef = useRef<Promise<void> | null>(null);
 
   // Acquire lock on the oldest available plan
   const acquireLock = useCallback(async () => {
-    setIsLocking(true);
-    setLockError(null);
+    if (inFlightRef.current) return inFlightRef.current;
 
-    try {
-      const result = await getAndLockOldestAvailablePlan(role);
+    const run = (async () => {
+      setIsLocking(true);
+      setLockError(null);
 
-      if (result.success && result.data) {
-        if (result.data.locked && result.data.planId) {
-          setLockedPlanId(result.data.planId);
-          setLockedPlanNumber(result.data.planNumber);
-          setLockExpiresAt(
-            result.data.lockExpiresAt
-              ? new Date(result.data.lockExpiresAt)
-              : null
-          );
-          hasLock.current = true;
-          onLockAcquired?.(result.data.planId, result.data.planNumber || "");
+      try {
+        const result = await surfboardApi.cod.locks.claimNextPlan(role as any);
+
+        if (result.success) {
+          if (result.data.locked && result.data.planId) {
+            setLockedPlanId(result.data.planId);
+            setLockedPlanNumber(result.data.planNumber);
+            setLockExpiresAt(
+              result.data.lockExpiresAt
+                ? new Date(result.data.lockExpiresAt)
+                : null,
+            );
+            hasLock.current = true;
+            onLockAcquired?.(result.data.planId, result.data.planNumber || "");
+          } else {
+            // No plans available to lock
+            setLockedPlanId(null);
+            setLockedPlanNumber(null);
+            setLockExpiresAt(null);
+            hasLock.current = false;
+          }
         } else {
-          // No plans available to lock
-          setLockedPlanId(null);
-          setLockedPlanNumber(null);
-          setLockExpiresAt(null);
-          hasLock.current = false;
+          setLockError(result.error || "Failed to acquire lock");
         }
-      } else {
-        setLockError(result.error || "Failed to acquire lock");
+      } catch (error) {
+        console.error("Error acquiring lock:", error);
+        setLockError("An unexpected error occurred");
+      } finally {
+        setIsLocking(false);
+        inFlightRef.current = null;
       }
-    } catch (error) {
-      console.error("Error acquiring lock:", error);
-      setLockError("An unexpected error occurred");
-    } finally {
-      setIsLocking(false);
-    }
+    })();
+
+    inFlightRef.current = run;
+    return run;
   }, [role, onLockAcquired]);
 
   // Release the current lock
@@ -94,7 +106,7 @@ export function usePlanLock({
     if (!lockedPlanId || !hasLock.current) return;
 
     try {
-      await releaseAllLocksForUser(role);
+      await surfboardApi.cod.locks.releaseAll(role as any);
       setLockedPlanId(null);
       setLockedPlanNumber(null);
       setLockExpiresAt(null);
@@ -108,7 +120,7 @@ export function usePlanLock({
   // Release all locks for the user (called on page leave)
   const releaseAllLocks = useCallback(async () => {
     try {
-      await releaseAllLocksForUser(role);
+      await surfboardApi.cod.locks.releaseAll(role as any);
       setLockedPlanId(null);
       setLockedPlanNumber(null);
       setLockExpiresAt(null);
@@ -123,7 +135,7 @@ export function usePlanLock({
     (planId: string) => {
       return lockedPlanId === planId;
     },
-    [lockedPlanId]
+    [lockedPlanId],
   );
 
   // Handle confirming navigation

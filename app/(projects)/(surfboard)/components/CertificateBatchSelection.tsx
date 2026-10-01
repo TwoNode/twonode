@@ -17,16 +17,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2, CheckCircle, AlertCircle, X, XCircle, Eye, UploadCloud } from "lucide-react";
-import { RemitaPaymentModal } from "./RemitaPaymentModal";
-import { submitRedCopyBatch } from "../actions/codActions";
-import { getCodSubmissionSettings, getCurrentSettings } from "../actions/settingsActions";
-import { useRouter } from "next/navigation";
 import {
-  verifyPlanRecordCopy,
-  downloadPlanPdfAsBase64,
-  savePlanVerificationResult,
-} from "../actions/verificationActions";
+  FileText,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  X,
+  XCircle,
+  Eye,
+  UploadCloud,
+  Share2,
+} from "lucide-react";
+import { RemitaPaymentModal } from "./RemitaPaymentModal";
+import { surfboardApi } from "@/surfboard/apiClient";
+import { useRouter } from "next/navigation";
 import { VerificationResultModal } from "./VerificationResultModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,8 +40,6 @@ import {
   scoreResults,
   shoelaceArea,
 } from "../utils/recordCopyVerification";
-import { uploadSurfboardFileToS3, deleteSurfboardFileFromS3 } from "../actions/awsActions";
-import { updatePlanRecordCopy } from "../actions/surfboardActions";
 
 interface Plan {
   id: string;
@@ -95,9 +97,11 @@ export function BatchSubmissionModal({
 
   useEffect(() => {
     if (isOpen) {
-      getCodSubmissionSettings().then((settings) => {
-        setAcceptanceText(settings.codAcceptanceText);
-        setPolicyContent(settings.codPolicyContent);
+      surfboardApi.settings.codSubmission().then((result) => {
+        if (result.success) {
+          setAcceptanceText(result.data.codAcceptanceText);
+          setPolicyContent(result.data.codPolicyContent);
+        }
       });
       setIsAccepted(false);
       setVerificationData({});
@@ -133,8 +137,8 @@ export function BatchSubmissionModal({
 
     try {
       // 1. Download S3 PDF as Base64 to bypass CORS
-      const dlRes = await downloadPlanPdfAsBase64(plan.id);
-      if (!dlRes.success || !dlRes.data) {
+      const dlRes = await surfboardApi.recordCopy.downloadPdf(plan.id);
+      if (!dlRes.success) {
         throw new Error(dlRes.error || "Failed to download PDF from server.");
       }
 
@@ -143,7 +147,8 @@ export function BatchSubmissionModal({
         if ((window as any).pdfjsLib) return (window as any).pdfjsLib;
         return new Promise<any>((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+          script.src =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
           script.async = true;
           script.onload = () => {
             const pdfjsLib = (window as any).pdfjsLib;
@@ -151,7 +156,8 @@ export function BatchSubmissionModal({
               "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
             resolve(pdfjsLib);
           };
-          script.onerror = () => reject(new Error("Failed to load PDF.js engine."));
+          script.onerror = () =>
+            reject(new Error("Failed to load PDF.js engine."));
           document.head.appendChild(script);
         });
       };
@@ -185,9 +191,11 @@ export function BatchSubmissionModal({
 
       // 5. Run verification logic
       const extraction = extractFromPDFText(allText, allItems);
-      
-      const settings = await getCurrentSettings();
-      const rawTol = ((settings.success && settings.data?.recordCopyTolerances) || {}) as any;
+
+      const settings = await surfboardApi.settings.get();
+      const rawTol = ((settings.success &&
+        settings.data?.recordCopyTolerances) ||
+        {}) as any;
       const tolerances = {
         tolAnchor: Number(rawTol.tolAnchor ?? 0.05),
         tolWCB: Number(rawTol.tolWCB ?? 0.05),
@@ -198,10 +206,12 @@ export function BatchSubmissionModal({
       };
 
       // Map plan.pillars to include id
-      const csvVertices = (Array.isArray(plan.pillars) ? plan.pillars : []).map((v: any) => ({
-        ...v,
-        id: v.id || v.pillarNumber || v.pillar || v.point || v.no || "",
-      }));
+      const csvVertices = (Array.isArray(plan.pillars) ? plan.pillars : []).map(
+        (v: any) => ({
+          ...v,
+          id: v.id || v.pillarNumber || v.pillar || v.point || v.no || "",
+        }),
+      );
 
       if (csvVertices.length === 0) {
         throw new Error("No CSV coordinates (pillars) found for this plan.");
@@ -210,7 +220,7 @@ export function BatchSubmissionModal({
       // Group vertices by polygonIndex
       const groups: Record<number, any[]> = {};
       for (const v of csvVertices) {
-        if (!v || typeof v !== 'object') continue;
+        if (!v || typeof v !== "object") continue;
         const idx = (v as any).polygonIndex ?? 0;
         if (!groups[idx]) groups[idx] = [];
         groups[idx].push(v);
@@ -229,18 +239,18 @@ export function BatchSubmissionModal({
 
       for (let i = 0; i < parcels.length; i++) {
         const vertices = parcels[i];
-        
+
         // Filter out ref coordinates already used by another parcel
         const availableCoords = extraction.refCoords.filter(
-          r => !usedRefCoords.has(`${r.easting}|${r.northing}`)
+          (r) => !usedRefCoords.has(`${r.easting}|${r.northing}`),
         );
 
         const anchor = identifyAnchor(
           availableCoords.length > 0 ? availableCoords : extraction.refCoords,
           vertices,
-          tolerances.tolAnchor
+          tolerances.tolAnchor,
         );
-        
+
         if (!anchor) {
           parcelResults.push({
             parcelIndex: i + 1,
@@ -270,7 +280,7 @@ export function BatchSubmissionModal({
           extraction.distances,
           vertices,
           tolerances.tolWCB,
-          tolerances.tolDist
+          tolerances.tolDist,
         );
 
         // Area validation
@@ -278,11 +288,12 @@ export function BatchSubmissionModal({
         let matchedPdfArea = null;
         if (extraction.pdfAreas.length > 0) {
           matchedPdfArea = extraction.pdfAreas.reduce((best: any, a: any) =>
-            Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best
+            Math.abs(a.sqm - csvArea) < Math.abs(best.sqm - csvArea) ? a : best,
           );
         }
         const pdfAreaSqm = matchedPdfArea ? matchedPdfArea.sqm : null;
-        const areaDiff = pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
+        const areaDiff =
+          pdfAreaSqm != null ? Math.abs(csvArea - pdfAreaSqm) : null;
         const areaMatch = areaDiff != null && areaDiff <= tolerances.tolArea;
 
         let hasWarnings = false;
@@ -290,9 +301,24 @@ export function BatchSubmissionModal({
           hasWarnings = true;
           allHasWarnings = true;
         }
-        const firstCsvVertexId = vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "";
-        const anchorVertexId = anchor?.vertex?.id || anchor?.vertex?.pillarNumber || anchor?.vertex?.pillar || anchor?.vertex?.point || anchor?.vertex?.no;
-        if (anchorVertexId && firstCsvVertexId && String(anchorVertexId).trim() !== String(firstCsvVertexId).trim()) {
+        const firstCsvVertexId =
+          vertices[0]?.id ||
+          vertices[0]?.pillarNumber ||
+          vertices[0]?.pillar ||
+          vertices[0]?.point ||
+          vertices[0]?.no ||
+          "";
+        const anchorVertexId =
+          anchor?.vertex?.id ||
+          anchor?.vertex?.pillarNumber ||
+          anchor?.vertex?.pillar ||
+          anchor?.vertex?.point ||
+          anchor?.vertex?.no;
+        if (
+          anchorVertexId &&
+          firstCsvVertexId &&
+          String(anchorVertexId).trim() !== String(firstCsvVertexId).trim()
+        ) {
           hasWarnings = true;
           allHasWarnings = true;
         }
@@ -301,11 +327,17 @@ export function BatchSubmissionModal({
           allHasWarnings = true;
         }
 
-        const score = scoreResults(traverse, tolerances, areaMatch, pdfAreaSqm, hasWarnings);
-        
+        const score = scoreResults(
+          traverse,
+          tolerances,
+          areaMatch,
+          pdfAreaSqm,
+          hasWarnings,
+        );
+
         if (score.hasLegErrors) allHasError = true;
         if (score.hasAreaFail) allHasAreaFail = true;
-        
+
         overallSum += score.overall;
 
         parcelResults.push({
@@ -318,14 +350,25 @@ export function BatchSubmissionModal({
           pdfArea: pdfAreaSqm,
           areaDiff,
           areaMatch,
-          firstCsvVertexId: vertices[0]?.id || vertices[0]?.pillarNumber || vertices[0]?.pillar || vertices[0]?.point || vertices[0]?.no || "",
+          firstCsvVertexId:
+            vertices[0]?.id ||
+            vertices[0]?.pillarNumber ||
+            vertices[0]?.pillar ||
+            vertices[0]?.point ||
+            vertices[0]?.no ||
+            "",
         });
       }
 
       const finalOverall = parcels.length > 0 ? overallSum / parcels.length : 0;
       let finalStatus: "VERIFIED" | "REVIEW" | "NOT_VERIFIED" = "REVIEW";
-      
-      if (finalOverall >= tolerances.tolPass && !allHasWarnings && !allHasError && !allHasAreaFail) {
+
+      if (
+        finalOverall >= tolerances.tolPass &&
+        !allHasWarnings &&
+        !allHasError &&
+        !allHasAreaFail
+      ) {
         finalStatus = "VERIFIED";
       }
       if (allHasError || allHasAreaFail) {
@@ -345,15 +388,17 @@ export function BatchSubmissionModal({
       };
 
       // 6. Save verification results to DB
-      const saveRes = await savePlanVerificationResult(
+      const saveRes = await surfboardApi.recordCopy.saveVerification(
         plan.id,
         finalStatus,
         finalOverall,
-        verificationDataPayload
+        verificationDataPayload,
       );
 
       if (!saveRes.success) {
-        throw new Error(saveRes.error || "Failed to save verification result to database.");
+        throw new Error(
+          saveRes.error || "Failed to save verification result to database.",
+        );
       }
 
       setVerificationData((prev) => ({
@@ -364,7 +409,9 @@ export function BatchSubmissionModal({
           isLoading: false,
         },
       }));
-      toast.success(`Verification complete for ${plan.planNumber}: ${finalStatus}`);
+      toast.success(
+        `Verification complete for ${plan.planNumber}: ${finalStatus}`,
+      );
     } catch (err: any) {
       setVerificationData((prev) => ({
         ...prev,
@@ -389,22 +436,33 @@ export function BatchSubmissionModal({
       // Delete the old file from S3 if it existed to save space
       if (plan.redCopyFileUrl) {
         try {
-          await deleteSurfboardFileFromS3({ url: plan.redCopyFileUrl });
+          await surfboardApi.files.deleteSurfboardFile({
+            url: plan.redCopyFileUrl,
+          });
         } catch (e) {
           console.error("Failed to delete old file:", e);
         }
       }
 
       // Upload new file to S3
-      const result = await uploadSurfboardFileToS3(file, "redcopy", plan.planNumber);
+      const result = await surfboardApi.files.uploadSurfboardFile(
+        file,
+        "redcopy",
+        plan.planNumber,
+      );
       if (!result || !result.url) {
         throw new Error("Upload to S3 failed");
       }
 
       // Update DB
-      const updateRes = await updatePlanRecordCopy(planId, result.url);
+      const updateRes = await surfboardApi.plans.updateRecordCopy(
+        planId,
+        result.url,
+      );
       if (!updateRes.success) {
-        throw new Error(updateRes.error || "Failed to update plan record copy in database");
+        throw new Error(
+          updateRes.error || "Failed to update plan record copy in database",
+        );
       }
 
       // Update the plan object inside selectedPlans locally so that next verification runs on the new URL
@@ -417,13 +475,17 @@ export function BatchSubmissionModal({
         return copy;
       });
 
-      toast.success("New record copy uploaded successfully!", { id: "reupload" });
-      
+      toast.success("New record copy uploaded successfully!", {
+        id: "reupload",
+      });
+
       // Automatically run verification on the new upload!
       await handleVerifyPlan(plan);
     } catch (error: any) {
       console.error("Reupload error:", error);
-      toast.error(`Reupload failed: ${error.message || "Unknown error"}`, { id: "reupload" });
+      toast.error(`Reupload failed: ${error.message || "Unknown error"}`, {
+        id: "reupload",
+      });
     } finally {
       setUploadingPlanId(null);
     }
@@ -431,7 +493,10 @@ export function BatchSubmissionModal({
 
   const verifyAll = async () => {
     for (const plan of selectedPlans) {
-      if (!verificationData[plan.id] || verificationData[plan.id].status === "ERROR") {
+      if (
+        !verificationData[plan.id] ||
+        verificationData[plan.id].status === "ERROR"
+      ) {
         await handleVerifyPlan(plan);
       }
     }
@@ -466,12 +531,12 @@ export function BatchSubmissionModal({
 
       setIsSubmitting(true);
 
-      const result = await submitRedCopyBatch(
+      const result = await surfboardApi.cod.batches.submit(
         selectedPlans.map((p) => p.id),
-        isAccepted
+        true,
       );
 
-      if (result.success && result.data) {
+      if (result.success) {
         const { batchId, batchCode, totalAmount, planCount, submitter } =
           result.data;
 
@@ -539,7 +604,7 @@ export function BatchSubmissionModal({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Total Plans Selected
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
@@ -552,18 +617,18 @@ export function BatchSubmissionModal({
 
           {/* Plans List */}
           <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-gray-900">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
               Selected Plans:
             </h4>
             <div className="max-h-60 overflow-y-auto space-y-2">
               {selectedPlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 gap-3"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10 gap-3"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900 font-mono">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">
                         {plan.planNumber}
                       </p>
                       {plan.redCopyFileUrl && (
@@ -593,7 +658,11 @@ export function BatchSubmissionModal({
                             disabled={uploadingPlanId === plan.id}
                           />
                           <button
-                            onClick={() => document.getElementById(`reupload-${plan.id}`)?.click()}
+                            onClick={() =>
+                              document
+                                .getElementById(`reupload-${plan.id}`)
+                                ?.click()
+                            }
                             className="flex items-center gap-1 text-amber-600 hover:text-amber-800 transition-colors cursor-pointer"
                             title="Upload new record copy"
                             disabled={uploadingPlanId === plan.id}
@@ -608,20 +677,23 @@ export function BatchSubmissionModal({
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 mt-0.5">{plan.surveyTitle}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      {plan.surveyTitle}
+                    </p>
                     {plan.lga && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         LGA: {plan.lga}
                       </p>
                     )}
                   </div>
-                  
+
                   {/* Verification Status */}
                   <div className="flex items-center gap-2 shrink-0">
                     {verificationData[plan.id] ? (
                       verificationData[plan.id].isLoading ? (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border">
-                          <Loader2 className="w-3 h-3 animate-spin text-gray-500" /> Verifying
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2.5 py-1 rounded-full border">
+                          <Loader2 className="w-3 h-3 animate-spin text-gray-500 dark:text-gray-400" />{" "}
+                          Verifying
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -630,8 +702,8 @@ export function BatchSubmissionModal({
                               verificationData[plan.id].status === "VERIFIED"
                                 ? "bg-green-100 text-green-800 hover:bg-green-100 border-green-200"
                                 : verificationData[plan.id].status === "REVIEW"
-                                ? "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"
-                                : "bg-red-100 text-red-800 hover:bg-red-100 border-red-200"
+                                  ? "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"
+                                  : "bg-red-100 text-red-800 hover:bg-red-100 border-red-200"
                             }`}
                           >
                             {verificationData[plan.id].status}
@@ -662,16 +734,16 @@ export function BatchSubmissionModal({
                         Verify Record Copy
                       </Button>
                     )}
- 
+
                     <div className="h-4 w-px bg-gray-300 mx-1"></div>
- 
+
                     {onRemovePlan && (
                       <button
                         onClick={() => onRemovePlan(plan.id)}
                         className="p-1 hover:bg-red-50 rounded-full transition-colors group"
                         title="Remove from selection"
                       >
-                        <X className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
+                        <X className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-red-600" />
                       </button>
                     )}
                   </div>
@@ -709,7 +781,8 @@ export function BatchSubmissionModal({
                     Verification Failed
                   </p>
                   <p className="text-xs text-red-800">
-                    One or more plans failed verification. You must remove these plans from your batch to proceed.
+                    One or more plans failed verification. You must remove these
+                    plans from your batch to proceed.
                   </p>
                 </div>
               </div>
@@ -717,7 +790,7 @@ export function BatchSubmissionModal({
           )}
 
           {allVerifiedOrReviewed ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+            <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4 mt-4">
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="policy-acceptance"
@@ -751,7 +824,8 @@ export function BatchSubmissionModal({
               <Button onClick={verifyAll} disabled={isVerifyingAny} size="sm">
                 {isVerifyingAny ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verifying...
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                    Verifying...
                   </>
                 ) : (
                   "Verify All"
@@ -762,10 +836,22 @@ export function BatchSubmissionModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting || isVerifyingAny}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting || isVerifyingAny}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !isAccepted || !allVerifiedOrReviewed || hasFailingPlan}>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              !isAccepted ||
+              !allVerifiedOrReviewed ||
+              hasFailingPlan
+            }
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -786,7 +872,7 @@ export function BatchSubmissionModal({
           <DialogHeader>
             <DialogTitle>Submission Policy</DialogTitle>
           </DialogHeader>
-          <div className="prose max-w-none text-sm text-gray-700 whitespace-pre-wrap">
+          <div className="prose max-w-none text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
             {policyContent}
           </div>
           <DialogFooter>
@@ -798,18 +884,25 @@ export function BatchSubmissionModal({
       <VerificationResultModal
         isOpen={activeVerificationModal.isOpen}
         onClose={() =>
-          setActiveVerificationModal({ isOpen: false, data: null, planNumber: "" })
+          setActiveVerificationModal({
+            isOpen: false,
+            data: null,
+            planNumber: "",
+          })
         }
         resultData={activeVerificationModal.data}
         planNumber={activeVerificationModal.planNumber}
       />
 
-      <Dialog open={!!viewingPdfUrl} onOpenChange={() => setViewingPdfUrl(null)}>
+      <Dialog
+        open={!!viewingPdfUrl}
+        onOpenChange={() => setViewingPdfUrl(null)}
+      >
         <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-4">
           <DialogHeader className="pb-2">
             <DialogTitle>View Record Copy - {viewingPdfPlanNumber}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 w-full h-full border rounded overflow-hidden bg-gray-100">
+          <div className="flex-1 w-full h-full border rounded overflow-hidden bg-gray-100 dark:bg-white/10">
             {viewingPdfUrl && (
               <iframe
                 src={viewingPdfUrl}
@@ -831,12 +924,14 @@ interface BatchSelectionBarProps {
   selectedCount: number;
   onSubmit: () => void;
   onClear: () => void;
+  onShare?: () => void;
 }
 
 export function BatchSelectionBar({
   selectedCount,
   onSubmit,
   onClear,
+  onShare,
 }: BatchSelectionBarProps) {
   if (selectedCount === 0) return null;
 
@@ -848,7 +943,7 @@ export function BatchSelectionBar({
         exit={{ opacity: 0, y: 50 }}
         className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[95%] sm:w-auto max-w-lg sm:max-w-none"
       >
-        <div className="bg-white rounded-xl shadow-2xl border-2 border-blue-500 p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-surface rounded-xl shadow-2xl border-2 border-blue-500 p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div className="flex items-center justify-between sm:justify-start gap-2">
             <Badge className="bg-blue-600 text-nowrap text-white px-3 py-1 text-sm w-full sm:w-auto flex justify-center">
               {selectedCount} selected
@@ -860,10 +955,22 @@ export function BatchSelectionBar({
               variant="outline"
               size="sm"
               onClick={onClear}
-              className="border-gray-300 flex-1 sm:flex-none"
+              className="border-gray-300 dark:border-white/15 flex-1 sm:flex-none"
             >
               Clear
             </Button>
+
+            {onShare && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onShare}
+                className="border-gray-300 dark:border-white/15 flex-1 sm:flex-none whitespace-nowrap"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+            )}
 
             <Button
               size="sm"

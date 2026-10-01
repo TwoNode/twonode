@@ -99,7 +99,7 @@ export default function PlanView({
               className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
                 viewMode === "grid"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-gray-50"
               }`}
             >
               <Grid className="w-4 h-4" />
@@ -110,7 +110,7 @@ export default function PlanView({
               className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
                 viewMode === "list"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  : "bg-white dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-gray-50"
               }`}
             >
               <List className="w-4 h-4" />
@@ -207,27 +207,27 @@ export default function PlanView({
           ))}
         </div>
       ) : (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-surface shadow-md rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-white/5">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Plan Number
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Area
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Location
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Updated
                   </th>
                   <th className="relative px-6 py-3">
@@ -235,7 +235,7 @@ export default function PlanView({
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-surface divide-y divide-gray-200">
                 {plans.map((plan) => (
                   <tr
                     key={plan.id}
@@ -245,24 +245,24 @@ export default function PlanView({
                     className="hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {plan.planNumber}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {plan.surveyTitle}
                       </div>
                       {plan.facilitator && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {plan.facilitator}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatArea(plan.areaSqM)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center">
                         <MapPinIcon className="h-4 w-4 mr-1 text-muted-foreground" />
                         <span
@@ -278,7 +278,7 @@ export default function PlanView({
                         {statusLabels[plan.status]}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {format(new Date(plan.updatedAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

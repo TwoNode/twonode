@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Settings, Trash2, Loader2, RefreshCw, BarChart3 } from "lucide-react";
-import { clearUserSubscription } from "@/app/(projects)/(surfboard)/actions/subscriptionActions";
-import { getSubscriptionAnalytics } from "@/app/(projects)/(surfboard)/actions/subscriptionAnalyticsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 
 interface SubscriptionAnalytics {
   activeCount: number;
@@ -54,9 +53,9 @@ export default function SubscriptionAdminFAB() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      const { data } = await getSubscriptionAnalytics();
-      if (data) {
-        setAnalytics(data);
+      const result = await surfboardApi.subscriptionAnalytics.get();
+      if (result.success) {
+        setAnalytics(result.data);
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -75,7 +74,7 @@ export default function SubscriptionAdminFAB() {
   const handleClearSubscription = async () => {
     setIsClearing(true);
     try {
-      const result = await clearUserSubscription();
+      const result = await surfboardApi.subscription.clear();
       if (result?.success) {
         toast.success("Subscription cleared successfully");
         window.location.reload();
@@ -175,17 +174,17 @@ export default function SubscriptionAdminFAB() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead>
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Missing Data</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User ID</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Missing Data</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {analytics.invalidSubscriptions.map((sub) => (
                           <tr key={sub.id}>
-                            <td className="px-4 py-2 text-sm text-gray-900">{sub.userId}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{sub.status}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{sub.userId}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{sub.status}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                               {!sub.subCode && "subCode "}
                               {!sub.emailToken && "emailToken"}
                             </td>
@@ -195,7 +194,7 @@ export default function SubscriptionAdminFAB() {
                     </table>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No invalid subscriptions found.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No invalid subscriptions found.</p>
                 )}
               </div>
 
@@ -205,24 +204,24 @@ export default function SubscriptionAdminFAB() {
                 {analytics.recentWebhookEvents.length > 0 ? (
                   <div className="space-y-2">
                     {analytics.recentWebhookEvents.map((event, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-white/5 rounded">
                         <div>
                           <span className="font-medium">{event.event}</span>
-                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400">
                             {event.status}
                           </span>
                         </div>
-                        <span className="text-sm text-gray-500">{event.count} events</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{event.count} events</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No webhook events in the last 24 hours.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No webhook events in the last 24 hours.</p>
                 )}
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               Failed to load analytics data.
             </div>
           )}

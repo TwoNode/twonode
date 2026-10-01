@@ -2,9 +2,8 @@
   "name": "twonode",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.1.1",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -13,6 +12,9 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "prisma:generate": "npx prisma generate",
     "prisma:push": "npx prisma db push",
     "prisma:studio": "npx prisma studio",
@@ -24,6 +26,7 @@
     "@arcgis/core": "^4.33.9",
     "@aws-sdk/client-s3": "^3.782.0",
     "@aws-sdk/s3-request-presigner": "^3.882.0",
+    "@cf-wasm/photon": "^0.4.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
     "@kinde-oss/kinde-auth-nextjs": "^2.10.0",
@@ -61,7 +64,7 @@
     "@turf/turf": "^7.2.0",
     "@types/leaflet": "^1.9.20",
     "axios": "^1.10.0",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "bowser": "^2.11.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -99,7 +102,6 @@
     "react-phone-number-input": "^3.4.12",
     "react-responsive": "^10.0.0",
     "react-responsive-carousel": "^3.2.23",
-    "react-toastify": "^11.0.5",
     "shadcn-file-upload": "^1.0.2",
     "sharp": "^0.33.5",
     "sonner": "^2.0.7",
@@ -113,11 +115,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/bcrypt": "^5.0.2",
-    "@types/date-fns": "^2.5.3",
     "@types/geojson": "^7946.0.16",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/node": "^20",
+    "@types/node": "^24.13.6",
     "@types/nodemailer": "^6.4.17",
     "@types/paystack__inline-js": "^1.0.1",
     "@types/pdf-parse": "^1.1.5",
@@ -125,12 +125,26 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/terraformer__arcgis": "^2.0.5",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.8.32",
+    "playwright": "^1.63.0",
     "postcss": "^8.5.6",
     "prisma": "^6.7.0",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.19.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "core-js",
+      "@vaadin/vaadin-usage-statistics"
+    ]
   }
 }

@@ -20,19 +20,7 @@ import {
   PILLAR_TYPE_ADJOINING_FILTERS,
   ParcelInfo,
 } from "@/app/(projects)/(surfboard)/types/surfboardTypes";
-import {
-  createSurfPlan,
-  updateSurfPlan,
-  searchReferencePlanNumbers,
-  getAllFacilitatorsAndPlanNumbers,
-  checkPlanNumberExists,
-  getAdminBoundaries,
-} from "@/app/(projects)/(surfboard)/actions/surfboardActions";
-import {
-  getSurfboardUploadTargetsMulti,
-  deleteSurfboardFileFromS3,
-} from "@/app/(projects)/(surfboard)/actions/awsActions";
-import { recognizePersonCount } from "@/app/(projects)/(surfboard)/actions/aiExtractionActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import {
   generatePolygonFromPillars,
   generateMultiPolygonFromPillarGroups,
@@ -49,6 +37,7 @@ import {
   FileCheck,
   AlertTriangle,
   Sparkles,
+  Download,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -240,24 +229,25 @@ const FileList = ({ files, onDelete, type }: FileListProps) => {
 const cn = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");
 
-const labelCls = "block text-sm font-medium text-gray-800 mb-1";
+const labelCls =
+  "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
 const reqBadge = (
   <span className="text-red-500" aria-hidden="true">
     *
   </span>
 );
-const helpCls = "mt-1 text-xs text-gray-500";
-const errorCls = "mt-1 text-sm text-red-600";
+const helpCls = "mt-1 text-xs text-gray-500 dark:text-gray-400";
+const errorCls = "mt-1 text-sm text-red-600 dark:text-red-400";
 
 const inputBase =
-  "w-full px-3 py-2 border rounded-md outline-none transition focus:ring-2 focus:ring-black focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed bg-white";
-const inputBorder = "border-gray-300";
+  "w-full px-3 py-2 border rounded-md outline-none transition focus:ring-2 focus:ring-black focus:border-black/30 dark:focus:ring-white/40 dark:focus:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-surface text-gray-900 dark:text-white";
+const inputBorder = "border-gray-300 dark:border-white/15";
 const inputError = "border-red-500 focus:ring-red-600";
 
 const sectionCardBase =
-  "bg-white rounded-2xl shadow p-6 space-y-6 border border-gray-100";
-const sectionTitle = "text-base font-semibold text-gray-900";
-const subtle = "text-sm text-gray-600";
+  "bg-white dark:bg-surface rounded-2xl shadow dark:shadow-none p-6 space-y-6 border border-gray-100 dark:border-white/10";
+const sectionTitle = "text-base font-semibold text-gray-900 dark:text-white";
+const subtle = "text-sm text-gray-600 dark:text-gray-400";
 
 type SectionProps = {
   id: string;
@@ -434,8 +424,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     (async () => {
       try {
-        const result = await getAllFacilitatorsAndPlanNumbers();
-        if (result.success && result.data) {
+        const result = await surfboardApi.plans.facilitators(true);
+        if (result.success) {
           setFacilitators(result.data.facilitators);
         }
       } catch (e) {
@@ -497,8 +487,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED); // Use generic search
-        setAdjOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(PLAN_TYPES.DEED); // Use generic search
+        setAdjOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setAdjOptions([]);
@@ -519,8 +509,8 @@ export default function SurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(form.planType);
-        setRefOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(form.planType);
+        setRefOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setRefOptions([]);
@@ -657,7 +647,9 @@ export default function SurfboardPlanForm({
 
         // Get admin boundaries for this polygon
         const tempPoly = await generatePolygonFromPillars(pillarsWithIndex);
-        const adminData = await getAdminBoundaries(tempPoly as any);
+        const adminData = await surfboardApi.plans.adminBoundaries(
+          tempPoly as any,
+        );
 
         newParcels.push({
           polygonIndex: parcelIdx,
@@ -708,6 +700,25 @@ export default function SurfboardPlanForm({
     }
   }
 
+  function handleDownloadPillarsCsv() {
+    if (pillars.length === 0) return;
+    // Reconstructs from the parsed rows already held in state, not the
+    // original uploaded file bytes — the raw File objects aren't kept once
+    // parsed (see csvFiles' doc comment above).
+    const headers = ["Pillar Number", "Easting", "Northing"];
+    const rows = pillars.map((p) => [p.pillarNumber ?? "", p.easting ?? "", p.northing ?? ""]);
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "pillars.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   async function removeParcel(index: number) {
     const nextGroups = pillarGroups.filter((_, i) => i !== index);
     const nextParcels = parcels
@@ -727,6 +738,11 @@ export default function SurfboardPlanForm({
 
     if (updatedGroups.length === 0) {
       setField("geometry", null);
+      // No parcels left to derive Ward/LCDA/LGA/State from — clear the
+      // Administrative Information fields instead of leaving them showing
+      // whichever removed parcel last populated them, so a fresh CSV upload
+      // fills them in from scratch rather than silently keeping stale data.
+      setForm((prev) => ({ ...prev, ward: null, lcda: null, lga: null, state: null }));
       return;
     }
 
@@ -737,6 +753,18 @@ export default function SurfboardPlanForm({
       geom = await generateMultiPolygonFromPillarGroups(updatedGroups);
     }
     setField("geometry", geom as any);
+
+    // Re-derive Ward/LCDA/LGA/State from whichever parcel is now first —
+    // otherwise removing parcel 1 (whose boundaries the fields were showing)
+    // left them stuck on that removed parcel's data instead of parcel 2's.
+    const newFirst = nextParcels[0];
+    setForm((prev) => ({
+      ...prev,
+      ward: newFirst.ward ?? null,
+      lcda: newFirst.lcda ?? null,
+      lga: newFirst.lga ?? null,
+      state: newFirst.state ?? null,
+    }));
   }
 
   // Upload helper (unchanged)
@@ -757,7 +785,7 @@ export default function SurfboardPlanForm({
       );
     });
     try {
-      const targets = await getSurfboardUploadTargetsMulti(formData);
+      const targets = await surfboardApi.files.uploadTargetsMulti(formData);
       return targets.map((target) => target.publicUrl);
     } catch (error) {
       console.error("Error uploading files:", error);
@@ -815,7 +843,8 @@ export default function SurfboardPlanForm({
         geometry: form.geometry,
         personCount: personCountManual, // Include person count
         withdrawalAndResubmissionStatus: form.withdrawalAndResubmissionStatus,
-        reasonForWithdrawalAndResubmission: form.reasonForWithdrawalAndResubmission,
+        reasonForWithdrawalAndResubmission:
+          form.reasonForWithdrawalAndResubmission,
         pillarTypeReferencePlanNumber: form.pillarTypeReferencePlanNumber,
         parcels: parcels,
         dateLodged:
@@ -841,7 +870,7 @@ export default function SurfboardPlanForm({
       let res: ApiResult<{ id: string; planNumber: string }>;
 
       if (mode === "create") {
-        res = await createSurfPlan(payload);
+        res = await surfboardApi.plans.create(payload as any);
         if (res.success) {
           toast.success("Plan created");
           setSelectedCadFiles([]);
@@ -851,7 +880,7 @@ export default function SurfboardPlanForm({
           toast.error(res.error || "Create failed");
         }
       } else {
-        res = await updateSurfPlan(payload);
+        res = await surfboardApi.plans.update(form.id!, payload as any);
         if (res.success) toast.success("Plan updated");
         else toast.error(res.error || "Update failed");
       }
@@ -878,7 +907,11 @@ export default function SurfboardPlanForm({
     if (!form.planNumber.trim()) return;
     setIsCheckingPlanNumber(true);
     try {
-      const exists = await checkPlanNumberExists(form.planNumber, form.id);
+      const checkResult = await surfboardApi.plans.checkNumberExists(
+        form.planNumber,
+        form.id,
+      );
+      const exists = checkResult.success ? checkResult.data.exists : false;
       if (exists) {
         setErrors((prev) => ({
           ...prev,
@@ -944,7 +977,8 @@ export default function SurfboardPlanForm({
         !refFilterConf.allowFreeText &&
         !refOptions.includes(form.referencePlanNumber)
       ) {
-        errs.referencePlanNumber = "Must select a valid plan number from the list";
+        errs.referencePlanNumber =
+          "Must select a valid plan number from the list";
       }
     }
 
@@ -952,7 +986,8 @@ export default function SurfboardPlanForm({
       form.planType === PLAN_TYPES.WITHDRAWAL_AND_RESUBMISSION &&
       !form.reasonForWithdrawalAndResubmission?.trim()
     ) {
-      errs.reasonForWithdrawalAndResubmission = "Reason for withdrawal is required";
+      errs.reasonForWithdrawalAndResubmission =
+        "Reason for withdrawal is required";
     }
 
     if (showAdjoiningField && !form.pillarTypeReferencePlanNumber?.trim()) {
@@ -972,6 +1007,42 @@ export default function SurfboardPlanForm({
     if (overs.length) errs.files = "Some selected files exceed 50MB";
 
     setErrors(errs);
+
+    // Previously a failed submit just silently did nothing beyond setting
+    // `errors` — on this long, multi-step form the user had no way to tell
+    // *which* field(s) were missing without scrolling around hunting for
+    // red text. Scroll to (and focus, for the native highlight ring) the
+    // first invalid field instead, in the same top-to-bottom order the
+    // checks above run in (Object.keys preserves insertion order).
+    const firstErrorField = Object.keys(errs)[0];
+    if (firstErrorField) {
+      // A handful of error keys don't share their input's `id` verbatim
+      // (e.g. the "cad" error belongs to the "cadFiles" input) — this maps
+      // the mismatched ones; every other key already matches its element id.
+      const ERROR_FIELD_TO_ELEMENT_ID: Record<string, string> = {
+        pillars: "pillarsCsv",
+        cad: "cadFiles",
+        pdf: "pdfFiles",
+        cert: "certFiles",
+        referencePlanNumber: "referencePlan",
+        reasonForWithdrawalAndResubmission: "reasonForWithdrawal",
+        pillarTypeReferencePlanNumber: "pillarTypeReferencePlan",
+        parcels: "pillarsCsv",
+      };
+      const targetId = ERROR_FIELD_TO_ELEMENT_ID[firstErrorField] ?? firstErrorField;
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (typeof (el as HTMLElement).focus === "function") {
+          (el as HTMLElement).focus({ preventScroll: true });
+        }
+      }
+      const count = Object.keys(errs).length;
+      toast.error(
+        count > 1 ? `Please fill in ${count} required fields` : "Please fill in the required field",
+      );
+    }
+
     return Object.keys(errs).length === 0;
   }
 
@@ -1014,8 +1085,8 @@ export default function SurfboardPlanForm({
     if (!form.surveyTitle) return;
     setIsRecognizing(true);
     try {
-      const res = await recognizePersonCount(form.surveyTitle);
-      if (res.success && res.data) {
+      const res = await surfboardApi.ai.recognizePersonCount(form.surveyTitle);
+      if (res.success) {
         setPersonCountAI(res.data.count);
         if (res.data.count !== personCountManual) {
           toast.warning(
@@ -1065,11 +1136,14 @@ export default function SurfboardPlanForm({
       if (typeof file === "string") {
         // It's an existing file URL, delete from S3
         try {
-          await deleteSurfboardFileFromS3({ url: file });
+          await surfboardApi.files.deleteSurfboardFile({ url: file });
         } catch (s3Error) {
-          console.error("S3 delete failed, proceeding with DB update:", s3Error);
+          console.error(
+            "S3 delete failed, proceeding with DB update:",
+            s3Error,
+          );
         }
-        await updateSurfPlan({
+        await surfboardApi.plans.update(form.id!, {
           ...INITIALS(initial),
           [field]: form[field].filter((f) => f !== file),
         } as any);
@@ -1427,7 +1501,7 @@ export default function SurfboardPlanForm({
                     className={cn(
                       inputBase,
                       errors.surveyTitle ? inputError : inputBorder,
-                      "min-h-[60px] resize-y",
+                      "min-h-15 resize-y",
                     )}
                     disabled={
                       (lockNonCert && mode === "edit") ||
@@ -1552,13 +1626,18 @@ export default function SurfboardPlanForm({
                       id="reasonForWithdrawal"
                       value={form.reasonForWithdrawalAndResubmission || ""}
                       onChange={(e) =>
-                        setField("reasonForWithdrawalAndResubmission", e.target.value)
+                        setField(
+                          "reasonForWithdrawalAndResubmission",
+                          e.target.value,
+                        )
                       }
                       rows={3}
                       className={cn(
                         inputBase,
-                        errors.reasonForWithdrawalAndResubmission ? inputError : inputBorder,
-                        "min-h-[80px] resize-y"
+                        errors.reasonForWithdrawalAndResubmission
+                          ? inputError
+                          : inputBorder,
+                        "min-h-20 resize-y",
                       )}
                       disabled={lockNonCert && mode === "edit"}
                       placeholder="Please explain why the reference plan was withdrawn..."
@@ -1989,7 +2068,7 @@ export default function SurfboardPlanForm({
               </div>
 
               <div className="flex flex-wrap justify-between gap-4">
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.ward && "text-gray-400")}
                   >
@@ -2003,7 +2082,7 @@ export default function SurfboardPlanForm({
                     className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.lcda && "text-gray-400")}
                   >
@@ -2017,7 +2096,7 @@ export default function SurfboardPlanForm({
                     className={cn(inputBase, "bg-gray-50")}
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label className={cn(labelCls, !form.lga && "text-gray-400")}>
                     Primary LGA
                   </label>
@@ -2029,7 +2108,7 @@ export default function SurfboardPlanForm({
                     placeholder="Auto-populated"
                   />
                 </div>
-                <div className="flex-1 min-w-[200px]">
+                <div className="flex-1 min-w-50">
                   <label
                     className={cn(labelCls, !form.state && "text-gray-400")}
                   >
@@ -2099,13 +2178,23 @@ export default function SurfboardPlanForm({
                       Pillar Summary
                     </h3>
                   </div>
-                  <a
-                    href="#pillar-summary"
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                    aria-label="Anchor link to Pillar Summary"
-                  >
-                    #
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPillarsCsv}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download CSV
+                    </button>
+                    <a
+                      href="#pillar-summary"
+                      className="text-xs text-gray-400 hover:text-gray-600"
+                      aria-label="Anchor link to Pillar Summary"
+                    >
+                      #
+                    </a>
+                  </div>
                 </div>
                 <hr className="border-dashed border-gray-200" />
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -2124,39 +2213,70 @@ export default function SurfboardPlanForm({
                           {(() => {
                             const geometry = handleGeometryDisplay();
                             if (!geometry || !geometry.coordinates?.length) {
-                              return <span className="text-xs text-gray-500 italic">No coordinates data</span>;
+                              return (
+                                <span className="text-xs text-gray-500 italic">
+                                  No coordinates data
+                                </span>
+                              );
                             }
 
-                            const boundaries: { label: string; points: [number, number][] }[] = [];
+                            const boundaries: {
+                              label: string;
+                              points: [number, number][];
+                            }[] = [];
 
                             if (geometry.type === "Polygon") {
-                              geometry.coordinates.forEach((ring: [number, number][], ringIndex: number) => {
-                                if (Array.isArray(ring) && ring.length > 0) {
-                                  boundaries.push({
-                                    label: geometry.coordinates.length > 1
-                                      ? `Polygon Ring ${ringIndex + 1}`
-                                      : "Polygon",
-                                    points: ring,
-                                  });
-                                }
-                              });
+                              geometry.coordinates.forEach(
+                                (
+                                  ring: [number, number][],
+                                  ringIndex: number,
+                                ) => {
+                                  if (Array.isArray(ring) && ring.length > 0) {
+                                    boundaries.push({
+                                      label:
+                                        geometry.coordinates.length > 1
+                                          ? `Polygon Ring ${ringIndex + 1}`
+                                          : "Polygon",
+                                      points: ring,
+                                    });
+                                  }
+                                },
+                              );
                             } else if (geometry.type === "MultiPolygon") {
-                              geometry.coordinates.forEach((polygon: [number, number][][], polyIndex: number) => {
-                                if (Array.isArray(polygon)) {
-                                  polygon.forEach((ring: [number, number][], ringIndex: number) => {
-                                    if (Array.isArray(ring) && ring.length > 0) {
-                                      boundaries.push({
-                                        label: polygon.length > 1
-                                          ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
-                                          : `Polygon ${polyIndex + 1}`,
-                                        points: ring,
-                                      });
-                                    }
-                                  });
-                                }
-                              });
+                              geometry.coordinates.forEach(
+                                (
+                                  polygon: [number, number][][],
+                                  polyIndex: number,
+                                ) => {
+                                  if (Array.isArray(polygon)) {
+                                    polygon.forEach(
+                                      (
+                                        ring: [number, number][],
+                                        ringIndex: number,
+                                      ) => {
+                                        if (
+                                          Array.isArray(ring) &&
+                                          ring.length > 0
+                                        ) {
+                                          boundaries.push({
+                                            label:
+                                              polygon.length > 1
+                                                ? `Polygon ${polyIndex + 1}, Ring ${ringIndex + 1}`
+                                                : `Polygon ${polyIndex + 1}`,
+                                            points: ring,
+                                          });
+                                        }
+                                      },
+                                    );
+                                  }
+                                },
+                              );
                             } else {
-                              return <span className="text-xs text-gray-500 italic">Unsupported geometry: {geometry.type}</span>;
+                              return (
+                                <span className="text-xs text-gray-500 italic">
+                                  Unsupported geometry: {geometry.type}
+                                </span>
+                              );
                             }
 
                             return boundaries.map((boundary, i) => (
@@ -2165,15 +2285,24 @@ export default function SurfboardPlanForm({
                                 className="max-h-40 overflow-y-auto mt-1 text-xs text-gray-700"
                               >
                                 <span>
-                                  {boundary.label} ({boundary.points.length} points):
+                                  {boundary.label} ({boundary.points.length}{" "}
+                                  points):
                                 </span>
                                 {boundary.points.map((coord, j) => {
-                                  if (!Array.isArray(coord) || coord.length < 2) return null;
+                                  if (!Array.isArray(coord) || coord.length < 2)
+                                    return null;
                                   const [x, y] = coord;
                                   return (
                                     <div key={j} className="py-0.5">
-                                      Point {j + 1}: ({typeof x === "number" ? x.toFixed(6) : String(x)},{" "}
-                                      {typeof y === "number" ? y.toFixed(6) : String(y)})
+                                      Point {j + 1}: (
+                                      {typeof x === "number"
+                                        ? x.toFixed(6)
+                                        : String(x)}
+                                      ,{" "}
+                                      {typeof y === "number"
+                                        ? y.toFixed(6)
+                                        : String(y)}
+                                      )
                                     </div>
                                   );
                                 })}

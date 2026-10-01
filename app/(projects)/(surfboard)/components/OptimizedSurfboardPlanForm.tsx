@@ -12,13 +12,7 @@ import {
   PILLAR_TYPE_ADJOINING_FILTERS,
   REFERENCE_FILTERS,
 } from "../types/surfboardTypes";
-import {
-  createSurfPlan,
-  updateSurfPlan,
-  checkPlanNumberExists,
-  searchReferencePlanNumbers,
-} from "../actions/surfboardActions";
-import { uploadSurfboardFileWithAuth } from "../actions/awsActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import { Badge } from "@/components/ui/badge";
 import MaplibreMap from "./maps/MaplibreMap";
 import { File, X, FileText, FileCheck, Save, Loader2 } from "lucide-react";
@@ -69,22 +63,22 @@ const INITIALS = (initial: any): SurfboardPlanDTO => {
 const cn = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");
 
-const labelCls = "block text-sm font-medium text-gray-800 mb-1";
+const labelCls = "block text-sm font-medium text-gray-800 dark:text-gray-200 mb-1";
 const reqBadge = (
   <span className="text-red-500" aria-hidden="true">
     *
   </span>
 );
 const inputBase =
-  "w-full px-3 py-2 border rounded-md outline-none transition focus:ring-2 focus:ring-black focus:border-black/30 disabled:opacity-50 disabled:cursor-not-allowed bg-white";
-const inputBorder = "border-gray-300";
+  "w-full px-3 py-2 border rounded-md outline-none transition focus:ring-2 focus:ring-black focus:border-black/30 dark:focus:ring-white/40 dark:focus:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-surface text-gray-900 dark:text-white";
+const inputBorder = "border-gray-300 dark:border-white/15";
 const inputError = "border-red-500 focus:ring-red-600";
-const errorCls = "mt-1 text-sm text-red-600";
+const errorCls = "mt-1 text-sm text-red-600 dark:text-red-400";
 
 const sectionCardBase =
-  "bg-white rounded-2xl shadow p-6 space-y-6 border border-gray-100";
-const sectionTitle = "text-base font-semibold text-gray-900";
-const subtle = "text-sm text-gray-600";
+  "bg-white dark:bg-surface rounded-2xl shadow dark:shadow-none p-6 space-y-6 border border-gray-100 dark:border-white/10";
+const sectionTitle = "text-base font-semibold text-gray-900 dark:text-white";
+const subtle = "text-sm text-gray-600 dark:text-gray-400";
 
 type SectionProps = {
   id: string;
@@ -187,8 +181,8 @@ export default function OptimizedSurfboardPlanForm({
   useEffect(() => {
     const load = async () => {
       try {
-        const list = await searchReferencePlanNumbers(PLAN_TYPES.DEED);
-        setAdjOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(PLAN_TYPES.DEED);
+        setAdjOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setAdjOptions([]);
@@ -220,8 +214,8 @@ export default function OptimizedSurfboardPlanForm({
     const load = async () => {
       if (!formData.planType) return;
       try {
-        const list = await searchReferencePlanNumbers(formData.planType);
-        setRefOptions(list || []);
+        const res = await surfboardApi.plans.referenceNumbers(formData.planType);
+        setRefOptions((res.success ? res.data : []) || []);
       } catch (e) {
         console.error(e);
         setRefOptions([]);
@@ -331,7 +325,7 @@ export default function OptimizedSurfboardPlanForm({
 
     for (const file of files) {
       try {
-        const result = await uploadSurfboardFileWithAuth(
+        const result = await surfboardApi.files.uploadSurfboardFileWithAuth(
           file,
           kind,
           formData.planNumber
@@ -378,9 +372,9 @@ export default function OptimizedSurfboardPlanForm({
 
       let result;
       if (mode === "edit" && formData.id) {
-        result = await updateSurfPlan(payload);
+        result = await surfboardApi.plans.update(formData.id, payload as any);
       } else {
-        result = await createSurfPlan(payload);
+        result = await surfboardApi.plans.create(payload as any);
       }
 
       if (result.success) {
@@ -411,10 +405,11 @@ export default function OptimizedSurfboardPlanForm({
 
     setPlanNumberChecking(true);
     try {
-      const exists = await checkPlanNumberExists(
+      const checkResult = await surfboardApi.plans.checkNumberExists(
         formData.planNumber,
         mode === "edit" ? formData.id : undefined
       );
+      const exists = checkResult.success ? checkResult.data.exists : false;
       if (exists) {
         setErrors((prev) => ({
           ...prev,

@@ -41,9 +41,9 @@ export function PlanLockWarningDialog({
               and another admin may take over.
             </p>
             {planNumber && (
-              <div className="bg-gray-100 px-4 py-3 rounded-lg">
-                <span className="text-sm text-gray-500">Locked Plan:</span>
-                <p className="font-semibold text-gray-900">{planNumber}</p>
+              <div className="bg-gray-100 dark:bg-white/10 px-4 py-3 rounded-lg">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Locked Plan:</span>
+                <p className="font-semibold text-gray-900 dark:text-white">{planNumber}</p>
               </div>
             )}
           </AlertDialogDescription>

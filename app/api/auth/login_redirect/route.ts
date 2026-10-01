@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { addBaseUrl } from "@/utils/addBaseUrl";
+import { NextRequest, NextResponse } from "next/server";
 import { Platform } from "@/utils/platform";
 import { getEncryptedUserData } from "@/utils/encryptedCookies";
 import {
@@ -13,14 +12,14 @@ import {
   isMDARole,
 } from "@/permissions";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   console.log("login_redirect PAGE");
   const userData = await getEncryptedUserData();
 
   let redirectUrl = "/";
 
   if (!userData) {
-    return NextResponse.redirect(addBaseUrl("/"));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   if (userData.platform === Platform.REVA) {
@@ -37,23 +36,23 @@ export async function GET() {
     }
   } else if (userData.platform === Platform.SURFBOARD) {
     if (canAccessSurfSuperAdminPanel(userData.role)) {
-      redirectUrl = "/surf-restricted/superadmin";
+      redirectUrl = "/surfboard-restricted/superadmin";
     } else if (canAccessSurfAdminPanel(userData.role)) {
-      redirectUrl = "/surf-restricted/dashboard";
+      redirectUrl = "/surfboard-restricted/dashboard";
     } else if (isMDARole(userData.role)) {
-      redirectUrl = "/surf-mda/dashboard";
+      redirectUrl = "/surfboard-mda/dashboard";
     } else if (canAccessSurfUserPanel(userData.role)) {
       redirectUrl = "/surfboard/dashboard";
     }
   } else if (userData.platform === Platform.GBC) {
     if (canAccessGBCAdminPanel(userData.role)) {
-      redirectUrl = "/gbc/restricted";
+      redirectUrl = "/gbc-restricted";
     } else if (canAccessGBCUserPanel(userData.role)) {
       redirectUrl = "/gbc";
     }
   }
 
-  return NextResponse.redirect(addBaseUrl(redirectUrl));
+  return NextResponse.redirect(new URL(redirectUrl, request.url));
 }
 
 // import { NextResponse } from "next/server";

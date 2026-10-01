@@ -6,10 +6,11 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/ui/pagination";
+import {
   FileText,
   Loader2,
   CreditCard,
@@ -38,20 +46,18 @@ import {
   ChevronDown,
   Copy,
   Download,
+  Search,
+  History,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { RemitaPaymentModal, type SubmitterInfo } from "./RemitaPaymentModal";
-import {
-  deleteAllBatches,
-  getUserBatches,
-  retryBatchPayment,
-  getBatchPDFData,
-} from "../actions/codActions";
+import { surfboardApi } from "@/surfboard/apiClient";
 import type {
   RedCopyBatchPDFData,
 } from "./RedCopySubmissionPDF";
 import { PhysicalSubmissionModal } from "./PhysicalSubmissionModal";
+import { useConfirm } from "@/hooks/useConfirm";
 
 // Dynamically import DownloadSubmissionLetterBtn to avoid SSR issues
 const DownloadSubmissionLetterBtn = dynamic(
@@ -70,10 +76,13 @@ interface Batch {
   userPaymentRef: string | null;
   userPaymentDate: Date | null;
   createdAt: Date;
+  lasgReceiptUrl?: string | null;
+  remitaReceiptUrl?: string | null;
   plans: Array<{
     id: string;
     planNumber: string;
     surveyTitle: string;
+    facilitator?: string | null;
     status: string;
     redCopyStatus: string;
     physicalCopySubmitted: boolean;
@@ -105,12 +114,27 @@ export function SubmittedBatchesModal({
   onClose,
   onSuccess,
 }: SubmittedBatchesModalProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [payingBatchId, setPayingBatchId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [physicalSubmittingBatchId, setPhysicalSubmittingBatchId] = useState<string | null>(null);
+
+  // Active/History split: a batch moves to History once every plan in it
+  // has reached LODGED — nothing further to do on it. Each tab is its own
+  // paginated, server-filtered query (not a client-side slice of
+  // everything), since history accumulates indefinitely.
+  const [scope, setScope] = useState<"active" | "history">("active");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [historyCount, setHistoryCount] = useState<number | null>(null);
 
   // PDF generation state: stores fetched PDF data keyed by batchId
   const [pdfDataMap, setPdfDataMap] = useState<Record<string, RedCopyBatchPDFData>>({});
@@ -124,19 +148,30 @@ export function SubmittedBatchesModal({
   );
   */
 
-  // Fetch batches when modal opens
+  // Debounce search, same pattern as the admin list pages.
   useEffect(() => {
-    if (isOpen) {
-      loadBatches();
-    }
-  }, [isOpen]);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  const loadBatches = async () => {
+  // A scope switch or new search query invalidates the current page.
+  useEffect(() => {
+    setPage(1);
+  }, [scope, debouncedSearch]);
+
+  const loadBatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await getUserBatches();
-      if (result.success && result.data) {
-        setBatches(result.data.batches);
+      const result = await surfboardApi.cod.batches.listPaginated({
+        page,
+        pageSize,
+        scope,
+        search: debouncedSearch || undefined,
+      });
+      if (result.success) {
+        setBatches(result.data.data);
+        setTotal(result.data.pagination.total);
+        setTotalPages(result.data.pagination.totalPages);
       } else {
         toast.error(result.error || "Failed to load batches");
       }
@@ -146,7 +181,27 @@ export function SubmittedBatchesModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, pageSize, scope, debouncedSearch]);
+
+  const loadCounts = useCallback(async () => {
+    const [activeRes, historyRes] = await Promise.all([
+      surfboardApi.cod.batches.listPaginated({ page: 1, pageSize: 1, scope: "active" }),
+      surfboardApi.cod.batches.listPaginated({ page: 1, pageSize: 1, scope: "history" }),
+    ]);
+    if (activeRes.success) setActiveCount(activeRes.data.pagination.total);
+    if (historyRes.success) setHistoryCount(historyRes.data.pagination.total);
+  }, []);
+
+  // Fetch batches whenever the modal is open and the query changes; counts
+  // only need refreshing on open or after something that could move a
+  // batch between tabs (payment/physical-submission success, delete-all).
+  useEffect(() => {
+    if (isOpen) loadBatches();
+  }, [isOpen, loadBatches]);
+
+  useEffect(() => {
+    if (isOpen) loadCounts();
+  }, [isOpen, loadCounts]);
 
   const [paymentBatch, setPaymentBatch] = useState<{
     id: string;
@@ -159,9 +214,9 @@ export function SubmittedBatchesModal({
   const handlePayNow = async (batchId: string) => {
     setPayingBatchId(batchId);
     try {
-      const result = await retryBatchPayment(batchId);
+      const result = await surfboardApi.cod.batches.retryPayment(batchId);
 
-      if (!result.success || !result.data) {
+      if (!result.success) {
         throw new Error(result.error || "Failed to initialize payment");
       }
 
@@ -227,7 +282,7 @@ export function SubmittedBatchesModal({
         return (
           <Badge
             variant="outline"
-            className="bg-gray-50 text-gray-700 border-gray-300"
+            className="bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/15"
           >
             {status}
           </Badge>
@@ -247,14 +302,19 @@ export function SubmittedBatchesModal({
     ].includes(status);
   };
 
+  /** Matches RECEIPT_ELIGIBLE_STATUSES in surfboard/services/receiptPdfService.ts. */
+  const canDownloadReceipt = (status: string) => {
+    return ["ACCOUNTS_APPROVED", "ACCOUNTS_DISAPPROVED", "COMPLETED"].includes(status);
+  };
+
   const handleFetchPdfData = useCallback(async (batchId: string) => {
     // If we already have data for this batch, do nothing
     if (pdfDataMap[batchId]) return;
 
     setLoadingPdfId(batchId);
     try {
-      const result = await getBatchPDFData(batchId);
-      if (result.success && result.data) {
+      const result = await surfboardApi.cod.batches.get(batchId);
+      if (result.success) {
         setPdfDataMap((prev) => ({
           ...prev,
           [batchId]: result.data as RedCopyBatchPDFData,
@@ -272,21 +332,25 @@ export function SubmittedBatchesModal({
 
   const handleDeleteAll = async () => {
     if (
-      !confirm(
-        "⚠️ DEVELOPMENT ONLY: Are you sure you want to delete ALL batches? This will reset all related plans and cannot be undone!",
-      )
+      !(await confirm({
+        title: "Delete ALL batches?",
+        description:
+          "DEVELOPMENT ONLY: this will reset all related plans and cannot be undone.",
+        confirmLabel: "Delete all",
+        variant: "destructive",
+      }))
     ) {
       return;
     }
 
     setIsDeleting(true);
     try {
-      const result = await deleteAllBatches();
-      if (result.success && result.data) {
+      const result = await surfboardApi.cod.batches.reset();
+      if (result.success) {
         toast.success(
           `Successfully deleted ${result.data.deletedCount} batch(es)`,
         );
-        await loadBatches();
+        await Promise.all([loadBatches(), loadCounts()]);
         router.refresh();
       } else {
         toast.error(result.error || "Failed to delete batches");
@@ -300,7 +364,9 @@ export function SubmittedBatchesModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      {ConfirmDialog}
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="space-y-3 pb-4 border-b">
           <div className="flex items-center justify-between">
@@ -317,7 +383,7 @@ export function SubmittedBatchesModal({
                 </DialogDescription>
               </div>
             </div>
-            {process.env.NODE_ENV !== "production" && batches.length > 0 && (
+            {process.env.NODE_ENV !== "production" && (activeCount || 0) + (historyCount || 0) > 0 && (
               <Button
                 variant="destructive"
                 size="sm"
@@ -339,6 +405,46 @@ export function SubmittedBatchesModal({
               </Button>
             )}
           </div>
+
+          {((activeCount || 0) + (historyCount || 0) > 0) && (
+            <>
+              {/* Active/History tabs — a batch moves to History once every
+                  plan in it has reached LODGED. */}
+              <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-white/5 p-1 w-fit">
+                {([
+                  { id: "active" as const, label: "Active", count: activeCount },
+                  { id: "history" as const, label: "History", count: historyCount },
+                ]).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setScope(opt.id)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                      scope === opt.id
+                        ? "bg-white dark:bg-surface text-blue-700 dark:text-blue-400 shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {opt.id === "history" && <History className="w-3.5 h-3.5" />}
+                    {opt.label}
+                    {opt.count != null && opt.count > 0 && (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">({opt.count})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by batch number, plan number, title, or facilitator..."
+                  className="pl-9"
+                />
+              </div>
+            </>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4 px-1">
@@ -348,21 +454,38 @@ export function SubmittedBatchesModal({
                 <div className="w-16 h-16 border-4 border-blue-100 rounded-full"></div>
                 <Loader2 className="w-16 h-16 animate-spin text-blue-600 absolute top-0 left-0" />
               </div>
-              <p className="text-gray-500 mt-4 font-medium">
+              <p className="text-gray-500 dark:text-gray-400 mt-4 font-medium">
                 Loading batches...
               </p>
             </div>
           ) : batches.length === 0 ? (
             <div className="text-center py-16">
               <div className="inline-flex p-6 bg-linear-to-br from-gray-50 to-gray-100 rounded-full mb-6">
-                <FileText className="w-20 h-20 text-gray-300" />
+                {debouncedSearch ? (
+                  <Search className="w-20 h-20 text-gray-300" />
+                ) : scope === "history" ? (
+                  <History className="w-20 h-20 text-gray-300" />
+                ) : (
+                  <FileText className="w-20 h-20 text-gray-300" />
+                )}
               </div>
-              <p className="text-gray-700 text-xl font-semibold mb-2">
-                No batches submitted yet
+              <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
+                {debouncedSearch
+                  ? `No batches match "${debouncedSearch}"`
+                  : scope === "history"
+                    ? "No batches in history yet"
+                    : (activeCount || 0) + (historyCount || 0) === 0
+                      ? "No batches submitted yet"
+                      : "No active batches"}
               </p>
-              <p className="text-gray-500 text-sm max-w-md mx-auto">
-                Submit plans for Certificate of Deposit to see them displayed
-                here with full details
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md mx-auto">
+                {debouncedSearch
+                  ? "Try a different batch number, plan number, title, or facilitator."
+                  : scope === "history"
+                    ? "Batches move here once every plan in them has been lodged."
+                    : (activeCount || 0) + (historyCount || 0) === 0
+                      ? "Submit plans for Certificate of Deposit to see them displayed here with full details"
+                      : "Every submitted batch has been fully lodged — check the History tab."}
               </p>
             </div>
           ) : (
@@ -371,7 +494,7 @@ export function SubmittedBatchesModal({
                 <AccordionItem
                   key={batch.id}
                   value={batch.id}
-                  className="group border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
+                  className="group border-2 border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-300 bg-linear-to-br from-white to-gray-50"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="p-5 hover:bg-linear-to-br hover:from-blue-50/50 hover:to-transparent transition-all duration-300">
@@ -383,7 +506,7 @@ export function SubmittedBatchesModal({
                               <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-lg group-hover/trigger:from-blue-200 group-hover/trigger:to-blue-300 transition-all duration-200">
                                 <Package className="w-4 h-4 text-blue-700" />
                               </div>
-                              <h3 className="text-lg font-bold text-gray-900 group-hover/trigger:text-blue-700 transition-colors duration-200">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover/trigger:text-blue-700 transition-colors duration-200">
                                 {batch.batchCode}
                               </h3>
                             </div>
@@ -392,8 +515,8 @@ export function SubmittedBatchesModal({
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <div className="p-1 bg-white rounded">
+                          <div className="flex items-center gap-2.5 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded">
                               <Package className="w-3.5 h-3.5 text-blue-600" />
                             </div>
                             <span className="font-medium">
@@ -402,8 +525,8 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                            <div className="p-1 bg-white rounded">
+                          <div className="flex items-center gap-2.5 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded">
                               <Calendar className="w-3.5 h-3.5 text-purple-600" />
                             </div>
                             <span className="font-medium">
@@ -411,8 +534,8 @@ export function SubmittedBatchesModal({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5 text-gray-900 bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
-                            <div className="p-1 bg-white rounded shadow-sm">
+                          <div className="flex items-center gap-2.5 text-gray-900 dark:text-white bg-linear-to-br from-green-50 to-emerald-50 px-3 py-2 rounded-lg border border-green-200 hover:from-green-100 hover:to-emerald-100 transition-all duration-200">
+                            <div className="p-1 bg-white dark:bg-surface rounded shadow-sm">
                               <CreditCard className="w-3.5 h-3.5 text-green-700" />
                             </div>
                             <span className="font-bold text-green-900">
@@ -488,11 +611,59 @@ export function SubmittedBatchesModal({
                             )}
                           </>
                         )}
+
+                        {canDownloadReceipt(batch.paymentStatus) && (
+                          // Lets the user choose which receipt they need
+                          // instead of always linking to whichever one
+                          // happened to be on file — the real LASG receipt
+                          // and the real Remita receipt are two different
+                          // documents, plus twonode's own self-generated
+                          // batch-summary PDF as a fallback (always
+                          // available, never the actual government receipt).
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Receipt
+                                <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {batch.lasgReceiptUrl ? (
+                                <DropdownMenuItem asChild>
+                                  <a href={batch.lasgReceiptUrl} target="_blank" rel="noopener noreferrer">
+                                    LASG Receipt
+                                  </a>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem disabled>LASG Receipt (not available)</DropdownMenuItem>
+                              )}
+                              {batch.remitaReceiptUrl ? (
+                                <DropdownMenuItem asChild>
+                                  <a href={batch.remitaReceiptUrl} target="_blank" rel="noopener noreferrer">
+                                    Remita Receipt
+                                  </a>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem disabled>Remita Receipt (not available)</DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem asChild>
+                                <a href={`/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`}>
+                                  Payment Summary (PDF)
+                                </a>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </div>
 
                     <AccordionContent className="pt-1">
-                      <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200">
+                      <div className="mt-5 pt-5 border-t-2 border-dashed border-gray-200 dark:border-white/10">
                         <div className="flex items-center justify-between gap-4 mb-4">
                           <div className="flex items-center gap-2">
                             <div className="h-1 w-1 bg-blue-500 rounded-full"></div>
@@ -524,7 +695,7 @@ export function SubmittedBatchesModal({
                           {batch.plans.map((plan, planIndex) => (
                             <div
                               key={plan.id}
-                              className="group/plan bg-white border-2 border-gray-100 rounded-lg p-4 flex items-start justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:translate-x-1"
+                              className="group/plan bg-white dark:bg-surface border-2 border-gray-100 dark:border-white/10 rounded-lg p-4 flex items-start justify-between gap-3 hover:border-blue-200 hover:shadow-md transition-all duration-200 hover:translate-x-1"
                               style={{ animationDelay: `${planIndex * 30}ms` }}
                             >
                               <div className="flex-1 min-w-0">
@@ -532,18 +703,18 @@ export function SubmittedBatchesModal({
                                   <div className="p-1.5 bg-linear-to-br from-blue-100 to-blue-200 rounded-md group-hover/plan:from-blue-200 group-hover/plan:to-blue-300 transition-all duration-200">
                                     <FileText className="w-4 h-4 text-blue-700" />
                                   </div>
-                                  <span className="font-bold text-sm text-gray-900 group-hover/plan:text-blue-700 transition-colors duration-200">
+                                  <span className="font-bold text-sm text-gray-900 dark:text-white group-hover/plan:text-blue-700 transition-colors duration-200">
                                     {plan.planNumber}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 ml-8 line-clamp-1">
+                                <p className="text-xs text-gray-600 dark:text-gray-400 ml-8 line-clamp-1">
                                   {plan.surveyTitle}
                                 </p>
                               </div>
                               <div className="flex gap-2 shrink-0">
                                 <Badge
                                   variant="outline"
-                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
+                                  className="text-xs font-semibold bg-linear-to-br from-gray-50 to-gray-100 border-gray-300 dark:border-white/15 hover:from-gray-100 hover:to-gray-200 transition-all duration-200"
                                 >
                                   {plan.status}
                                 </Badge>
@@ -567,6 +738,15 @@ export function SubmittedBatchesModal({
             </Accordion>
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="shrink-0 pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {total} batch{total === 1 ? "" : "es"}
+            </p>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DialogContent>
 
       {/* Manual Remita Payment Iframe Dialog */}
@@ -576,7 +756,7 @@ export function SubmittedBatchesModal({
           onClose={handleClosePayment}
           batchData={paymentBatch}
           onSuccess={async () => {
-            await loadBatches();
+            await Promise.all([loadBatches(), loadCounts()]);
             if (onSuccess) onSuccess();
           }}
         />
@@ -590,11 +770,12 @@ export function SubmittedBatchesModal({
           batchCode={batches.find((b) => b.id === physicalSubmittingBatchId)?.batchCode || ""}
           plans={batches.find((b) => b.id === physicalSubmittingBatchId)?.plans || []}
           onSuccess={async () => {
-            await loadBatches();
+            await Promise.all([loadBatches(), loadCounts()]);
             if (onSuccess) onSuccess();
           }}
         />
       )}
-    </Dialog>
+      </Dialog>
+    </>
   );
 }

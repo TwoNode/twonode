@@ -9,13 +9,15 @@ import {
   Globe2,
   TrendingUp,
 } from "lucide-react";
-import { getAllGBCSettings } from "../../actions/settings-actions";
-import GBC2Navbar from "../../components/Navbar";
+import { getSettings } from "@/gbc/services/settingsService";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+
+export const dynamic = "force-dynamic";
 
 export default async function AboutPage() {
   // Fetch settings for dynamic event information
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const eventTheme =
     settings?.event.theme ??
@@ -29,8 +31,11 @@ export default async function AboutPage() {
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white overflow-hidden"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
+        <div className="absolute inset-0 bg-grid opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
             href="/gbc"
@@ -71,8 +76,14 @@ export default async function AboutPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+              <div
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
+                style={{ background: GBC_COLORS.surface.main }}
+              >
+                <Sparkles
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  style={{ color: GBC_COLORS.primary.main }}
+                />
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                 What is GBC?
@@ -108,8 +119,14 @@ export default async function AboutPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <div
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
+                style={{ background: "#FCE7F3" }}
+              >
+                <Target
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  style={{ color: GBC_COLORS.secondary.dark }}
+                />
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                 Why GBC Matters
@@ -147,7 +164,10 @@ export default async function AboutPage() {
                     key={index}
                     className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white rounded-lg shadow-sm"
                   >
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-600 rounded-full shrink-0" />
+                    <div
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0"
+                      style={{ background: GBC_COLORS.primary.main }}
+                    />
                     <span className="font-medium text-sm sm:text-base">
                       {sector}
                     </span>
@@ -164,8 +184,14 @@ export default async function AboutPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <div
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
+                style={{ background: GBC_COLORS.surface.main }}
+              >
+                <Users2
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  style={{ color: GBC_COLORS.primary.main }}
+                />
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                 A Platform for Connection
@@ -182,8 +208,14 @@ export default async function AboutPage() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 my-6 sm:my-8 md:my-12">
-                <div className="text-center p-4 sm:p-6 bg-purple-50 rounded-xl">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <div
+                  className="text-center p-4 sm:p-6 rounded-xl"
+                  style={{ background: GBC_COLORS.surface.main }}
+                >
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+                    style={{ background: GBC_COLORS.primary.main }}
+                  >
                     <Users2 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold mb-2">Connect</h3>
@@ -192,8 +224,14 @@ export default async function AboutPage() {
                   </p>
                 </div>
 
-                <div className="text-center p-4 sm:p-6 bg-indigo-50 rounded-xl">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <div
+                  className="text-center p-4 sm:p-6 rounded-xl"
+                  style={{ background: "#FCE7F3" }}
+                >
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+                    style={{ background: GBC_COLORS.secondary.main }}
+                  >
                     <Globe2 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold mb-2">
@@ -204,8 +242,14 @@ export default async function AboutPage() {
                   </p>
                 </div>
 
-                <div className="text-center p-4 sm:p-6 bg-blue-50 rounded-xl">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <div
+                  className="text-center p-4 sm:p-6 rounded-xl"
+                  style={{ background: GBC_COLORS.surface.main }}
+                >
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4"
+                    style={{ background: GBC_COLORS.primary.main }}
+                  >
                     <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold mb-2">
@@ -243,7 +287,10 @@ export default async function AboutPage() {
 
               <ul className="space-y-3 sm:space-y-4 my-6 sm:my-8">
                 <li className="flex items-start gap-2 sm:gap-3">
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-purple-500 rounded-full flex items-center justify-center shrink-0 mt-0.5 sm:mt-1">
+                  <div
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 sm:mt-1"
+                    style={{ background: GBC_COLORS.primary.light }}
+                  >
                     <span className="text-white text-xs sm:text-sm">✓</span>
                   </div>
                   <span className="text-sm sm:text-base">
@@ -251,19 +298,28 @@ export default async function AboutPage() {
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shrink-0 mt-1">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1"
+                    style={{ background: GBC_COLORS.primary.light }}
+                  >
                     <span className="text-white text-sm">✓</span>
                   </div>
                   <span>Showcase groundbreaking projects</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shrink-0 mt-1">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1"
+                    style={{ background: GBC_COLORS.primary.light }}
+                  >
                     <span className="text-white text-sm">✓</span>
                   </div>
                   <span>Highlight economic opportunities</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shrink-0 mt-1">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1"
+                    style={{ background: GBC_COLORS.primary.light }}
+                  >
                     <span className="text-white text-sm">✓</span>
                   </div>
                   <span>
@@ -295,14 +351,29 @@ export default async function AboutPage() {
                 connections, and actionable outcomes.
               </p>
 
-              <div className="bg-purple-50 border-l-4 border-purple-600 p-4 sm:p-6 rounded-r-lg my-6 sm:my-8">
-                <p className="text-base sm:text-lg md:text-xl font-semibold text-purple-900 mb-2">
+              <div
+                className="p-4 sm:p-6 rounded-r-lg my-6 sm:my-8"
+                style={{
+                  background: GBC_COLORS.surface.main,
+                  borderLeft: `4px solid ${GBC_COLORS.primary.main}`,
+                }}
+              >
+                <p
+                  className="text-base sm:text-lg md:text-xl font-semibold mb-2"
+                  style={{ color: GBC_COLORS.primary.dark }}
+                >
                   GBC 2.0 Theme
                 </p>
-                <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600 mb-2">
+                <p
+                  className="text-lg sm:text-xl md:text-2xl font-bold mb-2"
+                  style={{ color: GBC_COLORS.primary.main }}
+                >
                   {eventTheme}
                 </p>
-                <p className="text-sm sm:text-base md:text-lg text-purple-800">
+                <p
+                  className="text-sm sm:text-base md:text-lg"
+                  style={{ color: GBC_COLORS.primary.dark }}
+                >
                   Sub-Theme: {eventSubTheme}
                 </p>
               </div>
@@ -312,7 +383,10 @@ export default async function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
+      <section
+        className="py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.primary }}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
             Be Part of the Movement
@@ -326,7 +400,8 @@ export default async function AboutPage() {
             <Link href="/gbc/tickets">
               <Button
                 size="lg"
-                className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-gray-100"
+                className="text-lg px-8 py-6 bg-white hover:bg-gray-100"
+                style={{ color: GBC_COLORS.primary.main }}
               >
                 Get Your Ticket
                 <ArrowRight className="ml-2 h-5 w-5" />

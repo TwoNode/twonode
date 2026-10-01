@@ -1,4 +1,4 @@
-import { RecordCopyVerificationTolerances } from "../actions/settingsActions";
+import { RecordCopyVerificationTolerances } from "@/surfboard/services/settingsService";
 
 // ============================================================
 // PDF EXTRACTION LOGIC

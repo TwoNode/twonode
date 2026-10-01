@@ -1,7 +1,7 @@
 // Audit logging utility - no "use server" needed since this is called from server actions
 
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
+import { getClientInfo } from "@/lib/audit";
 
 /**
  * Audit logging utility for tracking all critical actions in the Surfboard application
@@ -13,28 +13,6 @@ interface AuditLogParams {
   entity: string;
   entityId?: string | null;
   changes?: Record<string, any> | null;
-}
-
-/**
- * Get client information from request headers
- */
-async function getClientInfo(): Promise<{
-  ipAddress: string | null;
-  userAgent: string | null;
-}> {
-  try {
-    const headersList = await headers();
-    const ipAddress =
-      headersList.get("x-forwarded-for")?.split(",")[0] ||
-      headersList.get("x-real-ip") ||
-      null;
-    const userAgent = headersList.get("user-agent") || null;
-
-    return { ipAddress, userAgent };
-  } catch (error) {
-    console.error("Error getting client info:", error);
-    return { ipAddress: null, userAgent: null };
-  }
 }
 
 /**

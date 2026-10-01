@@ -6,10 +6,13 @@ type SidebarSettings = { disabled: boolean; isHoverOpen: boolean };
 type SidebarStore = {
   isOpen: boolean;
   isHover: boolean;
+  /** Desktop-only: rail collapses to icon-only width. Hovering it (isHover) temporarily overlays the full-width sidebar on top of the content without this flag changing, so the reserved layout space stays narrow. */
+  isRailCollapsed: boolean;
   settings: SidebarSettings;
   toggleOpen: () => void;
   setIsOpen: (isOpen: boolean) => void;
   setIsHover: (isHover: boolean) => void;
+  toggleRailCollapsed: () => void;
   getOpenState: () => boolean;
   setSettings: (settings: Partial<SidebarSettings>) => void;
 };
@@ -17,8 +20,14 @@ type SidebarStore = {
 export const useSidebar = create(
   persist<SidebarStore>(
     (set, get) => ({
-      isOpen: true,
+      // false so the sidebar starts closed on mobile/tablet, where its
+      // translate-x-based collapse is the only thing hiding it — desktop
+      // (lg+) always shows it regardless of this value, via the
+      // `lg:translate-x-0` fallback already baked into the closed-state
+      // class in components/sidebars/sidebar.tsx.
+      isOpen: false,
       isHover: false,
+      isRailCollapsed: true,
       settings: { disabled: false, isHoverOpen: false },
       toggleOpen: () => {
         set({ isOpen: !get().isOpen });
@@ -28,6 +37,9 @@ export const useSidebar = create(
       },
       setIsHover: (isHover: boolean) => {
         set({ isHover });
+      },
+      toggleRailCollapsed: () => {
+        set({ isRailCollapsed: !get().isRailCollapsed, isHover: false });
       },
       getOpenState: () => {
         const state = get();

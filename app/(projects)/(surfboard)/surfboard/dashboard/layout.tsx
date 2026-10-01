@@ -1,4 +1,4 @@
-import SurfboardUserPanelLayout from "@/components/layouts/surfboardUserPanelLayout";
+import SurfboardUserPanelLayout from "@/surfboard/layouts/surfboardUserPanelLayout";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 export const maxDuration = 60;

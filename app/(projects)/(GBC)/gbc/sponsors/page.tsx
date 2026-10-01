@@ -1,32 +1,37 @@
 // src/app/(public)/sponsors/page.tsx
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-// import { getSponsors, getPartners } from "@/actions/sponsor-actions";
 import { ExternalLink, Mail, ArrowRight } from "lucide-react";
-import { getPartners, getSponsors } from "../../actions/sponsor-actions";
-import GBC2Navbar from "../../components/Navbar";
+import { getPartners, getSponsors } from "@/gbc/services/cmsService";
+import { getSponsorTiers } from "@/gbc/services/sponsorTierService";
+import { groupSponsorsByTier } from "@/gbc/utils/sponsorTiers";
+import GBC2Navbar from "@/gbc/components/Navbar";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
+
+// Sponsors and their tiers are edited in the admin; render per request so a change shows up straight away
+// (a statically prerendered copy would stay frozen at whatever the database held at build time).
+export const dynamic = "force-dynamic";
 
 export default async function SponsorsPage() {
-  const sponsorsResult = await getSponsors();
-  const partnersResult = await getPartners();
+  const [sponsors, partners, tiers] = await Promise.all([
+    getSponsors(),
+    getPartners(),
+    getSponsorTiers(),
+  ]);
 
-  const sponsors = sponsorsResult.success ? sponsorsResult.data : [];
-  const partners = partnersResult.success ? partnersResult.data : [];
-
-  // Group sponsors by tier
-  const sponsorsByTier = {
-    HEADLINE: sponsors?.filter((s) => s.tier === "HEADLINE") || [],
-    IMPACT: sponsors?.filter((s) => s.tier === "IMPACT") || [],
-    SUPPORTING: sponsors?.filter((s) => s.tier === "SUPPORTING") || [],
-  };
+  // One section per tier that has sponsors, in the order set in the admin.
+  const tierGroups = groupSponsorsByTier(tiers, sponsors ?? []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <GBC2Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 via-indigo-600 to-blue-600 text-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+      <section
+        className="relative py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.hero }}
+      >
+        <div className="absolute inset-0 bg-grid opacity-10" />
         <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
           <Link
             href="/gbc"
@@ -76,7 +81,11 @@ export default async function SponsorsPage() {
               </p>
             </div>
             <Link href="/gbc/contact">
-              <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+              <Button
+                size="lg"
+                className="hover:brightness-110"
+                style={{ background: GBC_COLORS.primary.main }}
+              >
                 <Mail className="mr-2 h-4 w-4" />
                 Contact Us
               </Button>
@@ -85,63 +94,52 @@ export default async function SponsorsPage() {
         </div>
       </section>
 
-      {/* Headline Sponsors */}
-      {sponsorsByTier.HEADLINE.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-purple-100 text-purple-600 rounded-full font-bold mb-4">
-                HEADLINE SPONSORS
+      {/* Sponsors, one section per tier. Card size and badge style follow the
+          tier's size: FEATURED (large), STANDARD, COMPACT (small logos). */}
+      {tierGroups.map(({ tier, sponsors: tierSponsors }, index) => {
+        const featured = tier.size === "FEATURED";
+        const compact = tier.size === "COMPACT";
+        return (
+          <section
+            key={tier.key}
+            className={`py-12 sm:py-16 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+          >
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10 sm:mb-12">
+                <div
+                  className={`inline-block px-6 py-2 rounded-full font-bold mb-4 ${
+                    compact ? "bg-gray-200 text-gray-700" : ""
+                  }`}
+                  style={
+                    featured
+                      ? { background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.main }
+                      : compact
+                        ? undefined
+                        : { background: "#FCE7F3", color: GBC_COLORS.secondary.dark }
+                  }
+                >
+                  {tier.name.toUpperCase()}
+                </div>
+                {tier.description && <p className="text-gray-600">{tier.description}</p>}
               </div>
-              <p className="text-gray-600">Our premier partners</p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
-              {sponsorsByTier.HEADLINE.map((sponsor: any) => (
-                <SponsorCard key={sponsor.id} sponsor={sponsor} featured />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Impact Sponsors */}
-      {sponsorsByTier.IMPACT.length > 0 && (
-        <section className="py-12 sm:py-16 bg-gray-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-yellow-100 text-yellow-600 rounded-full font-bold mb-4">
-                IMPACT SPONSORS
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
-              {sponsorsByTier.IMPACT.map((sponsor: any) => (
-                <SponsorCard key={sponsor.id} sponsor={sponsor} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Supporting Sponsors */}
-      {sponsorsByTier.SUPPORTING.length > 0 && (
-        <section className="py-12 sm:py-16 bg-white">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10 sm:mb-12">
-              <div className="inline-block px-6 py-2 bg-gray-200 text-gray-700 rounded-full font-bold mb-4">
-                SUPPORTING SPONSORS
+              <div
+                className={
+                  featured
+                    ? "grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto"
+                    : compact
+                      ? "grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto"
+                      : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto"
+                }
+              >
+                {tierSponsors.map((sponsor: any) => (
+                  <SponsorCard key={sponsor.id} sponsor={sponsor} featured={featured} compact={compact} />
+                ))}
               </div>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
-              {sponsorsByTier.SUPPORTING.map((sponsor: any) => (
-                <SponsorCard key={sponsor.id} sponsor={sponsor} compact />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })}
 
       {/* Partners */}
       {partners && partners.length > 0 && (
@@ -175,7 +173,10 @@ export default async function SponsorsPage() {
       )}
 
       {/* Sponsorship Benefits */}
-      <section className="py-16 sm:py-20 md:py-24 bg-linear-to-br from-purple-600 to-indigo-600 text-white">
+      <section
+        className="py-16 sm:py-20 md:py-24 text-white"
+        style={{ background: GBC_GRADIENTS.primary }}
+      >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
@@ -217,7 +218,8 @@ export default async function SponsorsPage() {
               <Link href="/gbc/contact">
                 <Button
                   size="lg"
-                  className="bg-white text-purple-600 hover:bg-gray-100"
+                  className="bg-white hover:bg-gray-100"
+                  style={{ color: GBC_COLORS.primary.main }}
                 >
                   Become a Sponsor
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -254,9 +256,12 @@ function SponsorCard({
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow ${
-        featured ? "border-2 border-purple-200" : ""
-      }`}
+      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
+      style={
+        featured
+          ? { border: `2px solid ${GBC_COLORS.primary.light}` }
+          : undefined
+      }
     >
       <div className="p-8">
         <div className="flex items-center justify-center mb-6 h-32">
@@ -281,7 +286,8 @@ function SponsorCard({
               href={sponsor.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              className="inline-flex items-center hover:opacity-80 font-medium"
+              style={{ color: GBC_COLORS.primary.main }}
             >
               Visit Website
               <ExternalLink className="ml-2 h-4 w-4" />

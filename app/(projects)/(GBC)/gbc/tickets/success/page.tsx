@@ -9,9 +9,10 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { verifyGBCPayment } from "@/app/(projects)/(GBC)/actions/ticket-actions";
-import { getAllGBCSettings } from "@/app/(projects)/(GBC)/actions/settings-actions";
+import { verifyPayment } from "@/gbc/services/ticketService";
+import { getSettings } from "@/gbc/services/settingsService";
 import { notFound, redirect } from "next/navigation";
+import { GBC_COLORS, GBC_GRADIENTS } from "@/gbc/colors";
 
 export default async function TicketSuccessPage({
   searchParams,
@@ -25,9 +26,10 @@ export default async function TicketSuccessPage({
   }
 
   // Verify the payment
-  const verification = await verifyGBCPayment(reference);
-
-  if (!verification.success) {
+  let verification: Awaited<ReturnType<typeof verifyPayment>>;
+  try {
+    verification = await verifyPayment(reference);
+  } catch (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
@@ -38,8 +40,9 @@ export default async function TicketSuccessPage({
             Payment Verification Failed
           </h2>
           <p className="mt-2 text-gray-600">
-            {verification.error ||
-              "Unable to verify your payment. Please try again or contact support if the issue persists."}
+            {error instanceof Error
+              ? error.message
+              : "Unable to verify your payment. Please try again or contact support if the issue persists."}
           </p>
           <div className="mt-6">
             <Link href="/gbc/tickets">
@@ -54,19 +57,13 @@ export default async function TicketSuccessPage({
     );
   }
 
-  // Type guard: verification.data should exist after success check
-  if (!verification.data) {
-    redirect("/gbc/tickets");
-  }
-
   // Extract ticket data from verification response
-  const { tickets, count, amount } = verification.data;
+  const { tickets, count, amount } = verification;
   const primaryTicket = tickets[0]; // Get the first ticket (or primary ticket for groups)
   const isGroupTicket = count > 1;
 
   // Fetch settings for event details
-  const settingsResult = await getAllGBCSettings();
-  const settings = settingsResult.success ? settingsResult.data : null;
+  const settings = await getSettings();
 
   const eventDate = settings?.event.date ?? "2025-05-15";
   const eventTime = settings?.event.time ?? "09:00";
@@ -93,7 +90,7 @@ export default async function TicketSuccessPage({
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
           {/* Header */}
-          <div className="bg-linear-to-r from-purple-600 to-indigo-600 p-6 text-white">
+          <div className="p-6 text-white" style={{ background: GBC_GRADIENTS.primary }}>
             <div className="flex items-center gap-3 mb-4">
               <CheckCircle className="h-8 w-8 text-green-300" />
               <h1 className="text-2xl md:text-3xl font-bold">
@@ -108,36 +105,39 @@ export default async function TicketSuccessPage({
           </div>
 
           <div className="p-6 md:p-8">
-            <div className="bg-purple-50 rounded-lg p-4 mb-6 border border-purple-100">
+            <div
+              className="rounded-lg p-4 mb-6 border"
+              style={{ background: GBC_COLORS.surface.main, borderColor: GBC_COLORS.primary.light }}
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Ticket Number{isGroupTicket ? "s" : ""}
                   </p>
-                  <p className="font-mono font-bold text-purple-900">
+                  <p className="font-mono font-bold" style={{ color: GBC_COLORS.primary.dark }}>
                     {isGroupTicket
                       ? tickets.map((t) => t.ticketNumber).join(", ")
                       : primaryTicket.ticketNumber}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Payment Reference
                   </p>
-                  <p className="font-mono text-sm text-purple-900 break-all">
+                  <p className="font-mono text-sm break-all" style={{ color: GBC_COLORS.primary.dark }}>
                     {reference}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Amount Paid
                   </p>
-                  <p className="font-bold text-purple-900">
+                  <p className="font-bold" style={{ color: GBC_COLORS.primary.dark }}>
                     ₦{amount.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-purple-700 font-medium mb-1">
+                  <p className="text-sm font-medium mb-1" style={{ color: GBC_COLORS.primary.dark }}>
                     Status
                   </p>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -160,6 +160,26 @@ export default async function TicketSuccessPage({
                     We've sent your ticket{isGroupTicket ? "s" : ""} and QR code
                     {isGroupTicket ? "s" : ""} to {primaryTicket.email}
                     {isGroupTicket && " and all other attendees"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 text-gray-700">
+                <div className="mt-0.5">
+                  <div className="p-2 bg-purple-100 rounded-full">
+                    <Download className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium">Payment receipt</h3>
+                  <p className="text-sm text-gray-500">
+                    <a
+                      href={`/api/v1/gbc/tickets/${primaryTicket.ticketNumber}/receipt-pdf`}
+                      className="text-purple-600 hover:underline"
+                    >
+                      Download your receipt
+                    </a>
+                    {isGroupTicket && " (also attached to each attendee's confirmation email)"}
                   </p>
                 </div>
               </div>
@@ -206,12 +226,15 @@ export default async function TicketSuccessPage({
             </div>
 
             <div className="border-t border-gray-100 pt-6 mb-8">
-              <h3 className="font-bold text-lg mb-4 text-purple-600">
+              <h3 className="font-bold text-lg mb-4" style={{ color: GBC_COLORS.primary.main }}>
                 What's Next?
               </h3>
               <ol className="space-y-3 text-gray-600">
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     1
                   </span>
                   <span>
@@ -219,19 +242,28 @@ export default async function TicketSuccessPage({
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     2
                   </span>
                   <span>Save the QR code on your phone or print it</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     3
                   </span>
                   <span>Bring a valid ID to the event for verification</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
+                  <span
+                    className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium"
+                    style={{ background: GBC_COLORS.surface.main, color: GBC_COLORS.primary.dark }}
+                  >
                     4
                   </span>
                   <span>Present your QR code at the entrance for check-in</span>
@@ -248,7 +280,8 @@ export default async function TicketSuccessPage({
               </Link>
               <Link href="/gbc/contact" className="flex-1">
                 <Button
-                  className="w-full bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                  className="w-full text-white hover:brightness-110"
+                  style={{ background: GBC_GRADIENTS.primary }}
                   size="lg"
                 >
                   Contact Support
@@ -263,7 +296,8 @@ export default async function TicketSuccessPage({
             Didn't receive your ticket? Check your spam folder or contact us at{" "}
             <a
               href={`mailto:${contactEmail}`}
-              className="text-purple-600 hover:underline"
+              className="hover:underline"
+              style={{ color: GBC_COLORS.primary.main }}
             >
               {contactEmail}
             </a>

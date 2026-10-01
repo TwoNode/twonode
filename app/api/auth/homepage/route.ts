@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/scram", req.url));
   } else if (url.pathname.startsWith("/surfboard/")) {
     return NextResponse.redirect(new URL("/surfboard", req.url));
-  } else if (url.pathname.startsWith("/surf-restricted/")) {
-    return NextResponse.redirect(new URL("/surf-restricted", req.url));
+  } else if (url.pathname.startsWith("/surfboard-restricted/")) {
+    return NextResponse.redirect(new URL("/surfboard-restricted", req.url));
   } else if (url.pathname.startsWith("/gbc/")) {
     return NextResponse.redirect(new URL("/gbc", req.url));
   } else if (url.pathname.startsWith("/gbc-restricted/")) {

@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // Relative to this file's own location (prisma/schema/), not the schema
+  // folder's parent — resolves back to prisma/generated, matching every
+  // existing `@/prisma/generated` import across the codebase unchanged.
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------------------------------
+// Genuinely cross-product models — used by more than one of REVA/Surfboard/GBC.
+// See MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.3.
+// --------------------------------------------------------------------------------
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+  PAYMENT
+  PROPERTY
+}
+
+enum NotificationAudience {
+  SPECIFIC_USERS // Targeted to specific userIds
+  GENERAL_USERS // General notification for regular users
+  GENERAL_ADMINS // General notification for admins
+  SUPERADMIN // General notification for superadmins
+  ALL_USERS // Everyone (users + admins + superadmins)
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  type        NotificationType
+  title       String
+  message     String
+  readBy      String[]             @default([]) // List of userIds who read it
+  dismissedBy String[]             @default([]) // List of userIds who dismissed it
+  userIds     String[]             @default([]) // If null/empty => general
+  audience    NotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+}
+
+// --------------------------------------------------------------------------------
+// Native email+password auth (MDs/ARCHITECTURE_REBUILD_PROPOSAL.md §4.2), running
+// alongside Kinde rather than replacing it. Shared across all products (one
+// RefreshToken/LoginAttempt table, not one per product — proposal §6.1) since a
+// user can already be simultaneously signed into REVA/Surfboard/GBC today via the
+// existing multi-platform session cookie, and revocation/rotation logic is
+// simpler in one place. `platform` is a plain String (not a Prisma enum) —
+// validated against the single canonical Platform enum in utils/platform.ts,
+// deliberately not duplicating it here with different casing.
+// --------------------------------------------------------------------------------
+
+enum AuthProvider {
+  KINDE
+  NATIVE
+}
+
+/// No `user User @relation(...)` here: "User" isn't one model in this schema,
+/// it's RevaUser/SurfboardUser/GBCUser — Prisma has no polymorphic relations,
+/// so userId is a plain reference, scoped by `platform` to know which table
+/// it points into.
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  platform   String
+  tokenHash  String    @unique
+  familyId   String
+  revokedAt  DateTime?
+  replacedBy String?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId, platform])
+}
+
+/// One unified token for both a genuine forgotten-password reset and a
+/// first-time password setup for a Kinde-only account — same mechanism,
+/// only the emailed copy differs (utils/email.ts's sendPasswordResetEmail),
+/// decided by whether the user already has a passwordHash when the request
+/// comes in. Deliberately not reusing RefreshToken's shape even though it's
+/// structurally similar: a leaked/forged reset token grants "set this
+/// account's password" rather than "read this session," a meaningfully
+/// different blast radius worth keeping in its own table.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
+/// An invitation for a new admin/staff account on one product. Replaces
+/// creating the account up front: nothing exists in the product's user table
+/// until the invitee follows the emailed link and sets a password. The raw
+/// token is only ever in the email; just its sha256 hash is stored. Status is
+/// derived, not stored: accepted (acceptedAt), revoked (revokedAt), expired
+/// (expiresAt in the past) or pending. `platform` is a string discriminator
+/// like PasswordResetToken's, and the inviter is denormalised so the record
+/// stays readable if their account is later removed.
+model AdminInvitation {
+  id             String    @id @default(uuid())
+  platform       String
+  email          String
+  firstName      String
+  lastName       String
+  phone          String?
+  role           String
+  tokenHash      String    @unique
+  invitedById    String
+  invitedByName  String
+  invitedByEmail String
+  expiresAt      DateTime
+  lastSentAt     DateTime  @default(now())
+  acceptedAt     DateTime?
+  acceptedUserId String?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([platform, email])
+  @@index([platform, createdAt])
+}
+
+/// Same shape as PasswordResetToken (hashed token, expiry, single-use,
+/// platform-scoped) but kept as its own table rather than reused — a
+/// leaked/forged token here only lets someone mark an email "verified,"
+/// a much smaller blast radius than PasswordResetToken's "set this
+/// account's password," and reset's on-use side effects (burning every
+/// other outstanding token, revoking every refresh token) are specific to
+/// a credential change and don't belong on a verification action.
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
+/// 6-digit numeric OTP for email verification (alternative to link token).
+/// codeHash stores sha256(rawCode) so the raw code is never persisted.
+/// Wrong guesses increment `attempts`, capped at 5 independently of IP rate limiting.
+model EmailVerificationOtp {
+  id        String    @id @default(uuid())
+  userId    String
+  platform  String
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, platform])
+}
+
+/// Pre-verification registration (OTP-first, account-second): holds a
+/// signup's data until its secret — a 6-digit OTP or a link token,
+/// whichever the platform's `method` setting picked at issue time — is
+/// confirmed, so no User row — verified or not — is ever created for an
+/// email nobody has proven ownership of. codeHash stores sha256(secret);
+/// passwordHash is already bcrypt-hashed before being stored here, same as
+/// a real account's passwordHash. `method` is stamped at issue time (not
+/// re-read from settings at completion) so a mid-flight admin settings
+/// change can't desync what was actually emailed from what completion
+/// thinks it's checking. complete() reads email/passwordHash/firstName/
+/// lastName from THIS row only, never from the client, so verifying one
+/// email can't be used to create an account under a different, unverified
+/// one.
+model PendingRegistration {
+  id           String    @id @default(uuid())
+  platform     String
+  email        String
+  firstName    String
+  lastName     String
+  passwordHash String
+  method       String    @default("OTP") // "OTP" | "LINK" — fixed at issue time
+  codeHash     String
+  attempts     Int       @default(0)
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([platform, email])
+  @@index([expiresAt])
+}
+
+model LoginAttempt {
+  id         String   @id @default(uuid())
+  identifier String
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  signature   String    @unique // x-paystack-signature; uniquely identifies a delivery payload
+  event       String
+  platform    String
+  entityKey   String? // e.g., sub:SUB_xxx, ref:PSK_REF_xxx, cus:CUS_xxx
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  status      String // "pending" | "ok" | "error"
+  error       String?
+
+  @@index([event, platform])
+  @@index([entityKey])
+  @@index([receivedAt])
+}

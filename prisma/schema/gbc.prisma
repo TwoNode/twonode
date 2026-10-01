@@ -1,0 +1,465 @@
+// --------------------------------------------------------------------------------
+// GBC — Geospatial Builders Conference 2.0 ticketing/event-management platform.
+// --------------------------------------------------------------------------------
+
+enum GBCProfession {
+  SURVEYOR
+  GIS_ANALYST
+  URBAN_PLANNER
+  LAWYER
+  ENGINEER
+  ARCHITECT
+  DATA_SCIENTIST
+  DEVELOPER
+  PROJECT_MANAGER
+  STUDENT
+  RESEARCHER
+  ENTREPRENEUR
+  GOVERNMENT_OFFICIAL
+  NGO_STAFF
+  CONSULTANT
+  OTHER
+}
+
+enum GBCRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum GBCGender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum GBCTicketType {
+  EARLY_BIRD
+  REGULAR
+  COMPANY
+  VIP
+  STUDENT
+}
+
+enum GBCPaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum GBCEditionStatus {
+  UPCOMING
+  ACTIVE
+  PAST
+}
+
+/// One row per conference year (1.0, 2.0, ...) — promoted out of the
+/// GBCSettings JSON blob (see gbc_editions migration notes in
+/// docs/development-history/phases/phase-1-foundations.md) so the tag
+/// columns below can be real foreign keys instead of a bare string that
+/// nothing validated against the settings JSON. "Exactly one ACTIVE" is
+/// enforced two ways: app-level in editionService.ts (the deliberate
+/// activate/archive two-step), and a DB-level backstop — a partial unique
+/// index on (status) WHERE status = 'ACTIVE', added via raw SQL since
+/// Prisma's schema DSL can't express a partial index (see the migration's
+/// accompanying .sql file).
+model GBCEdition {
+  key          String           @id
+  name         String
+  theme        String
+  subTheme     String
+  venue        String
+  startDate    DateTime
+  endDate      DateTime
+  status       GBCEditionStatus
+  ticketPrefix String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  /// Soft-delete marker — a "deleted" edition just drops off the main
+  /// Editions list (recycle bin) rather than being removed outright, since
+  /// tickets/sponsors/speakers/partners hold a hard FK to it and losing
+  /// that history by accident would be far worse than an extra list filter.
+  /// Only permanentlyDeleteEdition() (editionService.ts) does a real
+  /// prisma.gBCEdition.delete(), and only once nothing still references it.
+  deletedAt    DateTime?
+
+  tickets    GBCTicket[]
+  sponsors   GBCSponsor[]
+  partners   GBCPartner[]
+  speakers   GBCSpeaker[]
+  gallery    GBCGallery[]
+  inquiries  GBCContactInquiry[]
+  eventStats GBCEventStats[]
+  settings   GBCSettings?
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("gbc_editions")
+}
+
+model GBCUser {
+  id        String  @id @default(cuid())
+  kindeId   String  @unique
+  email     String  @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  role      GBCRole @default(USER)
+  isActive  Boolean @default(true)
+
+  /// Native email+password auth (§4.2) — null if this account has never set
+  /// a password (Kinde-only). authProviders lets one account have both.
+  passwordHash  String?
+  authProviders AuthProvider[] @default([KINDE])
+  /// Nudge-only, not enforced — an unverified account isn't blocked from
+  /// anything today. Defaults false for every account, Kinde-registered
+  /// included: some accounts used Kinde's own email+password auth before
+  /// it was disabled, so having a kindeId is not proof the address was
+  /// ever confirmed. Only flips true via the native verify-email flow
+  /// (app/api/v1/auth/verify-email), regardless of which authProviders
+  /// the account has — same as RevaUser/SurfboardUser.
+  emailVerified Boolean @default(false)
+  emailVerifiedVia String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kindeId])
+  @@index([email])
+  @@index([isActive])
+}
+
+model GBCTicket {
+  id                   String           @id @default(cuid())
+  /// Generated in ticketService.ts from the active edition's ticketPrefix,
+  /// not a DB default — see GBCEdition.
+  ticketNumber         String           @unique
+  /// Real FK into GBCEdition.key (see that model's doc comment) — was a bare
+  /// categorical string before the gbc_editions migration.
+  edition              String           @default("2.0")
+  editionRef           GBCEdition       @relation(fields: [edition], references: [key])
+  name                 String
+  email                String
+  phone                String?
+  gender               GBCGender
+  profession           String           @default("")
+  ticketType           GBCTicketType
+  price                Int
+  paymentStatus        GBCPaymentStatus @default(PENDING)
+  // paymentRef is unique for non-COMPANY tickets, but COMPANY tickets can share the same reference (group purchases)
+  // Uniqueness is enforced at the application level in ticket-actions.ts
+  paymentRef           String?
+  paymentDate          DateTime?
+  paymentMethod        String?
+  paymentDetails       Json?
+  qrCode               String?
+  qrCodeS3Key          String?
+  checkedIn            Boolean          @default(false)
+  checkedInAt          DateTime?
+  checkedInBy          String?
+  certificateSentCount Int              @default(0)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([email])
+  @@index([phone])
+  @@index([ticketNumber])
+  @@index([paymentRef])
+  @@index([paymentStatus])
+  @@index([edition])
+  @@map("gbc_tickets")
+}
+
+model GBCSponsor {
+  id          String         @id @default(cuid())
+  name        String
+  logo        String
+  logoS3Key   String?
+  /// Key of a GBCSponsorTier (HEADLINE, IMPACT, SUPPORTING, or an admin-made one).
+  tier        String
+  tierRef     GBCSponsorTier @relation(fields: [tier], references: [key])
+  description String?        @db.Text
+  website     String?
+  order       Int            @default(0)
+  visible     Boolean        @default(true)
+  edition     String         @default("2.0")
+  editionRef  GBCEdition     @relation(fields: [edition], references: [key])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([edition])
+  @@map("gbc_sponsors")
+}
+
+/// A sponsorship level. Admin-managed; the original three keep their keys so
+/// existing sponsors and code that compares against them are unaffected.
+model GBCSponsorTier {
+  /// Stable identifier (UPPER_SNAKE of the name at creation); never changes on rename.
+  key         String   @id
+  name        String
+  /// Optional line shown under the tier heading on the public sponsors page.
+  description String?
+  /// Card size on the public page: FEATURED (large), STANDARD or COMPACT.
+  size        String   @default("STANDARD")
+  /// Display order on the public page — lowest first.
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sponsors GBCSponsor[]
+
+  @@map("gbc_sponsor_tiers")
+}
+
+model GBCPartner {
+  id          String     @id @default(cuid())
+  name        String
+  logo        String
+  logoS3Key   String?
+  description String?    @db.Text
+  website     String?
+  order       Int        @default(0)
+  visible     Boolean    @default(true)
+  edition     String     @default("2.0")
+  editionRef  GBCEdition @relation(fields: [edition], references: [key])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([edition])
+  @@map("gbc_partners")
+}
+
+model GBCGallery {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?      @db.Text
+  mediaType      GBCMediaType
+  mediaUrl       String
+  mediaS3Key     String?
+  thumbnailUrl   String?
+  thumbnailS3Key String?
+  year           Int
+  order          Int          @default(0)
+  visible        Boolean      @default(true)
+  /// Kept alongside `edition` as the event's calendar year — derived from the
+  /// edition's startDate when an item is created or moved to another edition.
+  edition        String       @default("2.0")
+  editionRef     GBCEdition   @relation(fields: [edition], references: [key])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([year])
+  @@index([edition])
+  @@map("gbc_gallery")
+}
+
+enum GBCMediaType {
+  IMAGE
+  VIDEO
+}
+
+enum GBCSpeakerTier {
+  KEYNOTE
+  PANELIST
+  FIRESIDE_CHAT
+}
+
+model GBCSpeaker {
+  id         String         @id @default(cuid())
+  name       String
+  title      String
+  bio        String         @db.Text
+  photo      String
+  photoS3Key String?
+  tier       GBCSpeakerTier
+  company    String?
+  linkedin   String?
+  twitter    String?
+  order      Int            @default(0)
+  visible    Boolean        @default(true)
+  featured   Boolean        @default(false)
+  edition    String         @default("2.0")
+  editionRef GBCEdition     @relation(fields: [edition], references: [key])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([edition])
+  @@map("gbc_speakers")
+}
+
+model GBCPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.Text
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gbc_pages")
+}
+
+/// One row per edition (edition is unique): each conference has its own event
+/// details, ticket prices/capacity, notification toggles and so on. An edition
+/// with no row yet reads as defaults until its first save creates it.
+model GBCSettings {
+  id               String     @id @default(cuid())
+  edition          String     @unique
+  editionRef       GBCEdition @relation(fields: [edition], references: [key])
+  /// Stores the entire application configuration as a JSON object.
+  /// Structure: GBCSettingsData (see utils/settings.ts)
+  /// {
+  ///   event: { name, theme, date, venue, time, ... },
+  ///   tickets: { earlyBirdPrice, regularPrice, maxCapacity, ... },
+  ///   notifications: { emailTicketConfirmation, ... },
+  ///   system: { maintenanceMode, ... }
+  /// }
+  settings         Json       @default("{}")
+  previousSettings Json?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@map("gbc_settings")
+}
+
+model GBCContactInquiry {
+  id         String           @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  subject    String
+  message    String           @db.Text
+  type       String?
+  status     GBCInquiryStatus @default(PENDING)
+  notes      String?          @db.Text
+  /// The edition current when the inquiry was submitted (set server-side —
+  /// the public contact form never supplies it).
+  edition    String           @default("2.0")
+  editionRef GBCEdition       @relation(fields: [edition], references: [key])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([edition])
+  @@map("gbc_contact_inquiries")
+}
+
+enum GBCInquiryStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model GBCEventStats {
+  id            String     @id @default(cuid())
+  date          DateTime   @unique @default(now())
+  ticketsSold   Int        @default(0)
+  revenue       Int        @default(0)
+  checkedIn     Int        @default(0)
+  newInquiries  Int        @default(0)
+  websiteVisits Int        @default(0)
+  emailsSent    Int        @default(0)
+  smsSent       Int        @default(0)
+  edition       String     @default("2.0")
+  editionRef    GBCEdition @relation(fields: [edition], references: [key])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([date])
+  @@index([edition])
+  @@map("gbc_event_stats")
+}
+
+model GBCNotification {
+  id        String                @id @default(cuid())
+  type      GBCNotificationType
+  recipient String
+  subject   String?
+  message   String                @db.Text
+  status    GBCNotificationStatus @default(PENDING)
+  sentAt    DateTime?
+  error     String?               @db.Text
+  metadata  String?               @db.Text
+  createdAt DateTime              @default(now())
+
+  @@index([status])
+  @@index([type])
+  @@map("gbc_notifications")
+}
+
+enum GBCNotificationType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum GBCNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  QUEUED
+}
+
+/**
+ * In-app admin notification inbox (bell dropdown), distinct from
+ * GBCNotification above (an outbound email/SMS send-log, not a user-facing
+ * inbox). Mirrors SurfboardNotification's shape exactly — same
+ * readBy/dismissedBy-array-of-userIds pattern, same audience targeting —
+ * since GBC's admin area is the only logged-in area this product has (no
+ * separate ticket-holder dashboard), audience here means "which admins."
+ */
+model GBCUserNotification {
+  id          String                      @id @default(cuid())
+  type        GBCUserNotificationType
+  title       String
+  message     String
+  readBy      String[]                    @default([])
+  dismissedBy String[]                    @default([])
+  userIds     String[]                    @default([])
+  audience    GBCUserNotificationAudience @default(SPECIFIC_USERS)
+  link        String?
+  metadata    Json?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  @@index([createdAt])
+  @@index([audience])
+  @@map("gbc_user_notifications")
+}
+
+enum GBCUserNotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  SYSTEM
+}
+
+enum GBCUserNotificationAudience {
+  SPECIFIC_USERS
+  GENERAL_ADMINS
+  SUPERADMIN
+  ALL_USERS
+}
+
+model GBCAuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   String?  @db.Text
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("gbc_audit_logs")
+}
