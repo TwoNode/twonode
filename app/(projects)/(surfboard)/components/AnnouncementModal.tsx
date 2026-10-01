@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { surfboardApi } from "@/surfboard/apiClient";
 
@@ -42,11 +48,15 @@ export function AnnouncementModal() {
 
   return (
     <Dialog open onOpenChange={(open) => !open && handleDismiss()}>
-      <DialogContent className="max-w-md">
+      {/* Wide, not the dialog system's narrow max-w-md default — an
+          important-enough-to-block announcement (app-store launch, event
+          promo, etc.) reads as cramped at form-dialog width; this gives it
+          room while still leaving breathing margin on large screens. */}
+      <DialogContent className="max-w-lg sm:max-w-2xl lg:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{announcement.title}</DialogTitle>
+          <DialogTitle className="text-xl">{announcement.title}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+        <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
           {announcement.message}
         </p>
         <DialogFooter className="gap-2 sm:gap-0">

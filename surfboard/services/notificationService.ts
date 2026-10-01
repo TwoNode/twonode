@@ -52,6 +52,21 @@ export type NotificationWithUser = {
   createdAt: Date;
   isRead: boolean;
   isDismissed: boolean;
+  showAsModal?: boolean;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
+};
+
+export type UpdateNotificationInput = {
+  type?: SurfboardNotificationType;
+  title?: string;
+  message?: string;
+  audience?: SurfboardNotificationAudience;
+  userIds?: string[];
+  link?: string | null;
+  showAsModal?: boolean;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
 };
 
 export async function createNotification(input: CreateNotificationInput) {
@@ -78,6 +93,34 @@ export async function createNotification(input: CreateNotificationInput) {
       console.error("Error sending notification WhatsApp messages:", error)
     );
   }
+
+  return { id: notification.id };
+}
+
+/**
+ * Edits an already-sent notification in place — title/message/audience/link,
+ * and the showAsModal/startsAt/endsAt scheduling window (now editable for
+ * every notification type, not just modal announcements: `startsAt` gates
+ * visibility in the ordinary bell feed too, see getUserNotifications below).
+ * Never re-sends email/WhatsApp — those are one-shot, fired only from
+ * createNotification, so correcting a typo after the fact can't re-notify
+ * everyone a second time.
+ */
+export async function updateNotification(id: string, input: UpdateNotificationInput) {
+  const notification = await prisma.surfboardNotification.update({
+    where: { id },
+    data: {
+      ...(input.type !== undefined && { type: input.type }),
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.message !== undefined && { message: input.message }),
+      ...(input.audience !== undefined && { audience: input.audience }),
+      ...(input.userIds !== undefined && { userIds: input.userIds }),
+      ...(input.link !== undefined && { link: input.link }),
+      ...(input.showAsModal !== undefined && { showAsModal: input.showAsModal }),
+      ...(input.startsAt !== undefined && { startsAt: input.startsAt }),
+      ...(input.endsAt !== undefined && { endsAt: input.endsAt }),
+    },
+  });
 
   return { id: notification.id };
 }
@@ -234,9 +277,20 @@ export async function getUserNotifications(
 ): Promise<NotificationWithUser[]> {
   const { includeRead = true, includeDismissed = false, limit = 50 } = options || {};
 
-  const where: any = { OR: [{ audience: "ALL_USERS" }, { userIds: { has: userId } }] };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.OR.push({ audience: "GENERAL_ADMINS" });
-  if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
+  const now = new Date();
+  const where: any = {
+    AND: [
+      { OR: [{ audience: "ALL_USERS" }, { userIds: { has: userId } }] },
+      // A startsAt/endsAt window now applies to every notification, not
+      // just modal announcements — lets an admin schedule an ordinary
+      // notification to appear (or stop appearing) in the bell feed at a
+      // future time instead of only being able to send it immediately.
+      { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+      { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+    ],
+  };
+  if (role === "ADMIN" || role === "SUPERADMIN") where.AND[0].OR.push({ audience: "GENERAL_ADMINS" });
+  if (role === "SUPERADMIN") where.AND[0].OR.push({ audience: "SUPERADMIN" });
 
   const notifications = await prisma.surfboardNotification.findMany({ where, orderBy: { createdAt: "desc" }, take: limit });
 
@@ -367,6 +421,9 @@ export async function getUserNotificationsPaginated(
     createdAt: notification.createdAt,
     isRead: notification.readBy.includes(userId),
     isDismissed: notification.dismissedBy.includes(userId),
+    showAsModal: notification.showAsModal,
+    startsAt: notification.startsAt,
+    endsAt: notification.endsAt,
   }));
 
   return paginatedResult(data, total, options.page, options.pageSize);
@@ -413,12 +470,21 @@ export async function dismissNotification(userId: string, notificationId: string
 }
 
 export async function getUnreadNotificationCount(userId: string, role: SurfboardRole) {
+  const now = new Date();
+  const audienceOr: any[] = [{ audience: "ALL_USERS" }, { userIds: { has: userId } }];
+  if (role === "ADMIN" || role === "SUPERADMIN") audienceOr.push({ audience: "GENERAL_ADMINS" });
+  if (role === "SUPERADMIN") audienceOr.push({ audience: "SUPERADMIN" });
+
+  // Same startsAt/endsAt window as getUserNotifications, so the bell badge
+  // count never includes a notification that isn't visible in the feed yet.
   const where: any = {
-    OR: [{ audience: "ALL_USERS" }, { userIds: { has: userId } }],
+    AND: [
+      { OR: audienceOr },
+      { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+      { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+    ],
     NOT: [{ readBy: { has: userId } }, { dismissedBy: { has: userId } }],
   };
-  if (role === "ADMIN" || role === "SUPERADMIN") where.OR.push({ audience: "GENERAL_ADMINS" });
-  if (role === "SUPERADMIN") where.OR.push({ audience: "SUPERADMIN" });
 
   const count = await prisma.surfboardNotification.count({ where });
   return { count };

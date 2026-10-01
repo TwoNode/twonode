@@ -1295,6 +1295,36 @@ export const surfboardApi = {
         { method: "POST" },
       ),
 
+    update: (
+      id: string,
+      input: Partial<{
+        type:
+          | "INFO"
+          | "SUCCESS"
+          | "WARNING"
+          | "ERROR"
+          | "SYSTEM"
+          | "PLAN"
+          | "SHARING";
+        title: string;
+        message: string;
+        audience:
+          | "SPECIFIC_USERS"
+          | "GENERAL_ADMINS"
+          | "SUPERADMIN"
+          | "ALL_USERS";
+        userIds: string[];
+        link: string | null;
+        showAsModal: boolean;
+        startsAt: string | null;
+        endsAt: string | null;
+      }>,
+    ) =>
+      jsonFetch<{ id: string }>(
+        `${BASE}/notifications/${encodeURIComponent(id)}`,
+        { method: "PATCH", body: JSON.stringify(input) },
+      ),
+
     remove: (id: string) =>
       jsonFetch<{ success: boolean }>(
         `${BASE}/notifications/${encodeURIComponent(id)}`,
