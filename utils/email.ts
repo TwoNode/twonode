@@ -9,7 +9,7 @@ import { Platform } from "@/utils/platform";
  * one flow instead of a generic shared template.
  */
 const PLATFORM_BRAND: Record<Platform, { name: string; accent: string; accentDark: string }> = {
-  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#2563EB", accentDark: "#1D4ED8" },
+  [Platform.SURFBOARD]: { name: "Surfboard", accent: "#233dff", accentDark: "#141c4d" },
   [Platform.REVA]: { name: "REVA", accent: "#008cff", accentDark: "#032740" },
   [Platform.GBC]: { name: "GBC", accent: "#7C3AED", accentDark: "#5B21B6" },
   [Platform.SCRAM]: { name: "TwoNode", accent: "#0077B6", accentDark: "#023E8A" },
@@ -199,7 +199,7 @@ export const sendPasswordResetEmail = async ({
         <p>${greeting}</p>
         <p>${bodyLine}</p>
         <p style="margin: 24px 0;">
-          <a href="${resetUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">${buttonLabel}</a>
+          <a href="${resetUrl}" style="background-color:${brand.accent};background-image:linear-gradient(135deg, ${brand.accent}, ${brand.accentDark});color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">${buttonLabel}</a>
         </p>
         <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
       </div>
@@ -257,7 +257,7 @@ export const sendAdminInvitationEmail = async ({
         <p>${escapeHtml(greeting)}</p>
         <p>${escapeHtml(bodyLine)}</p>
         <p style="margin: 24px 0;">
-          <a href="${acceptUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Accept invitation</a>
+          <a href="${acceptUrl}" style="background-color:${brand.accent};background-image:linear-gradient(135deg, ${brand.accent}, ${brand.accentDark});color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Accept invitation</a>
         </p>
         <p style="color:#666;font-size:13px;">This link can be used once and expires on ${expiry}. If you weren't expecting this invitation, you can safely ignore this email.</p>
       </div>
@@ -309,7 +309,7 @@ export const sendPlanShareInviteEmail = async ({
         <p>Hi,</p>
         <p>${escapeHtml(bodyLine)}</p>
         <p style="margin: 24px 0;">
-          <a href="${signupUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Sign up to view plan</a>
+          <a href="${signupUrl}" style="background-color:${brand.accent};background-image:linear-gradient(135deg, ${brand.accent}, ${brand.accentDark});color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Sign up to view plan</a>
         </p>
         <p style="color:#666;font-size:13px;">This invitation expires on ${expiry}. If you weren't expecting this, you can safely ignore this email.</p>
       </div>
@@ -355,7 +355,7 @@ export const sendVerificationEmail = async ({
         <p>${greeting}</p>
         <p>Please confirm your email address for your ${brand.name} account by clicking the button below.</p>
         <p style="margin: 24px 0;">
-          <a href="${verifyUrl}" style="background:${brand.accent};color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email</a>
+          <a href="${verifyUrl}" style="background-color:${brand.accent};background-image:linear-gradient(135deg, ${brand.accent}, ${brand.accentDark});color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify email</a>
         </p>
         <p style="color:#666;font-size:13px;">This link expires in 1 hour. If you didn't create this account, you can safely ignore this email.</p>
       </div>
