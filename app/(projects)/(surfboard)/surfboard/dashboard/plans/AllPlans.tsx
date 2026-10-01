@@ -2544,8 +2544,45 @@ export default function AllPlans() {
 
       <BulkSharePlanModal
         isOpen={showBulkShareModal}
-        onClose={() => setShowBulkShareModal(false)}
-        onShared={() => loadPlans()}
+        onClose={() => {
+          setShowBulkShareModal(false);
+          loadPlans(pagination.page, pagination.pageSize);
+        }}
+        onShared={(updatedPlanIds, addedUser, removedUserId) => {
+          if (updatedPlanIds && updatedPlanIds.length > 0) {
+            setPlans((prev) =>
+              prev.map((p) => {
+                if (!updatedPlanIds.includes(p.id)) return p;
+                let nextSharedTo = [...(p.sharedTo || [])];
+                let nextSharedToUsers = [...((p as any).sharedToUsers || [])];
+                if (addedUser) {
+                  if (!nextSharedTo.includes(addedUser.id)) {
+                    nextSharedTo.push(addedUser.id);
+                  }
+                  if (!nextSharedToUsers.some((u: any) => u.id === addedUser.id)) {
+                    nextSharedToUsers.push({
+                      id: addedUser.id,
+                      firstName: addedUser.firstName,
+                      lastName: addedUser.lastName,
+                      email: addedUser.email,
+                      surconRegNumber: addedUser.surconRegNumber,
+                    });
+                  }
+                }
+                if (removedUserId) {
+                  nextSharedTo = nextSharedTo.filter((id) => id !== removedUserId);
+                  nextSharedToUsers = nextSharedToUsers.filter((u: any) => u.id !== removedUserId);
+                }
+                return {
+                  ...p,
+                  sharedTo: nextSharedTo,
+                  sharedToUsers: nextSharedToUsers,
+                };
+              })
+            );
+          }
+          loadPlans(pagination.page, pagination.pageSize);
+        }}
         plans={plans.filter((p) => selectedPlans.includes(p.id))}
       />
 

@@ -93,7 +93,10 @@ export function RemitaPaymentModal({
   const isValidLasgUrl = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.hostname.includes("ebs-rcm.com") || parsed.hostname.includes("printreceipt");
+      return (
+        parsed.hostname === "printreceipt.ebs-rcm.com" ||
+        parsed.hostname.endsWith(".ebs-rcm.com")
+      );
     } catch {
       return false;
     }
@@ -183,7 +186,20 @@ export function RemitaPaymentModal({
           toast.success("Payment status updated: " + result.data.status);
         }
       } else {
-        showError(result.error || "Failed to verify payment");
+        let errMsg = result.error || "Failed to verify payment";
+        const anyResult = result as any;
+        if (anyResult.details && typeof anyResult.details === "object") {
+          const vals = Object.values(anyResult.details).filter(Boolean);
+          if (vals.length > 0) {
+            const first = vals[0];
+            if (typeof first === "string") {
+              errMsg = first;
+            } else if (typeof first === "object" && first !== null && "_errors" in (first as any)) {
+              errMsg = (first as any)._errors?.[0] || errMsg;
+            }
+          }
+        }
+        showError(errMsg);
       }
     } catch (error) {
       console.error("Link verification error:", error);

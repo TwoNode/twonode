@@ -32,6 +32,7 @@ async function jsonFetch<T>(
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
+    cache: init?.cache ?? "no-store",
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   return res.json();
@@ -44,6 +45,7 @@ async function formFetch<T>(
 ): Promise<ApiResult<T>> {
   const res = await fetch(url, {
     ...init,
+    cache: init?.cache ?? "no-store",
     method: init?.method ?? "POST",
     body: formData,
   });

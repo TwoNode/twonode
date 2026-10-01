@@ -651,11 +651,11 @@ export function SubmittedBatchesModal({
                               ) : (
                                 <DropdownMenuItem disabled>Remita Receipt (not available)</DropdownMenuItem>
                               )}
-                              <DropdownMenuItem asChild>
+                              {/* <DropdownMenuItem asChild>
                                 <a href={`/api/v1/surfboard/cod/batches/${batch.id}/receipt-pdf`}>
                                   Payment Summary (PDF)
                                 </a>
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
