@@ -97,7 +97,7 @@ export function Sidebar({
         // mobile). Bump above that tie only in these overlay cases, not all
         // the time, so it never fights other z-50 chrome (navbars,
         // dropdowns) during normal collapsed/expanded desktop states.
-        (isPeeking || sidebar.isOpen) ? "z-[100]" : "z-50",
+        (isPeeking || sidebar.isOpen) ? "z-100" : "z-50",
         "w-[240px] border-r shadow-lg",
         showFull ? sideBarWidthClass : RAIL_WIDTH_CLASS,
         sidebar.isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -106,12 +106,33 @@ export function Sidebar({
         background: railBackground || SIDEBAR_INK,
         borderColor: "rgba(255, 255, 255, 0.08)",
       }}
-      onMouseEnter={() => isRail && sidebar.setIsHover(true)}
+      onMouseEnter={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-sidebar-toggle="true"]')) return;
+        if (isRail) sidebar.setIsHover(true);
+      }}
+      onMouseMove={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-sidebar-toggle="true"]')) {
+          if (isRail && sidebar.isHover) sidebar.setIsHover(false);
+          return;
+        }
+        if (isRail && !sidebar.isHover) sidebar.setIsHover(true);
+      }}
       onMouseLeave={() => isRail && sidebar.setIsHover(false)}
     >
       {enableRailCollapse && (
         <button
+          data-sidebar-toggle="true"
           onClick={() => sidebar?.toggleRailCollapsed()}
+          onMouseEnter={(e) => {
+            e.stopPropagation();
+            if (isRail) sidebar.setIsHover(false);
+          }}
+          onMouseMove={(e) => {
+            e.stopPropagation();
+            if (isRail) sidebar.setIsHover(false);
+          }}
           // Sibling of the overflow-hidden content div below (not nested
           // inside it) so this isn't clipped by that div's overflow
           // boundary — it used to be a child of that div, which cut roughly
