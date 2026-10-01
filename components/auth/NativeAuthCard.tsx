@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, type FormEvent, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ClipboardEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login, register, requestPasswordReset } from "@/lib/auth/authApiClient";
+import { login, registerSendOtp, registerComplete, registerResendOtp, requestPasswordReset } from "@/lib/auth/authApiClient";
 import { useTheme } from "@/hooks/useTheme";
 import type { Platform } from "@/utils/platform";
 
@@ -59,7 +59,7 @@ function NativeAuthCardInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "register" | "register-otp" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,6 +69,29 @@ function NativeAuthCardInner({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
+
+  // register-otp: step 2 of registration, verifying the code/link sent to
+  // `email`. `registrationMethod` decides which UI this step shows — OTP
+  // boxes, or a "check your inbox" state for a link — per the platform's
+  // admin-configured verification method (returned by send-otp, since
+  // that's where it's actually decided, not guessed client-side).
+  const [pendingRegistrationId, setPendingRegistrationId] = useState<string | null>(null);
+  const [registrationMethod, setRegistrationMethod] = useState<"OTP" | "LINK">("OTP");
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [submittingOtp, setSubmittingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  useEffect(() => {
+    if (mode === "register-otp" && registrationMethod === "OTP") otpInputRefs.current[0]?.focus();
+  }, [mode, registrationMethod]);
 
   // Middleware (proxy.ts) attaches this when it bounces an unauthenticated
   // visit to login, so a session expiring (or a stale link) mid-task can
@@ -109,12 +132,31 @@ function NativeAuthCardInner({
       return;
     }
 
+    if (mode === "register") {
+      setIsSubmitting(true);
+      try {
+        const result = await registerSendOtp({ platform, email, password, firstName, lastName });
+        if (!result.success) {
+          setError(result.error || "Something went wrong. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+        setPendingRegistrationId(result.data.pendingRegistrationId);
+        setRegistrationMethod(result.data.method);
+        setOtp(["", "", "", "", "", ""]);
+        setResendCooldown(60);
+        setMode("register-otp");
+      } catch {
+        setError("Couldn't reach the server. Check your connection and try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const result =
-        mode === "login"
-          ? await login({ platform, email, password, rememberMe })
-          : await register({ platform, email, password, firstName, lastName });
+      const result = await login({ platform, email, password, rememberMe });
 
       if (!result.success) {
         setError(result.error || "Something went wrong. Please try again.");
@@ -148,6 +190,99 @@ function NativeAuthCardInner({
     setMode("login");
   }
 
+  function handleOtpDigitChange(index: number, value: string) {
+    const cleaned = value.replace(/\D/g, "");
+    const updated = [...otp];
+    updated[index] = cleaned ? cleaned.slice(-1) : "";
+    setOtp(updated);
+    setError(null);
+    if (cleaned && index < 5) otpInputRefs.current[index + 1]?.focus();
+  }
+
+  function handleOtpKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmitOtp();
+      return;
+    }
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleOtpPaste(e: ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    const updated = [...otp];
+    for (let i = 0; i < 6; i++) updated[i] = pasted[i] || "";
+    setOtp(updated);
+    setError(null);
+    otpInputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  }
+
+  async function handleSubmitOtp(codeOverride?: string) {
+    if (submittingOtp) return;
+    const code = codeOverride || otp.join("");
+    if (code.length !== 6 || !pendingRegistrationId) {
+      setError("Please enter the complete 6-digit code.");
+      return;
+    }
+    setSubmittingOtp(true);
+    setError(null);
+    try {
+      const result = await registerComplete({ platform, pendingRegistrationId, code });
+      if (!result.success) {
+        setError(result.error || "Invalid code. Please check and try again.");
+        setSubmittingOtp(false);
+        return;
+      }
+      router.push(resolveRedirect(result.data.role));
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+      setSubmittingOtp(false);
+    }
+  }
+
+  useEffect(() => {
+    if (registrationMethod !== "OTP") return;
+    const code = otp.join("");
+    if (code.length === 6 && !submittingOtp) handleSubmitOtp(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp, registrationMethod]);
+
+  async function handleResendOtp() {
+    if (resendCooldown > 0 || !pendingRegistrationId) return;
+    setError(null);
+    setResendStatus(null);
+    try {
+      const res = await registerResendOtp({ platform, pendingRegistrationId });
+      if (res.success) {
+        setResendCooldown(60);
+        setResendStatus(
+          registrationMethod === "OTP"
+            ? "A fresh 6-digit code has been sent to your email."
+            : "A new verification link has been sent to your email."
+        );
+      } else {
+        setError(res.error || "Failed to resend. Please try again later.");
+      }
+    } catch {
+      setError("Couldn't reach the server. Please try again later.");
+    }
+  }
+
+  function backToRegisterForm() {
+    setError(null);
+    setResendStatus(null);
+    setPendingRegistrationId(null);
+    setMode("register");
+  }
+
   return (
     <div className="bg-white dark:bg-surface dark:border dark:border-white/10 rounded-2xl shadow-xl dark:shadow-none p-8 max-w-md w-full flex flex-col items-center">
       <div className="flex justify-center mb-6">
@@ -162,7 +297,13 @@ function NativeAuthCardInner({
         className="text-3xl font-extrabold mb-2 text-center"
         style={{ color: headingColor }}
       >
-        {mode === "login" ? title : mode === "register" ? "Create your account" : "Reset your password"}
+        {mode === "login"
+          ? title
+          : mode === "register"
+            ? "Create your account"
+            : mode === "register-otp"
+              ? "Verify your email"
+              : "Reset your password"}
       </h1>
       <p
         className="mb-6 text-base font-medium text-center"
@@ -172,7 +313,11 @@ function NativeAuthCardInner({
           ? subtitle
           : mode === "register"
             ? (registerNotice ?? subtitle)
-            : "Enter your account email and we'll send you a link to reset your password."}
+            : mode === "register-otp"
+              ? registrationMethod === "OTP"
+                ? <>Enter the 6-digit code we sent to <strong>{email}</strong>.</>
+                : <>We've sent a verification link to <strong>{email}</strong>.</>
+              : "Enter your account email and we'll send you a link to reset your password."}
       </p>
 
       {error && (
@@ -196,6 +341,73 @@ function NativeAuthCardInner({
             style={{ color: accent }}
           >
             Back to sign in
+          </button>
+        </div>
+      ) : mode === "register-otp" ? (
+        <div className="w-full flex flex-col items-center gap-4">
+          {registrationMethod === "OTP" ? (
+            <>
+              <div className="flex gap-2">
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => { otpInputRefs.current[i] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    disabled={submittingOtp}
+                    onChange={(e) => handleOtpDigitChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={handleOtpPaste}
+                    className="w-11 h-12 text-center text-xl font-bold rounded-lg border border-gray-300 dark:border-white/15 dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2"
+                    style={{ caretColor: accent, ["--tw-ring-color" as string]: accent }}
+                  />
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                disabled={submittingOtp || otp.some((d) => !d)}
+                onClick={() => handleSubmitOtp()}
+                className="w-full px-6 py-3 h-auto text-white rounded-lg font-semibold text-lg shadow hover:opacity-90 transition"
+                style={{ background: `linear-gradient(90deg, ${dark}, ${accent})` }}
+              >
+                {submittingOtp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & create account"}
+              </Button>
+            </>
+          ) : (
+            // LINK method — nothing to submit here; completion happens when
+            // the user clicks the emailed link, which lands on a dedicated
+            // page (RegisterVerifyLinkCard) that calls registerComplete
+            // directly with the pendingRegistrationId + token from the URL.
+            <MailCheck className="h-10 w-10" style={{ color: accent }} />
+          )}
+
+          {resendStatus && (
+            <p className="text-sm text-emerald-600 dark:text-emerald-400 text-center">{resendStatus}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            disabled={resendCooldown > 0}
+            className="text-sm font-semibold hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ color: accent }}
+          >
+            {resendCooldown > 0
+              ? `Resend (${resendCooldown}s)`
+              : registrationMethod === "OTP"
+                ? "Resend code"
+                : "Resend link"}
+          </button>
+
+          <button
+            type="button"
+            onClick={backToRegisterForm}
+            className="text-sm text-gray-500 dark:text-gray-400 hover:opacity-80"
+          >
+            ← Use a different email
           </button>
         </div>
       ) : (
@@ -323,7 +535,7 @@ function NativeAuthCardInner({
       </form>
       )}
 
-      {allowRegister && mode !== "forgot" && (
+      {allowRegister && mode !== "forgot" && mode !== "register-otp" && (
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 text-center">
           {mode === "login" ? "Don't have an account? " : "Already have an account? "}
           <button
@@ -340,7 +552,7 @@ function NativeAuthCardInner({
         </p>
       )}
 
-      {alternateAuth && mode !== "forgot" && (
+      {alternateAuth && mode !== "forgot" && mode !== "register-otp" && (
         <>
           <div className="w-full flex items-center gap-3 my-6">
             <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
