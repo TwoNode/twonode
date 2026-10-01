@@ -4,12 +4,14 @@ import { Suspense } from "react";
 import { ResetPasswordCard } from "@/components/auth/ResetPasswordCard";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { Platform } from "@/utils/platform";
+import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 
 export default function SurfboardResetPasswordPage() {
   return (
     <AuthSplitLayout
-      accent="#2563EB"
-      accentDark="#1D4ED8"
+      accent="#233dff"
+      accentDark="#141c4d"
+      background={SURFBOARD_GRADIENTS.hero}
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
       description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
@@ -19,8 +21,8 @@ export default function SurfboardResetPasswordPage() {
           platform={Platform.SURFBOARD}
           logoSrc="/surfboard/surf_logo.svg"
           logoAlt="Surfboard Logo"
-          accent="#2563EB"
-          accentDark="#1D4ED8"
+          accent="#233dff"
+          accentDark="#141c4d"
           loginHref="/surfboard/login"
         />
       </Suspense>

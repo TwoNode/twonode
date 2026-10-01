@@ -7,6 +7,7 @@ import { RegisterVerifyLinkCard } from "@/components/auth/RegisterVerifyLinkCard
 import { VerifyEmailGate } from "@/components/auth/VerifyEmailGate";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { Platform } from "@/utils/platform";
+import { SURFBOARD_GRADIENTS } from "@/surfboard/colors";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -23,8 +24,8 @@ function VerifyEmailContent() {
         platform={Platform.SURFBOARD}
         logoSrc="/surfboard/surf_logo.svg"
         logoAlt="Surfboard Logo"
-        accent="#2563EB"
-        accentDark="#1D4ED8"
+        accent="#233dff"
+        accentDark="#141c4d"
         loginHref="/surfboard/login"
         dashboardHref="/surfboard/dashboard"
       />
@@ -37,8 +38,8 @@ function VerifyEmailContent() {
         platform={Platform.SURFBOARD}
         logoSrc="/surfboard/surf_logo.svg"
         logoAlt="Surfboard Logo"
-        accent="#2563EB"
-        accentDark="#1D4ED8"
+        accent="#233dff"
+        accentDark="#141c4d"
         loginHref="/surfboard/login"
       />
     );
@@ -49,8 +50,8 @@ function VerifyEmailContent() {
       platform={Platform.SURFBOARD}
       logoSrc="/surfboard/surf_logo.svg"
       logoAlt="Surfboard Logo"
-      accent="#2563EB"
-      accentDark="#1D4ED8"
+      accent="#233dff"
+      accentDark="#141c4d"
       loginHref="/surfboard/login"
       dashboardHref="/surfboard/dashboard"
     />
@@ -60,8 +61,9 @@ function VerifyEmailContent() {
 export default function SurfboardVerifyEmailPage() {
   return (
     <AuthSplitLayout
-      accent="#2563EB"
-      accentDark="#1D4ED8"
+      accent="#233dff"
+      accentDark="#141c4d"
+      background={SURFBOARD_GRADIENTS.hero}
       eyebrow="Surfboard"
       headline="Making Your Survey Practice Stand Out."
       description="Sign in to make every of your survey plan more trusted, valuable, accessible and connected."
