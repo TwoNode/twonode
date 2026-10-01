@@ -5,6 +5,7 @@ import { setEncryptedUserCookie } from "@/utils/encryptedCookies";
 import { issueSession } from "@/lib/auth/session";
 import { Platform, SurfboardRole } from "@/utils/platform";
 import { acceptPendingPlanShareInvites } from "@/surfboard/services/planService";
+import { markEmailVerified } from "@/lib/auth/userLookup";
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,10 +61,15 @@ export async function GET(request: NextRequest) {
       throw new Error("Failed to create or find user in database");
     }
 
+    if (!dbUser.emailVerified) {
+      await markEmailVerified(Platform.SURFBOARD, dbUser.id, "OAUTH");
+      dbUser.emailVerified = true;
+    }
+
     // Also mint a native session (additive; must never break the existing
     // Kinde login flow if it fails).
     try {
-      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD);
+      await issueSession(dbUser.id, dbUser.role, Platform.SURFBOARD, undefined, dbUser);
     } catch (err) {
       console.error("issueSession failed for surfboard callback:", err);
     }

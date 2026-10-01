@@ -24,6 +24,13 @@ export interface RecordCopyVerificationTolerances {
   tolWarn: number;
 }
 
+export interface EmailVerificationSettings {
+  enabled: boolean;
+  method: "OTP" | "LINK";
+  gracePeriodDays: number;
+  enforcedSince: string;
+}
+
 export interface SurfboardSettingsData {
   zoneFees: ZoneFeeRow[];
   systemChargePercent: number;
@@ -32,6 +39,7 @@ export interface SurfboardSettingsData {
   queryResponseFeePercent: number;
   coordinateShifts?: Record<string, { eastingShift: number; northingShift: number }>;
   recordCopyTolerances?: RecordCopyVerificationTolerances;
+  emailVerification?: EmailVerificationSettings;
 }
 
 const DEFAULT_SETTINGS: SurfboardSettingsData = {
@@ -44,6 +52,12 @@ const DEFAULT_SETTINGS: SurfboardSettingsData = {
   queryResponseFeePercent: 10,
   coordinateShifts: DEFAULT_COORDINATE_SHIFTS,
   recordCopyTolerances: { tolAnchor: 0.05, tolWCB: 0.05, tolDist: 0.05, tolArea: 0.01, tolPass: 95, tolWarn: 80 },
+  emailVerification: {
+    enabled: false,
+    method: "OTP",
+    gracePeriodDays: 30,
+    enforcedSince: "2026-10-01T00:00:00.000Z",
+  },
 };
 
 function mergeSettings(dbSettings: any, defaults: SurfboardSettingsData): SurfboardSettingsData {
@@ -71,6 +85,10 @@ async function getLatestMergedSettings(): Promise<SurfboardSettingsData> {
   const settings = await prisma.surfboardSettings.findFirst({ orderBy: { updatedAt: "desc" } });
   if (!settings || !settings.settings) return DEFAULT_SETTINGS;
   return mergeSettings(settings.settings, DEFAULT_SETTINGS);
+}
+
+export async function getSurfboardSettings(): Promise<SurfboardSettingsData> {
+  return getLatestMergedSettings();
 }
 
 export async function getCurrentSettings(userId: string): Promise<SurfboardSettingsData> {

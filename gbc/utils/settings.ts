@@ -65,6 +65,12 @@ export type GBCSettingsData = {
     debugMode: boolean;
     automaticBackups: boolean;
   };
+  emailVerification: {
+    enabled: boolean;
+    method: "OTP" | "LINK";
+    gracePeriodDays: number;
+    enforcedSince: string;
+  };
 };
 
 /**
@@ -201,5 +207,11 @@ export const defaultSettings: GBCSettingsData = {
     maintenanceMode: false,
     debugMode: false,
     automaticBackups: true,
+  },
+  emailVerification: {
+    enabled: false,
+    method: "OTP",
+    gracePeriodDays: 30,
+    enforcedSince: "2026-10-01T00:00:00.000Z",
   },
 };

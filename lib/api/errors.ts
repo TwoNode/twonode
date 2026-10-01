@@ -65,6 +65,16 @@ export class SubscriptionRequiredError extends ApiError {
 }
 
 /**
+ * Distinct from ForbiddenError so callers and client apps can tell "you're
+ * blocked until your email is verified" apart from generic forbidden errors.
+ */
+export class EmailVerificationRequiredError extends ApiError {
+  constructor(message = "Email verification is required to perform this action") {
+    super(403, "EMAIL_VERIFICATION_REQUIRED", message);
+  }
+}
+
+/**
  * Prisma error-code -> friendly message table. Ported from the existing
  * app/(projects)/(surfboard)/utils/prismaErrorHandler.ts (the one place this
  * codebase already had thorough coverage, but Surfboard-only and shaped to

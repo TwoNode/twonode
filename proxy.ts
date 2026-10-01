@@ -43,6 +43,8 @@ const publicRoutes = [
   "/gbc-restricted/verify-email",
   // An invitee has no account (so no session) until they follow this link.
   "/gbc-restricted/accept-invite",
+  "/surfboard/verify-email",
+  "/reva/verify-email",
 ];
 
 type DynamicAuthOptions = any & {
@@ -134,6 +136,19 @@ function resolveDashboardRedirect(pathname: string): string {
   if (pathname.startsWith("/gbc-restricted")) return "/gbc-restricted";
   if (pathname.startsWith("/gbc")) return "/gbc";
   return "/reva/dashboard"; // Default fallback
+}
+
+function resolveVerifyEmailPath(platform: Platform): string {
+  switch (platform) {
+    case Platform.SURFBOARD:
+      return "/surfboard/verify-email";
+    case Platform.REVA:
+      return "/reva/verify-email";
+    case Platform.GBC:
+      return "/gbc-restricted/verify-email";
+    default:
+      return "/surfboard/verify-email";
+  }
 }
 
 // Given a role already resolved for the active platform (regardless of
@@ -252,6 +267,13 @@ async function tryNativeSession(
 
   const nativeSession = await getNativeSession(activePlatform);
   if (!nativeSession) return null;
+
+  if (nativeSession.mustVerifyNow && !nativeSession.emailVerified) {
+    const verifyPath = resolveVerifyEmailPath(activePlatform);
+    if (!pathname.startsWith(verifyPath) && !pathname.includes("/logout")) {
+      return createRedirectResponse(req, verifyPath);
+    }
+  }
 
   const role = nativeSession.role;
   let subscription: SubscriptionData | null = null;

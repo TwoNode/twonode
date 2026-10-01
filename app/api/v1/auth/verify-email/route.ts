@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       data: { usedAt: new Date() },
     });
 
-    await markEmailVerified(platform, verificationToken.userId);
+    await markEmailVerified(platform, verificationToken.userId, "LINK");
 
     return NextResponse.json({
       success: true,

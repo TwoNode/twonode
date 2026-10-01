@@ -16,6 +16,8 @@ export interface JWTPayload {
   sub: string;
   role: string;
   platform: Platform;
+  emailVerified: boolean;
+  mustVerifyNow: boolean;
 }
 
 export async function signAccessToken(payload: JWTPayload): Promise<string> {
@@ -29,7 +31,14 @@ export async function signAccessToken(payload: JWTPayload): Promise<string> {
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as unknown as JWTPayload;
+    const p = payload as Record<string, unknown>;
+    return {
+      sub: p.sub as string,
+      role: p.role as string,
+      platform: p.platform as Platform,
+      emailVerified: Boolean(p.emailVerified),
+      mustVerifyNow: Boolean(p.mustVerifyNow),
+    };
   } catch {
     return null;
   }

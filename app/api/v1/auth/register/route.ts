@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Platform } from "@/utils/platform";
-import prisma from "@/lib/prisma";
-import { signAccessToken } from "@/lib/auth/jwt";
-import { setAuthCookies } from "@/lib/auth/cookies";
 import { validateCSRF } from "@/lib/auth/csrf";
 import { checkRateLimit, recordAttempt, getClientIp } from "@/lib/auth/rateLimit";
 import { validateBody } from "@/lib/api/validate";
 import { ConflictError, handleApiError } from "@/lib/api/errors";
 import { findUserByEmail, createNativeUser } from "@/lib/auth/userLookup";
 import { issueAndSendVerificationEmail } from "@/lib/auth/emailVerification";
+import { issueAndSendVerificationOtp } from "@/lib/auth/emailVerificationOtp";
+import { getEmailVerificationSettings } from "@/lib/auth/emailVerificationSettings";
+import { issueSession } from "@/lib/auth/session";
+import { computeMustVerifyNow } from "@/lib/auth/emailVerificationGate";
 
 const registerSchema = z.object({
   platform: z.nativeEnum(Platform),
@@ -47,36 +47,32 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await createNativeUser(platform, { email, passwordHash, firstName, lastName });
 
-    // Nudge-only (§ email-verification decision): a delivery hiccup here
-    // must never block account creation, so this is best-effort — the
-    // account is still usable unverified, and the resend endpoint covers
-    // a lost/failed email.
+    // Send verification code or link according to platform configuration.
+    // Best-effort delivery — failure shouldn't hard-fail signup, but user will land
+    // on a gate screen with a working Resend option.
+    const config = await getEmailVerificationSettings(platform);
     try {
-      await issueAndSendVerificationEmail(platform, user);
+      if (config.method === "OTP") {
+        await issueAndSendVerificationOtp(platform, user);
+      } else {
+        await issueAndSendVerificationEmail(platform, user);
+      }
     } catch (err) {
-      console.error("Failed to send verification email on registration:", err);
+      console.error("Failed to send verification on registration:", err);
     }
 
-    const familyId = crypto.randomUUID();
-    const rawRefreshToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawRefreshToken).digest("hex");
-
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        platform,
-        tokenHash,
-        familyId,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    const accessToken = await signAccessToken({ sub: user.id, role: user.role, platform });
-    await setAuthCookies(platform, accessToken, rawRefreshToken);
+    await issueSession(user.id, user.role, platform, 30 * 24 * 60 * 60, user);
+    const mustVerifyNow = await computeMustVerifyNow(platform, user);
 
     return NextResponse.json({
       success: true,
-      data: { id: user.id, email: user.email, role: user.role.toLowerCase() },
+      data: {
+        id: user.id,
+        email: user.email,
+        role: user.role.toLowerCase(),
+        emailVerified: user.emailVerified,
+        mustVerifyNow,
+      },
     });
   } catch (err) {
     return handleApiError(err, { route: req.nextUrl.pathname, method: req.method });
