@@ -34,6 +34,7 @@ import {
 } from "@/components/dashboard/DashboardSearch";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { UserAccountMenu } from "@/components/dashboard/UserAccountMenu";
+import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBanner";
 import {
   surfboardPlanStatusLabel,
   surfboardPlanStatusTone,
@@ -342,6 +343,7 @@ export default function SurfboardUserPanelLayout({
           />
         </div>
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+          <VerificationNagBanner platform={Platform.SURFBOARD} verifyHref="/surfboard/verify-email" />
           {!hasSubscriptionAccess && (
             <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
               <div className="flex">

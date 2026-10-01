@@ -14,6 +14,7 @@ import { sideBarWidthClass } from "./revaAdminPanelLayout";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
 import { useRouter } from "next/navigation";
+import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBanner";
 
 export default function RevaUserPanelLayout({
   children,
@@ -106,6 +107,7 @@ export default function RevaUserPanelLayout({
         </div>
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+          <VerificationNagBanner platform={Platform.REVA} verifyHref="/reva/verify-email" />
           {children}
         </div>
       </div>

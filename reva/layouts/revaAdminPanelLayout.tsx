@@ -12,6 +12,7 @@ import { useRevaAdminAccess } from "@/reva/hooks/useRevaAdminAccess";
 import RevaLoading from "@/reva/components/RevaLoading";
 import { getNavItemsForRole } from "@/reva/access/routes";
 import { Platform } from "@/utils/platform";
+import { VerificationNagBanner } from "@/components/dashboard/VerificationNagBanner";
 
 export const sideBarWidthClass = " lg:w-[284px] ";
 
@@ -110,6 +111,7 @@ export default function RevaAdminPanelLayout({
         />
 
         <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto">
+          <VerificationNagBanner platform={Platform.REVA} verifyHref="/reva/verify-email" />
           {children}
         </div>
       </div>
