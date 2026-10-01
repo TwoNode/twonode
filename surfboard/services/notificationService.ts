@@ -315,10 +315,16 @@ export async function getUserNotifications(
 
 /**
  * The current active (showAsModal, now between startsAt/endsAt, audience
- * matches this user, not yet dismissed by them) announcement, if any —
- * shown as a blocking modal rather than left in the bell dropdown. Reuses
- * dismissedBy as the "seen" marker so it doesn't reappear every page nav
- * within the same session once acknowledged.
+ * matches this user) announcement, if any — shown as a blocking modal on
+ * every login within the campaign window.
+ *
+ * dismissedBy is intentionally NOT used as a gate here: campaign
+ * announcements are designed to surface on every new login while active.
+ * The frontend uses sessionStorage to suppress re-popping within the same
+ * browser session (so closing the modal on a given page-nav keeps it closed
+ * for that tab), but a new login — a new sessionStorage scope — shows it
+ * again. dismissedBy is still written by dismissNotification for audit
+ * purposes but has no effect on this query.
  */
 export async function getActiveModalAnnouncement(
   userId: string,
@@ -341,7 +347,7 @@ export async function getActiveModalAnnouncement(
     orderBy: { createdAt: "desc" },
   });
 
-  if (!notification || notification.dismissedBy.includes(userId)) return null;
+  if (!notification) return null;
 
   return {
     id: notification.id,
@@ -352,7 +358,7 @@ export async function getActiveModalAnnouncement(
     link: notification.link,
     createdAt: notification.createdAt,
     isRead: notification.readBy.includes(userId),
-    isDismissed: false,
+    isDismissed: notification.dismissedBy.includes(userId),
   };
 }
 

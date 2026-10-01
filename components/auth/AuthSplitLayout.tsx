@@ -33,11 +33,12 @@ export function AuthSplitLayout({
 }: AuthSplitLayoutProps) {
   return (
     <div className="min-h-screen flex">
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 bg-white dark:bg-background">
+      {/* Left panel — scrollable so tall content (register form) never clips */}
+      <div className="flex flex-1 flex-col items-center justify-center px-4 sm:px-8 py-8 sm:py-12 bg-white dark:bg-background min-h-screen overflow-y-auto">
         {notice && <div className="w-full max-w-md mb-4">{notice}</div>}
         {children}
         {footerNote && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">{footerNote}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">{footerNote}</p>
         )}
       </div>
 
@@ -57,6 +58,7 @@ export function AuthSplitLayout({
         className="relative hidden lg:flex flex-1 overflow-hidden"
         style={{ background: background ?? `linear-gradient(135deg, ${accentDark}, ${accent})` }}
       >
+        {/* Dot grid texture */}
         <div
           className="absolute inset-0 opacity-[0.12]"
           style={{
@@ -66,6 +68,7 @@ export function AuthSplitLayout({
           }}
         />
 
+        {/* Ambient glow blobs */}
         <div
           className="absolute -top-24 -right-16 w-96 h-96 rounded-full blur-3xl animate-blob"
           style={{ background: "white", opacity: 0.18 }}
@@ -79,26 +82,18 @@ export function AuthSplitLayout({
           style={{ background: "white", opacity: 0.12 }}
         />
 
-        {/* Network graphic and headline text used to be two independently
-            positioned full-height overlays (graphic centered, text
-            bottom-anchored) — on any viewport short enough (laptop screens,
-            or a user zoomed to 125%+), the centered graphic's lower nodes
-            collided with the text card. Stacking them in one flex column
-            instead gives each its own region, so they can't overlap
-            regardless of panel height. */}
+        {/* Subtle radial spotlight behind the network graphic */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,255,255,0.10) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Network graphic and headline text stacked vertically so they never
+            overlap on short viewports (laptops, high-zoom settings). */}
         <div className="relative z-10 flex h-full w-full flex-col">
-          {/* At `lg` only (1024–1279px) — the tightest tier this panel ever
-              renders in — the graphic filled almost the whole column
-              (minimal p-6 padding, height-driven sizing with no other
-              cap), reading as oversized relative to the rest of the page.
-              `xl:max-w-none` lifts the cap once `xl:p-16`'s much larger
-              padding is already doing the same job on its own. */}
           <div className="flex-1 min-h-0 flex items-center justify-center p-6 pb-2 xl:p-16 xl:pb-4">
-            {/* Capped at a fixed size (not just height-driven) on every
-                tier, including xl — previously uncapped there, so on a tall
-                panel the whole diagram (lines + nodes together, not just
-                the node icons) filled nearly the whole column instead of
-                reading as one compact graphic. */}
             <PlatformNetworkGraphic variant={networkVariant} className="max-w-[240px] lg:max-w-[260px] xl:max-w-[300px]" />
           </div>
 

@@ -137,6 +137,11 @@ function SurfboardUserDashboardNavbar({
         profileHref="/surfboard/dashboard/settings"
         settingsHref="/surfboard/dashboard/settings"
         onLogout={() => {
+          // Clear per-session announcement markers so the modal re-surfaces
+          // on next login if a campaign is still active.
+          Object.keys(sessionStorage)
+            .filter((k) => k.startsWith("surf_announcement_seen_"))
+            .forEach((k) => sessionStorage.removeItem(k));
           fetch("/api/auth/logout_redirect?from=surfboard");
           router.push("/surfboard/login");
         }}
@@ -255,6 +260,11 @@ export default function SurfboardUserPanelLayout({
         <ConfirmedLogoutLink
           key="logout"
           onConfirm={() => {
+            // Clear per-session announcement markers so the modal re-surfaces
+            // on next login if a campaign is still active.
+            Object.keys(sessionStorage)
+              .filter((k) => k.startsWith("surf_announcement_seen_"))
+              .forEach((k) => sessionStorage.removeItem(k));
             fetch("/api/auth/logout_redirect?from=surfboard");
             router.push("/surfboard/login");
           }}
