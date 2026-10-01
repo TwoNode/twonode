@@ -1121,6 +1121,7 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
         geometry: true,
         pillars: true,
         state: true,
+        dateOnSurveyPlan: true,
         user: { select: { firstName: true, lastName: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -1144,6 +1145,11 @@ export async function getAllSurfPlansForAdmin(params: { skip?: number; take?: nu
       state: plan.state,
       ward: plan.ward,
       lga: plan.lga,
+      // The map popup's own "Survey date" line reads this straight off
+      // feature properties — never selected here before, so it always
+      // rendered the popup's "N/A" fallback regardless of the plan's
+      // actual date (same missing-select pattern as `facilitator` above).
+      dateOnSurveyPlan: plan.dateOnSurveyPlan,
       owner: plan.user ?? null,
       // The map popup shows this as "Surveyor" — the registered platform
       // user accountable for the plan, not the plan's own free-text
