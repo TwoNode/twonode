@@ -67,7 +67,7 @@ export function PlatformNetworkGraphic({
       MDA_SURFBOARD.x, MDA_SURFBOARD.y, MDA_SURFBOARD.r,
     );
     return (
-      <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
+      <div className={`relative w-full aspect-square max-w-full mx-auto ${className}`}>
         <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <defs>
             <linearGradient id="mda-line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -107,7 +107,7 @@ export function PlatformNetworkGraphic({
   const ringPairs: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 0]];
 
   return (
-    <div className={`relative aspect-square h-full max-w-full mx-auto ${className}`}>
+    <div className={`relative w-full aspect-square max-w-full mx-auto ${className}`}>
       <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
         <defs>
           {/* Gradient for hub→node spokes */}
@@ -187,11 +187,13 @@ export function PlatformNetworkGraphic({
             <Plus className="h-1/3 w-1/3 text-white/40" />
           </div>
         ) : n.kind === "gbc" ? (
-          // GBC wide wordmark pill
+          // GBC badge — square footprint (matches GBC_R's line-clipping
+          // assumption of an 18%x18% box); the wide wordmark letterboxes
+          // inside via object-contain rather than stretching the box.
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white px-3 py-2 shadow-lg z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "18%" }}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg z-10"
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "18%", aspectRatio: "1" }}
           >
             <img src="/gbc2/gbc2DarkLogo.png" alt="GBC" className="h-full w-full object-contain" />
           </div>

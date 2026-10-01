@@ -155,6 +155,21 @@ export async function updateSettings(patch: SettingsPatch, userId: string, editi
     }
   }
 
+  // Server is the sole authority for enforcedSince — never trust a
+  // caller-supplied value, and only stamp it fresh on a genuine
+  // false->true enable transition. Otherwise every account created
+  // between this feature's deploy date and whenever a superadmin
+  // actually enables it would wrongly get zero grace period (the static
+  // default's hardcoded date, not the real enable moment).
+  if (patch.emailVerification) {
+    const wasEnabled = current.emailVerification.enabled === true;
+    const nowEnabled = merged.emailVerification.enabled === true;
+    merged.emailVerification.enforcedSince =
+      !wasEnabled && nowEnabled
+        ? new Date().toISOString()
+        : current.emailVerification.enforcedSince;
+  }
+
   return replaceSettings(target.key, merged, userId, "UPDATE_SETTINGS");
 }
 
