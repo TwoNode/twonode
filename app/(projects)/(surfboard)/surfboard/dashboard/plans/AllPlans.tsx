@@ -2560,14 +2560,12 @@ export default function AllPlans() {
                     nextSharedTo.push(addedUser.id);
                   }
                   if (!nextSharedToUsers.some((u: any) => u.id === addedUser.id)) {
-                    const parts = (addedUser.name || "").trim().split(/\s+/);
                     nextSharedToUsers.push({
                       id: addedUser.id,
-                      firstName: parts[0] || "",
-                      lastName: parts.slice(1).join(" ") || "",
+                      firstName: addedUser.firstName,
+                      lastName: addedUser.lastName,
                       email: addedUser.email,
-                      surconNumber: addedUser.surconNumber,
-                      avatar: addedUser.avatar,
+                      surconRegNumber: addedUser.surconRegNumber,
                     });
                   }
                 }
