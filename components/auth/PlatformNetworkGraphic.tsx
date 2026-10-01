@@ -8,10 +8,9 @@ import { Plus } from "lucide-react";
 // at the visual center of every logo circle/pill.
 //
 // Node size as a % of container width:
-//   Hub      → 13%   (rounded-2xl square)
-//   Satellite → 9%   (rounded-full circle)
-//   GBC pill  → 18%  (wide pill — wordmark only)
-//   Open slot → 9%   (dashed circle)
+//   Hub       → 15%  (rounded-full circle)
+//   Satellite → 12%  (rounded-full circle)
+//   Open slot → 12%  (dashed circle)
 //
 // The SVG lines are now clipped so they appear to terminate at the *edge*
 // of each logo badge rather than running through its center — calculated
@@ -20,9 +19,9 @@ import { Plus } from "lucide-react";
 
 const HUB = { x: 50, y: 44 };
 // Half-widths in viewBox % units (used to shorten line endpoints)
-const HUB_R = 6.5;   // half of 13%
-const NODE_R = 4.5;  // half of 9%
-const GBC_R  = 9;    // half of 18%
+const HUB_R = 7.5;   // half of 15%
+const NODE_R = 6;    // half of 12%
+const GBC_R  = 6;    // half of 12%
 
 const NODES = [
   { x: 76, y: 22,   kind: "surfboard" as const, r: NODE_R },
@@ -82,15 +81,15 @@ export function PlatformNetworkGraphic({
         </svg>
 
         <div
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: "9%", aspectRatio: "1" }}
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg"
+          style={{ left: `${MDA_MDA.x}%`, top: `${MDA_MDA.y}%`, width: "12%", aspectRatio: "1" }}
         >
           <img src="/OSSG_Logo.png" alt="MDA" className="h-full w-full object-contain" />
         </div>
 
         <div
-          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg"
-          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: "9%", aspectRatio: "1" }}
+          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg"
+          style={{ left: `${MDA_SURFBOARD.x}%`, top: `${MDA_SURFBOARD.y}%`, width: "12%", aspectRatio: "1" }}
         >
           <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
         </div>
@@ -169,8 +168,8 @@ export function PlatformNetworkGraphic({
 
       {/* Hub — TwoNode */}
       <div
-        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-xl z-10"
-        style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "13%", aspectRatio: "1" }}
+        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-xl z-10"
+        style={{ left: `${HUB.x}%`, top: `${HUB.y}%`, width: "15%", aspectRatio: "1" }}
       >
         <img src="/logo.png" alt="TwoNode Technologies" className="h-full w-full object-contain" />
       </div>
@@ -181,27 +180,24 @@ export function PlatformNetworkGraphic({
           <div
             key={n.kind}
             className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed border-white/40 z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
             title="More platforms coming soon"
           >
             <Plus className="h-1/3 w-1/3 text-white/40" />
           </div>
         ) : n.kind === "gbc" ? (
-          // GBC badge — square footprint (matches GBC_R's line-clipping
-          // assumption of an 18%x18% box); the wide wordmark letterboxes
-          // inside via object-contain rather than stretching the box.
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white p-3 shadow-lg z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "18%", aspectRatio: "1" }}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg z-10"
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
           >
             <img src="/gbc2/gbc2DarkLogo.png" alt="GBC" className="h-full w-full object-contain" />
           </div>
         ) : (
           <div
             key={n.kind}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-2.5 shadow-lg z-10"
-            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "9%", aspectRatio: "1" }}
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white p-1 shadow-lg z-10"
+            style={{ left: `${n.x}%`, top: `${n.y}%`, width: "12%", aspectRatio: "1" }}
           >
             {n.kind === "surfboard" && (
               <img src="/surfboard/surf_logo.svg" alt="Surfboard" className="h-full w-full object-contain" />
